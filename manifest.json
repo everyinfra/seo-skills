@@ -1,0 +1,13 @@
+{
+  "name": "EveryInfra SEO Skills",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "maintainer": {"organization": "EveryInfra"},
+  "feedback_url": "https://github.com/everyinfra/seo-skills/issues",
+  "skills": [
+    {
+      "slug": "seo-suite",
+      "skill_path": "skills/seo-suite/SKILL.md"
+    }
+  ]
+}

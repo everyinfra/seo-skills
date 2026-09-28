@@ -1,0 +1,48 @@
+EveryInfra SEO Skills
+Copyright 2026 EveryInfra
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full text.
+
+Third-party materials
+---------------------
+
+The reference notes under skills/seo-suite/references/ were written by
+EveryInfra. For some topics, the way the material is organized was informed
+by the open-source projects and public documentation listed below.
+
+This repository does not contain copies of third-party text. Where a note
+draws on a third-party source, it gives only EveryInfra's own summary and a
+link to the original, listed in the "来源" (Sources) section at the end of
+that file.
+
+Open-source projects consulted (linked only, no text copied):
+
+  - aaron-he-zhu/seo-geo-claude-skills (Apache-2.0)
+    https://github.com/aaron-he-zhu/seo-geo-claude-skills
+  - coreyhaines31/marketingskills (MIT)
+    https://github.com/coreyhaines31/marketingskills
+  - addyosmani/web-quality-skills (MIT)
+    https://github.com/addyosmani/web-quality-skills
+  - squirrelscan/skills (MIT)
+    https://github.com/squirrelscan/skills
+
+Public documentation, papers and articles referenced by link, including
+Google Search Central, web.dev, Chrome for Developers, MDN, schema.org,
+RFC 9309, Google Analytics and Tag Manager help, Wikidata and Wikipedia policy
+pages, the C-SEO Bench paper (arXiv:2506.11097) and a Semrush article on
+semantic HTML, remain the property of their respective owners and are not
+reproduced here.
+
+Product and company names are used for identification only and may be
+trademarks of their respective owners. Mentioning them does not imply
+endorsement or affiliation.
+
+第三方资料说明
+--------------
+
+skills/seo-suite/references/ 下的参考资料由 EveryInfra 自行编写。部分主题的
+组织思路参考了上面列出的开源项目和公开文档。本仓库不包含第三方原文：涉及
+第三方来源的文件，只给出 EveryInfra 自己的要点摘要和原文链接，链接列在该
+文件末尾的「来源」一节。文中提到的产品和公司名称仅用于指明对象，可能是其
+各自所有者的商标，提及不代表背书或关联。
