@@ -3,6 +3,19 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.5.2 - 2026-10-08
+
+- **第三波长链路深挖(长尾七市场,每市场单独 agent 母语挖掘)——十八市场全覆盖完成**:
+  - **印地/印度**:GSC regex 快照缺口修复法(英文页在 Hinglish 查询排首页但 CTR 0.16% 的零成本机会);JioHotstar×OpenAI 超 App 内 ChatGPT;JustDial/IndiaMART 目录=GEO 引用源;语音助词词库;拼写漂移聚类;Sarvam MCP;
+  - **意大利**:P.IVA→Registro Imprese 竞品链(增值税号→ATECO→真实竞品,公开 API 独有);意语 AI 引用=Wikipedia 48.67%+个人专家站第三(Aranzulla 模式);4 星>5 星信任悖论;
+  - **土耳其**:**Yazeka**(土语专属 AI 答案,非 YandexGPT);**AIO 引用 75.3% 绑定自然前 10**(vs 美国 37%——美式结论不可平移);Wordstat TR 上线;Zemberek 黏着语工作流;**份额口径冲突并记**(StatCounter 26% vs 本地机构 3–5%);
+  - **越南**:t0mmy 99 条规则(提问式 H2≥50%、密度上限 1/150、nonce 双层质量门);Coc Cốc 官方偏好越南语+.vn;句长方差检测;
+  - **泰国**:`Intl.Segmenter("th")` 分词定论(**全球主流 SEO 工具栏在泰文站全部错误**);grapheme 字素计数;泰调可读性公式;Wongnai/Pantip 本地信号;PDPA;
+  - **波兰**:Bing 桌面 ~13.3%(全球 3 倍)必做;品牌引用按引擎分列(ChatGPT PKO vs Gemini mBank);URL 转写六机构共识;
+  - **荷兰/弗拉芒**:je/u tone 双轨;>60% 网民用 AI(欧洲最高档);[INVULLEN] 占位制;KvK 一致性;垂直行业本地页模板模式。
+- 独到方法索引十八市场全部填实;**跨区融合原则扩至 23 条**(新增:官方注册竞品链/分词字素基建/质量门防自评篡改/快照缺口诊断法/**口径冲突并记纪律**)。
+  Wave 3 completes 18-market coverage: HI/IT/TR/VI/TH/PL/NL, each with its own native-language agent.
+
 ## 0.5.1 - 2026-10-08
 
 - **第二波长链路深挖(方言/文字机制六市场,每市场单独 agent 母语挖掘)**:

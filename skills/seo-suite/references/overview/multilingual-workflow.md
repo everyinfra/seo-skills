@@ -136,6 +136,13 @@
 | 德语(DACH) | **Ansprache/Tonalität 两字段**+一致性优先;Sistrix 锚点(AIO 覆盖 20%/Pos.1 CTR 27%→11% **−59%**/月损 2.65 亿点击;1/3 德国人周用 AI——Bitkom 官方);GEO 引用源优先级=德国官方机构(BAFA/Fraunhofer/行业协会)>Tier-1 媒体>国际泛源;**测量:GSC(免 consent)为基准+GA4 建模值并列 consent rate**,小站勿依赖 Advanced CM 建模;瑞士=同 .ch 下语言子目录+CHF 原生定价 |
 | 法语 | **Vibe(ex-Le Chat)单独优化**(三爬虫分工+AFP 通稿信源+22.9% unique 推荐);AIO 法国 2026-07-22 上线,新闻站 2 个月 −22%;**Bill 96 无规模豁免**(25+ 须注册 OQLF/等效可见性/商标例外须配法语通用描述/罚 ~3 万 CAD/日/项);魁北克"法语化"vs 法国收英语词的词汇表(courriel/balado/magasinage ↔ email/podcast/shopping——OQLF 官方术语库);非洲法语区(塞内加尔桌面 Bing 9.2% 必配 Bing Places);法国 9 层目录+**40–60 词规范实体简介全平台逐字重复** |
 | 印尼语 | **AIO 触发率 37.2% 全球第一**;引用格局=视频/社媒 30.7%+电商平台被引+品牌词官网 72.2% 出现率;双雄+TikTok 分流(产品发现走 Tokopedia/Shopee/TikTok,Google 承担研究意图);**slow-4G 节流为测试基线**(全国中位 15–38 Mbps);meta 前 120 字符安全区;"hiruk pikuk"禁用 |
+| 印地/印度 | **GSC regex 快照缺口修复法**(英文页在 Hinglish 查询排首页但 CTR 0.16%——顶部加原样措辞定义行);**超 App 内 ChatGPT**(JioHotstar×OpenAI 2026-02);目录=GEO 引用源(JustDial/IndiaMART/Sulekha);语音=助词词库(kaise/konsa/batao)×产品词;拼写漂移聚类(音译规范化);Sarvam MCP(Indic API 官方后端) |
+| 意大利 | **P.IVA→Registro Imprese 竞品链**(增值税号→ATECO 码+省→真实竞品,公开 API 独有);"数据阶梯+声明降级"(测量值 vs 估算值标注);意语 AI 引用=Wikipedia 48.67%+个人专家站(Aranzulla 模式)第三;**4 星>5 星信任悖论**(意大利用户更信 4 星);AIO 2025-03-26 与 DACH 同批 |
+| 土耳其 | **Yazeka**(土语专属 AI 答案品牌,非 YandexGPT);**AIO 引用 75.3% 绑定自然前 10**(美式"社媒核心"结论不可平移);Wordstat TR(2026-01)+webmaster 全土语界面;黏着语 Zemberek 工作流;Trendyol 电商主导但 marketplace 页仅占 AIO 引用 2.5%;**份额口径冲突并记**(StatCounter 26% vs 本地 3–5%) |
+| 越南 | **t0mmy 99 条规则**(提问式 H2≥50%、密度只设上限 1/150 且仅计正文、nonce 双层质量门防 agent 自评篡改、标题词进前 30 字符防改写);Coc Cốc 官方偏好越南语+.vn;**句长方差检测**(反 AI 文风,mona-seo-check-vi) |
+| 泰国 | **`Intl.Segmenter("th")` 分词定论**(主流 SEO 工具栏在泰文站全错);**grapheme 字素计数**;泰调可读性公式(句≤25 词/词均≤5 字符);Wongnai/Pantip 外链=本地信号;PDPA 明示同意(医疗);泰文字体子集省 60–80% |
+| 波兰 | **Bing 桌面 ~13.3%**(全球 3 倍)必做 Bing WMT+IndexNow;**品牌引用按引擎分列**(ChatGPT PKO vs Gemini mBank);URL 转写六机构共识;Wykop/Dobreprogramy/Spider's Web 品牌渠道;sierotki 孤字排版规则 |
+| 荷兰/弗拉芒 | **je/u tone 双轨**(nl-NL=je 连 B2B;nl-BE=u 句中小写);>60% 网民用 AI(欧洲最高档);**[INVULLEN] 占位制+拒绝虚构 norm**(锚文本不给比例);GBP 描述用满 750 字符+KvK 商会号;5 个垂直行业本地页模板模式 |
 
 **跨区融合原则**(第一波提炼,全区通用):
 1. **每个市场先识别封闭生态搜索入口**(搜一搜/抖音 ↔ Naver Blog/Cafe ↔ Dzen ↔ Telegram 镜像 ↔ VK 群)——同构模式,逐市场点名。
@@ -156,5 +163,10 @@
 16. **职业注册号=本地执业凭证字段**:巴西委员会号(OAB/CRM)、德国官方机构源——管制市场 E-E-A-T 的可验证信号。
 17. **支付即意图维度**:OXXO/cuotas/contra entrega/Pix/COD——支付方式词层进意图分类(各市场通用模式)。
 18. **本地引擎 watch 列表**:每区标配(法 Vibe/阿 Fanar·Jais/印尼 Sahabat-AI/韩 Wrtn)——本土助手不照搬美系排名,小语种原创内容的边际收益更高(Vibe 22.9% unique 推荐)。
+19. **官方注册数据竞品链**:意 P.IVA→Registro Imprese(公开 API)>瑞 Zefix(免费)>德 Handelsregister(付费)——"官方注册竞品发现"三态适配。
+20. **分词/字素基建**:无空格文字(泰/日/中)先 `Intl.Segmenter` 再谈密度;标题按 grapheme 计——**全球主流 SEO 工具栏在泰文站全错**是教训。
+21. **质量门防自评篡改**:validator 达标 ∧ 独立评分 ≥85 才发布+状态目录只读+nonce(t0mmy 模式)——agent 产线的通用安全层。
+22. **快照缺口诊断法**:GSC regex 找"排名好但语言错配"的零成本机会(印度 Hinglish 案例可移植所有混码市场)。
+23. **口径冲突并记**:土耳其 Yandex(26% vs 3–5%)、日本引擎份额、韩国双口径——同一事实两源矛盾时**并记两说+建议本地实测**,不选边。
 
-*第三波(HI/IT/TR/VI/TH/PL/NL)的独到层随波次补入本表。*
+*(十八市场独到层全部填实:第一波 5 + 第二波 6 + 第三波 7。)

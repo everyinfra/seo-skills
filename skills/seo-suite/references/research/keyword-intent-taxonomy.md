@@ -97,13 +97,13 @@
 | 阿拉伯 | KW Planner(阿语最可靠工具之一)+ Google/YouTube 阿语 suggest + Ajebhom/TenKeyword;正字归一参考 Tanqeeh/tnkeeh 类库 | **打字=MSA、语音=方言**(从业者共识);埃及方言词跨区域触达最广;每核心词收录 MSA+方言(EG/SA/LV)+阿拉伯-印度/欧洲数字双写+正字变体(أ/ا/إ、ي/ى、ة/ه);Ahrefs/Semrush 阿语数据薄须交叉验证 |
 | 德语(DACH) | KW Planner(**分国别取数,禁合并 DACH 搜索量**——合并产生没人搜的虚高数) | **Ansprache(称谓)与 Tonalität(语气)拆两个字段**:传统 B2B 默认 Sie+locker Ton、B2C/SaaS 默认 du,混合仅允许按渠道或按阶段且写进 styleguide,**全触点一致性>单点选择**;词汇映射每国一份(Jänner/Januar、Metzger/Fleischhauer、Marille/Aprrikose);奥地利 44% 电商跨境流向德国——德国站可被动覆盖 |
 | 印尼 | KW Planner(id)+ 免费三源词研(客服对话/竞品评论区/社媒评论)+ Autocomplete a–z 验证 | **"关键词跟手指、正文跟词典"(kata kunci mengikuti jari pengguna, prosa mengikuti KBBI)**:gaul 词 Autocomplete 验证主导后可进 title/H2,正文保持 baku;五档 ragam 矩阵(beku/resmi/konsultatif/santai/akrar)比二元更细;gaul 区=实用/定义类,YMYL/健康/政府=baku 区(AIO 引用的健康/政府站全为规范语);宗教词用 KBBI 拼写(salat/Jumat);Ramadan/THR 季节内容刚需;**"hiruk pikuk"是印尼第一 ChatGPT 文风标记,绝对禁用**;±100 对 baku/salah 拼写(silakan≠silahkan) |
-| 印地/印度 | KW Planner(en-IN/hi-IN 分开) | **Hinglish 混码**:罗马化/天城体/英语三种书写,真实量在 Hinglish 非纯印地语;语音查询占比高(~70% 新用户,行业未证实) |
-| 意大利 | KW Planner(it-IT/it-CH) | it-CH 混德法词+瑞郎语境,当独立 locale 研究 |
-| 土耳其 | KW Planner + **Yandex Wordstat**(Yandex ~26%) | **黏着语**:后缀折叠格/数/领属→英文式头部词低估量,研究屈折表层形式与词干变体 |
-| 越南 | KW Planner(vi-VN) | **有调/无调当独立词**("khong/không"意图不同,移动端常无调);Coc Cốc(~6%)单独看 |
-| 泰国 | KW Planner(th-TH) | **无词间空格**:密度工具与精确匹配失效——先确认分词,再谈密度 |
-| 波兰 | KW Planner(pl-PL) | 9 个变音字母:内容**带**正确变音符写(Google 两种都匹配),不模仿无调输入 |
-| 荷兰/弗拉芒 | KW Planner(nl-NL/nl-BE) | 词汇分流(auto's/wagen)与正式度;比利时三语分站 |
+| 印地/印度 | KW Planner(en-IN/hi-IN 分开)+ **GSC regex(RE2)隔离罗马化 Hinglish 查询** | **Hinglish 三书写+拼写漂移聚类**(kya hota hai/h、kaunsa/konsa——音译规范化后聚类,IndicXlit 思路);**两大形态分开建**:英文词+meaning in hindi(电商信息)vs 英文词+印地语法包装(oily skin ke liye best foundation);语音=助词词库(kaise/konsa/batao/chahiye,泰米尔 enna/epdi/yaar)×产品词模板;**"排名好但快照语言错配"缺口**:英文页在 Hinglish 查询排首页但 CTR 0.16% 纚——修法=排名页顶部加用户原样措辞的 Hinglish 定义行(案例实测) |
+| 意大利 | KW Planner(it-IT/it-CH) | **双语双轨**:科技/数字主题意英同搜("crm per pmi"/"crm tool");**P.IVA→Registro Imprese 竞品链**:页脚增值税号→ATECO 行业码+省→同码同省注册公司=真实竞品(公开 API,意语区独有);Lei 仅机构/高龄/奢侈,现代趋势全面 tu |
+| 土耳其 | KW Planner + **Wordstat TR(2026-01 上线,wordstat.yandex.com.tr,土语分词联想)** | **黏着语工作流:Zemberek-nlp(1.4k★)词干+形态分析→保留高频屈折变体→Wordstat 验证后缀族**;URL 一律转写(ı→i/ğ→g/ş→s,禁 percent-encode);**份额口径冲突并记**:StatCounter Yandex ~26% vs 本地机构 3–5%(俄语旅游带 5–7%)——投放前本地实测 |
+| 越南 | KW Planner(vi-VN;GKP/Ahrefs 有调无调是独立词条分别查量) | **内容用带调形式(Google 语义评估更优)+混入无调输入变体+slug 无调小写**;Coc Cốc 官方偏好越南语页与 .vn 域(文档化收录因素);**提问式 H2 ≥50% 用真实搜索措辞**(对 SEO/GEO 双高价值);标题 45–65 字符、词进前 30 字符(防 Google 改写) |
+| 泰国 | KW Planner(th-TH) | **分词定论:`Intl.Segmenter("th")`(word 粒度)正确切词零依赖——全球主流 SEO 工具栏在泰文站全部错误**;标题按 **grapheme(字素)** 计非字符串长;泰调可读性:句 ≤25 词(>30 罚)、词均 ≤5 字符;`Intl.Segmenter("vi")` 同解越南 |
+| 波兰 | KW Planner(pl-PL) | 内容带变音符+**URL/slug 转写(ą→a/ł→l)是六家波兰 SEO 机构一致共识**(转义 %C4%85 体验差);**Bing 桌面 ~13.3%**(全球均值 3 倍)→必做 Bing WMT+IndexNow,B2B 桌面词单独追;**品牌引用按引擎分列**(ChatGPT 偏 PKO/Gemini 偏 mBank——Basta Digital) |
+| 荷兰/弗拉芒 | KW Planner(nl-NL/nl-BE) | 词汇分流(wagen/auto's、sloebers/gymschoenen)+**tone 双轨:nl-NL=je(连 B2B)/nl-BE=u(句中小写,商务政务),gij 仅乡土品牌**——同一内容无法靠词汇表通吃;hreflang 高频错误=nl-BE 页误标 nl-NL;**锚文本拒绝虚构比例 norm**(Google 不公布),自然顺序 brand>descriptive>naked>exact |
 
 **跨市场共同纪律**:关键词不互译(各语言独立研究,战略层对齐主题);SERP 证据记录地域与语言;变体归组后再估量,不把变体当独立词;**信源/词量断言带日期**(偏好结论半衰期 6–12 个月);屈折语系(俄/土)一律双频过滤。
 

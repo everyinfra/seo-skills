@@ -47,6 +47,11 @@
 | 巴西 | Apontador/Telelistas/GuiaMais/Solutudo + 分行业 Doctoralia(医)/JusBrasil(法)/iFood/GetNinjas | 目录(分行业>通用) | Free | NAP 一致第一;**30 个好目录分 4–6 周提交>200 个一天,>40 边际递减,90 天维护**;.edu.br 高权重;Google 巴西曾因售链整站处罚 | 2026-10-08 |
 | 德语区 | gelbeseiten.de/11880.com/dasoertliche.de/Cylex(德);local.ch/search.ch(瑞) | 目录+NAP | Free/Freemium | Tier-1 数字 PR:FAZ/Handelsblatt/Welt/WiWo/Manager Magazin(链接属性逐案核);pr-gateway.de 分发 +250 门户 | 2026-10-08 |
 | 法语区 | **法国 9 层目录体系**:①Google/Bing Places(**Bing 索引喂 ChatGPT**)/Apple BC→②PagesJaunes/118712→③Trustpilot/Avis Vérifiés→④CCI/societe.com/Pappers→⑤行业(Doctolib/Malt)→⑥Appvizer/Capterra FR→⑦地方→⑧集成市场→⑨LinkedIn/Crunchbase/**Wikidata/GitHub(直接喂 AI 语料)** | 目录九层 | Free/Freemium | **NAP 逐字符一致+40–60 词规范实体简介在所有平台逐字重复**(与长描述应变化相反——重复即实体强化);媒体走"专家回应记者"数字 PR;AFP 通稿放大引用面 | 2026-10-08 |
+| 印度 | **JustDial**(5,610 万商户)/IndiaMART(B2B 最大)/Sulekha/TradeIndia | 目录=AI 引用源 | Free/Freemium | AI 引擎引用印度 SME 时大量拉取这些目录——**目录完整性既是 Google prominence 信号又是 AI 引用源** | 2026-10-08 |
+| 意大利 | Pagine Gialle(Italiaonline) | 目录(local 定位) | Free/Freemium | 引用质量>数量(10 条正规+本地权威>100 条低质);**4 星>5 星信任悖论**(评论管理本地化) | 2026-10-08 |
+| 泰国 | Wongnai/ThaiSME/Yellowpages.co.th | 目录+本地信号 | Free | Wongnai 外链=本地信号;Pantip 出链=社交证明(nutttaro 检测项) | 2026-10-08 |
+| 波兰 | Panorama Firm/Oferteo | 目录 | Free/Freemium | RODO 冷外联限制(GDPR 级);Bing 桌面 13.3% 配套 Bing Places | 2026-10-08 |
+| 荷兰 | telefoonboek.nl/openingstijden.nl(DA~40) | 目录 | Free | **KvK(商会)号一致性**入 NAP;GBP 描述用满 750 字符 | 2026-10-08 |
 
 **卫星站风险（日语区 2026 定论，全区适用）**：为发链而生的卫星站是 SpamBrain 三层检测对象（链接模式×内容相似度×IP/WHOIS），恢复 3 个月–1 年。判定黄金律："去掉 SEO 收益后该站还有存在理由吗"。合法形态：地域分站、品牌分站、独立编辑方针的媒体。
 

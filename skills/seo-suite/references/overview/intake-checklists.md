@@ -31,7 +31,13 @@
 - **德语区**:Ansprache/Tonalität 两字段+跨触点一致性?分国别取数(禁合并 DACH)?GSC 基准+consent rate 并列?瑞士 CHF+子目录结构?
 - **法语**:Vibe 引用面板单独跑?Bill 96 检查(等效可见性/OQLF)?魁北克词汇表应用?塞内加尔等 Bing Places?
 - **印尼**:视频/社媒资产优先于长文?品牌词=sameAs+FAQ 实体页?slow-4G 基线测 LCP?"hiruk pikuk"类 slop 禁用表?
-- **长尾主流市场速查**(印地/意/土/越/泰/波兰/荷,详见多语言工作流长尾表):印地=Hinglish 三书写+hi-IN/en-IN 分开?意大利=it-CH 独立 locale?土耳其=Yandex 双引擎(~26%)?越南=有调/无调+Coc Cốc?泰国=分词验证?波兰=变音符保留?荷兰=nl-NL/nl-BE 分开?
+- **印地/印度**:GSC regex 跑过 Hinglish 快照缺口?目录(JustDial/IndiaMART)完整性?语音助词词库?超 App(JioHotstar)引用面?
+- **意大利**:P.IVA→竞品链用过?Wikipedia 意语词条存在?评论策略按"4 星>5 星"本地化?
+- **土耳其**:本地实测 Yandex 份额(口径冲突)?Yazeka 引用抽查?Zemberek 词干工作流?Trendyol 店铺?
+- **越南**:提问式 H2≥50%?无调变体混入?Coc Cốc site: 收录?.vn 外链?
+- **泰国**:`Intl.Segmenter("th")` 分词+grapheme 计数?Wongnai/Pantip 本地信号?PDPA(医疗)?
+- **波兰**:Bing WMT+IndexNow(桌面 13.3%)?URL 转写?品牌引用按引擎分列?
+- **荷兰**:je/u tone 双轨?nl-BE 误标检测?[INVULLEN] 占位制?KvK 一致性?
 - 逐市场分别评分还是只要一个总分?(本套件默认:逐市场分开)
 
 ## research intake
