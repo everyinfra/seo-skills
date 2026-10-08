@@ -6,7 +6,23 @@
 
 EveryInfra SEO Skills 的版本为 `0.1.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
 
+## 为什么是现在 / Why now
+
+> 数字均来自公开研究或厂商文档;来源登记于 `skills/seo-suite/references/content/geo-platform-differences.md` 第五节。
+
+| 指标 | 数值 |
+|---|---|
+| GEO 服务市场 | 8.5 亿美元 → 2031 年预计 73 亿 |
+| AI 引荐流量年增速 | +527% |
+| AI 流量转化率 vs 自然搜索 | 4.4 倍 |
+| Gartner:传统搜索流量(到 2028) | -50% |
+| 品牌提及 vs 外链对 AI 排名的相关性 | 约 3 倍 |
+| GEO 优化内容的可见性提升(KDD 2024,10K 查询) | +30–115% |
+| 目前投入 GEO 的营销者 | 仅 23% |
+
 ## 它是什么
+
+
 
 `seo-suite` 是一个统一的 SEO 入口：先做统一 intake（站点、市场、目标、已知问题、可用数据），再把任务路由到 overview、research、content、technical、monitoring 五类能力，最后按固定结构给出结论、优先级和验证方法。
 
