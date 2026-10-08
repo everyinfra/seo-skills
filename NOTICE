@@ -46,3 +46,19 @@ skills/seo-suite/references/ 下的参考资料由 EveryInfra 自行编写。部
 第三方来源的文件，只给出 EveryInfra 自己的要点摘要和原文链接，链接列在该
 文件末尾的「来源」一节。文中提到的产品和公司名称仅用于指明对象，可能是其
 各自所有者的商标，提及不代表背书或关联。
+
+## 0.2.0 新增参考的第三方来源(仅摘要+链接)
+
+- AgriciDaniel/claude-seo (MIT): backlink 7-section framework, hreflang 8 checks, sitemap rules
+- zubair-trzada/geo-seo-claude (open): llms.txt spec, citability weights, platform playbooks, brand authority
+- jianruntech/geo-score (open): AIV rubric structure, vendor crawler facts, sampling protocol
+- Auriti-Labs/geo-optimizer-skill (open): citation vs training bot taxonomy
+- flaqai/backlink_skills (open): channel list conventions, provenance six-field, submission discipline
+- alvinunreal/awesome-submitlist (open): destination JSON schema reference
+- indie-hacking/Awesome-SEO-Backlinks (MIT): difficulty grading format
+- OranAi-Ltd/orangeo-ai-visibility-skill (open): buyer prompt taxonomy
+echo "NOTICE updated"
+git add -A && git commit -q -m "v0.2.0: add 8 reference files — backlink analysis (7-section + data gate), graded directory, llms.txt guide, AI platform differences, citability scoring, crawler policy, hreflang 8-check, brand-mention monitoring; framework points borrowed with attribution (see NOTICE)" && git push -q && git log origin/main --oneline -1
+__zcode_status=$?
+if [ "$__zcode_status" -eq 0 ]; then pwd -P > '/var/folders/b5/h925y_mj3pb167zj799m_1vr0000gn/T/zcode-06b74a75-a297-464a-943e-635639f4e522-cwd'; fi
+exit "$__zcode_status"

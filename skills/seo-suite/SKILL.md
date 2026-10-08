@@ -84,6 +84,11 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 - `templates/research/competitor-pages-plan.md`
 - `templates/research/content-strategy-plan.md`
 
+
+#### 外链（backlinks）
+- [外链画像分析](../references/research/backlink-profile-analysis.md)：七段式框架、数据源置信度级联、健康分与数据闸门、disavow 决策
+- [外链渠道目录](../references/research/backlink-directory.md)：分级渠道清单（含核验日期）、提交纪律与反虚荣 KPI
+
 ### content
 适用于：
 - SEO content brief
@@ -110,6 +115,12 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 
 输出要求：
 - 根据 `references/content/` 中的结构、写法要点和 playbook 直接生成 brief、meta、GEO 优化或 refresh 方案。
+
+
+#### GEO / AI 搜索（llms.txt 与可引用性）
+- [llms.txt 指南](../references/content/llms-txt-guide.md)：格式规范、校验严重度、生成规则
+- [AI 平台差异事实库](../references/content/geo-platform-differences.md)：五引擎引用行为、爬虫分类、优化侧重
+- [可引用性打分](../references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
 
 ### technical
 适用于：
@@ -151,6 +162,11 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 - `templates/audit/entity-audit.md`
 
 Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生成。
+
+
+#### AI 爬虫与国际化
+- [AI 爬虫政策](../references/technical/ai-crawler-policy.md)：引用型 vs 训练型 bot、四种典型 robots 配置、暗坑清单
+- [hreflang 校验](../references/technical/hreflang-validation.md)：八检框架、实现方式选择、内容平价
 
 ### monitoring
 适用于：
@@ -195,6 +211,10 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 | 「不知道先做什么，帮我整体判断」 | overview |
 
 ## 特别约束
+
+
+#### 品牌与 AI 可见性
+- [品牌提及监控](../references/monitoring/brand-mention-monitoring.md)：五平台加权、买家提示词集、实体建设清单
 
 ### Schema 检查
 - FAQPage 词汇是否合法、Google 当前是否支持富结果、对 AI 引用是否有效，三件事分别判断，不混为一个「通过」。
