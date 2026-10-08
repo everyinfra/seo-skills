@@ -58,7 +58,7 @@ Disallow: /
 
 逐家做 2+3；并接受 `*-User` 类 bot 可能继续按单用户请求访问。**没有一键全退**。
 
-## 三、区域引擎的爬虫与收录补充(2026-10-08 并入)
+## 三、市场差异:区域引擎的爬虫与收录
 
 Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI 答案通道:
 
@@ -73,6 +73,20 @@ Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI �
 | 中文 | `Baiduspider` / `Bytespider` | 见中文 AI 搜索指南 | 中文站确认未被禁 |
 
 **llms.txt 在区域市场的证据状态**:Yandex 无消费证据(俄社区视为仅策展);日本企业采用 6.4–6.8%(2026-09 测)但 John Mueller 明示无 AI 系统当前使用——**一切市场都只作低成本对冲,不承诺引用**。
+
+**Yeti(Naver 爬虫)的 robots.txt 语义陷阱**(官方文档级,2026-10 深化)——四条与 Google 不同:
+1. robots.txt 返回 **5xx → 全站封禁**(Google 用缓存兜底);返回 HTML → 可能被当作"无规则";
+2. 规则按 **host/协议/端口隔离**——www 的规则救不了 apex 域;
+3. `User-agent : Yeti`(冒号前空格)RFC 9309 合法,但 grep 检查会漏;
+4. Yeti-only 白名单:`User-agent: * Disallow: /` + `User-agent: Yeti Allow: /`。
+另:**`nosourceinfo` meta(全球唯一)**——Naver 独有的 robots meta 值,把页面排除出 AI 출처설명(AI 来源说明):有 AI 引用暴露策略(如隐藏 R&D 页)时的官方开关。og:image 三条件:>150×150、≥5,000B、长宽比≤3:1、每页唯一。IndexNow(Naver 端点)批量上限 10,000 URL;JobPosting/VideoObject **仅标记不收录,须제휴(合作)+Push 收集**。
+
+**英文协议层(agent-readiness,2026-10 新增,语言中立)**:
+- **ARD**(Agentic Resource Discovery,Google+Linux Foundation 2026-05):robots `Agentmap:` → `<link rel="ai-catalog">` → `/.well-known/ai-catalog.json` 三级发现链;Lighthouse 13.5+ `AGENTIC_BROWSING` 类别可校验。
+- **WebMCP**(W3C WebML CG 草案,Chrome M149–156 origin trial):`document.modelContext.registerTool()` 页面级工具;目前仅 ChatGPT 桌面浏览器实证调用(单一消费者,标注)。
+- **Web Bot Auth**:`draft-ietf-webbotauth-httpsig-protocol-00`(2026-09),`Signature-Agent` 字典——ChatGPT-User 以此签名。
+- **Cloudflare 托管 robots.txt 坑**:Cloudflare 在响应端注入托管 Disallow(GPTBot/ClaudeBot 等),只存在于线上响应——**审计必须抓线上响应,不能只看源文件**。
+- **Google 官方口径(2026-05-15)**:llms.txt/AI 专用标记/分块不被 Google 特殊对待;**`nosnippet` 一举把内容排除出 AIO/AI Mode 输入**(对照 `Google-Extended` 只管 Gemini 训练)。
 
 ## 四、暗坑清单
 

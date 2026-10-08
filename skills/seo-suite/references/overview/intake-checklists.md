@@ -15,9 +15,10 @@
 
 按命中的市场逐个过(细则见[多语言工作流](multilingual-workflow.md)市场总表):
 
-- **俄语区**:Yandex.Webmaster 是否验证+区域已设?Metrica 是否安装(GA 因 152-ФЗ 不合规)?robots 对 `YandexAdditional` 的决策(允许=进 Neuro/Alice)?付费投放的 erid 标记?
-- **韩语区**:Search Advisor 是否注册+验证(canonical 精确)?Naver Blog/Cafe/지식iN 存在吗(AI Briefing 只引 Naver 生态)?电商是否做 Coupang?
-- **日语区**:Bing WMT 是否验证(Bing 28–33% 份额)?MEO/本地业务:GBP+ステマ規制内口碑策略?Qiita/Zenn 是否覆盖(技术品牌)?
+- **俄语区**:Yandex.Webmaster 是否验证+区域已设?Metrica 是否安装(GA 因 152-ФЗ 不合规)?robots 对 `YandexAdditional` 的决策(允许=进 Neuro/Alice)?付费投放的 erid 标记?**Telegram 公开频道(镜像 SEO)与 VK 群是否运营?商业透明层(оферта/реквизиты 等 6 类法定页)齐吗?**
+- **韩语区**:Search Advisor 是否注册+验证(canonical 精确;**robots.txt 无 5xx/HTML 陷阱——Yeti 5xx=全站封禁**)?og:image 三条件?IndexNow key 部署?연관채널 sameAs(치지직/당근 等韩域)?description ≤80 全角字且 og:description 一致?Naver Blog/Cafe/지식iN 存在吗(AI Briefing 只引 Naver 生态;**투트랙:生态内+自有域**)?有 AI 引用暴露敏感页要用 `nosourceinfo` 吗?电商是否做 Coupang?**收录验证窗口设 2–4 周(수집요청是优先级队列)**
+- **日语区**:Bing WMT 是否验证(Bing 28–33% 份额)?**审计是否用全角阈值(title 32/desc 120/正文 300 全角字,勿套英文 60/160)?内容是否过「AI 臭」密度 lint?**MEO/本地:GBP+ステマ規制内口碑+投稿週 1 回?Qiita/Zenn 是否覆盖(技术品牌)?業界ポータル NAP 是否完全一致?
+- **英文(协议层)**:agent-readiness 三件套是否要做——ARD(`ai-catalog.json`)/llms.txt/WebMCP?Cloudflare 托管 robots 是否检测(抓线上响应)?Lighthouse `AGENTIC_BROWSING` 跑过吗?
 - **西语**:es-ES+es-419 结构决策?方言本地化(非机翻)?
 - **葡语(巴西)**:pt-BR 原生词表?ChatGPT/LLM 可见性是否列入优先目标(全球最强采用市场)?
 - **阿拉伯**:`dir="rtl"` 全链?MSA 骨架+方言层策略?

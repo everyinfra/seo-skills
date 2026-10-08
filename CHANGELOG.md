@@ -3,6 +3,19 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.5.0 - 2026-10-08
+
+- **架构重构:市场成为一等维度(市场 × 能力双维度)**。SKILL.md:intake 市场先行(18 市场第一必答字段)、统一输出首行注市场、新增「市场维度」运行方式;capability-map 双维度结构+市场分层表(独立学科/ChatGPT 超强/方言分裂/合规驱动/基线);routing-rules 新增「第零步:先定市场」;统一各能力文件「市场差异」小节命名约定。
+- **第一波长链路深挖(独立学科五市场,每市场单独 agent 母语挖掘)**:
+  - **中文**:新增「生态内搜索速查」(搜一搜 Peoplerank/小红书 CES 互动分/抖音四因子/知乎引证与 2026-08"知乎修正"/豆包信源金字塔与 2–4 周验收窗/采样风控 ≤20 问);排行站免费申报通道(maigoo/CNPP 官方口径);新库:geo-book(一手实测)、AIGEOTOOLS(175★)、deepseek-geo(118★)、douyin-seo-playbook;
+  - **英文**:协议层 agent-readiness(ARD 三级发现链/WebMCP/Web Bot Auth/Lighthouse AGENTIC_BROWSING);引用四级阶梯+recommended-against 暗级;ChatGPT 5.6 格式降权(listicle −50.5%);AIO 与 AI Mode 86% 引用不同源;Cloudflare 托管 robots 坑;fan-out 逆向;新库:marketingskills(53.7k★)、open-seo(22.7k★)、jdevalk/specification.website(874★)等 12 库;
+  - **俄语区**:Telegram 公开镜像 SEO(t.me/s/ 被 Yandex 抓取,~90% 曝光来自 Yandex);Webmaster SoV 官方报告;Alisa RAG 五步+ЭПОС;商业透明层 6 类法定页;9 项官方违规+накрутка ПФ 红线;目录生态(Бизнес/2ГИС/Zoon/Flamp/Отзовик+TGStat);VK 群可排名;Horosheff 深读(行为代理 7 分制等 8 项新检查);
+  - **韩语区**:`nosourceinfo`(全球唯一官方 AI 引用退出 meta);Yeti robots 语义四陷阱(5xx=全站封禁/host 隔离);연관채널 sameAs 实体图谱;AI 인용수 公开可侦察(메이트);웹문서/서비스内双通道;블로그 투트랙;官方 5 项引用标准+反模式;leopard627(707★)与 55 份官方文档蒸馏库深读;
+  - **日语区**:全角阈值体系(title 32/desc 120/正文 300);「AI 臭」密度 lint(28 动词×14 构文);MEO 三因素×投稿週 1 回;2026-06 引用生态(note 第 2/新闻跌出/PR TIMES 特例/垂类>综合榜);卫星站终结论;業界ポータル NAP 一致;kseo/utsushi/seo-operator/hana652 深读([要追加]/[要確認] 占位符协议升为全区规范)。
+- **主干新增「十八市场独到方法索引」**(第一波五行填实)+**跨区融合十原则**(封闭生态入口/SoV 计量观/断言半衰期/免费申报先行/行为代理审计/免责声明即 GEO 内容/密度检测/占位符协议/垂类媒体子表/互动分公式化)。
+- monitoring/brand-mention 新增市场差异节(四级阶梯+各市场监控通道);backlink-directory 新增区域渠道节(中/俄/日+卫星站风险+链接红线);intake-checklists 四市场深化。
+  Architecture: market becomes a first-class dimension (market × capability); Wave 1 deep-dives for the five independent-discipline markets (ZH/EN/RU/KR/JP), each with its own native-language agent.
+
 ## 0.4.1 - 2026-10-08
 
 - **结构反馈落地:区域知识融入套件本体**。移除 0.4.0 的 `references/regions/` 独立专区(4 份指南),把内容并入五类能力文件——全球能力不再是一个模块,而是每个能力集合自带:

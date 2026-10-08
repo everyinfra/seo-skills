@@ -59,7 +59,7 @@ robots 决策速查：
 - AirOps 2025：H2/H3 层级 2.8x 引用
 - BrightEdge（1M AI 答）：68% 引高权站；43% 引用来自 FAQ 标记页
 
-## 六、区域 AI 搜索平台(2026-10-08 并入,来源类型标注)
+## 六、市场差异:区域 AI 搜索平台
 
 Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用同一套 GEO 假设:
 
@@ -74,9 +74,17 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 | **Wrtn**(韩)/ **本地阿拉伯助手**(Jais/Fanar) | Wrtn >500 万 MAU;阿拉伯助手存在但 ChatGPT 主导使用 | 行业/未证实(份额) | 二线优先级;GPT-4 在阿拉伯方言上显著退化(arXiv:2305.14976)→ MSA 内容更可靠被引 |
 | **ChatGPT(印度)** | ~1 亿周活,ChatGPT 第二大市场(Altman 官方口径);AIO 覆盖英语+印地语;罗马化印地文本使 AI 处理掉 5–12 F1(arXiv 2512.10780) | 官方/研究 | 印度 LLM 可见性优先级仅次于巴西;Hinglish 三种书写都要测 |
 | **Coc Cốc AI(越南)** | 本地引擎 ~6%,浏览器自带 AI 聊天机器人 | 官方 Play 页 | 越南的小额但独占的本地 AI 面 |
+| **Alice AI(俄,2026-10 深化)** | RAG 五步:意图分析→级联子查询→经典索引检索→passage 级神经评估→合成;答案为改写非原文;**官方 Webmaster「SoV 可见度」报告**(3 个月/周更,2026-04 上线);覆盖 42% 查询、4,950 万 MAU;质量框架 ЭПОС;底座 AliceAI-T5-35B 开源 | Yandex 官方 | SoV(非位置)是官方 GEO 计量口径;引用前提仍是经典 SERP 排名 |
+| **Naver AI Briefing(官方标准)** | 官方 5 项引用基准:전문성·경험/주제 일관성/진정성·투명성/가독성/활동성·최신성;反模式:无关关键词/**내돈내산·협찬 须明示**/无关图片;图内核心信息必须文本化;机械批量生成被滤;**2026-06 起引用数货币化(메이트,Top10 月 1,000 万韩元)且当选者公开→竞品引用量可侦察** | Naver 官方博客/帮助 | 韩区 GEO 验收用「인용수」做可查基准 |
+| **日本引用生态(2026-06)** | 综合 Top:YouTube、**note 第 2**、Wikipedia JP、アメブロ、知恵袋、PR TIMES、Reddit、mybest、楽天——**新闻系全部跌出**;ChatGPT→Reddit/PR TIMES/アメブロ(英文 Wikipedia 排日文之上);Perplexity→知恵袋第 3;垂类(汽车)过半引行业专业媒体 | 行业(Ahrefs 定点) | 盯"行业定番媒体"优于综合榜;PR TIMES=日本特有高引新闻稿渠道 |
+| **ChatGPT 5.6 格式动荡(2026-08)** | listicle 引用份额 15.77%→7.80%(−50.5%)、comparison −32.1%、site:/official 检索激增;Gemini/Perplexity 未见同等降权 | 行业(Peec AI) | 被工业化滥用的格式遭检索层降权——格式策略按引擎分平台制定 |
+| **AIO vs AI Mode(英)** | 730k 回答研究:两者 **86% 时候引用不同来源**;会话深度 21 秒 vs 49 秒(品牌对比 77 秒) | 行业(Machine Relations 2026-07) | Google 的两个 AI 面分开优化分开验收 |
+| **微信搜一搜 AI 问答(中)** | 元宝嵌入搜一搜多触点,公众号被引比例显著高于其他信源;搜一搜排序=Peoplerank,首页公众号获该领域近八成流量(2023 公开课口径) | 官方(公开课)/行业 | 公众号=元宝唯一可运营信源;搜一搜排名是引用前置层 |
+| **豆包信源金字塔(中)** | 字节系权重高(头条 ~35.2%+抖音 ~13.5%,行业横评);9/12 题引抖音视频(geo-book 2026-08 实测);高权媒体收录 48h、被引 2–4 周 | 行业/一手实测 | 头条号+抖音图文双发;验收窗口按 2–4 周 |
+| **知乎「引证」(中)** | 官方功能:绿色标记有可靠来源、红色标记不可信;但 2026-08 实测知乎几乎未被六引擎引用("知乎修正") | 官方功能/一手实测 | 带来源的机构号回答优先;知乎当"实体存在"做,勿当必然引用渠道 |
 
 ## 七、来源
 
 - 厂商事实与"禁 GPTBot 不阻止引用"：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`、[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
 - 平台侧重与统计：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
-- 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）
+- 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional、SoV）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest、lizck.com 定点综述（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）；Naver 官方博客 224296857688 与 help.naver.com/service/30056（AI Briefing 标准与메이트）；Peec AI（ChatGPT 5.6 格式）；Machine Relations（AIO/AI Mode）；微信公开课 PRO 2023、卢松松博客（Peoplerank）、极搜AI（元宝）、CSDN 2026-07 横评与 [geo-book](https://github.com/JingHao-Leon/geo-book)（豆包/知乎修正，一手）

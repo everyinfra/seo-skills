@@ -14,19 +14,19 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 ### 1. 单入口
 - SEO / GEO / AI 搜索可见度 / SERP / Schema / 技术 SEO / 排名追踪 / 外链 / Programmatic SEO / 竞品页 / 内容策略 / 内容刷新等需求，都从这里进入，再按下面的规则路由。
 
-### 2. 统一 intake
-先确认：
+### 2. 统一 intake(市场先行)
+先确认——**目标市场是第一个必答字段**,市场决定用哪套引擎/工具/规范:
+- **目标市场 / 语言**(18 市场:中、英、俄、韩、日、西、葡、阿、法、德、印尼、印地、意、土、越、泰、波兰、荷;清单与锚点见 [多语言工作流](references/overview/multilingual-workflow.md)。未指定时:单语言站按站点语言推断,多语言站逐市场分开跑)
 - 站点 / 域名 / 页面 URL
 - 站点类型（SaaS、电商、内容站、文档站、本地业务等）
-- 目标市场 / 语言 / 地域
 - 目标（流量、排名、CTR、转化、AI 引用、监控）
 - 当前已知问题 / 近期变更 / 可用数据源
 
-详细清单见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
+详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
 ### 3. 统一输出
 默认输出结构：
-1. Summary
+1. Summary(**首行注明目标市场/语言**;多市场任务逐市场各一组)
 2. Findings
 3. Priority
 4. Recommended actions
@@ -38,11 +38,13 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 - 对于 schema 检查，不能只靠静态 HTML 抓取判断「没有 schema」。
 - 不承诺排名、流量或 AI 引用的提升幅度；工程上完成的改动只能称为「已上线待观察」。
 
-#### 6. 语言
+### 5. 市场维度(全球套件的运行方式)
+- **每个任务 = 市场 × 能力**:先定市场(引擎格局/工具栈/合规),再进 overview/research/content/technical/monitoring 能力路由。
+- **市场差异知识长在能力文件里**:各能力文件中带「市场差异」的小节是本套件的全球层,主干索引在 [多语言工作流](references/overview/multilingual-workflow.md)。
 - 面向用户的输出使用用户的语言;参考文件的语言不决定输出语言。
-- 多语言站点逐语言版本分开评分,不合并总分。详见 [多语言工作流](references/overview/multilingual-workflow.md)。
+- 多区域站点逐市场分开评分,不合并总分。
 
-## 5. 你需要自备什么
+## 6. 你需要自备什么
 - 本 Skill 不附带数据。需要数据的任务，使用你自己的数据源：Google Search Console、GA4、Bing Webmaster Tools 的导出，或你自己账号下的排名追踪、外链、爬虫工具的导出。
 - 可选的外部 API（例如 PageSpeed Insights API、Knowledge Graph Search API）需要你自己的 Key，Skill 不提供任何 Key。
 - 需要看渲染后页面时，使用你的 AI 工具自带的浏览器能力，或由你提供渲染后的 HTML / 截图。

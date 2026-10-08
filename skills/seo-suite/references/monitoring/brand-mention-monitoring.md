@@ -46,8 +46,21 @@
 用：独立提及数、实体一致性得分、固定提示词下的出现率与位置、AI 引用中的品牌出现。
 **不用**：总提及数（含自发）、粉丝数、单次爆发帖。
 
-## 六、来源
+## 六、市场差异：各市场的监控通道与指标（2026-10-08 一波并入）
+
+**度量升级（源自英文区，全区适用）**：引用四级阶梯 Retrieved → Cited → Mentioned → **Recommended**——推荐主要由站外共识（评论站/分析师/论坛）决定，且有 "recommended against" 暗级（模型点名排除产品）；监控输出用 framing（有利/中立/含糊/负面）而非只计数。观察性基准（单家研究，带机构名引用）：真推荐后一周 +182% 品牌搜索、约 2.5× 新访客（SimilarWeb）；**69% 的自荐型榜单即使被 AIO 引用也不把自己放进推荐**（Amsive，100 条 B2B 查询）。引用≠阅读：AI 答案点击率 ~4%（Reuters Institute）、AIO 引用点击 ~1%（Pew）——KPI 用「AI 回答中出现率」，勿用「AI 流量」单腿。免费 DIY：DevTools Network 面板提取 ChatGPT 真实 fan-out 搜索词；**Perplexity Sonar 返回真实引用 URL，是最可验证的监测探针**（utsushi 的 Share of AI Voice 模式）。
+
+| 市场 | 增补监控通道 |
+|---|---|
+| 中文 | 采样频控：DeepSeek ~30 问触发风控，分时段 ≤20 问/时段（一手）；指标五项：覆盖率/首屏推荐率/单篇月均被引/90 天留存/同词竞品对比（行业）；微信指数做品牌词趋势；知乎「引证」标记纳入实体一致性检查；参考实现 [DeepSeekGEO/deepseek-geo](https://github.com/DeepSeekGEO/deepseek-geo)（118★）、lymefun-ux/geo-monitor-skill |
+| 俄语区 | **Webmaster「Алиса AI 可见度」SoV 报告**（官方，3 个月数据/周更）——唯一官方 GEO 监测口径；Telegram：监控 t.me/s/ 镜像在 Yandex top-30（品牌+品类词）；VK：群名/状态/讨论页三处；红线：行为因素刷量（накрутка ПФ）自动罚 6–12 月 |
+| 韩语区 | **AI 브리핑 인용수**：本人可见（채널 홈 프로필：누적/당월/전월）；**竞品若为메이트当选者则公开可查**——韩区竞品 AI 引用监测的唯一官方数据源；`site:도메인`（Naver 搜索栏）=색인 수 基准；주말 하락=평일性 주제 信号 |
+| 日语区 | SC「生成AIパフォーマンス」报告（官方）；分引擎分开跟（ChatGPT→Reddit/PR TIMES、Perplexity→知恵袋、AIO→YouTube/note）；垂类词盯行业定番媒体 |
+| 英文 | 自托管免费替代栈：elmo/oneglanse/limelit-open；共识档案同步（G2/Capterra/Gartner/Crunchbase 描述与 About 页同段位同类目）；Comscore 2026-06：35% 桌面用户访问 AI 助手；ChatGPT AI referral 份额 89%→63%（Goodie 2026-05，发现渠道碎片化进行中） |
+
+## 七、来源
 
 - 五平台权重与 0.737 相关性：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-brand-mentions/SKILL.md`
 - 7/5/3 提示词分类法：[OranAi-Ltd/orangeo-ai-visibility-skill](https://github.com/OranAi-Ltd/orangeo-ai-visibility-skill) `references/prompt-taxonomy.md`
 - 品牌提及 3x 相关性主张：geo-seo-claude README 市场数据表
+- 第六节：coreyhaines31/marketingskills（四级阶梯/格式动荡）；Amsive、SimilarWeb、Scrunch（推荐基准，观察性）；Reuters Institute DNR 2026、Pew（点击率）；Comscore、Goodie（碎片化）；JingHao-Leon/geo-book（风控，一手）；incognito-54/utsushi（Share of AI Voice/Sonar 探针）；Yandex Webmaster 官方（SoV）；Naver 메이트 帮助页（인용수 公开）

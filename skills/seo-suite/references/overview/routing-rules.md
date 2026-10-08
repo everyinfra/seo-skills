@@ -1,5 +1,9 @@
 # Routing Rules
 
+## 第零步:先定市场
+
+任何任务先确认目标市场/语言(18 市场清单见 multilingual-workflow.md)。市场决定引擎格局与工具栈(如俄语区→Yandex、韩语区→Naver);未确认市场前,下面的能力路由结论可能整体不适用。
+
 ## 入口判断
 
 ### 走 research
