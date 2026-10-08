@@ -4,100 +4,44 @@
 
 **Free to download. Use your own AI tool and model.**
 
-EveryInfra SEO Skills is version `0.1.0`, licensed under Apache-2.0. The repository ships one SEO / GEO workbench Skill: `seo-suite`. It is a set of instructions, reference notes and output templates. It does not call a model, does not bundle a model provider, and has no API key or runtime dependency. Your own AI tool supplies the model and the model quota.
+EveryInfra SEO Skills is version `0.3.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
 
-The Skill's instructions and reference notes are written in Simplified Chinese. Compatible AI tools can read them and answer in the user's language.
+**Install (one command):**
 
-## What it is
+```bash
+curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
+```
 
-`seo-suite` is a single entry point for SEO work. It starts with a shared intake (site, market, goals, known issues, available data), routes the task to one or more of five capability sets — overview, research, content, technical, monitoring — and returns findings, priorities and validation steps in a fixed structure.
+## Why now
 
-It is evidence-first: it does not report signals that are not on the page, and it does not promise ranking, traffic or AI-citation gains. Advice on GEO (visibility in AI search) follows the evidence constraints in `references/content/geo-evidence.md`.
+> All figures sourced; source register lives in `skills/seo-suite/references/content/geo-platform-differences.md`.
 
-## SEO tasks it covers
-
-| Capability set | Typical tasks |
+| Metric | Value |
 |---|---|
-| overview | Site-wide SEO diagnosis, roadmap and prioritization, triage when you do not know where to start |
-| research | Keyword research and search intent, SERP analysis, content gaps, competitor analysis, alternative / vs page planning, topic clusters and content strategy |
-| content | SEO content briefs and writing, titles and meta descriptions, GEO / AI search visibility, content quality review, refreshing decayed content |
-| technical | Technical and on-page SEO audits, robots.txt and status codes, structured data (Schema), internal linking and site architecture, entities and knowledge graph, programmatic SEO, Core Web Vitals (LCP), reading audit-tool exports, SEO attribution tracking (GA4 / GTM) |
-| monitoring | Rank tracking setup, backlink quality review and outreach drafts, SEO / GEO metrics, alert thresholds, performance reports |
+| GEO services market | $850M → $7.3B by 2031 |
+| AI-referred traffic growth | +527% YoY |
+| AI traffic conversion vs organic | 4.4x |
+| Gartner: traditional search traffic by 2028 | -50% |
+| Brand mentions vs backlinks correlation for AI ranking | ~3x |
+| GEO-optimized content visibility gain (KDD 2024, 10K queries) | +30-115% |
+| Marketers currently investing in GEO | only 23% |
 
-## What you bring
+## What it does
 
-- An AI tool that supports Skills, with a model you configure yourself.
-- For data-driven tasks, your own data sources: exports from Google Search Console, GA4 or Bing Webmaster Tools, or from rank-tracking, backlink or crawler tools under your own accounts.
-- Optional external APIs (for example PageSpeed Insights API or Knowledge Graph Search API) need your own key. This repository contains no keys and does not provide any.
-- For outreach emails, publishing or other external actions, the Skill only drafts; you confirm and carry them out yourself.
+A single entry point: unified intake (site, market, goals, known issues, available data), then routing across overview / research / content / technical / monitoring, then structured output (Summary, Findings, Priority, Actions, Validation).
 
-## Install
+**Bilingual by design.** The skill answers in the user's language and scores each language version of a multilingual site separately. Unique capability: a [Chinese AI-search guide](skills/seo-suite/references/content/chinese-ai-search-guide.md) built on a measured 187,818-citation dataset — brand sites take only 1.37% of citations; 28 ranking sites take 9.1% at the earliest positions; engine moats for Baidu AI / Tencent Yuanbao / Doubao / Kimi / DeepSeek; CJK thresholds and a 15-item readiness checklist.
 
-Get the repository first: on the GitHub page use **Code → Download ZIP** and unpack it, or clone it:
+| Capability | Typical tasks |
+|---|---|
+| overview | Site-wide diagnosis, roadmap, triage, multilingual workflow |
+| research | Keywords & intent, SERP, content gaps, competitors, alternative/vs pages, backlink profile analysis (7-section framework), graded directory, directory-submission engine |
+| content | Briefs, E-E-A-T, GEO citability scoring, llms.txt authoring/validation, AI platform differences, Chinese AI search |
+| technical | Audits, schema, robots + AI crawler policy, hreflang 8-check, programmatic SEO gates, sitemaps |
+| monitoring | Rank tracking, KPIs, alerts, brand mention monitoring, SEO drift monitoring |
 
-```bash
-git clone https://github.com/everyinfra/seo-skills.git
-```
+Evidence-first: never reports signals that are not on the page; never promises ranking, traffic or AI citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
 
-The commands below assume the folder is named `seo-skills`. A ZIP download may unpack as `seo-skills-main`; use the actual folder name.
+## License & attribution
 
-### Codex (CLI / IDE)
-
-Copy the whole `skills/seo-suite` folder into `~/.agents/skills/`:
-
-```bash
-mkdir -p ~/.agents/skills
-cp -R seo-skills/skills/seo-suite ~/.agents/skills/
-```
-
-In Codex, invoke it with `$seo-suite`, or describe an SEO task and let Codex pick the Skill from its description. If it is not detected, restart Codex.
-
-### Claude Code
-
-Copy the whole `skills/seo-suite` folder into `~/.claude/skills/` (all projects) or into a project's `.claude/skills/` (that project only):
-
-```bash
-mkdir -p ~/.claude/skills
-cp -R seo-skills/skills/seo-suite ~/.claude/skills/
-```
-
-In Claude Code, invoke it with `/seo-suite`, or describe an SEO task and let Claude Code pick the Skill from its description.
-
-Other tools that support Skills can use the same folder in their documented Skill directory. See [Build skills — Codex](https://developers.openai.com/codex/build-skills) · [Extend Claude with skills](https://code.claude.com/docs/en/skills)
-
-## Repository layout
-
-```text
-seo-skills/
-├── README.md              Chinese README
-├── README.en.md           English README
-├── LICENSE                Apache-2.0 full text
-├── NOTICE                 Attribution and third-party materials
-├── CHANGELOG.md           Release notes
-├── manifest.json          Package metadata
-└── skills/
-    └── seo-suite/
-        ├── SKILL.md       Entry point: intake, routing rules, output structure
-        ├── references/
-        │   ├── overview/     Capability map, routing rules, intake checklists
-        │   ├── research/     Search intent, SERP, content gaps, competitors, topic clusters, content strategy
-        │   ├── content/      GEO evidence constraints, titles and meta, content structure, refresh
-        │   ├── technical/    robots, status codes, Schema, linking and architecture, entities, performance, tracking
-        │   └── monitoring/   Rank tracking, backlinks, metrics, reports, alerts
-        └── templates/
-            ├── research/     Research output templates
-            ├── audit/        Audit output templates
-            └── monitor/      Monitoring output templates
-```
-
-## Third-party materials
-
-The notes in `references/` were written by EveryInfra. For some topics, the way the material is organized was informed by open-source projects and public documentation. This repository does not contain their text; it gives only our own summaries plus links to the originals, listed in the "来源" (Sources) section at the end of each file. See [NOTICE](NOTICE).
-
-## Feedback
-
-Please open [GitHub Issues](https://github.com/everyinfra/seo-skills/issues) for problems and suggestions. Do not post API keys, credentials, customer data or other confidential information.
-
-## License
-
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. Framework points borrowed (summary + link, per NOTICE) from: AgriciDaniel/claude-seo, zubair-trzada/geo-seo-claude, jianruntech/geo-score, Auriti-Labs/geo-optimizer-skill, coreyhaines31/marketingskills, flaqai/backlink_skills, alvinunreal/awesome-submitlist, indie-hacking/Awesome-SEO-Backlinks, OranAi-Ltd/orangeo-ai-visibility-skill, liangdabiao/GEO-Content-Optimizer-Skill, Ryze-AI-Adgent/open-seo-mcp-skills.

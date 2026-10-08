@@ -4,7 +4,7 @@
 
 **免费下载，用你自己的 AI 工具和模型。**
 
-EveryInfra SEO Skills 的版本为 `0.1.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+EveryInfra SEO Skills 的版本为 `0.3.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
 
 ## 为什么是现在 / Why now
 
@@ -19,6 +19,14 @@ EveryInfra SEO Skills 的版本为 `0.1.0`，采用 Apache-2.0 许可协议。�
 | 品牌提及 vs 外链对 AI 排名的相关性 | 约 3 倍 |
 | GEO 优化内容的可见性提升(KDD 2024,10K 查询) | +30–115% |
 | 目前投入 GEO 的营销者 | 仅 23% |
+
+
+
+**一行安装:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
+```
 
 ## 它是什么
 

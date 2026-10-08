@@ -3,6 +3,10 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.3.1 - 2026-10-09
+
+- **多语言结构化**:SKILL.md 增加语言约定(输出随用户语言、多语言站逐版本评分)与英文触发词;新增《多语言工作流》参考(按市场路由、双语检查顺序、一套事实多种变体、中英阈值差异对照);README.en.md 更新至 v0.3 能力并加安装命令;README.md 同步。
+  Multilingual structuring: language conventions in SKILL.md, new multilingual-workflow reference, EN README updated.
 ## 0.3.0 - 2026-10-09
 
 - 第二轮新增 4 个参考资料:**中文 AI 搜索指南**(187,818 条引用实测:品牌官网仅占 1.37%、28 个排行站吃 9.1%、各引擎护城河、CJK 阈值、15 项就绪清单)、**程序化 SEO 闸门**(100/500 页硬闸、页型地板)、**SEO 漂移监控**(13 元素基线+17 规则)、**目录提交引擎**(九问闸门+13 层目录)。
