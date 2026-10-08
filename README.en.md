@@ -4,9 +4,11 @@
 
 **Free to download. Use your own AI tool and model.**
 
-EveryInfra SEO Skills is version `0.4.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
+EveryInfra SEO Skills is version `0.5.2`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
 
 **The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
+
+**The 0.5 series: market × capability dual-dimension architecture + per-market deep-dives for all 18.** Every task picks its market first, then routes by capability. `multilingual-workflow.md` carries the **18-market unique-methods index** (what only works/matters in each market — e.g. WeChat Peoplerank & XHS CES score for Chinese, Korea's `nosourceinfo` official AI-citation opt-out, Brazil's Reclame Aqui cited by 22.3% of ChatGPT brand answers, Japan's "AI-flavor" density lint, Thailand's `Intl.Segmenter` word-segmentation settlement) and **23 cross-region fusion principles** (assertion half-life, conflict-noting discipline, sovereign-assistant pattern, register-duality template, etc.).
 
 **Install (one command):**
 
@@ -28,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 | GEO-optimized content visibility gain (KDD 2024, 10K queries) | +30-115% |
 | Marketers currently investing in GEO | only 23% |
 
-Global-market why-now (added in 0.4.0, source type noted):
+Global-market why-now (0.4–0.5 series, source type noted):
 
 | Metric | Value | Source |
 |---|---|---|

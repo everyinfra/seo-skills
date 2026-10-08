@@ -3,6 +3,12 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.5.3 - 2026-10-08
+
+- **跨区迁移矩阵**:11 组"源方法→可迁移市场+迁移条件"(生态内搜索打法/投诉平台引用源/AI 臭 lint/快照缺口诊断/音译聚类/超级 App OG/官方注册竞品链/提问式 H2+质量门/SoV 计量/主权助手/目录引用源)——迁移后必须本地实测。
+- README 双语更新至 0.5 系列全貌(双维度架构+独到方法索引+融合 23 条);仓库描述同步。
+  Cross-region migration matrix (11 method-transfer pairs) + README sync; the v0.5 long chain is complete.
+
 ## 0.5.2 - 2026-10-08
 
 - **第三波长链路深挖(长尾七市场,每市场单独 agent 母语挖掘)——十八市场全覆盖完成**:

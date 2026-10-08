@@ -170,3 +170,19 @@
 23. **口径冲突并记**:土耳其 Yandex(26% vs 3–5%)、日本引擎份额、韩国双口径——同一事实两源矛盾时**并记两说+建议本地实测**,不选边。
 
 *(十八市场独到层全部填实:第一波 5 + 第二波 6 + 第三波 7。)
+
+### 跨区迁移矩阵(某市场验证过的方法 → 可迁移到哪些市场;迁移后必须本地实测)
+
+| 源方法(起源市场) | 可迁移市场 | 迁移条件 |
+|---|---|---|
+| 搜一搜"生态内搜索"打法(中) | 韩(Naver Blog)/俄(Dzen/TG 镜像)/日(note)/印尼(TikTok) | 市场存在封闭生态搜索入口 |
+| Reclame Aqui 投诉平台=GEO 引用源(巴西,22.3%) | 德/英(Trustpilot)、美(PissedConsumer)、俄(Отзовик)、日(食べログ) | 找到本国"RA 等价物"并实测被引率 |
+| 「AI 臭」密度 lint(日,28 动词×14 构文) | 全区(每语种建 slop 表:pt-BR 35 型/印尼 hiruk pikuk/波兰 humanizer-pl) | 母语者标注触发词+人类上限频率基线 |
+| 快照缺口诊断(GSC regex,印度 Hinglish) | 所有混码市场(阿拉伯 franco-arabe/菲 Taglish/印尼口语) | 语言错配且排名好的页 |
+| 音译规范化聚类(印度 IndicXlit) | 阿拉伯(3arabizi)/越南(无调)/土耳其(黏着后缀) | 存在罗马化/口语变体双写 |
+| 微信 OG 先行+WA 归因(巴西 WhatsApp) | 印度(WhatsApp)/印尼(WA+TikTok)/日(LINE) | 超级 App 分流发现的市场 |
+| 官方注册竞品链(意 P.IVA→Registro) | 瑞士(Zefix 免费)/德国(Handelsregister 付费) | 有公开企业注册 API |
+| 提问式 H2+nonce 质量门(越南 t0mmy) | 全区(语言无关) | agent 产线场景 |
+| SoV 取代位置的计量观(俄,官方) | 全区(韩 인용수/日 Share of AI Voice 已同构) | 引擎提供份额类指标或可采样 |
+| 主权助手单独优化(法 Vibe) | 印尼(Sahabat-AI)/阿拉伯(Fanar)/韩(Wrtn) | 本土助手有独立爬虫/索引 |
+| 目录=GEO 引用源(印度 JustDial) | 巴西(Apontador)/波兰(Panorama Firm)/泰(Wongnai) | AI 引擎拉取本地目录的市场 |
