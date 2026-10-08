@@ -3,6 +3,13 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.3.0 - 2026-10-09
+
+- 第二轮新增 4 个参考资料:**中文 AI 搜索指南**(187,818 条引用实测:品牌官网仅占 1.37%、28 个排行站吃 9.1%、各引擎护城河、CJK 阈值、15 项就绪清单)、**程序化 SEO 闸门**(100/500 页硬闸、页型地板)、**SEO 漂移监控**(13 元素基线+17 规则)、**目录提交引擎**(九问闸门+13 层目录)。
+  Round-2 additions: Chinese AI-search guide (measured citation economics from a 187,818-citation dataset), programmatic SEO gates, SEO drift monitoring, directory-submissions engine.
+- 修复 0.2.0 中 SKILL.md 的 8 条死链;新增一行安装脚本 install.sh。
+- 来源登记更新见 NOTICE。
+
 ## 0.2.0 - 2026-10-09
 
 - 新增 8 个参考资料:外链画像分析(七段式框架+数据闸门)、外链渠道目录(分级+核验日期)、llms.txt 指南(格式+校验严重度)、AI 平台差异事实库(五引擎+爬虫分类)、可引用性打分(五维块级+就绪度分层)、AI 爬虫政策(引用型 vs 训练型 bot)、hreflang 八检、品牌提及监控(五平台加权+买家提示词集)。

@@ -88,6 +88,9 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 #### 外链（backlinks）
 - [外链画像分析](references/research/backlink-profile-analysis.md)：七段式框架、数据源置信度级联、健康分与数据闸门、disavow 决策
 - [外链渠道目录](references/research/backlink-directory.md)：分级渠道清单（含核验日期）、提交纪律与反虚荣 KPI
+#### 目录提交引擎（directory submissions）
+- [目录提交引擎](references/research/directory-submissions.md)：九问就绪闸门、13 层目录结构、追踪 CSV、反虚荣 KPI
+
 
 ### content
 适用于：
@@ -121,6 +124,9 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 - [llms.txt 指南](references/content/llms-txt-guide.md)：格式规范、校验严重度、生成规则
 - [AI 平台差异事实库](references/content/geo-platform-differences.md)：五引擎引用行为、爬虫分类、优化侧重
 - [可引用性打分](references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
+#### 中文 AI 搜索（独有能力）
+- [中文 AI 搜索指南](references/content/chinese-ai-search-guide.md)：引用经济学（品牌官网仅 1.37%）、各引擎护城河、CJK 阈值、15 项就绪清单
+
 
 ### technical
 适用于：
@@ -167,6 +173,9 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 #### AI 爬虫与国际化
 - [AI 爬虫政策](references/technical/ai-crawler-policy.md)：引用型 vs 训练型 bot、四种典型 robots 配置、暗坑清单
 - [hreflang 校验](references/technical/hreflang-validation.md)：八检框架、实现方式选择、内容平价
+#### 程序化与规模化
+- [程序化 SEO 闸门](references/technical/programmatic-seo-gates.md)：100/500 页闸门、页型地板、安全 vs 风险页型、索引膨胀控制
+
 
 ### monitoring
 适用于：
@@ -215,6 +224,9 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 
 #### 品牌与 AI 可见性
 - [品牌提及监控](references/monitoring/brand-mention-monitoring.md)：五平台加权、买家提示词集、实体建设清单
+#### 漂移监控（drift）
+- [SEO 漂移监控](references/monitoring/seo-drift-monitoring.md)：13 元素基线、17 条对比规则、SQLite 存储模型
+
 
 ### Schema 检查
 - FAQPage 词汇是否合法、Google 当前是否支持富结果、对 AI 引用是否有效，三件事分别判断，不混为一个「通过」。
