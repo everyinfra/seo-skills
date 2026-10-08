@@ -3,6 +3,12 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.6.0 - 2026-10-08
+
+- **模板市场化(架构落到输出)**:全部 14 个输出模板(research 6/audit 4/monitor 4)加目标市场字段或市场专属行——引擎面提醒(俄/土=Yandex、韩=Yeti、日=Bing 必查、越=Cốc Cốc)、市场阈值(日语全角/泰语字素)、逐市场分列纪律;多市场站逐市场各出一份报告。
+- **新增 [Agent-Readiness 操作层](skills/seo-suite/references/technical/agent-readiness.md)**(吸收英文区 seo-agentic 五件+specification.website):ARD 三级发现链实操(Agentmap/ai-catalog.json 写法)、WebMCP registerTool 模式与表单声明式写法、Web Bot Auth 签名(ChatGPT-User)、Lighthouse AGENTIC_BROWSING 七审计解读、语言中立层的多语言部署(每 locale 一份目录)、就绪决策表(英文站全开/其他语区 llms.txt 等价物的分叉立场)。证据约束:协议层无引擎宣布消费,定位为低成本期权。
+  Templates gain the market dimension; new agent-readiness reference absorbs the English protocol layer.
+
 ## 0.5.3 - 2026-10-08
 
 - **跨区迁移矩阵**:11 组"源方法→可迁移市场+迁移条件"(生态内搜索打法/投诉平台引用源/AI 臭 lint/快照缺口诊断/音译聚类/超级 App OG/官方注册竞品链/提问式 H2+质量门/SoV 计量/主权助手/目录引用源)——迁移后必须本地实测。

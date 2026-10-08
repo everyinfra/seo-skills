@@ -183,6 +183,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 
 #### AI 爬虫与国际化
 - [AI 爬虫政策](references/technical/ai-crawler-policy.md)：引用型 vs 训练型 bot、四种典型 robots 配置、暗坑清单
+- [Agent-Readiness 操作层](references/technical/agent-readiness.md)：协议时代站点准备(ARD 三级发现链/WebMCP 页面工具/Web Bot Auth 签名/Lighthouse AGENTIC_BROWSING 七审计/语言中立层多语言部署/就绪决策表)
 - [hreflang 校验](references/technical/hreflang-validation.md)：八检框架、实现方式选择、内容平价
 #### 程序化与规模化
 - [程序化 SEO 闸门](references/technical/programmatic-seo-gates.md)：100/500 页闸门、页型地板、安全 vs 风险页型、索引膨胀控制
