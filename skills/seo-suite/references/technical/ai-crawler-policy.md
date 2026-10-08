@@ -71,6 +71,8 @@ Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI �
 | 日语区 | bingbot | Bing 在日份额 28–33%(StatCounter),喂 Copilot 检索 | 日语区 Bing WMT 验证与可爬探测为必做项(多数市场可选项) |
 | 越南 | Coc Cốc | 本地引擎 ~6% 份额,浏览器自带 AI 聊天机器人(官方 Play 页) | 越南向流量单独提交 Coc Cốc 收录 |
 | 中文 | `Baiduspider` / `Bytespider` | 见中文 AI 搜索指南 | 中文站确认未被禁 |
+| 法语区 | **MistralAI 三爬虫** | `MistralAI-User`(实时检索)/`MistralAI-Index`(索引)须放行;`MistralAI-Training` 仅训练、可封(Mistral 官方文档) | Vibe 引用面=GEO 目标;训练/检索分工模式的官方范例 |
+| (全) | 过时 token | `anthropic-ai`、`Claude-Web`、`ChatGPT-Plugins` 已失效勿写;`Google-Extended` 不影响搜索排名(官方) | robots 审计先查死 token;**User/Index/Training 三分工**正在成为各家标配 |
 
 **llms.txt 在区域市场的证据状态**:Yandex 无消费证据(俄社区视为仅策展);日本企业采用 6.4–6.8%(2026-09 测)但 John Mueller 明示无 AI 系统当前使用——**一切市场都只作低成本对冲,不承诺引用**。
 

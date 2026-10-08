@@ -11,7 +11,7 @@
 | 2 | 双向返回 | A→B 则必须 B→A；全网格互指 | Critical |
 | 3 | x-default | 仅当回退页真实存在；每组**至多一个** | High |
 | 4 | 语言码 | ISO 639-1（`en`/`zh`/`ja`）；拒 `eng`/`jp`。文字用 ISO 15924：`zh-Hant`、`zh-Hans-US` 合法 | High |
-| 5 | 区域码 | ISO 3166-1 Alpha-2 **大写**；拒 `en-uk`（应为 `en-GB`）、`EU`/`UN`（非国家）、`es-LA`（非单一国家）；**唯一例外：`es-419`**——Google 接受的 UN M.49 区域码（拉美/加勒比），西语站常用 `es-ES + es-419 + es` 结构；**仅国家码无效**（`-US` 必须配语言） | High |
+| 5 | 区域码 | ISO 3166-1 Alpha-2 **大写**；拒 `en-uk`（应为 `en-GB`）、`EU`/`UN`（非国家）、`es-LA`（非单一国家）；`es-419`：**口径冲突待复核**——Google 官方文档列为支持值（UN M.49 例外），但有西语从业者报告解析器不认（2026-10）；稳妥写法=`es` 兜底 + `es-419` + 国码全簇双向回链（两说兼容）；**仅国家码无效**（`-US` 必须配语言） | High |
 | 6 | 位置 | hreflang 仅在 canonical URL 上有效；与 canonical 精确匹配（含尾斜杠） | High |
 | 7 | 协议 | 组内 https/http 一致 | Medium |
 | 8 | 跨域 | 允许，但**两个域都要有返回标签** | High |
@@ -31,7 +31,7 @@
 3. **过期翻译**：EN 改版后其他语言未跟——检测各语言版 dateModified 差距。
 4. **未复核机翻**：整站机翻无人工审校标记为 scaled-content-abuse 风险（Google 政策名目）。
 5. **文化适配**（软项）：各语言版的示例、案例、货币、合规表述是否本地化，而非字面翻译。
-6. **RTL（阿拉伯语版必检）**：`<html dir="rtl">` 全链、双向文本隔离（`<bdi>`/unicode-bidi）、布局镜像用逻辑 CSS 属性（margin-inline 等）——hreflang `ar` 正确但页面仍是 LTR 布局是高频假国际化。
+6. **RTL 审计项（阿拉伯语版必检,2026-10 二波深化）**：`<html dir="rtl">` 全链、双向文本隔离（`<bdi>` 或 U+2066–2069,禁裸 RLM/LRM 补丁——W3C string-meta TR）；`<input dir="rtl">` 按类型自动方向,电话/验证码/卡号字段显式 `dir="ltr"`；数字：阿拉伯-印度数字(٠-٩) vs 欧洲数字全站统一,货币顺序按本地习惯；**镜像例外**：播放/进度/时钟图标与 logo 不镜像；字体：**preload 会绕过 unicode-range→只 preload 阿语子集单文件**（Tajawal 阿语子集仅 8.7KB）,用 size-adjust 回退字体控 CLS（阿语字形度量致 CLS 高于拉丁）；遗留 left/right 用 `[dir="rtl"]` 覆盖表——hreflang `ar` 正确但页面仍是 LTR 布局是高频假国际化。
 7. **常见市场码组合**（2026-10-08 并入）：`es-ES`+`es-419`(+国码同 URL 可选)；`pt-BR`/`pt-PT` 分开（内容差异实质存在）；`ar`+`ar-EG`/`ar-SA`/`ar-AE`（或单一 `ar`）；`fr-FR`/`fr-CA`/`fr-BE` 分开；`de-DE`/`de-AT`/`de-CH` 分开（Sie/du 与词汇差异）；`id`（印尼通常单码即够）；`hi-IN`/`en-IN` 并存时必须两版都真实；`it-IT`/`it-CH` 分开（复制会被归并信号）；`nl-NL`/`nl-BE` 分开（弗拉芒词汇不同；比利时另有 `fr-BE`/`de-BE`）；`tr-TR`/`vi-VN`/`th-TH`/`pl-PL` 通常单国单码。
 
 ## 四、审计输出格式

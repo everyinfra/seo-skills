@@ -25,6 +25,12 @@
 - **法语**:fr 变体分离(fr-FR/fr-CA/fr-BE)?魁北克 Bill 96 合规?
 - **德语**:Sie/du 按国别定了?Consent Mode v2 是否影响测量计划?
 - **印尼**:baku/gaul 双轨?移动优先(>82% 移动流量)?
+- **西语**:es 兜底+es-419+国码全簇回链(两说兼容)?拉美内容有显式区域信号?支付词层(OXXO/cuotas)入表?es-US 当独立市场?
+- **葡语(巴西)**:Reclame Aqui 指数/响应率/TOP 抱怨话题映射 FAQ?WhatsApp OG 先行+wa.me 归因?委员会注册号+CNPJ 页脚?AO90 拼写核查?
+- **阿拉伯**:品类×语域矩阵定了?文化日历闸门(Ramadan 弧/发布窗口)?合规词表预审(GAMR/TDRA)?GEO 测量用 50 查询×14 天重测?
+- **德语区**:Ansprache/Tonalität 两字段+跨触点一致性?分国别取数(禁合并 DACH)?GSC 基准+consent rate 并列?瑞士 CHF+子目录结构?
+- **法语**:Vibe 引用面板单独跑?Bill 96 检查(等效可见性/OQLF)?魁北克词汇表应用?塞内加尔等 Bing Places?
+- **印尼**:视频/社媒资产优先于长文?品牌词=sameAs+FAQ 实体页?slow-4G 基线测 LCP?"hiruk pikuk"类 slop 禁用表?
 - **长尾主流市场速查**(印地/意/土/越/泰/波兰/荷,详见多语言工作流长尾表):印地=Hinglish 三书写+hi-IN/en-IN 分开?意大利=it-CH 独立 locale?土耳其=Yandex 双引擎(~26%)?越南=有调/无调+Coc Cốc?泰国=分词验证?波兰=变音符保留?荷兰=nl-NL/nl-BE 分开?
 - 逐市场分别评分还是只要一个总分?(本套件默认:逐市场分开)
 

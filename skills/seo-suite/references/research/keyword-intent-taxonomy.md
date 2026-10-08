@@ -92,11 +92,11 @@
 | 俄语区 | **Yandex.Wordstat**(`"短语"`=精确短语、`!词`=精确词形、`+/-`;精确频率公式 `"[!слово1 !слово2]"`;`(вариант1\|вариант2)` 变体合并) | 显示**预测曝光**非搜索量;右侧列≠精确频率;История/季节页**不支持运算符**;俄语形态丰富→"基础频率虚高"比英语严重,**聚类前双频过滤(基础/精确两档)**;按区域+设备分层 |
 | 韩语区 | **Naver DataLab**(趋势)+ Naver Ads 关键词工具(量)+ **연관검색어/자동완성 흡수도法**:目标词的自动完成词逐个检查正文覆盖(先做全员覆盖词,再做无人覆盖词=先占机会) | 韩国用户真实输入,非英译;**통합검색 콜렉션 结构**:查询词决定 블로그/카페/지식iN/웹문서/지역 哪类集合展示——关键词研究按"集合"分层(官方文档级) |
 | 日语区 | **ラッコキーワード**(候选挖掘)→ Google KW Planner JP(验量) | **全角/半角(ＳＥＯ/SEO)与片假名转写变体归组**;汉字/假名同词多写法;**MEO/SEO 词分工**:MEO=「地域名+業種」「〇〇近く」(今から行く意图)→GBP,SEO=比较/情报类→网页(行业共识);ChatGPT 日语查询可能被内部英译(Ahrefs 假说,未证实)→重要词备英文对照页 |
-| 西语 | KW Planner 按区域 | **按方言区分套**:es-ES 与 es-419 词汇不同(coche/carro/auto);es-US 单独机会 |
-| 葡语(巴西) | KW Planner(br) | 只做 pt-BR;口语化/俚语词群纳入;pt-PT 词不进口 |
-| 阿拉伯 | KW Planner(ar 区域) | **MSA+方言双层 + 正字变体归组**(hamza/ta-marbuta);拉丁转写查询单独验证 |
-| 德语(DACH) | KW Planner(de-DE/de-AT/de-CH) | **Sie/du 称谓改变查询词**——先定称谓再做词表;复合长词是常态 |
-| 印尼 | KW Planner(id) | **baku(正式)/gaul(口语)双轨**;EYD V(2022)拼写修订影响拼写;英印混码预期 |
+| 西语 | KW Planner 按区域 | **按方言区分套**:es-ES 与拉美词汇不同(coche/carro/auto);es-US 单独机会(70.2M 人口/45.5M 母语者,全球第二;**81% 受亲友之托代搜**的"集体搜索"特征——Pew);人称分层:tú=消费默认/usted=法律金融医疗/vos=rioplatense/vosotros=仅西班牙;**支付即意图词层**:MX=OXXO/efectivo、AR=cuotas/dólar(通胀语境,比较词带 precio/cuota 前缀,2025 电商 +55% 跑赢通胀 28 点——CACE 官方)、CO/PE=contra entrega |
+| 葡语(巴西) | KW Planner(br)+ **Reclame Aqui 当关键词语料**(真实用户抱怨语言) | 只做 pt-BR;**AO90 正字法唯一标准**(idéia→ideia,老拼法仅存量长尾,Trends 对比后决定兼收);标题禁 Title Case(英文 AI 味标志);实体全称句式("A X, agência de Y em São Paulo") |
+| 阿拉伯 | KW Planner(阿语最可靠工具之一)+ Google/YouTube 阿语 suggest + Ajebhom/TenKeyword;正字归一参考 Tanqeeh/tnkeeh 类库 | **打字=MSA、语音=方言**(从业者共识);埃及方言词跨区域触达最广;每核心词收录 MSA+方言(EG/SA/LV)+阿拉伯-印度/欧洲数字双写+正字变体(أ/ا/إ、ي/ى、ة/ه);Ahrefs/Semrush 阿语数据薄须交叉验证 |
+| 德语(DACH) | KW Planner(**分国别取数,禁合并 DACH 搜索量**——合并产生没人搜的虚高数) | **Ansprache(称谓)与 Tonalität(语气)拆两个字段**:传统 B2B 默认 Sie+locker Ton、B2C/SaaS 默认 du,混合仅允许按渠道或按阶段且写进 styleguide,**全触点一致性>单点选择**;词汇映射每国一份(Jänner/Januar、Metzger/Fleischhauer、Marille/Aprrikose);奥地利 44% 电商跨境流向德国——德国站可被动覆盖 |
+| 印尼 | KW Planner(id)+ 免费三源词研(客服对话/竞品评论区/社媒评论)+ Autocomplete a–z 验证 | **"关键词跟手指、正文跟词典"(kata kunci mengikuti jari pengguna, prosa mengikuti KBBI)**:gaul 词 Autocomplete 验证主导后可进 title/H2,正文保持 baku;五档 ragam 矩阵(beku/resmi/konsultatif/santai/akrar)比二元更细;gaul 区=实用/定义类,YMYL/健康/政府=baku 区(AIO 引用的健康/政府站全为规范语);宗教词用 KBBI 拼写(salat/Jumat);Ramadan/THR 季节内容刚需;**"hiruk pikuk"是印尼第一 ChatGPT 文风标记,绝对禁用**;±100 对 baku/salah 拼写(silakan≠silahkan) |
 | 印地/印度 | KW Planner(en-IN/hi-IN 分开) | **Hinglish 混码**:罗马化/天城体/英语三种书写,真实量在 Hinglish 非纯印地语;语音查询占比高(~70% 新用户,行业未证实) |
 | 意大利 | KW Planner(it-IT/it-CH) | it-CH 混德法词+瑞郎语境,当独立 locale 研究 |
 | 土耳其 | KW Planner + **Yandex Wordstat**(Yandex ~26%) | **黏着语**:后缀折叠格/数/领属→英文式头部词低估量,研究屈折表层形式与词干变体 |

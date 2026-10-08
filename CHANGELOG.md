@@ -3,6 +3,18 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.5.1 - 2026-10-08
+
+- **第二波长链路深挖(方言/文字机制六市场,每市场单独 agent 母语挖掘)**:
+  - **西语**:审计报告翻译层(四段式+行业类比库,731 审计校准);GEO 五维评分带西语 NLP 特征(¿...? 疑问式 h2、information gain ≥3 数据点);es-US 集体代搜(81%);支付即意图词层(OXXO/cuotas/contra entrega);半岛偏置对抗;**es-419 口径冲突并记**(Google 官方文档列为支持值 vs 从业者报告解析器不认→双保险写法);
+  - **葡语(巴西)**:Reclame Aqui 三重角色(22.3% ChatGPT 品牌回答被引/关键词语料/信任信号→SAC 成为 GEO 手段);WhatsApp 官方发现层(Status 广告+Canals);E-E-A-T 巴西化(OAB/CRM 注册号);pt-BR 反 AI 35 型;AO90 正字法;季节日历;
+  - **阿拉伯**:品类×语域矩阵;文化日历闸门(Ramadan 发布窗口);50 查询×14 天重测协议;RTL 审计深化(bidi 隔离/数字方向/镜像例外/字体 preload 陷阱与 CLS);内容鸿沟 0.6% vs 5.2%(W3Techs,禁用无出处的"3%");合规预审(GAMR/TDRA);
+  - **德语区**:Ansprache/Tonalität 拆两字段;Sistrix 锚点(AIO 覆盖 20%/Pos.1 CTR −59%/月损 2.65 亿点击)与 Bitkom AI 使用数据;GSC 免 consent 基准+consent rate 并列的报表结构;德国官方机构作为 GEO 引用源优先级;
+  - **法语**:**Vibe(ex-Le Chat)单独优化**(MistralAI 三爬虫分工+AFP 通稿信源+22.9% unique 推荐);Bill 96 实操(无规模豁免/等效可见性/罚则);魁北克 vs 法国官方术语库词汇表;非洲法语区(塞内加尔桌面 Bing 9.2%);法国 9 层目录+实体简介逐字重复;AIO 法国 2026-07-22 上线口径修正;
+  - **印尼语**:AIO 触发率 37.2% 全球第一;引用格局实测(YouTube 12.7%/社交视频 30.7%/电商平台被引/品牌词官网 72.2% 出现率);"关键词跟手指、正文跟词典"三区操作律+五档 ragam;"hiruk pikuk"slop 禁用;slow-4G 测试基线;双雄+TikTok 分流。
+- 独到方法索引补六行;**跨区融合原则扩至 18 条**(新增:Reclame Aqui 等价物/反 AI 文案本地化桥/正字法改革分裂/主权助手模式/语域双轨模板/职业注册号/支付即意图/本地引擎 watch 列表);MistralAI 三爬虫与过时 token 表进爬虫政策;hreflang es-419 冲突并记;六市场目录渠道;intake 六市场闸门。
+  Wave 2: six dialect/script-mechanism markets, each with its own native-language agent (ES/PT-BR/AR/DE/FR/ID).
+
 ## 0.5.0 - 2026-10-08
 
 - **架构重构:市场成为一等维度(市场 × 能力双维度)**。SKILL.md:intake 市场先行(18 市场第一必答字段)、统一输出首行注市场、新增「市场维度」运行方式;capability-map 双维度结构+市场分层表(独立学科/ChatGPT 超强/方言分裂/合规驱动/基线);routing-rules 新增「第零步:先定市场」;统一各能力文件「市场差异」小节命名约定。

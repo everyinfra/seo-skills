@@ -43,6 +43,10 @@
 | 俄语区 | TGStat / Telemetr | Telegram 频道目录 | Free | 公开频道收录基础;TG 镜像 SEO 见多语言工作流独到层 | 2026-10-08 |
 | 日语区 | 食べログ/ホットペッパー（餐饮）、じゃらん/楽天トラベル/一休（旅行）、iタウンページ、業種別ポータル | サイテーション 渠道（MEO 知名度信号） | Free/Freemium | **NAP 表记完全一致**（「丁目」写法不一致即断链）;旅行词被门户独占→直订内容是独有赛道;OTA 佣金 10–20% | 2026-10-08 |
 | 日语区 | note / アメブロ / PR TIMES | AI 引用渠道（2026-06 Ahrefs:note 第 2、PR TIMES 综合 6 位） | Free/付费新闻稿 | 日本特例:新闻稿本身被高引（全球口径 press release 仅 1.1%） | 2026-10-08 |
+| 西语区 | Páginas Amarillas(西)/Sección Amarilla(墨)/各国黄页/商会与行业协会目录 | 目录+NAP | Free | 忽略国际垃圾目录与"49€100 目录"服务(错数据反扣分);PR 走 nota de prensa 生态(Europa Press/EFE 分发,兼打 GEO 提及) | 2026-10-08 |
+| 巴西 | Apontador/Telelistas/GuiaMais/Solutudo + 分行业 Doctoralia(医)/JusBrasil(法)/iFood/GetNinjas | 目录(分行业>通用) | Free | NAP 一致第一;**30 个好目录分 4–6 周提交>200 个一天,>40 边际递减,90 天维护**;.edu.br 高权重;Google 巴西曾因售链整站处罚 | 2026-10-08 |
+| 德语区 | gelbeseiten.de/11880.com/dasoertliche.de/Cylex(德);local.ch/search.ch(瑞) | 目录+NAP | Free/Freemium | Tier-1 数字 PR:FAZ/Handelsblatt/Welt/WiWo/Manager Magazin(链接属性逐案核);pr-gateway.de 分发 +250 门户 | 2026-10-08 |
+| 法语区 | **法国 9 层目录体系**:①Google/Bing Places(**Bing 索引喂 ChatGPT**)/Apple BC→②PagesJaunes/118712→③Trustpilot/Avis Vérifiés→④CCI/societe.com/Pappers→⑤行业(Doctolib/Malt)→⑥Appvizer/Capterra FR→⑦地方→⑧集成市场→⑨LinkedIn/Crunchbase/**Wikidata/GitHub(直接喂 AI 语料)** | 目录九层 | Free/Freemium | **NAP 逐字符一致+40–60 词规范实体简介在所有平台逐字重复**(与长描述应变化相反——重复即实体强化);媒体走"专家回应记者"数字 PR;AFP 通稿放大引用面 | 2026-10-08 |
 
 **卫星站风险（日语区 2026 定论，全区适用）**：为发链而生的卫星站是 SpamBrain 三层检测对象（链接模式×内容相似度×IP/WHOIS），恢复 3 个月–1 年。判定黄金律："去掉 SEO 收益后该站还有存在理由吗"。合法形态：地域分站、品牌分站、独立编辑方针的媒体。
 
