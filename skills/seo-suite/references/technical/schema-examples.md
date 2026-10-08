@@ -84,6 +84,13 @@ WebPage 节点（`isPartOf`、`breadcrumb` 等关系）可以用来表达页面�
 - 同一实体不要同时用 microdata 和 JSON-LD 各写一份；确需并存时，内容必须一致。
 - 验证时除了看有没有报错，还要看节点之间的引用是否都能对上（见 [validation-guide.md](validation-guide.md)）。
 
+## 富结果状态速查(2026-10-09 全量核对;官方 changelog 为准,季度复核)
+
+**已停展(标记无害但零收益,可清理)**:FAQ(2026-05-07)、HowTo(2023-09)、Sitelinks searchbox(2024-11)、Practice Problems(2025-11 宣布/2026-01 删文档)、Home activities(2024-06)、**2025-06-12 七类**(Booking actions/Course info/Estimated salary/Fact Check/Learning video/Special announcement/Vehicle listing;注意"Vacation Rentals"说法与官方 changelog 不符,勿采信)。
+**展示中**:Product/merchant listing(字段持续加:2026-05 hasAdultConsideration、2026-07 Product.category+促销时段)、Review snippet(**收紧**:2025-01 仅采信带文字+作者名;2025-11 嵌套规则;2026-07-24 明文禁虚假/激励性评论标记,可触发 manual action)、Organization(旧 Logo 文档已并入,含 alternateName)、Video、JobPosting(未受限)、Event、Course List 轮播(Course info 已停)、Recipe。
+**澄清**:LocalBusiness 无传统富结果(营业时间展示官方注明限医疗类;菜单/时数主要走 GBP);Dataset 仅供 Dataset Search;**无 AI 专用 schema**(官方);**"Person 新增 alternateName"是误传**(Thing 层旧属性,2024–26 无 release 改动——官方 releases 页核实);spam policies 2026-05-15 起明确同样适用于生成式 AI 回答。
+**申诉**:违规走 "Spammy structured markup" manual action——只取消富结果资格不影响索引排名;修复后 SC 提交 reconsideration。
+
 ## 常见误区
 
 - 每个组件各输出一份 Organization，`@id` 不同或内容互相矛盾。

@@ -3,6 +3,13 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.7.0 - 2026-10-09
+
+- **schema 富结果状态速查**(全量核对官方 changelog):已停展清单(FAQ/HowTo/Sitelinks searchbox/Practice Problems/2025-06 七类)+展示中清单(Product 字段演进至 2026-07、Review 收紧三连、JobPosting 未受限);三处澄清——LocalBusiness 无传统富结果、无 AI 专用 schema、**"Person 新增 alternateName"是误传**(官方 releases 页核实);申诉走 Spammy structured markup(只罚富结果不罚排名)。
+- **算法更新归因层**并入漂移监控:官方六步归因流程(数据假象→形态→时间对齐→传感器→GSC 分层→等 1–2 周);2024–2026 时间线要点(reviews 更新 2024-01 后零次;2026 出现 Discover update 与 19.5 小时超短 spam;**2024-08 官方 ranking bug 证明事故与算法同流**);传感器现状(RankRanger 死亡/Semrush 2026-09 基线重算);**algorithm-updates 数据文件最小字段集**(含 bug_incident 类型与 source_tier 降权)+漂移联动规则(窗口交集→"疑似算法"标签);跨市场可观测性(Yandex 官方公告/Naver 无看板/Bing 无公告流)。
+- **SXO/persona 层**(深读 claude-seo seo-sxo + marketingskills customer-research 还原):意图×persona 映射(SERP 五信号推导 4–7 persona;页面 4 维×25 打分;证据面扩展含**信号源按市场替换**——中文=知乎/小红书、韩=카페、日=知恵袋);persona 卡加 locale 字段(本地信任偏好);IST/SOLL 对比骨架+超具体占位符纪律+"页面可以是错页型"判定;intake 加 persona 证据闸门。
+  Schema rich-result status audit + algorithm-update attribution layer + SXO/persona layer (market-neutralized).
+
 ## 0.6.2 - 2026-10-09
 
 - **AI 味检测的市场差异层**:ai-writing-detection 新增各语言 AI 味标记表(日 28 动词×14 构文/巴西 35 型/印尼 hiruk pikuk 禁用/波兰 humanizer/越南句长方差/中文营销词)——"检测密度而非误用"原理落地,原则 #12 的实体化;跨语言通用信号(句长方差/结构平行)与母语者标注维护纪律。

@@ -56,6 +56,16 @@
 
 不要给纯信息型页面硬塞购买按钮，也不要用长篇教程去抢交易型查询。各阶段的转化预期以站点自己的历史数据为准，不套行业平均数。
 
+## 意图 × persona 映射(SXO 层,2026-10-09 并入)
+
+意图回答"这词要什么页",persona 回答"这词背后是谁、页面是否服务好他"——意图层的下游:
+
+- **persona 推导(从 SERP 证据,无证据不立 persona)**:PAA 问题簇→知识缺口人群;广告文案分众→商业人群(Budget/Enterprise);相关搜索→旅程阶段;SERP 结果类型→消费偏好。4–7 个,每卡:目标/旅程阶段/2–3 关键问题/信号证据。
+- **页面 4 维打分(×25=100/persona)**:Relevance(解决该 persona 具体需求)/Clarity(10 秒首屏找到答案)/Trust(信任信号对该 persona)/Action(CTA 匹配阶段:awareness="learn more"、decision="buy now")。80+/60+/40+/39− 四档;优先级=最弱 persona×意图份额;全 persona 最低维=系统性问题。
+- **证据面扩展**:SERP 之外用客服工单/评论挖掘(G2/Reddit;中文=知乎/小红书,韩=카페,日=知恵袋——**信号源必须按市场替换**)、一手访谈;置信度 High=3+ 独立来源非引导提及;每段 ≥5 数据点才立 persona,季度复审。
+- **persona 卡加 locale 字段**:市场/语言/本地信任偏好(德区 Sie/du、巴西 Reclame Aqui、日区ステマ規制;Trust 维判据 SOC2 偏美式 SaaS,YMYL 换资质/法定页)。
+- **用户故事桥**:`As a [persona], I want [goal], because [emotional driver], but I'm blocked by [barrier]`——每条引用具体 SERP 信号。
+
 ## 交付字段
 
 每个关键词或关键词簇至少给出：
