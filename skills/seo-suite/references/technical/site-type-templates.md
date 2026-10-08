@@ -42,6 +42,19 @@
 - 主要页面：首页、服务页（每项服务一页）、门店或服务区域页、关于、联系。
 - 要点：多门店时每个门店一页，写真实地址、营业时间和本地信息，不做只换城市名的模板页；配合 LocalBusiness 结构化数据和地图商家资料。
 
+### 本地 SEO 六行业速查(2026-10-09 并入;来源类型:官方/行业/观察)
+
+| 行业 | 平台要点 | 评价边界(合规红线) | schema 正解 | 常见错误 |
+|---|---|---|---|---|
+| 餐饮 | 主类目 Restaurant+官方菜单编辑器/预订链接 | 美国 FTC 16 CFR 465(2024-10 生效):禁虚假/未披露激励/内部人评价,单条罚 ~$53,088(官方);日本 ステマ規制 | `Restaurant`+`hasMenu` | 泛 LocalBusiness;菜单不可见却标记 |
+| 医疗/牙科 | 类目 Dentist/Medical clinic;**insurance accepted 属性**逐保司填(观察级) | 回复评价不得确认就诊关系/不透 PHI(HIPAA);**日本:患者体验谈属医疗广告禁止项**(MHLW 官方)——自站禁登,第三方自发评不论 | `Dentist`/`Physician`(单人)/`MedicalClinic`/`Hospital` 分清 | 医疗实体强加 aggregateRating(富结果受限) |
+| 法律 | 类目 Lawyer/Legal services | ABA 7.1/7.2(不虚假/不付酬换评)+1.6 保密——回负评不透委托事实 | `LegalService`/`Attorney` | 州广告规则误判 |
+| 家居服务 | **SAB 模式:隐藏地址+服务区**;完工后短信征集 | EU UCPD/Omnibus 禁未披露激励评价(官方) | `HomeAndConstructionBusiness` 子类(Plumber/Electrician/RoofingContractor) | 服务×城市页无真实本地证据→doorway 风险 |
+| 教育 | 类目 School/Tutoring/Language/Driving school | 未成年人隐私与肖像授权 | `EducationalOrganization`/`School` | **`DrivingSchool` 在 schema.org 不存在(404 已验证)**——用 LocalBusiness+additionalType |
+| 汽车 | Auto repair/New-Used car dealer+预约链接 | 售后/交车后征集 | `AutoRepair`/`AutoDealer`/`AutoWash`(AutomotiveBusiness 子类) | 品牌类目漏选 |
+
+**评价生态第二平台(按市场)**:日=食べログ+EPARK(医疗)+Hot Pepper;韩=네이버 플레이스(리뷰 최근성·꾸준함>总数+**저장**;官方两度修订 리뷰 政策,伪造票据刷评→清零);俄=**Google 自 2022-03 停俄区用户发评**(媒体级)→Yandex Business+2GIS/Flamp/Отзовik;巴西=Reclame Aqui 双轨;德=ProvenExpert(本土印章文化)+Handwerkskammer 会员目录(手工业高权威免费外链,Meisterbetrieb 称号仅限持证者——合规红线)。
+
 ## 平台 / 市场型站点
 
 - 主要页面：分类、列表、详情（商家、服务提供者、条目）、地点组合页。

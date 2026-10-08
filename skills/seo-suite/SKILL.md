@@ -134,6 +134,7 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 #### GEO / AI 搜索（llms.txt 与可引用性）
 - [llms.txt 指南](references/content/llms-txt-guide.md)：格式规范、校验严重度、生成规则
 - [AI 平台差异事实库](references/content/geo-platform-differences.md)：五引擎引用行为、爬虫分类、优化侧重
+- [电商 GEO 阶梯](references/content/ecommerce-geo-ladder.md):五级阶梯(产品数据→评价→内容→marketplace 分工→agent 交互)、Product schema 七个高频错误、七市场分叉表、AI 购物现状、UCP/ACP 双协议
 - [可引用性打分](references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
 #### 中文 AI 搜索（独有能力）
 - [中文 AI 搜索指南](references/content/chinese-ai-search-guide.md)：引用经济学（品牌官网仅 1.37%）、各引擎护城河、CJK 阈值、15 项就绪清单

@@ -3,6 +3,13 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.6.1 - 2026-10-09
+
+- **新增 [电商 GEO 阶梯](skills/seo-suite/references/content/ecommerce-geo-ladder.md)**:五级阶梯(L1 产品数据→L5 agent 交互,逐级验收)、Product schema 七个高频错误(price 带货币符号即非法等)、七市场分叉表(印尼 AIO 直接引 marketplace 页/土耳其 marketplace 仅占 AIO 引用 2.5%/俄罗斯低优先级)、AI 购物现状(ChatGPT Instant Checkout 已 2026-03 退役;"AI 管发现、商家管结算")、**UCP(Google 主导,~50 家背书)与 ACP(OpenAI+Stripe)双协议对照**与 L5 实操入口(Shopify/ucp-cli)。
+- **本地 SEO 六行业速查表**并入 site-type-templates(餐饮/医疗/法律/家居/教育/汽车×平台要点/评价合规红线/schema 正解/常见错误;`DrivingSchool` 在 schema.org 不存在已验证;三深例:日本医疗广告禁止项/韩国 리뷰 政策/德国 Handwerkskammer)+评价生态第二平台按市场(俄=Google 停发评→Yandex 系)。
+- **中文指南二轮核验(11 处修订)**:发现并接入新持续数据源 [ZhiMaHang/chinese-ai-engine-sources](https://github.com/ZhiMaHang/chinese-ai-engine-sources)(45 题×12 引擎按月快照,issue-11=13,203 引用);"知乎修正"改判"引擎分化"(文心 #3/DeepSeek #4 实引);豆包 7 月信源池改版(第三方 32%→7%,抖音绝对主导);百度"三件套"改"双前提"(知道降级,无独立 App→文心助手 2.0);元宝新 #2 信源 ima.qq.com;搜一搜 2026 新口径(8 亿 MAU/15 亿日均);DeepSeek 2026-05-29 修改/重生成新限制;Kimi 三方分歧带日期引用。
+  Ecommerce GEO ladder + local six-vertical table + Chinese guide second-pass verification (new monthly dataset wired in).
+
 ## 0.6.0 - 2026-10-08
 
 - **模板市场化(架构落到输出)**:全部 14 个输出模板(research 6/audit 4/monitor 4)加目标市场字段或市场专属行——引擎面提醒(俄/土=Yandex、韩=Yeti、日=Bing 必查、越=Cốc Cốc)、市场阈值(日语全角/泰语字素)、逐市场分列纪律;多市场站逐市场各出一份报告。
