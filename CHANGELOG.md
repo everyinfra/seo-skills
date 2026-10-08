@@ -3,6 +3,18 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.4.0 - 2026-10-08
+
+- **全球市场专区(regions/)**:新增 4 个区域指南,把套件从"中英双语"扩展为"全球 SEO/GEO 一把做,逐市场分开评分"——
+  - **俄语区(Yandex 生态)**:平行工具栈映射(Webmaster/ИКС/Metrica/Wordstat/Business)、行为与商业排名因素、Королёв/Вега 算法、Alice AI 从自然 SERP 取源(经典 top-10 是引用前提)、YandexAdditional 唯一退出控制、llms.txt 在俄无消费证据、GigaChat 引用仅 App 内、152-ФЗ 与 ORD/erid 合规、15 项就绪清单;
+  - **韩语区(Naver 生态)**:份额双口径(StatCounter 并列 vs 本土面板 63–64%)、Search Advisor 要点、C-Rank/D.I.A. 创作者排名、SERP 自有垂直主导、AI Briefing 几乎只引 Naver 生态(韩语 GEO=Naver 生态优先)、Coupang 商品搜索、Wrtn/ChatGPT 格局、14 项就绪清单;
+  - **日语区**:Yahoo! Japan=Google 索引、Bing 在日 28–33%(喂 Copilot)、AIO 覆盖 76.9% 日语查询、LLMOチェキ >95% AI 证据来自第三方站、文字数按体裁分层(MEO 500–1,200/一般 1,500–3,500/支柱 7,000–12,000)、ステマ規制、Yahoo!プレイス 2027-03 EOL、14 项就绪清单;
+  - **全球六市场(西·葡·阿·法·德·印尼)**:对照表(引擎份额/最大坑/hreflang)、es-419、pt-BR、RTL+MSA/方言分层(arXiv 同行评审:方言退化)、Bill 96、DACH Sie/du、baku/gaul 双轨、AI 引用语言绑定(西语 83–84%)、合规速查(GDPR/LGPD/Bill 96)。
+  Four regional guides adding global market-by-market SEO/GEO in one pass: Russian (Yandex ecosystem), Korean (Naver ecosystem), Japanese, and a six-market comparative guide (Spanish/Portuguese/Arabic/French/German/Indonesian).
+- **接线**:SKILL.md 新增「区域市场专区」路由与全球市场英文触发词(Yandex/Naver/MEO/es-419/pt-BR/RTL/Bill 96/Sie-du/baku-gaul 等);多语言工作流升级为全球市场路由表(九语区)+ 逐区可达性/es-419/逐引擎盲区;README 双语更新至 0.4.0 并新增全球市场数据表(均注明来源类型)。
+- **修复**:消除 SKILL.md 中历史遗留的重复块(frontmatter/头部/整套路由规则各重复一次,475→260 行)。
+- 所有事实按套件证据纪律标注来源类型(官方/行业/社区),未证实项在各文件末尾集中声明。
+
 ## 0.3.1 - 2026-10-09
 
 - **多语言结构化**:SKILL.md 增加语言约定(输出随用户语言、多语言站逐版本评分)与英文触发词;新增《多语言工作流》参考(按市场路由、双语检查顺序、一套事实多种变体、中英阈值差异对照);README.en.md 更新至 v0.3 能力并加安装命令;README.md 同步。

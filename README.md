@@ -4,7 +4,9 @@
 
 **免费下载，用你自己的 AI 工具和模型。**
 
-EveryInfra SEO Skills 的版本为 `0.3.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+EveryInfra SEO Skills 的版本为 `0.4.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+
+**独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十个单市场工具——本套件把九个语区放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、俄语区（Yandex/Alice 生态）、韩语区（Naver/AI Briefing 生态）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）。
 
 ## 为什么是现在 / Why now
 
@@ -19,6 +21,20 @@ EveryInfra SEO Skills 的版本为 `0.3.0`，采用 Apache-2.0 许可协议。�
 | 品牌提及 vs 外链对 AI 排名的相关性 | 约 3 倍 |
 | GEO 优化内容的可见性提升(KDD 2024,10K 查询) | +30–115% |
 | 目前投入 GEO 的营销者 | 仅 23% |
+
+**全球市场的"为什么"(0.4.0 新增,均注明来源类型):**
+
+| 指标 | 数值 | 来源 |
+|---|---|---|
+| Yandex 在俄搜索份额 | ~70–73%(2026) | StatCounter(行业) |
+| AI 答案覆盖俄语信息查询 | 68% | applabx(行业研究) |
+| Naver 在韩份额 | 本土面板 ~63–64%(StatCounter 口径与 Google 并列) | InterAd/InternetTrend(行业) |
+| 韩国AI Briefing 引用来源 | 几乎全部为 Naver 自有生态 | Andgentic(行业) |
+| 日本 AIO 出现率 | 76.9% 日语查询(1,459 查询实测) | Itera(行业) |
+| 日本 AI 搜索使用率 | 21.3%(2025-05)→ 37.0%(2026-02) | CyberAgent GEO Lab |
+| 巴西 ChatGPT 采用 | 25.5% 人口用 App(全球最高)、~5,000 万月用户 | StatCounter/OpenAI |
+| 西语查询的 AI 引用语言绑定 | 83–84% 引西语源 | Temso(行业研究) |
+| 非英 SEO skill 供给 | 西/巴西/法/印尼语 top 仓库仅 1–5 星 | GitHub API 2026-10 实测 |
 
 
 
@@ -45,6 +61,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 | content | SEO 内容 brief 与写作、标题与 meta 描述、GEO / AI 搜索可见度优化、内容质量检查、旧内容刷新 |
 | technical | 技术 SEO 与单页审计、robots.txt 与状态码、结构化数据（Schema）、内链与站点架构、实体与知识图谱、Programmatic SEO、Core Web Vitals（LCP）、审计工具输出解读、SEO 归因埋点（GA4 / GTM） |
 | monitoring | 排名追踪设置、外链质量评估与外联起草、SEO / GEO 指标、告警阈值、效果报告 |
+| **regions(0.4.0 新增)** | **逐市场专区**：俄语区(Yandex.Webmaster/ИКС/Metrica/Wordstat、Alice AI 取源规则、152-ФЗ 合规)、韩语区(Search Advisor、C-Rank/D.I.A.、AI Briefing、Coupang)、日语区(Yahoo! Japan、Bing、MEO、ステマ規制)、西·葡·阿·法·德·印尼(es-419、pt-BR、RTL/MSA、Bill 96、Sie/du、baku/gaul) |
 
 ## 你需要自备什么
 
@@ -101,11 +118,12 @@ seo-skills/
     └── seo-suite/
         ├── SKILL.md       入口：intake、路由规则、输出结构
         ├── references/
-        │   ├── overview/     能力地图、路由规则、intake 清单
-        │   ├── research/     搜索意图、SERP、内容缺口、竞品、专题集群、内容策略
-        │   ├── content/      GEO 证据约束、标题与 meta、内容结构与写法、内容刷新
+        │   ├── overview/     能力地图、路由规则、intake 清单、多语言工作流(全球市场路由)
+        │   ├── research/     搜索意图、SERP、内容缺口、竞品、专题集群、内容策略、外链
+        │   ├── content/      GEO 证据约束、标题与 meta、内容结构与写法、中文 AI 搜索指南、内容刷新
         │   ├── technical/    robots、状态码、Schema、内链与架构、实体、性能、埋点
-        │   └── monitoring/   排名追踪、外链、指标、报告、告警
+        │   ├── monitoring/   排名追踪、外链、指标、报告、告警、漂移监控
+        │   └── regions/      俄语区(Yandex)、韩语区(Naver)、日语区、全球六市场(西·葡·阿·法·德·印尼)
         └── templates/
             ├── research/     研究类输出模板
             ├── audit/        审计类输出模板

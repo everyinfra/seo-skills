@@ -4,7 +4,9 @@
 
 **Free to download. Use your own AI tool and model.**
 
-EveryInfra SEO Skills is version `0.3.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
+EveryInfra SEO Skills is version `0.4.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
+
+**The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want ten single-market tools. This suite puts nine language markets in one workbench, scored market-by-market: Chinese, Russian (Yandex/Alice ecosystem), Korean (Naver/AI Briefing ecosystem), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul).
 
 **Install (one command):**
 
@@ -26,6 +28,20 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 | GEO-optimized content visibility gain (KDD 2024, 10K queries) | +30-115% |
 | Marketers currently investing in GEO | only 23% |
 
+Global-market why-now (added in 0.4.0, source type noted):
+
+| Metric | Value | Source |
+|---|---|---|
+| Yandex share of Russian search | ~70-73% (2026) | StatCounter (industry) |
+| AI answers covering RU informational queries | 68% | applabx (industry study) |
+| Naver share in Korea | ~63-64% on the domestic panel (statistical tie with Google on StatCounter) | InterAd/InternetTrend (industry) |
+| Korean AI Briefing citation pool | almost exclusively Naver-owned properties | Andgentic (industry) |
+| AI Overviews appearing on Japanese queries | 76.9% (1,459 queries measured) | Itera (industry) |
+| Japan AI-search usage | 21.3% (May 2025) → 37.0% (Feb 2026) | CyberAgent GEO Lab |
+| Brazil ChatGPT adoption | 25.5% of the population uses the app (highest globally), ~50M monthly users | StatCounter/OpenAI |
+| Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources | Temso (industry study) |
+| Non-English SEO skill supply | top Spanish/Brazilian/French/Indonesian repos have 1-5 stars | GitHub API, Oct 2026 |
+
 ## What it does
 
 A single entry point: unified intake (site, market, goals, known issues, available data), then routing across overview / research / content / technical / monitoring, then structured output (Summary, Findings, Priority, Actions, Validation).
@@ -34,11 +50,12 @@ A single entry point: unified intake (site, market, goals, known issues, availab
 
 | Capability | Typical tasks |
 |---|---|
-| overview | Site-wide diagnosis, roadmap, triage, multilingual workflow |
+| overview | Site-wide diagnosis, roadmap, triage, multilingual workflow (global market routing) |
 | research | Keywords & intent, SERP, content gaps, competitors, alternative/vs pages, backlink profile analysis (7-section framework), graded directory, directory-submission engine |
 | content | Briefs, E-E-A-T, GEO citability scoring, llms.txt authoring/validation, AI platform differences, Chinese AI search |
 | technical | Audits, schema, robots + AI crawler policy, hreflang 8-check, programmatic SEO gates, sitemaps |
 | monitoring | Rank tracking, KPIs, alerts, brand mention monitoring, SEO drift monitoring |
+| **regions (new in 0.4.0)** | **Market-by-market guides**: Russian (Yandex.Webmaster/IKS/Metrica/Wordstat, Alice AI sourcing rules, 152-FZ & erid compliance), Korean (Search Advisor, C-Rank/D.I.A., AI Briefing, Coupang), Japanese (Yahoo! Japan, Bing, MEO, stealth-marketing rules), Spanish·Portuguese·Arabic·French·German·Indonesian (es-419, pt-BR, RTL/MSA, Bill 96, Sie/du, baku/gaul) |
 
 Evidence-first: never reports signals that are not on the page; never promises ranking, traffic or AI citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
 

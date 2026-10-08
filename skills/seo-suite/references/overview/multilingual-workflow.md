@@ -1,7 +1,7 @@
-# 多语言工作流(中英双语与多市场站点)
+# 多语言工作流(全球市场路由:中英为核,九语区专区)
 
-> 建立于 2026-10-09。综合本套件各参考文件的多语言相关内容而成;平台差异事实见 [AI 平台差异事实库](../content/geo-platform-differences.md),中文引擎细则见 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md),标签规范见 [hreflang 校验](../technical/hreflang-validation.md)。
-> 本文件回答:当一个站点同时服务中文与英文(或更多语言)受众时,本套件如何工作。
+> 建立于 2026-10-09;2026-10-08 扩展为全球市场路由(俄/韩/日/西·葡·阿·法·德·印尼)。综合本套件各参考文件的多语言相关内容而成;平台差异事实见 [AI 平台差异事实库](../content/geo-platform-differences.md),中文引擎细则见 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md),标签规范见 [hreflang 校验](../technical/hreflang-validation.md)。
+> 本文件回答:当一个站点面向全球多个语言市场时,本套件如何工作——**全球 SEO/GEO 一把做,但逐市场分开评**。
 
 ## 一、语言约定(本 skill 的运行规则)
 
@@ -15,16 +15,20 @@
 |---|---|---|
 | 中文(中国大陆) | 中文 AI 搜索指南 | 百度 AI / 文心 / 腾讯元宝 / 豆包 / 通义千问 / Kimi / DeepSeek |
 | 全球(英语为主) | AI 平台差异事实库 + 可引用性打分 | Google AIO / ChatGPT / Perplexity / Gemini / Copilot |
-| 双语站 | 本文件 + hreflang 校验 + 两份引擎指南 | 全部 |
+| 俄语区 | [俄语区(Yandex)指南](../regions/russian-yandex-guide.md) | Yandex / Alice AI / Neuro / GigaChat(+Google ~25–28%) |
+| 韩语区 | [韩语区(Naver)指南](../regions/korean-naver-guide.md) | Naver(+自有垂直)/ Google / Coupang / ChatGPT·Gemini·Wrtn |
+| 日语区 | [日语区指南](../regions/japanese-market-guide.md) | Google / Yahoo! Japan(同索引)/ Bing·Copilot / ChatGPT·Gemini |
+| 西·葡·阿·法·德·印尼 | [全球市场指南](../regions/global-markets-guide.md) | Google 为主(87.8–99.4%);分裂策略与合规是重点 |
+| 多语站 | 本文件 + hreflang 校验 + 各命中市场的专区指南 | 全部 |
 
-## 三、双语站点的检查顺序
+## 三、多语言站点的检查顺序
 
-1. **可达性(两套都要)**:robots 对引用型 bot 的政策(AI 爬虫政策参考);中文站额外确认 Baiduspider / Bytespider 未被禁。
-2. **hreflang 八检**:自引用/双向返回/ISO 码(`zh-Hans` / `zh-Hant` / `en`)——中文简繁体用 ISO 15924 文字码区分。
+1. **可达性(每区一套)**:robots 对引用型 bot 的政策(AI 爬虫政策参考);中文站额外确认 Baiduspider / Bytespider 未被禁;俄语区对 `YandexAdditional` 做显式决策(允许=进 Neuro/Alice 引用池);日语区单独验证 Bing 可爬(28–33% 份额喂 Copilot)。
+2. **hreflang 八检**:自引用/双向返回/ISO 码(`zh-Hans` / `zh-Hant` / `en`)——中文简繁体用 ISO 15924 文字码区分;西语区用 `es-419`(Google 接受的唯一 UN M.49 区域码)。
 3. **内容平价**:德语比英语长 25–35%、日语短 10–25% 的字数比预期同样适用于中英对照(中文版通常比英文短 20–40%,视领域);大幅偏离提示截断或未本地化。
 4. **本地实质**(不是字面翻译):示例、案例、货币、合规表述、联系方式是否本地化;未复核机翻标记为 scaled-content-abuse 风险。
-5. **本地格式**:日期、数字、电话、地址格式按目标区域(`1,000.00` vs `1.000,00`;中文用 `1,000.00` 但日期 `2026年10月9日`)。
-6. **逐引擎可见性**:中文引擎用中文提示词采样(见中文指南的 7 组问句),全球引擎用英文提示词——**同站两语言分开测,不合并**。
+5. **本地格式**:日期、数字、电话、地址格式按目标区域(`1,000.00` vs `1.000,00`;中文用 `1,000.00` 但日期 `2026年10月9日`;法语 `:;!?` 前有不换行空格;阿拉伯语 RTL 布局)。
+6. **逐引擎可见性**:中文引擎用中文提示词采样(见中文指南的 7 组问句),全球引擎用英文提示词,俄/韩/日/西等按各区指南的引擎清单用当地语言提示——**同站各语言分开测,不合并**。
 
 ## 四、内容策略:一套事实,多种变体
 
@@ -58,6 +62,7 @@
 
 1. **机翻直接上线**无人工审校——scaled-content-abuse 风险 + 转换率双输。
 2. **英文阈值套中文页**(或反向)——上表列出不可互套的项。
-3. **只测主语言可见性**——中文市场盲区是元宝/豆包,英文市场盲区是 AIO/Perplexity,两边都要测。
+3. **只测主语言可见性**——中文市场盲区是元宝/豆包,英文市场盲区是 AIO/Perplexity,俄语区盲区是 Alice/Neuro,韩语区盲区是 AI Briefing(只引 Naver 生态),日语区盲区是 Gemini(30% 使用)——每个命中市场都要测。
 4. **同文跨渠道群发**——实测无效且稀释实体一致性。
 5. **hreflang 与 canonical 打架**——八检第 1/6 条(自引用全等)是最常见失败点。
+6. **把一个语区当一个市场**——"西语"至少分 es-ES/es-419;"DACH"的 Sie/du 按国别定;pt-PT 冒充 pt-BR;阿拉伯 MSA/方言不分层;印尼 baku/gaul 不双轨(见全球市场指南)。
