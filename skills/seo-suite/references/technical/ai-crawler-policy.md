@@ -58,7 +58,23 @@ Disallow: /
 
 逐家做 2+3；并接受 `*-User` 类 bot 可能继续按单用户请求访问。**没有一键全退**。
 
-## 三、暗坑清单
+## 三、区域引擎的爬虫与收录补充(2026-10-08 并入)
+
+Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI 答案通道:
+
+| 市场 | Bot / 机制 | 行为(来源类型) | 决策 |
+|---|---|---|---|
+| 俄语区 | **`YandexAdditional`** | 供 Yandex 生成式答案(Нейро/Alice AI)取内容;是**唯一文档化的退出控制**——`User-agent: YandexAdditional / Disallow: /` 即退出;Forbes RU 等媒体已用此退出(Yandex 官方;案例 SEONews) | 想进俄语 AI 答案池=显式允许;与 GPTBot 等政策**分开决策** |
+| 俄语区 | Yandex 主爬虫 | 经典收录走 YandexBot;**IndexNow**(Yandex 参与协议)可加速抓取(官方) | 俄语区把 IndexNow 纳入新鲜度策略 |
+| **土耳其** | Yandex 系(同俄语区) | **Yandex 在土份额 ~26%(2026-09 StatCounter;3 月 ~13%,大反弹)**,YandexGPT SERP 答案同样存在 | 土耳其=第二个 Yandex 市场:Webmaster 注册与 YandexAdditional 决策同俄语区逻辑,且需 Google+Yandex 双引擎 |
+| 韩语区 | Naver robot 收录 | 外部站需在 Search Advisor 发起 robots 收录请求;外部博客仅经收录后才出现在 Blog 标签(Naver 官方 Help) | 韩语流量前提是"被 Naver 收",不是"被爬" |
+| 日语区 | bingbot | Bing 在日份额 28–33%(StatCounter),喂 Copilot 检索 | 日语区 Bing WMT 验证与可爬探测为必做项(多数市场可选项) |
+| 越南 | Coc Cốc | 本地引擎 ~6% 份额,浏览器自带 AI 聊天机器人(官方 Play 页) | 越南向流量单独提交 Coc Cốc 收录 |
+| 中文 | `Baiduspider` / `Bytespider` | 见中文 AI 搜索指南 | 中文站确认未被禁 |
+
+**llms.txt 在区域市场的证据状态**:Yandex 无消费证据(俄社区视为仅策展);日本企业采用 6.4–6.8%(2026-09 测)但 John Mueller 明示无 AI 系统当前使用——**一切市场都只作低成本对冲,不承诺引用**。
+
+## 四、暗坑清单
 
 1. **WAF/CDN 拦截**：robots 宽松但 Cloudflare 等按 UA 挑战 AI bot——活体探测（发真实 bot UA）才能发现。robots.txt 只说"允不允许"，不说"到没到得了"。
 2. **`Google-Extended` 误解**：它不是 AIO 开关。
@@ -66,11 +82,12 @@ Disallow: /
 4. **ai.txt / GEO link tags**：尚无引擎公开承诺遵守；有则加分，无则不扣。
 5. **robots 与 llms.txt 矛盾**：llms.txt 列出的页对 AI 爬虫禁抓——白做一半。
 
-## 四、探测方法
+## 五、探测方法
 
 对每个引用型 bot：用其真实 UA string `curl -A` 访问首页与一个深页，记录状态码。200 = 可达；403/429/5xx/挑战页重定向 = 被拦。对照 robots 声明，标注"声明允许但实际被拦"的项——这类项修复收益最高（WAF 白名单一行的事）。
 
-## 五、来源
+## 六、来源
 
 - 27 bot 引用/训练分类+频率：[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
 - 厂商官方行为声明（OAI-SearchBot/SearchBot/User 系）：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`（2026-10-04 复核一手文档）
+- 区域补充：Yandex Webmaster 官方文档（YandexAdditional）；SEONews（俄媒体退出案例）；Naver 官方 Help（robots 收录）；StatCounter（Bing 日本份额）；PR Times（llms.txt 日企采用率）

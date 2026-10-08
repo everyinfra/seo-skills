@@ -1,6 +1,6 @@
 ---
 name: seo-suite
-description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意图与 SERP 分析、内容缺口、竞品与替代方案页规划、SEO 内容与标题描述优化、AI 搜索可见度（GEO）、技术 SEO 审计、结构化数据（Schema）、内链与站点架构、实体信号、Programmatic SEO、Core Web Vitals、SEO 归因埋点、排名监控、外链分析、告警与 SEO 报告。先做统一 intake，再按 overview、research、content、technical、monitoring 五类能力路由。Use for SEO, GEO / AI search visibility, keyword research, SERP analysis, content optimization, technical SEO audits, schema markup, internal linking, site architecture, programmatic SEO, Core Web Vitals, rank tracking, backlink analysis and SEO reporting, llms.txt authoring and validation, AI crawler robots.txt policy, backlink profile analysis, directory submission campaigns, programmatic SEO quality gates, hreflang and international SEO, Chinese AI search engines (Baidu AI, Doubao, Kimi, DeepSeek, Yuanbao), brand mention monitoring, SEO drift monitoring, multilingual sites, global market-by-market SEO/GEO in one pass: Yandex and the Russian market (Yandex.Webmaster, Metrica, Wordstat, IKS, Alice AI, Neuro, GigaChat), Naver and the Korean market (Search Advisor, C-Rank, DIA, Naver Blog, AI Briefing, Coupang), the Japanese market (Yahoo! Japan, Bing Japan share, MEO, AI Overviews in Japanese), Spanish es-419 LatAm splits, Brazilian Portuguese pt-BR, Arabic RTL with MSA vs dialects, French fr-CA and Bill 96, German DACH Sie/du, Indonesian baku vs gaul. 
+description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意图与 SERP 分析、内容缺口、竞品与替代方案页规划、SEO 内容与标题描述优化、AI 搜索可见度（GEO）、技术 SEO 审计、结构化数据（Schema）、内链与站点架构、实体信号、Programmatic SEO、Core Web Vitals、SEO 归因埋点、排名监控、外链分析、告警与 SEO 报告。先做统一 intake，再按 overview、research、content、technical、monitoring 五类能力路由。Use for SEO, GEO / AI search visibility, keyword research, SERP analysis, content optimization, technical SEO audits, schema markup, internal linking, site architecture, programmatic SEO, Core Web Vitals, rank tracking, backlink analysis and SEO reporting, llms.txt authoring and validation, AI crawler robots.txt policy, backlink profile analysis, directory submission campaigns, programmatic SEO quality gates, hreflang and international SEO, Chinese AI search engines (Baidu AI, Doubao, Kimi, DeepSeek, Yuanbao), brand mention monitoring, SEO drift monitoring, multilingual sites, global market-by-market SEO/GEO in one pass: Yandex and the Russian market (Yandex.Webmaster, Metrica, Wordstat, IKS, Alice AI, Neuro, GigaChat), Naver and the Korean market (Search Advisor, C-Rank, DIA, Naver Blog, AI Briefing, Coupang), the Japanese market (Yahoo! Japan, Bing Japan share, MEO, AI Overviews in Japanese), Spanish es-419 LatAm splits, Brazilian Portuguese pt-BR, Arabic RTL with MSA vs dialects, French fr-CA and Bill 96, German DACH Sie/du, Indonesian baku vs gaul, Hindi Hinglish code-mixing and voice-first queries, Turkish agglutinative keyword forms and Yandex Türkiye, Vietnamese diacritic variants and Coc Coc, Thai spaceless-script word segmentation, Polish diacritics, Dutch nl-NL vs Flemish nl-BE, Italian it-CH. 
 ---
 
 # SEO Suite
@@ -89,15 +89,10 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 - `templates/research/content-strategy-plan.md`
 
 
-#### 多语言 / 多市场站点
-- [多语言工作流](references/overview/multilingual-workflow.md):语言约定、按市场路由、双语检查顺序、一套事实多种变体、中英阈值差异对照
-
-#### 区域市场专区（regions）——全球 SEO/GEO 一把做
-目标市场命中以下任一区域时，先读对应专区指南，再套用通用能力；多区域站点逐区域分开评分：
-- [俄语区（Yandex 生态）指南](references/regions/russian-yandex-guide.md)：Yandex ~70–73% 份额下的平行工具栈（Webmaster/ИКС/Metrica/Wordstat）、行为与商业因素、Alice AI 从自然 SERP 取源、YandexAdditional 控制、152-ФЗ 与 erid 合规、15 项就绪清单
-- [韩语区（Naver 生态）指南](references/regions/korean-naver-guide.md)：份额双口径、Search Advisor、C-Rank/D.I.A.、SERP 自有垂直主导、AI Briefing 只引 Naver 生态、Coupang 商品搜索、14 项就绪清单
-- [日语区指南](references/regions/japanese-market-guide.md)：Yahoo! Japan=Google 索引、Bing 在日 28–33%、AIO 覆盖 76.9% 日语查询、>95% AI 证据来自第三方站、文字数按体裁分层、ステマ規制、14 项就绪清单
-- [全球市场指南（西语·葡语·阿拉伯语·法语·德语·印尼语）](references/regions/global-markets-guide.md)：六市场对照表、es-419/pt-BR/RTL-MSA/Bill 96/Sie-du/baku-gaul 分裂策略、AI 引用语言绑定（83–84%）、合规速查
+#### 多语言 / 多市场站点(全球 SEO/GEO 一把做)
+- [多语言工作流](references/overview/multilingual-workflow.md):**全球主干**——市场总表(中/英/俄/韩/日/西/葡/阿/法/德/印尼)、逐市场工具栈映射、语言与内容规范(阈值不可互套)、检查顺序、合规速查、常见坑
+- 区域知识已融入五类能力文件,按需读取:[多语言工作流](references/overview/multilingual-workflow.md)(引擎格局/工具栈/合规)、[AI 平台差异事实库](references/content/geo-platform-differences.md)第六节(Yandex Alice/Neuro、Naver AI Briefing、日语 AIO、引用语言绑定)、[AI 爬虫政策](references/technical/ai-crawler-policy.md)第三节(YandexAdditional、Naver 收录、Bing 日本)、[hreflang 校验](references/technical/hreflang-validation.md)(es-419 例外、RTL、市场码组合)、[关键词意图分类](references/research/keyword-intent-taxonomy.md)(Wordstat/DataLab/ラッコ 工具链与方言归组)、[intake 清单](references/overview/intake-checklists.md)(目标市场 intake 闸门)、[中文 AI 搜索指南](references/content/chinese-ai-search-guide.md)
+- 多区域站点逐市场分开评分,不合并总分
 
 #### 外链（backlinks）
 - [外链画像分析](references/research/backlink-profile-analysis.md)：七段式框架、数据源置信度级联、健康分与数据闸门、disavow 决策

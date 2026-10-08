@@ -81,9 +81,36 @@
 - 把别人的品牌词当泛词做内容，和对方官网正面竞争。
 - 一个页面同时对准几种互相冲突的意图。
 
+## 区域市场的关键词研究差异(2026-10-08 并入)
+
+意图分类跨市场通用,但**工具链和词形处理按市场换**:
+
+| 市场 | 工具链 | 词形处理要点 |
+|---|---|---|
+| 英文 | Google KW Planner + 自有 SERP 数据 | 词而非字;长尾靠修饰词扩展 |
+| 中文 | 百度指数 + 各 AI 引擎采样(见中文指南) | 15–25 字问句口语措辞;简繁分开 |
+| 俄语区 | **Yandex.Wordstat**(`"短语"`=精确短语、`!词`=精确词形、`+/-` 排除) | 显示**预测曝光**非搜索量;按区域+季节分层;西里尔原生词,勿拉丁直译 |
+| 韩语区 | **Naver DataLab**(趋势,按年龄/性别/设备)+ Naver Ads 关键词工具(量) | 韩国用户真实输入(DataLab 验证),不是英文翻译;敬语体系统一 |
+| 日语区 | **ラッコキーワード**(候选挖掘)→ Google KW Planner JP(验量) | **全角/半角(ＳＥＯ/SEO)与片假名转写变体归组**;汉字/假名同词多写法 |
+| 西语 | KW Planner 按区域 | **按方言区分套**:es-ES 与 es-419 词汇不同(coche/carro/auto);es-US 单独机会 |
+| 葡语(巴西) | KW Planner(br) | 只做 pt-BR;口语化/俚语词群纳入;pt-PT 词不进口 |
+| 阿拉伯 | KW Planner(ar 区域) | **MSA+方言双层 + 正字变体归组**(hamza/ta-marbuta);拉丁转写查询单独验证 |
+| 德语(DACH) | KW Planner(de-DE/de-AT/de-CH) | **Sie/du 称谓改变查询词**——先定称谓再做词表;复合长词是常态 |
+| 印尼 | KW Planner(id) | **baku(正式)/gaul(口语)双轨**;EYD V(2022)拼写修订影响拼写;英印混码预期 |
+| 印地/印度 | KW Planner(en-IN/hi-IN 分开) | **Hinglish 混码**:罗马化/天城体/英语三种书写,真实量在 Hinglish 非纯印地语;语音查询占比高(~70% 新用户,行业未证实) |
+| 意大利 | KW Planner(it-IT/it-CH) | it-CH 混德法词+瑞郎语境,当独立 locale 研究 |
+| 土耳其 | KW Planner + **Yandex Wordstat**(Yandex ~26%) | **黏着语**:后缀折叠格/数/领属→英文式头部词低估量,研究屈折表层形式与词干变体 |
+| 越南 | KW Planner(vi-VN) | **有调/无调当独立词**("khong/không"意图不同,移动端常无调);Coc Cốc(~6%)单独看 |
+| 泰国 | KW Planner(th-TH) | **无词间空格**:密度工具与精确匹配失效——先确认分词,再谈密度 |
+| 波兰 | KW Planner(pl-PL) | 9 个变音字母:内容**带**正确变音符写(Google 两种都匹配),不模仿无调输入 |
+| 荷兰/弗拉芒 | KW Planner(nl-NL/nl-BE) | 词汇分流(auto's/wagen)与正式度;比利时三语分站 |
+
+**跨市场共同纪律**:关键词不互译(各语言独立研究,战略层对齐主题);SERP 证据记录地域与语言;变体归组后再估量,不把变体当独立词。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/keyword-research/references/keyword-intent-taxonomy.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/keyword-research/references/keyword-intent-taxonomy.md)（Apache-2.0）
 - 一手资料：[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
+- 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（西语 es-419 组合经 Google hreflang 文档核实；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）

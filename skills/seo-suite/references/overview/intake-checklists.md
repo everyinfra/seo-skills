@@ -11,6 +11,22 @@
 - 近期是否改版、迁移、换模板、改 URL、改 CMS
 - 有哪些数据：Search Console、GA4、排名工具、外链工具、日志、爬虫结果
 
+## 目标市场 intake(多语言/全球站必答,2026-10-08 并入)
+
+按命中的市场逐个过(细则见[多语言工作流](multilingual-workflow.md)市场总表):
+
+- **俄语区**:Yandex.Webmaster 是否验证+区域已设?Metrica 是否安装(GA 因 152-ФЗ 不合规)?robots 对 `YandexAdditional` 的决策(允许=进 Neuro/Alice)?付费投放的 erid 标记?
+- **韩语区**:Search Advisor 是否注册+验证(canonical 精确)?Naver Blog/Cafe/지식iN 存在吗(AI Briefing 只引 Naver 生态)?电商是否做 Coupang?
+- **日语区**:Bing WMT 是否验证(Bing 28–33% 份额)?MEO/本地业务:GBP+ステマ規制内口碑策略?Qiita/Zenn 是否覆盖(技术品牌)?
+- **西语**:es-ES+es-419 结构决策?方言本地化(非机翻)?
+- **葡语(巴西)**:pt-BR 原生词表?ChatGPT/LLM 可见性是否列入优先目标(全球最强采用市场)?
+- **阿拉伯**:`dir="rtl"` 全链?MSA 骨架+方言层策略?
+- **法语**:fr 变体分离(fr-FR/fr-CA/fr-BE)?魁北克 Bill 96 合规?
+- **德语**:Sie/du 按国别定了?Consent Mode v2 是否影响测量计划?
+- **印尼**:baku/gaul 双轨?移动优先(>82% 移动流量)?
+- **长尾主流市场速查**(印地/意/土/越/泰/波兰/荷,详见多语言工作流长尾表):印地=Hinglish 三书写+hi-IN/en-IN 分开?意大利=it-CH 独立 locale?土耳其=Yandex 双引擎(~26%)?越南=有调/无调+Coc Cốc?泰国=分词验证?波兰=变音符保留?荷兰=nl-NL/nl-BE 分开?
+- 逐市场分别评分还是只要一个总分?(本套件默认:逐市场分开)
+
 ## research intake
 
 - 想抢哪些主题或词

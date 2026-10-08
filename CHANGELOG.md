@@ -3,6 +3,19 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.4.1 - 2026-10-08
+
+- **结构反馈落地:区域知识融入套件本体**。移除 0.4.0 的 `references/regions/` 独立专区(4 份指南),把内容并入五类能力文件——全球能力不再是一个模块,而是每个能力集合自带:
+  - `overview/multilingual-workflow.md` 重写为**全球主干**:11 市场总表(格局/决定性事实/就绪闸门)、逐市场工具栈映射(俄/韩/日)、语言与内容规范(文字数按体裁、Sie/du、MSA/方言、baku/gaul、RTL、排版)、合规速查(152-ФЗ/erid、GDPR、LGPD、Bill 96、PIPA、ステマ規制);
+  - `content/geo-platform-differences.md` 新增第六节**区域 AI 平台**(Alice/Neuro 取源规则、GigaChat 仅 App 内引用、Naver AI Briefing 只引自有生态、日语 AIO 76.9%、引用语言绑定 83–84%);
+  - `technical/ai-crawler-policy.md` 新增第三节**区域引擎爬虫与收录**(YandexAdditional 唯一退出控制、Naver robots 收录、Bing 日本必做);
+  - `technical/hreflang-validation.md` 修正规则五(**es-419 是 Google 接受的唯一 UN M.49 例外**)+ 新增 RTL 必检与常见市场码组合;
+  - `research/keyword-intent-taxonomy.md` 新增**区域关键词研究差异**(Wordstat 算子、DataLab、ラッコ→Planner 管线、方言/语域/变体归组);
+  - `overview/intake-checklists.md` 新增**目标市场 intake 闸门**(逐市场必答问题)。
+- SKILL.md 路由改指向融入后的文件;README 双语同步("全球能力融在每个能力集合里")。
+- **第二轮语区并入(18 市场全覆盖)**:印地(India,ChatGPT 第二大市场 ~1 亿周活;Hinglish 三种书写;hi-IN/en-IN 分开)、意大利(it-CH 独立 locale)、**土耳其(Yandex ~26%——俄语区之外第二个 Yandex 市场**,黏着语关键词形式)、越南(有调/无调变体+Coc Cốc ~6%)、泰国(无空格分词,密度工具失效)、波兰(变音符规范化)、荷兰(nl-NL/nl-BE 弗拉芒)——折入多语言工作流长尾市场表、爬虫政策(Yandex 土耳其/Coc Cốc)、hreflang 市场码组合、关键词区域表、intake 速查。
+  Structural feedback: regional knowledge merged into the five capability files (regions/ section removed); multilingual-workflow rewritten as the global backbone; second round adds 7 more markets (18 total, incl. Turkish Yandex and Hindi/India).
+
 ## 0.4.0 - 2026-10-08
 
 - **全球市场专区(regions/)**:新增 4 个区域指南,把套件从"中英双语"扩展为"全球 SEO/GEO 一把做,逐市场分开评分"——

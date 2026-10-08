@@ -6,7 +6,7 @@
 
 EveryInfra SEO Skills is version `0.4.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
 
-**The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want ten single-market tools. This suite puts nine language markets in one workbench, scored market-by-market: Chinese, Russian (Yandex/Alice ecosystem), Korean (Naver/AI Briefing ecosystem), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul).
+**The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
 
 **Install (one command):**
 
@@ -41,6 +41,8 @@ Global-market why-now (added in 0.4.0, source type noted):
 | Brazil ChatGPT adoption | 25.5% of the population uses the app (highest globally), ~50M monthly users | StatCounter/OpenAI |
 | Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources | Temso (industry study) |
 | Non-English SEO skill supply | top Spanish/Brazilian/French/Indonesian repos have 1-5 stars | GitHub API, Oct 2026 |
+| Yandex share in Turkey | ~26% (Sept 2026, up from ~13% in March) — a second Yandex market | StatCounter (industry) |
+| India ChatGPT adoption | ~100M weekly active users, ChatGPT's #2 market | OpenAI (Altman, official) |
 
 ## What it does
 
@@ -50,12 +52,13 @@ A single entry point: unified intake (site, market, goals, known issues, availab
 
 | Capability | Typical tasks |
 |---|---|
-| overview | Site-wide diagnosis, roadmap, triage, multilingual workflow (global market routing) |
-| research | Keywords & intent, SERP, content gaps, competitors, alternative/vs pages, backlink profile analysis (7-section framework), graded directory, directory-submission engine |
-| content | Briefs, E-E-A-T, GEO citability scoring, llms.txt authoring/validation, AI platform differences, Chinese AI search |
-| technical | Audits, schema, robots + AI crawler policy, hreflang 8-check, programmatic SEO gates, sitemaps |
+| overview | Site-wide diagnosis, roadmap, triage, multilingual workflow (the global backbone: market table, per-market toolchains, compliance), target-market intake gates |
+| research | Keywords & intent (with per-market toolchains: Wordstat, DataLab, ラッコ), SERP, content gaps, competitors, alternative/vs pages, backlink profile analysis (7-section framework), graded directory, directory-submission engine |
+| content | Briefs, E-E-A-T, GEO citability scoring, llms.txt authoring/validation, AI platform differences (incl. regional AI platforms: Yandex Alice/Neuro, Naver AI Briefing, Japanese AIO), Chinese AI search |
+| technical | Audits, schema, robots + AI crawler policy (incl. YandexAdditional, Naver collection, Bing Japan), hreflang 8-check (incl. es-419, RTL), programmatic SEO gates, sitemaps |
 | monitoring | Rank tracking, KPIs, alerts, brand mention monitoring, SEO drift monitoring |
-| **regions (new in 0.4.0)** | **Market-by-market guides**: Russian (Yandex.Webmaster/IKS/Metrica/Wordstat, Alice AI sourcing rules, 152-FZ & erid compliance), Korean (Search Advisor, C-Rank/D.I.A., AI Briefing, Coupang), Japanese (Yahoo! Japan, Bing, MEO, stealth-marketing rules), Spanish·Portuguese·Arabic·French·German·Indonesian (es-419, pt-BR, RTL/MSA, Bill 96, Sie/du, baku/gaul) |
+
+Global capability is **woven into every capability set**, not a separate module: `overview/multilingual-workflow.md` is the spine (engine landscape, per-market tool stacks, language conventions and compliance across markets), and each capability file carries the regional knowledge relevant to it.
 
 Evidence-first: never reports signals that are not on the page; never promises ranking, traffic or AI citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
 

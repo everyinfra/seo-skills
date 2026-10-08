@@ -59,7 +59,24 @@ robots 决策速查：
 - AirOps 2025：H2/H3 层级 2.8x 引用
 - BrightEdge（1M AI 答）：68% 引高权站；43% 引用来自 FAQ 标记页
 
-## 六、来源
+## 六、区域 AI 搜索平台(2026-10-08 并入,来源类型标注)
+
+Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用同一套 GEO 假设:
+
+| 平台(市场) | 已证实行为 | 来源类型 | 实操含义 |
+|---|---|---|---|
+| **Alice AI / Нейро(Neuro)**(俄) | 答案来源**取自 Yandex 自然 SERP**,不单独爬取不单独排序;Webmaster 有"Alice 可见面板" | Yandex 官方文档 | 经典 Yandex top-10 即引用前提;退出控制仅 `YandexAdditional` |
+| **GigaChat 2**(俄,Sber) | 联网检索+编号脚注引用,**仅聊天 App 内显示,API 不带引用** | 官方 FAQ | 品牌抽查须手工在 App 内做 |
+| **Naver AI Briefing / AI Tab**(韩) | 引用**几乎全部来自 Naver 自有生态**(Blog/Cafe/지식iN/Premium);覆盖从 ~3% 升至 ~20%(2026) | 行业(Andgentic/The Egg;20% 非官方) | 韩语 GEO=Naver 生态 GEO 优先,自有站其次;ChatGPT/Gemini 是唯一不需 Naver 资产的通道 |
+| **Google AIO(日)** | AIO 出现于 **76.9% 日语查询**(1,459 查询);日语 AI 搜索使用率 21.3%→37.0%(2025-05→2026-02) | 行业(Itera/CyberAgent GEO Lab) | 日语区的 AIO 覆盖比英文区更普遍 |
+| **ChatGPT(日)** | 对日语国内查询也把 Reddit 引用排第一;Perplexity 偏知恵袋并转向 Wikipedia JP+note.com | 行业(Ahrefs 经 Nikkei;SiTest) | 日语第三方引用面=Reddit+日生态(note/知恵袋/Wikipedia JP) |
+| **引用语言绑定(跨市场)** | 西语查询在 AIO/Copilot 得 83–84% 西语引用;西班牙西语查询 7% 引用去 .es 域 vs 英文查询 1.7% | 行业(Temso/Weglot) | **AI 引用审计必须用目标语言提示跑**;>95% 的日语 AI 答案证据来自第三方站(LLMOチェキ 120 万引用) |
+| **Wrtn**(韩)/ **本地阿拉伯助手**(Jais/Fanar) | Wrtn >500 万 MAU;阿拉伯助手存在但 ChatGPT 主导使用 | 行业/未证实(份额) | 二线优先级;GPT-4 在阿拉伯方言上显著退化(arXiv:2305.14976)→ MSA 内容更可靠被引 |
+| **ChatGPT(印度)** | ~1 亿周活,ChatGPT 第二大市场(Altman 官方口径);AIO 覆盖英语+印地语;罗马化印地文本使 AI 处理掉 5–12 F1(arXiv 2512.10780) | 官方/研究 | 印度 LLM 可见性优先级仅次于巴西;Hinglish 三种书写都要测 |
+| **Coc Cốc AI(越南)** | 本地引擎 ~6%,浏览器自带 AI 聊天机器人 | 官方 Play 页 | 越南的小额但独占的本地 AI 面 |
+
+## 七、来源
 
 - 厂商事实与"禁 GPTBot 不阻止引用"：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`、[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
 - 平台侧重与统计：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
+- 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）

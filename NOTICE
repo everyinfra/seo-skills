@@ -58,9 +58,9 @@ skills/seo-suite/references/ 下的参考资料由 EveryInfra 自行编写。部
 - indie-hacking/Awesome-SEO-Backlinks (MIT): difficulty grading format
 - OranAi-Ltd/orangeo-ai-visibility-skill (open): buyer prompt taxonomy
 
-## 0.4.0 区域指南的数据来源(事实引用,非框架借鉴)
+## 0.4.0/0.4.1 全球区域知识的数据来源(事实引用,非框架借鉴)
 
-regions/ 下四个区域指南由 EveryInfra 自行编写;所有事实在文中行内标注来源与来源类型
+区域知识(0.4.0 曾以 regions/ 专区形式发布,0.4.1 起融入套件五类能力文件)由 EveryInfra 自行编写;所有事实在文中行内标注来源与来源类型
 (官方/行业/社区/未证实),主要数据源:StatCounter、Mediascope、InterAd/InternetTrend、
 applabx、CyberAgent GEO Lab、Itera、Ahrefs(经 Nikkei xTREND)、SiTest、LLMOチェキ(PR Times)、
 Temso、Weglot、Yandex Webmaster 官方文档、Naver 官方 PR/Help、arXiv:2305.14976、arXiv:2510.27543。
