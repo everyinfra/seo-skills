@@ -3,6 +3,11 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.6.2 - 2026-10-09
+
+- **AI 味检测的市场差异层**:ai-writing-detection 新增各语言 AI 味标记表(日 28 动词×14 构文/巴西 35 型/印尼 hiruk pikuk 禁用/波兰 humanizer/越南句长方差/中文营销词)——"检测密度而非误用"原理落地,原则 #12 的实体化;跨语言通用信号(句长方差/结构平行)与母语者标注维护纪律。
+  Per-language AI-flavor marker tables — principle #12 made concrete.
+
 ## 0.6.1 - 2026-10-09
 
 - **新增 [电商 GEO 阶梯](skills/seo-suite/references/content/ecommerce-geo-ladder.md)**:五级阶梯(L1 产品数据→L5 agent 交互,逐级验收)、Product schema 七个高频错误(price 带货币符号即非法等)、七市场分叉表(印尼 AIO 直接引 marketplace 页/土耳其 marketplace 仅占 AIO 引用 2.5%/俄罗斯低优先级)、AI 购物现状(ChatGPT Instant Checkout 已 2026-03 退役;"AI 管发现、商家管结算")、**UCP(Google 主导,~50 家背书)与 ACP(OpenAI+Stripe)双协议对照**与 L5 实操入口(Shopify/ucp-cli)。

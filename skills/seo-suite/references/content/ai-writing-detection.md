@@ -55,6 +55,23 @@
 - 为了「像人写的」故意加口语和错别字。
 - 把所有长句都拆碎，导致论证断裂。
 
+## 市场差异:各语言的 AI 味标记表(2026-10-09 三波整合)
+
+**原理(日语区最完整实现,hana652 六法则)**:AI 文的问题不是"误用"而是**密度**——正确技法以人类上限 3–8 倍的频率出现。每语种建自己的标记表,检测"密度"而非"误用":
+
+| 语言 | 标记/触发词(示例) | 检测要点 | 来源 |
+|---|---|---|---|
+| 日语 | 転用動詞 28 语(落ちる/壊れる/設計/本質)+構文 14 种(対比構文/三连反复/文体混在) | レジスター(register)别阈值;writing-lint 机器判定+before/after 对照 | hana652/tech-writing-pack(一手) |
+| 葡语(巴西) | gerúndio 链("…garantindo mais eficiência")、逃 ser 动词("configura-se como")、mulecas("Vale destacar que"/"Nos dias de hoje") | 发布前 35 型审查+Unicode 水印清理 | pedrenrick/web-search(一手翻译层) |
+| 印尼语 | **"hiruk pikuk"(第一标记,绝对禁用)**、负平行结构、Title Case 标题、em-dash 风格化 | L1–L10 十条硬禁令 | alvinindra/bahasa-skills(一手) |
+| 波兰语 | (humanizer-pl 8★ 专门去 AI 味)+sierotki 孤字排版规则 | 波兰排版规则单独检查 | humanizer-pl/Zuczkowski(一手) |
+| 荷兰语 | 连字符作风格标点、"AI"小写 | 写规明令 | GianlucaNaarden 库写规 |
+| 越南语 | 句长方差检测(反均匀句长) | mona-seo-check-vi 的量化法 | 一手 |
+| 中文 | 营销词>3/页(创新领先/卓越/极致类)、标题党(暴涨/封神/必看) | 已有 CJK 阈值见中文指南 | 套件自有 |
+| 英文 | hype 词(revolutionary/game-changing)克制 | 已有 | 套件自有 |
+
+**跨语言通用信号**:句长方差过低(均匀句长=AI 味)、段落结构过度平行、每段都以总起句开头。检测思路可迁移(日语六法则→各语建"人类上限频率"基线);**每语种表的建立需要母语者标注触发词**——表会过时,带日期维护。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
