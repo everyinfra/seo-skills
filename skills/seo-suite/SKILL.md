@@ -24,6 +24,10 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
+### 7. 可执行层与样例
+- **scripts/**:`self_check.py`(自检:frontmatter/模板七段式/死链)、`link_check.py`(内部链接校验)、`text_units.py`(按市场计量单位统计:全角/字素/词)——规则的可执行版本;
+- **examples/**:`gold-standard-keyword-research.md`(金标准样例输出,合成数据)——交付标准的实体参照;其余模板按同结构产出。
+
 ### 3. 统一输出
 默认输出结构：
 1. Summary(**首行注明目标市场/语言**;多市场任务逐市场各一组)
