@@ -3,6 +3,16 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.28.0 - 2026-10-09
+
+- **孤儿文件清零 + market_lint v3(完善度清单第 2、3 项)——special_checks 机检映射 24→52 条 + v3 常开机检 12 项(检查函数注册表共 64),golden 测试 62→71**:
+  - **孤儿修复**:audit-tool-output.md(56→140 行已深化)SKILL.md 裸路径升级为带描述链接行;basename 全量反查再发现两个真孤儿并全部入链——grid_rank.py 与 head_check.py(S7 可执行层漏排,37 脚本清单补齐)+ examples/gold-standard-keyword-research.md(research 路由挂黄金样例);复检孤儿=0;
+  - **⑨ special_checks 第二批映射 +28 条**(可机检未实现项,覆盖 30 条 special_checks 条目):ko nosourceinfo(全球唯一官方 AI 引用退出 meta)/标签-值网格/연관채널 sameAs、ja 星5つ QR 王道违法话术、en 段落级可引性四要素(专名+数字+as-of+方法学)、es coche/carro 词汇分流+支付词层、pt CNPJ·OAB 凭证/仅收 PIX·boleto 骗局信号/publieditorial rel 披露、de Werbung 标签+rel 双披露(OLG Köln 口径)、fr courriel/balado 术语表(fr-CA 硬判)、id desc 120 字符安全区/baku-gaul 正文词典化/EYD V 新旧拼法并存、hi 语音助词、it it-CH(.ch+CHF 分裂)/P.IVA/估算声明降级、tr tanıtım 披露、vi 标题词前 30 字符(t0mmy)、th 佛历年(泰月名配公历年即 FAIL)/词中截断余量、pl 剥变音残留/sierotki 行尾孤字、nl je-u 混用/[INVULLEN] 占位/KvK 号;
+  - **⑩ v3 常开机检 12 项(全市场注册表,输出数值供阈值判定)**:内容类 营销词密度(per 千词/千字)/句长 CV(<0.25=AI 均匀签名)/FAQ 问句密度/有源数字密度(同句来源线索占比<30% 且数字≥5=无源堆砌);结构类 H2 疑问式占比(¿/什么/怎么/why/how/wie/wat… 12 语)/列表密度 li/(li+p)/标题关键词位次(高频词代理);格式类 日期格式按市场(de 见 10/9/2026 即 WARN)/电话前缀(+7/+82/+86/+91/+55…)/货币符号(€ vs 元、R$ vs $);语言类 ru 西里尔/ko 谚文/th 泰文字符占比;robots 类 页面级 noai/noimageai/nosnippet AI 退出 meta;
+  - **--report 尾部新增 AUTO 比例行**;18 市场全量跑通无崩溃;zh/de/ja 真实样文冒烟:special_checks AUTO 比例 zh 2/10=20%(剩余 8 条均为平台级 offpage,不可页内机检)+12 项常开机检(营销词密度 11.4/千字、标题关键词位次命中)、de 2/9=22%→3/9=33%(+Werbung 双披露)、ja 6/10=60%→7/10=70%(+星5つ);
+  - 测试 62→71(+9:电话前缀/日期格式/AI 退出 meta/货币符号/句长 CV/AUTO 比例行/ko nosourceinfo/de Werbung 披露/H2 疑问式占比),零网络全绿。
+  Orphan files zeroed (audit-tool-output descriptive link; grid_rank+head_check wired into S7; gold-standard example linked); market_lint v3: +28 special_checks mappers (24→52) + 12 always-on checks (64-function registry), AUTO-ratio line in --report; tests 62→71.
+
 ## 0.23.1 - 2026-10-09
 
 - **S2 实测工具盲区修复轮(9.5 冲刺自动化提升)**——7 项,site_audit.py 重写 + head_check.py 中文场景门控,golden 测试 32→46 全绿:
@@ -16,6 +26,15 @@ Future content or structure changes must bump the version and add a dated entry.
   - golden 测试新增 SiteAuditTests(9)+ HeadCheckChineseScopeTests(4)+ 全字母文字(1),零网络;
   - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
   S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
+
+## 0.28.0 - 2026-10-09
+
+- **完善度清单 1-3 项落地**:
+  - **templates 层全面深化(第 1 项)**:12 个骨架模板全文重写到标杆水准(60-84 行/个)——每模板加 Key numbers 区/核心结构表/What could change;代表:serp 九特征矩阵/competitor 每家竞品卡+对位表/pages-plan 内链图+发布顺序/strategy 支柱集群+90 天日历/on-page 九元素市场阈值表/technical 五层栈/entity 实体矩阵/alert 四级 playbook+升级链/backlink 价带三层/performance AI 引荐趋势/rank 五桶×市场×引擎分列;
+  - **孤儿修复(第 2 项)**:audit-tool-output 挂入 SKILL.md 路由;另发现并修复 grid_rank/head_check(脚本清单 35→37)和 gold-standard 样例共 3 个孤儿——**复检孤儿=0**;
+  - **MANUAL→AUTO 特检自动化(第 3 项)**:market_lint v3 检查注册表 24→**64 条**(+28 条 special_checks 语义映射覆盖 30 条 MANUAL:+12 项常开机检:营销词密度/句长 CV/FAQ 密度/有源数字密度/H2 疑问式占比/列表密度/标题词位次/日期格式/电话前缀/货币符号/字符占比/noai meta);三市场冒烟 AUTO 比例:de 22→33%/ja 60→70%/zh 持平(余为平台级 offpage);
+  - 测试 62→**71**(+9),self_check 全绿。
+  Completeness items 1-3: 12 templates rewritten to benchmark depth, orphan files fixed (now zero), market_lint v3 auto-checks 24→64, tests 62→71.
 
 ## 0.27.0 - 2026-10-09
 

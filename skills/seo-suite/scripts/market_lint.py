@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""多语言市场 lint v2(stdlib,规则读 markets.json——18 市场数据与逻辑分离)。
+"""多语言市场 lint v3(stdlib,规则读 markets.json——18 市场数据与逻辑分离)。
 v1 保留:① title/desc 长度按市场单位(chars|fullwidth|grapheme;ja/ko 全角、th 字素);
 ② 句长按 sentence_ideal;③ 营销词>3 警告;④ fr :;!? 前窄空格/de 数字逆序;
 ⑤ de Sie/du、ja ですます、ko 합니다体;⑥ zh 简繁混检。
@@ -10,10 +10,20 @@ v2 新增:
   th ครับ/ค่ะ、es ¿H2/es-419),不可机检项以 [MANUAL] 前缀输出人工清单;
 ⑧ 常开机检(不在 special_checks 但按市场语义应检):ru 西里尔占比+拉丁混排、ko 과/와 助词搭配。
 --report:输出该市场全部 special_checks 的 [AUTO-OK]/[AUTO-FAIL]/[MANUAL] 三态清单。
+v3 新增(2026-10-09,检查函数注册表 24→64):
+⑨ special_checks 第二批机检映射 +28 条(ko nosourceinfo/标签-值网格/연관채널、ja 星5つQR王道、
+  en 段落级可引性四要素、es 词汇分流/支付词层、pt CNPJ/PIX骗局/软文披露、de Werbung 双披露、
+  fr courriel 术语表、id 安全区/baku-gaul/EYD V、hi 语音助词、it it-CH/P.IVA/估算声明、
+  tr tanıtım 披露、vi 标题词前30字符、th 佛历/词中截断、pl 变音/sierotki、nl je-u/INVULLEN/KvK);
+⑩ v3 常开机检注册表 12 项(全市场):内容类(营销词密度/句长CV/FAQ问句密度/有源数字密度)、
+  结构类(H2 疑问式占比/列表密度/标题关键词位次)、格式类(日期格式/电话前缀/货币符号)、
+  语言类(ru 西里尔/ko 谚文/th 泰文字符占比)、robots 类(页面级 noai/noimageai/nosnippet)。
+--report 尾部打印该市场 special_checks 的 AUTO 比例(AUTO-OK+AUTO-FAIL / 总数)。
 用法: python3 market_lint.py --market ja FILE [--url URL] [--report]
 FILE=HTML(<title>+meta description)或纯文本(title:/desc: 前缀行,其余正文;无前缀则第 1 行 title、第 2 行 desc)。
 超限即 CRITICAL,退出码 1。"""
 import sys, os, re, json, math, unicodedata, urllib.request
+from collections import Counter
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 UA = "Mozilla/5.0 (compatible; seo-suite-marketlint/2.0)"
@@ -28,6 +38,32 @@ VI_UNACC = {"va", "cua", "khong", "duoc", "nguoi", "nhung", "voi", "nay", "tai",
 VI_ACC = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ")
 # ru 商业页法定透明层 6 类(HTML 内链文本/锚点匹配)
 RU_LEGAL = ["оферта", "реквизит", "пользовательское соглашение", "политика конфиденциальности", "контакт", "возврат"]
+# ---------- v3 词表(⑨⑩ 用)----------
+ID_GAUL = {"banget", "gak", "nggak", "santuy", "udah", "doang", "gimana", "kayaknya"}  # gaul 口语判别词
+ID_EYD = [("resiko", "risiko"), ("azas", "asas"), ("ijin", "izin"), ("aktifitas", "aktivitas"),
+          ("praktek", "praktik"), ("hipotesa", "hipotesis"), ("analisa", "analisis"),
+          ("obyek", "objek"), ("atifisial", "artifisial")]  # EYD V 旧拼法→新拼法
+PL_STRIPPED = ["mozliwosci", "bedzie", "wiecej", "stworzyc", "tlumaczyc", "piekny", "krolik", "zloty", "zlobek"]
+PL_ORPHAN = r"(w|i|o|a|u|z|we|ze|do|na|po|za|od|albo|lub)\s*$"  # sierotki:行尾单双字母虚词
+HI_VOICE = ["kaise", "konsa", "batao", "kahan", "kitna", "kyun"]  # 语音层罗马化助词
+TH_MONTHS = "มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม"
+SRC_CUES = ["据", "根据", "来源", "统计", "according to", "source:", "based on", "survey", "study",
+            "によると", "による", "에 따르면", "según", "fuente", "selon", "laut", "secondo", "volgens"]  # 有源数字同句线索
+H2_Q_RE = r"^(?:¿\s*|[?？]|什么|怎么|如何|为什么|哪|何以|何が|なぜ|why\b|how\b|what\b|which\b|wie\b|was\b|warum\b|wann\b|comment\b|pourquoi\b|quel\b|qué\b|cómo\b|cuál\b|apa\b|bagaimana\b|mengapa\b|neden\b|nasıl\b|jak\b|czym\b|co\b|wat\b|hoe\b|waarom\b|perché\b)"
+DATE_STYLE = {"zh": "cjk", "ja": "cjk", "ko": "cjk", "de": "dot", "ru": "dot", "tr": "dot", "pl": "dot",
+              "nl": "dash", "es": "slash", "pt": "slash", "fr": "slash", "it": "slash", "id": "slash",
+              "vi": "slash", "en": "en", "hi": "name", "th": "be", "ar": "name"}
+CUR_LOCAL = {"zh": ("¥", "￥", "元"), "ja": ("円", "￥"), "ko": ("원", "￦"), "de": ("€",), "fr": ("€",),
+             "es": ("€",), "it": ("€",), "nl": ("€",), "pt": ("R$",), "en": ("$", "£"), "ru": ("₽",),
+             "tr": ("₺",), "pl": ("zł",), "id": ("Rp",), "hi": ("₹",), "vi": ("đ",), "th": ("฿",),
+             "ar": ("ر.س", "د.إ")}  # ar 多国:SAR/AED 均容忍
+SCRIPT_RANGE = {"ru": ("\u0400", "\u04FF"), "ko": ("\uAC00", "\uD7A3"), "th": ("\u0E00", "\u0E7F")}  # v3 语言占比输出
+
+def robots_meta_content(raw):
+    """meta name=robots 的 content 值(name/content 两种属性顺序)。"""
+    m = (re.search(r"""<meta[^>]+name=["']robots["'][^>]+content=["']([^"']*)["']""", raw, re.I)
+         or re.search(r"""<meta[^>]+content=["']([^"']*)["'][^>]+name=["']robots["']""", raw, re.I))
+    return m.group(1) if m else None
 
 def load_rules(market):
     with open(os.path.join(BASE, "markets.json"), encoding="utf-8") as f:
@@ -114,6 +150,35 @@ AUTO_RULES = [
     ("th_grapheme", "th", r"字素计数"),
     ("es_h2q", "es", r"倒问号"),
     ("es_419", "es", r"唯一 UN 区域码"),
+    # ---------- v3 第二批映射(2026-10-09):special_checks 中可机检项 ----------
+    ("ko_nosourceinfo", "ko", r"nosourceinfo"),
+    ("ko_grid", "ko", r"标签-值网格"),
+    ("ko_channel", "ko", r"연관채널"),
+    ("ja_qr", "ja", r"星5つ"),
+    ("en_citability", "en", r"段落级可引性|四要素在场"),
+    ("es_variant", "es", r"coche/carro|词汇分流"),
+    ("es_payment", "es", r"OXXO|支付词"),
+    ("pt_cnpj", "pt", r"CNPJ|执业凭证"),
+    ("pt_payment", "pt", r"PIX/boleto"),
+    ("pt_sponsored", "pt", r"publieditorial"),
+    ("de_werbung", "de", r"软文 Werbung"),
+    ("fr_terms", "fr", r"courriel"),
+    ("id_safezone", "id", r"安全区"),
+    ("id_baku", "id", r"baku/gaul"),
+    ("id_eyd", "id", r"EYD"),
+    ("hi_voice", "hi", r"语音层|助词词库"),
+    ("it_ch", "it", r"it-CH 独立 locale"),
+    ("it_piva", "it", r"P\.IVA"),
+    ("it_estval", "it", r"测量值 vs 估算值|声明降级"),
+    ("tr_tanitim", "tr", r"tanıtım"),
+    ("vi_kw30", "vi", r"前 30 字符|防 AI 改写"),
+    ("th_buddhist", "th", r"佛历年"),
+    ("th_trunc", "th", r"词中截断"),
+    ("pl_diacritics", "pl", r"变音字母"),
+    ("pl_sierotki", "pl", r"sierotki|孤字"),
+    ("nl_tone", "nl", r"je/u tone"),
+    ("nl_placeholder", "nl", r"INVULLEN"),
+    ("nl_kvk", "nl", r"KvK"),
 ]
 # 已由 ①-⑥ 核心段诊断并计数的规则(⑦ 正常模式只补清单行,不重复计 WARN)
 COVERED = {"zh_script_mix", "marketing_cap", "ja_keigo", "fr_nbsp", "de_ansprache"}
@@ -384,6 +449,458 @@ def r_es_419(ctx):
         return "FAIL", "有 %s 而无 es-419" % es
     return "MANUAL", "未见 hreflang,须站点级核验"
 
+# ---------- v3 runner:⑨ special_checks 第二批 ----------
+def r_ko_nosourceinfo(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入"
+    m = robots_meta_content(ctx["raw"])
+    if (m and "nosourceinfo" in m.lower()) or re.search(r"""name=["']nosourceinfo["']""", ctx["raw"], re.I):
+        return "FAIL", "nosourceinfo 在场——该页退出 Naver AI Briefing(全球唯一官方 AI 引用退出 meta;退出决策须显式记录)"
+    return "OK", "未见 nosourceinfo——页面在 AI Briefing 引用池内(如需退出须显式决策记录)"
+
+def r_ko_grid(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入(检 table/dl 标签-值网格)"
+    raw = ctx["raw"]
+    grids = len(re.findall(r"<(table|dl)\b", raw, re.I))
+    links = len(re.findall(r"<a\b[^>]+href=[\"']https?://", raw, re.I))
+    if grids == 0:
+        return "FAIL", "无 table/dl 网格结构——AI Briefing 引用条件:标签-值网格>散文块"
+    if links == 0:
+        return "FAIL", "标签-值网格 %d 处但无外链——一手来源声明并链接原文缺失" % grids
+    return "OK", "标签-值网格 %d 处+外链 %d(一手来源可链)" % (grids, links)
+
+def r_ko_channel(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入(检 연관채널/sameAs)"
+    raw_l = ctx["raw"].lower()
+    sameas = "sameas" in raw_l
+    domains = [d for d in ("blog.naver.com", "cafe.naver.com", "chzzk.naver.com", "daangn.com", "tistory.com", "brunch.co.kr") if d in raw_l]
+    if sameas or domains:
+        return "OK", "연관채널 线索:sameAs=%s,官方域 %s(치지직/당근 含官方域名清单口径)" % (sameas, domains[:3] or "无")
+    return "FAIL", "未见 sameAs/官方域链接——연관채널 channel markup 缺失(Search Advisor 实体绑定断)"
+
+def r_ja_qr(ctx):
+    if re.search(r"星5つ|星５つ|5つ星|レビューをお願い", ctx["alltext"]):
+        return "FAIL", "「星5つで」类评价指定话术在场——景表法 QR 王道违法(评价征集须中立提示)"
+    return "OK", "未见星5つ指定话术"
+
+def r_en_citability(ctx):
+    body = ctx["body"]
+    props = len(set(re.findall(r"\b[A-Z][a-z]{2,}\b", body)))          # 主体:专名密度
+    nums = len(re.findall(r"\d[\d.,]*", body)) >= 3                      # 数字
+    asof = bool(re.search(r"as of|as-of|updated|\b(19|20)\d{2}\b", body, re.I))  # as-of 日期
+    method = bool(re.search(r"\bmethod(?:ology)?\b|\bsample\b|\bsurvey\b|N\s*=\s*\d|\bstudy\b|\bmeasured\b|\baccording to\b", body, re.I))
+    hits = sum([props >= 3, nums, asof, method])
+    if hits < 3:
+        return "FAIL", "可引性四要素 %d/4(专名 %d/数字 %s/日期 %s/方法学 %s)——段落级自包含才可被引用" % (
+            hits, props, nums, asof, method)
+    return "OK", "四要素 %d/4 在场(专名 %d/数字 %s/日期 %s/方法学 %s)" % (hits, props, nums, asof, method)
+
+def r_es_variant(ctx):
+    a = ctx["alltext"].lower()
+    es_es = len(re.findall(r"\bcoche?s?\b", a))
+    latam = len(re.findall(r"\bcarro?s?\b|\bautos?\b", a))
+    if es_es and latam:
+        return "FAIL", "es-ES(coche %d)与 es-419(carro/auto %d)词汇混用——按变体组分流" % (es_es, latam)
+    if es_es:
+        return "OK", "es-ES 词汇(coche %d)——确认目标变体" % es_es
+    if latam:
+        return "OK", "es-419 词汇(carro/auto %d)" % latam
+    return "OK", "未检出车辆类判别词(词汇分流失活,人工按品类核)"
+
+def r_es_payment(ctx):
+    a = ctx["alltext"].lower()
+    hits = sorted({w for w in ("oxxo", "cuotas", "contra entrega", "efectivo", "transferencia", "envío gratis", "envio gratis") if w in a})
+    if hits:
+        return "OK", "支付词命中 %s——交易意图层标注(payment_intent.py 词表同源)" % hits
+    if re.search(r"\$|€|precio|\bmxn\b|\bcop\b", a):
+        return "FAIL", "有价格信号但无支付方式词(OXXO/cuotas/contra entrega)——支付即意图层缺失"
+    return "OK", "无商业信号,支付词层失活(非交易页)"
+
+def r_pt_cnpj(ctx):
+    a = ctx["alltext"]
+    cnpj = re.search(r"\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}", a)
+    reg = re.search(r"OAB[/\s-]*\d+|CRM[/\s-]*\d+", a, re.I)
+    if cnpj or reg:
+        return "OK", "执业凭证在场(%s)——OAB/CRM 委员会号+CNPJ 信任层" % (cnpj.group(0) if cnpj else reg.group(0))
+    if re.search(r"R\$|preço|comprar|advocacia|consult", a, re.I):
+        return "FAIL", "商业信号在场但无 CNPJ/OAB/CRM 凭证字段——信任与合规缺口"
+    return "MANUAL", "无商业信号可判(内容页凭证非必需)"
+
+def r_pt_payment(ctx):
+    a = ctx["alltext"].lower()
+    pix, boleto = "pix" in a, "boleto" in a
+    card = "cartão" in a or "cartao" in a
+    if (pix or boleto) and not card:
+        return "FAIL", "仅收 PIX/boleto 类无卡支付——骗局信号核查:披露完整支付矩阵(卡通道在场即破)"
+    if pix or boleto or card:
+        return "OK", "支付矩阵含卡通道(pix=%s/boleto=%s/cartão=%s)" % (pix, boleto, card)
+    if re.search(r"r\$|comprar|loja", a):
+        return "OK", "交易页未见支付词——支付披露层人工补核"
+    return "OK", "非交易页"
+
+def r_pt_sponsored(ctx):
+    a = ctx["alltext"].lower()
+    if not re.search(r"publieditorial|publicidade|patrocinad|publicitári", a):
+        return "OK", "未见软文标记词(普通内容页)"
+    if not ctx["is_html"]:
+        return "MANUAL", "检出 publieditorial 词——rel=sponsored 披露须 HTML 机检"
+    if re.search(r"""rel=["'][^"']*(sponsored|nofollow)[^"']*""", ctx["raw"], re.I):
+        return "OK", "软文在场且链接带 rel=sponsored/nofollow 披露"
+    return "FAIL", "publieditorial 在场但无 rel=sponsored 披露——CONAR+搜索引擎双重风险"
+
+def r_de_werbung(ctx):
+    a = ctx["alltext"].lower()
+    if not re.search(r"\bwerbung\b|\banzeige\b|gesponsert", a):
+        return "OK", "未见软文标记词"
+    if not ctx["is_html"]:
+        return "MANUAL", "检出 Werbung/gesponsert——标签与 rel 须 HTML 机检"
+    raw = ctx["raw"]
+    lab = (re.search(r">\s*(?:Werbung|Anzeige|Gesponsert)\b", raw, re.I)
+           or re.search(r"""class=["'][^"']*(?:label|badge|ad-marker)[^"']*["']""", raw, re.I))
+    rel = re.search(r"""rel=["'][^"']*(sponsored|nofollow)[^"']*""", raw, re.I)
+    if lab and rel:
+        return "OK", "软文双披露在场(文字标签+rel)——OLG Köln 2024 口径达标"
+    if lab or rel:
+        return "FAIL", "软文披露半套(%s)——文字标签与 rel=sponsored 双要(Abmahnung 风险先于 Google 惩罚)" % ("标签" if lab else "rel")
+    return "FAIL", "Werbung/gesponsert 在场但无标签无 rel=sponsored——Abmahnung 律师函风险"
+
+def r_fr_terms(ctx):
+    a = ctx["alltext"].lower()
+    m = {"email": "courriel", "podcast": "balado", "shopping": "magasinage"}
+    hits = sorted(w for w in m if re.search(r"\b%s\b" % w, a))
+    if not hits:
+        return "OK", "未见 anglicism(OQLF 术语表不触发)"
+    is_ca = ctx["is_html"] and re.search(r"""lang=["']fr[-_]CA""", ctx["raw"], re.I)
+    if is_ca:
+        return "FAIL", "fr-CA 页用 anglicism %s——OQLF 术语表:%s" % (hits, [m[w] for w in hits])
+    return "OK", "fr-FR 容忍 anglicism %s;fr-CA 须换 %s(分流决策记录)" % (hits, [m[w] for w in hits])
+
+def r_id_safezone(ctx):
+    d = ctx["desc"]
+    sz = ctx["cfg"]["desc_limit"].get("safe_zone", 120)
+    if not d:
+        return "MANUAL", "无 desc 可判"
+    return "OK", "desc 前 %d 字符安全区:「%s」关键信息须前置在此(截断风险区外)" % (sz, d[:sz])
+
+def r_id_baku(ctx):
+    words = set(re.findall(r"[a-z']+", ctx["body"].lower()))
+    gaul = sorted(words & ID_GAUL)
+    if gaul:
+        return "FAIL", "gaul 口语词 %s 在正文——关键词跟手指(baku/gaul 双轨),正文跟词典(baku)" % gaul
+    return "OK", "正文 baku 一致(gaul 变体若在关键词层另开双轨)"
+
+def r_id_eyd(ctx):
+    a = ctx["alltext"].lower()
+    old = [o for o, n in ID_EYD if re.search(r"\b%s\b" % o, a)]
+    new = [n for o, n in ID_EYD if re.search(r"\b%s\b" % n, a)]
+    if old and new:
+        return "FAIL", "EYD V 新旧拼法并存(旧 %s/新 %s)——全站统一新拼法,旧拼法关键词层兼收" % (old[:3], new[:3])
+    if old:
+        return "FAIL", "EYD V 旧拼法 %s——按新拼法 %s(关键词层旧拼法兼收)" % (old, [n for o, n in ID_EYD if o in old])
+    if new:
+        return "OK", "EYD V 新拼法在场 %s" % new[:3]
+    return "OK", "未检出新旧拼法判别词"
+
+def r_hi_voice(ctx):
+    a = ctx["alltext"].lower()
+    hits = sorted({w for w in HI_VOICE if re.search(r"\b%s\b" % w, a)})
+    if hits:
+        return "OK", "语音助词形态 %s 命中——并入语音层关键词(助词词库×产品词)" % hits
+    return "OK", "未检出罗马化语音助词(语音层关键词另行构建)"
+
+def r_it_ch(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入(canonical/og:url 域判)"
+    raw = ctx["raw"]
+    ch = bool(re.search(r"""(?:canonical|og:url)[^>]*\.ch/""", raw, re.I))
+    chf = "CHF" in raw
+    if ch and chf:
+        return "OK", ".ch 域+CHF 价在场——it-CH 独立 locale 成立(混德法词另人工核)"
+    if ch and not chf:
+        return "FAIL", ".ch 域在场但无 CHF 定价——疑似直接复制 it-IT"
+    if chf and not ch:
+        return "FAIL", "CHF 价在场但 canonical 非 .ch——it-CH 信号分裂"
+    return "OK", "非 it-CH 页(it-IT 常规);it-CH 站须 .ch+CHF+混德法词独立做"
+
+def r_it_piva(ctx):
+    m = re.search(r"P\.?\s?IVA[\s::-]*\d{8,11}", ctx["alltext"], re.I)
+    if m:
+        return "OK", "P.IVA 在场(%s)——可链 Registro Imprese(ATECO+省)竞品链" % m.group(0)
+    if re.search(r"azienda|impresa|servizi|contatt", ctx["alltext"], re.I):
+        return "FAIL", "商业页未见 P.IVA——Registro Imprese 竞品链断"
+    return "MANUAL", "非商业页,P.IVA 不适用"
+
+def r_it_estval(ctx):
+    body = ctx["body"]
+    nums = len(re.findall(r"\d[\d.,]*", body))
+    est = re.findall(r"\bcirca\b|\bstimat[oi]\b|~|secondo stime|approssimat", body, re.I)
+    if nums >= 3 and not est:
+        return "FAIL", "数字 %d 处无估算声明(circa/stimato)——测量值 vs 估算值须降级标注(数据阶梯)" % nums
+    if est:
+        return "OK", "估算声明在场 %d 处——测量值/估算值分级达标" % len(est)
+    return "OK", "数字 %d 处(<3,声明判失活)" % nums
+
+def r_tr_tanitim(ctx):
+    if "tanıtım" not in ctx["alltext"].lower():
+        return "OK", "未见 tanıtım yazısı 标记词"
+    if not ctx["is_html"]:
+        return "MANUAL", "检出 tanıtım——链路披露须 HTML 机检"
+    if re.search(r"""rel=["'][^"']*(sponsored|nofollow|ugc)[^"']*""", ctx["raw"], re.I):
+        return "OK", "tanıtım 链接带 rel 披露(非西式 guest post,链路披露必须)"
+    return "FAIL", "tanıtım yazısı 在场但链接无 rel=sponsored 披露"
+
+def r_vi_kw30(ctx):
+    t, kw = ctx["title"], ctx.get("proxy_kw")
+    lim = ctx["cfg"]["title_limit"].get("keyword_first_chars", 30)
+    if not t:
+        return "MANUAL", "无 title 可判"
+    if not kw:
+        return "MANUAL", "正文高频词不可用(正文过短,关键词人工给)"
+    pos = t.lower().find(kw)
+    if pos == -1:
+        return "FAIL", "正文高频词「%s」不在 title——t0mmy 规则:标题词进前 %d 字符防 AI 改写" % (kw, lim)
+    return ("OK" if pos < lim else "FAIL"), "「%s」位次 %d/前 %d 字符(%s)" % (kw, pos, lim, "达标" if pos < lim else "超出")
+
+def r_th_buddhist(ctx):
+    a = ctx["alltext"]
+    be = re.search(r"พ\.?\s?ศ\.?\s*\d{4}|พุทธศักราช\s*\d{4}", a)
+    greg = re.search(r"(?:%s)\s*2\d{3}|2\d{3}\s*(?:%s)" % (TH_MONTHS, TH_MONTHS), a)
+    if be:
+        return "OK", "佛历(พ.ศ.)纪年在场:%s" % be.group(0)
+    if greg:
+        return "FAIL", "泰月名配公历年(%s)——泰市场日期用佛历 พ.ศ.=公历+543" % greg.group(0)
+    return "OK", "未检出泰文日期(佛历检查失活)"
+
+def r_th_trunc(ctx):
+    cfg = ctx["cfg"]
+    nt, nd = unit_len(ctx["title"], "grapheme"), unit_len(ctx["desc"], "grapheme")
+    risky = []
+    if nt >= cfg["title_limit"]["value"] - 5:
+        risky.append("title %d/%d" % (nt, cfg["title_limit"]["value"]))
+    if nd >= cfg["desc_limit"]["value"] - 10:
+        risky.append("desc %d/%d" % (nd, cfg["desc_limit"]["value"]))
+    if risky:
+        return "FAIL", "无空格文字词中截断风险:%s——meta 在词中间被截,逐页人工复核截断点" % ",".join(risky)
+    return "OK", "title %d/desc %d 距限有余量,词中截断风险低" % (nt, nd)
+
+def r_pl_diacritics(ctx):
+    low = ctx["body"].lower()
+    stripped = sorted({w for w in PL_STRIPPED if w in low})
+    if stripped:
+        return "FAIL", "剥变音残留词 %s——恢复 ą/ę/ł(剥字母伤品牌与 AI 保真)" % stripped
+    if any(c in low for c in "ąćęłńóśźż"):
+        return "OK", "变音字母在场(ą/ę/ł 保留)"
+    return "OK", "未检出波兰语变音依赖词"
+
+def r_pl_sierotki(ctx):
+    lines = ctx.get("lines") or []
+    hits = [ln[-25:] for ln in lines if re.search(PL_ORPHAN, ln)]
+    if hits:
+        return "FAIL", "行尾孤字 %d 处(%s…)——单双字母虚词不悬行尾(sierotki:NBSP/构建层)" % (len(hits), hits[0])
+    if not lines:
+        return "MANUAL", "需保留换行的输入(HTML 已折行,孤字判失活)"
+    return "OK", "行尾无孤字(sierotki 达标)"
+
+def r_nl_tone(ctx):
+    a = ctx["alltext"]
+    je = len(re.findall(r"\b[Jj]e\b|\bjouw\b|\b[Jj]ij\b", a))
+    u_ = len(re.findall(r"\buw?\b", a))
+    if je and u_:
+        return "FAIL", "je(%d)/u(%d) 混用——nl-NL=je(连 B2B)、nl-BE=u(句中小写),全站单轨" % (je, u_)
+    if je:
+        return "OK", "je 体一致(nl-NL 口径)"
+    if u_:
+        return "OK", "u 体一致(确认 nl-BE 目标)"
+    return "OK", "未见称谓"
+
+def r_nl_placeholder(ctx):
+    hits = re.findall(r"\[INVULLEN\]|INVULLEN|\[TODO\]|\[PLACEHOLDER\]|\bTBD\b|\bLorem\b|XXX", ctx["alltext"])
+    if hits:
+        return "FAIL", "占位符 %d 处(%s)——[INVULLEN] 占位制:发布前替换+虚构拒绝(数字不编造)" % (len(hits), sorted(set(hits))[:3])
+    return "OK", "无占位符残留"
+
+def r_nl_kvk(ctx):
+    m = re.search(r"KvK[-\s:]?\d{8}", ctx["alltext"], re.I)
+    if m:
+        return "OK", "KvK 商会号在场(%s)——GBP 描述 750 字符用满另人工核" % m.group(0)
+    if re.search(r"bedrijf|zakelijk|offerte|diensten", ctx["alltext"], re.I):
+        return "FAIL", "商业页未见 KvK 号——荷兰商会信任层缺口"
+    return "MANUAL", "非商业页,KvK 不适用"
+
+# ---------- v3 runner:⑩ 常开机检注册表(全市场)----------
+def g_mw_rate(ctx):
+    hits = ctx.get("mw_hits", 0)
+    if not hits:
+        return "OK", "营销词命中 0"
+    body, cfg = ctx["body"], ctx["cfg"]
+    if cfg.get("sentence_split") == "cjk":
+        denom, unit = max(len(body), 1) / 1000.0, "千字"
+    else:
+        denom, unit = max(len(body.split()), 1) / 1000.0, "千词"
+    return ("FAIL" if hits > 3 else "OK"), "营销词命中 %d,密度 %.1f/%s(页上限 3,计数已进报告)" % (hits, hits / denom, unit)
+
+def g_sent_cv(ctx):
+    cfg = ctx["cfg"]
+    su = cfg["sentence_ideal"].get("unit", "words")
+    sents = split_sents(ctx["body"], cfg.get("sentence_split", "latin"))
+    lens = [l for l in (len(s) if su == "chars" else len(s.split()) for s in sents) if l > 0]
+    if len(lens) < 5:
+        return "MANUAL", "句数 %d<5,CV 不可判" % len(lens)
+    mean = sum(lens) / len(lens)
+    sd = math.sqrt(sum((x - mean) ** 2 for x in lens) / len(lens))
+    cv = sd / mean if mean else 0
+    return ("FAIL" if cv < 0.25 else "OK"), "句长 CV %.2f(均值 %.1f%s/句;AI 均匀签名阈值 0.25)" % (cv, mean, "字" if su == "chars" else "词")
+
+def g_faq_density(ctx):
+    body = ctx["body"]
+    qs = len(re.findall(r"[?？¿]", body))
+    sents = split_sents(body, ctx["cfg"].get("sentence_split", "latin"))
+    ratio = qs / max(len(sents), 1) * 100
+    if qs == 0:
+        return "OK", "问句 0,密度 %.1f%%——FAQ/PAA 层建议配问答块(密度值供阈值判定)" % ratio
+    return "OK", "问句 %d,密度 %.1f%%(每百句;供 FAQ 块阈值判定)" % (qs, ratio)
+
+def g_num_density(ctx):
+    body, cfg = ctx["body"], ctx["cfg"]
+    su = cfg["sentence_ideal"].get("unit", "words")
+    sents = split_sents(body, cfg.get("sentence_split", "latin"))
+    total = len(re.findall(r"\d[\d.,]*", body))
+    num_sents = [s for s in sents if re.search(r"\d", s)]
+    if not num_sents:
+        return "OK", "数字 0(有源数字密度判失活)"
+    denom = (max(len(body), 1) / 1000.0) if su == "chars" else (max(len(body.split()), 1) / 1000.0)
+    sourced = sum(1 for s in num_sents if any(c in s for c in SRC_CUES))
+    share = sourced / len(num_sents) * 100
+    state = "FAIL" if total >= 5 and share < 30 else "OK"
+    return state, "数字 %d 处,密度 %.1f/%s;有源(同句来源线索)%d/%d=%.0f%%(<30%% 且数字≥5=无源数字堆砌)" % (
+        total, total / denom, "千字" if su == "chars" else "千词", sourced, len(num_sents), share)
+
+def g_h2_question(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入"
+    h2s = [re.sub(r"<[^>]+>", "", h).strip() for h in re.findall(r"<h2[^>]*>(.*?)</h2>", ctx["raw"], re.S | re.I)]
+    if not h2s:
+        return "MANUAL", "无 H2 可判"
+    qs = [h for h in h2s if re.match(H2_Q_RE, h, re.I)]
+    ratio = len(qs) / len(h2s) * 100
+    return ("FAIL" if len(h2s) >= 4 and not qs else "OK"), "疑问式 H2 %d/%d(%.0f%%;H2≥4 且全陈述式→FAIL)" % (len(qs), len(h2s), ratio)
+
+def g_list_density(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入"
+    raw = ctx["raw"]
+    li = len(re.findall(r"<li\b", raw, re.I))
+    p = len(re.findall(r"<p\b", raw, re.I))
+    if li + p == 0:
+        return "MANUAL", "无 li/p 可判"
+    d = li / (li + p)
+    return ("FAIL" if p >= 6 and d < 0.1 else "OK"), "列表密度 li/(li+p)=%.2f(li %d/p %d;长文全无列表=可扫性差)" % (d, li, p)
+
+def g_title_kw(ctx):
+    t, kw = ctx["title"], ctx.get("proxy_kw")
+    if not t:
+        return "MANUAL", "无 title"
+    if not kw:
+        return "MANUAL", "正文高频词不可用(正文过短)"
+    lim = ctx["cfg"]["title_limit"].get("keyword_first_chars", 30)
+    pos = t.lower().find(kw)
+    if pos == -1:
+        return "FAIL", "正文高频词「%s」不在 title(位次 -1)——标题未锚定主题词" % kw
+    return ("OK" if pos < lim else "FAIL"), "「%s」位次 %d(理想前 %d 字符,vi t0mmy 口径)" % (kw, pos, lim)
+
+def g_date_fmt(ctx):
+    mkt, a = ctx["market"], ctx["alltext"]
+    style = DATE_STYLE.get(mkt)
+    expect = ctx["cfg"].get("formats", {}).get("date", "?")
+    cjk = re.findall(r"\d{4}年\d{1,2}月\d{1,2}日|\d{4}년\s*\d{1,2}월", a)
+    dot = re.findall(r"\b\d{1,2}\.\d{1,2}\.\d{4}\b", a)
+    dash = re.findall(r"\b\d{1,2}-\d{1,2}-\d{4}\b", a)
+    slash = re.findall(r"\b\d{1,2}/\d{1,2}/\d{4}\b", a)
+    if style == "cjk":
+        native, foreign = cjk, slash + dot + dash
+    elif style == "dot":
+        native, foreign = dot, slash + dash
+    elif style == "dash":
+        native, foreign = dash, slash + dot
+    elif style == "slash":
+        native, foreign = slash, cjk + dot + dash
+    elif style == "en":
+        native, foreign = slash + re.findall(r"[A-Z][a-z]+ \d{1,2}, \d{4}", a), cjk
+    else:  # name/be/未知:仅判 CJK 格式入侵
+        native, foreign = [], cjk
+    if foreign:
+        return "FAIL", "日期 %s 与市场规范不符(%s 期望 %s;ISO 8601 容忍)" % (foreign[:3], mkt, expect)
+    if native:
+        return "OK", "市场格式日期在场 %s(%s)" % (native[:2], expect)
+    return "OK", "未检出冲突日期(ISO/纪年判失活;期望 %s)" % expect
+
+def g_phone_prefix(ctx):
+    want = ctx["cfg"].get("formats", {}).get("phone_prefix", "").lstrip("+")
+    phones = re.findall(r"\+(\d{1,3})[\s-]?\d{2,4}[\s-]?\d{3,4}", ctx["alltext"])
+    if not phones:
+        return "OK", "未检出国际电话(前缀核验失活;市场期望 +%s)" % want
+    bad = sorted({p for p in phones if p != want})
+    if bad:
+        return "FAIL", "电话前缀 +%s 与市场 +%s 不符(共 %d 号,异前缀 %s)——落地页信任信号" % (
+            "/+".join(bad), want, len(phones), bad)
+    return "OK", "电话前缀一致 +%s(共 %d 号)" % (want, len(phones))
+
+def g_currency(ctx):
+    a, local = ctx["alltext"], CUR_LOCAL.get(ctx["market"], ())
+    found = [m.group(0) for m in re.finditer(r"R\$|€|£|¥|￥|₽|₺|₹|฿|zł|Rp\b|CHF|\$", a)]
+    found += [t for t in ("元", "円", "원", "đ") if t in a]
+    if not found:
+        return "OK", "未检出货币符号(本地化核验失活;市场符号 %s)" % ("/".join(local) or "?")
+    fset = set(found)
+    foreign = sorted(fset - set(local))
+    if foreign:
+        present = sorted(fset & set(local))
+        if not present:
+            return "FAIL", "货币符号 %s 非本市场(期望 %s)——价格未本地化" % (foreign, "/".join(local))
+        return "FAIL", "货币混用:本地 %s+外币 %s——多币种页须显式标注币种" % (present, foreign)
+    return "OK", "货币符号本地化一致(%s)" % sorted(fset)
+
+def g_script_ratio(ctx):
+    rng = SCRIPT_RANGE.get(ctx["market"])
+    letters = ctx["letters"]
+    if not rng or not letters:
+        return "MANUAL", "本市场不在 v3 语言占比清单(ru/ko/th)或正文为空"
+    lo, hi = rng
+    n = sum(1 for c in letters if lo <= c <= hi)
+    r = n / len(letters)
+    if r < 0.3:
+        return "FAIL", "母语字符占比 %.0f%%<30%%——语言/市场错配?" % (r * 100)
+    return "OK", "母语字符占比 %.0f%%(%d/%d 字母;数值供阈值判定)" % (r * 100, n, len(letters))
+
+def g_ai_meta(ctx):
+    if not ctx["is_html"]:
+        return "MANUAL", "机检需 HTML 输入"
+    m = robots_meta_content(ctx["raw"])
+    if not m:
+        return "OK", "robots meta 未设置(默认进 AI 答案输入)"
+    low = m.lower()
+    exits = [t for t in ("noai", "noimageai", "nosnippet", "max-snippet:0") if t in low]
+    if exits:
+        return "FAIL", "robots meta 含 %s——页面退出 AI 答案输入(要进 AI 的页须移除;ko nosourceinfo/ja nosnippet 同层)" % exits
+    return "OK", "robots meta=%s(无 AI 退出指令)" % m
+
+V3_CHECKS = [
+    ("v3_mw_rate", "营销词密度", g_mw_rate),
+    ("v3_sent_cv", "句长 CV", g_sent_cv),
+    ("v3_faq", "FAQ 问句密度", g_faq_density),
+    ("v3_num", "有源数字密度", g_num_density),
+    ("v3_h2q", "H2 疑问式占比", g_h2_question),
+    ("v3_list", "列表密度", g_list_density),
+    ("v3_titlekw", "标题关键词位次", g_title_kw),
+    ("v3_date", "日期格式", g_date_fmt),
+    ("v3_phone", "电话前缀", g_phone_prefix),
+    ("v3_currency", "货币符号", g_currency),
+    ("v3_script", "母语字符占比", g_script_ratio),
+    ("v3_aimeta", "AI 退出 meta", g_ai_meta),
+]
+
 RUNNERS = {
     "zh_script_mix": r_zh_script, "marketing_cap": r_marketing, "ja_len": r_ja_len,
     "ja_keigo": r_ja_keigo, "ja_ai": r_ja_ai, "ja_nosnippet": r_ja_nosnippet,
@@ -393,6 +910,17 @@ RUNNERS = {
     "tr_dotted_i": r_tr_dotted_i, "vi_tones": r_vi_tones, "vi_variance": r_vi_variance,
     "hi_mix": r_hi_mix, "hi_num": r_hi_num, "th_polite": r_th_polite,
     "th_grapheme": r_th_grapheme, "es_h2q": r_es_h2q, "es_419": r_es_419,
+    # v3 第二批
+    "ko_nosourceinfo": r_ko_nosourceinfo, "ko_grid": r_ko_grid, "ko_channel": r_ko_channel,
+    "ja_qr": r_ja_qr, "en_citability": r_en_citability, "es_variant": r_es_variant,
+    "es_payment": r_es_payment, "pt_cnpj": r_pt_cnpj, "pt_payment": r_pt_payment,
+    "pt_sponsored": r_pt_sponsored, "de_werbung": r_de_werbung, "fr_terms": r_fr_terms,
+    "id_safezone": r_id_safezone, "id_baku": r_id_baku, "id_eyd": r_id_eyd,
+    "hi_voice": r_hi_voice, "it_ch": r_it_ch, "it_piva": r_it_piva,
+    "it_estval": r_it_estval, "tr_tanitim": r_tr_tanitim, "vi_kw30": r_vi_kw30,
+    "th_buddhist": r_th_buddhist, "th_trunc": r_th_trunc, "pl_diacritics": r_pl_diacritics,
+    "pl_sierotki": r_pl_sierotki, "nl_tone": r_nl_tone, "nl_placeholder": r_nl_placeholder,
+    "nl_kvk": r_nl_kvk,
 }
 
 def main():
@@ -416,7 +944,14 @@ def main():
     ar_ratio = (sum(1 for c in letters if "\u0600" <= c <= "\u06FF") / len(letters)) if letters else 0
     alltext = " ".join([title, desc, body])
     ctx = {"market": market, "cfg": cfg, "title": title, "desc": desc, "body": body,
-           "alltext": alltext, "is_html": is_html, "raw": raw, "letters": letters, "ar_ratio": ar_ratio}
+           "alltext": alltext, "is_html": is_html, "raw": raw, "letters": letters, "ar_ratio": ar_ratio,
+           "lines": [] if is_html else [l for l in text.splitlines() if l.strip()]}
+    # v3:正文高频词代理(标题关键词位次检查用;CJK 用 2 字符 n-gram,拉丁用 ≥5 字母词)
+    if market in ("zh", "ja"):
+        grams = [g for g in re.findall(r"[\u4e00-\u9fff]{2}", body)]
+    else:
+        grams = [w.lower() for w in re.findall(r"[^\W\d_]{5,}", body)]
+    ctx["proxy_kw"] = Counter(grams).most_common(1)[0][0] if grams else None
     crit = warn = 0
 
     def crit_out(msg):
@@ -561,7 +1096,7 @@ def main():
         elif "과" in body or "와" in body:
             print("✓ 과/와 助词搭配(收音+과/无收音+와)无误")
 
-    # ⑦ special_checks 动态机检/人工清单(--report 输出三态)
+    # ⑦/⑨ special_checks 动态机检/人工清单(--report 输出三态;v3 第二批映射同池执行)
     checks = cfg.get("special_checks", [])
     if checks:
         print("\n%s" % ("⑦ special_checks 三态清单(--report)" if report else "⑦ special_checks 机检 + 人工清单"))
@@ -589,7 +1124,26 @@ def main():
             else:  # 规则降级 MANUAL(输入不满足机检前提)
                 man += 1
                 print("[MANUAL] %s —— %s" % (sc, detail))
+        auto = ok + fail
         print("special_checks: AUTO-OK %d / AUTO-FAIL %d / MANUAL %d(共 %d)" % (ok, fail, man, len(checks)))
+        print("AUTO 比例: %d/%d = %.0f%%" % (auto, len(checks), auto * 100.0 / max(len(checks), 1)))
+
+    # ⑩ v3 常开机检(内容/结构/格式/语言/robots 五类注册表,全市场)
+    v3_ok = v3_fail = v3_man = 0
+    print("\n⑩ v3 常开机检(内容/结构/格式/语言/robots,%d 项)" % len(V3_CHECKS))
+    for cid, title_, fn in V3_CHECKS:
+        state, detail = fn(ctx)
+        if state == "FAIL":
+            v3_fail += 1
+            warn += 1
+            print("[v3-FAIL] %s —— %s" % (title_, detail))
+        elif state == "MANUAL":
+            v3_man += 1
+            print("[v3-MANUAL] %s —— %s" % (title_, detail))
+        else:
+            v3_ok += 1
+            print("[v3-OK] %s —— %s" % (title_, detail))
+    print("v3 常开机检: OK %d / FAIL %d / MANUAL %d(共 %d)" % (v3_ok, v3_fail, v3_man, len(V3_CHECKS)))
 
     # 支柱页长度(体裁提示)
     pm, pu = cfg.get("pillar_min"), cfg.get("pillar_unit", "words")

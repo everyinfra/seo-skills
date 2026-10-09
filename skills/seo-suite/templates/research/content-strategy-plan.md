@@ -1,48 +1,84 @@
-# Content Strategy Plan
+# {答案式标题,例:"2 支柱 7 集群覆盖 82% 可及搜索量:先建 'workflow' 支柱页+3 篇 spoke,90 天内容预算约 1.5 人/月"}
 
-> 多市场站点：逐市场各出一份本报告，不合并。市场差异规则见 references/overview/multilingual-workflow.md。
-## Business Context
-- 目标市场/语言：（每市场一套支柱，不共用）
-- Product / brand:
-- ICP:
-- Goal: traffic / leads / authority / AI visibility
+_For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Product/brand: {} · ICP: {} · Goal: traffic / leads / authority / AI visibility_
 
-## Content Pillars
-
-| Pillar | Why it matters | Searchable | Shareable | Priority |
-|---|---|---|---|---|
-|  |  |  |  |  |
-
-## Topic Cluster Map
-
-| Pillar | Cluster | Buyer Stage | Example Topics |
-|---|---|---|---|
-|  |  |  |  |
-
-## Opportunity Backlog
-
-| Topic | Keyword / Query Pattern | Content Type | Buyer Stage | Priority | Why now |
-|---|---|---|---|---|---|
-|  |  |  |  |  |  |
-
-## Recommended Sequencing
-1.
-2.
-3.
-
-## Internal Linking / Architecture Notes
-- Hub pages:
-- Spokes:
-- Cross-links:
+> 多市场站点:逐市场各出一份本报告,不合并。每市场一套支柱,不共用。市场差异规则见 references/overview/multilingual-workflow.md。
 
 ## The answer
 
-{一段独立成立:结论+量化+置信度。只读这段的人不会错。}
+{一段独立成立:几支柱几集群、覆盖多少可及搜索量、90 天做什么、要多少资源、预期结果+区间、置信度。只读这段的人不会错。}
+
+## Key numbers
+
+| 指标 | 数值 | 对比/阈值 |
+|---|---|---|
+| 支柱数 / 集群数 | {} / {} | |
+| 可及月搜索量(覆盖) | {} | 占目标词池 {}% |
+| 90 天计划产出 | {} 篇 | 新建 {} + 改版 {} |
+| 资源估算 | {人力} | 内容 {} 人天 + 设计/开发 {} |
+| 成功指标基线 → 目标 | {基线值 → 目标值} | 90 天口径见 Success Metrics |
+
+## Pillar–Cluster Map(支柱-集群图)
+
+```
+支柱 P1:{名称}(pillar page: /{slug}/)
+ ├── 集群 C1 {名称} — 意图:{信息} — 阶段:{认知}
+ ├── 集群 C2 {名称} — 意图:{商业调研} — 阶段:{考虑}
+ └── 集群 C3 {名称} — 意图:{交易} — 阶段:{决策}
+支柱 P2:{名称}
+ └── …
+```
+
+| Pillar | Cluster | Primary Query | Intent | Buyer Stage | Example Topics | 月搜索量 | 优先级 |
+|---|---|---|---|---|---|---|---|
+|  |  |  |  | 认知/考虑/决策/使用 |  |  | P1/P2/P3 |
+
+支柱入选标准:与产品专长直接相关、有持续搜索需求、我们能拿出一手经验或数据。集群组织方法见 references/research/topic-cluster-templates.md。
+
+## 90-Day Content Calendar
+
+| 周 | 产出 | 类型 | 所属集群 | Owner | 依赖 | 完成定义 |
+|---|---|---|---|---|---|---|
+| 1–2 | P1 支柱页 | 新建 | P1 |  | {关键词研究定稿} | {收录+内链就位} |
+| 3 | C1-spoke 1 | 新建 | C1 |  | 支柱页上线 | {} |
+| 4 | C2-spoke 1 | 新建 | C2 |  |  |  |
+| 5–6 | {现有页改版 top1} | 改版 | {C1} |  | {content-refresh-playbook} | {} |
+| … |  |  |  |  |  |  |
+| 12 | 复盘:按 Success Metrics 校准下季度 | — | — | — | — | 出下季计划 |
+
+节奏规则:每集群首篇先行验证,首篇未获展示信号前不开第二篇;改版与新建穿插( Decay 信号驱动,见 content-decay-signals.md)。
+
+## Resource Estimate
+
+| 资源 | 90 天需求 | 说明 |
+|---|---|---|
+| 内容人力 | {X 人天/篇 × N 篇} | 含研究、写作、 SME 审核 |
+| 设计/开发 | {} | {图表/交互工具/模板页} |
+| 一手数据/专家 | {} | {E-E-A-T:署名、实测、原创数据} |
+| 总预算 | {} | 超出 {阈值} 需决策人砍范围 |
+
+## Success Metrics
+
+| 指标 | 基线(日) | 90 天目标 | 数据源 | 检查频率 |
+|---|---|---|---|---|
+| 非品牌自然点击/月 | {} | +{}% | GSC(正则入附录) | 双周 |
+| 目标词 top10 数 | {} | {} | 排名追踪 | 双周 |
+| 集群页参与度(关键事件率) | {} | ≥{}% | GA4(写明口径) | 月 |
+| {AI 可见性/引荐,如适用} | {} | {} | {自有观测,注明口径} | 月 |
+
+## Internal Linking / Architecture Notes
+
+- Hub pages:{支柱页列表} · Spokes:{集群页} · Cross-links:{仅真实相关的集群间}
+- URL/目录约定:{} · 每篇恰好一条上下文 CTA 指向 {转化页}
 
 ## What could change this conclusion
 
-- {数据缺口/仅相关非因果(附能定案的验证)/样本局限/继承假设}
+- {数据缺口:搜索量为估算区间;AI 可见性无公开基准}
+- {仅相关非因果:集群打法见效周期 2-6 个月;能定案的验证:首集群 3 篇 60 天排名信号}
+- {样本局限:支柱划分基于当前词池,新品类词未入}
+- {继承假设:阶段划分按 keyword-intent-taxonomy.md;资源估算基于 {} 历史单产}
 
 ## Method Notes
 
-- 数据源与抓取时间:{...};已知坑:{...};数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{关键词工具+GSC+日期}。已知坑:{新内容收录与排名有 2-8 周滞后,90 天目标按保守 CTR 假设}。数字缺失写 [要追加: 数据源],禁编造。
+- 符号:P1=90 天内必做,P2=本季度,P3=backlog;目标值全部为本站历史基线外推,不用行业平均。

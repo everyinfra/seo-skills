@@ -228,6 +228,80 @@ class MarketLintTests(unittest.TestCase):
         os.unlink(p)
 
 
+class MarketLintV3Tests(unittest.TestCase):
+    """v3 常开机检(⑩)与 special_checks 第二批映射(⑨):格式/语言/robots/内容/结构"""
+
+    def _lint(self, market, content):
+        p = tmp_file(content)
+        r = run_script("market_lint.py", ["--market", market, p])
+        os.unlink(p)
+        return r.stdout
+
+    def test_v3_phone_prefix_mismatch(self):
+        out = self._lint("zh", "联系我们\n咨询热线说明\n价格 199 元,咨询 +1 555 1234 即可购买下单。")
+        self.assertIn("[v3-FAIL] 电话前缀", out)               # +1 而非 +86
+        out_ok = self._lint("zh", "联系我们\n咨询热线说明\n价格 199 元,咨询 +86 138 0013 8000 即可购买下单。")
+        self.assertIn("电话前缀一致 +86", out_ok)
+
+    def test_v3_date_format_foreign(self):
+        out = self._lint("de", "Preisvergleich\nKaufberatung\nStand 10/9/2026 gemäß Studie von 2026.")
+        self.assertIn("[v3-FAIL] 日期格式", out)               # de 应为 09.10.2026
+        out_ok = self._lint("de", "Preisvergleich\nKaufberatung\nStand 09.10.2026 gemäß Studie von 2026.")
+        self.assertIn("市场格式日期在场", out_ok)
+
+    def test_v3_ai_meta_exits_page(self):
+        html = ('<html><head><title>Test</title>'
+                '<meta name="robots" content="noai,noimageai"></head>'
+                '<body>Beispielseite mit Inhalt.</body></html>')
+        out = self._lint("en", html)
+        self.assertIn("[v3-FAIL] AI 退出 meta", out)
+        self.assertIn("noai", out)
+
+    def test_v3_currency_not_localized(self):
+        out = self._lint("de", "Produktvergleich\nPreise\nDas Produkt kostet $ 199 laut Hersteller.")
+        self.assertIn("[v3-FAIL] 货币符号", out)               # de 期望 €
+        out_ok = self._lint("de", "Produktvergleich\nPreise\nDas Produkt kostet 199 € laut Hersteller.")
+        self.assertIn("货币符号本地化一致", out_ok)
+
+    def test_v3_sentence_cv_ai_signature(self):
+        body = "\n".join("Dieser Satz hat genau neun Worte hier drin." for _ in range(8))
+        out = self._lint("de", "Beispielseite\nBeschreibung\n" + body)
+        self.assertIn("[v3-FAIL] 句长 CV", out)                # CV=0 → AI 均匀签名
+
+    def test_v3_auto_ratio_line(self):
+        out = self._lint("ja", "テストタイトル\n説明文\n本文は短いテストです。")
+        self.assertIn("AUTO 比例:", out)
+        self.assertIn("v3 常开机检: OK", out)
+
+    def test_ko_nosourceinfo_auto(self):
+        html_bad = ('<html><head><title>네이버 블로그</title>'
+                    '<meta name="robots" content="nosourceinfo"></head><body>콘텐츠 내용입니다.</body></html>')
+        out = self._lint("ko", html_bad)
+        self.assertIn("[WARN] [AUTO] nosourceinfo meta 决策记录", out)
+        self.assertIn("该页退出 Naver AI Briefing", out)
+        html_ok = ('<html><head><title>네이버 블로그</title></head><body>콘텐츠 내용입니다.</body></html>')
+        out2 = self._lint("ko", html_ok)
+        self.assertIn("未见 nosourceinfo", out2)
+
+    def test_de_werbung_sponsored_disclosure(self):
+        base = ('<html><head><title>Test</title></head><body><span class="ad-label">Anzeige</span>'
+                ' Dieser Artikel ist gesponsert. Mehr dazu im Beitrag.'
+                ' <a href="https://b.de/x">Link</a></body></html>')
+        out_bad = self._lint("de", base)
+        self.assertIn("[WARN] [AUTO] 软文 Werbung", out_bad)
+        self.assertIn("披露半套", out_bad)
+        out_ok = self._lint("de", base.replace('<a href="https://b.de/x">', '<a rel="sponsored" href="https://b.de/x">'))
+        self.assertIn("双披露在场", out_ok)
+
+    def test_v3_h2_question_ratio(self):
+        html = ('<html><head><title>T</title></head><body>'
+                '<h2>Was ist SEO?</h2><h2>Wie funktioniert Indexierung?</h2>'
+                '<h2>Was kostet SEO?</h2><h2>Historie der Suchmaschinen</h2>'
+                '<p>Inhalt mit Beispielen.</p></body></html>')
+        out = self._lint("de", html)
+        self.assertIn("疑问式 H2 3/4", out)
+
+
 class LlmstxtValidateTests(unittest.TestCase):
     """validate:H1 缺失告警 / 链接<3 / 合规件通过"""
 

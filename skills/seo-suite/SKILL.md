@@ -24,7 +24,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 7. 可执行层(35 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 7. 可执行层(37 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -41,6 +41,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `robots_posture.py URL`:AI 爬虫三层矩阵+Cloudflare 注入检测+Content-Signal
 - `llmstxt.py validate|check|generate`:v2 校验/线上探测/生成
 - `schema_lint.py URL`:@id/悬空引用/自评评分/占位符黑名单
+- `head_check.py URL|FILE`:head 元素检查——元素顺序/charset 位置(>1024B)/弃用 meta 堆叠(twitter:* 全套/x-ua-compatible/fb:app_id)/og:image 绝对 URL;`--market zh` 门控微信/QQ itemprop 中文场景检查
 
 **关键词与 SERP**
 - `gsc_mining.py 导出.csv [--mode matrix] [--decay cur prev]`:striking distance/低 CTR(期望曲线)/蚕食/衰退
@@ -49,9 +50,10 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `payment_intent.py`:支付即意图标注(OXXO/cuotas/Pix/COD…)
 - `geo_difficulty.py`:GEO 难度公式+客户三档
 - `serp_occupancy.py --market XX`:市场 SERP 占位审计(UGC 五霸/聚合器/投诉站)
+- `grid_rank.py rank_data.csv`:本地网格排名三指标(ARP/ATRP/SoLV;未命中 21 惩罚+盲区=ATRP−ARP 必同报)
 
 **多语言实装(markets.json 数据层)**
-- `market_lint.py --market XX FILE`:全角可见长度(日 32)/泰文字素/句长/营销词 18 语/格式/敬语混用/简繁混检
+- `market_lint.py --market XX FILE`:v3 检查注册表 64 条——special_checks 动态机检 52 条映射(全角可见长度(日 32)/泰文字素/句长/营销词 18 语/格式/敬语混用/简繁混检+ko nosourceinfo/ja 星5つ/en 可引性四要素/pt CNPIX骗局/de Werbung 双披露/id baku-gaul/EYD/th 佛历/pl 变音/sierotki/nl je-u·KvK 等)+ v3 常开机检 12 项(营销词密度/句长CV/FAQ问句密度/有源数字密度/H2 疑问式占比/列表密度/标题关键词位次/日期格式/电话前缀/货币符号/母语字符占比/noai·noimageai·nosnippet AI 退出 meta);--report 尾部打印该市场 AUTO 比例
 - `local_format.py --market de|fr|ar|zh`:数字/标点空格/RTL 数字/日期/电话
 - `text_metrics.py`:CJK 词数/metronomic 句长 AI 签名/slop/Unicode 水印(--scrub 清除)
 - `text_units.py`:按市场计量单位统计
@@ -124,6 +126,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `templates/research/competitor-analysis-output.md`
 - `templates/research/competitor-pages-plan.md`
 - `templates/research/content-strategy-plan.md`
+- 黄金样例:[examples/gold-standard-keyword-research.md](examples/gold-standard-keyword-research.md)——关键词研究的达标产出长什么样,先看再写
 
 
 #### 多语言 / 多市场站点(全球 SEO/GEO 一把做)
@@ -208,7 +211,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `references/technical/mermaid-templates.md`
 - `references/technical/LCP.md`
 - `references/technical/cwv-playbook.md`
-- `references/technical/audit-tool-output.md`
+- [审计工具输出解读](references/technical/audit-tool-output.md)：用户提供 Screaming Frog / Lighthouse / Sitebulb / Ahrefs / GSC 导出时先读——各工具字段对照、脚本化审计器 JSON 信封、跨工具字段映射与 findings 合并七步、严重度重映射(P0-P3)
 - `references/technical/event-library.md`
 - `references/technical/ga4-implementation.md`
 - `references/technical/gtm-implementation.md`

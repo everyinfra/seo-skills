@@ -1,31 +1,61 @@
-# Content Gap Output
+# {答案式标题,例:"最大缺口不在关键词而在形式:对手用交互式计算器垄断 'X ROI' 前 5,我们 3 篇文字文全部 20 名开外"}
 
-> 多市场站点：逐市场各出一份本报告，不合并。市场差异规则见 references/overview/multilingual-workflow.md。
-## Summary
-- 目标市场/语言：（缺口按市场语言分别评估）
-- Competitors reviewed:
-- Gap themes found:
-- Highest-priority missing assets:
+_For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Competitors reviewed: {N 家,按 SERP 选} · Data pulled: {日期+数据源}_
 
-## Gap Table
-
-| Gap | Why It Matters | Suggested Asset | Priority |
-|---|---|---|---|
-|  |  |  |  |
-
-## Recommended Actions
-1.
-2.
-3.
+> 多市场站点:逐市场各出一份本报告,不合并。缺口按市场语言分别评估,市场差异规则见 references/overview/multilingual-workflow.md。
 
 ## The answer
 
-{一段独立成立:结论+量化+置信度。只读这段的人不会错。}
+{一段独立成立:最大的一类缺口(关键词/主题/形式/漏斗/SERP 功能五类之一)+ 量化(缺口主题数、对应可及搜索量)+ 判定依据是"用户需求没被满足"而非"竞品有我没有" + 置信度。只读这段的人不会错。}
+
+## Key numbers
+
+| 指标 | 数值 | 对比/阈值 |
+|---|---|---|
+| 竞品数(SERP 反复出现) | {} | |
+| 缺口主题数(过滤后) | {} | 过滤前候选 {} 个 |
+| 缺口合计月搜索量 | {} | 区间 {low–high} |
+| P1 级缺口(建议 90 天内做) | {} | 按下方优先级公式 |
+
+## Gap Table
+
+Priority 用公式 **Score = 月搜索量 × 缺口深度 ÷ KD** 归一后排序。缺口深度:1=对手覆盖我全无,2=我有但明显靠后,3=双方都没做好但确有需求(来自客服问题/站内搜索/社区提问)。Evidence 必须可复查:对手 URL、GSC 查询行、SERP 快照日期。
+
+| Gap(主题/查询簇) | 类型 | Why It Matters | Evidence | 月搜索量 | KD | 缺口深度 | Score | Suggested Asset | Priority |
+|---|---|---|---|---|---|---|---|---|---|
+|  | 关键词/主题/形式/漏斗/功能 | {对业务的意义} | {对手 URL+我们 GSC 现状+抓取日期} |  |  | 1/2/3 | {} | {页面类型+要点} | P1/P2/P3 |
+
+先过滤再排序(过滤规则见 gap-analysis-frameworks.md):与产品专长无关、意图承接不了(如对手的导航型品牌词)、拿不出比现有结果更多价值、需求太小——不入表。
+
+## Strategic Bets(至多 3 张卡,高不确定高回报)
+
+**Bet 1:{名称}**
+- 押注逻辑:{为什么现在是空位,凭什么我们能赢}
+- 所需资源:{内容形式/人力/周;是否需要一手数据或工具开发}
+- 预期回报:{可及流量+区间} · 置信度 {高/中/低}
+- 止损条件:{N 周无排名进展即放弃/转向}
+
+**Bet 2:…**
+
+**Bet 3:…**
+
+## Recommended Actions
+
+1. {先做哪个 P1,为什么;对应 Suggested Asset}
+2.
+3.
+
+排序总纪律:P1 全部进入本季度排期;Bet 卡至多同时押 1 个,失败即止损转 P2。
 
 ## What could change this conclusion
 
-- {数据缺口/仅相关非因果(附能定案的验证)/样本局限/继承假设}
+- {数据缺口:对手查询数据为商业工具估算,不同工具差 ±;只作相对比较}
+- {仅相关非因果:对手排前面≠该主题值得抄;能定案的验证:先发 1 篇,30 天看排名与参与度}
+- {样本局限:竞品按 SERP 选了 {} 家,媒体/社区站可能漏;小语种工具覆盖弱}
+- {继承假设:意图与缺口深度按 {} 规则打分}
 
 ## Method Notes
 
-- 数据源与抓取时间:{...};已知坑:{...};数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{GSC 导出+第三方工具+SERP 快照+日期}。已知坑:{GSC 查询行有隐私省略;估算量非实测}。数字缺失写 [要追加: 数据源],禁编造。
+- 符号:KD=关键词难度(0–100,第三方模型);缺口深度 1–3 见上;P1=90 天内,P2=本季度,P3=backlog。
+- 五类缺口定义与过滤打分规则见 references/research/gap-analysis-frameworks.md;SERP 功能缺口只计 Google 当前仍展示的功能(FAQ/HowTo 已停,不计入)。
