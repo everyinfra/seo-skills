@@ -176,3 +176,21 @@
 3. 拒绝键判例链是否上行(BGH/EU 层);Abmahnung 波次是否波及 AI 生成内容标注。
 4. de-AT/de-CH 的 Sie→du 演化速度(模板默认是否翻转)。
 5. OMR Reviews/ProvenExpert 在 AIO 引用源中的份额(德本土评价层 AI 权重)。
+
+## 本地实测(2026-10-09)
+
+### 真实站验证(spiegel.de / heise.de × site_audit + llmstxt check + head_check;zeit.de 403 换站)
+
+- **zeit.de 对非浏览器 UA 整站 403**——直接拒审;换 heise.de(七工具信源之一)补位。德国头部站 UA 过滤先于一切结论,审计先换浏览器 UA 重试(同 hi 轮 justdial/indiamart 实录)。
+- `site_audit --market de`:spiegel — **robots.txt 禁 OAI-SearchBot+ChatGPT-User+Claude-SearchBot(3/4;PerplexityBot 放行)**、首页无 H1、alt 缺失 575/649、title 32/65;heise — **title 67/65 超限 +2**(德市场 65 上限/55 理想下限真实触发,两站一上一下正好夹出 SISTRIX 口径的实操价值)、**charset 落在第 7,182 字节(>1024 ERROR)**、66 块 JSON-LD(结构化最重的实测站)、390 链接。
+- `llmstxt check`:两站均无 llms.txt(四路径真 404)。
+- `head_check`:spiegel — 5 ERROR(twitter:* 全套)+charset/viewport 在 title 后;heise — 5 ERROR(charset 超限+twitter:* 四条)。
+- **德文数字格式检查触发实证(market_lint.py)**:`--market de --url` 直跑——**德式数字识别 ✓**(spiegel ['180.000','400.000','14.000']/heise ['82.044','81.331','68.185'],千分点+逗号小数口径);**55–65 理想带双向触发**:spiegel 32 报「低于理想下限 55(浪费)」INFO、heise 67 报 CRITICAL 超限——markets.json 的 de 专有阈值链(65 上限+ideal_min 55)完整可用;Sie/du 混用 WARN(spiegel 50/2)与 Ansprache 一致性检查触发。
+- **结构性发现(德头部封锁与法同级)**:spiegel 3/4 禁=lefigaro 同日实测同姿态,PerplexityBot 均放行——欧陆付费墙大报封锁 ChatGPT/Claude 系但留 Perplexity 是共同模式。AIO 跑了 ~19 个月+头部退出 → 4.2 的引用源优先级(官方机构 BAFA/Fraunhofer/destatis>Tier-1)进一步强化:Tier-1 媒体自己在收缩 AI 面,白帽权威源是引用池的净增量入口。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.de.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:**SISTRIX 博客**(AIO-DE 覆盖率破 40% 重排线/CTR 恢复曲线)、**StatCounter DE 月度份额**(桌面 Bing 12.81% 口径漂移)、heise/Ecosia 博客(自有索引是否成默认源)、IT-Recht-Kanzlei/ABAKUS(Abmahnung 波次与判例上行)、SE Ranking DACH 报告。
+- 断言半衰期 6–12 个月;CTR/份额类数字最先过期,判例与法定义务(DDG §5)最稳。
+- 增量研究前先读「本地实测(2026-10-09)」——zeit.de 403 与头部 robots 姿态是当日快照,复审时重跑实读;55–65 阈值链已实测可用,勿退回泛用 60。

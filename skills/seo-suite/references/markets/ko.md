@@ -167,3 +167,27 @@
 | pazarus 类小众付费位次追踪 | 키워드별 일간 순위 추적 | **类比定位**:ko 시장 位次追踪缺口由 블랙키위 멤버십/판다랭크 类填补;pazarus 本体 2026-10 검색未能独立核实,**引用前先验证其在营状态** |
 
 > **검색 口径**:本文件 2026-10-09 以韩语 web 검색 수행.원문:인터넷트렌드/연합뉴스/한국경제/조선일보/서울경제/전자신문/ZDNet/매일경제/네이버 공식 공지·고객센터·스마트플레이스 공지/커넥터스·업계 블로그 실测.업계 통칭(C-Rank·NS-Rank·저장량 공식·발행 시간대)已标注 비공식,勿当官方口径转引.
+
+## 八、本地实测(2026-10-09)
+
+**跑了什么**:www.naver.com + www.tistory.com × `site_audit --market ko` / `llmstxt check` / `head_check`(site_audit v1.1;coupang.com 403 未穿透)。
+
+**输出摘要**:
+
+- **naver**:全角口径验证通过——title「NAVER」**3 전각**(5 个半角字符×0.5 进位)、desc 29 전각<80 下限 WARN、词数 78<200、无 JSON-LD。**四条 AI 检索爬虫 CRITICAL 实测为真,且比预想更彻底**:robots.txt 全文仅 3 行——`User-agent: *` + `Disallow: /` + `Allow: /$`,即**门户首页对一切爬虫(含 Googlebot、甚至 Yeti)整站关门,只放行首页与一个 privacy-sandbox JSON**。Naver 的索引生态靠 Search Advisor 提交(第五节),门户自身不做被爬对象;AI Briefing 几乎只引 Naver 生态(第一节)与门户全禁互为表里。
+- **tistory**:title「티스토리」**4 전각**(한글 EAW=W 计 1,正确)、desc 55 전각<80、robots.txt 不可达;head_check:twitter:* 四项弃用 ERROR。
+- **naver head_check**:x-ua-compatible + twitter:title/url/image/description 全套 ERROR、referrer/x-ua 位置在 title 前。
+- `llmstxt check`:两站 4 路径全 404(判无,准确)。
+
+**工具盲区(实测确认)**:
+
+1. **전각阈值正确触发**(Naver 30 전각/desc 80 전각经 markets.json 接线,换算 EAW W/F=1、半角=0.5 进位无误),但下限 20 전각/80 전각对 ko 品牌首页过严(NAVER 3、티스토리 4 全属正常);
+2. **真禁与 `Disallow: /?` 误报在输出里不可分辨**(naver 真禁与 ru 市场 robotparser 误报是同款文案)——ai-bots 结论必须复核 robots 原文;
+3. nosourceinfo meta、연관채널 channel markup、AI Briefing 标签-值网格等 ko 专属检查全不在工具覆盖内(special_checks 人肉清单);
+4. 403 bot 墙:coupang 未穿透,韩电商审计需浏览器口径(同 en 市场 ebay/etsy)。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.ko.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:Naver 공식블로그/공지(검색·콘텐츠 정책)、Search Advisor 공지(수집/색인/IndexNow)、AI Briefing 인용 조건·별점·메이트 인용수 기능 공지、圈层工具(블랙키위/아이템스카우트)月度数据、naver.com robots 政策变化(整站禁是否松动)。
+- 断言半衰期 6–12 个月;门户全禁 robots 属可逆姿势,每季实测复查。

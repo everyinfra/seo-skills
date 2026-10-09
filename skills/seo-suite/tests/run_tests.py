@@ -313,5 +313,118 @@ class LocalFormatTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
 
 
+class SiteAuditTests(unittest.TestCase):
+    """S2 实测修复回归:title 不吞 head 内 script/JSON-LD;泰文字素/天城文/拉丁扩展/
+    土耳其 İ 词数;--market 接线 markets.json 阈值单位。零网络——直接测纯函数。"""
+
+    def test_title_excludes_script_and_jsonld(self):
+        import site_audit as sa
+        html = ('<html lang="ja"><head><title>テストサイトのタイトル</title>'
+                '<script type="application/ld+json">{"@context":"https://schema.org","name":"大"}</script>'
+                '<script>var x=1;console.log("junk junk junk");</script>'
+                '<style>body{color:red}</style></head><body><h1>見出し</h1></body></html>')
+        p = sa.Page(); p.feed(html)
+        self.assertEqual(p.title[0].strip(), "テストサイトのタイトル")   # 假 title 不再产生
+        self.assertEqual(p.jsonld, 1)                                  # JSON-LD 仍被计数
+        self.assertIn("schema.org", "".join(p.ld_buf))                  # ld 缓冲正常
+
+    def test_wc_script_aware(self):
+        import site_audit as sa
+        # 6+ 站触发数十万字符假 title 的形态:title 后跟巨型 JSON-LD
+        html = "<html><head><title>Good Title Here</title><script>{\"" + "a" * 500000 + "\"}</script></head></html>"
+        p = sa.Page(); p.feed(html)
+        self.assertEqual(p.title[0].strip(), "Good Title Here")
+
+    def test_wc_thai_grapheme(self):
+        import site_audit as sa
+        t = "สวัสดีครับ"                       # 10 码点,3 个组合标记(Mn)
+        self.assertEqual(sa.wc(t), 7)            # 字素近似:泰文不再计 0/不按码点高估
+        self.assertEqual(sa.unit_len(t, "grapheme"), 7)
+        self.assertEqual(len(t), 10)             # 旧口径(码点)确实高估 30%+
+
+    def test_wc_devanagari_not_zero(self):
+        import site_audit as sa
+        self.assertGreater(sa.wc("यह एक हिन्दी वाक्य है"), 0)   # 天城文块逐字计——此前恒 0
+
+    def test_wc_latin_extended_words_not_split(self):
+        import site_audit as sa
+        self.assertEqual(sa.wc("thời trang nam giảm giá"), 5)   # 越南 0x1EA0-1EF9
+        self.assertEqual(sa.wc("żółć źrebię gęśl"), 3)          # 波兰 0x0100-0x017F
+        self.assertEqual(sa.wc("çalışma özellikleri"), 2)       # 土耳其/西欧变音
+
+    def test_wc_other_alphabetic_scripts(self):
+        import site_audit as sa
+        self.assertEqual(sa.wc("اليوم السابع أخبار مصر"), 4)      # 阿文——youm7 验证站
+        self.assertEqual(sa.wc("Привет мир как дела"), 4)         # 西里尔
+        self.assertEqual(sa.wc("SEO工具で分析"), 6)                # 混排:1 拉丁词+5 CJK 字
+
+    def test_wc_turkish_dotted_i(self):
+        import site_audit as sa
+        self.assertEqual(sa.wc("İstanbul haritası"), 2)
+        self.assertEqual(sa.wc("I\u0307stanbul haritası"), 2)   # 分解形 İ 不拆词(U+0307 清洗)
+
+    def test_market_thresholds_from_markets_json(self):
+        import site_audit as sa
+        ja = sa.load_market("ja")
+        self.assertEqual((ja["title_limit"]["value"], ja["title_limit"]["unit"]), (32, "fullwidth"))
+        self.assertEqual(sa.unit_len("ラ" * 30 + "ab", "fullwidth"), 31)  # 30 全角+2 半角×0.5
+        th = sa.load_market("th")
+        self.assertEqual(th["title_limit"]["unit"], "grapheme")
+        self.assertEqual(sa.load_market("en")["desc_limit"]["value"], 155)
+
+    def test_unknown_market_rejected(self):
+        r = run_script("site_audit.py", ["https://example.com", "--market", "xx"])
+        self.assertIn("未知市场 xx", r.stdout + r.stderr)
+
+    def test_fullwidth_ja_title_over_limit_offline(self):
+        import site_audit as sa
+        t = "ラ" * 40
+        tl = sa.load_market("ja")["title_limit"]
+        self.assertGreater(sa.unit_len(t, tl["unit"]), tl["value"])   # 40 全角 > 32
+
+
+class HeadCheckChineseScopeTests(unittest.TestCase):
+    """itemprop 微信/QQ 三件套 WARN 只对中文场景报(zh 市场/中文内容),
+    日文(假名)页不再产生跨市场噪音。stdin 输入,零网络。"""
+
+    @staticmethod
+    def run_head(html, *extra):
+        return run_script("head_check.py", ["-", *extra], stdin=html)
+
+    def test_english_page_no_wechat_warn(self):
+        html = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<title>Example Domain</title><meta name="viewport" content="width=device-width">'
+                '<meta property="og:image" content="https://example.com/i.png"></head>'
+                '<body><h1>Example</h1></body></html>')
+        r = self.run_head(html)
+        self.assertIn("itemprop 三件套跳过", r.stdout)
+        self.assertNotIn("微信/QQ 分享 itemprop", r.stdout)
+
+    def test_chinese_page_reports_itemprop(self):
+        html = ('<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">'
+                '<title>示例站点首页标题</title><meta name="viewport" content="width=device-width">'
+                '<meta property="og:image" content="https://example.com/i.png"></head>'
+                '<body><p>这是中文正文内容示例页面。</p></body></html>')
+        r = self.run_head(html)
+        self.assertIn("微信/QQ 分享 itemprop 三件套缺失", r.stdout)
+
+    def test_japanese_kana_page_no_wechat_warn(self):
+        html = ('<!doctype html><html lang="ja"><head><meta charset="utf-8">'
+                '<title>日本語のページタイトルです</title><meta name="viewport" content="width=device-width">'
+                '<meta property="og:image" content="https://example.com/i.png"></head>'
+                '<body><p>これは日本語の本文です。ひらがなとカタカナがある。</p></body></html>')
+        r = self.run_head(html)
+        self.assertIn("itemprop 三件套跳过", r.stdout)
+        self.assertNotIn("微信/QQ 分享 itemprop", r.stdout)   # 汉字(kanji)≠中文——kana 判日文
+
+    def test_market_zh_forces_report(self):
+        html = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<title>English Page Title</title><meta name="viewport" content="width=device-width">'
+                '<meta property="og:image" content="https://example.com/i.png"></head>'
+                '<body><p>plain english</p></body></html>')
+        r = self.run_head(html, "--market", "zh")
+        self.assertIn("微信/QQ 分享 itemprop 三件套缺失", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

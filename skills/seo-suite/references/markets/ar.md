@@ -202,9 +202,28 @@
 | AI 测量 | GSC 生成式 AI 报告 + GA4 AI referrer 正则 | 50 查询×14 天重测协议 |
 | hreflang | `ar` + `ar-SA`/`ar-EG`/`ar-AE` | 国码分层,勿单 ar 打天下 |
 
+## 本地实测(2026-10-09)
+
+### 真实站验证(youm7.com / aljazeera.net × site_audit + llmstxt check + head_check)
+
+- `site_audit --market ar`:youm7 — title 12/60 字符(纯品牌名「اليوم السابع」,<20 WARN)、desc 120/155 ✓、1 H1、440+ 链接(门户常态)、跳级 h2→h4、**robots.txt 四个 AI 检索爬虫全放行**;aljazeera — title 38/60 ✓、desc 143/155 ✓、**robots.txt 禁 ChatGPT-User+PerplexityBot(2/4;OAI-SearchBot/Claude-SearchBot 放行)**——CRITICAL 逐出该二 AI 答案池。
+- `llmstxt check`:**youm7 /llms.txt 200 真实在场**——阿拉伯语 llms.txt(H1+blockquote 摘要+10 个阿语 H2 节+11 链接),埃及头部站配 llms.txt 在八站跨市场实测中独一份;aljazeera 无。
+- `head_check`:youm7 — 5 ERROR(fb:app_id+twitter:* 三条+mask-icon)+viewport 在 title 后;aljazeera — 8 ERROR(x-ua-compatible+twitter:* 七条)。charset 均在前 65 字节 ✓,og:image 绝对 URL ✓。
+- **RTL 检查触发实证(market_lint.py)**:`--market ar --url` 直跑 youm7——`ar_rtl` ✓ **dir="rtl" 在场(阿文占比 99%)**,`ar_bidi` WARN **裸 LTR 标点 4 处**(形如「(ف」「و)」——正是 3.2 的 U+2066/U+2067 隔离缺口),阿-印数字检查 ✓ 全站统一西文 0-9。**site_audit.py 本身不含 RTL/双向隔离/数字混用检查**(market 参数只接线 title/desc 阈值)——阿语审计必须 site_audit+market_lint 双工具组合,单跑 site_audit 会漏掉本市场最硬的方向位检查。
+- **llmstxt.py validate 的 BOM 误报(真实站触发)**:youm7 的 llms.txt 带 UTF-8 BOM(\ufeff)——`validate` 同时误报「缺 H1」(`^# ` 正则被 BOM 挡住)与「含 Unicode 水印字符」(\ufeff 在水印字符表内)。BOM 是阿语 CMS 常见输出,validate 须先剥 BOM 再校验;引用该站 llms.txt 状态时以「在场但校验器误报」记录。
+- **结构性发现(海湾收紧 vs 埃及开放)**:aljazeera(海湾头部)封 2/4 AI 爬虫,youm7(埃及头部)全放行+llms.txt 在场——阿语头部 AI 姿态两极。叠加 1.2 的 0.6% 内容缺口与 4.2 阿英引用池不相交:头部退出的池子由中腰部阿语原生内容补位,GEO 边际回报判断(1.2)获实测支撑。
+- 拦截实录:两站对非浏览器 UA 均放行(对照 hi 轮 justdial/indiamart、本轮 zeit.de 403);`sitemap.xml` 两站均不可达(INFO 级,门户常见)。
+
 ## 来源类型标注
 
 - **官方**:Google 官方博客(AIO/AI Mode 时间线)、沙特商务部 mc.gov.sa(Ramadan 折扣季)、UAE Media Council/NMA(广告主许可)、微软 AI 扩散报告(委托研究)、G42/SDAIA/HUMAIN(模型与 App)、W3Techs(0.6%)。
 - **研究**:arXiv:2305.14976、arXiv:2510.27543(方言退化);Ahrefs(AIO 触发 20.5%,1.46 亿结果);Seer Interactive(被引 +120%/无 AIO −38%,547 万查询);voctos 2026(阿英域名重叠 0.149/40 组;16 组埃及 IP 引用结构)。
 - **行业/从业者共识**:Khamsat/Backlinkat 在架价(2026-10 检索)、Salla/Zid 官方帮助中心与教程、seoinriyadh 案例(2026-07)、h-haboubi 2026 KSA 指南、"打字=MSA/语音=方言"共识。
 - **KB 继承**:0.6% vs 5.2% 缺口、链接价带、Salla/Zid 平台面、RTL/隔离/归一机制、文化日历闸门——见 multilingual-workflow.md 阿拉伯语区专项段。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.ar.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:**GAMR(沙特媒体监管总局)/TDRA·UAE Media Council 公告**(广告词表与许可证口径)、**StatCounter SA 月度份额**(连续 2 月 >1pp 漂移)、Google 官方 MENA AIO/AI Mode 语言扩展公告、Cloudflare AI 爬虫默认策略变更(2026-09-15 起为持续红旗)、沙特商务部折扣季日历(Ramadan 2027≈02-08 前核对)。
+- 断言半衰期 6–12 个月;监管罚则(GAMR/TDRA)与文化日历先于份额类数字过期。
+- 增量研究前先读「本地实测(2026-10-09)」——youm7 llms.txt 在场+aljazeera 2/4 封禁是当日快照,头部姿态以复审时重跑 robots 实读为准;`market_lint.py` 是 RTL 检查的唯一入口,勿以 site_audit 单跑下结论。

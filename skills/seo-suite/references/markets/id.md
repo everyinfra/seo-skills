@@ -153,3 +153,35 @@
 - **JNews 生态**:Jegtheme(印尼本土主题厂)出品的新闻/杂志/博客主题——78+ demo、AMP、**内置 schema 结构化数据**、广告位管理,是印尼本地 publisher/新闻站与 jasa 建站厂的默认选择。含义:①接手印尼存量站大概率遇 JNews,审计按其 schema 配置走;②客户要求"能做新闻站"时,推荐正版 JNews 是**对抗 nulled 向量的正面路线**(买正版授权即消除 6.2 首要风险);③竞品新闻站指纹识别按 JNews 特征类聚。
 
 > **检索口径**:本文件 2026-10-09 以印尼语 web 检索(SEO Indonesia 2026 terbaru / Tokopedia SEO produk Analisis Pencarian / belajar SEO pemula / jasa SEO murah / bahasa baku gaul SEO / EYD V KBBI / PBN nulled / TikTok Shop market share / Shopee performa chat)。原文:Tokopedia Seller Center、Shopee Seller Education、Limadata、Arfadia、Ivan Lanin(Medium)、Badan Bahasa(SK EYD V)、Google Ramadan insights、cmlabs、DailySEO ID、Legiit/PBN LTD/Projects.co.id、Sribu/Fastwork、jnews.io。量级类数字(32% GMV/34% 转化差/2-3% 基准)为转述口径,引用前复核。
+
+## 本地实测(2026-10-09)
+
+### 一手源重核结论
+
+- **TikTok Shop×Tokopedia GMV 多源带**:cube.asia(2026-06)**31%**(自 23%)+66% 增速;worldtradescanner **39% vs Shopee 40%**;Momentum Works:TikTok Shop 已达 **Shopee 2025 GMV 的 2/3**;Shopee 侧 53-54%。**裁决:本文件 32% 落在 31-39% 带内、与主流口径(cube.asia)差 1pp,维持并标注"分母敏感(合并 GMV vs 平台 GMV)"。**
+- **本地 AIO/零点击口径复核**:印尼语从业者圈 2026 初口径 **68% 搜索零点击、AIO 出现率 48%**(本地帖转引)——与 KB 记录(~65% 零点击)同带自洽;cmlabs AI Search 指南确认在架(Mode AI 2025-03 实验起、Gemini 驱动、后续追问保上下文)——cmlabs=风向标地位未变。
+- **TikTok Shop 与 Google 的分工新数据(2026 增量)**:TikTok Shop 全域 GMV $45.6B(SEA 追踪口径)而印尼单一市场 $13.1B(≈29%)——**印尼权重近三成,内容电商创新先在印尼试再外溢**;对 SEO 交付的含义:TikTok 站内搜索联想词库(2.3 节)从"免费词库"升格为**印尼语分词的一手语料基础设施**(Google 侧难切的歧义,TikTok 联想已给出用户真实切分);口播双关键词层(TikTok 站内+Google 视频盒)在 YouTube 12.7% 被引盘(1.2 节)上是复合收益。
+
+### 真实站验证(detik.com / kompas.com / tokopedia.com)
+
+| 项 | detik.com | kompas.com | tokopedia.com |
+|---|---|---|---|
+| site_audit | 跳级 h1→h3 / 301 链接 / **alt 缺失 85/111(77%)** | **4 个 AI 检索爬虫全禁**(OAI-SearchBot/ChatGPT-User/Claude-SearchBot/PerplexityBot)/ 无 H1(原始 HTML) | **15s 超时(两跑两败)** |
+| head_check | charset 位于第 2364 字节(>1024 违规)+ 弃用 meta 堆叠 | charset 1980 字节同类违规 | 未跑通 |
+| llmstxt | /index.html.md "200"=**假阳性**(catch-all 服务器回 HTML 壳) | ✗ 全无 | 未跑通 |
+
+- **头条发现:kompas.com 封禁全部四个 AI 检索爬虫**——印尼最大新闻出版商整体退出 AI 答案分发,与 detik(不封)形成同市场对照组。AIO 引用层"新闻/门户"格(1.2 节)将向 detik/Liputan6 集中;新闻侧客户咨询先查 robots AI 爬虫立场再定 GEO 策略,**封 AI 爬虫=主动让出 37.2% 触发市场的被引面**。
+- **tokopedia.com 首页海外实测超时**:与 slow-4G 基线画像互证——印尼头部站审计要么本地 vantage 要么缓存层,海外直接跑会把"网络现实"误报为"站点缺陷";该站无 `--market id` 专属超时,15s 默认值对本市场偏紧。
+- **detik alt 缺失 77%**:图片重灾区新闻站的典型;alt 审计在印尼市场优先级高于欧洲市场(图片搜索+slow-4G 下图文比更高)。
+
+### 工具盲区:EYD V 检查确认未触发(结构性缺失)
+
+- 实测确认:head_check/site_audit **不存在任何 baku-gaul 语域或 EYD V 正字法检查**——markets.json `id.special_checks` 里"EYD V 新旧拼法兼收决策记录"是文档级标记,无脚本执行体;且印尼语正字法本身 ASCII 化,**没有字符级信号可触发**(对照:tr 的 İ/ı 至少有码点特征)。
+- EYD V 真正的机器检查面在**词表层**(mesjid/musalla/Ramadhan 类违拼词表),需 KBBI 词表驱动——目前只能靠人工/母语审;工具改进方向:违拼词表 lint(非字符 lint)。
+- 附带盲区:llmstxt check 对 catch-all 服务器(detik 类)产生 /index.html.md 假阳性——**不校验返回体格式**,凡 SPA 站的 .md 孪生探测结果须人工看头 80 字符。
+
+## 维护
+
+- **复审节奏**:markets.json `id.review_cycle`(interval_days 90,next 2027-01-09);触发信号:cube.asia/Momentum Works 季度 GMV 更新(31-39% 带收敛或破带)、kompas 类头部媒体 AI 爬虫立场反转、cmlabs 新 playbook、GSC AI Performance Report 印尼语数据开放度。
+- **数字分诊**:GMV 类数字必带分母标签(合并平台 GMV vs 单平台);零点击/AIO 触发率区分全球口径与印尼本地口径;TikTok Shop 印尼 $13.1B 与全域 $45.6B 勿混引。
+- **工具链提醒**:本市场跑 site_audit 需预留超时或走本地代理(头部站海外超时常态);llmstxt .md 孪生结果人工复核头 80 字符;EYD V/baku-gaul 检查当前无工具执行体,交付清单里保留人工项。

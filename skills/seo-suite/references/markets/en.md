@@ -149,3 +149,26 @@
 - 协议层:[Chrome WebMCP origin trial](https://developer.chrome.com/blog/ai-webmcp-origin-trial)、[SEJ/ARD 11 厂商](https://www.searchenginejournal.com/the-web-is-growing-a-second-layer-almost-a-third-head/581147)、[nz365guy 试点](https://nz365guy.com/blog/four-websites-agent-ready-webmcp)
 - 测量:GA4 AI Assistant 渠道([WebFX](https://www.webfx.com/blog/ai/google-analytics-ai-assistant-traffic))、Direct 漏损 ~70%([TapClicks](https://www.tapclicks.com/blog/how-to-track-ai-referral-traffic-and-fix-your-marketing-attribution-in-2026))、[SearchScore](https://searchscore.io/research/ai-search-visibility-ceiling-2026)
 - 格局:Comscore/零点击([Quartz](https://qz.com/google-zero-click-searches-rate))、社媒链接差(Social Media Today 转述)、GPTBot 8.05%([TechnologyChecker Q3](https://technologychecker.io/blog/chatgpt-statistics))
+
+## 八、本地实测(2026-10-09)
+
+**跑了什么**:en.wikipedia.org(内容站)+ www.craigslist.org(分类信息/交易站)× `site_audit --market en` / `llmstxt check` / `head_check`;ebay.com、etsy.com 主页对审计 UA 403(见盲区 1)。
+
+**输出摘要**:
+
+- **wikipedia**:desc 缺失 CRITICAL(首页确实无 meta description)、2 个 H1、669 链接>100、alt 缺 5/23;**四条 AI 检索爬虫全放行**——与"被引最多域名"地位自洽;llms.txt 404(判无,准确);head_check ERROR=`link rel=edituri` 弃用,og:image 绝对 URL 通过。
+- **craigslist**:title 83 chars **真实超限 60**、2 H1、h1→h4 跳级、html 无 lang、458 链接;AI 爬虫放行;llms.txt 404。
+- **etsy(403 站的例外)**:主页 403 挡掉 site_audit/head_check,但 **/llms.txt 200 且是真 llms.txt(首行"# Etsy: official reference for AI assistants")**——大型电商把 llms.txt 当一线实践;同一 UA 下静态文件可取、HTML 应用被墙,三工具中只有 llmstxt 探测穿透。
+- head_check 跨站规律:twitter:* 全套弃用 ERROR 在 naver/tistory/note/yahoo 等站也全中——2026 口径判定合理,但头部大站普遍不清理,审计报告须按"行业现状噪音"降档解读。
+
+**工具盲区(实测确认)**:
+
+1. **bot 墙盲区**:ebay/etsy(及 ko 市场 coupang)主页对 stdlib UA 一律 403,site_audit/head_check 完全失效——大站审计需浏览器口径,报告必须标注"未穿透";
+2. desc 下限 80 与 en 常规文案实践偏松紧不一(小 desc 常态 WARN),严重度需人工调档;
+3. GA/AI 归因类(第五节)不在任何本地工具覆盖内,维持月度手工口径。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.en.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:Google Search Status Dashboard(spam/core 更新时间戳)、DemandSphere/Ahrefs 品牌词 AIO 覆盖月度研究、Chrome WebMCP origin trial/ARD 采用进展、GA4 AI Assistant 渠道口径变化、ChatGPT/Perplexity 引用池份额季度研究。
+- 断言半衰期 6 个月内(引用份额类 3 个月);etsy llms.txt 存在性与 403 墙组合属可变基础设施,每季抽查。

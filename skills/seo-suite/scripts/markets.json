@@ -91,7 +91,20 @@
         "豆包GEO前提=抖音蓝V认证(2026-07信源分级)",
         "企鹅号开通检查(元宝内环比翻倍)",
         "空壳备案红旗(2026清理常态化)"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "ZhiMaHang 月更(月度口径)",
+          "百度搜索资源平台公告(收录/算法)",
+          "微信公开课《开发者接入微信 AI 生态指引》与搜一搜 AI 入口全量状态",
+          "新榜智汇信源引用指南月更",
+          "知乎直答外供/豆包信源分级变化"
+        ],
+        "note": "2026-10-09 本地实测轮建立(zhihu/taobao 真实站验证);知乎 robots 四 AI 检索爬虫全禁+Google-Extended 禁、淘宝放行、desc 下限80>上限78 边界矛盾已记录 references/markets/zh.md 本地实测节"
+      }
     },
     "en": {
       "title_limit": {
@@ -160,7 +173,20 @@
         "GA4 AI Assistant 渠道迁移+~70% AI 引荐误记 Direct 修正",
         "顶引页月度复测(流失≥30%/季)",
         "Reddit 代发/买赞=inauthentic mention 高危"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "Google Search Status Dashboard(spam/core 更新时间戳)",
+          "DemandSphere/Ahrefs 品牌词 AIO 覆盖月度研究(2026-09 27%→80%+ 复测)",
+          "Chrome WebMCP origin trial/ARD 采用进展",
+          "GA4 AI Assistant 渠道与 Direct 漏损(~70%)口径变化",
+          "ChatGPT/Perplexity 引用池份额季度研究(Reddit 塌陷复测)"
+        ],
+        "note": "2026-10-09 本地实测轮建立(wikipedia/craigslist/etsy 真实站验证);etsy 有真 llms.txt、ebay/etsy 主页 403 bot 墙已记录 references/markets/en.md 本地实测节"
+      }
     },
     "ru": {
       "title_limit": {
@@ -224,7 +250,20 @@
         "Вебмастер SoV-отчёт Алисы AI=首要 GEO 指标(非位置)",
         "TG 发帖维持≤20帖镜像窗口",
         "神经块商品查询(~15%)单独审计"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "Yandex Webmaster 博客(算法/Алиса/Нейро 官方公告)",
+          "Яндекс 财报与 Вебмастер SoV-отчёт Алисы AI 口径更新",
+          "searchengines.guru/habr/vc.ru 圈内风向",
+          "152-ФЗ/Metrica 合规政策变化",
+          "yandex.ru→dzen 门户重定向结构变化(实测靶站有效性)"
+        ],
+        "note": "2026-10-09 本地实测轮建立(yandex/habr 真实站验证);robotparser 'Disallow: /?'→整站禁误报与门户 302 重定向盲区已记录 references/markets/ru.md 本地实测节"
+      }
     },
     "ko": {
       "title_limit": {
@@ -285,7 +324,20 @@
         "메이트 인용수 2026-06-04 起프로필 표시",
         "AI 광고 2026-07-15 出稿与自然引用同屏",
         "가짜 영수증 1회=不可逆 제재"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "Naver 공식블로그/공지(검색·콘텐츠 정책)",
+          "Search Advisor 공지(수집/색인/IndexNow)",
+          "AI Briefing 인용 조건·별점·메이트 인용수 기능 공지",
+          "블랙키위/아이템스카우트 등 圈层工具月度数据",
+          "naver.com robots 정책 변화(포털 전면 폐쇄 여부 재확인)"
+        ],
+        "note": "2026-10-09 本地实测轮建立(naver/tistory 真实站验证);naver.com robots 整站禁(User-agent: * Disallow: /,仅 Allow: /$)已记录 references/markets/ko.md 本地实测节"
+      }
     },
     "ja": {
       "title_limit": {
@@ -346,7 +398,20 @@
         "ChatGPT 日本结构性孤立(引 Google 上位仅 19.9%)",
         "星5つで 這句話本身違法(QR 王道)",
         "はてな卫星站=链接 spam 高危"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "四大媒体 RSS:webtan.impress.co.jp/suzukikenichi.com/life-from2020.com/news.yahoo.co.jp(Ahrefs 日本語月次)",
+          "Bing 28-33%→Copilot 引用面份额复测(桌面 51.8% 反超口径)",
+          "ステマ規制/景表法 执法与 QR 王道判例动态",
+          "GEO AIO Tracker/LLM Insight 月次引用数据",
+          "ChatGPT 日本 引用孤立度(引 Google 上位仅 19.9%)复测"
+        ],
+        "note": "2026-10-09 本地实测轮建立(note/yahoo 真实站验证);全角阈值触发验证、yahoo /llms.txt 200-HTML 假阳性已记录 references/markets/ja.md 本地实测节"
+      }
     },
     "es": {
       "title_limit": {
@@ -407,7 +472,21 @@
         "GSC 生成AI 报告为测量基线",
         "wa.me 深链+预填消息审计(对话商务 45-60% vs 网站 2-4%)",
         "外链按 DR 价带分档标注租链足迹"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "StatCounter es-ES/es-MX 分国月度份额(墨西哥 Bing 波动单记)",
+          "GSC 生成式 AI 性能报告口径变化",
+          "Mercado Libre 算法/卖家中心公告",
+          "Meta WA 计费与 Business Agent 政策",
+          "AI Information Map Spain 年更",
+          "es-US 代搜(81% 受托)原始研究复现"
+        ],
+        "note": "2026-10-09 本地实测轮建立(分国重核+真实站验证);81% 受托搜标单源降置信;头部大报 AI 爬虫封锁已记录 references/markets/es.md"
+      }
     },
     "pt": {
       "title_limit": {
@@ -463,7 +542,20 @@
         "仅收 PIX/boleto=骗局信号",
         "publieditorial=rel:sponsored+披露",
         "ML 六信号:Full/ficha100%/60字/断货即掉/投诉<1%/CVR"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "StatCounter BR 月度份额(Google 88.4%/Bing 9.63% 口径漂移)",
+          "Conversion 博客与《Tendências de SEO》年更",
+          "Reclame Aqui 官方研究与 Black Friday 年度报告",
+          "SEONextbr/Optimiza 报告(AIO 86.8% 口径复测)",
+          "Google blog pt-BR(Search I/O 巴西场);LGPD/CNPCD 执法动态"
+        ],
+        "note": "2026-10-09 本地实测轮建立(g1+uol 真实站验证);g1 全放行/uol 禁 2/4、pt special_checks 零 AUTO 机检项已记录 references/markets/pt.md 本地实测节;next 2027-01-09 取代旧 2027-04 口径"
+      }
     },
     "ar": {
       "title_limit": {
@@ -522,7 +614,20 @@
         "Cloudflare 2026-09 默认封训练可连带封 Googlebot",
         "Ramadan 2027≈02-08~03-08 对齐 54 天官方折扣季",
         "UAE 广告主许可证 2026-01 强制(罚 AED 10,000)"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "GAMR(沙特媒体监管总局)/TDRA·UAE Media Council 公告(广告词表与许可证口径)",
+          "StatCounter SA 月度份额(连续 2 月 >1pp 漂移触发)",
+          "Google 官方 MENA AIO/AI Mode 语言扩展公告",
+          "Cloudflare AI 爬虫默认策略变更(2026-09-15 起持续红旗)",
+          "沙特商务部折扣季日历(Ramadan 2027≈02-08 前核对)"
+        ],
+        "note": "2026-10-09 本地实测轮建立(youm7+aljazeera 真实站验证);youm7 llms.txt 在场但 validate 有 BOM 误报、aljazeera 禁 2/4 AI 爬虫已记录 references/markets/ar.md 本地实测节"
+      }
     },
     "fr": {
       "title_limit": {
@@ -581,7 +686,20 @@
         "AIO 疑问类覆盖 97.5%——月度跑疑问词面板",
         "Bill 96 罚 3,000-30,000 CAD/项+私人诉权",
         "Bill 96 检查 fr-CA 等效可见性"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "CNIL/Arcom 动态(Arcom 33-38% AIO 损失评估更新/CNIL AI·consent 新指引)",
+          "StatCounter FR 月度份额(桌面 Bing 10.92% 口径漂移)",
+          "Vincent Hego 观察站 AIO 覆盖率(疑问类 97.5% 复测)",
+          "Mistral robots 文档与 IP JSON 变动(Vibe 三爬虫分态)",
+          "OQLF Bill 96 执法公告;法国出版商 vs Google 诉讼进展"
+        ],
+        "note": "2026-10-09 本地实测轮建立(lemonde+lefigaro 真实站验证);lemonde llms.txt 软 200(HTML 兜底页)与英文版 UA 分流、lefigaro 3/4 AI 爬虫封锁已记录 references/markets/fr.md 本地实测节"
+      }
     },
     "de": {
       "title_limit": {
@@ -642,7 +760,20 @@
         "Ecosia 已混自有索引(非纯 Google)",
         "桌面 Bing 12.81% 泛口径低估",
         "OLG Köln 判例:拒绝键同层同等醒目"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "SISTRIX 博客(AIO-DE 覆盖率破 40% 重排线/位置1 CTR 恢复曲线)",
+          "StatCounter DE 月度份额(桌面 Bing 12.81% 口径漂移)",
+          "heise/Ecosia 博客(自有德语索引是否成默认结果源)",
+          "IT-Recht-Kanzlei/ABAKUS(Abmahnung 波次与判例上行)",
+          "SE Ranking DACH 报告(三口径并记第三源)"
+        ],
+        "note": "2026-10-09 本地实测轮建立(spiegel+heise 真实站验证,zeit.de 403 换站);55-65 阈值链与德式数字机检实测可用、spiegel 3/4 AI 爬虫封锁已记录 references/markets/de.md 本地实测节"
+      }
     },
     "id": {
       "title_limit": {
@@ -701,7 +832,18 @@
         "低端 jasa SEO Rp99k-500k=结构性 PBN",
         "Ivan Lanin 定调关键词跟手指正文跟词典",
         "PBN×nulled 闭环($15/条 .id 域)"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "cube.asia/Momentum Works 季度 GMV 更新(TikTok Shop×Tokopedia 31-39% 带收敛或破带)",
+          "kompas 类头部媒体 AI 爬虫立场反转(当前 4 爬虫全禁)",
+          "cmlabs 新 playbook/AIO 触发率复测(37.2% 口径)",
+          "GSC AI Performance Report 印尼语数据开放度"
+        ],
+        "next": "2027-01-09",
+        "note": "2026-10-09 深挖轮建立:GMV 32% 落多源 31-39 带;kompas 封 4 个 AI 爬虫为头条实测;详见 references/markets/id.md 本地实测节"
+      }
     },
     "hi": {
       "title_limit": {
@@ -752,7 +894,21 @@
         "hi-IN 与 en-IN 分开评分",
         "语音层关键词形态:助词词库×产品词",
         "拼写漂移音译规范化聚类(IndicXlit);聚合器(JustDial/IndiaMART/Sulekha)占位审计"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-01-09",
+        "last": "2026-10-09",
+        "signals": [
+          "StatCounter 印度月度份额(连续 2 月 >1pp 漂移触发)",
+          "Google for India 年度发布(惯例 Q4)",
+          "ChatGPT 印度 WAU 官方口径更新",
+          "IAMAI–Kantor 年报",
+          "Discover 依赖度行业口径(State of Indian Digital Publishing/Praman)",
+          "Sarvam/Krutrim 主权栈 API 与爬虫生态"
+        ],
+        "note": "2026-10-09 本地实测轮建立(双源重核+真实站验证);Bain 80/60 已修正为美国样本外推;site_audit 天城文词数盲区已记录 references/markets/hi.md"
+      }
     },
     "it": {
       "title_limit": {
@@ -805,7 +961,18 @@
         "P.IVA→Registro 竞品链",
         "AIO 监测须 live SERP(缓存低估近半)",
         "意英双轨关键词表禁直译"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "SEOZoom 新 AIO 采样窗/覆盖复测(2026-08-28 自动扩张后)",
+          "FIEG-AGCOM/欧盟投诉程序性进展(新闻域名是否重返引用面)",
+          "StatCounter IT 桌面 Google 跌破 78% 或 Bing 桌面破 11%",
+          "Connect.gt/giorgiotave 圈内年度议题单更新"
+        ],
+        "next": "2027-01-09",
+        "note": "2026-10-09 深挖轮建立:StatCounter 直核多源自洽(全平台 89-91 带/桌面 ~80);实测详见 references/markets/it.md 本地实测节"
+      }
     },
     "tr": {
       "title_limit": {
@@ -860,7 +1027,18 @@
         "Yandex 三口径并记(26/16/3-5%),投放前本地实测",
         "Trendyol 断货/开新卡=权重清零,救老卡优先",
         "r10 tanıtım 90₺+审计归付费占位"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "StatCounter TR 单月 Yandex 重上 25% 或跌破 8%(三口径裁决复核)",
+          "Yandex TR 官方份额/财报首次分国披露",
+          "Yazeka 引用池/门槛公开数据出现",
+          "Trendyol Akademi 算法口径更新(content score 公式等)"
+        ],
+        "next": "2027-01-09",
+        "note": "2026-10-09 裁决:26%=窗口均值已退役;16%=StatCounter 单月(13-16 带);预算按点击口径 3-5%;详见 references/markets/tr.md 本地实测节"
+      }
     },
     "vi": {
       "title_limit": {
@@ -912,7 +1090,17 @@
         "nonce 双层质量门防 agent 自评篡改(validator 达标∧独立评分 ≥85 才发布)",
         "句长方差检测反 AI 文风(mona-seo-check-vi 口径)",
         "backlink báo 新闻域链披露(Google 链接垃圾政策范围)"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "https://gs.statcounter.com/search-engine-market-share/all/viet-nam",
+          "Cốc Cốc qc.coccoc.com 季度/年度趋势报告(12 月年度版)",
+          "Decision Lab The State of Consumer AI in Vietnam(年度)",
+          "VNG 财报(Zalo MAU/收入拆分,季度)"
+        ],
+        "next": "2027-01-09"
+      }
     },
     "th": {
       "title_limit": {
@@ -961,7 +1149,17 @@
         "meta 词中截断逐页检查(无空格文字)",
         "ครับ(男)/ค่ะ(女)礼貌尾词性别一致",
         "佛历年日期格式(พ.ศ. 2569);PDPA 医疗明示同意"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "https://gs.statcounter.com/search-engine-market-share/all/thailand",
+          "Momentum Works Ecommerce in Southeast Asia(年度,5-6 月)",
+          "https://lineforbusiness.com/th/news(LINE 产品变动一手源,如 VOOM 关闭)",
+          "ThaiPBS Policy Watch + Google 泰语 AI 功能官方文档(hl=th)"
+        ],
+        "next": "2027-01-09"
+      }
     },
     "pl": {
       "title_limit": {
@@ -1010,7 +1208,17 @@
         "sierotki 孤字排版规则(单双字母词不悬行尾)",
         "品牌引用按引擎分列测量(ChatGPT vs Gemini 信源偏好不同)",
         "Allegro Trafność 参数逐月更新+新增参数跟踪"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "https://gs.statcounter.com/search-engine-market-share/all/poland",
+          "Gemius/PBI Mediapanel 月报 + 年度 E-commerce w Polsce",
+          "planeta-seo.pl(月度聚合)+ Promptowy AI w Polsce 月报",
+          "Allegro 官方卖家公告(参数/广告政策变更)"
+        ],
+        "next": "2027-01-09"
+      }
     },
     "nl": {
       "title_limit": {
@@ -1065,7 +1273,17 @@
         "StatCounter Yandex 2.56%=疑机器人假信号",
         "LinkedIn 口径标注(活跃 5.8M vs 账户 13-15M)",
         "交易层荷语强制"
-      ]
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "signals": [
+          "https://gs.statcounter.com/search-engine-market-share/all/netherlands",
+          "https://seranking.com/nl/blog/ai-overviews-nederland/ + Frankwatching 转引",
+          "Newcom Nationaal Social Media Onderzoek(每年 1 月)",
+          "over.bol.com / Partnerplatform 公告 + Yoast 版本日志(llms.txt 行为)"
+        ],
+        "next": "2027-01-09"
+      }
     }
   },
   "payment_words": {

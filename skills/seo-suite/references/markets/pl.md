@@ -21,7 +21,9 @@
 | Google 桌面份额 | **82.83%**;**Bing 桌面 13.94%** | StatCounter PL 桌面口径,2026-09——Bing 桌面约为全球桌面均值(14.65%)同级,但相对全平台 7.38% 是"桌面假象",必做 |
 | Przegląd od AI(AI Overviews) | **2025-03-26 上线波兰语** | 波语版命名"Przegląd od AI";先于多数欧陆市场 |
 | AI Mode(Tryb AI) | 2025-10-08 起波语可用,免费、手动切换 | Promptowy/Tabletowo |
-| ChatGPT 采用 | **10.2M 月用户(34.4% 网民)** | 2025-10;1 月 3.6M→6 月 9.3M→10 月 10.2M,Gemius/press.pl |
+| ChatGPT 采用 | **10.2M 月用户(34.4% 网民)** | 2025-10;1 月 3.6M→6 月 9.3M→10 月 10.2M,Gemius/press.pl。**2026-10-09 复核:Gemius《E-commerce w Polsce 2026》(2026-09-30)称 2026-06 AI 工具整体 16M real users、ChatGPT 仍居首**——采用曲线未走平 |
+| Allegro 底座 | **~19M 月用户、日均 5.6M**;Temu 日活第二 | 2026-10-09 复核两源一致(nowymarketing 2026-10-01 引 Gemius + Gemius PDF 原文);Gemius 日活榜 Temu 升至第二——比价新势力进入实战名单 |
+| AIO 出现频率(波兰本地) | **~每 4 个查询出现 1 次** | Senuto 基于 GSC 数据的分析(aiport 转引,2026)——波兰 Przegląd od AI 覆盖已远高于荷语(对照 nl.md 5.22%),信息类站必须按"AIO 常态"设计 |
 | ChatGPT 用户画像 | ~60% ≤34 岁;39.6% 住农村 | Gemius——农村最大单块,勿当纯都市工具 |
 | Zero-click | 54%→**72%**(AIO 出现的查询) | 全球口径(malyseo 引 Semrush 类研究),方向性适用 |
 | AI 采用总量 | 34.4% 网民用 AI 工具 | O-M.pl 2026 |
@@ -155,4 +157,45 @@
 | GSC | 基线 + AI 链接来源(2026 起含 AI 平台 referral 维度) | 28 天口径月检 |
 
 ---
-**验证协议**:①四引擎(ChatGPT/Claude/Gemini/Perplexity)品牌三态季度重测,分列记录;②Allegro 参数完整度 + 新增参数月检;③Wikidata/Wikipedia 实体字段在改名/合并后即时更新并复测;④StatCounter PL 份额半年度复核;⑤Senuto 可见性基线月度快照。下次复审:2027-04,或 OBTK 后续研究 / Przegląd od AI 波兰覆盖率出现新口径时。
+**验证协议**:①四引擎(ChatGPT/Claude/Gemini/Perplexity)品牌三态季度重测,分列记录;②Allegro 参数完整度 + 新增参数月检;③Wikidata/Wikipedia 实体字段在改名/合并后即时更新并复测;④StatCounter PL 份额半年度复核;⑤Senuto 可见性基线月度快照。
+
+## 八、Allegro Ads 联动(2026-10-09 增量:站内付费 × 自然位协同)
+
+> pl 市场此前缺的 Allegro Ads 深潜。数据锚点:2026-10-09 复核(波语检索)。
+
+### 8.1 2026 年 Allegro Ads 的地位变化
+
+- **从"可选"变"必做"**:本地 2026 年指南口径(pryzmat.media / lepiejsprzedaj.pl)一致——Allegro 贡献波兰电商大盘 **60-70% 的平台流量盘子**,纯自然位维持头部 listing 的可见性已不现实;Ads 与 Trafność 六信号(2.1)是同一飞轮的两端:广告拉初期 CTR/销量 → 喂转化数据 → 自然位承接 → 降投放。
+- **竞价模型=出价 × offer 质量**:排名不只看出价,还看 **CTR、描述完整度、与查询的匹配度**(raiseyoursales 口径)——即 2.1 的"参数 100%+意图式标题"直接降低广告 CPC:**先修 offer 质量再开广告,同预算多买 20-30% 流量**是本地代理的标准话术,方向可信。
+- **Top Offer(Top oferta)徽章逻辑**:被有效推广+高转化+低投诉的 offer 更易获 Top 徽章,徽章再反哺 CTR——广告是拿徽章的路径之一,不是平行系统(vsprint 口径)。
+
+### 8.2 与 Google 侧的联动纪律
+
+- **词表分层(同 vi 的双层词表纪律)**:Allego 站内词(购买意图,短+属性)与 Google 词(信息/研究意图)分开建;Allegro Ads 的 wyszukiwania 报告(站内实搜)是 Google 侧品类词表的上游信源之一——站内热词反哺 Google 落地页选题。
+- **预算联动公式(提案用)**:冷启动期 Ads:自然投入 ≈ 7:3,稳定期反转 ≈ 3:7——"以投养排"的波兰版;停投后自然位维持时长按类目 2-6 周不等(本地经验值,非官方披露)。
+- **Allegro Ads × Przegląd od AI**:Google 侧 AIO 每 4 查询出现 1 次(一、1.1 新行)——商品类查询被 AIO 摘要截流的趋势下,Allegro 站内+Ads 是波兰电商的"确定性流量"仓位,提案里作为对冲 AIO 的论据。
+- 红旗承接(→ 六):靠 Ads 灌量掩盖参数过时/差评积累是掉位定时炸弹——Ads 数据越好,算法对 offer 质量信号的权重越敏感。
+
+## 十、本地实测(2026-10-09)
+
+**实测站**:onet.pl(第一门户)、wykop.pl(最大 UGC 社区,markets.json entity_source 之首)。工具:`site_audit.py --market pl` / `llmstxt.py check` / `head_check.py`。
+
+| 站 | site_audit 触发项 | head_check 汇总 | llms.txt |
+|---|---|---|---|
+| onet.pl | WARN:og 全缺(首页)/ alt 11/11 缺 / 根 /sitemap.xml 不可达;无 CRITICAL | 4 ERROR(apple-mobile-web-app-capable、x-ua-compatible、msapplication-config、mask-icon)+ og:image 缺;exit 1 | 无 |
+| wykop.pl | WARN:desc 201 超限 / **2 个 H1** / 338 链接>100 | **0 ERROR,3 WARN(viewport 顺序、geo 缺、微信/QQ 误报)——8 站实测中唯一 head 全绿,exit 0** | 无 |
+
+**工具盲区(如实记录)**:
+
+1. **波兰变音符词被切碎**:`wc()` 的 Latin 正则 `[A-Za-z0-9']+` 不认 ą/ę/ł…——"przegląd" 计成 2 个 token,词数系统性虚高(粗估 +10-20%);"词数<200 soft-thin" 在 pl 站的判定阈值实际应下调。
+2. **title 解析泄漏(同 vi/th 的 bug)**:onet 报 "title 70560 字符"(JSON-LD @graph 并入)、wykop 报 121901(内联 CSS 并入)——真实 title 分别 ~25/~75 字符;title 长度结论以 head_check 为准。
+3. **`--market pl` 未接线**:sentence case/sierotki/变音保留等 markets.json `special_checks` 在 site_audit/head_check 均无实现——**sierotki 检查对 pl 不适配(工具缺口)**:孤字排版需在构建层(NBSP 处理)或 WordPress 插件层做,套件目前只能人工抽查。
+4. **微信/QQ itemprop 检查对 pl 无意义**(误报,忽略)。
+5. sitemap 检查只探根 /sitemap.xml,不读 robots.txt 的 Sitemap 声明——onet 的 sitemap 实际在别处,报"不可达"是**假阴性**(与 nl.md nos.nl 同一问题)。
+6. wykop 的 2 个 H1 属真发现(多 H1 在门户/社区站常见,层级语义靠 H2 补偿)。
+
+## 维护
+
+- **复核周期**:90 天;**下次复核 2027-01-09**(取代原"验证协议"末行的 2027-04 全量复审——90 天节奏先跑,届时合并)。
+- **信号源**:StatCounter 波兰国家页(gs.statcounter.com/search-engine-market-share/all/poland)、Gemius/PBI Mediapanel 月报(ChatGPT/AI 工具 real users;年度《E-commerce w Polsce》)、OBTK(obtk.pl 分引擎品牌研究后续)、Planeta SEO(planeta-seo.pl 月度聚合)、Promptowy《AI w Polsce》月报、Allegro 官方卖家公告(参数类目变更)。
+- **上次核验**:2026-10-09(母语一手源重核:引擎份额 89,56/7,38/1,44 精确一致、AIO/AI Mode 双日期、ChatGPT 采用曲线+2026-06 AI 16M、Allegro 19M/5,6M 两源;本地实测 2 站×3 工具)。

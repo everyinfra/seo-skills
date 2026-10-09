@@ -196,3 +196,26 @@
 | Букварикс/arsenkin 类 | 俄语语义扩展与快检 | 从业者圈常用 |
 
 **信息源**:searchengines.guru(最大论坛)、habr、vc.ru、SEONews、RG/Коммерсантъ/CNews(官方动向一手)。
+
+## 九、本地实测(2026-10-09)
+
+**跑了什么**:yandex.ru + habr.com × `site_audit --market ru` / `llmstxt check` / `head_check`(site_audit v1.1)。
+
+**输出摘要**:
+
+- **yandex.ru**:**302 → dzen.ru(?yredirect=true,门户已让渡给 Дзен),工具静默跟随重定向,审计落在 JS 空壳上**——title/desc/H1 全"缺失"、词数 0,全是重定向伪影而非站方问题;55/160 chars 阈值虽已接线但测不到真实值。**四条 AI 检索爬虫 CRITICAL 均为误报**:robots.txt 的 OAI-SearchBot 段只有 `Disallow: /?`(禁查询串)+错误页/服务路径,stdlib robotparser 把 `Disallow: /?` 归一化成 `Disallow: /` 判整站禁(实测 can_fetch('/')=False);真实语义=**首页可抓、带查询参数的 URL 禁抓**。俄语门户审计靶站应改用 ya.ru(搜索)/dzen.ru。
+- **habr.com**:desc 缺失 CRITICAL、og:image 相对 URL、alt 缺 40/41、262 链接;**AI 检索爬虫真实放行**;head_check ERROR:charset 声明落在第 1,074 字节(>1024 上限)、twitter:* 三项、fb:app_id、apple-mobile-web-app-capable;西里尔词数统计正常(v1.1 已修——旧版把西里尔整段记 0 词)。
+- `llmstxt check`:两站 4 路径全 404(判无,准确)。
+
+**工具盲区(实测确认)**:
+
+1. **重定向透明**:302 后不报告"审计的是重定向目标",空壳页全套 CRITICAL 会误导——门户域审计前先 curl -I 看落点;
+2. **`Disallow: /?` 解析缺陷**:Yandex 系 robots 惯用查询串禁令,robotparser 一律误判整站禁——ru 市场 ai-bots 结论必须人工复核 robots 原文;
+3. **无西里尔占比/语言构成检查**:ё/е 归组、Вы 敬称、法定透明层(оферта/реквизиты)等 ru 专属检查全不在工具里,special_checks 是人肉清单;
+4. Wordstat/Metrica 侧(三态分诊、Вебвизор)均超出本地工具能力,维持 MCP/手工口径。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.ru.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:Yandex Webmaster 博客(算法/Алиса/Нейро 官方公告)、Яндекс 财报与 SoV-отчёт 口径、searchengines.guru/habr/vc.ru 圈内风向、152-ФЗ/Metrica 政策、yandex.ru→dzen 门户结构变化。
+- 断言半衰期 6–12 个月;robotparser 误报类结论(reviewer 必读九节盲区 2)在工具修复前随复审重申。

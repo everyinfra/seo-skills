@@ -148,3 +148,36 @@
 3. Amazon 分国权威新估计(52% vs 35% 是否收敛)。
 4. AIO 外链占比(>25%)继续上升趋势确认。
 5. it-CH(提契诺)SERP 差异信号是否强化。
+
+## 本地实测(2026-10-09)
+
+### 一手源重核结论
+
+- **StatCounter IT 直核(多源交叉)**:桌面 host 口径(2025-08~2026-08 窗口)Google.com **79.84%** / Bing.com 9.37%;移动口径 2026-07 **Google 97.04%**(DDG 0.63%/Bing 0.62%);全平台第三方汇编(alphametic,2026-04)**88.97%**/Bing 5.64%/Yahoo 3.55%。
+- **裁决**:本文件关键数字自洽——ANSA 90.87%(2026-01)落在 StatCounter 系全平台 89-91% 带内;Statista 桌面 80.47% vs StatCounter 桌面 79.84% 差 <1pp。**多源一致,单源标注项:Repubblica −30% 系 FIEG 方单方口径(Google 称"不准确"),维持两方并记。**
+
+### 真实站验证(repubblica.it / aranzulla.it)
+
+| 项 | repubblica.it | aranzulla.it |
+|---|---|---|
+| site_audit CRITICAL | **PerplexityBot 被 robots 禁**——AI 答案被逐出 | meta description 缺失(首页) |
+| site_audit WARN | 34 个 H1(首页聚合页常态)/641 链接 | 跳级 h1→h4 / 无 JSON-LD |
+| llmstxt check | **/llms.txt 200(意语内容地图)** | 全部 ✗(无 llms.txt) |
+| head_check | error=6(弃用 twitter:* 全套+fb:app_id) | error=0(仅顺序/geo WARN) |
+
+- **解读 ①(FIEG 悖论的现场证据)**:repubblica 一边向 AGCOM 递状抗议 AIO,一边**已部署 /llms.txt 且只封 PerplexityBot、放行 OAI-SearchBot/Claude-SearchBot**——出版商的真实策略是"选择性 AI 分发"而非全面对抗;给新闻侧客户的建议从"对抗 AIO"修正为"分级放行+被引监测"。
+- **解读 ②(Aranzulla 反直觉)**:头部 meta/description/JSON-LD 全缺、无 llms.txt,仍是意语 AIO 被引第一域名——**可切分内容 > 技术完备性**;技术审计权重在意市场应向"答案段落结构"倾斜。
+- **工具盲区记录**:①site_audit.py 标题解析器吞脚本——`handle_endtag('title')` 不关闭累积,title 一路吸到 `<body>`,实测 23,050/25,270 字符假超标(6 站全触发);②`wc()` 词计数用 `[A-Za-z0-9']+`,意语重音词(à/è/ù/é)被切碎,词数虚高——与德法同病;③`--market it` 无专属阈值(仅 ja 特判),desc 上限用 160 而非本文件 155。
+
+### Connect.gt 社区实时动向(2026-10 抽样)
+
+- 社区体量复核:Giorgio Taverniti(GT 系创始人)公开口径 **13 万+注册**,2004 年 Forum GT 延续至今——意大利圈共识第一道过滤的地位未变。
+- SEO 版块热帖样本:**站群迁移三问**(集团站→商业站拆分:交叉 canonical 必须拆除、301 一对一防链、GSC "Cambio di indirizzo" 工具用法)——社区共识与英文最佳实践一致,但**术语全意语化**(migrazione/canonical incrociato),检索本地案例用意语词。
+- Taverniti 2026 年初公开课定调 **"SEO in 2026: The Year of Awareness"**(认知年):主线是 AI 时代从业者的定位重估——与 SEOZoom "0.1% 俱乐部"叙事同构:圈内共识已从"排名"转向"被引/可见性"计价。
+- 实操含义:意语报告引用本地共识时,优先链 Connect.gt 帖+SEOZoom 研究,再补美系工具口径——本土口径系统性高于美系(见 1.3),引用顺序即立场。
+
+## 维护
+
+- **复审节奏**:随 markets.json `it.review_cycle`(interval_days 90,next 2027-01-09);触发信号:SEOZoom 新采样窗、FIEG-AGCOM/欧盟程序性进展、StatCounter IT 桌面份额跌破 78% 或 Bing 桌面破 11%、Connect.gt 年度大会议题单。
+- **数字分诊**:引擎份额=StatCounter 直核+ANSA 并记;AIO 覆盖=SEOZoom/BrightEdge/Conductor 三口径;流量冲击=FIEG vs Google 两方并记+方法学附注;单源数字(如 Amazon 52%)标注后才可引用。
+- **工具链提醒**:对本市场跑 site_audit 时,标题长度/词数两项读数先人工复核(标题吞脚本 bug+重音词碎片化);AIO 监测一律 live SERP(缓存低估近半,见 4.3)。

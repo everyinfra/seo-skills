@@ -150,3 +150,42 @@
 | StatCounter TR + 本地点击数据 | 双口径引擎份额 | 并记呈现,禁单口径 |
 
 **信息源**:r10.net(交易中枢)、Seobaz/turksem/机构博客、Marketing Türkiye、AA(Technology)、Technopat/Webtekno(份额月报)、Trendyol Akademi(官方)。
+
+## 本地实测(2026-10-09)
+
+### Yandex TR 三口径裁决(26 / 16 / 3-5%)
+
+一手重核后**裁决如下,并修正本文件既有表述**:
+
+| 口径 | 重核后的真实身份 | 裁决 |
+|---|---|---|
+| ~26% | StatCounter **12 个月滚动窗口均值**(2026-09 视图 25.19-25.53%)——窗口数学上被 2025-09~12 的伪影尖峰(病毒点 49.79%)抬高 | **退役**:作为"当前份额"引用=统计错误;单月已远低于此 |
+| ~16% | **同为 StatCounter 源的单月读数**(2026-08 单月 15.98%;2026-03 单月 13.44%,serpsculpt 转引)。⚠ 原文件称 cancankiran "用行为数据修正面板偏差"——**重核原文后确认不实**:该博客明言"Aşağıdaki veriler StatCounter'ın Ağustos 2026 Türkiye ölçümüne dayanıyor",就是引用 StatCounter 单月截图 | 保留为"面板口径现状":单月 13-16% 带 |
+| 3-5% | 本地机构点击侧实测(GSC/分析面板引荐流量) | **预算基准**:唯一与真实引流挂钩的口径 |
+
+- **结论**:26 vs 16 是**同源窗口差**(12 个月均值 vs 单月),非独立方法学冲突——原文件"独立博客复核"表述已按上文修正;真正的冲突是 **StatCounter 面板口径(13-16%)vs 点击口径(3-5%)的 3-5 倍差**。Yandex/Google 均不发布 TR 分国份额,公开数据**无法终裁**此差;系列走势(尖峰 49.79%→13.44%→15.98%)与"Yandex 浏览器装机默认+后台刷新污染面板"假说一致。
+- **实操判决(替代终裁)**:①预算按点击口径 3-5% 排;②面板单月 13-16% 只作"可见性上限"叙事;③26% 窗口值禁止进报告;④**终裁权限下放给客户自有数据**——交付前查其分析面板 Yandex 引荐占比,<3% 直接放弃 Yandex 专项(第六节红旗的量化补强)。
+- 佐证带:Yandex 自报 2025 用户/查询 +75%(Habertürk/AA 复核确认,低基数高增速);生态噪音谱系—— Vimaj 称 1.5%、searchendurance 称 53.05%(2026-01,疑似复读旧尖峰)——TR 份额引用市场是重灾区,双口径并记纪律不放松。
+
+### 真实站验证(trendyol.com / sikayetvar.com)
+
+| 项 | trendyol.com | sikayetvar.com |
+|---|---|---|
+| site_audit | 原始 HTML **无 H1/0 链接/canonical 缺失**(JS 渲染盲区,实际首页数千链接);**/llms.txt 200(英语类目表)** | H1=1 / JSON-LD=2 / 252 链接,服务端渲染完整 |
+| head_check | error=11(弃用 meta 堆叠:twitter:app:* 全套/x-ua-compatible) | error=6(twitter:* 冗余);title 含 Ş/İ 解析正确 |
+| llmstxt | ✓ 在架 | ✗ 无 |
+
+- **Trendyol 是 JS-SPA 审计盲区的标本**:无头抓取下"无 H1/0 链接"全是假阴性——Trendyol 类站必须用渲染引擎或 Search Console 数据审计,site_audit 类原始 HTML 工具仅作 robots/llms.txt 探测层。**Trendyol 已上 llms.txt(英语)**:marketplace 把 llms.txt 当 AI 分发入口的信号,与第四节"货架页=可被引实体"互证。
+- **Şikayetvar 服务端渲染完整**+结构化数据在场——投诉页能稳定占品牌词首页(第五节)的技术底座;ORM 审计时它就是"竞品技术基准"。
+
+### 工具盲区:İ 双码点实锤(单元级复现)
+
+- `site_audit.py` 词计数 `[A-Za-z0-9']+` **不含 İ(U+0130)/ı(U+0131)/ğ/ş/ç/ö/ü**:实测 "İstanbul"→"stanbul"(İ 静默丢失)、"ıstanbul"→"stanbul"、"içerik kalitesi ölçümü"→ 5 词(实际 3 词,碎片化虚高 67%)——**经典 Turkish-I bug 的计数器变体**,土语页词数/密度读数全部失真,人工复核或先归一化。
+- `--market tr` 无专属阈值(仅 ja 特判):desc 用 160 上限而非本文件/markets.json 的 155;title/desc 内 Ş/İ 解析在 head_check 下正常(其解析器独立且正确)。
+- İ/ı 归组、slug 转写(第三节)在工具链均无实现——markets.json special_checks 为文档级标记,执行靠人工+Zemberek 流水线。
+
+## 维护
+
+- **复审节奏**:markets.json `tr.review_cycle`(interval_days 90,next 2027-01-09);触发信号:StatCounter TR 单月 Yandex 重上 25% 或跌破 8%、Yandex TR 官方份额/财报披露、Yazeka 引用池公开数据、Trendyol Akademi 算法口径更新。
+- **份额纪律**:任何报告出现 Yandex TR 份额必须带口径标签(窗口均值/单月/点击侧),26% 窗口值已退役;新数字先进本文件第一节表格再对外引用。
+- **工具链提醒**:土语站词数/密度读数失真(İ/ı/ğ/ş/ç 碎片化),引用前人工复核;SPA 站(trendyol 类)site_audit 仅采信 robots/llms.txt 探测结果。

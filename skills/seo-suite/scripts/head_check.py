@@ -10,7 +10,8 @@
   4. og:image: 须存在且为绝对 URL(https://…)
   5. geo 四件套: ICBM / geo.position / geo.region / geo.placename
   6. 中文浏览器 meta: 微信/QQ 分享不消费 OG,读 itemprop 微数据三件套
-     (itemprop name / image / description)
+     (itemprop name / image / description)——仅 zh 市场或检出中文内容时报,
+     日文(假名)/韩文(谚文)/无汉字页跳过,消除跨市场噪音
   7. 弃用清单(HEAD DEPRECATED.md,17 项): x-ua-compatible / skype_toolbar /
      msapplication-config / mask-icon / apple-mobile-web-app-capable /
      prerender / x-dns-prefetch-control / amphtml / EditURI / pingback /
@@ -19,7 +20,7 @@
   8. link rel=prerender → 建议改用 Speculation Rules API
 
 用法:
-  python3 head_check.py https://example.com
+  python3 head_check.py https://example.com [--market zh]
   python3 head_check.py ./page.html        # 本地文件
   python3 head_check.py - < page.html      # stdin
 
@@ -177,6 +178,26 @@ def byte_offset(text, char_pos, enc):
     return len(text[:char_pos].encode(enc, errors="replace"))
 
 
+def chinese_share_scope(text, market=None):
+    """微信/QQ itemprop 检查是否适用:--market zh 显式指定,或 lang=zh,
+    或文档检出足量汉字且无假名(日文)/谚文(韩文)——日文页满篇汉字属 kanji,
+    不是中文内容,不得触发。"""
+    if market == "zh":
+        return True
+    m = re.search(r"""<html[^>]*\blang\s*=\s*["']?([\w-]+)""", text, re.I)
+    if m:
+        tag = m.group(1).lower()
+        if tag.startswith("zh"):
+            return True
+        if tag[:2] in ("ja", "ko"):
+            return False
+    if re.search(r"[\u3040-\u30FF]", text):   # 平假名/片假名 → 日文页
+        return False
+    if re.search(r"[\uAC00-\uD7A3]", text):   # 谚文 → 韩文页
+        return False
+    return len(re.findall(r"[\u3400-\u4DBF\u4E00-\u9FFF]", text)) >= 20
+
+
 def describe_meta(m):
     for attr, label in (("name", "name"), ("property", "property"),
                         ("http_equiv", "http-equiv"), ("itemprop", "itemprop")):
@@ -185,7 +206,7 @@ def describe_meta(m):
     return "meta(匿名)"
 
 
-def check(raw, text, enc, ctype, out):
+def check(raw, text, enc, ctype, out, market=None):
     """执行 8 项检查,out(sev, msg) 收集结果;返回 (metas, links)。"""
     hp = HeadParser(text)
     try:
@@ -267,16 +288,21 @@ def check(raw, text, enc, ctype, out):
         out("warn", f"geo meta 缺失: {', '.join(geo_missing)} → 面向搜索/位置服务表达地理相关性;"
                     f"本地商家优先 LocalBusiness schema,geo meta 作辅助")
 
-    # --- 6. 微信/QQ itemprop 三件套 ---
-    props = {m["itemprop"] for m in metas if m["itemprop"]}
-    trio_missing = [p for p in ITEMPROP_TRIO if p not in props]
-    if not trio_missing:
-        out("ok", "中文分享 itemprop 三件套齐全(name / image / description)")
-    elif props:
-        out("warn", f"微信/QQ 分享 itemprop 不全: 缺 {', '.join(trio_missing)}(现有 {sorted(props)})")
+    # --- 6. 微信/QQ itemprop 三件套(仅中文场景:zh 市场或检出中文内容)---
+    # S2 修复:此前对所有站点无条件 WARN——日/英/阿文站全成跨市场噪音。
+    # 判定:--market zh 显式指定,或 lang=zh,或正文检出汉字且非日文(假名)/韩文(谚文)页。
+    if chinese_share_scope(text, market):
+        props = {m["itemprop"] for m in metas if m["itemprop"]}
+        trio_missing = [p for p in ITEMPROP_TRIO if p not in props]
+        if not trio_missing:
+            out("ok", "中文分享 itemprop 三件套齐全(name / image / description)")
+        elif props:
+            out("warn", f"微信/QQ 分享 itemprop 不全: 缺 {', '.join(trio_missing)}(现有 {sorted(props)})")
+        else:
+            out("warn", "微信/QQ 分享 itemprop 三件套缺失(仅中文分享场景需要:微信/QQ 不消费 OG,读 itemprop 微数据;"
+                        f'需 <html itemscope itemtype=…> 配合)')
     else:
-        out("warn", "微信/QQ 分享 itemprop 三件套缺失(仅中文分享场景需要:微信/QQ 不消费 OG,读 itemprop 微数据;"
-                    f'需 <html itemscope itemtype=…> 配合)')
+        out("info", "itemprop 三件套跳过——非中文页面/市场(微信/QQ 分享场景不适用)")
 
     # --- 7/8. 弃用清单 + prerender 建议 ---
     seen_hits = set()
@@ -312,6 +338,8 @@ def main():
     ap = argparse.ArgumentParser(
         description="HTML <head> 元素检查器(口径: technical/head-elements.md;严重违规退出码 1)")
     ap.add_argument("url", help="页面 URL(http/https;亦支持本地文件路径或 - 读 stdin)")
+    ap.add_argument("--market", default=None,
+                    help="目标市场码(如 zh);itemprop 中文分享检查按市场判定,缺省按内容自动识别")
     ap.add_argument("--timeout", type=float, default=15.0, help="抓取超时秒数,默认 15")
     ap.add_argument("--max-bytes", type=int, default=2_000_000, help="最多读取字节数,默认 2MB")
     a = ap.parse_args()
@@ -330,7 +358,7 @@ def main():
     def out(sev, msg):
         findings.append((sev, msg))
 
-    metas, links = check(raw, text, enc, ctype, out)
+    metas, links = check(raw, text, enc, ctype, out, market=a.market)
     findings.sort(key=lambda f: SEV_ORDER[f[0]])  # 稳定排序: error → warn → info → ok
 
     W = 76

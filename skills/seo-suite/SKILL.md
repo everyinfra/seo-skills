@@ -28,7 +28,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
-- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1)
+- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知
 - `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical
 - `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
 - `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威

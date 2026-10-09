@@ -3,6 +3,30 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.23.1 - 2026-10-09
+
+- **S2 实测工具盲区修复轮(9.5 冲刺自动化提升)**——7 项,site_audit.py 重写 + head_check.py 中文场景门控,golden 测试 32→46 全绿:
+  - **site_audit title 解析吞 head 内 script/JSON-LD(最高优先)**:HTMLParser 的 title 收集改为只在 `<title>…</title>` 内——此前 title 开启后 head 内全部裸文本(含 JS/JSON-LD)被拼进 title,6+ 站触发 2-75 万字符假 title;连带修复 title 内空白被丢导致的词粘连;
+  - **泰文字素计长 + 泰文词数**:wc() 与 title/desc 长度接入 grapheme 近似(unicodedata.combining==0 且非 Mn/Cf,同 markets.json units 口径)——码点计长高估 30-50%、词数恒 0 双修复(实测 20 码点→14 字素);
+  - **天城文(印地)词数计 0**:wc() 对 Devanagari 块(0x0900-0x097F)按字符计(同 CJK 口径);
+  - **越南/波兰变音词被 ASCII 正则切碎**:wc() 词字符从 `[A-Za-z0-9']` 泛化为一切 Unicode 字母的连续段——拉丁扩展(0x00C0-0x024F 波兰/土耳其 + 0x1E00-0x1EFF 越南)之外连带修复阿文/俄文/希腊/希伯来整段记 0(youm7 实测 141→2204 词,假 soft-thin WARN 消失);
+  - **土耳其 İ 双码点**:wc() 先 replace('İ','i') 再清洗 U+0307(casefold 前替换口径,同 keyword_variants canon 链),分解形 I+U+0307 不再把一个词劈成两个;
+  - **--market 接线 markets.json**:title/desc 阈值不再硬编码(ja 32/120 全角),按市场单位(chars/fullwidth/grapheme)判定,18 市场全量可用,未知市场列出可用值退出;
+  - **微信/QQ itemprop WARN 跨市场噪音(head_check)**:仅 zh 市场(新增 --market 参数)或检出中文内容时报——日文页满篇 kanji 但有假名即判日文跳过(note.com 实测 INFO 跳过;--market zh 仍可强制);
+  - golden 测试新增 SiteAuditTests(9)+ HeadCheckChineseScopeTests(4)+ 全字母文字(1),零网络;
+  - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
+  S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
+
+## 0.24.0 - 2026-10-09
+
+- **多语言 9.5 冲刺轮(6 agent:S1 深挖+S2 实测+S3 节奏+S5 工具修复)**:
+  - **S1 薄市场深挖(9 市场)**:vi/th/pl/nl/it/tr/id/hi/es 门户页各扩 30-50 行+关键数字一手源双核(更正:泰国原 54/38/7 份额系误引印尼列;印度 Bain 80/60 实为美国样本;土耳其 Yandex 26%=12 月均值含伪影→**实操判决:预算按 3-5%,终裁下放客户引荐数据**;hi 补泰米尔/泰卢固六段展开);
+  - **S2 真实站验证(18 市场×2 站×3 工具=108 次实测)**:全部门户页新增「本地实测(2026-10-09)」节。结构性发现:**欧陆大报 3/4 封 AI 爬虫 vs 巴西/埃及头部开放**;知乎全禁 AI 检索 vs 淘宝全放行;Naver robots 整站禁一切爬虫只 Allow /$;youm7 是八站唯一真 llms.txt;Etsy 403 墙后仍有真 llms.txt;kompas 封全部 AI 爬虫 vs detik 不封;
+  - **S3 复核节奏**:18 市场 markets.json 全部加 review_cycle(90 天/各自信号源/next 2027-01-09);门户页尾部维护节;
+  - **S5 工具盲区修复(7 项)**:title 吞 JSON-LD(50 万字符假 title)/泰文字素/天城文词数恒 0/越南波兰变音切碎/土耳其 İ/--market 接线 markets.json 阈值(18 市场按单位判定)/微信 itemprop 仅 zh——**golden tests 32→46 全绿**;
+  - RU 实测发现的 stdlib robotparser 误报(Disallow:/? 被当整站禁)已记录为已知边界。
+  Multilingual 9.5 push: 9 thin markets deepened with dual-source verification, 18 markets × 2 real sites × 3 tools = 108 live audits written back into portals, review cycles for all 18, 7 tool blind-spots fixed (tests 32→46).
+
 ## 0.23.0 - 2026-10-09
 
 - **六缺口补全轮(审计驱动)**——5 个新模块:

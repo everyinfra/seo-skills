@@ -26,7 +26,7 @@
 
 ### 2.1 Shopee 店内 SEO(排名 = 店内运营指标,不是站外 SEO)
 
-Shopee 是越南电商第一入口,产品发现型查询先在站内搜索发生——"SEO Shopee"是独立学科,指标全部在 Kênh Người Bán(卖家中心)→ Dữ liệu 看板内闭环:
+Shopee 是越南电商第一入口,产品发现型查询先在站内搜索发生——"SEO Shopee"是独立学科,指标全部在 Kênh Người Bán(卖家中心)→ Dữ liệu 看板内闭环。**平台份额锚(2026-10-09 复核)**:Momentum Works《Ecommerce in Southeast Asia 2026》越南 2025 GMV ฿0,66T(+~50% 档),平台列 **Shopee 58% / TikTok Shop 39% / Lazada 3%**——TikTok Shop 在越南的电商份额与印尼并列 SEA 最高档(高于泰国 32%),做店内 SEO 时把 TikTok Shop 当第二站而非可选项:
 
 | 指标(chỉ số gian hàng) | 作用 | 实操口径 |
 |---|---|---|
@@ -100,6 +100,7 @@ markets.json 已收 4 条硬参数;增量维度:
 | AI 信任度 | **全球第 3(65,6 điểm)**;接受度第 5(71,6);综合 6/40 | World AI Index 2025(WIN),Bộ KH&CN 转发 |
 | 互联网用户 AI 接触 | **78-80% 近 3 个月用过至少一个 AI 平台**;1/3 每日使用 | Decision Lab 2025-07 面板(n=600) |
 | 平台格局 | **ChatGPT 81% / Gemini 51% / Meta AI 36%**;本土 AI(AI Hay 等)2 个进 top 10 | Decision Lab / VnExpress |
+| 平台格局(2026-03 更新) | **ChatGPT 66% / Gemini 50% / Meta AI 24%**;Kiki Info 进 top 10 | VnExpress 2026-03-09 引 2026 版面板(vietnam.vn 转引一致)——ChatGPT 份额下移但 Gemini 持平,引用时两版并注年份 |
 
 ### 4.2 操作结论
 
@@ -152,4 +153,52 @@ markets.json 已收 4 条硬参数;增量维度:
 | Shopee 站内 suggest + Kênh Người Bán → Dữ liệu | 站内词表+店内指标 | 2.1 全部指标官方入口 |
 | GSC + Ahrefs/Semrush | Google 侧标准面 | 无调形关键词**手工补录**——工具自动归一化会吞掉双轨 |
 
+## 七、Zalo 生态(2026-10-09 增量:越南第二战场)
+
+> vi 市场此前缺的私域/发现层深潜。数据锚点:2026-10-09 复核(母语检索)。
+
+### 7.1 盘子与变现(VNG 财报口径,两源一致)
+
+- **Zalo ~78,3 triệu MAU**(VNG 披露,Zalo 官方账号口径;Nhân Dân 引 VNG Q3/2024 财报 77,6 triệu,趋势一致)——越南第一大通讯/社交平台,人口覆盖 ~76%;通讯类份额 "chiếm gần 70%"(Nhân Dân 口径)。
+- **VNG 2026-04 首次拆分 Zalo 收入:2025 年 1.718 tỉ đồng,占 VNG 总营收 ~16%**(CafeF)——变现加深意味着 OA/广告位价格与竞价密度只会上升,早进场成本低。
+- **Zalo OA 2026-06-01 起启用 4 档新服务包**(GaPiT 转官方公告)——套餐层重新定价,引用报价前查官方现行页。
+
+### 7.2 Zalo 在发现链路里的真实位置(承接 1.2 三段式)
+
+- 三段式 `Zalo/FB 群种草 → Shopee 比价成交 → Google 研究` 中,Zalo 承担的是**熟人信任层**:群聊转发是越南口碑传播的主通道,OA 是"品牌在 Zalo 里的官方门面"——种草后的第一步验证(这是不是正品/有没有官方)发生在 **Zalo 站内搜索**。
+- **Zalo 站内搜索占位 = 越南版的品牌 SERP 审计**:用户搜品牌名,若 OA 认证号缺席而山寨号/仿号在场,转化在进入 Google 之前就漏掉了——ORM 台账在 vi 市场要加"Zalo 品牌词占位"一行(与 Google 品牌词 SERP、无调形 SERP 并列三查)。
+- **OA 的私域广播 ≠ 社媒发帖**:消息触达(类 LINE OA Broadcast)是通知型渠道,打开率逻辑接近邮件营销——内容节奏按"服务通知 > 节日问候 > 促销"排,促销频率过高直接掉粉。
+- **Zalo OA Ads(Official Account Ads)**:以涨粉(followers)为结算导向的付费位(CNV 2026-01 口径)——冷启动买粉再靠广播承接,是"以投养私域"的标准路径;与 Google Ads 词表完全不通用。
+- Mini App(Zalo 小程序)承载轻交易/表单,跳过独立站开发——中小客户预算有限时,vi 市场的 MVP 顺序常是 **Zalo OA + Mini App 先于独立站 SEO**;SEO 从业者的定位是接住"研究段"的长尾,而非全链路。
+
+### 7.3 操作清单(品牌进 vi 市场的 Zalo 三步)
+
+1. 认证 OA + 品牌词占位审计(站内搜品牌名,查山寨仿号);
+2. 客服话术接 OA(自动应答+人工兜底),响应速度是私域评分核心;
+3. 广播内容日历与 Zalo Ads 涨粉计划分开考核(粉数/留存 vs 触达/转化)。
+
+## 十、本地实测(2026-10-09)
+
+**实测站**:vnexpress.net(头部新闻门户)、tinhte.vn(最大科技社区,markets.json entity_source 之一)。工具:`site_audit.py --market vi` / `llmstxt.py check` / `head_check.py`。
+
+| 站 | site_audit 触发项 | head_check 汇总 | llms.txt |
+|---|---|---|---|
+| vnexpress.net | WARN:desc 192 超限 / 跳级 h2→h4 / 153 链接>100;无 CRITICAL | 9 ERROR(x-ua-compatible、fb:app_id、apple-mobile-web-app-capable、twitter:*×6)/2 WARN/geo 四件套齐,exit 1 | 无(/llms.txt 等 4 路径全 404) |
+| tinhte.vn | **CRITICAL:无 H1**;WARN:desc 162 超限 / 183 链接>100 | 6 ERROR(twitter:*×4、fb:app_id、**charset 位于第 34763 字节**——前置 34KB 内联样式);文档 1.44MB,exit 1 | 无 |
+
+**工具盲区(如实记录)**:
+
+1. **title 解析泄漏(工具 bug,vi 两站全触发)**:`site_audit.py` 的 HTMLParser 把 `<head>` 内 title 之后出现的 JSON-LD/JS 全部并入 title 长度——vnexpress 报 "title 180485 字符"、tinhte 报 104794,均为假告警;真实 title 长度正常(head_check 读到的 50-55 字符)。vi 市场门户普遍把 JSON-LD 放 head,此 bug 在本市场高频命中,title 长度结论以 head_check 为准。
+2. **`--market vi` 未接线**:market 参数只有 `ja` 有差异化阈值,markets.json 里 vi 的 65 字符 title 上限未生效(按 60 通用值判)——阈值偏差小,但属声明与实现不一致。
+3. **词数统计对越南语失真**:`wc()` 的 Latin 正则 `[A-Za-z0-9']+` 把含变音符的越南语词按 ASCII 边界切碎("przegląd"式问题在 vi 同样存在),词数虚高;内容词数结论需 `text_metrics.py` 交叉。
+4. **head_check 的微信/QQ itemprop 检查对 vi 无意义**:该检查是中文分享场景专用,在越南站上报 WARN 属误报,忽略即可。
+5. 无站点提供 llms.txt——vi 头部站对 AI 爬虫协议层动作迟于 nl(见 nl.md 实测),GEO 引用面竞争仍靠内容质量。
+
 > **检索口径**:本文件 2026-10-09 以越南语 web 检索执行(查询组:SEO website 2026 / Shopee SEO từ khóa / Cốc Cốc tìm kiếm + 追加)。原文:StatCounter Global Stats/Tuổi Trẻ/VietnamPlus/VietnamNet/VnExpress/VnEconomy/Báo Đầu Tư/CafeF/Bộ KH&CN(mst.gov.vn)/Cốc Cốc press & qc.coccoc.com/Decision Lab(经 Brands Vietnam 转发)/Shopee 官方博客/Mona Media/Salework/Nhanh.vn/Admatrix/SEOVIP/Hapo Digital/PRBaoChi/Fame Media/BacklinkAll/爬虫侧 Dark Visitors(coccocbot UA)。t0mmy 99 条为业内规则集(非官方算法披露);价格锚来自服务商 2026 公开报价页,引用前复核在营状态。
+> **2026-10-09 复核增补**:StatCounter 92,94/5,96/0,65 两源一致(gs.statcounter 直读 + TopOnSeek/TapChiCongThuong 转引);AI 使用 23,5%/第 38 位与信任第 3(65,6)/接受第 5(71,6)/综合 6/40(59,2)多源一致(VnEconomy/Nhân Dân/baomoi 等);平台格局补 2026-03 版(66/50/24,VnExpress+vietnam.vn 两源);VWAS 移动浏览器 ~21% 仍(单源);Cốc Cốc 年度趋势报告 2025 版 2025-12-17 发布(VietnamPlus 确认);Zalo 78,3 triệu MAU(Zalo 官方 + Nhân Dân 引 VNG 财报,两源)。
+
+## 维护
+
+- **复核周期**:90 天;**下次复核 2027-01-09**。
+- **信号源**:StatCounter 越南国家页(gs.statcounter.com/search-engine-market-share/all/viet-nam)、Cốc Cốc 官方报告(qc.coccoc.com 季度版 + 12 月年度版)、Decision Lab《The State of Consumer AI in Vietnam》(年度)、VNG 财报(Zalo MAU/收入拆分,季度)、Nhân Dân/Brands Vietnam(面板转引)。
+- **上次核验**:2026-10-09(母语一手源重核:引擎份额/AI 使用与信任/平台格局两版口径/Zalo 盘子;本地实测 2 站×3 工具)。

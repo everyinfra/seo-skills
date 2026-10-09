@@ -15,7 +15,7 @@
 | ChatGPT 份额 | 聊天机器人流量 **~82–83.56%** | StatCounter 2026-01,口径并记 |
 | AI 使用率 | >60% 网民用 AI(欧洲最高档);人均 ChatGPT 全球 #2 | Newcom/圈内 2026 |
 | LinkedIn | 活跃 **5.8–6.2M**;账户口径 13–15M | Newcom 2026/SearchLab/NapoleonCat,并记 |
-| bol.com | 11M+ 活跃客户(NL+BE)/~12% 荷兰线上销售/€5.17B 停滞 | Ahold 系 2026 |
+| bol.com | **13,5-14M 活跃客户(NL+BE)**/43.300 销售伙伴/63M 商品;marketplace 份额 ~55% | bol 官方 over.bol.com(2026-03 口径 14M)+ SearchLab/Rylee(13,5-13,7M)——2026-10-09 复核更新,旧口径 11M+ 作废;~12% 荷兰线上销售/€5,17B 停滞为 Ahold 系 2026 口径 |
 | bol 标题 | 官方建议 ~70;头部实测 ~80–90;技术上限 ~100 字符 | Partnerplatform/HubSpot 分析 |
 | title/desc(Google 侧) | 60/155 字符 | markets.json |
 | 价带锚点 | **€150–350**(本品类主导价带,内部口径) | 内部 2026-10 |
@@ -45,7 +45,7 @@
 
 ### 2.1 bol.com 是"第二搜索引擎"(交易侧)
 
-- **体量**:11M+ 活跃客户(NL+BE 双市场)/~12% 荷兰线上销售额/月访问 100M+;营收 €5.17B(停滞),Amazon.nl €3.70B(增长中)是第二极。
+- **体量**:**13,5-14M 活跃客户(NL+BE 双市场,2026 官方口径)**/43.300 verkooppartners/63M 商品;marketplace 内份额 ~55%(SearchLab)/月访问 100M+;营收 €5.17B(停滞),Amazon.nl €3.70B(增长中)是第二极。
 - **zoekalgoritme 排名因子**(Partnerplatform 官方):产品信息与查询的相关度 + 点击/购买行为 + 销售历史 + 评论 + 价格 + 图像质量——销售飞轮明显:卖得越好→排得越前→卖得更好。新品冷启动靠广告(bol Ads)拉动初始销量。
 - **zoekterm 研究是第一动作**:官方 **Bol Zoektrends** 工具给平台内搜索量(不是 Google 关键词的直接映射——bol 用户查询更口语、更品类化);配合 **Lijstpagina Ranking** 看 chunk(产品组)内位置。第三方:MarketMentor/Rylee 类工具做位置追踪。
 - **标题规范**:结构=品牌 + 型号/类型 + 产品组 + 关键属性(颜色/尺寸),连字符分隔;官方建议 ~70 字符,头部卖家实测 ~80–90,**技术上限 ~100——不要把 Google 的 60 字符纪律套到 bol**(bol 标题同时喂站内搜索,长标题=更多匹配面);禁 CAPS/符号/营销词。
@@ -155,3 +155,54 @@
 4. LinkedIn Newcom 2027 口径(活跃 vs 账户是否收敛)。
 5. Marktplaats(ebay 系)策略变化对品牌词 SERP 结构的影响;荷兰二手经济(循环经济政策)对新品价带的挤压。
 6. KvK 数据在 AI 引用中的权重是否显性化(KvK 号是否成为 ChatGPT 实体核验信号)。
+
+## 八、Marktplaats 策略(2026-10-09 增量:二手 C2C 巨头的实战位)
+
+> nl 市场此前缺的 Marktplaats 深潜(2.2 只有角色定位)。数据锚点:2026-10-09 复核(荷语检索)。
+
+### 8.1 广告产品与价格(官方口径)
+
+| 产品 | 价格 | 用途 |
+|---|---|---|
+| Omhoog plaatsen(置顶一次) | **€1,50** | listing 下沉后快速回顶(时效型) |
+| Dagtopper(当日榜首) | **€4/24h** | 单日品类榜首曝光,适合新品/清库存 |
+| Topadvertentie(顶部广告) | **€25/7 天** | 周期性霸位,品牌词+品类词双占 |
+| **Marktplaats Pro(商家版)** | **按点击付费(CPC),无月费/开通费** | 官方明确"alleen voor kliks"——webshop 级投放,商品流自动同步 |
+
+- 经典三件套(置顶/Dagtopper/Top)价格口径来自官方帮助中心与 marketingfacts 存档,浮动不大;**Pro 的 CPC 模式是 2026 主推**——对 webshop 而言 Marktplaats Pro 已是"第二个购物广告面",与 Google Shopping/bol Ads 并列做 ROAS 对比。
+
+### 8.2 品牌策略:三个占位动作
+
+1. **品牌词 SERP 占位**:Marktplaats 列表页域名权重高(荷兰流量第 2 marketplace),品牌词下二手列表几乎必现——**官方账号(Marktplaats Zakelijk)入驻+自营翻新/官翻位**是抢回定价锚的手段;不入驻 = 二手价由 C2C 卖家随机定价,拉低新品感知价(2.2 既有结论的执行解)。
+2. **二手价情报**:同款二手成交价是荷兰比价文化的暗层(Tweakers Pricewatch 只管新货)——定价与 promo 节奏前扫 Marktplaats 同款在挂量与均价,€150-350 主导价带(2.4)的"旧款甩卖潮"直接压新款首发。
+3. **listing 写法**:标题具体化(型号+状态+配件)+≥3 张实拍图+诚实描述是官方与消费者节目(Kassa/BNNVARA)一致口径——**Marktplaats 的"排名因子"朴素版就是新鲜度+图文完整度**,与 bol 的属性完备逻辑同构但门槛低得多;描述荷语化(交易层词汇,3.3)。
+
+### 8.3 循环经济政策面(前瞻)
+
+- 荷兰循环经济政策推动二手消费主流化(复审钩子 5 的另一半):Marktplaats 的流量结构受益于政策,**新品品牌把 Marktplaats 当"竞品监控位+以旧换新触点"**的双角色会强化;提案里 marktplaats 占位审计纳入季度 ORM 例行。
+
+## 十、本地实测(2026-10-09)
+
+**实测站**:nos.nl(公共新闻广播,第一大新闻机构)、metronieuws.nl(全国免费报系)。**首选站 nu.nl 与 tweakers.nl 双双 403**(套件 UA 被反爬拦截,bol.com/kieskeurig 亦 403)——荷兰头部站 bot 防护严,是本市场工具适配的首要发现。工具:`site_audit.py --market nl` / `llmstxt.py check` / `head_check.py`。
+
+| 站 | site_audit 触发项 | head_check 汇总 | llms.txt |
+|---|---|---|---|
+| nos.nl | **CRITICAL:ChatGPT-User + PerplexityBot 被 robots.txt 禁**;WARN:desc 62<80 / 121 链接 / alt 78/78 缺 / 无 JSON-LD | 8 ERROR(twitter:app:*×6、msapplication-config、mask-icon);exit 1 | 无 |
+| metronieuws.nl | WARN:3 个 H1 / og:description 缺 / 143 链接 | 3 ERROR(x-ua-compatible、twitter:site、apple-mobile-web-app-capable);exit 1 | **有 /llms.txt(200)**——Yoast SEO v27.6 自动生成,36 链接/8 节 |
+
+**重大市场发现(非工具问题)**:**NOS 在 robots.txt 全面禁 AI 爬虫**——实读确认 CCBot/ChatGPT-User/GPTBot/Google-Extended/Google-CloudVertexBot/Applebot-Extended/anthropic-ai/ClaudeBot/Omgili(-bot)/FacebookBot/Diffbot(+PerplexityBot)全部 `Disallow: /`。**荷兰最大新闻机构既禁训练也禁检索抓取**——GEO 含义:ChatGPT/Perplexity 的荷语答案无法引用 NOS,引用面权重向 NU.nl/AD 系/未禁站转移;给荷语客户做 GEO 引用面审计时,**robots 姿态本身成为分层变量**(用 `robots_posture.py` 批量查目标信源是否对 AI 开放)。
+
+**工具盲区(如实记录)**:
+
+1. **反爬 403(本市场特有浓度)**:`seo-suite-audit/1.0` UA 在 nu.nl/tweakers.net/bol.com/kieskeurig 全被拦——荷兰头部站 bot 管理严格,site_audit 的 UA 需可配置或先 curl 探测可达性再跑;结论:nl 审计前先换站或用浏览态抓取。
+2. **llmstxt.py 的 BOM 处理缺陷**:metronieuws 的 /llms.txt 以 UTF-8 BOM(\ufeff)开头(Yoast 生成器的固定行为),`validate` 一边统计行打 "H1 ✓" 一边问题行列 "缺 H1"(`^# ` 正则被 BOM 顶掉)且同 BOM 又触发 "含 Unicode 水印字符"——**两报自相矛盾,根因一个**:读文件时应 `lstrip('\ufeff')`。另 Yoast 转义污染("Metronieuws\.nl")在链接名里,LLM 可读性受损,校验器可加一条提醒。
+3. **title 解析泄漏(同 vi/th/pl 的 bug)**:nos 报 29221、metro 报 25949 字符(head 内 CSS/JS 并入);真实 title 正常。
+4. **sitemap 假阴性**:site_audit 只探根 /sitemap.xml——nos 的 sitemap 在 /sitemap/index.xml 且在 robots.txt 声明 3 个,报"不可达"误导;应改为先读 robots.txt 的 Sitemap 行。
+5. **微信/QQ itemprop 检查对 nl 无意义**(误报,忽略)。
+6. **市场级洞察**:Yoast v27.6 起自动生成 llms.txt 且默认开启——荷兰站群(WordPress+Yoast 占比极高)的 llms.txt 覆盖率将快速上升,**nl 可能是 llms.txt 普及最快的欧洲市场**;套件的 llms.txt 检查在 nl 从"几乎必空"变为高频命中,注意 Yoast 版两个已知缺陷(BOM+转义)。
+
+## 维护
+
+- **复核周期**:90 天;**下次复核 2027-01-09**。
+- **信号源**:StatCounter 荷兰国家页(gs.statcounter.com/search-engine-market-share/all/netherlands)、SE Ranking 荷语 AIO 研究(seranking.com/nl/blog/ai-overviews-nederland)+ Frankwatching 转引、Newcom《Nationaal Social Media Onderzoek》(每年 1 月)、SearchLab 统计页(searchlab.nl/statistieken,季度更新)、bol 官方 over.bol.com 与 Partnerplatform 公告、Yoast 版本日志(llms.txt 生成行为变化)。
+- **上次核验**:2026-10-09(母语一手源重核:引擎份额 89,14/4,6/2,56 精确一致、AIO 触发率 5,22/6,43/2,17 一手直读、LinkedIn 5,8M Newcom 口径、bol 13,5-14M 更新;本地实测 2 站×3 工具 + NOS robots 全禁 AI 爬虫实读)。

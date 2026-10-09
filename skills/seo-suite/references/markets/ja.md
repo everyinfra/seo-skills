@@ -155,3 +155,27 @@
 | LLM Insight/Ahrefs Brand Radar | AI 引用域名月次ランキング | 第五节三件套之二;月次对表 |
 
 > **検索 口径**:本文件 2026-10-09 以日语 web 検索(生成AI検索対策 2026/MEO 口コミ 增やし方/AI Overview 引用 サイト 上がる 等)および StatCounter·life-from2020·Ahrefs 原文 fetch 完成。ヒルクプイクク事件为 2024 年业界公知案例(2026-10 検索未再現原发报道,引用时标"業界通説")。引用先:webtan.impress.co.jp/suzukikenichi.com/life-from2020.com/news.yahoo.co.jp(Ahrefs 9 月版)/local-mieruca.com/mieru-ca.com/leadcreation.co.jp/picktop.jp ほか。
+
+## 九、本地実測(2026-10-09)
+
+**跑了什么**:note.com + www.yahoo.co.jp × `site_audit --market ja` / `llmstxt check` / `head_check`(site_audit v1.1)。
+
+**输出摘要**:
+
+- **note.com**:title **18 全角**<20(kseo 32 全角阈值经 markets.json 正确接线;EAW W/F=1、半角=0.5 进位无误)、词数 164<200(列表壳页)、**四条 AI 检索爬虫全放行**——entity_sources 首位的 note 对 AI 检索开放,与其被引地位自洽;llms.txt 404(判无,准确);head_check:twitter:app: 系列移动深链 8 项弃用 ERROR。
+- **yahoo.co.jp**:title「Yahoo! JAPAN」**6 全角**(11 个半角字符×0.5=5.5 进位 6,换算正确)、desc 73 全角<80 下限 WARN、**17 个 H1**(门户型首页现状)、alt 1/1 缺;AI 检索爬虫放行。
+- **yahoo llmstxt 假阳性**:/llms.txt 等 4 路径**全 200 但返回 lang="ja" 的 HTML fallback**——同 zh 站动线路由问题,「有无 llms.txt」必须人眼验首行内容。
+- yahoo head_check:twitter:site/image + fb:app_id ERROR、viewport 位置 WARN。
+
+**工具盲区(実測確認)**:
+
+1. **日文全角阈值正确触发**(title 单位=fullwidth、32/120 接线无误;两站均远低于上限,**超限分支未在真实站上验证到正例**——超限案例需补实测);
+2. desc 下限 80 全角折合 ~160 字符,对日语 desc 过严(yahoo 73 全角≈146 字符被 WARN);
+3. です/ます 混检、「AではなくB」对比构文≤2-3 次、AI 臭指纹词、全角英数字(ＳＥＯ)混在等 ja 专属检查全不在 site_audit 覆盖内(special_checks 人肉清单);
+4. nosnippet 检查只有 meta robots 一层,X-Robots-Tag 层由 site_audit 覆盖但 llms.txt 探测无内容校验(200-HTML 假阳性)。
+
+## 維護
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.ja.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:四大媒体 RSS(webtan.impress/suzukikenichi/life-from2020/news.yahoo+ Ahrefs 日本語月次)、Bing→Copilot 份额复测(桌面 51.8% 反超口径)、ステマ規制/景表法 执法动态、GEO AIO Tracker 月次引用数据、ChatGPT 日本引用孤立度(19.9%)复测。
+- 断言半衰期 6–12 个月;全角超限正例缺失记为待补项,下次复审优先补。

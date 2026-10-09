@@ -148,4 +148,29 @@
 
 ## 复审记录
 
-- 2026-10-09:建页。增量来自定向研究(百度 Q2 财报/AI Day/问一问双模型/小微灰度/豆包十行业抖音第一/小红书搜索占比 55%/市场 320 亿)。下次复审:2027-04 前后,重点=搜一搜 AI 入口全量状态、豆包信源分级是否松动、知乎直答外供变化。
+- 2026-10-09:建页。增量来自定向研究(百度 Q2 财报/AI Day/问一问双模型/小微灰度/豆包十行业抖音第一/小红书搜索占比 55%/市场 320 亿)。2026-10-09 本地实测轮补真实站验证(下节),复审节奏并轨 90 天(见「维护」节)。
+
+## 九、本地实测(2026-10-09)
+
+**跑了什么**:zhihu.com(百度生态引用大户)+ taobao.com(阿里系、历史上封百度的代表站)× `site_audit --market zh` / `llmstxt check` / `head_check`(site_audit v1.1,S2 修复后口径)。
+
+**输出摘要**:
+
+- **zhihu**:title 14 chars(解析正确——修复前版本曾把 head 内脚本吞进 title 报 2,791 字符的假 title)、desc 217 chars **超百度 78 上限,阈值正确触发**;无 H1/canonical/og/JSON-LD。**四条 AI 检索爬虫 CRITICAL 实测为真**:robots.txt `User-Agent: *` 段=`Allow: /tardis/jm` + `Disallow: /`——OAI-SearchBot/ChatGPT-User/Claude-SearchBot/PerplexityBot 全禁,连 Google-Extended(训练)也整站禁;但 Googlebot/bingbot/Baiduspider/Sogou 有专属放行段。**被引用大户主动退出 AI 检索**的中文样本,与第六节 AI-GEO 现状互证。
+- **taobao**:title「淘宝」2 chars、desc 113>78、无 H1;**四个 AI 检索爬虫全部放行**(robots 仅 3 条 `User-agent: *` 规则,Allow: /$ 与 /list/*)——阿里系对 AI 检索开放;著名的 2008 封百度条款已不在当前 robots.txt(Baiduspider 无专属段)。
+- `llmstxt check`:两站 /llms.txt、/llms-full.txt、/index.md **全返回 200 但内容是 SPA 的 HTML fallback**——工具只看 HTTP 码不验内容类型,动线路由全命中=假阳性,"有无 llms.txt"必须人眼验首行。
+- `head_check`:两站均中 x-ua-compatible 弃用 ERROR;zhihu viewport 在 title 后;itemprop 微信/QQ 三件套缺失 WARN 对中文站是**真信号**(与 es 等市场当噪音相反)。
+
+**工具盲区(实测确认)**:
+
+1. title 下限 20 chars 未按市场校准——中文品牌首页 14 字(≈28 en chars)属正常长度,照样 WARN;
+2. **desc 下限 80 > 百度上限 78,边界自相矛盾**——中文页不存在能同时躲开两条 WARN 的 desc 长度;
+3. /llms.txt 200-HTML 假阳性(见上);
+4. ai-bots 判定继承 stdlib robotparser 的 `Disallow: /?`→`Disallow: /` 归一化缺陷:知乎是真禁,同一机制在 yandex.ru 是误报(ru.md 九节)——`Disallow: /?`(只禁查询串)写法一律被判整站禁,ru/zh 审计必须复核 robots 原文;
+5. 百科/百家号/公众号占位、简繁混检、营销词密度等 zh 专属检查均不在工具覆盖内(special_checks 是人肉清单)。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.zh.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:ZhiMaHang 月更、百度搜索资源平台公告、微信公开课《开发者接入微信 AI 生态指引》与搜一搜 AI 入口全量状态、新榜智汇引用指南月更、知乎直答外供/豆包信源分级变化。
+- 断言半衰期 6–12 个月;知乎 AI 爬虫封锁、淘宝 robots 姿态属可逆决策,每季实测复查。

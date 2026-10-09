@@ -163,3 +163,20 @@
 
 ---
 **验证协议**:①ChatGPT 关浏览问品牌三态,季度重测;②RA 品牌页(评分/解决率/最新投诉)月检;③ML 温度计 + ficha 完整度周检;④AIO 出现率用 SEONextbr 口径年度复核。下次复审:2027-04,或 RA 年度研究/AIO 份额口径更新时。
+
+## 本地实测(2026-10-09)
+
+### 真实站验证(g1.globo.com / uol.com.br × site_audit + llmstxt check + head_check)
+
+- `site_audit --market pt`:g1 — title 34/60 ✓、**desc 195/155 超限 +40**(门户真实超限,Critical 级 CRITICAL 于 market_lint 同步复现)、677 链接、跳级 h1→h3、**robots.txt 四个 AI 检索爬虫全放行**;uol — title 25/60 ✓、desc 153/155 ✓、448 链接、**robots.txt 禁 Claude-SearchBot+PerplexityBot(2/4;ChatGPT 系放行)**。
+- `llmstxt check`:两站均无 llms.txt(四路径真 404)。
+- `head_check`:g1 — 5 ERROR(x-ua-compatible+fb:app_id+twitter:*);uol — 7 ERROR(skype_toolbar+x-ua-compatible+fb:app_id+twitter:* 四条)。charset 均达标,og:image 绝对 URL ✓。
+- `market_lint --market pt`:desc 超限 CRITICAL 复现(195/155);句长拆分对门户跑马灯/页脚连排文本误报(最长「句」1,278 词——新闻首页 ticker 非正文,人工排除);**pt special_checks 9/9 全 MANUAL,零 AUTO 机检项**——四市场实测中机检覆盖最薄(v2 动态机检未映射 pt 专属规则),Title Case/AO90 兼收/você 统一全靠人工过三。
+- **结构性发现(巴西门户对 AI 开放是欧陆反面)**:g1 全放行、uol 仅禁 2/4 且 ChatGPT 系放行——对照同日欧陆头部(lefigaro/spiegel 3/4 禁)与海湾(aljazeera 2/4),**巴西头部是八站实测中最开放的一档**。叠加 ChatGPT 单极(~99%)与 AIO 86.8% 常态(1.1):引用面供给端(G1 开放)与需求端(用户全在 ChatGPT)同向,巴西 GEO 的入口摩擦低于欧陆市场——「先占位」在 pt 的性价比高于 fr/de 同期判断。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**(替代上方 2027-04 旧口径);signals 清单与 `scripts/markets.json` 的 `markets.pt.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:**StatCounter BR 月度份额**(Google 88.4%/Bing 9.63% 口径漂移)、**Conversion 博客/《Tendências de SEO》年更**、Reclame Aqui 官方研究与 Black Friday 年度报告、SEONextbr/Optimiza 报告(AIO 86.8% 口径)、Google blog pt-BR(Search I/O 巴西场)、LGPD/CNPCD 执法动态。
+- 断言半衰期 6–12 个月;RA 研究数字(5.55 亿月引/55% 购前查)随年度研究刷新,勿跨年沿用。
+- 增量研究前先读「本地实测(2026-10-09)」——门户 robots 姿态是当日快照,复审时重跑实读;pt 无 AUTO 机检项,审计清单必须人工过第三节全表。

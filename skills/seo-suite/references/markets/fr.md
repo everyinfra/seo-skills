@@ -170,3 +170,20 @@
 3. StatCounter 法国桌面/移动份额再采样(口径冲突是否收敛)。
 4. Bill 96 执法案例与私人诉权判例(OQLF 公告)。
 5. Qwant 索引策略(Bing 依赖)是否变化。
+
+## 本地实测(2026-10-09)
+
+### 真实站验证(lemonde.fr / lefigaro.fr × site_audit + llmstxt check + head_check)
+
+- `site_audit --market fr`:lemonde — title 53/60 ✓、desc 147/155 ✓、716 链接级门户常态、**对非浏览器 UA 返回英文版**("Le Monde in English")——内容协商/geo 分流,法语页审计须带 fr Accept-Language 重测,默认 UA 拿到的不是 fr-FR 版;robots.txt 禁 Claude-SearchBot(1/4)。lefigaro — title 58/60 ✓、desc 119/155 ✓、8,807 词、**robots.txt 禁 OAI-SearchBot+ChatGPT-User+Claude-SearchBot(3/4;PerplexityBot 放行)**——逐出 ChatGPT/Claude 引用面,仅 Perplexity 可引。
+- `llmstxt check`:**lemonde /llms.txt 200 为软假阳性**——四个探测路径全部返回同一张 HTML SPA 兜底页(`<!DOCTYPE html><html lang="en">`),工具只看状态码不看内容类型——**「200 ≠ llms.txt 在场」**,法语大站审计须人工核 body 是否 markdown;lefigaro 四路径真 404。
+- `head_check`:lemonde — 8 ERROR(twitter:*+apple-mobile-web-app-capable)+title 落在第 12,947 字节(head 前堆 17 个 ad:* / pbstck:* 运营 meta——推荐顺序大违例);lefigaro — 14 ERROR(mask-icon+smartbanner:* 17 条 meta 在 title 前)。itemprop 三件套对非中文市场正确跳过(INFO)——不产噪音。
+- **NBSP 检查触发实证(market_lint.py)**:`--market fr --url` 直跑——fr_nbsp 规则触发,但**对原始 HTML 源码运行产生实体噪音**:lefigaro 报 654 处中大量是撇号实体 `&#039;` 的分号被计入(上下文样本 'l&#039;a'),真实法语排版缺口(「a Une : 」类普通空格)混在其中;lemonde 因返回英文版,18 处全为英文上下文(Date:/Time:)。**结论:NBSP 数字不可直接引用,须先做实体解码+文本抽取+语言判定再跑**——v2 机检在原始 HTML 上的计数是上界不是净值。
+- **结构性发现(法头部封锁与德同级)**:lefigaro 3/4 禁+spiegel.de 同日实测同为 3/4 禁——欧陆付费墙大报的 AI 爬虫封锁是跨市场默认姿势(对照 youm7 全放行)。AIO 2026-07-22 刚上线+头部主动退出 → 1.2 的「先占位窗口」判断获实测支撑:法语引用面向 AFP 系/官方机构/中腰部白帽源敞开。
+
+## 维护
+
+- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.fr.review_cycle` 保持一致,以 json 为准。
+- 触发即复审的信号:**CNIL/Arcom 动态**(Arcom 33–38% 损失评估是否更新、CNIL AI/consent 新指引)、**StatCounter FR 月度份额**(桌面 Bing 10.92% 口径漂移)、Vincent Hego 观察站 AIO 覆盖率、Mistral robots 文档与 IP JSON 变动(Vibe 三爬虫)、OQLF Bill 96 执法公告、法国出版商 vs Google 诉讼进展。
+- 断言半衰期 6–12 个月;AIO 时间线/CTR 类数字最先过期,法规罚则次之。
+- 增量研究前先读「本地实测(2026-10-09)」——lemonde 英文版分流与 llms.txt 软 200 是工具层陷阱记录;头部 robots 姿态以复审时重跑实读为准。
