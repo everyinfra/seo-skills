@@ -24,17 +24,56 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 7. 可执行层(实装脚本,AI 直接调用)
-规则已变成代码——对应任务先跑脚本,再按能力文件解读输出:
-- **site_audit.py URL [--market ja|en|zh]**:单页审计(title/desc/H1/canonical/robots/og/JSON-LD/llms.txt/sitemap/AI爬虫放行/staging 子域/词数 CJK 感知),CRITICAL 退出码 1;
-- **robots_posture.py robots-url [--signal visibility|protect-ip]**:AI 爬虫三层放行矩阵+Cloudflare 注入块检测+Content-Signal 建议;
-- **text_metrics.py [--market zh|en] [--scrub]**:CJK 词数/句长节奏(metronomic AI 签名)/中英 slop 词/Unicode 水印扫描与清除;
-- **gsc_mining.py 导出.csv [--mode matrix] [--decay cur.csv prev.csv]**:GSC 导出直接挖 striking distance/低 CTR 机会(期望 CTR 曲线)/蚕食/流量衰退,无需 API;
-- **schema_lint.py URL**:@id 绝对性/引用悬空/aggregateRating 范围/FAQ 空答案/占位符黑名单;
-- **llmstxt.py validate|check|generate**:v2 结构校验/线上探测(.md 孪生)/从 sitemap 生成骨架;
-- **serp_overlap.py 输入.csv**:四档聚类判据(7-10 同文/4-6 同簇/2-3 互链/0-1 分开);
-- **self_check.py / link_check.py / text_units.py**:套件自检/链接校验/市场计量单位。
-全部 stdlib-only 无依赖;来源方法论(百仓深扫)见 NOTICE。
+### 7. 可执行层(33 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
+
+**审计与页面质量**
+- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1)
+- `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical
+- `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
+- `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威
+- `core_eeat.py FILE`:CORE-EEAT 机械化(GEO/SEO 双分+veto 封顶 59)
+
+**技术 SEO**
+- `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
+- `hreflang_cluster.py URL...`:簇矩阵(es-419 放行/jp 拒绝/单断全废提示)
+- `redirect_chain.py URL`:逐跳链/循环/301 检查
+- `robots_posture.py URL`:AI 爬虫三层矩阵+Cloudflare 注入检测+Content-Signal
+- `llmstxt.py validate|check|generate`:v2 校验/线上探测/生成
+- `schema_lint.py URL`:@id/悬空引用/自评评分/占位符黑名单
+
+**关键词与 SERP**
+- `gsc_mining.py 导出.csv [--mode matrix] [--decay cur prev]`:striking distance/低 CTR(期望曲线)/蚕食/衰退
+- `serp_overlap.py 输入.csv`:四档聚类判据(7-10/4-6/2-3/0-1)
+- `keyword_variants.py`:跨语言变体归组(阿正书/越声调/全半角/土 İ/俄 ё)
+- `payment_intent.py`:支付即意图标注(OXXO/cuotas/Pix/COD…)
+- `geo_difficulty.py`:GEO 难度公式+客户三档
+- `serp_occupancy.py --market XX`:市场 SERP 占位审计(UGC 五霸/聚合器/投诉站)
+
+**多语言实装(markets.json 数据层)**
+- `market_lint.py --market XX FILE`:全角可见长度(日 32)/泰文字素/句长/营销词 18 语/格式/敬语混用/简繁混检
+- `local_format.py --market de|fr|ar|zh`:数字/标点空格/RTL 数字/日期/电话
+- `text_metrics.py`:CJK 词数/metronomic 句长 AI 签名/slop/Unicode 水印(--scrub 清除)
+- `text_units.py`:按市场计量单位统计
+
+**AI/GEO 测量**
+- `citation_panel.py init|record|report|diff`:采样面板(五状态/配对分母/Wilson CI)
+- `fanout_analysis.py 输入.csv`:query fan-out 三桶(added/dropped/preserved)
+- `ai_referral_log.py < access.log`:AI referrer 下界分析(+--bot-ua 先行指标)
+- `cite_domain.py --input json`:CITE 40 项域名评级(veto BLOCK)
+
+**归因与管道**
+- `did_attribution.py --pre --post`:DiD 对照归因(56/28/7 参数/三态判定/断代检测)
+- `seo_vs_ads.py --gsc --ads`:四桶 join(double-paying 检测+省额区间)
+- `yt_outlier.py videos.csv`:YouTube 2× 离群+标题词频(长短分基线)
+- `trend_scout.py`:HN+Reddit 趋势雷达(失败源明说不猜)
+- `freshness.py [DIR]`:证据保鲜(>90 天 stale/未来日期 error/--fail-stale)
+- `report_build.py --findings json --out html`:自包含报告(禁 script/80KB/>20 条=失败报告)
+
+**套件自维护**
+- `self_check.py` / `link_check.py`
+
+来源方法论见 NOTICE(百仓深扫改写,非复制代码)。
 ## 6. 你需要自备什么
 - 本 Skill 不附带数据。需要数据的任务，使用你自己的数据源：Google Search Console、GA4、Bing Webmaster Tools 的导出，或你自己账号下的排名追踪、外链、爬虫工具的导出。
 - 可选的外部 API（例如 PageSpeed Insights API、Knowledge Graph Search API）需要你自己的 Key，Skill 不提供任何 Key。
