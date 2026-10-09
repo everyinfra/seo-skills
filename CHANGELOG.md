@@ -17,6 +17,14 @@ Future content or structure changes must bump the version and add a dated entry.
   - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
   S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
 
+## 0.25.0 - 2026-10-09
+
+- **薄文件深化轮(逐文件行数审计驱动,11 个 <70 行文件→全部 120+)**——3 个 agent 并行:
+  - **content 域**:discover-news(54→164:**Follow 功能 2025-11 已被移除**——原文件当现行功能写已修正;Chartbeat:Discover 占出版商 14.9% pageviews/AIO 首位 CTR −58%/突发新闻 +103%)/image-search(55→159:图搜流量案例/Lens 购物联动/C2PA 现状)/ecommerce-ladder(64→181:每级验收命令/印度 Flipkart 主场/UCP Integration Hub 上线·Universal Cart 证实/Noon 合并)/video(120→206:三平台可索引文本层/**Podcast SEO 新节**);
+  - **technical 域**:hreflang(44→150:三载体对比 75% 错误率/x-default 六用法/CMS 陷阱三件)/log-analysis(53→156:三源日志正则/实战三案例/抓取预算闭环)/semantic-html(42→121:可访问性树与 agent/框架陷阱)/navigation(48→130:faceted 2025-12 官方细则/mega menu 预算);
+  - **research+杂**:competitor-page-patterns(61→151:页型逆向完整工作流)/audit-tool-output(56→140:四工具字段映射+统一 schema)/event-library(49→130:逐事件字典+同意降级)/serp-feature(82→161:九特征触发×优化对照表+波动指数)。
+  Thin-file deepening: 11 files under 70 lines all expanded to 120+, with 2026-10 verified facts (Discover Follow removed, UCP Hub live, AIO CTR -58%).
+
 ## 0.24.0 - 2026-10-09
 
 - **多语言 9.5 冲刺轮(6 agent:S1 深挖+S2 实测+S3 节奏+S5 工具修复)**:

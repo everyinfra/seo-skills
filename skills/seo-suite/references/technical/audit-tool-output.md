@@ -54,3 +54,87 @@
 **3. 扣分制评分的语义。** technical 分数 = 9 个类别等权平均（不是加权），每类从 100 起扣固定分：robots 缺失 -18、sitemap<80 -18、含非 200 URL -16；noindex -25、非 200 状态 -40、canonical 缺失 -12/不匹配 -10；安全 = 基础 40 + 每个 header 12；structured_data/js_rendering/indexnow 是三档离散值（92/62、90/60、85/68）。schema 分：无任何标记 -35、每个坏 JSON-LD 块 -20、每个弃用类型 -10、缺推荐类型每个 -8（上限 -24）。知道扣分表才能反推「82 分」到底缺什么。
 
 **4. 隐藏依赖与预置文案。** content 分析器会跨读 `.seo-cache/pages/{slug}/geo.json` 旧缓存参与打分；schema 分析器读 `.seo-cache/site-meta.json` 的 `business_type` 判断 FAQPage 是否违规——缓存过期会让结论过期。`issues`/`recommendations` 是脚本里预写好的字符串模板，不是针对本站的定制建议；`parse_html` 会静默丢弃解析失败的 JSON-LD 块，所以 schema 列表只含合法块，坏块数量要看专门的 invalid 计数字段。生成的 schema 草稿里的 `[Placeholder]` 记号必须替换后才能用。另有反模式可学：双 UA 抓取对比（Googlebot 内容 > 默认 UA 的 1.25 倍 → 动态渲染/隐藏嫌疑）和字数<120 + SPA 标记（`__next_data__`、`id="root"`、`ng-version` 等）判 JS 渲染风险。
+
+## 主流工具输出字段对照（深读 2026-10-09）
+
+### Lighthouse JSON（PageSpeed Insights 同源）
+
+顶层字段（官方 [understanding-results.md](https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md)、[DebugBear 解读](https://www.debugbear.com/blog/lighthouse-performance-audits)）：
+
+| 字段 | 读法 |
+|---|---|
+| `fetchTime` / `lighthouseVersion` / `requestedUrl` / `finalUrl` | 报告新鲜度与实际被测 URL（重定向后）；两次报告对比先核这几个字段 |
+| `runWarnings` | 运行告警（页面没加载完、被拦截等）；非空时分数降权解读 |
+| `configSettings` | 设备、节流、通道（lab 模拟），决定结论适用场景 |
+| `categories` | 每类 `score`（0-1）+ `auditRefs`；performance 分是按权重加权，不是简单平均 |
+| `audits.{id}` | 每条审计：`score`（1 过 / 0 不过 / `null` 不计分）、`scoreDisplayMode`（informative / notApplicable / manual）、`displayValue`（人读值）、`numericValue`（毫秒等原始值）、`details.items[]`（逐条证据） |
+| `stackPacks` | 针对检测到的技术栈（WordPress/React 等）的附加建议，非普适 |
+
+常用 audit id：`largest-contentful-paint`、`cumulative-layout-shift`、`total-blocking-time`、`first-contentful-paint`、`speed-index`、`render-blocking-resources`、`unused-javascript`、`uses-responsive-images`、`is-on-https`。写结论引用 `displayValue` + `details.items` 里的具体资源 URL，不要只引总分；CWV 判断口径见 [cwv-playbook.md](cwv-playbook.md)。
+
+两条读数纪律：
+
+- **实验室方差**：模拟环境敏感，同一页多跑几次分数会漂移；结论性对比取多次中位数，或用现场数据佐证（[DebugBear](https://www.debugbear.com/blog/lighthouse-performance-audits)）。
+- **PSI API 的现场数据**：响应里 `loadingExperience`（页面级 CrUX）与 `originLoadingExperience`（源级）和 `lighthouseResult`（实验室）并存；现场数据按 P75 分位报告，两者冲突时 CWV 判定以现场数据优先（[PSI API 文档](https://developers.google.com/speed/docs/insights/v5/get-started)）。
+
+### Screaming Frog CSV
+
+- **Internal: All（主导出）常见列**：`Address`、`Content`、`Status Code`、`Status Message`、`Indexability`、`Indexability Status`、`Title 1` 及其长度/像素宽、`Meta Description 1` 及长度、`H1-1`、`Word Count`、`Crawl Depth`、`Inlinks`、`Outlinks`、`Canonical Link Element 1`、`Meta Robots 1`、`Response Time`、`Last Modified`、结构化数据列。列名后缀数字是「第 N 个实例」——同一页多 H1 时要检查 `H1-2` 是否也为空。
+- **Bulk Export → Response Codes → Client Error (4xx)**：失效链接清单（来源页、目标、状态码）。
+- **Bulk Export → Links → All Inlinks / All Outlinks**：`Type`（Hyperlink/Script…）、`Source`、`Destination`、`Anchor`、`Status Code`、`Follow`、`Rel`、`Target`、`Alt Text`——内链与锚文本分析的基础（[官方内链审计教程](https://www.screamingfrog.co.uk/seo-spider/tutorials/internal-linking-audit-with-the-seo-spider)、[内链变更对比](https://www.screamingfrog.co.uk/blog/finding-and-testing-internal-link-changes)）。
+- **配置先行**：是否渲染 JS、是否遵守 robots.txt、深度与页数上限都改变列里的值；导出不带配置时，先向用户确认配置再下结论（[用户指南](https://www.screamingfrog.co.uk/seo-spider/user-guide/general)）。
+
+### Sitebulb
+
+- 问题叫 **Hints**：每条 hint 自带解释、建议与受影响 URL 列表，severity 分 High / Medium / Low。先看 hint 的 URL 列表页而非只看计数。
+- **URL Lists** 列可自定义（增删技术列与提取数据列），可导出 CSV / Google Sheets（[v4 说明](https://sitebulb.com/release-notes-archive/version-4)）；Cloud 版有 Data Studio 连接器与自动报告（[连接器文档](https://support.sitebulb.com/en/articles/9857610-data-studio-sitebulb-connector)、[导出设置](https://support.sitebulb.com/en/articles/9854016-data-exports-settings)）。
+- Sitebulb Score 同样是自定义聚合分，按上文「健康分」规则处理：可引用、不作结论依据。
+
+### Ahrefs Site Audit
+
+- 问题按 **Errors / Warnings / Notices** 分组；点进单条问题可导出受影响页面 CSV（[官方导出指南](https://help.ahrefs.com/en/articles/2646667-how-to-export-site-audit-report)）。
+- **Page Explorer → Edit Columns** 控制导出列（状态码、标题、描述、字数、响应时间等），全量原始抓取数据可导（[新版 Site Audit 博文](https://ahrefs.com/blog/new-site-audit-tool)、[标题描述导出教程](https://help.ahrefs.com/en/articles/11091682-how-to-export-titles-and-meta-descriptions-from-site-audit)）。
+- Health Score 为加权自定义分，跨工具不可比。
+
+### Search Console 导出（常一起出现，顺带对照）
+
+- **效果报告**：`Top queries` / `Top pages` 两张表，列均为 Clicks、Impressions、CTR、Position；按查询与按页面两个维度分别导出，不能同时。
+- **页面索引编制（原覆盖报告）导出**常见列：URL、Last crawl、Crawled as、Page fetch、Indexing state、Google-selected canonical、原因——判断「为什么没被编入索引」的主证据。
+- 口径提醒：CTR / Position 是展示级聚合，与分析工具的会话口径不同，不可相加（同 [event-library.md](event-library.md) 的对齐原则）。
+
+### 多工具输出合并成统一 findings
+
+1. **统一 schema**：`finding_id` / `url_or_template` / `issue`（用本 Skill 的问题分类，见 [audit-rule-catalog.md](audit-rule-catalog.md)）/ `evidence`（工具名 + 原始行号或样例 URL）/ `tools_reported[]` / `impact`（影响页面数 × 页面重要性）/ `priority` / `fix` / `verify`。
+2. **join key = 规范化 URL + 模板**：去 query/fragment、统一大小写与协议；问题挂到模板而非逐页。同一问题被多个工具报告时合并为一条，`tools_reported` 记录全部来源——多工具交叉出现的问题优先级上调，孤证问题复核后再定。
+3. **冲突处理**：工具间结论不一致（一个报重复标题一个不报）时，回原始 HTML / 渲染后 DOM 抽样复核，以事实为准而非多数票；差异常来自渲染配置不同。
+4. **时间与配置对齐**：多份导出的爬取时间差超过两周、或渲染设置不同，在结论注明，且不对同一指标做前后对比。
+5. **严重度重算**：所有工具等级只作输入，最终优先级按「是否影响索引 / 是否主流量页 / 影响面」重排（同上文「转成审计结论」）。
+6. **合并示例**：Lighthouse `audits.render-blocking-resources` + Screaming Frog `Response Time` 高 + PSI 现场数据 LCP 慢 → 合成一条「落地页性能」finding，evidence 分别指向三个导出，fix 按 [cwv-playbook.md](cwv-playbook.md) 给出。
+7. **合并后单条 finding 的样子**：`finding_id=perf-001 | url_or_template=/blog/* | issue=移动端 LCP > 2.5s | tools_reported=[lighthouse, psi-field, sf-response-time] | impact=全部博文模板（约 320 URL）| priority=P1 | fix=按 cwv-playbook 拆阻塞资源 | verify=28 天后 CWV 报告复测`。
+8. **收尾核对清单**：每条 finding 都有样例 URL；同一问题没有在两条 finding 里重复出现；所有引用的工具名与爬取时间都写在 evidence 里；优先级与「影响索引 / 主流量页」排序一致。
+
+### 跨工具字段映射（合并时的对照底表）
+
+| 我方 finding 字段 | Screaming Frog | Ahrefs | Sitebulb | Lighthouse / PSI |
+|---|---|---|---|---|
+| URL | `Address` | Page URL | URL | `finalUrl` |
+| 状态码 | `Status Code` | HTTP status | Hint「4xx/5xx」下的 URL 列表 | `audits.is-on-http` 等 |
+| 标题问题 | `Title 1` + 长度列 | Issues「page title」类 | Hint「title too long/missing」 | `audits.document-title` |
+| 字数 | `Word Count` | Page Explorer 字数列 | URL List 加列 | — |
+| 性能 | `Response Time`（TTFB 近似） | 响应时间列 | —（性能走 Lighthouse 集成，版本而定） | `audits.*` + `loadingExperience` |
+| 结构化数据 | 结构化数据列 | Issues「structured data」 | Hint 对应条目 | `audits.structured-data`（有限） |
+
+### 严重度重映射
+
+工具等级只作输入，统一优先级按此重算：
+
+| 统一优先级 | 判定 |
+|---|---|
+| P0 | 影响索引或可达：noindex 误设、robots 屏蔽、5xx、canonical 指错 |
+| P1 | 影响主流量 / 转化页的表现：CWV 现场数据超标、标题缺失或重复集中在模板 |
+| P2 | 影响面小或仅合规性：少量失效外链、可访问性单项 |
+| P3 | 记录不处理：工具自定义规则与 Google 文档冲突的项（注明「以 Google 文档为准」） |
+
+### 来源补遗
+
+[Lighthouse understanding-results（官方）](https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md)、[DebugBear Lighthouse 审计解读](https://www.debugbear.com/blog/lighthouse-performance-audits)、[Screaming Frog 用户指南](https://www.screamingfrog.co.uk/seo-spider/user-guide/general)、[Screaming Frog 内链审计](https://www.screamingfrog.co.uk/seo-spider/tutorials/internal-linking-audit-with-the-seo-spider)、[Sitebulb 数据导出设置](https://support.sitebulb.com/en/articles/9854016-data-exports-settings)、[Ahrefs Site Audit 导出](https://help.ahrefs.com/en/articles/2646667-how-to-export-site-audit-report)、[Ahrefs 新版 Site Audit](https://ahrefs.com/blog/new-site-audit-tool)

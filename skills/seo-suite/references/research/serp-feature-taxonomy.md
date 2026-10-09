@@ -80,3 +80,82 @@
 **页面变迁取证**（Wayback CDX，免费，约 15 请求/分钟）：prefix 匹配拉整域快照、按天去重、`id_` 后缀取原始 HTML。用途：核对竞品页面何时改版 / 改价、找回已下线的对比页与客户名单、为「变化开始的日期」提供独立证据，服务报告的时间线对齐。
 
 **数字 PR 外联的序列规则**（cold-email-outreach / outbound-prospecting-engine，移植到链接、评测与专家引用请求）：触达节奏 Day 1 / 5 / 12，每次换角度换框架（Signal-Proof-Ask → PAS → 社证）；个性化三档——合并字段 / 按细分 / 逐人定制（超过 50 人不做逐人）；硬规则：首句谈对方不谈自己、每次触达给新理由（禁止 just checking in）、每封一个低门槛 CTA、主题 50 字符以内无感叹号；联系人去重并缓存，不重复触达；发出前人工审核样信；效果分层看（送达 → 打开 → 回复 → 正向回复），基准按客群给区间。注意边界：外联争取的是**第三方页面上的位置**，SERP 槽位本身仍由搜索引擎决定，与上文三条通用原则不冲突。
+
+## 触发条件与优化动作对照表（深读 2026-10-09）
+
+先重申三条通用原则：表中「触发条件」是**旁证归纳**（出现该特征通常说明什么），「优化动作」只提升资格与可理解性，不保证展示。
+
+| 特征 | 常见触发条件（旁证） | 优化入口 | 主要不可控项 |
+|---|---|---|---|
+| AI 概览 | 问题型、需综合多源的信息查询 | 无专门标记：页面可抓取、已索引、事实清楚可核对、被可靠来源引用；深入做法见 [geo-evidence.md](../content/geo-evidence.md) 与 [ai-citation-patterns.md](../content/ai-citation-patterns.md)（[Google AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)） | 是否被引用及引用版式 |
+| 精选摘要 | 定义 / 步骤 / 列表 / 表格型查询；页面通常已在前十，5-20 位常被引用为机会带（[Frase](https://www.frase.io/blog/how-to-optimize-for-featured-snippets-on-google)、[Moz](https://moz.com/blog/optimize-featured-snippets)） | 问题作 H2/H3，紧跟约 40-60 词直接回答；步骤用 `<ol>`、对比用 `<table>`；答案里不塞品牌名（[Moz](https://moz.com/blog/optimize-featured-snippets)、[Nightwatch](https://nightwatch.io/blog/optimize-for-featured-snippets)） | 无申请入口；`nosnippet` / `max-snippet` 只能主动限制 |
+| PAA | 主题存在追问链 | 用 PAA 树工具（如 AlsoAsked）与相关搜索挖真实问题，正文自然回答（[Semrush PAA 研究](https://www.semrush.com/blog/how-to-maximize-people-also-ask-seo-opportunities-study)）；FAQPage 标记不进 PAA | 问题由 Google 生成且会变 |
+| 本地包 | 显性 / 隐性地域意图 | Google 官方三因子：相关性、距离、知名度（[官方文档](https://support.google.com/business/answer/7091)）——资料完整、类目准确、各处 NAP 一致、真实评价积累；网格监测见 [local-grid-ranking.md](../monitoring/local-grid-ranking.md) | 距离权重不受网站控制 |
+| 购物 | 明确购买意图 | Product 结构化数据与页面价格 / 库存一致，Merchant Center feed 与页面一致（[电商指南](https://developers.google.com/search/docs/specialty/ecommerce)） | 商品数据审核与排序机制 |
+| 视频轮播 | 操作、评测、教程类查询 | 独立可索引观看页 + VideoObject；SeekToAction 让 Google 自动识别关键片段（[Google 官方博客](https://developers.google.com/search/blog/2021/07/new-way-key-moments)）；完整字幕 / 转录文本利于理解（[Search Engine Land](https://searchengineland.com/guide/how-to-win-video-driven-serps)） | 平台视频常占多数位 |
+| 知识面板 | 查询指向实体 | Organization 结构化数据与可见信息一致；Wikidata 等外部实体源准确 | 面板内容自动生成 |
+| 图片包 | 视觉型查询（样子 / 设计 / 示意） | 原创图、描述性文件名与 alt、图片靠近相关文字、图片站点地图（[Google 图片 SEO](https://developers.google.com/search/docs/appearance/google-images)） | 图片流量不一定转化 |
+| 相关搜索 / 热门搜索 | 用户有后续探索方向 | 当选题与内链线索，无优化位 | 无 |
+
+### 每特征的最小验证路径
+
+| 特征 | 验证方式 |
+|---|---|
+| AIO / 精选摘要 / PAA | 手工抽查（记录查看条件）；无标记级验证工具 |
+| 结构化数据类（Product / Organization / Video） | [富媒体搜索结果测试](https://search.google.com/test/rich-results) + Search Console 增强报告 |
+| 本地包 | 商家资料后台的搜索表现 + [local-grid-ranking.md](../monitoring/local-grid-ranking.md) 的网格抽查 |
+| 视频 | VideoObject 经富媒体测试；观看页 `site:` / 视频站点地图核查 |
+| 购物 | Merchant Center 后台诊断 + 商品状态 |
+
+### 读表补充
+
+- **AIO 专项**：AIO 的「优化入口」之所以只有可抓取 + 可索引 + 事实清楚，是因为 Google 明确说明无额外要求、无专门标记（[AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)）；真正能做的是被引用面的经营：可核对的数据、明确的出处、独立站点的提及——方法与证据见 [geo-evidence.md](../content/geo-evidence.md)，勿把本表当作「AIO checklist」。
+- **组合读法**：同一次 SERP 里多个特征同时出现时，先按上文「读 SERP 组合」判意图，再决定争哪个特征：意图不对，单特征优化是浪费。
+- **特征优先级**：对同一查询不可能全都要；按「我方页型与该特征的占据者页型是否同型」决定——同型可争，异型先补页型。
+
+### 快速参考：特征 → 主要控制面
+
+| 特征 | 主要控制面 |
+|---|---|
+| AIO / 精选摘要 / PAA | 内容与结构（无标记入口） |
+| 本地包 | 商家资料 + 实体信息一致性 |
+| 购物 | Merchant Center 数据 + Product 标记一致性 |
+| 视频 / 图片 | 媒体资产、元数据、站点地图 |
+| 知识面板 / 附加链接 | 实体与站点结构（全自动生成） |
+
+## SERP 波动测量
+
+- **Semrush Sensor**：0-10 日度波动分，0-2 低 / 2-5 正常 / 5-8 高 / 8-10 极高；可按 20+ 类目与设备拆分，支持对自己的查询集算 personal score（[官方](https://www.semrush.com/sensor)、[KB](https://www.semrush.com/kb/652-sensor)、[档位解读](https://seo.co/blog/rankings-volatility)）。
+- **MozCast**：固定约 1 万查询的「气温」隐喻指数，温度越高越动荡（[对比说明](https://seo.co/blog/rankings-volatility)）。
+- **自建指数（不依赖第三方时）**：固定查询集每日快照前十，算「位置变动比例」= 发生排名变化的 URL 数 ÷（查询数 × 10）；更精细用 Spearman footrule 距离。特征变化另计一列：任一特征的占据者变化记 1。
+- **自建快照的操作步骤**：①固定查询集（30-100 个，含品牌词 / 非品牌词 / 各意图）→ ②固定查看条件（地域、语言、设备、个性化关闭或一致）→ ③每日同一时段抓取前十与特征清单 → ④入库为长表 → ⑤每周算位置变动比例与特征变化数，画时间线。
+- **判读纪律**（接上文「不把相关性当因果」）：全行业 Sensor 高企 + 本站波动 → 先怀疑算法更新，查 Google [搜索状态面板](https://status.search.google.com/products/rGHU1u87FJnkP6W2WywE/history) 是否有公告；Sensor 平静 + 单页暴跌 → 优先查自身改动（技术、内容、canonical）。波动期的策略是记录而非立即改页（[Nightwatch](https://nightwatch.io/blog/serp-volatility-tracking)）。
+- **混杂因素**：地域与设备个性化会让不同观察者看到不同 SERP；快照条件不固定时，「波动」里混着观察误差。快照必须锁定地域、语言、设备与采集时段。
+- **疑似更新期的报告写法**：只陈述「日期区间、受影响查询数、特征变化数、涨跌分布」，归因等 1-2 周窗口过后再下；窗口内结论标注「待确认」。
+- **类目分层**：Sensor 支持按行业类目看波动（[官方](https://www.semrush.com/sensor)）；本站查询集的类目与 Sensor 类目对齐后，行业波动与个体波动才可比。
+
+## Feature 占有率追踪
+
+- **查询集选取**：30-100 个目标查询，覆盖品牌词、核心非品牌词、各意图各页面类型；查询集一旦固定就不要中途增删（口径漂移会让时间线失效），要换集时另起一条基线。
+- **指标定义**：对查询集 Q 与特征 F，`占有率 = 我方占据该特征的查询数 ÷ 实际出现该特征的查询数`（分母只算该特征真实出现的查询）；逐特征分别报，不合成单一分。
+- **数据结构**：`date × query × feature × occupier_url × rank` 长表；人工抽查或排名工具导出皆可，必须记录查看条件（同上文监测规矩）。示例：
+
+| date | query | feature | occupier_url | rank |
+|---|---|---|---|---|
+| 2026-10-09 | crm for nonprofits | featured_snippet | competitor.example/crm-nonprofits | 1 |
+| 2026-10-09 | crm for nonprofits | video | youtube.com/watch?v=… | 4 |
+| 2026-10-09 | best crm | shopping | merchant.example/crm | 2 |
+
+- **告警规则**：占据者易主；某特征对我方查询集整体消失（先排查是功能调整还是竞争失利，见上文监测条目）；精选摘要连续 N 日丢失。
+- **与排名合并读法**：占有率时间线叠自然排名时间线看——排名稳但占有率掉，多为 SERP 版式变化（新特征挤占）而非页面问题；排名与占有率同掉，才回查页面与技术。
+- **报告口径**：Share of Voice 类指标在 AccuRanker、Semrush 等工具中常见内置，AIO 追踪在近年工具中已普遍纳入（[工具对比](https://nathanojaokomo.com/blog/best-rank-tracking-tools)、[Semrush 排名追踪](https://www.semrush.com/features/rank-tracking/)、[cloro.dev 方法](https://cloro.dev/blog/serp-features-tracking)）；自建时写清分母定义，避免与工具口径混用。
+
+### 深读轮补充误区
+
+- 用「某特征出现次数」当 KPI：分母（该特征本来出现多少次）没记录，涨跌无从解释。
+- 拿不同查看条件（地域/设备/日期）的两张快照对比，把正常波动当成易主。
+- 把 AIO 占有率与传统 SoV 合成一个分数：两种位置的点击含义完全不同。
+
+### 来源补遗
+
+[Google 本地排名官方文档](https://support.google.com/business/answer/7091)、[SeekToAction 关键片段官方博客](https://developers.google.com/search/blog/2021/07/new-way-key-moments)、[Google AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)、[Semrush PAA 研究](https://www.semrush.com/blog/how-to-maximize-people-also-ask-seo-opportunities-study)、[Moz 精选摘要](https://moz.com/blog/optimize-featured-snippets)、[Frase 精选摘要](https://www.frase.io/blog/how-to-optimize-for-featured-snippets-on-google)、[Nightwatch 精选摘要](https://nightwatch.io/blog/optimize-for-featured-snippets)、[Search Engine Land 视频 SERP](https://searchengineland.com/guide/how-to-win-video-driven-serps)、[Semrush Sensor](https://www.semrush.com/sensor)、[Sensor KB](https://www.semrush.com/kb/652-sensor)、[SEO.co 波动档位](https://seo.co/blog/rankings-volatility)、[Nightwatch 波动应对](https://nightwatch.io/blog/serp-volatility-tracking)、[cloro.dev 特征追踪](https://cloro.dev/blog/serp-features-tracking)、[排名追踪工具对比](https://nathanojaokomo.com/blog/best-rank-tracking-tools)、[Semrush 排名追踪](https://www.semrush.com/features/rank-tracking/)、[Google 搜索状态面板](https://status.search.google.com/products/rGHU1u87FJnkP6W2WywE/history)
