@@ -104,3 +104,21 @@
 ## 完全装载:寄生 SEO 平台分层(百仓深扫;kostja94 parasite-seo)
 
 **寄生 SEO(barnacle SEO)="分布式权重工程"**:借 DA 90+ 平台数天上首页。平台分层:Tier1 GEO 权威(Medium/Reddit/LinkedIn Articles/Quora——AI 引用 Very high)/Tier2 技术权威(GitHub/Stack Overflow/Dev.to)/Tier3-6 受控平台(WordPress.com/Blogger/HN)/wiki 层(**Grokipedia**)。战术:内容 1500+ 词/主词进标题+前 100 词/重发用 canonical;链接路径=Tier-2 反链→寄生内容→自有站。**风险红线:Google Site Reputation Abuse(2024)打击操纵性第三方内容**。
+
+## Grokipedia 引用战术全流程(kostja94 grokipedia 深读,2026-10-09)
+
+**平台事实**(2026-01 口径):xAI 的 AI 生成百科,2025-10 上线,~600 万+ 条;用户不能直接编辑,只能 Suggest Article(灯泡图标/搜不到时 Request this article)/Suggest Edit(划选文字弹表单)/Report Error;Grok AI 审核约 2 小时,无保证通过。ChatGPT 引用最多(~26.3 万次回应/1360 万提示词,~9.5 万独立页——仍远少于 Wikipedia 的 290 万,但引用份额自 2025-11 中旬持续上升);Google AI(Gemini/AIO/AI Mode)与 Copilot 2025-12 起采用。**引用场景特征:小众/冷门/高度具体的事实性查询,且常是首批被引来源**——定位"潜在未来 Wikipedia",早期参与捕获未来权威。
+
+**前置条件(基础决定一切)**:站上必须先有一篇**可被 Grok 抓取的、提到目标产品的已发布文章**。Grok 建条/改条靠 web search 找源;页面不被索引或不含该主题就不会被引。排名高有助于被发现但**不是必要条件**。
+
+**战术 1 · Suggest Article(诱建新条目引你的内容)**——**红线:Suggest Article 全程不带自己的 URL/品牌**,Grok 检测并拒绝直接 URL。隐身做法:把自己文章的核心概念(定义/分类/用例/技术术语/示例)改写成中性百科式"要覆盖的方面"(aspects to cover)。主题必须具体百科化("3D Model Generator" 过,"Technology" 拒);Additional Details 写该覆盖什么/为何重要/具体兴趣区——你的措辞影响 Grok 跑哪些搜索查询,你的页面排得上这些概念就可能被引为源。
+
+**战术 2 · Suggest Edit(丰富现有条目)**——**红线:Summary 和 Edit 内容零品牌零 URL**,自己的 URL **只出现在"Add another source"**,且与 1-2 个权威源(Forbes/TechCrunch/行业报告)混交(混交提升采纳率)。Summary 简短事实型("Expanded Virtual Staging Methods with additional techniques");Edit 内容要实质、中性、百科腔——把薄弱小节扩成完整子节;想精确添加的短语用双引号括起(便于 Ctrl+F 定位应用)。
+
+**Grok 审核约束**:拒推广腔、拒显式求引;两战术的通过机制都是"提供真实有用内容+让 Grok 自己通过搜索或 source 栏发现你"。
+
+**寄生平台执行细则补充**(parasite-seo 深读,接上文平台分层):LinkedIn Pulse 关键词进 headline,常排企业官方博客之上(B2B/机构首选);Medium 重发必须设 canonical;Reddit 综合指南型帖子+高赞排序好;Quora 答行业问题自然带链。**跨平台联合发布**:同一核心内容按平台改造+各配不同关键词(防重复内容),同平台内做内容簇(多文互链攒主题权威);**关键词分层**(keyword layering)=一篇内布多个相关词。Tier-2 反链路径:Web 2.0/客串文先指向寄生内容(养它),寄生内容再自然链回自有站。平台封禁风险集中在"推广腔/薄内容"——质量红线与 Google Site Reputation Abuse 同源。
+
+### 来源补充(R3 深读,2026-10-09)
+
+- [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) `skills/platforms/grokipedia/SKILL.md`(两战术+字段级表单模板+实测案例页)、`skills/seo/parasite-seo/SKILL.md`(平台执行细则);引用数据:The Verge 2026-01-31、SEO 工具 2026-01 统计

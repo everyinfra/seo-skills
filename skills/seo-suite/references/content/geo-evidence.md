@@ -128,3 +128,14 @@ NeurIPS Datasets & Benchmarks 2025；有公开代码/数据）考察问答与商
 **审计 JSON Schema**(qiaomu):顶层必填 7 项(schema_version/generated_at/scope/coverage/findings/action_plan/missing_evidence);scope.mode 7 枚举(advisory/page/template_sample/site_inventory/incident/migration/ai_search_extension);evidence_ref.kind 14 枚举(url/file/http/rendered_dom/search_console/server_log/crawl/serp/web_vitals_field/official_doc…)+observed_at;**finding 三轴:impact(5 档)/confidence(3 档)/effort(xs-xl)分立**;evidence_level=observed/inferred/missing 三分;**action 必须挂 finding_ids 且自带 verification**;source_review 必填 overdue_sources——过期来源显式暴露。
 **预注册标定纪律**(respectaso):评分曲线必须实测拟合而非手调——327 官方值+90 负样本、30% holdout(按 crc32 哈希切分防泄漏)、Spearman/Pearson/MAE 三指标;**预注册闸门**(见数前固定:held-out Spearman≥0.25 且超旧模型);三版本号独立 bump 才触发历史重算;"NEVER hand-tune these: refit under pre-registered gates"。任何套件评分器的维护纪律。
 **文件治理三法**(boraoztunc):①拒绝留痕——上游技能审计后拒绝理由全部写入 NOTICE("共享同一模板、描述不可区分→降低路由质量");②**一 trigger 一技能**(两个近同技能竞争同一 trigger 会降低路由);③采纳时纠错留痕(补 -webkit- 前缀/对齐参数,写明)。
+
+## 官方指引与内容政策增量(claude-seo 深读,2026-10-09)
+
+来源:[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-geo/references/google-ai-optimization-guide.md`、`skills/seo-agentic/references/vendor-matrix.md`(该仓自标"一手来源综合,2026-09-23 复核")。
+
+1. **Google AI 优化指南五条"不需要做"**(2026-05-15 Search Central 博客公布,文档更新 2026-07-10):不需要创建 llms.txt 或 AI 专用标记文件;不需要为 AI 把内容切块(chunking);不需要用特定措辞/长尾变体改写;不需要追逐博客/论坛/视频里的不真实提及;不需要为 AI 功能过度投资结构化数据。Google 的定位原话:"优化生成式 AI 搜索就是优化搜索体验,因而**仍是 SEO**"——AEO/GEO 被视为同一工作的别名。与本文第二节四条取舍一致,可作官方出处引用。
+2. **Google"第三方 SEO 工具"文档**(2026-06-05):任何工具都不能保证排名;第三方工具**无法访问 Google 内部排名数据**;Google 不背书厂商;Search Console 是权威一手源。套件评分器输出报告时照此声明"启发式,非引擎内部信号"。
+3. **Who/How/Why 测试**(Google E-E-A-T 指南配套):Who——读者期望处有署名,YMYL 主题必须有作者背景页;How——尤其 AI 辅助内容,读者会问就披露过程;Why——为帮助人而非吸引点击。**YMYL 2025-09 QRG 扩展到政治/社会议题**。自警四信号:按目标字数写作(没有这种字数)、无专业知识只为流量进入领域、伪造发布日期新鲜度、为"新鲜度"批量翻新内容。
+4. **Merchant Center 两条可执行 AI 内容要求**(有具体执法面):AI 生成产品图必须带 IPTC `DigitalSourceType: TrainedAlgorithmicMedia` 元数据;AI 生成的产品标题与描述须在 feed 中单独指定并标注为 AI 生成。QRG §4.6.5(规模化内容滥用)/§4.6.6(低努力主内容)是对应罚则面。
+5. **厂商数字红旗**(vendor-matrix 明令不引用):Cloudflare 的 markdown token 削减数字为厂商来源;WebMCP"token 效率"百分比只追溯到营销帖、无可复核基准;WebArena 等 agent 基准测的是**模型**不是站点质量;无受控公开研究把 accessibility-tree 质量或 WebMCP 与 agent 任务成功率挂钩——全部按假设处理。
+6. **agent 客户端事实的保鲜纪律**(可借鉴的方法):该仓 vendor-matrix 每行带来源分级 P(一手)/S(二手)/C(冲突),60 天以上行引用前必须重查;`CHECKED_ON` 常量与文档同次提交更新——快变事实"只在带日期的表里活,不散落正文"。

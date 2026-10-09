@@ -113,3 +113,49 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 - **SOV 纪律**:share 只在展示层 round 一次;时序用 **per-prompt LVCF(末值前推)** 消除错峰排期的假 dip;引用波动双指标=set volatility(逐日域名集 Jaccard)+weighted volatility(逐日份额向量 **Bray–Curtis**);Stability=(1−clamp01(wv))×100,<2 天返回 null。
 - **五状态差距分类**(unifapi):no answer/采集失败/brand absent/name-only mention/cited brand——**采集失败≠内容缺口**;no-answer 留在覆盖分母作 zero-presence;跨期比较只用两期均成功的 cell(配对分母);mentioned≠cited(文本别名 vs sources 域名)。
 - **Grokipedia**(xAI 百科,2025-10 上线,~6M 文章):ChatGPT 13.6M 提示中 ~263K 回复引用(2026-01);场景=小众具体事实查询常列首批来源;**Suggest Article 绝不放 URL**——把自家文章概念改写成中性"aspects to cover"让 Grok 自然发现(反推广红线:严格拒绝推广内容);审核 ~2 小时,状态流 Pending→In Progress→Processing→Created。
+
+## Agent 客户端行为矩阵(claude-seo 深读,2026-10-09)
+
+来源:[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-agentic/references/vendor-matrix.md`(2026-09-23 复核,逐行标 P=一手/S=二手/C=冲突)。这是"引擎"层之外的**agent 客户端**层——它们不检索排名,而是直接读页面替用户行动:
+
+| 客户端 | 读什么 | WebMCP | 身份/robots |
+|---|---|---|---|
+| ChatGPT 桌面版内置浏览器(site tools) | ARIA/无障碍树(官方 publisher FAQ) | **是,仅命令式**;默认开、仅顶层文档、无 Enterprise/Edu | ChatGPT-User,Web Bot Auth 签名(P) |
+| Google: Gemini in Chrome / Chrome auto browse | 页面元素+屏幕坐标 | 无消费公开证据(Google 共同编辑 spec) | Google-Agent(用户触发,通常无视 robots);试验 `agent.bot.goog` 签名(P/S) |
+| Microsoft Edge / Copilot Mode | 未文档化 | Edge 支持测试;无 Copilot 消费证据 | 未研究(P/S) |
+| Anthropic: Claude for Chrome / computer use | 页面文本、DOM、控制台、网络、截图 | 无(公开 issue 报发现缺失) | ClaudeBot/Claude-SearchBot/Claude-User 全遵守 robots;IP 表在 claude.com/crawling/bots.json(P) |
+| Perplexity Comet | 无障碍树+截图 | 无公开信号 | PerplexityBot 遵守;Perplexity-User 通常无视(P) |
+| Brave Leo | 未文档化 | 实验性,Nightly flag | 未验证(S) |
+| Apple Safari/WebKit | n/a | **反对**(agent 更接近辅助技术,站点不应检测) | n/a(P) |
+| Mozilla Firefox | n/a | 中立,不实现 | n/a(P) |
+
+**产品状态注记**(S 级,写报告前重查):ChatGPT Atlas 浏览器 2026-08-09 报道停止;Project Mariner 2026-05-04 报道关闭;Chrome WebMCP origin trial M149–M156、**无 ship 里程碑**;Lighthouse 13.5.0(PSI 同版);Web Bot Auth `draft-ietf-webbotauth-httpsig-protocol-00`(2026-09-01),`Signature-Agent` 已改字典形式 `sig1="https://signer.example"`。
+
+**robots.txt 组选择的三个暗坑**(RFC 9309;access-policy.md):
+1. 爬虫只遵守**点名它的最具体组**——存在 `User-agent: GPTBot` 组时,`*` 组对该爬虫整组失效。Cloudflare 托管 robots 把 `Content-Signal:` 放 `*` 组,而规范没有说它能逃逸组选择——**站点有命名组时必须在每组内重复该行**。
+2. 5xx robots → 合规爬虫按全站禁用处理;4xx → 视为无限制(与 ai-crawler-policy 一致,此处为 claude-seo 独立复核)。
+3. **不要用 IP 封禁 Anthropic 爬虫**——被封的爬虫连 robots.txt 都读不到,等于静默全禁;要区分"真 bot 与伪装 UA"用 Web Bot Auth 签名验证,不封 IP。
+4. 两个未证缺口须在报告中明说:无一手来源显示任何消费者 agent 发送 `Accept: text/markdown`;Dia/Opera/Comet 的 agent 动作 robots 行为未验证。
+
+## 爬虫访问层补充与角色混淆警示(geo-seo-claude 深读,2026-10-09)
+
+来源:[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-crawlers/SKILL.md`(387 行,三层爬虫参考)。
+
+1. **封锁率基线**(Originality.ai 2025):top-1000 网站中 **35%+ 封至少一个主要 AI 爬虫,5–10% 全封**——多为继承自旧 SEO 配置的激进 robots;封锁 AI 爬虫是"从 AI 答案消失"的最快单一途径。审计时把"意外封锁"当默认怀疑项。
+2. **⚠️ 角色混淆警示(方法论样本)**:该仓(高星流行仓库)的爬虫角色表与厂商文档存在三处硬冲突——把 GPTBot 说成"ChatGPT 搜索的动力,封它则 ChatGPT 搜索不收录"(实际搜索是 OAI-SearchBot;禁 GPTBot 不阻止 ChatGPT 引用);把 ClaudeBot 说成"live search/citation"(实际是 Claude-SearchBot;ClaudeBot 是训练);把 Google-Extended 说成"控制 AI Overviews"(实际不管 AIO)。**爬虫角色事实只从厂商 bots 文档取**,流行技能仓库的角色表须逐条对照我们的第三节。
+3. **补充爬虫名单**(三层中我们此前未列全的 Tier2/3):GoogleOther(Google 非排名用途/研究抓取)/ Amazonbot(Alexa 与 Amazon AI)/ FacebookBot(Meta AI;链接预览是另一个爬虫,不受影响)/ cohere-ai / anthropic-ai(Anthropic 安全研究+训练的旧 token,与 ClaudeBot 分立)/ Bytespider(字节系;西方市场站点常封,中文市场目标站**必须放行**——见中文指南)。
+4. **页级与头级 AI 指令**(新兴非标准,报告须带"草案"标):`<meta name="robots" content="noai">`/`noimageai`(Cloudflare Content Signals 语境的页级退出)、bot 特异 meta(`<meta name="GPTBot" content="noindex">`)、`X-Robots-Tag: noai`/`X-Robots-Tag: GPTBot: noindex`(HTTP 头优先于 meta,且覆盖非 HTML 资源)。
+5. **爬虫访问评分结构**(可借鉴):Tier1 放行 50%(每爬虫 20 分)/ Tier2 放行 25% / 无一键全封(`*` Disallow 全站+noai meta)15% / llms.txt+sitemap 对 AI 可达 10%。
+
+## 爬虫三分类与 2026-10 厂商文档更新(geo-score 深读,2026-10-09)
+
+来源:[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/ai-crawlers.md`(三分类框架,逐条厂商出处,2026-10-04 复核)。
+
+1. **三分类取代二分**(robots.txt 里混这三类是 AI 可见性建议最常见错误):**检索爬虫**(真爬虫,为回答用户问题抓页——封它丢的是引用)、**训练爬虫**(为训练语料抓页)、**退出 token**(**不是爬虫、不发请求**——只是声明"其他爬虫抓到的内容可否这样用";长得像 UA 才总被误当爬虫)。`Disallow: Google-Extended` 不会阻止 Googlebot 抓取;`Disallow: Applebot-Extended` 不会把站移出 Spotlight/Siri/Safari 结果。
+2. **10 个检索 UA 完整名单**(g.reachable 实测对象):OAI-SearchBot / ChatGPT-User / Claude-SearchBot / Claude-User / PerplexityBot / Perplexity-User / Googlebot(AIO grounding 也用它)/ **Bingbot(喂 Copilot)** / Applebot(Siri+Spotlight 含 AI 答案)/ **Amazonbot(Alexa+Rufus)**——比本文第三节 5 个的名单多出 Bingbot/Amazonbot 两个必测项;用户触发型(ChatGPT-User 等)也算:封它仍是封。
+3. **Apple 新事实**(官方 2026-09-04):Applebot-Extended 只管训练 Apple 基础模型;**退出 Apple 的 AI 答案(Siri/Spotlight)用 `nosnippet`**,不是 Applebot-Extended。
+4. **Google-Extended 控制全集**:训练未来 Gemini(Gemini Apps+Vertex API 背后的模型)**+ Gemini Apps 与 Vertex AI Grounding 的接地**;Search Console 帮助页也把它列为 AIO/AI Mode 生成模型的训练控制。不影响 Google Search 收录与排名(官方)。
+5. **Meta 新爬虫**(官方文档):`Meta-WebIndexer`(改善 Meta AI 搜索结果,Meta 称其帮助 Meta AI 引用并链接站点内容)/`Meta-ExternalFetcher`(按用户请求抓链接、**可能绕过 robots.txt**);`Meta-ExternalAgent` 非纯训练(官方写"训练或通过直接索引内容改进产品")。
+6. **Amazon 分类待审**:官方新列 `Amzn-SearchBot`(搜索含 Alexa)与 `Amzn-User`(代用户抓取),并称 Amazonbot 的抓取可能用于训练 Amazon 模型——Amazonbot 仍在检索表但标注待复审。
+7. **活体探测的解释限定**:探测从审计者自己的 IP 发厂商 UA 串(非厂商 IP 段);Claude-SearchBot/Claude-User 官方只发布 token,UA 串由 token 构造。**做 IP 段/rDNS 验证的防火墙会拒绝这些探测但服务真爬虫——拒绝只能读作"该服务器拒绝未验证爬虫 UA",不是厂商爬虫被封的证据**。
+8. **评分立场**(可借鉴):只对检索爬虫评分——封全部训练爬虫+退出 token**不扣一分**;"允许检索+拒绝训练"是合法姿势。但"不扣分"≠"无代价":封 Google-Extended 同时退出 Gemini Apps/Vertex grounding(见第 4 条),其余(cohere-ai/Bytespider/anthropic-ai/CCBot 下游)代价未知——报告如实分开写。

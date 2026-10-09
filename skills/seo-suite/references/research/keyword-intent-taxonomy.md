@@ -132,10 +132,25 @@
 **llm_mentions 决策规则**:DataForSEO `ai_optimization/llm_mentions`(platform: google|chat_gpt;**Perplexity 不支持**);include_subdomains:true 否则裸域 0 结果;**返回 ≥20 条→跳过猜测直接差距分析;<20 作种子;0 才推测**;推测=gpt-4o-search-preview 实测(~$0.01/问,一次 $0.15-0.20,1-2s 串行)。
 **内容护城河公式**(Affitor):目标=TOP5 竞品(排除 Wikipedia/Reddit)平均页数×1.5;分档 <20 页 GREEN/20-50 YELLOW/50-100 ORANGE(收窄利基)/100+ RED;竞品页数用 site: 计数;加速杠杆=独家数据/格式优势/更新速度。
 
+## 深读补充:机会规则/聚类成本/难度评分(R3 组四仓深读,2026-10-09)
+
+**AI 提问词的四类意图分组**(open-seo ai-prompt-research,关键词意图分类在 AI 问句上的等价物):Learning(原理/含义)/Choosing(best/comparison/alternatives/recommendations——**对商业最有价值,答案会点名产品**)/Doing(操作步骤)/Branded(点名品牌或竞品,**单列:测的是声誉不是发现量**)。头词取 1-3 词的短种子("crm" 优于 "best crm for small agencies",精确长短语返回少);跨调用结果按归一化文本(小写/去空白折叠)合并近重复;来源域按可注册域归并(www.semrush.com/semrush.com/sv.semrush.com 算一个);空 sources 的提问单独计数,不当"引无人"。
+
+**SERP 重叠聚类的成本工程**(claude-seo serp-overlap-methodology,四档阈值见上文百仓深扫节,此处补执行优化):全两两对比 N(N-1)/2 次 SERP——40 词=780 次,必须预分组省成本:①先按意图分类(I/C/T/N,去 N)②同头词("CRM software" 变体族)归组③两两对比只在组内跑④各组最高量词跨组抽查。**跳检规则**:同头词+同意图→假定重叠 4-6 不查;不同意图→假定 0-2 除非同头词;被跳过的对抽 20% 验证假定。**3-4 分边界裁决**:同域不同页=更近/同意图=倾向同簇/一方量 10×+=各自成页/拿不准进同簇分页写(宁聚勿散)。**反模式**:绝不按文本相似聚类("dog training tips"vs"classes" 文似 SERP 异);SERP 特性不同(一个出本地包一个出精选摘要)即使 URL 重叠也要分内容型;**打分前滤掉全 SERP 常客域**(Wikipedia/Reddit 类,取全库前 5 常见域);单会话内缓存 SERP 结果复用(A-B 拉过的 A-C 不再拉)。
+
+**簇结构与执行闸门**(claude-seo hub-spoke + execution-workflow):每 pillar 挂 2-5 簇×每簇 2-4 篇(pillar 2500-4000 词/spoke 1200-1800 词已入上节);模板按意图自动选:信息宽=ultimate-guide/信息 how=how-to/信息 list=listicle/信息概念=explainer/商业比较=comparison/商业评估=review/商业排名=best-of/交易=landing-page——多个匹配时看 SERP 实际内容形态(前列全是 listicle 就用 listicle)。锚文本多样性:**同一锚文本对同一页占比 ≤40%**。执行顺序=**pillar 先行→spoke 按量降序**;回链注入用占位符 `<!-- cluster-link:ID -->` 在写作时预埋,目标页上线后回填;中断恢复:产出 <50% 目标字数视为未写,重做。**交付记分卡**:内链密度 ≥3/篇、孤儿页 0、spoke→pillar 连通率 100%、pillar→spoke 100%、簇内互链实现率 ≥80%、同主词页数 0(蚕食)、实际/目标字数偏差 ≤10%——任一闸门失败不得静默通过。
+
+**内容件优先级权重**(gooseworks topical-authority-mapper):搜索量 25%×竞争缺口 25%×意图匹配(ICP)20%×簇完整度 15%×制作成本 15%。**缺口分类四型**(seo-opportunity-finder):hard gap(对手有页我全无,高优)/soft gap(我有但薄<500 词或过时,中优)/positioning gap(对手占据的簇正对我 ICP 核心痛点,高优)/informational gap(高流量低商业意图,低优);商业意图 1-5 分(5=直指产品"best AI SDR tools"/4=问题意识无产品/3=相邻痛点/2=教育沾边/1=泛流量),**≥3 分才进排期**。
+
+**竞品词差三桶**(Ryze competitor-gap,替代单一大 gap 概念):Gap(对手 top-20、我零曝光→新建内容)/Behind(双排但对手领先 ≥5 位→改现有页)/Ahead(我反超——简要报,这是护城河)。对手排名是估算、我方 GSC 是实测,**输出必须标注哪个数是哪个口径**;竞品品牌词默认丢,除非要做 vs/alternative 页——单列候选。
+
+**Impact × Confidence 双轴评分**(ericosiu content_attack_brief,可直接代码化,已同步进 scripts/gsc_mining.py 头注):Impact(0-10)=量档(≥10k+3/≥2k+2/≥500+1)+CPC 档($15+3/$5+2/$1+1)+漏斗档(BOFU+2/MOFU+1)+趋势档(>50%+2/>20%+1);Confidence(0-10)=KD 档(≤10+4/≤20+3/≤35+2/≤50+1)+现有位次(≤10+3/≤30+2/≤50+1)+主题权威加成(该词落在本站内容指纹主题内且指纹计数>5,+2);优先级=Impact×Confidence。**趋势判读**:12 个月量史取首 3 月均值 vs 末 3 月均值,>50%=Surging/>20%=Rising/>5%=Growing/±5%=Stable/≥-20%=Declining/更低=Falling。**漏斗词表**:BOFU 触发词=agency/services/hire/pricing/tools/software/best/vs/alternative/platform/cost/price/company/firms/consultant/consultancy/outsource;MOFU=how to/guide/strategy/examples/case study/roi/tutorial/template/checklist/tips/framework/what is/explained/overview/comparison。**执行路径分派**:KD≤20 且无页→全自动新建;已有页且 KD≤50→全自动刷新;KD≤40→半自动(AI 起草人审);KD≤60→人写 AI 优化;更高→专家写+外链。**衰退检测 28d vs 90d 口径**:90 天点击×(28/90) 归一成日均再比,仅 c90>5 才判,c28<c90×0.7(即降 >30%)记衰退。**竞品 gap 硬阈值**:对手 best_position ≤20 且我 >50(或零曝光),过相关性词表+噪音黑名单双滤(login/coupon/what is/wikipedia 类不进 gap)。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
+- 深读来源（R3 组，2026-10-09）：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/ai-prompt-research/SKILL.md`（Apache-2.0）；[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-cluster/references/serp-overlap-methodology.md`、`hub-spoke-architecture.md`、`execution-workflow.md`（MIT）；[gooseworks-ai/goose-skills](https://github.com/gooseworks-ai/goose-skills) `skills/seo/composites/topical-authority-mapper/SKILL.md`、`seo-opportunity-finder/SKILL.md`（MIT）；[Ryze-AI-Adgent/open-seo-mcp-skills](https://github.com/Ryze-AI-Adgent/open-seo-mcp-skills) `skills/competitor-gap/SKILL.md`；[ericosiu/ai-marketing-skills](https://github.com/ericosiu/ai-marketing-skills) `seo-ops/content_attack_brief.py`
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/keyword-research/references/keyword-intent-taxonomy.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/keyword-research/references/keyword-intent-taxonomy.md)（Apache-2.0）
 - 一手资料：[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
 - 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（西语 es-419 组合经 Google hreflang 文档核实；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）

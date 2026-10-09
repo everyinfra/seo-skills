@@ -72,3 +72,17 @@ ARD/OKF 无任何 AI 引擎宣布消费;WebMCP 单一消费者(ChatGPT 桌面浏
 **llms.txt 消费端安全**(mcpdoc):远程 llms.txt 自动只放行其所在域;本地文件必须显式 --allowed-domains;**meta-refresh 重定向目标域也须过白名单**;官方两跳协议=list_doc_sources→fetch llms.txt→反思其中 URL→fetch 相关页。
 **单一事实源+CI 漂移门**(sceneview):llms.txt 为唯一源,MCP/派生知识全由它生成;CI `--check` 比对派生物,漂移即 fail build;部署时 rm 旧副本防影射——"published surface cannot drift by construction"。
 **电商 agent 接口**(aimeos):店铺自带 MCP 端点(搜索/增删产品/订单,OAuth)——AI 电商的 agent-readiness 实例。
+
+## 协商决策状态机与 Link 头(nuxt-ai-ready 源码深读,2026-10-09)
+
+补上节"完全装载"的实现层:`src/runtime/server/utils/negotiation-decision.ts` + `negotiation-response.ts` + `link-header.ts` + `markdown-request.ts`(协议行为细节见 [ai-crawler-policy.md](ai-crawler-policy.md) 同日节)。
+
+**决策状态机五出口**(`resolveNegotiationDecision`,纯函数):`skip`(reason ∈ well-known/internal/artifact/not-a-page/deferred)/`not-acceptable`/`html`/`redirect`/`render`。入口短路序:`/.well-known/` 前缀→artifact 路径(agent skill 原样应答)→**内部头 `x-ai-ready-internal`**(模块自取 HTML 时绕过协商)→renderInfo 为 null(not-a-page:`.md` 以外的扩展名、JSON/event-stream Accept 的 API 请求、保留路径)。**两阶段执行**:`early`(在 Nitro 静态资源处理器之前)+`middleware`——**显式 `.md` 在 early 段必然 defer**(等静态预渲染文件先应答,且渲染要排在站点自注册的 auth 中间件之后,避免鉴权旁路);隐式 markdown 协商命中则 **307 重定向到 `.md` 双胞胎**——注释明示动机:"HTML 与 markdown 各占独立缓存键,对**忽略 Vary 的 CDN** 这才是安全的"。not-a-page 判定:Accept 含 `application/json` 或 `text/event-stream` 且不含 html/markdown/plain/`*/*` 的请求直接排除(不打扰 API)。
+
+**决策缓存与去重**:同一请求的决策挂在 `event.context[Symbol('nuxt-ai-ready:negotiation')]`,键含 owner/path/policy/botNegotiation,**early 与 middleware 双跑只算一次**;协商头应用有 `APPLIED_KEY` 布尔守卫,防 `Vary` 被二次 append。
+
+**Link 头模板**(`link-header.ts`):HTML 响应带 `<{path}.md>; rel="alternate"; type="text/markdown"`;markdown 响应带 `<{path}>; rel="alternate"; type="text/html"` + `<{path}>; rel="canonical"`(**md 的 canonical 指回 HTML 版**);两者都带 `<{llms.txt}>; rel="describedby"`(可关)。**RFC 9110 §5.5 头值 ASCII 限制**:非拉丁字符路径(中文/西里尔)必须 `encodeURI` 后进头,否则 Cloudflare 拒收整个响应——**中文站自研协商时的高频坑**。i18n 站点用 status-aware 变体(错误响应带精简 Link 集)。
+
+**bot 启发式的三条护栏**(`markdown-request.ts`):预渲染(`x-nitro-prerender` 或 import.meta.prerender)一律 html;`sec-fetch-dest: document` 的浏览器导航跳过 bot 判定;Accept 中 text/markdown|text/*|*/* 匹配组全部 q=0 时维持原偏好(启发式不得覆盖显式拒绝)。
+
+**路由规则互斥**(`content-negotiation.ts`):路由规则带 `isr` 或 `cache` 且 cache.varies 不含全部协商 Vary 维度时,协商自动 disabled(source: 'isr'|'route-cache')——**ISR/整页缓存与按 Accept 分表示天生冲突**,自研时同样要在 CDN 层禁或配 varies。

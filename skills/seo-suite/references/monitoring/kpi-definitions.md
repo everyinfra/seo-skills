@@ -80,3 +80,36 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · monitor/performance-reporter/references/kpi-definitions.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/monitor/performance-reporter/references/kpi-definitions.md)（Apache-2.0）
 - 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[Search Console API](https://developers.google.com/webmaster-tools)、[AI 功能与网站](https://developers.google.com/search/docs/appearance/ai-features)、[GA4 事件](https://support.google.com/analytics/answer/9322688)、[Web Vitals](https://web.dev/articles/vitals)、[CrUX](https://developer.chrome.com/docs/crux)
+
+## 机会挖掘与变更测量的口径细则(crawlseo/seo-monster/iannuttall/elmo/unifapi 源码深读,2026-10-09)
+
+### 四类机会口径(crawlseo seo-opportunities.ts)
+
+expectedCtr 参考曲线(粗略行业均值,**只用于 gap 排序,不用于判断标题好坏**;更稳的做法是 seo-monster 式用本站各位置历史 CTR 自校准曲线):pos≤1=28%、≤2=15%、≤3=11%、≤4–5=7%、≤6–10=3%、≤11–20=1%、>20=0.5%。
+
+| 机会 | 入池条件 | 口径要点 |
+|---|---|---|
+| striking distance | 位置 4–20 且 28 天展示 ≥20 | 按展示排序;**potential=impressions×expectedCtr(max(1, pos−3))**,即「推进 3 位」的估算 |
+| low CTR | 展示 ≥50 且位置 ≤15 | gap=expectedCtr−实际 CTR,须 >2pp;排序按 **展示×gap**(绝对量×差距,不是百分比优先) |
+| content decay | 前 28 天点击 ≥10 | 28 天 vs 前 28 天,变化 ≤−25% 才报;小基数页不入池 |
+| cannibalization | 同 query ≥2 个落地页且 top 页展示 ≥20 | 页面位置=Σ(pos×imp)/Σimp **展示加权位置**,不是简单平均 |
+
+### GSC 对比与异常(seo-monster 工具目录)
+
+`gsc_compare_periods` 支持按 delta 排序、min_delta_clicks/impressions/position 门槛、**anomalies_only + sigma_threshold(σ 阈值离群检测)**——一次调用出 movers/losers/outliers 报表;decaying/trending pages = 按 delta_impressions 降/升序的页面级包装器(rescue 清单)。多资产场景先看 portfolio_summary(每属性一行的多站 rollup)。
+
+### 变更测量口径(iannuttall measure-change)
+
+- **equal-finalized-calendar-windows**:前后等长、只用 finalized 日历日,按 GSC 的 America/Los_Angeles 时区切日;after 窗被截或每窗 finalized 天 <7 → 指标标 provisional、**不给方向性判定**。
+- GSC position 一律是 impression-weighted 平均位置;query 级数据因隐私匿名化缺行≠零流量(retained-query-date-aggregates 口径要在报告里注明)。
+- GA4 交叉读用落地页过滤器,且注意 GA4 属性时区与 GSC 太平洋日的边界差异。
+
+### AI 可见度指标公式版(elmo/unifapi)
+
+- visibility = 提及品牌的 run 数 ÷ 总 run 数;share of voice = brand ÷ (brand+Σcompetitors)(提及单位须一致,如「提及该实体的 run 数」)。
+- citation coverage = Σ C(b,i) ÷ 成功 cell 数(多品牌可同现,**跨品牌求和可 >100%**);citation share = Σ C(b,i) ÷ Σ_b Σ C(b,i)(非空时恒 =100%);加权版分母带 w_i,**不叫 share**;空分母=N/A 不是 0;valid no-answer 留在 coverage 分母。
+- stability = round((1−Bray–Curtis weighted volatility)×100),输入是逐日引用份额向量;fanout 的 avgPerExecution 分母只计发生 fanout 的 run。
+
+### 页内内容分参考公式(crawlseo parseHtml)
+
+base 40 + title 在 15–65 字符 +15(有但不在区间 +5)+ description 在 50–160 +15(否则 +5)+ 恰好 1 个 H1 +15(多个 +5)+ 词数 ≥300 +15(≥100 得 +8)+ 有 schema +5 + 有 canonical +5,clamp 0–100。定位是**页内质量粗筛信号**,不是排名预测;配合 health score(100−8×CRITICAL−3×WARNING−1×INFO)分别看「这页写得如何」与「这站技术上如何」。

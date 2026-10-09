@@ -93,3 +93,47 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 **假设单句模板**:"[Property] lost [magnitude] starting [date] because [cause], evidenced by [data], recovery requires [actions], timeline [duration]"。
 **DiD 对照参数**(seo-monster):pre=56 天(≥2× post)/post=28/gap=7 天 washout;闸门=控制页≥3、treated pre 点击≥5、控制页 pre 点击≥5;lift CI(±1.96 SE)三态判定;GSC 断代检测(impression bug 2025-05-13~2026-04-30;num=100 弃用 2025-09-11)窗口重叠时 clicks 为唯一可信指标;**"server-side page-level split test 是唯一真因果检验"**。
 **告警矩阵默认值**(crawlseo):TRAFFIC_DROP 7 天点击 ≤−20%(当期≥5);POSITION_CHANGE 28 天均位恶化 ≥2 位;CRAWL_ISSUES 健康分 <70;VITALS 最近 5 份报告 ≥2 份 LCP>2.5s 或 CLS>0.1;健康分=100−8×CRITICAL−3×WARNING−1×INFO。
+
+## 诊断清单细化 + 回归四件套 + DiD 实现细节(rampstack/iannuttall/seo-monster 源码深读,2026-10-09)
+
+### 五层协议的 checklist 级细化(rampstack seo-traffic-diagnosis/references/diagnosis-checklist.md)
+
+**L1 拉动清单**:GSC clicks 与 impressions(近 90 天逐日)+analytics 同窗 organic sessions+YoY 同期+可过滤时的 bot 流量。校验项:日期口径对齐;窗口内无 analytics 停摆;**窗口内无 tag manager 发布**;GSC clicks 与 sessions 同向(±10–20% 内);YoY 同形态→季节性而非异常;无节假日/行业事件解释。
+
+**L4 技术回归症状表**(症状→可能原因):
+
+| 症状 | 可能原因 |
+|---|---|
+| 部署后全站骤降 | robots.txt 全封 / 误加 sitewide noindex / 路由断裂 |
+| 页面 404/410 | URL 结构变更、缺重定向 |
+| 页面 5xx | 服务器/托管故障,可能 CDN 配错 |
+| Render mismatch | JS 渲染对爬虫失效(框架升级后高发) |
+| hreflang 断裂 | 跨国流量掉但其他市场位移 |
+| 批量 canonical 变更 | 改版后 canonical 指向错误 URL |
+
+L4 校验项补:重定向须 1 跳且 301;受影响 URL 无 4xx/5xx 尖峰;sitemap 含受影响 URL 且新鲜;hreflang 互指且指向活 URL;Googlebot 抓取率正常(服务器日志);**逐条比对 deploy 日期与流量下降日期**。
+
+**L5 三判读**(L1–L4 全净时):下降落在已知更新日→大概率算法性,审计内容质量与 E-E-A-T,恢复常需等下一个更新周期;掉位且有新强势域名进 SERP→竞争位移,审计对方内容并更新自己;全行业搜索需求下滑→非己方问题,管理预期。
+
+**诊断不清时的 4 步**(不强行下结论):列 top 2 假设各附证据→推荐对两者都有效的最低风险动作→指出能区分两个假设的数据→提出采集该数据的监控计划。"Stakeholders prefer honest uncertainty to confident-but-wrong."
+
+**交付模板**:What happened 1 句 / Why 1 句 / What we're doing 3–5 条 / When to expect recovery+置信度 / What to watch for(恢复或恶化的前导指标)。诊断正文 7 段:Summary、Symptom、逐层发现、根因假设、行动计划、恢复预期、监控计划;4–10 页。
+
+### 回归四件套(iannuttall/seo technical-watch 源码,一次编排并行跑)
+
+| 组件 | 口径 |
+|---|---|
+| crawl-diff | BFS 抓取→与上一 run 快照 diff,**7 字段**:status/title/meta_description/canonical/h1/indexable/contentHash;变更分 added/changed/removed 三类;**newErrors=after≥400 且 before<200**;indexabilityFlips 单列;快照入库供下次对比 |
+| index-watch | URL Inspection 逐 URL:单次 ≤100 个、dailyLimit ≤2000;每 URL 保留最近 20 次尝试(拿到成功后修剪);**quota 被限或属性错误后,剩余 URL 全部标 deferred、不再发请求**;产出 changed/regressions/recoveries/alerts 四分类 |
+| index-monitor | sitemap 驱动的同能力(有 sitemap 时替代逐 URL) |
+| link-recover | 找有搜索价值(点击/展示下限可配)的可恢复 URL |
+
+**编排纪律**:findingCount = crawl 高优先建议 + index currentIssues + recovery high/medium;failed+quotaBlocked+deferred 计为「未完成检查」而**不算缺陷**——"Do not treat incomplete checks as SEO defects"。index-watch 固定四条 caveats:URL Inspection 报的是 Google 已索引快照非 live 测试;PASS/NEUTRAL/FAIL ↔ indexed/excluded/invalid;excluded 或 canonical 差异可能是有意的(复核而非默认缺陷);本地配额账本(保守 UTC 日上限)看不到其他机器/客户端对 URL Inspection 的调用。
+
+### DiD 实现细节(seo-monster rank_attribution + iannuttall measure-change 互补)
+
+- **控制组构造**:默认 section(URL 首路径段)池;section 池 <3 页自动回退 site-wide 并注记;控制页 pre 点击 ≥5 才入池。
+- **公式**:peer_trend_ratio = mean(各控制页 post/pre 点击比);counterfactual = treated_pre × ratio;lift = treated_post − counterfactual;CI 由 ratio 的 ±1.96 SE 推出 lift_lo/lift_hi。
+- **判定五态**:lift_lo>0→likely_positive;lift_hi<0→likely_negative;跨零→inconclusive;**treated pre<5→insufficient_data;控制页<3→insufficient_control——数据不足本身就是一种 verdict,不许硬给方向**。
+- **confounders 块**(每次必返):data_regime_breaks(GSC impression bug 2025-05-13~2026-04-30、num=100 弃用 2025-09-11,窗口重叠即检出)→position_reliable 标志;parallel_trends_assumption;algo_update_note——"查 Search Status Dashboard change_date 前后 ~2 周的 core/spam 更新;DiD 经控制组吸收全站性更新,吸收不了页面类型特定的更新"。
+- **iannuttall 变体**(equal-finalized-calendar-windows-v1):前后等长 finalized 日历窗(GSC America/Los_Angeles 时区),可选 controlScope/controlTarget;adjusted delta = control-ratio counterfactual;**置信度纪律:GSC 证据 partial→confidence 降一档;每窗 finalized 天 <7 或 after 窗被截→verdict=not-enough-data,不给方向**;caveats:position 是 impression-weighted;query 匿名化缺行≠零流量。

@@ -9,7 +9,7 @@
       "words": "空白分词(泰文为空格短语近似,精确分词须 Intl.Segmenter('th'))"
     },
     "sections": {
-      "markets": "18 个语言市场规则(market_lint.py / local_format.py)",
+      "markets": "18 个语言市场规则(market_lint.py / local_format.py);special_checks=逐语区独有检查项标记(2026-10-09 R5 深度吸收轮,源自 multilingual-workflow.md 十一B)",
       "payment_words": "支付即意图词表(payment_intent.py);区域键非语言市场键(BR=pt 市场语言但支付区域 BR)",
       "serp_occupancy": "SERP 占位平台表(serp_occupancy.py);键为区域码(in=印度)",
       "complaint_lookalikes": "品牌词审计必查的本国投诉/UGC 同构平台"
@@ -30,7 +30,14 @@
       "engines": ["baidu", "sogou", "quark", "yuanbao", "doubao"],
       "entity_sources": ["baike.baidu.com", "baijiahao.baidu.com", "zhidao.baidu.com", "mp.weixin.qq.com"],
       "hreflang_codes": ["zh-Hans-CN", "zh-Hant-TW", "zh-Hant-HK"],
-      "notes": "hreflang 用 ISO 15924 文字码(zh-Hans/zh-Hant),不用 zh-CN 裸码;百科/百家号/知道三件套是引用前提;中文比英文短 20-40%,大幅偏离提示未本地化"
+      "notes": "hreflang 用 ISO 15924 文字码(zh-Hans/zh-Hant),不用 zh-CN 裸码;百科/百家号/知道三件套是引用前提;中文比英文短 20-40%,大幅偏离提示未本地化",
+      "special_checks": [
+        "百科/百家号/知道+公众号占位三件套(引用前提,缺即 FAIL)",
+        "简繁不混检+zh-Hans/zh-Hant 文字码 hreflang",
+        "营销词(创新领先/极致类)≤3/页",
+        "证据阶梯六级分开记(eligible→retrieved→cited→mentioned→recommended→converted),禁合并成'AI 可见性提升'",
+        "robots 对 Baiduspider/Bytespider 显式决策(勿套英文站语义)"
+      ]
     },
     "en": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -46,7 +53,14 @@
       "engines": ["google", "bing", "chatgpt", "perplexity", "gemini", "copilot"],
       "entity_sources": ["wikidata.org", "wikipedia.org", "reddit.com", "linkedin.com"],
       "hreflang_codes": ["en", "en-US", "en-GB", "en-AU", "en-CA"],
-      "notes": "92% AIO 引用来自自然 top-10——经典排名即 AI 可见性前提;Wikidata 实体一致是引用层基础"
+      "notes": "92% AIO 引用来自自然 top-10——经典排名即 AI 可见性前提;Wikidata 实体一致是引用层基础",
+      "special_checks": [
+        "三类 AI 爬虫按目的分策(training/search-indexing/live-fetch)——封训练勿连带封引用",
+        "协议层 agent-readiness(ARD/ai-catalog.json/WebMCP/Web Bot Auth)",
+        "段落级可引性:主体+数字+as-of 日期+方法学四要素在场",
+        "llms.txt 对 Google 无效标注(不帮不伤,勿当排名手段)",
+        "inauthentic mentions/逐长尾建页=Scaled Content Abuse 风险标注"
+      ]
     },
     "ru": {
       "title_limit": {"value": 55, "unit": "chars", "note": "Yandex ~50-55 字符截断"},
@@ -61,7 +75,14 @@
       "engines": ["yandex", "google", "alice", "neuro", "dzen"],
       "entity_sources": ["yandex-business", "2gis.ru", "zoon.ru", "flamp.com", "otzovik.com", "dzen.ru"],
       "hreflang_codes": ["ru", "ru-RU", "ru-KZ", "ru-BY"],
-      "notes": "Yandex ~70-73%+Metrica(152-ФЗ,GA 实际不可用);Alice/Neuro 取源自然 top-10;原生西里尔+7 号电话是专家性信号;ё/е 变体归组"
+      "notes": "Yandex ~70-73%+Metrica(152-ФЗ,GA 实际不可用);Alice/Neuro 取源自然 top-10;原生西里尔+7 号电话是专家性信号;ё/е 变体归组",
+      "special_checks": [
+        "商业页法定透明层 6 类字段(оферта/реквизиты 类法定页)缺失即 WARN——IndexLift 口径",
+        "行为质量代理:首屏清晰度/低空锚率/模板文本占比(Horosheff 行为近似)",
+        "Telegram t.me/s/ 公开镜像:标题=关键词+品牌,前 150 字符即摘要",
+        "Wordstat 区域码显式(lr 213≠1,全俄 225);MCP 401/403/429 分诊",
+        "语义核交付含 URL 状态表(ok/refresh/create/merge/301/blocked)且禁虚构频次"
+      ]
     },
     "ko": {
       "title_limit": {"value": 30, "unit": "fullwidth", "note": "Naver PC ~30 전각"},
@@ -76,7 +97,14 @@
       "engines": ["naver", "google", "daum", "naver-ai-briefing"],
       "entity_sources": ["blog.naver.com", "cafe.naver.com", "kin.naver.com", "chzzk.naver.com", "daangn.com", "tistory.com", "brunch.co.kr"],
       "hreflang_codes": ["ko", "ko-KR"],
-      "notes": "연관채널 sameAs 用官方域名清单(치지직/당근 포함);AI Briefing 几乎只引 Naver 生态;PIPA cookie 同意+跨境披露;nosourceinfo 是本市场独有的官方 AI 引用退出 meta"
+      "notes": "연관채널 sameAs 用官方域名清单(치지직/당근 포함);AI Briefing 几乎只引 Naver 生态;PIPA cookie 同意+跨境披露;nosourceinfo 是本市场独有的官方 AI 引用退出 meta",
+      "special_checks": [
+        "nosourceinfo meta 决策记录(全球唯一官方 AI 引用退出)",
+        "AI Briefing 引用条件:标签-值网格>散文块+一手来源声明并链接原文+事实在移动首屏",
+        "RSS 含最新文全文提交;robots 按 User-agent 管 Yeti、禁 IP 封禁(IP 段随时变)",
+        "연관채널 channel markup 在场",
+        "自动互邻/评论交换=spam 头号目标禁用;发布后频繁编辑-删除循环侵蚀文档信任分——修订节流"
+      ]
     },
     "ja": {
       "title_limit": {"value": 32, "unit": "fullwidth", "note": "kseo 全角阈值:title 32"},
@@ -92,7 +120,15 @@
       "engines": ["google", "bing", "yahoo-japan"],
       "entity_sources": ["note.com", "chiebukuro.yahoo.co.jp", "qiita.com", "zenn.dev", "tabelog.com"],
       "hreflang_codes": ["ja", "ja-JP"],
-      "notes": "Bing 28-33% 喂 Copilot——单独验证可爬;Yahoo! Japan=Google 索引;ステマ規制限评价征集;日语版比英语短 10-25%"
+      "notes": "Bing 28-33% 喂 Copilot——单独验证可爬;Yahoo! Japan=Google 索引;ステマ規制限评价征集;日语版比英语短 10-25%",
+      "special_checks": [
+        "全角阈值 title 32/desc 120/正文 300(visible_length 口径:全角=1/半角=0.5)",
+        "です/ます 敬语混检(常体落下即标;学术栏だ/である 除外)",
+        "「AI 臭」密度 lint:对比构文「AではなくB」≤2-3 次/篇;指纹词固定字符串表(種明かしをすると 等)",
+        "nosnippet 会把内容退出 AIO/AI Mode 输入——要进 AI 的页勿设",
+        "全角英数字(ＳＥＯ/SEO)混在检查+charset/lang 声明",
+        "换算通胀(月→年→日数)≤2 次/篇;无出处传闻逸话删除"
+      ]
     },
     "es": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -107,7 +143,14 @@
       "engines": ["google", "bing", "copilot"],
       "entity_sources": ["wikipedia(es)", "google-business", "tripadvisor", "yelp"],
       "hreflang_codes": ["es", "es-ES", "es-MX", "es-AR", "es-419"],
-      "notes": "es-419 是 Google 接受的唯一 UN 区域码;西语查询 83-84% 引西语源;半岛偏置要对抗;es-ES 与 es-419 词汇分流(coche/carro/auto);es-US 集体代搜(81% 受托)"
+      "notes": "es-419 是 Google 接受的唯一 UN 区域码;西语查询 83-84% 引西语源;半岛偏置要对抗;es-ES 与 es-419 词汇分流(coche/carro/auto);es-US 集体代搜(81% 受托)",
+      "special_checks": [
+        "es-419 唯一 UN 区域码 hreflang 检查",
+        "coche/carro/auto 词汇分流按变体组",
+        "¿...? 倒问号疑问式 H2 在场",
+        "支付词层 OXXO/cuotas/contra entrega 进意图分类",
+        "半岛偏置对抗:es-419 独立测 SERP;拉美托管欧洲→CDN 本地化前置"
+      ]
     },
     "pt": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -122,7 +165,14 @@
       "engines": ["google", "chatgpt", "bing"],
       "entity_sources": ["reclameaqui.com.br", "wikipedia(pt)", "google-business"],
       "hreflang_codes": ["pt", "pt-BR", "pt-PT"],
-      "notes": "ChatGPT 最强市场(25.5% 人口,~5,000 万月用户);Reclame Aqui 三重角色=AI 引用源+语料+信任信号(SAC 即 GEO);LGPD 选择加入同意"
+      "notes": "ChatGPT 最强市场(25.5% 人口,~5,000 万月用户);Reclame Aqui 三重角色=AI 引用源+语料+信任信号(SAC 即 GEO);LGPD 选择加入同意",
+      "special_checks": [
+        "Reclame Aqui 品牌词占位必查(22.3% ChatGPT 被引)",
+        "OAB/CRM 委员会号+CNPJ 执业凭证字段在场",
+        "AO90 新旧拼法 Trends 对比后兼收决策记录",
+        "troca de links 环形链检查(无安全阈值,改三角链)",
+        "ML listing 60 字符标题+ficha técnica 全字段+投诉率<1% 门槛"
+      ]
     },
     "ar": {
       "title_limit": {"value": 60, "unit": "chars", "note": "阿文文案比英文膨胀 ~20%——按 60 留余量防换行"},
@@ -138,7 +188,15 @@
       "engines": ["google", "copilot"],
       "entity_sources": ["wikipedia(ar)", "google-business", "haraj.sa"],
       "hreflang_codes": ["ar", "ar-SA", "ar-EG", "ar-AE"],
-      "notes": "全链 RTL:dir=rtl+逻辑 CSS+镜像布局;裸 LTR 标点须 U+2066/U+2067 隔离;MSA 内容 LLM 处理好、方言显著退化;正字变体(أإا/ى/ة/tatweel)归组;COD=الدفع عند الاستلام 是信任资产"
+      "notes": "全链 RTL:dir=rtl+逻辑 CSS+镜像布局;裸 LTR 标点须 U+2066/U+2067 隔离;MSA 内容 LLM 处理好、方言显著退化;正字变体(أإا/ى/ة/tatweel)归组;COD=الدفع عند الاستلام 是信任资产",
+      "special_checks": [
+        "RTL 方向位检查:dir=rtl+逻辑 CSS 属性+镜像布局全链",
+        "裸 LTR 标点/数字 U+2066/U+2067 双向隔离",
+        "MSA/方言分层决策记录(品类×语域矩阵)",
+        "Ramadan 内容弧与发布窗口闸门(Iftar/Taraweeh/Suhoor;海湾峰值 10-3 月)",
+        "阿-印数字 ٠-٩ 与 0-9 全页统一不混",
+        "3arabizi 罗马化变体音译聚类"
+      ]
     },
     "fr": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -153,7 +211,15 @@
       "engines": ["google", "bing", "vibe-ex-lechat"],
       "entity_sources": ["wikipedia(fr)", "pagesjaunes.fr", "AFP 系媒体"],
       "hreflang_codes": ["fr", "fr-FR", "fr-CA", "fr-BE", "fr-CH"],
-      "notes": "Bill 96:fr-CA 商务站法语义务(25+ 须 OQLF 注册,罚 ~3 万 CAD/日/项);魁北克 vs 法国词汇表(courriel/email);40-60 词实体简介全平台逐字重复"
+      "notes": "Bill 96:fr-CA 商务站法语义务(25+ 须 OQLF 注册,罚 ~3 万 CAD/日/项);魁北克 vs 法国词汇表(courriel/email);40-60 词实体简介全平台逐字重复",
+      "special_checks": [
+        ":;!? 前 U+202F 窄不换行空格(非普通空格)",
+        "Bill 96 合规闸门:25+ 人 OQLF 注册;商标例外须配法语通用描述",
+        "courriel/balado/magasinage 术语表按 fr-CA/fr-FR 分流",
+        "Vibe(ex-Le Chat)三爬虫分工+AFP 系信源占位",
+        "40-60 词实体简介全平台逐字一致检查",
+        "非洲法语区桌面 Bing 9.2%→Bing Places 必配"
+      ]
     },
     "de": {
       "title_limit": {"value": 65, "unit": "chars", "ideal_min": 55, "note": "Sistrix 口径 55-65 字符;德语词长,低于 55 浪费"},
@@ -169,7 +235,14 @@
       "engines": ["google", "bing"],
       "entity_sources": ["impressum(§5 DDG 法定页义务)", "wikipedia(de)", "bafa.de", "fraunhofer.de", "行业协会"],
       "hreflang_codes": ["de", "de-DE", "de-AT", "de-CH"],
-      "notes": "Google 87.8%(主要市场最低)+Bing 6.5%;GEO 引用源优先德国官方机构>德国 Tier-1 媒体;Consent Mode v2 纳入测量设计"
+      "notes": "Google 87.8%(主要市场最低)+Bing 6.5%;GEO 引用源优先德国官方机构>德国 Tier-1 媒体;Consent Mode v2 纳入测量设计",
+      "special_checks": [
+        "Sie/du 按国别+Ansprache/Tonalität 两字段全站一致性",
+        "Impressum(§5 DDG)法定页在场",
+        "软文 Werbung 标注(Abmahnung 律师函风险先于 Google 惩罚);OLG Köln 2024 拒绝键同等醒目",
+        "租链(月租制)资产台账勿按永久入账",
+        "GSC(免 consent)基准+GA4 consent rate 并列;德语版长度 +25-35% 平价带"
+      ]
     },
     "id": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -184,7 +257,14 @@
       "engines": ["google", "chatgpt", "tokopedia", "shopee"],
       "entity_sources": ["tokopedia.com", "shopee.co.id", "tiktok.com", "google-business"],
       "hreflang_codes": ["id", "id-ID"],
-      "notes": "AIO 触发率 37.2% 全球第一;移动 >82% 搜索流量——slow-4G 为测试基线;产品发现走 Tokopedia/Shopee/TikTok,Google 承担研究意图"
+      "notes": "AIO 触发率 37.2% 全球第一;移动 >82% 搜索流量——slow-4G 为测试基线;产品发现走 Tokopedia/Shopee/TikTok,Google 承担研究意图",
+      "special_checks": [
+        "meta 前 120 字符安全区(关键信息前置)",
+        "baku/gaul 双轨关键词层(关键词跟手指、正文跟词典)",
+        "EYD V 正字法新旧拼法兼收决策记录",
+        "marketplace(Tokopedia/Shopee/TikTok)占位审计先于 Google",
+        "slow-4G 节流为测试基线;nulled 主题/PBN 供应链风险标注"
+      ]
     },
     "hi": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -199,7 +279,14 @@
       "engines": ["google", "chatgpt", "voice"],
       "entity_sources": ["justdial.com", "indiamart.com", "sulekha.com"],
       "hreflang_codes": ["hi", "hi-IN", "en-IN"],
-      "notes": "真实查询量在 Hinglish/罗马化,不在纯印地语;hi-IN 与 en-IN 分开;语音查询助词词库(kaise/konsa/batao)×产品词;拼写漂移聚类"
+      "notes": "真实查询量在 Hinglish/罗马化,不在纯印地语;hi-IN 与 en-IN 分开;语音查询助词词库(kaise/konsa/batao)×产品词;拼写漂移聚类",
+      "special_checks": [
+        "Hinglish 三写变体归组+GSC regex 快照缺口诊断(排名好但语言错配页)",
+        "lakh/crore 数字分组(1,23,456.78)",
+        "hi-IN 与 en-IN 分开评分",
+        "语音层关键词形态:助词词库×产品词",
+        "拼写漂移音译规范化聚类(IndicXlit);聚合器(JustDial/IndiaMART/Sulekha)占位审计"
+      ]
     },
     "it": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -214,7 +301,13 @@
       "engines": ["google", "bing"],
       "entity_sources": ["wikipedia(it)", "aranzulla-类个人专家站", "registroimprese"],
       "hreflang_codes": ["it", "it-IT", "it-CH"],
-      "notes": "it-CH 当独立 locale(.ch 域+瑞郎价+混德法语词),复制 it-IT 会被信号归并;4 星>5 星信任悖论;AIO 2025-03-26 与 DACH 同批"
+      "notes": "it-CH 当独立 locale(.ch 域+瑞郎价+混德法语词),复制 it-IT 会被信号归并;4 星>5 星信任悖论;AIO 2025-03-26 与 DACH 同批",
+      "special_checks": [
+        "it-CH 独立 locale 检查(.ch 域+CHF 价+混德法词,勿复制 it-IT)",
+        "P.IVA→Registro Imprese(ATECO+省)竞品链",
+        "测量值 vs 估算值声明降级标注(数据阶梯)",
+        "评分展示策略按 4 星>5 星信任校准"
+      ]
     },
     "tr": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -229,7 +322,14 @@
       "engines": ["google", "yandex", "yazeka"],
       "entity_sources": ["eksisozluk.com", "sikayetvar.com", "donanimhaber.com", "technopat.net"],
       "hreflang_codes": ["tr", "tr-TR"],
-      "notes": "第二个 Yandex 市场(~26%):Yandex Webmaster+Wordstat TR 双引擎;黏着语屈折形式研究(英文式头部词低估量);AIO 引用 75.3% 绑定自然前 10"
+      "notes": "第二个 Yandex 市场(~26%):Yandex Webmaster+Wordstat TR 双引擎;黏着语屈折形式研究(英文式头部词低估量);AIO 引用 75.3% 绑定自然前 10",
+      "special_checks": [
+        "Yandex 双引擎投入按客群决策记录(本地实操几乎没人做)",
+        "黏着语屈折形式关键词层(词干+格/数/领属后缀,Zemberek)",
+        "İ/i 双码点归组前先替换(İ→i̇)",
+        "tanıtım yazısı 赞助文链路披露(非西式 guest post)",
+        "份额口径冲突并记(StatCounter 26% vs 本地 3-5%),建议本地实测"
+      ]
     },
     "vi": {
       "title_limit": {"value": 65, "unit": "chars", "ideal_min": 45, "keyword_first_chars": 30, "note": "t0mmy:标题词进前 30 字符防 AI 改写;45-65 字符理想"},
@@ -244,7 +344,14 @@
       "engines": ["google", "coc-coc"],
       "entity_sources": ["webtretho.com", "tinhte.vn", "google-business"],
       "hreflang_codes": ["vi", "vi-VN"],
-      "notes": "有调/无调(không/khong)意图不同——归组研究但排名当独立词跟踪;Coc Cốc ~6% 偏好越南语+.vn 单独提交;提问式 H2≥50%;密度只设上限 1/150"
+      "notes": "有调/无调(không/khong)意图不同——归组研究但排名当独立词跟踪;Coc Cốc ~6% 偏好越南语+.vn 单独提交;提问式 H2≥50%;密度只设上限 1/150",
+      "special_checks": [
+        "有调/无调双轨当独立词跟踪(移动端常不打入)",
+        "标题词进前 30 字符防 AI 改写",
+        "nonce 双层质量门防 agent 自评篡改(validator 达标∧独立评分 ≥85 才发布)",
+        "句长方差检测反 AI 文风(mona-seo-check-vi 口径)",
+        "backlink báo 新闻域链披露(Google 链接垃圾政策范围)"
+      ]
     },
     "th": {
       "title_limit": {"value": 60, "unit": "grapheme", "note": "泰文无词间空格——按字素计数;meta 在词中间被截"},
@@ -259,7 +366,14 @@
       "engines": ["google"],
       "entity_sources": ["pantip.com", "wongnai.com", "google-business"],
       "hreflang_codes": ["th", "th-TH"],
-      "notes": "分词须 Intl.Segmenter('th')——密度工具/精确匹配计数全失效;泰调可读性:句≤25 词/词均≤5 字符;PDPA 医疗明示同意;字体子集省 60-80%"
+      "notes": "分词须 Intl.Segmenter('th')——密度工具/精确匹配计数全失效;泰调可读性:句≤25 词/词均≤5 字符;PDPA 医疗明示同意;字体子集省 60-80%",
+      "special_checks": [
+        "Intl.Segmenter('th') 分词验证为密度/匹配计数前置(主流工具栏全错)",
+        "grapheme 字素计数(组合符号不计独立字符)",
+        "meta 词中截断逐页检查(无空格文字)",
+        "ครับ(男)/ค่ะ(女)礼貌尾词性别一致",
+        "佛历年日期格式(พ.ศ. 2569);PDPA 医疗明示同意"
+      ]
     },
     "pl": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -274,7 +388,14 @@
       "engines": ["google", "bing"],
       "entity_sources": ["wykop.pl", "dobreprogramy.pl", "wikipedia(pl)"],
       "hreflang_codes": ["pl", "pl-PL"],
-      "notes": "Bing 桌面 ~13.3%(全球 3 倍)必做 Bing WMT+IndexNow;内容带正确变音字母写(勿剥 ą/ę/ł——伤品牌与 AI 保真);sierotki 孤字排版"
+      "notes": "Bing 桌面 ~13.3%(全球 3 倍)必做 Bing WMT+IndexNow;内容带正确变音字母写(勿剥 ą/ę/ł——伤品牌与 AI 保真);sierotki 孤字排版",
+      "special_checks": [
+        "Bing WMT+IndexNow 接入(桌面 13.3%)",
+        "变音字母保留检查(禁剥 ą/ę/ł)",
+        "sierotki 孤字排版规则(单双字母词不悬行尾)",
+        "品牌引用按引擎分列测量(ChatGPT vs Gemini 信源偏好不同)",
+        "Allegro Trafność 参数逐月更新+新增参数跟踪"
+      ]
     },
     "nl": {
       "title_limit": {"value": 60, "unit": "chars"},
@@ -289,7 +410,14 @@
       "engines": ["google", "bing"],
       "entity_sources": ["kvk.nl(商会号)", "wikipedia(nl)", "google-business"],
       "hreflang_codes": ["nl", "nl-NL", "nl-BE"],
-      "notes": "nl-NL/nl-BE 分流(auto's/wagen 词汇与正式度);[INVULLEN] 占位制,拒绝虚构;GBP 描述用满 750 字符+KvK 号;>60% 网民用 AI(欧洲最高档)"
+      "notes": "nl-NL/nl-BE 分流(auto's/wagen 词汇与正式度);[INVULLEN] 占位制,拒绝虚构;GBP 描述用满 750 字符+KvK 号;>60% 网民用 AI(欧洲最高档)",
+      "special_checks": [
+        "je/u tone 双轨(nl-NL=je 连 B2B;nl-BE=u 句中小写)",
+        "[INVULLEN] 占位制+虚构拒绝 norm(锚文本不给比例、数字不编造)",
+        "KvK 商会号+GBP 描述 750 字符用满",
+        "nl-NL/nl-BE 词汇分流(auto's/wagen)",
+        "权威 .nl 链优先;批量进口链拒收风险标注"
+      ]
     }
   },
   "payment_words": {

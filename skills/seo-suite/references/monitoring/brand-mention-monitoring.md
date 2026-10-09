@@ -76,3 +76,33 @@
 **6 类商业意图 prompt 生成法**(research-ai-citations):直接推荐/对比/功能/场景/价格/迁移——每类 15-20 条聚成 5-10 簇,实跑 10-15 条关键 prompt;记录品牌是否提及+位置/被引 URL/竞品/**主导来源类型分布(目录/listicle/官网/Reddit)**。
 **citation-recipe 反推法**(Ryze):抓自己被引 top 2-3 页反推配方(答案靠前/统计定义/干净标题/schema),再让"有机强但零 AI 引荐"的页照方重构。
 **品牌答案监控闭环**(irinabuht):固定品牌 prompt 面板(what is X/X pricing/X vs Y/is X good for Z/X alternatives)按计划跑,**周对周 diff**:新主张/消失提及/情绪漂移;每条错误主张溯源到具体页面;修正三层=出版商外联+自有 FAQ 明示+**changelog 式页面供 AI 爬虫拾取**。
+
+## 测量口径源码级 + 纪律条款(elmohq/elmo、unifapi-agent/agents 源码深读,2026-10-09)
+
+### 波动率与稳定性(elmo visibility-stats.ts)
+
+- **双口径刻意分开**:set volatility=相邻日引用域名集合的 Jaccard 距离均值;weighted volatility=逐日引用份额向量的 Bray–Curtis 距离均值。两者近正交——一个每天有单一主导源+嘈杂长尾的 prompt,按集合看动荡、按量看稳定;**「答案到底由谁承载」以 weighted 为准**,产品 Stability = round((1−weighted)×100)。dayTransitions(相邻日转换数)作可靠性闸门,<2 天返回 null 不硬算。
+- **share 只存精确比率、显示层各自 round 一次**:预舍入会让表格/环形图/趋势互相差 1 个点。
+- **LVCF 平滑**(per-prompt last-value-carried-forward):每个 prompt 的最近一次观察 carry 到它没跑的日期,再逐日求和——错开的 prompt 日程不再产生假 dip;carry 预置最早观察避免爬坡凹陷。排行榜用同一规则 carry 到末日求和:headline/环形图/表格与趋势线终点天然一致(不能用全窗聚合,否则与线对不上)。
+
+### Query fanout 口径(elmo fanout-analysis.ts + README 方法论五步)
+
+- 读时排除两类条目:与 prompt 逐字相同的查询(引擎确实会原样搜 prompt,但重复不说明「改写」,而本分析只看改写);`unavailable` 哨兵(搜索发生了但查询串不暴露的 provider)。因此从不暴露搜索的引擎贡献 0 行,而不是拉低均值。
+- 产出指标:avgPerExecution(**分母只计发生 fanout 的 run**);topByPrompts(触达最多不同 prompt 的查询,跨 prompt 广度)与 topByRuns 分列;wordChanges(引擎 added/dropped/preserved 了 prompt 的哪些词,按次数加权)——回答「内容要赢的是引擎实际发出的搜索,不是你想优化的原句」。
+- 方法论五步:prompt 按品牌定义(向导生成或手写,每个都是潜在客户会问 AI 的问题)→后台 worker 定时跑每引擎(抓真实消费面+模型 API 互补)→每个回答归一化解析(答案文本/引用 URL/fanout 搜索/模型版本;文本扫描品牌名+别名+域名,竞品同样)→**全量入 PostgreSQL 含原始引擎输出,任何指标可重算审计**→聚合出趋势(visibility=提及 run 占比;SoV=对竞品的提及对比;引用按 URL/域/类目上卷)。
+
+### 十一条测量纪律(unifapi-agent geo-methodology.md,措辞照抄要点)
+
+1. 每个测量绑定 surface+prompt+locale+search mode+样本+观察时间,与答案、request id 一起存。
+2. **citation 只来自答案的 sources/references;检索到但未使用的搜索结果不是 citation**;citation 域名精确匹配、子域规则显式、URL 变体去重。
+3. mention 来自可见答案文本+显式别名;**不得从链接目的地、无关子串、域名匹配推断**;文本匹配仍可能有歧义→保留答案供人工复核。
+4. 每个采到的答案中,每个 tracked brand **至多计 1 次**(mention 与 citation 可同答案并存)。
+5. **valid no-answer(有效无答案)留在 coverage 分母**;采集失败/unknown 无观察、单独报告;「更多失败不得显示为可见度丢失」。
+6. coverage 与 share 是两个指标:coverage 分母=成功 cell 数(多品牌可同现,跨品牌求和可 >100%);share 分母=tracked brands 观察之和(=100%)。**「any tracked brand appeared」做分母的是 conditional coverage,不是 share**;空分母=N/A(null),不是 0。
+7. 对比只用两轮**都成功采集的 cell(paired denominator)**并附各自完成率;冻结面板文本、品牌定义、引擎、locale、采样规则、权重后再比。
+8. 需求加权口径可选,但必须与未加权并列展示;**weighted coverage 不许叫 share**。
+9. 不混合:不同引擎之间、ChatGPT 自然 vs 强制搜索(force_web_search 两态是两个研究)、不同面板、索引语料检索与 live prompt 执行(Google AI Mode 的 result position 不是品牌推荐位)。
+10. 单轮不构成排名或编辑效应的证据;多轮比较前先排查引擎/模型切换、答案本身变异、采集覆盖变化,再谈趋势。
+11. 预算纪律(monitor.mjs runner):先 dry-run;跑前读实时价格表;max_credits 全局上限+每请求 Max-Credits 头(涨价不会静默超支);transport 超时/中断→unknown,**绝不自动重放**(按最大可能成本入账);同快照文件重跑只补 pending cell 不重采成功的。
+
+与第三节(固定提示词集)的衔接:上述纪律即「报告时附样本量与区间」的可执行化——落地时把 6/7/10 写进监控脚本的输出 schema,把 2/3/4 写进解析器。

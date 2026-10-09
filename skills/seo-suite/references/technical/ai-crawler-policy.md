@@ -102,6 +102,18 @@ Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI �
 
 对每个引用型 bot：用其真实 UA string `curl -A` 访问首页与一个深页，记录状态码。200 = 可达；403/429/5xx/挑战页重定向 = 被拦。对照 robots 声明，标注"声明允许但实际被拦"的项——这类项修复收益最高（WAF 白名单一行的事）。
 
+## 协商与放行的服务端实现(nuxt-ai-ready 源码深读,2026-10-09)
+
+读 harlan-zw/nuxt-ai-ready `src/runtime/server/utils/`(markdown-request/negotiation-decision/negotiation-response/content-negotiation/link-header)+ `src/runtime/cache-control.ts` + skills/nuxt-ai-ready/SKILL.md + nuxt-seo docs llms-txt 篇。agent-readiness.md"完全装载"节已有决策摘要,这里补**可直接照抄的协议行为**。
+
+**Content-Signal 的 robots.txt 实际格式**(SKILL.md 官方示例):`aiReady: { contentSignal: { search: true } }` 输出 `Content-Signal: ai-train=no, search=yes, ai-input=no`——**字段未配置即渲染为 no**(显式 opt-in 语义,与 robots Allow/Disallow 的默认开放相反,写政策时别搞反默认值)。
+
+**协商失败的正确响应**:Accept 无法匹配时返回 **406 + `statusMessage: 'Not Acceptable'` + body 提示 `Supported types: text/html, text/markdown, text/plain`**,并 `appendHeader vary` + 设不可缓存头。协商成功的 HTML 直通响应也会 `Vary: Accept`(botNegotiation 开启时扩为 `Accept, Sec-Fetch-Dest, User-Agent`——**Sec-Fetch-Dest=document 视为浏览器导航,绕过 bot 启发式**)。
+
+**缓存头的 Cloudflare 特化**(`cache-control.ts` 注释原文):"Freshness 只进 max-age——**Cloudflare 在有 s-maxage 时禁用 stale serving**,stale-while-revalidate 在边缘永不生效",故模板固定 `public, max-age=N, stale-while-revalidate=M` 不写 s-maxage。`mergeVaryHeader` 去重合并 Vary token,**遇 `*` 直接整体降级为 `*`**。markdown 响应的隐私防线:cookie/authorization/set-cookie 任一存在、或 cache-control 族头含 private|no-store|no-cache → 强制 `private, no-store` + `cdn-cache-control: no-store`(**表示切换不得把私有内容变公开**——缓存个性化检查的供给侧实现,呼应 seo-ops C10)。
+
+**llms.txt 与双文档的工程参数**(nuxt-seo docs):`/llms.txt` 控制在 **~5K tokens**(结构化索引,先读这个);`/llms-full.txt` 是全量 markdown(**仅预渲染页进静态文件**,运行时访问不索引任何东西——`nuxi generate` 或 `nitro.prerender.routes` 是收录前提);Cursor/Windsurf 用 `@https://site/llms.txt` 引用(**@ 必须手敲,粘贴破坏上下文识别**)。`.md` 双胞胎映射:`/about`→`/about.md`、`/`→`/index.md`;**`/api` 与 `/_` 前缀路径不生成**。每个生成页尾部自动带 `## Sitemap` 段+独立 `/sitemap.md`(关闭项 `sitemapMd: false`)。**Nuxt Content v3 站点 `.md` 路由直接回源 markdown 源文件而非转换 HTML**(`contentSource: false` 才转)——CMS 站做双胞胎时先确认语义。**Agent Skills 发布面**:`skills/<name>/SKILL.md` 发布到 `/.well-known/agent-skills/` + `/skills/<name>/SKILL.md` + llms.txt 内,单 skill 站点额外挂 `/SKILL.md`;这些路径被协商器视为 artifact **原样应答、永不渲染**。**MCP 工具面**:`list_pages`/`search_pages`/`get_page_markdown` 三工具挂 `/mcp`(需运行中的服务器,静态导出无法承载);运行时索引带 **contentHash 变更检测**(hash 不变则跳过重索引)与 TTL。
+
 ## 六、来源
 
 - 27 bot 引用/训练分类+频率：[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`

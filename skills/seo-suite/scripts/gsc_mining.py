@@ -6,7 +6,40 @@ striking distance(pos 5-20 且曝光≥20)/ quick wins(pos 11-20+曝光≥50+低
   python3 gsc_mining.py queries.csv [--mode query]        # 单表: Query,Clicks,Impressions,CTR,Position
   python3 gsc_mining.py matrix.csv --mode matrix          # Query,Page,Clicks,Impressions,CTR,Position
   python3 gsc_mining.py cur.csv prev.csv --decay          # 两期对比
-CTR 接受 '3.2%' 或 0.032。"""
+CTR 接受 '3.2%' 或 0.032。
+
+────────────────────────────────────────────────────────────────────────────
+可代码化规则参考(R3 组深读,2026-10-09;来源与完整语境见
+references/research/keyword-intent-taxonomy.md"深读补充"节)——扩本脚本时的判据:
+
+[衰退双口径] ericosiu/ai-marketing-skills content_attack_brief.py:
+  28d vs 90d 归一化衰退: c90_norm = clicks_90d * (28/90); 仅 c90_norm > 5 才判;
+  衰退 = c28 < c90_norm * 0.7 (即降幅 >30%)。比本脚本 28v28 更平滑(抗单周波动)。
+
+[评分双轴] 同上, Impact(0-10) × Confidence(0-10) = 优先级:
+  Impact = 量档(>=10k+3 / >=2k+2 / >=500+1) + CPC档($15+3 / $5+2 / $1+1)
+           + 漏斗(BOFU+2 / MOFU+1) + 趋势(trend>50%+2 / >20%+1)
+  Confidence = KD档(<=10+4 / <=20+3 / <=35+2 / <=50+1) + 现有位次(<=10+3 / <=30+2 / <=50+1)
+               + 主题权威(词落在本站内容指纹主题且计数>5, +2)
+
+[趋势判读] 12 个月量史: 首3月均值 vs 末3月均值 →
+  >50% Surging / >20% Rising / >5% Growing / ±5% Stable / >=-20% Declining / 其余 Falling
+
+[漏斗词表] BOFU: agency services hire pricing tools software best vs alternative
+  platform cost price company firms consultant consultancy outsource
+  MOFU: how to guide strategy examples case study roi tutorial template checklist
+  tips framework what is explained overview comparison; 商业/交易意图标志优先于词表
+
+[执行路径分派] KD<=20 且无排名页→全自动新建; 已有页且 KD<=50→全自动刷新;
+  KD<=40→半自动(AI 起草+人审); KD<=60→人写 AI 优化; 更高→专家写+外链
+
+[竞品 gap 硬阈值] Ryze competitor-gap: 对手位 <=20 且我 >50/零曝光才算 gap;
+  竞品品牌词默认排除(除非做 vs/alternative 页)
+
+[趋势雷达联动] scripts/trend_scout.py 已实现 HN+Reddit 源;Google Trends RSS
+  (trends.google.com/trending/rss?geo=US) 与 Brave site:twitter.com 查询可再补两源
+────────────────────────────────────────────────────────────────────────────
+"""
 import sys, csv
 
 EXP_CTR = [(1,.28),(2,.15),(3,.11),(5,.07),(10,.03),(20,.01),(999,.005)]

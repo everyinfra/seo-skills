@@ -85,3 +85,44 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · monitor/alert-manager/references/alert-threshold-guide.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/monitor/alert-manager/references/alert-threshold-guide.md)（Apache-2.0）
 - 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[CrUX](https://developer.chrome.com/docs/crux)、[Web Vitals](https://web.dev/articles/vitals)、[排名系统指南](https://developers.google.com/search/docs/appearance/ranking-systems-guide)、[Google Search Status Dashboard](https://status.search.google.com/)、[搜索流量下降排查](https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops)
+
+## 告警矩阵默认值与 CI 门设计(crawlseo/siteone-crawler 源码深读,2026-10-09)
+
+### 四条默认告警(crawlseo evaluate.ts,双闸门设计)
+
+| 类型 | 窗口 | 触发条件 | 默认值 |
+|---|---|---|---|
+| TRAFFIC_DROP | 7 天 vs 前 7 天 | 点击变化 ≤−20% **且当期点击 ≥5**(最小绝对量地板) | −20% |
+| POSITION_CHANGE | 28 天 | 平均位置恶化 ≥2 位 | −2 位 |
+| CRAWL_ISSUES | 最近一次完成爬取 | 健康分 <70(消息附 issuesFound) | 70 |
+| VITALS_DEGRADED | 最近 5 份报告 | ≥2 份差;差 = LCP>2.5s **或** CLS>0.1 **或** perfScore<50(连续 2 份,不是单份尖峰) | 2/5 |
+
+新站点自动创建这四条(EMAIL 渠道);命中即写 lastFired(冷却的事实记录)。
+
+### 健康分与计数口径(crawlseo engine.ts / issue-filter.ts)
+
+- 健康分 = 100 − 8×CRITICAL − 3×WARNING − 1×INFO,clamp 0–100。
+- **爬虫自用的内部行(details.kind=crawl_summary/content_score)不进用户可见计数**——SQL 细节:JSON 键缺失时比较得 NULL,`NOT (kind=…)` 仍为 NULL,必须显式「无 kind OR 非内部 kind」分支,否则把全部普通问题误过滤掉。
+- 分页列表的 per-severity 计数走全量 groupBy,**不随列表 take 数变化**(列表只出 200 行,计数是全爬取的)。
+- redirect 解析后的最终 URL 记入 visited,防同页双存导致 phantom DUPLICATE_TITLE;托管基础设施端点(managed infra)的 4xx 降为 INFO「expected, not a broken link」。
+- **页级问题严重度映射**(可直接当爬虫告警分级表):HTTP≥400=BROKEN_LINK/CRITICAL;MISSING_TITLE=CRITICAL;MISSING_DESCRIPTION、MISSING_H1、MISSING_ALT、SLOW_PAGE(>3000ms)、LARGE_PAGE(>3MB)、DUPLICATE_TITLE、MIXED_CONTENT、MISSING_ROBOTS、孤儿页=WARNING;MULTIPLE_H1、MISSING_CANONICAL、MISSING_SCHEMA、DUPLICATE_DESCRIPTION、不在 sitemap=INFO。
+
+### CI 质量门设计(siteone-crawler ci_gate.rs)
+
+- **约定**:全过 exit 0,任一失败 exit 10;输出 JUnit XML(GitLab/Jenkins/GitHub 通用)+ GitHub `::error` workflow command(失败项直接显示在 PR checks 里)。
+- **零成功响应立即失败**:0 页、或只有负状态码(−1 连接错误/−2 超时等,不算成功响应)→ 直接 fail,不进阈值判分——爬取失败不许产出假绿的门。
+- 检查面(每项 metric/operator/threshold/actual 全部落盘):
+  - **min 阈值**:overall 默认 ≥5.0(10 分制);分类可分别配:performance/SEO/security 默认 5.0、accessibility 3.0、best-practices 5.0;
+  - **max 阈值**:404 默认 ≤0、5xx ≤0、criticals ≤0(排除 ignore_code);warnings 可选;
+  - **forbidden finding codes**:指定 apl_code 只要出现非 OK 项即 fail——**Notice 级也能拦**(计数告警拦不住的用这个);同一 code 同时在 ignore 列表则 ignore 赢(「已接受」优先);
+  - **baseline 回归门**:overall 相对基线掉分 ≤ max_score_drop(默认 0 = 一分不许掉);基线文件读不出→大声 WARNING 并跳过该项,**绝不静默绿**;只配 max_score_drop 没配 baseline 同样警告;
+  - avg response time 可选;
+  - **min pages/assets/documents**:内容类型计数下限,防「只爬到 3 页」的假绿(documents 为 0 时该项不出现)。
+- 分类权重参考(与测试 fixture 同源):performance .20 / SEO .20 / security .25 / accessibility .20 / best-practices .15。
+
+### 爬虫侧 SEO 阈值与防误报(siteone-crawler seo_opengraph_analyzer.rs)
+
+- **只对 indexable 页跑 on-page 检查**(noindex 与 robots.txt 拒抓的页移出分母),且要求 200+HTML。
+- title 缺失=WARNING,长度出 10–60 字符=NOTICE;meta description 缺失与出 50–160=NOTICE;canonical 缺失=NOTICE,**跨 host 指向=WARNING,但 www 与裸域视为等价**(www 规范化是常见故意模式,不等价会报大量噪音)。
+- **sitewide noindex 检测的防误报设计**:总页数 ≥10 **且** noindex 占比 ≥80% 才升 CRITICAL(「possible accidental site-wide noindex」,几乎总是部署事故),否则只发 NOTICE——小规模/部分爬取、或分面导航大量故意 noindex 的站不会误触 P0。
+- heading 结构:多 H1 标错并计入树;层级跳级(如 h3 直接跟 h1)按「实际应为的层级」标错。

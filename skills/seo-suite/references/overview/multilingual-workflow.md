@@ -215,3 +215,113 @@
 | SoV 取代位置的计量观(俄,官方) | 全区(韩 인용수/日 Share of AI Voice 已同构) | 引擎提供份额类指标或可采样 |
 | 主权助手单独优化(法 Vibe) | 印尼(Sahabat-AI)/阿拉伯(Fanar)/韩(Wrtn) | 本土助手有独立爬虫/索引 |
 | 目录=GEO 引用源(印度 JustDial) | 巴西(Apontador)/波兰(Panorama Firm)/泰(Wongnai) | AI 引擎拉取本地目录的市场 |
+
+## 十一B、十八语区专项分析(2026-10-09 R5 深度吸收轮)
+
+> 逐语区四件套:**独家渠道**(该语区独有平台及玩法)/**语言机制实操**(文字方向·正书·声调·敬语的具体处理)/**本圈信息源**(从哪学)/**红旗**(该市场特有风险)。俄/韩/日/中四区吸收自 9 个本地开源仓库内部文件(qiaomu-seo、GEORank、fire-your-seo-agency、naver-searchadvisor-expert、kseo、tech-writing-pack、aio-knowledge、google-yandex-seo-skill、yadryshko-semantic-core-subagent)。
+
+### 中文区专项
+
+**独家渠道**:搜一搜(Peoplerank)/小红书(CES 互动分)/百家号+知道+百科三件套构成引用底座;开源工具链两件——qiaomu-seo(审计契约化:每个断言带官方源+复审日期,证据阶梯 eligible→retrieved→cited→mentioned→recommended→converted 六级不合并)与 GEORank(自托管 GEO 工作台:诊断→30/60/90 天方案→拓词→结构化工具,自带模型 API Key 把数据留在境内)。**语言机制实操**:简繁不混,句 15–25 字;全角标点;中文版比英文短 20–40% 是平价带;营销词"极致/颠覆"类 ≤3/页。**本圈信息源**:站长圈(卢松松/白杨SEO)、5118(已出 MCP,36 API 接 Claude)、qiaomu 的 evidence-policy 是断言纪律范本。**红旗**:蜘蛛池=百度官方定性黑产(只抓不录);假权重站识别(刷冷僻高指数词→权重虚高→卖链);英文 robots 语义直接套中文站会误禁 Baiduspider/Bytespider。
+
+### 俄语区专项
+
+**独家渠道**:Telegram 公开镜像 t.me/s/(Yandex 抓取,~90% 曝光来自 Yandex;标题=关键词+品牌,前 150 字符即摘要);IndexLift 审计器把 Yandex 检查单列为独立 findings 组。**语言机制实操**:原生西里尔+7 号电话是专家性信号;вы 敬称小写统一;ё/е 归组;Wordstat 经 MCP-KV 接 Yandex Cloud(API Key+Folder ID+search-api.webSearch.user 角色;401=Key 坏、403=计费/角色、429=配额),区域码显式传(莫斯科 213≠莫斯科州 1)。**本圈信息源**:searchengines.guru、habr、vc.ru;Horosheff 双仓(审计器+语义核方法论)。**红旗**:商业页法定透明层(оферта/реквизиты 六类法定页)缺失在 IndexLift 是独立 FAIL;накрутка ПФ 操纵罚 6–12 月;yadryshko 禁令:不得虚构频次、不得隐瞒 SERP 未验证、未接 GSC/Вебмастер 不得宣称 production-ready——这三个"不得"应作全区交付纪律。
+
+### 韩语区专项
+
+**独家渠道**(leopard NEO 实测+官方蒸馏):AI Briefing 引用条件=标签-值网格(合同金额/期间/对手方)压过散文块、页面声明一手来源并链接原文、事件后分钟级上线抢引用、关键事实在移动首屏;博客双轨=Naver 品牌博客养生态信任/停留,自有域做事实账本,AI Briefing 最终引结构化数据页。**语言机制实操**:description ≤80 全角;합니다体全站统一;RSS 须含最新文全文提交;robots 按 User-agent 管 Yeti、勿按 IP 封(IP 段随时变);연관채널 channel markup 声明社媒账号。**本圈信息源**:naver-searchadvisor-expert(56 篇官方指南全量蒸馏仓)、네이버 검색 공식블로그、아프니까 사장이다 카페。**红旗**:官方垃圾政策点名——自动互邻/评论交换是垃圾过滤器头号目标、宏与多账号刷评=操纵违规、频繁编辑-删除循环侵蚀文档信任分;站长优化度报告是 AI 评分间接指标≠排名保证;B2B/金融类周末 dip 本身是真实需求证据(非异常)。
+
+### 日语区专项
+
+**独家渠道**:MEO(GBP 投稿週 1–2 回,每篇仅显示 ~7 天)+食べログ/知恵袋/Qiita·Zenn 构成 AI 引用底物。**语言机制实操**:kseo 定数审计口径——title 32/description 120/正文 300 全角,visible_length() 全角=1/半角=0.5;charset/lang/全角英数字混在单独检查;「判定不用 LLM」:同一页面两次审计必须同分,LLM 只写改善文且只喂实测值——这是审计可信度的设计范本。**本圈信息源**:海外SEO情報ブログ、Web担当者Forum;aio-knowledge(Google 日语官方指南蒸馏:nosnippet 会把内容从 AIO/AI Mode 输入排除、fan-out 偏好主题综合覆盖而非逐长尾建页)。**红旗**:「AI 臭」判定看密度不看误用(tech-writing-pack 六法则)——对比构文「AではなくB」人类上限 1 篇 2–3 次;律仪法则=结构机械一致+表层微抖是人类写不出的判据,修正原则"第 2 次起变形";换算通胀(月→年→日数)≤2 次/篇、无出处传闻逸话删除;"種明かしをすると"类指纹词跨账号复现→进固定字符串 lint;ステマ規制下"星5つでお願い"式征评本身构成要件。
+
+### 西语区专项
+
+**独家渠道**:拉美 Facebook 本地页+WhatsApp 是事实转化按钮(QR 到店+WA 索评);外链高度商品化(niche 博客 50€→大媒体 1,500–5,000€,新闻稿 7€/媒体起)。**语言机制实操**:¿...? 倒问号进 H2;es-ES/es-419 词汇分流(coche/carro/auto 不可互换);数字 1.234,56(ES)vs 1,234.56(部分 419 国);tú/usted 按国别与场景。**本圈信息源**:Human Level/SEOPLUS 大会/Campamento Web 播客(半岛);Nubimetrics Academy+Telegram 群(拉美)。**红旗**:"一份中性西语通吃"是首错;es-US 集体代搜(81% 受托)意味着品牌词 SERP 常被代理商页面占据;拉美托管常在欧洲——CDN 本地化是本地 SEO 前置;半岛偏置要主动对抗(es-419 独立测);支付词层 OXXO/cuotas/contra entrega 进意图分类。
+
+### 巴西葡语区专项
+
+**独家渠道**:Reclame Aqui 三重角色(22.3% ChatGPT 品牌回答被引+关键词语料+信任信号→SAC 客服质量成为 GEO 手段);WhatsApp Status 官方广告+OG 预览先行(预览缓存极强)+wa.me 归因链;IG 姓名字段放关键词+"评论 X 发链接"DM 自动化(Meta 免费原生版)。**语言机制实操**:pt-BR você 全站统一;pt-PT tu/você 分层且不冒充 pt-BR;AO90 正字法新旧拼法先做 Trends 对比再决定兼收。**本圈信息源**:Conversion《Guia de SEO》(圈圣经)、SEO Happy Hour/MestreCast 播客。**红旗**:Mercado Livre listing 60 字符标题+ficha técnica 全字段+问答响应速度是排名因子+投诉率 <1% 保 Mercado Líder;troca de links 无安全阈值(改三角链防环形);LGPD 分析 cookie 选择加入;pt-BR 反 AI 35 型 slop 表是文风 lint 基线。
+
+### 阿拉伯语区专项
+
+**独家渠道**:品类×语域矩阵(金融/法律/B2B=MSA,电商/娱乐=方言,educated colloquial 兜底);Fanar/Jais 本土助手不照搬美系排名;haraj.sa 等本地分类信息平台。**语言机制实操**:RTL 方向位是硬检查——`dir="rtl"`+逻辑 CSS 属性+镜像布局全链;裸 LTR 标点/数字须 U+2066/U+2067 双向隔离;正字变体(أإا/ى/ة/tatweel)归组;3arabizi 罗马化按音译规范化聚类;文案比英文膨胀 ~20% 须在 title/desc 留余量防换行;阿-印数字 ٠-٩ 或 0-9 全页统一不混。**本圈信息源**:GAMR/TDRA 词表(合规预审先于内容);GEO 测量协议=50 查询×预期标注×14 天重测。**红旗**:Ramadan 内容弧 30 天、发布窗口 Iftar 后/Taraweeh 后/Suhoor(海湾峰值 10–3 月)——错过窗口整季失效;COD الدفع عند الاستلام 是信任资产不是可选项;MSA 内容 LLM 处理好、方言显著退化——方言页的 AI 引用预期单独校准。
+
+### 法语区专项
+
+**独家渠道**:Vibe(ex-Le Chat)单独优化(三爬虫分工+AFP 通稿是被本土 AI 引用的隐藏高速通道+22.9% unique 推荐);Qwant <1% 且 2025-08 起转 Bing 索引。**语言机制实操**:`:;!?` 前窄不换行空格 U+202F(非普通空格);1 234,56 空格千分位;魁北克 vs 法国术语表(courriel/balado/magasinage ↔ email/podcast/shopping,OQLF 官方术语库)按 fr-CA/fr-FR 分流。**本圈信息源**:Abondance(1998 起)/WebRankInfo 论坛;链接平台 €3–10/条起,本地共识"降值优先于惩罚"。**红旗**:Bill 96 无规模豁免(25+ 人须 OQLF 注册,罚 ~3 万 CAD/日/项,商标例外须配法语通用描述)——合规先于内容;AIO 2026-07-22 才上线=比德国多一年经典 SEO 红利窗口,发布日历按上线日重排;Piano Analytics(法企)是大企业默认,"数据主权"是采购决策词;非洲法语区桌面 Bing 9.2% 必配 Bing Places;40–60 词实体简介全平台逐字重复。
+
+### 德语区(DACH)专项
+
+**独家渠道**:GEO 引用源优先级=德国官方机构(BAFA/Fraunhofer/行业协会)>Tier-1 德媒>国际泛源;Ecosia=Bing 索引,不用单独做。**语言机制实操**:Sie/du 按国别定(B2B 默认 Sie;de-DE du 化快于 de-AT/de-CH)+Ansprache/Tonalität 两字段进内容契约并全站一致;复合长词是常态不是异常;1.000,00 格式;德语版比英语长 25–35% 是本地化平价带。**本圈信息源**:ABAKUS 论坛(4.5 万会员)/SISTRIX 博客/Seokratie;SEO Campixx、SEOkomm 大会。**红旗**:链接实为月租制(119€/月起)——把租链当永久资产入账是错;软文不标"Werbung"→竞争对手 Abmahnung 律师函风险大于 Google 惩罚;OLG Köln 2024:拒绝键须与接受键同等醒目;Consent Mode v2 横幅损测量——GSC(免 consent)为基准+GA4 建模值并列 consent rate,小站勿依赖 Advanced CM;Impressum(§5 DDG)是法定页。
+
+### 印尼语区专项
+
+**独家渠道**:产品发现始于 marketplace/TikTok 站内(Tokopedia/Shopee/TikTok),Google 承担研究意图——"先优化 Google"是错序;Tokopedia 官方 Analisis Pencarian 工具;Sahabat-AI 本土助手 watch。**语言机制实操**:baku/gaul 双轨关键词("关键词跟手指、正文跟词典");meta 前 120 字符安全区(关键信息前置);EYD V 正字法改革新旧拼法对比后兼收;AIO 引用的健康/政府站全为 baku——GEO 内容层比 SEO 内容层更偏正式语域。**本圈信息源**:cmlabs(风向标)/DailySEO ID/ads.id 论坛。**红旗**:jasa SEO murah 廉价圈(Rp50 万/月 vs 正规 Rp600 万)——修复烂摊子成本常超服务费;PBN 公开叫卖+".ac.id 付费链接"商品化;nulled 主题文化是真实入侵向量(供应链安全进审计);移动 >82% 流量+slow-4G 节流为测试基线(全国中位 15–38 Mbps);AIO 触发率 37.2% 全球第一。
+
+### 印地语区(印度)专项
+
+**独家渠道**:超 App 内 ChatGPT(JioHotstar×OpenAI 2026-02);聚合器占位层(JustDial 1000+ 城市/IndiaMART/Sulekha)挤掉本地词页 1——实操是"入驻聚合器+GBP";中型出版商 Discover 流量已超 Google Search,WhatsApp 次之。**语言机制实操**:Hinglish 混码三写(罗马化/天城体/英语)——真实量在 Hinglish 非纯印地语;GSC regex 快照缺口诊断法(英文页在 Hinglish 查询排首页但 CTR 0.16%→顶部加原样措辞定义行);数字 lakh/crore 分组(1,23,456.78);hi-IN 与 en-IN 分开评分。**本圈信息源**:Google Search Central Live Bengaluru 2026/SaaS SEO Alliance/Telegram SEOhindi 频道。**红旗**:把印度当单一英语市场;语音查询=助词词库(kaise/konsa/batao)×产品词;拼写漂移须音译规范化聚类(IndicXlit);外包三层($99 PBN/Clutch 白标/$100–300 编辑链)按价格分层审供应链;泰米尔有文字圈、泰卢固几乎全 YouTube(蓝海)。
+
+### 意大利语区专项
+
+**独家渠道**:P.IVA→Registro Imprese 竞品链(增值税号→ATECO 码+省→真实竞品,公开 API 独有);"数据阶梯+声明降级"(测量值 vs 估算值显式标注);意语 AI 引用=Wikipedia 48.67%+个人专家站(Aranzulla 模式)第三极。**语言机制实操**:it-CH 当独立 locale(.ch 域+瑞郎价+混德法语词)——复制 it-IT 会被信号归并,瑞士版排不上;Lei 商务默认。**本圈信息源**:Connect.gt 论坛(14.6k 帖)/SERP Conf Rome/Search Tech 大会/SEOZoom。**红旗**:意语关键词池比德法小得多——高估体量是首错;4 星>5 星信任悖论(意大利用户更信 4 星,评分展示策略不能照搬美式 5 星导向);内容外包 25–80€/篇(约英语圈一半)——低价买到的是低价圈;guest post 15–30€ 走量层与 40–100€ 单篇层质量断层;Amazon.it 份额无公开数,勿引用传闻。
+
+### 土耳其语区专项
+
+**独家渠道**:第二个 Yandex 市场(Wordstat TR 2026-01+Webmaster 全土语界面)——但本地实操几乎没人做,按客群决策再投入;Yazeka(土语专属 AI 答案品牌,非 YandexGPT)是本市场特有 GEO 面;Trendyol 九信号(单量转化最强/content score 传 80–90+/断货即掉/标题公式 Marka+Ürün+Model+Özellik)。**语言机制实操**:黏着语后缀把格/数/领属折进一个长词——英文式头部词研究低估量,须研究屈折形式与词干(Zemberek 工作流);İ/i 陷阱(İ→i̇ 双码点,归组前先替换);siz 默认。**本圈信息源**:r10.net(交易中枢)/İlyas Teker/Antalya Search 'n Stuff 大会。**红旗**:外链主形态=tanıtım yazısı(新闻站赞助文,90₺ 垃圾层→13,500₺ 全国媒体)——不是西式 guest post 市场;土语 SERP 被 UGC 碾压(Ekşi Sözlük #1/DonanımHaber/Akakçe);品牌词被 Şikayetvar 占据催生 ORM 产业;份额口径冲突并记(StatCounter 26% vs 本地 3–5%),建议本地实测;AIO 引用 75.3% 绑定自然前 10。
+
+### 越南语区专项
+
+**独家渠道**:Coc Cốc(搜索 ~6% 但浏览器装机 ~25%——价值在数据面年度报告,不是必优化第二引擎;官方偏好越南语+.vn 域,单独提交收录);backlink báo 产业(22–30 省级国家级新闻域 sidebar 链,1,500–3,500 VND/条——规模化购链,属 Google 链接垃圾政策范围)。**语言机制实操**:有调/无调双轨(không/khong 移动端常不打入)——意图不同,归组研究但排名当独立词跟踪;t0mmy 99 条:标题词进前 30 字符防 AI 改写;提问式 H2≥50%;密度只设上限 1/150 且仅计正文。**本圈信息源**:IDVS 论坛(持牌)/Brands Vietnam/卖家 FB 群;t0mmy 规则集+mona-seo-check-vi(句长方差检测反 AI 文风)。**红旗**:nonce 双层质量门防 agent 自评篡改(validator 达标 ∧ 独立评分 ≥85 才发布+状态目录只读);把买新闻外链当白帽;优先级错置(Cốc Cốc 优先级低于 FB 群/Zalo)。
+
+### 泰语区专项
+
+**独家渠道**:Pantip 帖在"รีวิว/ซื้อไหม"类词常年霸榜(排名占有者+声誉层双角色——不是外链来源);Wongnai 本地生活目录=GEO 引用源;TikTok 口播词被索引。**语言机制实操**:`Intl.Segmenter("th")` 分词定论——主流 SEO 工具栏在泰文站全错,密度/精确匹配计数先验证分词再谈;grapheme 字素计数(元音/声调组合符号不计独立字符);泰调可读性公式(句≤25 词/词均≤5 字符);ครับ(男)/ค่ะ(女)礼貌尾词一致;佛历年日期(9 ตุลาคม 2569)。**本圈信息源**:Pantip(真活跃)/ThaiSEOBoard(交易区)/FB 群。**红旗**:หลังบ้าน("后门")=灰黑帽链网,赌博站 hack 排名手法,被罚后恢复以年计——低价外包安全是幻觉;泰文字体子集省 60–80% 带宽;PDPA 医疗明示同意;meta 在词中间被截(无空格文字的截断行为要逐页检查)。
+
+### 波兰语区专项
+
+**独家渠道**:Bing 桌面 ~13.3%(全球 3 倍)——必做 Bing WMT+IndexNow;品牌引用按引擎分列测量(ChatGPT 引 PKO vs Gemini 引 mBank——各 AI 信源偏好不同,分引擎报告);Allegro"Trafność"算法(参数填满且逐月更新、常新增参数,过时即掉)=marketplace 独立学科;AIO 波语名 Przeglądy od AI(2025-03-26,~28.95% 单源)。**语言机制实操**:9 个变音字母内容带正确变音符写(勿剥 ą/ę/ł——Google 有调/无调都匹配,剥变音符伤品牌与 AI 保真);sierotki 孤字排版(单双字母词不悬行尾);1 234,56 空格千分位;Pan/Pani 商务。**本圈信息源**:Planeta SEO 聚合/Senuto/Silesia SEM 大会(十几年)。**红旗**:"波兰=便宜买链黑帽可行"是过时印象,本地已转向 E-E-A-T;WhitePress/LinkHouse 中介常态(100–1,000 zł/篇)按内容质量分层审;"只做 Allegro 就够"(实为 marketplace×官网双轨)。
+
+### 荷兰语区专项
+
+**独家渠道**:发现层 LinkedIn 14M=第 2 渠道;一条权威 .nl 链>数百条进口链(荷语 Google 拒收批量进口链);NL 的 AIO 触发率信息类仅 6.43%(2025-06,远低于美)——交易词暂安全,红利在经典 SEO。**语言机制实操**:je/u tone 双轨(nl-NL=je 连 B2B;nl-BE=u 句中小写);nl-NL/nl-BE 词汇分流(auto's/wagen)与正式度不同——单一 nl 码服务两国是错配;比利时三语(nl-BE/fr-BE/de-BE)分别 hreflang。**本圈信息源**:Frankwatching(第一大本营)/Marketingfacts/Yoast(本圈巨头,术语定义权)。**红旗**:"荷兰人英语好→英文内容即可"——交易发生在荷语;[INVULLEN] 占位制+拒绝虚构 norm(锚文本不给比例、数字不编造);GBP 描述用满 750 字符+KvK 商会号;>60% 网民用 AI(欧洲最高档)——AI 引用审计的市场基础反而最厚。
+
+### 英文区专项
+
+**独家渠道**:协议层 agent-readiness(ARD/ai-catalog.json/WebMCP/Web Bot Auth——英文站全开,其他语区只保留 llms.txt 类等价物);三类 AI 爬虫按目的分策(training:GPTBot/ClaudeBot/Google-Extended;search indexing:OAI-SearchBot/PerplexityBot;live fetch:ChatGPT-User 类)——封训练连带封掉引用流量是最常见误杀。**语言机制实操**:句 15–20 词;hype 词(unlock/seamless 类)≤3/页;段落级可引性=[主体+数字+as-of 日期+方法学]——Naver AI Briefing 与 Perplexity 都精确以此粒度截取;一手数字源策略=给数字命名+稳定 URL 作引用地址。**本圈信息源**:Google Search Central、Search Engine Land、r/SEO、Ahrefs/Sistrix 研究;qiaomu 证据阶梯六级(eligible→retrieved→cited→mentioned→recommended→converted)是计量范本。**红旗**:inauthentic mentions(买提及)是 Google 官方点名的 spam 风险;逐长尾变体建页=Scaled Content Abuse;llms.txt 对 Google 无效(不帮不伤)——别当排名手段卖。
+
+## 十二、NEO 车道的度量协议与内容流水线(leopard fire-your-seo-agency 深读,2026-10-09)
+
+韩区 NEO 玩法(AI Briefing 引用条件/博客双轨/垃圾红线)已入第十节韩语区专项;本节收编该仓**跨车道通用的两套协议**——度量闭环与内容流水线,任何语区照抄。
+
+### 12.1 度量闭环:"改完"不是终点,数字动了才是
+
+**基线在动手前记录**(没有 before 就永远证明不了效果),五项:①GSC 近 28 天曝光/点击/均位**按页面组**分;②(Naver 目标时)Search Advisor 内容曝光/点击+头部查询表;③AI 引用 O/X——对 5-10 个目标问题在 Perplexity/ChatGPT/Naver AI Briefing 实问,逐条记"被引/未被引";④索引量:`site:domain` 计数(Google+Bing 都查)+GSC 已索引页;⑤**AI 爬虫访问趋势**(GPTBot/PerplexityBot/ClaudeBot 等在服务器日志的走势)——爬在引之前,是先行指标(具体 grep 见 technical/log-analysis.md)。
+
+**复测日期是工作的一部分**:改动后默认 **14 天复测**,比较时**剔除最近 2-3 天**(上报延迟);复测靠日历/agent 提醒不靠记性——**报告里写明复测日期才算交付完成**。搜索反映有滞后,当天看数是噪音。
+
+**读数顺序**:①**先看曝光后看点击**——结构性改善的第一信号是曝光上升;CTR 要等 title/description 改了才动。曝光升而 CTR 平=下一件事是 meta。②周末 dip 是常态(工作日性质话题如 B2B/金融),该模式本身是真实需求的证据不是异常。③**查询列表就是路线图**:Search Advisor/GSC 头部查询=用户实际输入的问题清单,头部查询没有专属落地页=下一个要建的页。
+
+**报告四行制**:`[Baseline] 8/1–8/28: 12,400 曝光 · 180 点击 · AI 引用 0/8` / `[Change] 8/29: 6 个意图落地页+llms.txt+FAQ LD` / `[Re-measure] 定于 9/12` / `[Result] 31,000 曝光(+150%) · 610 点击 · AI 引用 3/8`——最后一行出现才算"完成"。**陈旧数据陷阱**:只查"指标非零"的监控会放过卡死多日的值——**盯值的日期而非值本身**("最后更新 >N 天就不展示"是安全默认)。
+
+### 12.2 内容流水线:可被引用的句子,持续生产+到期刷新
+
+**内容在各车道的角色分工**(一条内容流水线喂全部车道):SEO=可索引页的数量与新鲜度;AEO="一问一页"的供给线;GEO=段落级引用材料(主体+数字+as-of 日期+方法);LLMO=建造记录本身,存活进训练语料;NEO=Naver 博客(双轨的"生态内"半边)。
+
+**五种被引页型**(做这些,别做别的):①问题页(一个 when/how much/how 问题+直答+证据表)②数据页(自己算的数,稳定 URL+明示刷新节奏)③词汇/定义页(一句定义+对比表+示例——**第一易截取形态**)④建造日志/changelog(做了什么为何怎么做+实测数字——LLMO 训练面+E-E-A-T 的 Experience)⑤对比页(表格优先/带日期/无主场偏袒)。**不做**:二手新闻转述(原始源拿走引用)、关键词变体页农场("best X/best X 2026/X 排行"——同答案复制互拆排名,规模化即 scaled content abuse)、无答案文(结论"看情况"的页没引擎会引)。
+
+**问题积压队列取代内容日历**(来源优先级):①GSC/Search Advisor 头部查询**且无专属页** ②有曝光但位次 5-15 的查询(已是候选,弱在直答或表格)③站内搜索/工单/客户提问 ④自动补全与相关搜索。优先级=**有曝光排名低 > 有曝光无专属页 > 纯预估新需求**(纯预估写的排最后)。
+
+**发布闸门要点**(每项不过不发):frontmatter 的 question/answer/data_asof/sources 齐;`curl -sL` 无 JS 可见正文/直答/表格;可见 FAQ 文本与 FAQPage LD **逐字符一致**;内链 1 上(hub)+2 横(相关)起步;部署后 curl 验 sitemap lastmod;IndexNow ping(Bing 与 Naver 都消费);数据页/hub 级页加进 llms.txt;Naver 是目标时发布即在 Search Advisor 请求收录。**发布后记基线(曝光 0)→14 天复测入清单**。
+
+**刷新触发**(任一即标 refresh-needed):底层数据变了(财报日/价格/政策)/28 天曝光比 60 天前降 30%+/查询措辞在搜索数据里迁移("2025"→"2026")/发现事实错误。刷新纪律:`dateModified` **只在内容真变时 bump**——纯日期 bump 可被检测且反噬;页底加一行变更记录("Updated 2026-10-30: 加入 Q3 数据")=信任信号;刷新页重新过发布闸门(含新 IndexNow)。**合并与删除**:同问题两篇→301+canonical 并入强者(复制品互拆排名);删除是最后手段,真删返 410 并撤 sitemap;URL 必须变时 301 永久保留(模型记住的是地址)。
+
+**分发顺序红线**:自有域先索引确认(1-3 天)**再**外发副本——不先认领原创,副本会被当原文。Naver 博客编辑器**不渲染 Markdown**(粘贴 `#`/`**`/`|` 会以字面字符出现)——用编辑器原生工具重建标题/加粗/表格,发后手机端查泄漏符号;各外部面只放摘要+1-2 链,不贴全文不链接轰炸。
+
+**度量口径**:"N 篇/月"是产出不是结果——**被看见或被引的份额**(发布文中 28 天曝光>0 的比例/AI 被引比例)、每篇 28 天曝光/点击/均位、5-10 个目标问题的 AI 引用 O/X、积压消耗率 vs 流入率(积压空了=该重读查询数据了)。信号→动作:曝光升点击降→改 title/description;发布 14 天零曝光→查索引(sitemap/noindex/SSR/IndexNow);卡位 5-15→强化直答/表格/as-of+加内链;有曝光无 AI 引用→查竞争原始源/段落自足性/llms.txt 收录;曝光降 30%→触发刷新。
+
+### 来源(第十二节)
+
+- [leopard627/fire-your-seo-agency](https://github.com/leopard627/fire-your-seo-agency)(MIT) `references/en/measure.md`(度量闭环/四行报告/陈旧数据陷阱)、`references/en/content.md`(五页型/问题积压/发布闸门/刷新触发/分发顺序/度量口径)——`references/en/neo-naver.md` 的韩区玩法已由前轮并入第十节韩语区专项

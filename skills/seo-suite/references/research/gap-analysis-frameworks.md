@@ -72,9 +72,22 @@
 - 照着对手的页面换词重写，没有新增价值。
 - 把已停止展示的富结果当作要补的缺口。
 
+## open-seo 缺口工作流深读(open-seo+Ryze 深读,2026-10-09)
+
+**市场面 vs 单对手两条线**:多个对手的市场级读法用 competitive-landscape(5-10 条混合意图代表查询→SERP 反复出现的域分组:直品竞品/出版媒体/市场目录/社区论坛/文档资源,**标注域类型,出版者≠产品竞品**→最强 3-5 个域拉概况→缺口表带"谁目前拥有该主题"+少数主题承载大部分需求时配条形图);单对手深钻用 competitor-analysis,其关键词主题六分组可直接当缺口骨架:**产品/品类词、alternatives/comparisons、模板/工具/计算器、教育指南、品牌需求、本地词**;漏洞按"可赢性"排序输出。查询集小(<10)时结论必须自称 directional。
+
+**候选清单纪律(seo-audit 式 opportunities.md)**:排序前写工作清单,5-10 条候选、**至少来自三种不同机会类型**:①现有页低于其所对需求的表现 ②有真实需求无承接页(含产品自己声明里的 feature/framework/use-case 查询)③**要保护的已赢页面**(近顶部排名的页是保护对象不是重写对象)④访问/索引/重定向缺陷在流失访问 ⑤帮现有访客走下一步。每行带:页面|观察到的问题|证据(查询簇+量+位次"第 N 位(第 1 页)"或"前 20 无"+日期)|建议改动|搜索者是谁为何重要|合理收益|工作量|主要不确定。**一条硬规则:如果再做一次查询就能改变某行排序,先做那次查询再排**。每个候选只有两个归宿——进推荐,或进"我们还查了什么"表并带真实理由("等销售要"不是理由;"需求只有头部候选的 1/4 且该页已排第 7"才是);对落选第二名写一句"为什么头名胜它",进报告。
+
+**收益的诚实计法**(seo-audit 第 5 步,防潜力虚报):①点名机制——新排名/现有排名升位/同位更多点击,三者收益完全不同;②**按查询簇计不按精确词计**,变体重叠不加总(变体不是不同的人);③已排名页已吃掉部分量,按总量算情景=高估;④搜索量≠访问量,用明示的点击份额假设,position-one 情景必须标"假设性";⑤当前基线未知时写"总潜在访问"不写"增量访问";⑥绝不发明转化率/收入;无数字时给方向判断及理由("已排第 3,头部空间小")。
+
+**付费词=预算验证过的 SEO 路线图**(Ryze seo-vs-ads,缺口第五数据源):广告搜索词报告×GSC 同窗 join 分四桶——double-paying(自然 ≤3 位仍付费同词,尤其无竞价的品牌词,费用即标题数字)/defensible(自然强但对手在投,付费可能正当)/paid-only winners(广告转化但零自然排名→**内容缺口已被真金白银预验证,最优先补**)/organic-only converters(自然强无广告覆盖→扩量候选)。节省估算=double-paying 花费×保守自然捕获率(品牌词第 1 位取 50-70%,标注为估算)。
+
+**研究与复用纪律**(open-seo 项目上下文模式,适用于任何多轮缺口工作):同主题研究 30 天内做过→复用结果并说明,不重复付费;缺口发现的对手域/关键页**回写项目上下文**(下轮不再重找);竞品品牌词默认不进缺口,除非目标是 vs/alternative 页——那时单列。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
+- 深读来源（R3 组，2026-10-09）：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/seo-audit/SKILL.md`、`competitive-landscape/SKILL.md`、`competitor-analysis/SKILL.md`、`keyword-research/SKILL.md`（Apache-2.0）；[Ryze-AI-Adgent/open-seo-mcp-skills](https://github.com/Ryze-AI-Adgent/open-seo-mcp-skills) `skills/seo-vs-ads/SKILL.md`、`competitor-gap/SKILL.md`
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/content-gap-analysis/references/gap-analysis-frameworks.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/content-gap-analysis/references/gap-analysis-frameworks.md)（Apache-2.0）
 - 一手资料：[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[GA4 事件](https://support.google.com/analytics/answer/9322688)
