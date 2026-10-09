@@ -134,6 +134,7 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 #### GEO / AI 搜索（llms.txt 与可引用性）
 - [llms.txt 指南](references/content/llms-txt-guide.md)：格式规范、校验严重度、生成规则
 - [AI 平台差异事实库](references/content/geo-platform-differences.md)：五引擎引用行为、爬虫分类、优化侧重
+- [视频 SEO/GEO](references/content/video-geo-guide.md):AI 引用视频的机制(Gemini 进片内/ChatGPT 整片)、**播放量不是门槛文本可及性才是**、人工字幕是唯一可控层、key moments 两法、MLA 多音轨、五市场平台格局(韩 Naver TV 已关停/俄 VK Video·RuTube 反超)
 - [电商 GEO 阶梯](references/content/ecommerce-geo-ladder.md):五级阶梯(产品数据→评价→内容→marketplace 分工→agent 交互)、Product schema 七个高频错误、七市场分叉表、AI 购物现状、UCP/ACP 双协议
 - [可引用性打分](references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
 #### 中文 AI 搜索（独有能力）
@@ -184,6 +185,8 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 
 #### AI 爬虫与国际化
 - [AI 爬虫政策](references/technical/ai-crawler-policy.md)：引用型 vs 训练型 bot、四种典型 robots 配置、暗坑清单
+- [JS 渲染与 SPA SEO](references/technical/rendering-seo.md):两波索引已死的新口径、渲染策略决策表、**meta 注入红线(社交/AI 爬虫不执行 JS)**、五引擎渲染差异(Naver 官方建议 SSR/百度以抓取诊断实测)、SPA 审计 7 项与 cloaking 红线
+- [服务器日志分析](references/technical/log-analysis.md):日志是 AI 到访的唯一可靠测量层(GA 看不见不执行 JS 的爬虫)、DNS 双重验证、**Bytespider 无视 robots 只能边缘封锁**、a11y×SEO 三分法(SEO 重叠/纯人类/agent 项)
 - [Agent-Readiness 操作层](references/technical/agent-readiness.md)：协议时代站点准备(ARD 三级发现链/WebMCP 页面工具/Web Bot Auth 签名/Lighthouse AGENTIC_BROWSING 七审计/语言中立层多语言部署/就绪决策表)
 - [hreflang 校验](references/technical/hreflang-validation.md)：八检框架、实现方式选择、内容平价
 #### 程序化与规模化

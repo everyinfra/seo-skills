@@ -3,6 +3,13 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.8.0 - 2026-10-09
+
+- **新增 [视频 SEO/GEO 指南](skills/seo-suite/references/content/video-geo-guide.md)**(补最大缺口——YouTube 是多市场 AI 引用第一源):AI 读视频的双通道机制(Gemini 进片内时间戳引用/ChatGPT 整片选择/关键帧+transcript);**播放量不是被引门槛,文本可及性才是**(被引视频 41% 播放<1,000);人工校对字幕是唯一可控层(captions API 官方仅所有者可取);key moments 两法;8 项视频 GEO 清单;五市场平台格局(**韩国 Naver TV 已关停只剩 YouTube;俄 VK Video/RuTube 日活反超 YouTube**);MLA 多音轨。
+- **新增 [JS 渲染与 SPA SEO](skills/seo-suite/references/technical/rendering-seo.md)**:两波索引已死的新口径(官方已删);渲染队列实际行为(JS 站 9 倍抓取预算);渲染策略决策表;**meta 注入红线(社交与多数 AI 爬虫不执行 JS,69% 主流爬虫不渲染)**;五引擎渲染差异(**Naver 官方确认 Yeti 解析 JS 但建议 SSR;百度以站长平台抓取诊断实测为准**);SPA 审计 7 项+cloaking 红线+预渲染内容漂移风险。
+- **新增 [服务器日志分析](skills/seo-suite/references/technical/log-analysis.md)**:日志是 AI 到访的唯一可靠测量层;DNS 双重验证法;AI UA 过滤+IP 段对照;**Bytespider 无视 robots 且伪装移动 UA,只能边缘封锁**;GEO 基线用法(到访≠引用);**a11y×SEO 三分法**(SEO 重叠项/纯人类项/agent 项——与 agent-readiness 呼应)。
+  Video SEO/GEO + rendering/SPA SEO + log analysis: three gap-filling references.
+
 ## 0.7.0 - 2026-10-09
 
 - **schema 富结果状态速查**(全量核对官方 changelog):已停展清单(FAQ/HowTo/Sitelinks searchbox/Practice Problems/2025-06 七类)+展示中清单(Product 字段演进至 2026-07、Review 收紧三连、JobPosting 未受限);三处澄清——LocalBusiness 无传统富结果、无 AI 专用 schema、**"Person 新增 alternateName"是误传**(官方 releases 页核实);申诉走 Spammy structured markup(只罚富结果不罚排名)。
