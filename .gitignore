@@ -17,5 +17,8 @@ Thumbs.db
 __pycache__/
 node_modules/
 
-# seo-suite 持续监控状态(含告警 pending 与站点快照,不入库)
+# seo-suite 持续监控本地状态整体默认不入库(audit 05-§4:config secret/告警瞬时态防泄漏)。
+# commit-back 基线例外:workflow 里 `git add -f <dir>/monitor.db <dir>/runs`(显式白名单,
+# 只提交基线库与快照;config.json/alerts.json/notify-state.json/gsc.csv 永不提交)。
 .seo-monitor/
+.seo-monitor-*/

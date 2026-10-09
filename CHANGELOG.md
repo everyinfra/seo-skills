@@ -17,6 +17,14 @@ Future content or structure changes must bump the version and add a dated entry.
   - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
   S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
 
+## 0.27.0 - 2026-10-09
+
+- **20 路深度审计+全面融入(用户指令:先审计评测,再融入)**——8 个 agent 并行审计(常驻平台/GH Actions 生态/agent 运行时/商业平台基准/自家红队/五细分/五开源深入/五周边反面),产出 8 份审计报告(归档 monitor-audit/),提炼 40+ 条建议,全部实施:
+  - **P0 修复 7/7(红队发现)**:cooldown 通知层失效(suppressed 剔除双保险)/陈旧 alerts.json 重发(--max-age 拒发)/SQLite WAL+flock 防本地并发/基线污染(status 守卫+quarantine 命令+partial 标记)/**SSRF 302 穿墙(重定向逐跳复查)**/config secret 防泄漏/Bing cites 空值误判;
+  - **P1 增强 8/8(最佳实践抄入)**:**dead man's switch**(heartbeat ping+2×周期检测)/双窗口判定(critical 需 7 天基线同向)/告警抑制树(site_down 抑制 page_down)/字段级 diff(selector 级)/run 状态机+PruneDB/workflow commit-back+matrix+issue 自动开关/if:failure() 兜底/**Apprise 式通用 webhook**/SSL 到期梯度+expect_substring+维护窗口;
+  - **测试 46→62(+16)**;E2E 真实跑通:critical→cooldown 不重发→陈旧拒发→quarantine→自愈→report 全周期+SSL 实测 77 天+坏渠道隔离。
+  20-path deep audit then full integration: 7 P0 fixes (cooldown leak, SSRF redirect, baseline quarantine) + 8 P1 best-practices (dead man's switch, inhibition tree, dual-window, Apprise webhooks); tests 46→62.
+
 ## 0.26.0 - 2026-10-09
 
 - **持续监控守护层(用户核心诉求:从一次性审计→本地长期监控+自动完善)**:

@@ -1,29 +1,41 @@
 # seo-monitor:持续监控守护(GitHub Actions 模板)
 # ----------------------------------------------------------------------------
 # 日检(cron 03:17 UTC)+ 周检(周一 04:23 UTC)。告警 diff 非零退出 → notify.py
-# 按级别路由(critical 即时发;warn/info 由 --flush 批量发;low 只进周报)。
+# 按级别路由(critical 即时发;warn/info 由 --flush 批量发;low 只进周报;
+# suppressed 冷却命中不通知;--max-age 拒发陈旧 alerts.json)。
 #
 # 使用前:
 #   1. 把本文件拷到你站点仓库的 .github/workflows/seo-monitor.yml
-#   2. 仓库 Variables 配 SEO_SITE(如 https://example.com)与 SEO_MARKET(如 us,可省)
+#   2. 仓库 Variables 配 SEO_SITES(JSON 数组,如 ["https://example.com",
+#      "https://example.org"];多站点自动 matrix 扇出,fail-fast 关闭不连坐)
+#      与 SEO_MARKET(如 us,可省)
 #   3. 仓库 Secrets 配告警渠道(任选):SEO_MONITOR_SLACK_WEBHOOK /
-#      SEO_MONITOR_DISCORD_WEBHOOK / SEO_MONITOR_TG_TOKEN+SEO_MONITOR_TG_CHAT
-#   4. GSC 流量问(可选):在 run 前把 GSC 导出放到 .seo-monitor/gsc.csv
-#      (可加一步用你自己的凭据拉取;没有该文件则该问自动跳过,不猜数)
+#      SEO_MONITOR_DISCORD_WEBHOOK / SEO_MONITOR_TG_TOKEN+SEO_MONITOR_TG_CHAT /
+#      SEO_MONITOR_WEBHOOK_URL(Apprise 式通用 webhook)——secret 只走 env,
+#      config.json 永远只存 env 引用名,commit-back 不带 config.json
+#   4. (推荐)SEO_MONITOR_HEARTBEAT_URL:healthchecks.io 类 dead man's switch,
+#      run 成功 ping /ok、失败 ping /fail;grace ≈ cron 间隔×2+典型运行时长
+#   5. GSC 流量问(可选):在 run 前把 GSC 导出放到 .seo-monitor-<host>/gsc.csv
+#      (没有该文件则该问自动跳过,不猜数)
 #
-# 状态持久化:monitor.db 通过 actions/cache 在 run 之间保留(缓存过期≈基线重置,
-# 会先出一轮"基线建立"的 info;改成提交回仓库即可彻底持久,见下方 ALT 注释)。
+# 状态持久化(audit 02 决策):基线用 commit-back(monitor.db 提交回仓库,永不过期、
+# 可 diff、可回滚),actions/cache 仅作迁移期兜底;config.json/alerts.json/
+# notify-state.json/gsc.csv 永不提交(secret 与瞬时态不进 git)。
+#
+# critical → 自动开/复用 label=seo-monitor-active 的 issue(GITHUB_TOKEN 自带,
+# 零新 secret);diff 归零自动关 issue。workflow 自身失败有 if: failure() 兜底通知。
 #
 # ----------------------------------------------------------------------------
 # 本地/自托管三条替代路径(GitHub 不可用时):
 #
-# ALT-1 本地 cron(Linux/macOS 通用):
+# ALT-1 本地 cron(Linux/macOS 通用;monitor 自带 flock+WAL,多 cron 安全):
 #   crontab -e
 #   17 3 * * *  cd /path/to/site && python3 /path/to/seo-suite/scripts/monitor.py run --checks daily && \
 #     python3 /path/to/seo-suite/scripts/monitor.py diff --out .seo-monitor/alerts.json --format text; \
-#     rc=$?; [ $rc -ne 0 ] && python3 /path/to/seo-suite/scripts/notify.py --dir .seo-monitor \
-#       --alerts .seo-monitor/alerts.json --flush warn
-#   # diff 退出码:0=无告警 1=critical 2=warn 4=错误;只在前两者时通知
+#     rc=$?; [ $rc -eq 1 -o $rc -eq 2 ] && python3 /path/to/seo-suite/scripts/notify.py run \
+#       --dir .seo-monitor --alerts .seo-monitor/alerts.json --flush warn --max-age 30
+#   # diff 退出码:0=无告警 1=critical 2=warn 4=错误;rc=3(run 未完成)不通知,
+#   # 陈旧 alerts.json 由 notify --max-age 拒发,run 失败改由 heartbeat /fail 上报
 #
 # ALT-2 macOS launchd(比 cron 更省电,守护长驻场景):
 #   ~/Library/LaunchAgents/com.seo.monitor.plist,ProgramArguments 指向一个包装脚本,
@@ -57,19 +69,24 @@ on:
         required: false
         default: "daily"
 
-# 防止误触发到模板仓库本身:拷贝后删掉这一行(if 放在 job 上)
-concurrency:
-  group: seo-monitor
-  cancel-in-progress: false
-
 permissions:
-  contents: read
+  contents: write    # commit-back 基线(monitor.db;不含 config secret)
+  issues: write      # critical 自动开 issue 兜底通道
 
 jobs:
   monitor:
     if: github.repository != 'everyinfra/seo-skills'   # 拷贝后删除
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false        # 一站慢/挂不连坐(audit 02)
+      matrix:
+        site: ${{ fromJSON(vars.SEO_SITES || '["https://example.com"]') }}
+    concurrency:              # 每站点一组,排队串行防写冲突
+      group: seo-monitor-${{ matrix.site }}
+      cancel-in-progress: false
+    env:
+      SEO_MONITOR_HEARTBEAT_URL: ${{ secrets.SEO_MONITOR_HEARTBEAT_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -77,59 +94,135 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Restore monitor state (SQLite 基线)
+      - name: Resolve per-site monitor dir
+        run: |
+          HOST=$(printf %s "${{ matrix.site }}" | sed -E 's#^https?://##; s#[/:].*##')
+          MDIR=".seo-monitor-$(printf %s "$HOST" | tr . -)"
+          echo "MDIR=$MDIR" >> "$GITHUB_ENV"
+          echo "HOST=$HOST" >> "$GITHUB_ENV"
+
+      # 迁移期兜底:首次切到 commit-back 前从旧 cache 恢复(audit 02 rec1)
+      - name: Restore monitor state (cache 兜底,基线以 commit-back 为准)
         uses: actions/cache@v4
         with:
-          path: .seo-monitor
-          key: seo-monitor-${{ github.run_id }}
+          path: ${{ env.MDIR }}
+          key: seo-monitor-${{ env.HOST }}-${{ github.run_id }}
           restore-keys: |
-            seo-monitor-
+            seo-monitor-${{ env.HOST }}-
 
-      - name: init (首次自动建立 .seo-monitor/)
+      - name: init (首次自动建立监控目录)
         run: |
           python3 skills/seo-suite/scripts/monitor.py init \
-            --site "${{ vars.SEO_SITE || 'https://example.com' }}" \
-            --market "${{ vars.SEO_MARKET || '' }}" || true
-        # ALT(彻底持久化,不用 cache):放开下面两步,并在 permissions 里给 contents: write
-        # - name: Commit monitor state
-        #   run: |
-        #     git config user.name "seo-monitor-bot" && git config user.email "bot@users.noreply.github.com"
-        #     git add .seo-monitor/monitor.db .seo-monitor/config.json || true
-        #     git diff --cached --quiet || git commit -m "chore(seo-monitor): state update [skip ci]" && git push
+            --site "${{ matrix.site }}" \
+            --market "${{ vars.SEO_MARKET || '' }}" \
+            --dir "$MDIR" || true
 
       - name: run checks
         run: |
           python3 skills/seo-suite/scripts/monitor.py run \
             --checks "${{ inputs.checks || 'daily' }}" \
-            --budget-minutes 5 --dir .seo-monitor
+            --budget-minutes 5 --dir "$MDIR"
 
-      - name: diff (阈值告警;退出码 1=critical 2=warn)
+      - name: diff (阈值告警;退出码 1=critical 2=warn;维护窗口=0)
         id: diff
         run: |
           set +e
           python3 skills/seo-suite/scripts/monitor.py diff \
-            --dir .seo-monitor --out .seo-monitor/alerts.json --format text
+            --dir "$MDIR" --out "$MDIR/alerts.json" --format text
           echo "rc=$?" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: notify (critical 即时 + warn 日批;info 周批由周检 --flush info 发)
+      - name: notify (critical 即时 + warn 日批;suppressed 不通知;陈旧拒发)
         if: steps.diff.outputs.rc != '0' && steps.diff.outputs.rc != '4'
         run: |
           python3 skills/seo-suite/scripts/notify.py run \
-            --dir .seo-monitor --alerts .seo-monitor/alerts.json --flush warn
+            --dir "$MDIR" --alerts "$MDIR/alerts.json" --flush warn --max-age 30
         env:
           SEO_MONITOR_SLACK_WEBHOOK: ${{ secrets.SEO_MONITOR_SLACK_WEBHOOK }}
           SEO_MONITOR_DISCORD_WEBHOOK: ${{ secrets.SEO_MONITOR_DISCORD_WEBHOOK }}
           SEO_MONITOR_TG_TOKEN: ${{ secrets.SEO_MONITOR_TG_TOKEN }}
           SEO_MONITOR_TG_CHAT: ${{ secrets.SEO_MONITOR_TG_CHAT }}
           SEO_MONITOR_SMTP_PASS: ${{ secrets.SEO_MONITOR_SMTP_PASS }}
+          SEO_MONITOR_WEBHOOK_URL: ${{ secrets.SEO_MONITOR_WEBHOOK_URL }}
+
+      - name: track critical via issue (零新 secret 的兜底通道)
+        if: steps.diff.outputs.rc == '1' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "seo-monitor-active" --color d73a4a || true
+          SUMMARY=$(python3 - <<'PY'
+          import json
+          d = json.load(open("$MDIR/alerts.json"))
+          lines = ["[%s] %s: %s" % (a["level"].upper(), a["code"], a["message"])
+                   for a in d.get("alerts", []) if a["level"] in ("critical", "warn")]
+          print("\n".join(lines) or "(counts only)")
+          PY
+          )
+          ISSUE=$(gh issue list --label "seo-monitor-active" --state open \
+                  --json number --jq '.[0].number' || true)
+          if [ -n "$ISSUE" ]; then
+            gh issue comment "$ISSUE" --body "seo-monitor ${{ matrix.site }} @ ${{ github.run_id }}:
+          $SUMMARY"
+          else
+            gh issue create --title "[seo-monitor] critical: ${{ matrix.site }}" \
+              --label "seo-monitor-active" \
+              --body "$SUMMARY"
+          fi
+
+      - name: close tracking issue when clean (归零自动关)
+        if: steps.diff.outputs.rc == '0' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ISSUE=$(gh issue list --label "seo-monitor-active" --state open \
+                  --json number --jq '.[0].number' || true)
+          [ -n "$ISSUE" ] && gh issue close "$ISSUE" --comment "diff 归零,告警清零自动关闭" || true
 
       - name: weekly report (job summary 里出周报)
         if: inputs.checks == 'weekly' || github.event.schedule == '23 4 * * 1'
         run: |
           {
-            echo "## SEO 周报"
+            echo "## SEO 周报(${{ matrix.site }})"
             echo '```'
-            python3 skills/seo-suite/scripts/monitor.py report --days 7 --dir .seo-monitor
+            python3 skills/seo-suite/scripts/monitor.py report --days 7 --dir "$MDIR"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # 基线 commit-back(audit 02/05:cache 7 天即驱逐=基线静默重置/陈旧假风暴)。
+      # 只提交 monitor.db 与 runs/ 快照——config.json(secret env 引用虽无明文,
+      # 仍按最小面排除)、alerts.json、notify-state.json、gsc.csv 一律不进 git。
+      - name: Commit monitor baseline (commit-back;排除 secret/瞬时态)
+        run: |
+          git config user.name "seo-monitor-bot"
+          git config user.email "bot@users.noreply.github.com"
+          # -f 显式白名单:.seo-monitor*/ 整体在 .gitignore,只有 monitor.db 与 runs/ 获准提交
+          git add -f "$MDIR/monitor.db" "$MDIR/runs" 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "基线无变化,不提交"
+          else
+            git commit -m "chore(seo-monitor): baseline update ${{ matrix.site }} [skip ci]"
+            git pull --rebase --autostash origin ${GITHUB_REF_NAME:-main} || true
+            git push || echo "::warning::基线 push 失败(下轮 run 会重试;cache 仍在)"
+          fi
+
+      # 安全网(audit 02 rec3):run 步骤崩溃/超时时,notify 被跳过=静默空窗——
+      # 这里兜底把"workflow 自身失败"作为 critical 发往同渠道(heartbeat /fail 之外的双保险)
+      - name: safety net (workflow 自身失败兜底通知)
+        if: failure()
+        run: |
+          printf '{"site": "%s", "generated": "%s", "alerts": [{"level": "critical", \
+          "code": "monitor_run_failed", "key": "workflow", "message": "seo-monitor workflow \
+          步骤失败(详见 Actions 日志 %s/%s/actions/runs/%s)", "action": "检查 workflow 日志与 \
+          cron/heartbeat 配置", "boundary": "human"}]}' \
+            "${{ matrix.site }}" "$(date -u +%FT%T)" \
+            "${{ github.repository }}" "${{ github.ref_name }}" "${{ github.run_id }}" \
+            > /tmp/runtime-alerts.json
+          python3 skills/seo-suite/scripts/notify.py run \
+            --dir "$MDIR" --alerts /tmp/runtime-alerts.json --max-age 60 || true
+        env:
+          SEO_MONITOR_SLACK_WEBHOOK: ${{ secrets.SEO_MONITOR_SLACK_WEBHOOK }}
+          SEO_MONITOR_DISCORD_WEBHOOK: ${{ secrets.SEO_MONITOR_DISCORD_WEBHOOK }}
+          SEO_MONITOR_TG_TOKEN: ${{ secrets.SEO_MONITOR_TG_TOKEN }}
+          SEO_MONITOR_TG_CHAT: ${{ secrets.SEO_MONITOR_TG_CHAT }}
+          SEO_MONITOR_WEBHOOK_URL: ${{ secrets.SEO_MONITOR_WEBHOOK_URL }}

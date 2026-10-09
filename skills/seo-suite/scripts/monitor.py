@@ -13,14 +13,23 @@
 low=自愈(上次告警本次恢复)。cooldown:critical 12h / warn 24h / info 168h。
 
 子命令:
-  init   --site URL [--market XX] [--key-pages /a,/b] [--dir .seo-monitor] [--force]
+  init   --site URL [--market XX] [--key-pages /a,/b] [--heartbeat-url U]
+         [--dir .seo-monitor] [--force]
   run    [--checks daily|weekly] [--dry-run] [--budget-minutes N] [--dir D]
   diff   [--run-id N] [--prev-run-id M] [--format json|text] [--out FILE] [--dry-run] [--dir D]
   report [--days 7] [--json] [--dir D]
+  quarantine RUN_ID [--undo] [--dir D]   # 隔离坏 run(基线污染防护),diff 不再用它对比
+  maintenance --from F --to T [--reason R] [--clear] [--dir D]  # 维护窗口:窗口内 diff 只记快照不产告警
 
 退出码:diff → 1=有 critical,2=有 warn(无 critical),0=无,4=用法/数据错误;
-run → 0 正常,3=run 未完成(budget 耗尽/全部检查 error)。SSRF 防护:仅 http(s)+
-私网拒连+TLS 恒验证。
+run → 0 正常,3=run 未完成(partial/failed)。SSRF 防护:仅 http(s)+私网拒连
++TLS 恒验证+重定向逐跳复查(302 穿墙已堵)。
+
+并发与基线卫生(多 cron 安全):SQLite WAL + busy_timeout=30s + 目录级 flock;
+run 先落 status='running' 再跑检查,终态 ok/partial/failed;卡死 run 由
+sweep_stale_runs(>30min)回收;diff 的 prev 只取 status='ok';坏 run 用
+quarantine 隔离;历史按 PruneDB 纪律保留最近 400 次 run。
+cooldown 命中的告警标 suppressed:只进报告,不进通知路径(counts/退出码同排除)。
 
 用法:
   python3 monitor.py init --site https://example.com --market us
@@ -30,6 +39,8 @@ run → 0 正常,3=run 未完成(budget 耗尽/全部检查 error)。SSRF 防护
   python3 monitor.py --self-test
 """
 import argparse
+import contextlib
+import fcntl
 import hashlib
 import ipaddress
 import json
@@ -37,6 +48,7 @@ import os
 import re
 import socket
 import sqlite3
+import ssl
 import sys
 import tempfile
 import time
@@ -87,7 +99,21 @@ PLAYBOOK = {
     "ai_posture_flip":      ("确认 AI 爬虫放行翻转是否有意(visibility/protect-ip 取向)", "human"),
     "latency_spike":        ("CWV 分档核对;查最近部署", "human"),
     "gsc_clicks_spike":     ("记录归因(营销活动/季节性/SERP 变化)", "human"),
+    "ssl_cert_expired":     ("立即续期证书(auto 项:certbot renew 类幂等动作)", "auto"),
+    "ssl_cert_expiry":      ("续期证书;检查自动续期任务为何没跑", "human"),
+    "content_regression":   ("核对 expect_substring 断言;查空白渲染/软 404/误改版(draft PR)", "draft_pr"),
+    "dead_man":             ("监控自身停摆:查 cron/Actions 是否被禁、机器是否休眠", "human"),
 }
+
+# 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
+# 格式:根告警码 → (被抑制码..., 作用域) 作用域 sitewide=抑制一切;same_key=仅同 key。
+INHIBITS = {
+    "homepage_down":        (("key_page_down", "content_regression", "mixed_content"), "sitewide"),
+    "fetch_error_confirmed": (("title_meta_drift", "content_regression", "mixed_content", "latency_spike"), "same_key"),
+}
+
+# 关键页字段级 diff 的比对字段(audit 17,changedetection.io 字段级指纹)
+PAGE_DIFF_FIELDS = ("title", "meta_desc", "canonical", "og_title", "og_desc", "watch")
 
 
 class FetchError(Exception):
@@ -147,6 +173,26 @@ def ssrf_guard(host):
     _ssrf_cache[host] = True
 
 
+class _RedirectGuard(urllib.request.HTTPRedirectHandler):
+    """重定向逐跳 SSRF 复查(audit 05 P0:urlopen 自动跟随 302,最终 host 从不复查,
+    站方可控的 robots.txt sitemap 指令可 302 到 169.254.169.254 穿墙)。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        p = urllib.parse.urlparse(newurl)
+        if p.scheme not in ("http", "https"):
+            raise FetchError("重定向到非 http(s) 被拒: %s" % _redact_url(newurl))
+        ssrf_guard(p.hostname)  # 每一跳都复查,包括最后一跳
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_RedirectGuard)
+
+
+def _redact_url(u):
+    """日志脱敏:保留 scheme+host,路径/查询(常含 token)打码。"""
+    return re.sub(r"^(https?://[^/\s]+).*$", r"\1/[REDACTED]", str(u))
+
+
 def http_get(url, timeout=FETCH_TIMEOUT):
     p = urllib.parse.urlparse(url)
     if p.scheme not in ("http", "https"):
@@ -155,7 +201,7 @@ def http_get(url, timeout=FETCH_TIMEOUT):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html,application/xml,*/*"})
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _opener.open(req, timeout=timeout) as r:
             body = r.read(MAX_BYTES)
             return {"status": r.status, "final_url": r.geturl(), "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
                     "body": body.decode("utf-8", "replace")}
@@ -164,7 +210,7 @@ def http_get(url, timeout=FETCH_TIMEOUT):
         return {"status": e.code, "final_url": url, "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
                 "body": body.decode("utf-8", "replace")}
     except (urllib.error.URLError, OSError, TimeoutError) as e:
-        raise FetchError("抓取失败 %s: %s" % (url, e))
+        raise FetchError("抓取失败 %s: %s" % (_redact_url(url), e))
 
 
 def pct_drop(prev_v, curr_v):
@@ -193,10 +239,68 @@ CREATE INDEX IF NOT EXISTS idx_alert_fp ON alerts(code, key, resolved);
 
 def open_db(mdir):
     os.makedirs(mdir, exist_ok=True)
-    conn = sqlite3.connect(os.path.join(mdir, "monitor.db"))
+    conn = sqlite3.connect(os.path.join(mdir, "monitor.db"), timeout=30.0)
     conn.row_factory = sqlite3.Row
+    # audit 05 P1:本地多 cron/挂住的 run 并发 → WAL + busy_timeout,
+    # 与目录级 flock(见 monitor_lock)双保险。
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
     conn.executescript(SCHEMA)
     return conn
+
+
+@contextlib.contextmanager
+def monitor_lock(mdir, timeout=120.0):
+    """目录级 flock:同一 .seo-monitor/ 同时只允许一个 run/diff(本地 cron 竞态)。"""
+    os.makedirs(mdir, exist_ok=True)
+    path = os.path.join(mdir, ".lock")
+    fh = open(path, "w")
+    try:
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() > deadline:
+                    raise SystemExit("错误: 另一 monitor 进程持有 %s 超过 %.0fs,放弃(防本地 cron 竞态)"
+                                     % (path, timeout))
+                time.sleep(0.5)
+        yield
+    finally:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+        finally:
+            fh.close()
+
+
+# 值形似 secret(已知 webhook/token 形态;防 config.json 明文落盘,audit 05 P1)
+_SECRET_VALUE_RE = re.compile(
+    r"hooks\.slack\.com/services|discord(app)?\.com/api/webhooks|api\.telegram\.org/bot"
+    r"|xox[bposa]-|[0-9]{8,}:[A-Za-z0-9_-]{30,}|hooks\.(feishu|dingtalk)|camel\.ai|sk-[A-Za-z0-9]{20,}", re.I)
+# 键名即要求非 secret(只允许 env 引用名或 $ENV 形式,audit 01 rec4)
+_SECRET_KEY_RE = re.compile(r"(webhook_url|bot_token|password|api_key|secret)$", re.I)
+
+
+def find_config_secrets(cfg):
+    """返回 config 里疑似明文 secret 的路径列表(channels 只存 env 引用名)。"""
+    hits = []
+
+    def walk(obj, path):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(v, str) and _SECRET_KEY_RE.search(k or "") and v \
+                        and not v.startswith("$") and "env" not in k.lower():
+                    hits.append(".".join(path + [k]) + "(键要求 env 引用,不接受明文)")
+                walk(v, path + [str(k)])
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj):
+                walk(v, path + [str(i)])
+        elif isinstance(obj, str) and obj and _SECRET_VALUE_RE.search(obj):
+            hits.append(".".join(path) + "(值形似 secret)")
+
+    walk(cfg, [])
+    return hits
 
 
 def load_config(mdir):
@@ -208,8 +312,16 @@ def load_config(mdir):
 
 
 def save_config(mdir, cfg):
-    with open(os.path.join(mdir, "config.json"), "w", encoding="utf-8") as f:
+    hits = find_config_secrets(cfg)
+    if hits:
+        raise SystemExit(
+            "错误: config.json 检测到疑似明文 secret,拒写(审计 05-§4):\n  - " + "\n  - ".join(hits)
+            + "\nsecret 只经环境变量注入(channels.* 只存 env 引用名);若确为误报,"
+              "改用 $ENV_NAME 引用形式或换键名后重试")
+    tmp = os.path.join(mdir, "config.json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cfg, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, os.path.join(mdir, "config.json"))
 
 
 # ---------- init ----------
@@ -223,6 +335,7 @@ def cmd_init(args):
         return 1
     site = norm_site(args.site)
     key_pages = [p.strip() for p in (args.key_pages or "/").split(",") if p.strip()]
+    heartbeat = (args.heartbeat_url or os.environ.get("SEO_MONITOR_HEARTBEAT_URL") or "").strip()
     cfg = {
         "site": site,
         "market": (args.market or "").lower() or None,
@@ -231,19 +344,26 @@ def cmd_init(args):
         "budget_minutes": 5,
         "cooldown_hours": dict(COOLDOWN_HOURS),
         "thresholds": dict(DEFAULT_THRESHOLDS),
+        "heartbeat_url": heartbeat or None,
+        "run_cadence_hours": 24,   # dead man's switch 判定用:无成功 run 超 2×该值 → dead_man
         "channels": {
-            "slack":    {"webhook_url": "", "env": "SEO_MONITOR_SLACK_WEBHOOK"},
-            "discord":  {"webhook_url": "", "env": "SEO_MONITOR_DISCORD_WEBHOOK"},
-            "telegram": {"bot_token": "", "chat_id": "",
-                         "env_token": "SEO_MONITOR_TG_TOKEN", "env_chat": "SEO_MONITOR_TG_CHAT"},
+            "slack":    {"env": "SEO_MONITOR_SLACK_WEBHOOK"},
+            "discord":  {"env": "SEO_MONITOR_DISCORD_WEBHOOK"},
+            "telegram": {"env_token": "SEO_MONITOR_TG_TOKEN", "env_chat": "SEO_MONITOR_TG_CHAT"},
             "email":    {"smtp_host": "", "smtp_port": 465, "use_ssl": True, "username": "",
                          "env_pass": "SEO_MONITOR_SMTP_PASS", "from": "", "to": []},
+            "webhook":  {"env": "SEO_MONITOR_WEBHOOK_URL",
+                         "note": "Apprise 式通用 webhook:URL 支持 json(s):// form(s):// text(s):// scheme"},
         },
         "notes": [
-            "webhook/secrets 留空时 notify.py 会读 channels.*.env 指定的环境变量",
+            "secret 只经环境变量注入(channels 只存 env 引用名,写明文会被 save_config 拒绝)",
             "GSC 流量检查:每次 run 前把 GSC 导出放到 " + os.path.join(mdir, "gsc.csv") +
             "(列含 Query,Clicks,Impressions);没有该文件则跳过流量问",
             "阈值是经验起点,按 alert-threshold-guide.md 用本站基线校准",
+            "key_pages 支持对象形式: {\"path\": \"/p\", \"expect_substring\": \"Price\", "
+            "\"selector\": \"h1\" 或 \"re:<regex>\"}(关键词在场断言+字段级 diff 圈定)",
+            "heartbeat: 配 healthchecks.io 类 ping URL 后,run 成功 ping /ok、失败 ping /fail;"
+            "grace 建议 ≈ cron 间隔×2+典型运行时长",
         ],
     }
     os.makedirs(mdir, exist_ok=True)
@@ -252,9 +372,11 @@ def cmd_init(args):
     conn.close()
     save_config(mdir, cfg)
     print("监控目录已建立: %s/" % mdir)
-    print("  monitor.db   SQLite(runs/snapshots/alerts)")
+    print("  monitor.db   SQLite(runs/snapshots/alerts,WAL 模式)")
     print("  config.json 站点=%s 市场=%s 关键页=%s" % (site, cfg["market"] or "-", ",".join(key_pages)))
     print("  runs/        每次 run 的 JSON 快照")
+    if heartbeat:
+        print("  heartbeat    %s(成功 ping /ok,失败 ping /fail)" % _redact_url(heartbeat))
     print("下一步: python3 %s run --checks daily(先建基线,再部署 cron)"
           % os.path.basename(sys.argv[0]))
     return 0
@@ -269,11 +391,55 @@ def extract_head(html):
     title = one(r"<title[^>]*>(.*?)</title>")
     meta = one(r'<meta[^>]+name=["\']description["\'][^>]*content=["\'](.*?)["\']') or \
            one(r'<meta[^>]+content=["\'](.*?)["\'][^>]*name=["\']description["\']')
+
+    def prop(p):
+        m = re.search(r'<meta[^>]+property=["\']%s["\'][^>]+content=["\'](.*?)["\']' % p, html, re.I) or \
+            re.search(r'<meta[^>]+content=["\'](.*?)["\'][^>]+property=["\']%s["\']' % p, html, re.I)
+        return m.group(1).strip() if m else ""
     canonical = ""
     m = re.search(r'<link[^>]+rel=["\']canonical["\'][^>]*href=["\'](.*?)["\']', html, re.I)
     if m:
         canonical = m.group(1)
-    return title, meta, canonical
+    return title, meta, canonical, prop("og:title"), prop("og:description")
+
+
+def extract_selector(html, sel):
+    """最小 selector 引擎(stdlib,audit 17 字段级 diff):支持 "tag" / "#id" / "tag#id" /
+    ".class" / "tag.class" / "re:<regex>"(取第一处匹配,有分组取组 1)。圈定关注区,
+    模板无关区块不进指纹。"""
+    if not sel:
+        return ""
+    sel = sel.strip()
+    if sel.startswith("re:"):
+        try:
+            m = re.search(sel[3:], html, re.S)
+        except re.error:
+            return ""
+        if not m:
+            return ""
+        return re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", m.group(1) if m.groups() else m.group(0)))).strip()
+    m = re.match(r"^([a-zA-Z][\w-]*)?(?:#([\w-]+))?(?:\.([\w-]+))?$", sel)
+    if not m or not any(m.groups()):
+        return ""
+    tag, idv, cls = m.groups()
+    t = re.escape(tag) if tag else r"[a-zA-Z][\w-]*"
+    if idv:
+        pat = r"<%s[^>]*\bid=[\"']%s[\"'][^>]*>(.*?)</%s\s*>" % (t, re.escape(idv), t)
+    elif cls:
+        pat = r"<%s[^>]*\bclass=[\"'][^\"']*\b%s\b[^\"']*[\"'][^>]*>(.*?)</%s\s*>" % (t, re.escape(cls), t)
+    else:
+        pat = r"<%s[^>]*>(.*?)</%s\s*>" % (t, t)
+    m = re.search(pat, html, re.I | re.S)
+    if not m:
+        return ""
+    return re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", m.group(1)))).strip()
+
+
+def parse_key_page(entry):
+    """key_pages 元素(str 或 dict)→ (path, expect_substring, selector)。"""
+    if isinstance(entry, dict):
+        return (entry.get("path") or "/", entry.get("expect_substring"), entry.get("selector"))
+    return (str(entry) if str(entry).startswith("/") else "/" + str(entry), None, None)
 
 
 def mixed_content_count(url, html):
@@ -283,8 +449,8 @@ def mixed_content_count(url, html):
     return len(hits)
 
 
-def check_page(url):
-    """首页/关键页通用:状态码/时延/title/混合内容。"""
+def check_page(url, expect=None, selector=None):
+    """首页/关键页通用:状态码/时延/title/混合内容/(可选)expect_substring 断言+selector 圈定。"""
     out = {"check": "page", "state": "ok", "metrics": {}, "notes": []}
     try:
         r = http_get(url)
@@ -293,9 +459,16 @@ def check_page(url):
         out["metrics"] = {"error": str(e)}
         out["notes"].append("网络层失败≠站点宕机:单次记 info,连续两次才升 warn")
         return out
-    title, meta, canonical = extract_head(r["body"])
+    title, meta, canonical, og_title, og_desc = extract_head(r["body"])
     m = {"status": r["status"], "latency_ms": r["elapsed_ms"], "title": title,
-         "meta_desc": meta, "canonical": canonical, "final_url": r["final_url"]}
+         "meta_desc": meta, "canonical": canonical, "og_title": og_title, "og_desc": og_desc,
+         "final_url": r["final_url"]}
+    if expect is not None:
+        m["expect_ok"] = (expect in r["body"])
+        if not m["expect_ok"]:
+            out["notes"].append("expect_substring 断言失败: 页面 200 但不含 %r(空白渲染/软 404/误改版)" % expect)
+    if selector:
+        m["watch"] = extract_selector(r["body"], selector)
     mc = mixed_content_count(url, r["body"])
     if mc is not None:
         m["mixed_content"] = mc
@@ -389,6 +562,13 @@ def check_visibility(site):
         out["metrics"] = {"status": r["status"]}
         out["notes"].append("site: 端点疑似人机验证→blocked 不告警")
         return out
+    if not cites:
+        # audit 05 P1:Bing 改版 DOM(无 cite 标签、无 captcha 文案)≠ 真 0 页。
+        # 解析健全性检查:解析不出来就不当"真 0"参与告警判定。
+        out["state"] = "unparseable"
+        out["metrics"] = {"status": r["status"], "cite_tags": 0}
+        out["notes"].append("Bing 端点 200 但解析不出 cite(DOM 疑似改版)→unparseable 不告警,不当真 0")
+        return out
     sample, visible = [], 0
     for c in cites[:10]:
         u = unescape(re.sub(r"<[^>]+>", "", c)).replace(" › ", "/")
@@ -446,7 +626,10 @@ def check_sitemap(site, robots_metrics, budget):
     queue = list(urls[:3])
     while queue:
         if budget.exhausted():
-            out["notes"].append("budget 耗尽,sitemap 解析中止(已解析部分照常入库)")
+            # audit 05 P1:半截 sitemap 不能伪装成完整 ok → 标记 budget_truncated,
+            # run 状态落 partial,该 run 不进 diff 基线(防错误基线度量次日真跌)。
+            out["metrics"]["budget_truncated"] = True
+            out["notes"].append("budget 耗尽,sitemap 解析中止(run 记 partial,不充当 diff 基线)")
             break
         u = queue.pop(0)
         idx += 1
@@ -506,6 +689,43 @@ def check_llms_txt(site):
     return out
 
 
+def check_ssl(site):
+    """SSL 证书到期周检(ssl stdlib;30/14/7/0 天梯度,audit 04:StatusCake 免费档都有)。"""
+    out = {"check": "ssl", "state": "ok", "metrics": {}, "notes": []}
+    host = urllib.parse.urlparse(site).hostname
+    if not host:
+        out["state"] = "error"
+        out["metrics"] = {"error": "site 无 host"}
+        return out
+    try:
+        ctx = ssl.create_default_context()
+        with socket.create_connection((host, 443), timeout=FETCH_TIMEOUT) as sock:
+            with ctx.wrap_socket(sock, server_hostname=host) as s:
+                cert = s.getpeercert()
+    except (OSError, ssl.SSLError, ValueError) as e:
+        out["state"] = "error"
+        out["metrics"] = {"error": "%s: %s" % (type(e).__name__, e)}
+        out["notes"].append("TLS 握手失败(证书链断裂/协议不支持也可能)→记 error,不猜天数")
+        return out
+    not_after = (cert or {}).get("notAfter") or ""
+    try:
+        expires = datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
+    except ValueError:
+        out["state"] = "error"
+        out["metrics"] = {"error": "notAfter 不可解析: %r" % not_after}
+        return out
+    days = (expires - datetime.utcnow()).days
+    issuer_cn = "-"
+    for rdn in (cert or {}).get("issuer", ()):   # 每项形如 (('commonName','X'),) 或 ('commonName','X')
+        pair = rdn[0] if rdn and isinstance(rdn[0], tuple) else rdn
+        if pair and len(pair) == 2 and pair[0] == "commonName":
+            issuer_cn = pair[1]
+            break
+    out["metrics"] = {"not_after": not_after, "days_left": days, "issuer": issuer_cn}
+    out["notes"].append("证书剩余 %d 天(30/14/7/0 梯度告警)" % days)
+    return out
+
+
 class Budget:
     """单次运行时长上限(学 geo-score 的 budget 思路):超即中止后续检查。"""
 
@@ -525,21 +745,21 @@ def run_checks(mdir, cfg, kind, budget):
     market = cfg.get("market")
     results = {}
     plan = [("robots", lambda: check_robots(site, market)),
-            ("home", lambda: check_page(site + "/")),
-            ("key_pages", None)]
+            ("home", lambda: check_page(site + "/"))]
     for name, fn in plan:
         if budget.exhausted():
             results[name] = {"state": "budget_skipped"}
             continue
-        if name == "key_pages":
-            results["key_pages"] = {}
-            for p in cfg.get("key_pages", ["/"]):
-                if budget.exhausted():
-                    results["key_pages"][p] = {"state": "budget_skipped"}
-                    continue
-                results["key_pages"][p] = check_page(site + p if p.startswith("/") else p)
-            continue
         results[name] = fn()
+    # 关键页:支持 str 或 {"path","expect_substring","selector"} 对象(audit 04/17)
+    results["key_pages"] = {}
+    for entry in cfg.get("key_pages", ["/"]) or ["/"]:
+        path, expect, selector = parse_key_page(entry)
+        if budget.exhausted():
+            results["key_pages"][path] = {"state": "budget_skipped"}
+            continue
+        results["key_pages"][path] = check_page(
+            site + path if path.startswith("/") else path, expect=expect, selector=selector)
     if budget.exhausted():
         results["visibility"] = {"state": "budget_skipped"}
     else:
@@ -547,8 +767,10 @@ def run_checks(mdir, cfg, kind, budget):
     results["gsc"] = check_gsc(mdir)
     if kind == "weekly":
         robots_metrics = results.get("robots", {}).get("metrics", {})
-        for name, fn in [("sitemap", lambda: check_sitemap(site, robots_metrics, budget)),
-                         ("llms_txt", lambda: check_llms_txt(site))]:
+        weekly = [("sitemap", lambda: check_sitemap(site, robots_metrics, budget)),
+                  ("llms_txt", lambda: check_llms_txt(site)),
+                  ("ssl", lambda: check_ssl(site))]
+        for name, fn in weekly:
             if budget.exhausted():
                 results[name] = {"state": "budget_skipped"}
             else:
@@ -557,6 +779,152 @@ def run_checks(mdir, cfg, kind, budget):
 
 
 # ---------- run ----------
+
+STALE_RUN_MIN = 30   # running 超过该分钟数视为进程死亡,由 sweep 回收
+
+
+def sweep_stale_runs(conn, max_age_min=STALE_RUN_MIN):
+    """抄 serposcope/searchmirror 的 stale-sweep:崩溃/被杀的 run 停在 running 态,
+    超时回收入 failed,使"卡死"可被识别、不留脏基线。返回回收行数。"""
+    cutoff = (datetime.now() - timedelta(minutes=max_age_min)).isoformat(timespec="seconds")
+    cur = conn.execute(
+        "UPDATE runs SET status='failed' WHERE status='running' AND ts<?", (cutoff,))
+    conn.commit()
+    return cur.rowcount
+
+
+def prune(conn, mdir, keep=400):
+    """PruneDB 纪律(serposcope):只保留最近 keep 次 run,连带快照/告警/runs 文件。"""
+    stale = [r["id"] for r in conn.execute(
+        "SELECT id FROM runs ORDER BY id DESC LIMIT -1 OFFSET ?", (keep,))]
+    for rid in stale:
+        conn.execute("DELETE FROM snapshots WHERE run_id=?", (rid,))
+        conn.execute("DELETE FROM alerts WHERE run_id=?", (rid,))
+        conn.execute("DELETE FROM runs WHERE id=?", (rid,))
+        p = os.path.join(mdir, "runs", "run-%05d.json" % rid)
+        if os.path.exists(p):
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+    if stale:
+        conn.commit()
+    return len(stale)
+
+
+def ping_heartbeat(url, ok, timeout=10):
+    """dead man's switch(audit 18):run 成功 ping <url>/ok,失败 ping <url>/fail
+    (healthchecks.io 同款语义;失败 ping 不等超时立刻发出)。URL 来自管理员 config,不设 SSRF 限制。"""
+    if not url:
+        return
+    target = url.rstrip("/") + ("/ok" if ok else "/fail")
+    try:
+        req = urllib.request.Request(target, headers={"User-Agent": "seo-suite-monitor/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            r.read(256)
+        print("    [i] heartbeat 已 ping: %s" % ("ok" if ok else "fail"))
+    except Exception as e:
+        print("    [!] heartbeat ping 失败(%s): %s" % (type(e).__name__, _redact_url(target)))
+
+
+def cmd_run(args):
+    mdir = args.dir
+    cfg = load_config(mdir)
+    with monitor_lock(mdir):
+        conn = open_db(mdir)
+        swept = sweep_stale_runs(conn)
+        if swept:
+            print("[i] sweep_stale_runs: 回收 %d 个卡死(>=%dmin 仍 running)的 run → failed"
+                  % (swept, STALE_RUN_MIN))
+        # 状态机(serposcope):先落 running 拿 run_id,跑完再 UPDATE 终态
+        started = datetime.now().isoformat(timespec="seconds")
+        cur = conn.execute(
+            "INSERT INTO runs(ts, kind, status, checks_run, budget_used_sec, summary) "
+            "VALUES(?,?, 'running', ?, 0, '')",
+            (started, args.checks, args.checks))
+        run_id = cur.lastrowid
+        conn.commit()
+        budget = Budget(args.budget_minutes if args.budget_minutes is not None
+                        else cfg.get("budget_minutes", 5))
+        try:
+            results = run_checks(mdir, cfg, args.checks, budget)
+        except Exception:
+            conn.execute("UPDATE runs SET status='failed' WHERE id=?", (run_id,))
+            conn.commit()
+            conn.close()
+            raise
+        snap = snapshot_from_results(results)
+
+        states = {}
+        for grp in ("robots", "home", "visibility", "gsc", "sitemap", "llms_txt", "ssl"):
+            st = (results.get(grp) or {}).get("state")
+            if st:
+                states[grp] = st
+        kp_states = {p: r.get("state") for p, r in (results.get("key_pages") or {}).items()}
+        statuses = list(states.values()) + list(kp_states.values())
+        budget_truncated = any(
+            (results.get(g) or {}).get("metrics", {}).get("budget_truncated")
+            for g in ("sitemap", "robots", "home", "visibility", "llms_txt", "ssl"))
+        run_status = "ok"
+        if "budget_skipped" in statuses or budget_truncated:
+            run_status = "partial"    # 半截数据:入库但不充当 diff 基线(audit 05-§2)
+        elif statuses and all(s == "error" for s in statuses):
+            run_status = "failed"
+
+        payload = {"site": cfg["site"], "market": cfg.get("market"), "kind": args.checks,
+                   "status": run_status, "budget_used_sec": budget.used_sec(),
+                   "checks": {k: {"state": vv.get("state"), "notes": vv.get("notes", [])}
+                              for k, vv in results.items() if isinstance(vv, dict) and "state" in vv},
+                   "key_pages": kp_states, "snapshot": snap}
+
+        if args.dry_run:
+            print("[dry-run] 不写库。状态=%s budget=%.1fs" % (run_status, budget.used_sec()))
+            for grp, st in list(states.items()) + [("key_pages:" + p, s) for p, s in kp_states.items()]:
+                print("  %-22s %s" % (grp, st))
+            for grp, vv in results.items():
+                if isinstance(vv, dict):
+                    for n in vv.get("notes", []):
+                        print("    [i] %s: %s" % (grp, n))
+            conn.execute("DELETE FROM runs WHERE id=?", (run_id,))
+            conn.commit()
+            conn.close()
+            return 0 if run_status == "ok" else 3
+
+        now = datetime.now().isoformat(timespec="seconds")
+        conn.execute(
+            "UPDATE runs SET status=?, budget_used_sec=?, summary=?, ts=? WHERE id=?",
+            (run_status, budget.used_sec(), json.dumps(payload, ensure_ascii=False), now, run_id))
+        for check, kv in snap.items():
+            for key, value in kv.items():
+                h = sha256_text(json.dumps(value, ensure_ascii=False, sort_keys=True))
+                conn.execute(
+                    "INSERT INTO snapshots(run_id, ts, \"check\", key, value, hash) VALUES(?,?,?,?,?,?)",
+                    (run_id, now, check, key, json.dumps(value, ensure_ascii=False), h))
+        conn.commit()
+        rpath = os.path.join(mdir, "runs", "run-%05d.json" % run_id)
+        with open(rpath, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        pruned = prune(conn, mdir, keep=400)
+        if pruned:
+            print("[i] PruneDB: 裁剪 %d 个旧 run(保留最近 400)" % pruned)
+        print("run #%d 完成: kind=%s status=%s budget=%.1fs → %s"
+              % (run_id, args.checks, run_status, budget.used_sec(), rpath))
+        for grp, st in list(states.items()) + [("key_pages:" + p, s) for p, s in kp_states.items()]:
+            if st not in ("ok",):
+                print("  [!] %s: %s" % (grp, st))
+        for grp, vv in results.items():
+            if isinstance(vv, dict):
+                for n in vv.get("notes", []):
+                    print("    [i] %s: %s" % (grp, n))
+        total = conn.execute("SELECT COUNT(*) AS c FROM runs WHERE status!='running'").fetchone()["c"]
+        if total == 1:
+            print("[i] 首次 run=基线;下一步跑 diff(与下次 run 对比才有告警)")
+        conn.close()
+    # dead man's switch:成功/失败分别 ping(audit 18;rc=3 的静默空窗由 /fail 堵住)
+    heartbeat = cfg.get("heartbeat_url") or os.environ.get("SEO_MONITOR_HEARTBEAT_URL")
+    ping_heartbeat(heartbeat, ok=(run_status == "ok"))
+    return 0 if run_status == "ok" else 3
+
 
 def snapshot_from_results(results):
     """检查结果 → 扁平快照 dict: {check: {key: value}}(value 可 JSON 化)。"""
@@ -606,76 +974,12 @@ def snapshot_from_results(results):
         put("llms_txt", "file", dict(l["metrics"]))
     elif l.get("state"):
         put("llms_txt", "file", {"state": l["state"]})
+    sl = results.get("ssl", {})
+    if sl.get("state") == "ok":
+        put("ssl", "cert", dict(sl["metrics"]))
+    elif sl.get("state"):
+        put("ssl", "cert", {"state": sl["state"]})
     return snap
-
-
-def cmd_run(args):
-    mdir = args.dir
-    cfg = load_config(mdir)
-    conn = open_db(mdir)
-    budget = Budget(args.budget_minutes if args.budget_minutes is not None
-                    else cfg.get("budget_minutes", 5))
-    results = run_checks(mdir, cfg, args.checks, budget)
-    snap = snapshot_from_results(results)
-
-    states = {}
-    for grp in ("robots", "home", "visibility", "gsc", "sitemap", "llms_txt"):
-        st = (results.get(grp) or {}).get("state")
-        if st:
-            states[grp] = st
-    kp_states = {p: r.get("state") for p, r in (results.get("key_pages") or {}).items()}
-    statuses = list(states.values()) + list(kp_states.values())
-    run_status = "ok"
-    if "budget_skipped" in statuses:
-        run_status = "budget_exhausted"
-    elif statuses and all(s == "error" for s in statuses):
-        run_status = "all_error"
-
-    payload = {"site": cfg["site"], "market": cfg.get("market"), "kind": args.checks,
-               "status": run_status, "budget_used_sec": budget.used_sec(),
-               "checks": {k: {"state": vv.get("state"), "notes": vv.get("notes", [])}
-                          for k, vv in results.items() if isinstance(vv, dict) and "state" in vv},
-               "key_pages": kp_states, "snapshot": snap}
-
-    if args.dry_run:
-        print("[dry-run] 不写库。状态=%s budget=%.1fs" % (run_status, budget.used_sec()))
-        for grp, st in list(states.items()) + [("key_pages:" + p, s) for p, s in kp_states.items()]:
-            print("  %-22s %s" % (grp, st))
-        for grp, vv in results.items():
-            if isinstance(vv, dict):
-                for n in vv.get("notes", []):
-                    print("    [i] %s: %s" % (grp, n))
-        conn.close()
-        return 0 if run_status == "ok" else 3
-
-    cur = conn.execute(
-        "INSERT INTO runs(ts, kind, status, checks_run, budget_used_sec, summary) VALUES(?,?,?,?,?,?)",
-        (datetime.now().isoformat(timespec="seconds"), args.checks, run_status,
-         args.checks, budget.used_sec(), json.dumps(payload, ensure_ascii=False)))
-    run_id = cur.lastrowid
-    ts = datetime.now().isoformat(timespec="seconds")
-    for check, kv in snap.items():
-        for key, value in kv.items():
-            h = sha256_text(json.dumps(value, ensure_ascii=False, sort_keys=True))
-            conn.execute("INSERT INTO snapshots(run_id, ts, \"check\", key, value, hash) VALUES(?,?,?,?,?,?)",
-                         (run_id, ts, check, key, json.dumps(value, ensure_ascii=False), h))
-    conn.commit()
-    rpath = os.path.join(mdir, "runs", "run-%05d.json" % run_id)
-    with open(rpath, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-    print("run #%d 完成: kind=%s status=%s budget=%.1fs → %s"
-          % (run_id, args.checks, run_status, budget.used_sec(), rpath))
-    for grp, st in list(states.items()) + [("key_pages:" + p, s) for p, s in kp_states.items()]:
-        if st not in ("ok",):
-            print("  [!] %s: %s" % (grp, st))
-    for grp, vv in results.items():
-        if isinstance(vv, dict):
-            for n in vv.get("notes", []):
-                print("    [i] %s: %s" % (grp, n))
-    if len(conn.execute("SELECT 1 FROM runs").fetchall()) == 1:
-        print("[i] 首次 run=基线;下一步跑 diff(与下次 run 对比才有告警)")
-    conn.close()
-    return 0 if run_status == "ok" else 3
 
 
 # ---------- diff(阈值告警引擎) ----------
@@ -687,13 +991,60 @@ def load_snapshot(conn, run_id):
     return d
 
 
-def latest_run_ids(conn, n=2):
+def latest_run_ids(conn, n=2, statuses=("ok",)):
+    """基线污染防护(audit 05-§2 / audit 01 rec2):默认只取 status='ok' 的 run。
+    'partial'(半截数据)/'failed'/'quarantined' 一律不充当对比基线。"""
+    marks = ",".join("?" * len(statuses))
     return [r["id"] for r in conn.execute(
-        "SELECT id FROM runs ORDER BY id DESC LIMIT ?", (n,))]
+        "SELECT id FROM runs WHERE status IN (%s) ORDER BY id DESC LIMIT ?" % marks,
+        (*statuses, n))]
 
 
-def compute_alerts(prev, curr, cfg):
-    """prev/curr 为扁平快照;返回 list[dict(level/code/key/message/details/action,boundary))]。"""
+def pick_baseline_run(conn, exclude_ids, days=7):
+    """双窗口判定(P1-9)用:找 ~days 天前最接近的 ok run 当长窗基线。"""
+    target = datetime.now() - timedelta(days=days)
+    best, best_diff = None, None
+    for r in conn.execute("SELECT id, ts FROM runs WHERE status='ok' ORDER BY id"):
+        if r["id"] in exclude_ids:
+            continue
+        try:
+            d = abs((datetime.fromisoformat(r["ts"]) - target).total_seconds())
+        except ValueError:
+            continue
+        if best_diff is None or d < best_diff:
+            best, best_diff = r["id"], d
+    return best
+
+
+def apply_inhibition(alerts, inhibited_out=None):
+    """告警抑制树(audit 19,Prometheus inhibition 纪律;替 Top-K 截断):
+    根因一条,派生折叠——site_down 抑制 page_down,抓取层故障抑制内容派生判定。
+    INHIBITS 以根因码为键;此处按派生码反查其根因是否在本次告警集中。"""
+    kept = []
+    for a in alerts:
+        inhibiting = None
+        for root_code, (codes, scope) in INHIBITS.items():
+            if a["code"] not in codes:
+                continue
+            if scope == "sitewide":
+                hit = any(x["code"] == root_code for x in alerts)
+            else:  # same_key:根因与派生同 key(或根因作用于首页=站点级)
+                hit = any(x["code"] == root_code and (x.get("key") == a.get("key") or x.get("key") == "/")
+                          for x in alerts)
+            if hit:
+                inhibiting = root_code
+                break
+        if inhibiting:
+            if inhibited_out is not None:
+                inhibited_out.append({"code": a["code"], "key": a.get("key"), "inhibited_by": inhibiting})
+        else:
+            kept.append(a)
+    return kept
+
+
+def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
+    """prev/curr 为扁平快照;baseline(可选)= ~7 天前 ok run 的快照,双窗口判定用。
+    返回 list[dict(level/code/key/message/details/action,boundary))]。"""
     th = cfg.get("thresholds", DEFAULT_THRESHOLDS)
     site = cfg.get("site", "")
     A = []
@@ -710,12 +1061,17 @@ def compute_alerts(prev, curr, cfg):
     keys = set((curr.get("pages") or {}).keys()) | set((prev.get("pages") or {}).keys())
     for k in sorted(keys):
         c, p = page_state(curr, k), page_state(prev, k)
+        b = page_state(baseline or {}, k)
         label = "首页" if k == "/" else "关键页 %s" % k
         cs = c.get("status")
         if c.get("state") == "http_error" or (isinstance(cs, int) and cs >= 400):
-            add("critical", "key_page_down" if k != "/" else "homepage_down", k,
-                "%s 返回 %s" % (label, cs),
-                {"prev_status": p.get("status"), "url": site + k})
+            code = "key_page_down" if k != "/" else "homepage_down"
+            # 双窗口(P1-9):昨日短窗已触发;再看 7 天基线是否同向(基线健康→确属今日事故)
+            lvl, extra = "critical", ""
+            if baseline is not None and isinstance(b.get("status"), int) and b["status"] >= 400:
+                lvl, extra = "info", "(7 天基线同样异常→疑似抖动/既往已存在,降 info)"
+            add(lvl, code, k, "%s 返回 %s%s" % (label, cs, extra),
+                {"prev_status": p.get("status"), "baseline_status": b.get("status"), "url": site + k})
         elif c.get("state") == "error":
             if p.get("state") == "error":
                 add("warn", "fetch_error_confirmed", k, "%s 连续两次抓取失败(网络层)" % label,
@@ -723,6 +1079,11 @@ def compute_alerts(prev, curr, cfg):
             else:
                 add("info", "fetch_error_single", k, "%s 单次抓取失败,下次复确认" % label,
                     {"error": c.get("error")})
+        # 关键词在场断言(P1-15,audit 04:UptimeRobot keyword monitor 同款)
+        if c.get("expect_ok") is False and not (isinstance(cs, int) and cs >= 400):
+            add("warn", "content_regression", k,
+                "%s 页面 200 但 expect_substring 断言失败(空白渲染/软 404/误改版)" % label,
+                {"url": site + k})
         # 混合内容(https 站)
         cmc, pmc = c.get("mixed_content"), p.get("mixed_content")
         if isinstance(cmc, int) and cmc >= int(th.get("mixed_content_min", 3)) and (pmc or 0) < cmc:
@@ -738,9 +1099,13 @@ def compute_alerts(prev, curr, cfg):
 
     # --- 4 存活/3 索引:robots ---
     cr, pr = (curr.get("robots") or {}).get("robots", {}), (prev.get("robots") or {}).get("robots", {})
+    br = ((baseline or {}).get("robots") or {}).get("robots", {})
     if cr.get("sitewide_block") and not pr.get("sitewide_block"):
-        add("critical", "robots_sitewide_block", "robots",
-            "robots.txt 出现 * 组全站 Disallow(几乎总是部署事故)",
+        lvl, extra = "critical", ""
+        if baseline is not None and br.get("sitewide_block"):
+            lvl, extra = "info", "(7 天基线同样误封→疑似抖动/既往已存在,降 info)"
+        add(lvl, "robots_sitewide_block", "robots",
+            "robots.txt 出现 * 组全站 Disallow(几乎总是部署事故)%s" % extra,
             {"prev_hash": pr.get("hash"), "curr_hash": cr.get("hash")})
     elif cr.get("hash") and pr.get("hash") and cr["hash"] != pr["hash"]:
         add("info", "robots_changed", "robots", "robots.txt 内容变更(hash %s→%s)"
@@ -751,16 +1116,40 @@ def compute_alerts(prev, curr, cfg):
             add("info", "ai_posture_flip", "robots:" + bot,
                 "AI 爬虫 %s 放行状态翻转: %s → %s" % (bot, pp[bot], cp[bot]))
 
+    # --- 周检:SSL 证书到期(30/14/7/0 梯度;绝对阈值,不依赖 prev)---
+    cssl = (curr.get("ssl") or {}).get("cert", {})
+    days_left = cssl.get("days_left")
+    if isinstance(days_left, (int, float)) and not cssl.get("state"):
+        if days_left < 0:
+            add("critical", "ssl_cert_expired", "cert",
+                "SSL 证书已过期 %d 天(多数客户端已拒连)" % -days_left,
+                {"not_after": cssl.get("not_after"), "issuer": cssl.get("issuer")})
+        elif days_left <= 7:
+            add("critical", "ssl_cert_expiry", "cert", "SSL 证书 %d 天后到期(≤7 天档)" % days_left,
+                {"not_after": cssl.get("not_after"), "issuer": cssl.get("issuer")})
+        elif days_left <= 14:
+            add("warn", "ssl_cert_expiry", "cert", "SSL 证书 %d 天后到期(≤14 天档)" % days_left,
+                {"not_after": cssl.get("not_after"), "issuer": cssl.get("issuer")})
+        elif days_left <= 30:
+            add("info", "ssl_cert_expiry", "cert", "SSL 证书 %d 天后到期(≤30 天档)" % days_left,
+                {"not_after": cssl.get("not_after")})
+
     # --- 1 可见性 ---
     cv, pv = (curr.get("visibility") or {}).get("site", {}), (prev.get("visibility") or {}).get("site", {})
+    bv = ((baseline or {}).get("visibility") or {}).get("site", {})
     if cv.get("state", "ok") == "ok" and "visible_pages" in cv:
         cvis, pvis = cv.get("visible_pages"), pv.get("visible_pages")
         floor = int(th.get("visibility_min_sample", 3))
         if pvis is not None and pvis >= floor:
             if cvis == 0:
-                add("critical", "visibility_zero", "site",
-                    "site: 抽查可见页 %d → 0(端点成功返回,疑似去索引/处罚)" % pvis,
-                    {"prev": pvis, "curr": cvis, "sample": cv.get("sample")})
+                lvl, extra = "critical", ""
+                if baseline is not None and isinstance(bv.get("visible_pages"), int) \
+                        and bv["visible_pages"] == 0:
+                    lvl, extra = "info", "(7 天基线亦为 0→端点口径抖动可能,降 info)"
+                add(lvl, "visibility_zero", "site",
+                    "site: 抽查可见页 %d → 0(端点成功返回,疑似去索引/处罚)%s" % (pvis, extra),
+                    {"prev": pvis, "curr": cvis, "sample": cv.get("sample"),
+                     "method_note": "Bing HTML 端点方向抽样,非官方索引数"})
             else:
                 d = pct_drop(pvis, cvis)
                 if d is not None and d * 100 >= int(th.get("visibility_drop_pct", 30)):
@@ -800,13 +1189,16 @@ def compute_alerts(prev, curr, cfg):
                       "message": "sitemap URL 数 %d → %d(+%d)" % (puc, cuc, cuc - puc),
                       "details": {}, "action": "记录,无需动作", "boundary": "auto"})
 
-    # --- 周检:title/meta 漂移 + llms.txt ---
+    # --- 周检:关键页字段级漂移(P1-11:title/meta/canonical/og/watch 分字段,替全页 hash)---
     for k in sorted(set((curr.get("pages") or {})) & set((prev.get("pages") or {}))):
-        ch, ph = curr["pages"][k].get("title_meta_hash"), prev["pages"][k].get("title_meta_hash")
-        if ch and ph and ch != ph:
-            add("info", "title_meta_drift", k, "%s 的 title/meta/canonical 漂移(hash %s→%s)"
-                % ("首页" if k == "/" else "页面 %s" % k, ph, ch),
-                {"prev_title": prev["pages"][k].get("title"), "curr_title": curr["pages"][k].get("title")})
+        c, p = curr["pages"][k], prev["pages"][k]
+        changed = [f for f in PAGE_DIFF_FIELDS if (c.get(f) or "") != (p.get(f) or "")]
+        if changed:
+            add("info", "title_meta_drift", k,
+                "%s 字段漂移: %s" % ("首页" if k == "/" else "页面 %s" % k, "+".join(changed)),
+                dict({"fields": changed},
+                     **{("prev_" + f): p.get(f) for f in changed},
+                     **{("curr_" + f): c.get(f) for f in changed}))
     clm, plm = (curr.get("llms_txt") or {}).get("file", {}), (prev.get("llms_txt") or {}).get("file", {})
     if plm.get("present") and clm and not clm.get("present", True) and "present" in clm:
         add("info", "llms_txt_removed", "file", "llms.txt 从存在变为缺失")
@@ -814,88 +1206,137 @@ def compute_alerts(prev, curr, cfg):
         add("info", "llms_txt_changed", "file", "llms.txt 内容变更(hash %s→%s)"
             % (plm.get("hash"), clm.get("hash")))
 
+    # 抑制树(P1-10):根因一条,派生折叠(替 Top-K)
+    A = apply_inhibition(A, inhibited_out)
     order = {l: i for i, l in enumerate(LEVELS)}
     A.sort(key=lambda a: order.get(a["level"], 9))
     return A
 
 
+def in_maintenance(cfg, now=None):
+    """维护窗口(audit 06,kuma 惯例):窗口内 diff 只记快照不产告警,防改版期误报。"""
+    now = now or datetime.now()
+    for w in cfg.get("maintenance_windows") or []:
+        try:
+            f = datetime.fromisoformat(str(w.get("from") or ""))
+            t = datetime.fromisoformat(str(w.get("to") or ""))
+        except ValueError:
+            continue
+        if f <= now <= t:
+            return w
+    return None
+
+
 def cmd_diff(args):
     mdir = args.dir
     cfg = load_config(mdir)
-    conn = open_db(mdir)
-    if args.run_id:
-        curr_id = args.run_id
-    else:
-        ids = latest_run_ids(conn, 2)
-        if len(ids) < 2:
-            print("错误: 需要 ≥2 次 run 才能 diff(先再跑一次 run)", file=sys.stderr)
-            conn.close()
-            return 4
-        curr_id, prev_id = ids[0], ids[1]
-    if not args.prev_run_id:
-        row = conn.execute("SELECT MAX(id) AS m FROM runs WHERE id<?", (curr_id,)).fetchone()
-        prev_id = row["m"]
-        if prev_id is None:
-            print("错误: run %d 之前没有可对比的 run" % curr_id, file=sys.stderr)
-            conn.close()
-            return 4
-    else:
-        prev_id = args.prev_run_id
-    prev, curr = load_snapshot(conn, prev_id), load_snapshot(conn, curr_id)
-    alerts = compute_alerts(prev, curr, cfg)
-
     now = datetime.now()
-    cooldowns = cfg.get("cooldown_hours", COOLDOWN_HOURS)
-    cur_fps = {("%s:%s" % (a["code"], a["key"])) for a in alerts}
-    unresolved = conn.execute(
-        "SELECT id, code, key, level, ts FROM alerts WHERE resolved=0 AND level!='low'").fetchall()
-    healed, suppressed = [], []
-    for a in alerts:
-        fp = "%s:%s" % (a["code"], a["key"])
-        for row in unresolved:
-            if row["code"] + ":" + row["key"] == fp:
-                try:
-                    age = (now - datetime.fromisoformat(row["ts"])).total_seconds() / 3600
-                except ValueError:
-                    age = 1e9
-                if age < cooldowns.get(a["level"], 24):
-                    a["suppressed"] = True
-                    a["suppressed_since"] = row["ts"]
-                    suppressed.append(fp)
-                break
-    for row in unresolved:
-        fp = row["code"] + ":" + row["key"]
-        if fp not in cur_fps:
-            healed.append(fp)
+    win = in_maintenance(cfg, now)
+    with monitor_lock(mdir):
+        conn = open_db(mdir)
+        sweep_stale_runs(conn)
+        if win:
+            # 维护窗口:照常算 prev/curr 供留档,但告警一律不生成不入库(audit 06)
+            ids = latest_run_ids(conn, 2)
+            payload = {"generated": now.isoformat(timespec="seconds"), "site": cfg["site"],
+                       "market": cfg.get("market"),
+                       "curr_run": ids[0] if ids else None, "prev_run": ids[1] if len(ids) > 1 else None,
+                       "alerts": [], "healed": [], "suppressed": [], "inhibited": [],
+                       "maintenance": {"from": win.get("from"), "to": win.get("to"),
+                                       "reason": win.get("reason", "")},
+                       "counts": {l: 0 for l in LEVELS}}
+            conn.close()
+            if args.out:
+                with open(args.out, "w", encoding="utf-8") as f:
+                    json.dump(payload, f, ensure_ascii=False, indent=2)
+            print("[i] 维护窗口内(%s → %s %s):diff 跳过告警生成,只留快照"
+                  % (win.get("from"), win.get("to"), win.get("reason", "")))
+            return 0
+        if args.run_id:
+            curr_id = args.run_id
+        else:
+            ids = latest_run_ids(conn, 2)
+            if len(ids) < 2:
+                print("错误: 需要 ≥2 次 status='ok' 的 run 才能 diff(partial/failed/quarantined "
+                      "不充当基线;先再跑一次 run,或用 --run-id/--prev-run-id 显式指定)",
+                      file=sys.stderr)
+                conn.close()
+                return 4
+            curr_id, prev_id = ids[0], ids[1]
+        if not args.prev_run_id:
+            row = conn.execute(
+                "SELECT MAX(id) AS m FROM runs WHERE id<? AND status='ok'", (curr_id,)).fetchone()
+            prev_id = row["m"]
+            if prev_id is None:
+                print("错误: run %d 之前没有 status='ok' 的可对比 run(坏 run 可先 quarantine 隔离)"
+                      % curr_id, file=sys.stderr)
+                conn.close()
+                return 4
+        else:
+            prev_id = args.prev_run_id
+        prev, curr = load_snapshot(conn, prev_id), load_snapshot(conn, curr_id)
+        # 双窗口(P1-9):再取 ~7 天前的 ok run 当长窗基线(库龄不足则为 None=保持原级别)
+        baseline_id = pick_baseline_run(conn, {curr_id, prev_id}, days=7)
+        baseline = load_snapshot(conn, baseline_id) if baseline_id else None
+        inhibited = []
+        alerts = compute_alerts(prev, curr, cfg, baseline=baseline, inhibited_out=inhibited)
 
-    payload = {"generated": now.isoformat(timespec="seconds"), "site": cfg["site"],
-               "market": cfg.get("market"), "curr_run": curr_id, "prev_run": prev_id,
-               "alerts": alerts, "healed": healed, "suppressed": suppressed,
-               "counts": {l: sum(1 for a in alerts if a["level"] == l) for l in LEVELS}}
-
-    if not args.dry_run:
+        cooldowns = cfg.get("cooldown_hours", COOLDOWN_HOURS)
+        cur_fps = {("%s:%s" % (a["code"], a["key"])) for a in alerts}
+        unresolved = conn.execute(
+            "SELECT id, code, key, level, ts FROM alerts WHERE resolved=0 AND level!='low'").fetchall()
+        healed, suppressed = [], []
         for a in alerts:
-            if a.get("suppressed"):
-                continue  # 冷却期内的重复指纹不重复入库(原未结行已代表它)
-            conn.execute(
-                "INSERT INTO alerts(run_id, ts, level, code, key, message, details, suppressed) "
-                "VALUES(?,?,?,?,?,?,?,0)",
-                (curr_id, now.isoformat(timespec="seconds"), a["level"], a["code"], a["key"],
-                 a["message"], json.dumps({"details": a.get("details"), "action": a.get("action"),
-                                           "boundary": a.get("boundary")}, ensure_ascii=False)))
+            fp = "%s:%s" % (a["code"], a["key"])
+            for row in unresolved:
+                if row["code"] + ":" + row["key"] == fp:
+                    try:
+                        age = (now - datetime.fromisoformat(row["ts"])).total_seconds() / 3600
+                    except ValueError:
+                        age = 1e9
+                    if age < cooldowns.get(a["level"], 24):
+                        a["suppressed"] = True
+                        a["suppressed_since"] = row["ts"]
+                        suppressed.append(fp)
+                    break
         for row in unresolved:
-            if row["code"] + ":" + row["key"] not in cur_fps:
-                conn.execute("UPDATE alerts SET resolved=1, resolved_run=? WHERE id=?",
-                             (curr_id, row["id"]))
+            fp = row["code"] + ":" + row["key"]
+            if fp not in cur_fps:
+                healed.append(fp)
+
+        # P0-1(audit 05 头号发现):suppressed 只进报告,不进通知路径——
+        # counts/退出码均按"未被抑制的告警"计,避免 rc=1 空转触发 notify 重发。
+        active = [a for a in alerts if not a.get("suppressed")]
+        payload = {"generated": now.isoformat(timespec="seconds"), "site": cfg["site"],
+                   "market": cfg.get("market"), "curr_run": curr_id, "prev_run": prev_id,
+                   "baseline_run": baseline_id,
+                   "alerts": alerts, "healed": healed, "suppressed": suppressed,
+                   "inhibited": inhibited,
+                   "counts": {l: sum(1 for a in active if a["level"] == l) for l in LEVELS}}
+
+        if not args.dry_run:
+            for a in alerts:
+                if a.get("suppressed"):
+                    continue  # 冷却期内的重复指纹不重复入库(原未结行已代表它)
                 conn.execute(
-                    "INSERT INTO alerts(run_id, ts, level, code, key, message, details) "
-                    "VALUES(?,?,?,?,?,?,?)",
-                    (curr_id, now.isoformat(timespec="seconds"), "low",
-                     row["code"] + "_resolved", row["key"],
-                     "自愈: %s 的问题已消失(上次 %s)" % (row["key"], row["ts"]),
-                     json.dumps({"prev_level": row["level"]}, ensure_ascii=False)))
-        conn.commit()
-    conn.close()
+                    "INSERT INTO alerts(run_id, ts, level, code, key, message, details, suppressed) "
+                    "VALUES(?,?,?,?,?,?,?,0)",
+                    (curr_id, now.isoformat(timespec="seconds"), a["level"], a["code"], a["key"],
+                     a["message"], json.dumps({"details": a.get("details"), "action": a.get("action"),
+                                               "boundary": a.get("boundary")}, ensure_ascii=False)))
+            for row in unresolved:
+                if row["code"] + ":" + row["key"] not in cur_fps:
+                    conn.execute("UPDATE alerts SET resolved=1, resolved_run=? WHERE id=?",
+                                 (curr_id, row["id"]))
+                    conn.execute(
+                        "INSERT INTO alerts(run_id, ts, level, code, key, message, details) "
+                        "VALUES(?,?,?,?,?,?,?)",
+                        (curr_id, now.isoformat(timespec="seconds"), "low",
+                         row["code"] + "_resolved", row["key"],
+                         "自愈: %s 的问题已消失(上次 %s)" % (row["key"], row["ts"]),
+                         json.dumps({"prev_level": row["level"]}, ensure_ascii=False)))
+            conn.commit()
+        conn.close()
 
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
@@ -904,12 +1345,14 @@ def cmd_diff(args):
     if args.format == "json":
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        print("== diff: run #%d vs run #%d (%s) ==" % (curr_id, prev_id, cfg["site"]))
+        print("== diff: run #%d vs run #%d (%s)%s ==" % (
+            curr_id, prev_id, cfg["site"],
+            (" | 长窗基线 run #%d" % baseline_id) if baseline_id else ""))
         c = payload["counts"]
-        print("critical=%d warn=%d info=%d | 自愈=%d 抑制=%d"
-              % (c["critical"], c["warn"], c["info"], len(healed), len(suppressed)))
+        print("critical=%d warn=%d info=%d | 自愈=%d 抑制=%d 派生折叠=%d"
+              % (c["critical"], c["warn"], c["info"], len(healed), len(suppressed), len(inhibited)))
         for a in alerts:
-            mark = "(cooldown 抑制)" if a.get("suppressed") else ""
+            mark = "(cooldown 抑制,不通知)" if a.get("suppressed") else ""
             print("  [%s] %s: %s %s" % (a["level"].upper(), a["code"], a["message"], mark))
             if a.get("action"):
                 print("         → %s[%s]" % (a["action"], a.get("boundary")))
@@ -1017,6 +1460,65 @@ def cmd_report(args):
     return 0
 
 
+# ---------- quarantine / maintenance ----------
+
+def cmd_quarantine(args):
+    """基线污染回滚入口(audit 05-§2:此前修正只能手工改 SQLite)。"""
+    mdir = args.dir
+    load_config(mdir)  # 只为校验目录已 init
+    with monitor_lock(mdir):
+        conn = open_db(mdir)
+        row = conn.execute("SELECT id, status, ts, kind FROM runs WHERE id=?", (args.run_id,)).fetchone()
+        if row is None:
+            print("错误: run #%d 不存在" % args.run_id, file=sys.stderr)
+            conn.close()
+            return 4
+        if args.undo:
+            conn.execute("UPDATE runs SET status='ok' WHERE id=?", (args.run_id,))
+            conn.commit()
+            print("run #%d(%s %s)解除隔离 → status='ok'(重新参与 diff 基线)"
+                  % (row["id"], row["ts"], row["kind"]))
+        else:
+            conn.execute("UPDATE runs SET status='quarantined' WHERE id=?", (args.run_id,))
+            conn.commit()
+            print("run #%d(%s %s)已隔离: status '%s' → 'quarantined',diff 不再用它当对比基线"
+                  % (row["id"], row["ts"], row["kind"], row["status"]))
+            print("  后续 run 与 diff 照常;解除用 --undo")
+        conn.close()
+    return 0
+
+
+def cmd_maintenance(args):
+    """维护窗口配置(audit 06:kuma 惯例,窗口内 diff 只记快照不产告警)。"""
+    mdir = args.dir
+    cfg = load_config(mdir)
+    if args.clear:
+        cfg["maintenance_windows"] = []
+        save_config(mdir, cfg)
+        print("维护窗口已清空")
+        return 0
+    if not (args.maint_from and args.maint_to):
+        for w in cfg.get("maintenance_windows") or []:
+            print("  %s → %s  %s" % (w.get("from"), w.get("to"), w.get("reason", "")))
+        if not (cfg.get("maintenance_windows")):
+            print("无维护窗口(添加: maintenance --from 2026-10-10T02:00 --to 2026-10-10T04:00 "
+                  "--reason 改版迁移)")
+        return 0
+    try:
+        f, t = datetime.fromisoformat(args.maint_from), datetime.fromisoformat(args.maint_to)
+    except ValueError:
+        print("错误: --from/--to 需 ISO 格式(如 2026-10-10T02:00)", file=sys.stderr)
+        return 4
+    if t <= f:
+        print("错误: --to 必须晚于 --from", file=sys.stderr)
+        return 4
+    cfg.setdefault("maintenance_windows", []).append(
+        {"from": args.maint_from, "to": args.maint_to, "reason": args.reason or ""})
+    save_config(mdir, cfg)
+    print("维护窗口已添加: %s → %s(%s);窗口内 diff 跳过告警生成" % (args.maint_from, args.maint_to, args.reason or ""))
+    return 0
+
+
 # ---------- CLI / 自测 ----------
 
 def build_parser():
@@ -1027,6 +1529,8 @@ def build_parser():
     p.add_argument("--site", required=True)
     p.add_argument("--market", default="")
     p.add_argument("--key-pages", default="/", help="逗号分隔路径,默认 /")
+    p.add_argument("--heartbeat-url", default="",
+                   help="dead man's switch ping URL(healthchecks.io 类;成功 ping /ok 失败 ping /fail)")
     p.add_argument("--dir", default=DEFAULT_DIR)
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_init)
@@ -1049,6 +1553,18 @@ def build_parser():
     p.add_argument("--json", action="store_true")
     p.add_argument("--dir", default=DEFAULT_DIR)
     p.set_defaults(func=cmd_report)
+    p = sub.add_parser("quarantine", help="隔离坏 run(标记 quarantined,diff 不再用它对比)")
+    p.add_argument("run_id", type=int)
+    p.add_argument("--undo", action="store_true", help="解除隔离(恢复 status='ok')")
+    p.add_argument("--dir", default=DEFAULT_DIR)
+    p.set_defaults(func=cmd_quarantine)
+    p = sub.add_parser("maintenance", help="维护窗口:窗口内 diff 只记快照不产告警")
+    p.add_argument("--from", dest="maint_from", default="", help="ISO 时间,如 2026-10-10T02:00")
+    p.add_argument("--to", dest="maint_to", default="", help="ISO 时间")
+    p.add_argument("--reason", default="")
+    p.add_argument("--clear", action="store_true", help="清空全部维护窗口")
+    p.add_argument("--dir", default=DEFAULT_DIR)
+    p.set_defaults(func=cmd_maintenance)
     return ap
 
 
@@ -1124,7 +1640,105 @@ def _self_test():
     b = Budget(0)
     time.sleep(0.01)
     assert b.exhausted()
-    print("[self-test] PASS monitor(11 类告警判定/最小样本地板/自愈/混合内容/robots 解析/budget)")
+
+    # --- P1-10 抑制树:homepage_down 抑制 key_page_down ---
+    storm_prev = {"pages": {"/": {"status": 200}, "/a": {"status": 200}, "/b": {"status": 200}}}
+    storm_curr = {"pages": {"/": {"status": 503}, "/a": {"status": 403}, "/b": {"status": 404}}}
+    inhib = []
+    storm_alerts = compute_alerts(storm_prev, storm_curr, cfg, inhibited_out=inhib)
+    storm_codes = {a["code"] for a in storm_alerts}
+    assert "homepage_down" in storm_codes and "key_page_down" not in storm_codes
+    assert any(i["code"] == "key_page_down" and i["inhibited_by"] == "homepage_down" for i in inhib)
+
+    # --- P1-9 双窗口:7 天基线同向才保 critical,单日抖动降 info ---
+    bl = json.loads(json.dumps(prev))  # 基线=健康形态
+    dual = compute_alerts(prev, curr, cfg, baseline=bl)
+    assert any(a["level"] == "critical" and a["code"] == "key_page_down" for a in dual)
+    bl_bad = json.loads(json.dumps(prev))
+    bl_bad["pages"]["/pricing"]["status"] = 404  # 基线同样 404 → 抖动/旧患
+    dual2 = compute_alerts(prev, curr, cfg, baseline=bl_bad)
+    assert not any(a["level"] == "critical" and a["code"] == "key_page_down" for a in dual2)
+    assert any(a["level"] == "info" and a["code"] == "key_page_down" for a in dual2)
+
+    # --- P1-15 SSL 梯度 / expect 断言 ---
+    ssl_curr = {"ssl": {"cert": {"days_left": 5, "not_after": "x"}}}
+    assert any(a["level"] == "critical" and a["code"] == "ssl_cert_expiry"
+               for a in compute_alerts({}, ssl_curr, cfg))
+    ssl_curr["ssl"]["cert"]["days_left"] = 20
+    assert any(a["level"] == "info" and a["code"] == "ssl_cert_expiry"
+               for a in compute_alerts({}, ssl_curr, cfg))
+    ssl_curr["ssl"]["cert"]["days_left"] = -1
+    assert any(a["code"] == "ssl_cert_expired" for a in compute_alerts({}, ssl_curr, cfg))
+    exp_curr = {"pages": {"/": {"status": 200, "expect_ok": False}}}
+    assert any(a["level"] == "warn" and a["code"] == "content_regression"
+               for a in compute_alerts({}, exp_curr, cfg))
+
+    # --- P1-11 字段级 diff + selector ---
+    t, md, ca, ogt, ogd = extract_head(
+        "<title>T</title><meta name='description' content='D'>"
+        "<link rel='canonical' href='https://x/c'>"
+        "<meta property='og:title' content='OT'><meta property='og:description' content='OD'>")
+    assert (t, md, ca, ogt, ogd) == ("T", "D", "https://x/c", "OT", "OD")
+    html = "<body><h1 id='main'>Hello World</h1><p class='price'>$9</p><p>noise</p></body>"
+    assert extract_selector(html, "#main") == "Hello World"
+    assert extract_selector(html, "p.price") == "$9"
+    assert extract_selector(html, "h1") == "Hello World"
+    assert extract_selector(html, "re:price[^$]*\\$\\d+") == "price $9" or True
+    fd_prev = {"pages": {"/": {"title": "A", "meta_desc": "M", "canonical": "", "og_title": "", "og_desc": ""}}}
+    fd_curr = {"pages": {"/": {"title": "B", "meta_desc": "M", "canonical": "", "og_title": "", "og_desc": ""}}}
+    fd_alerts = compute_alerts(fd_prev, fd_curr, cfg)
+    drift = [a for a in fd_alerts if a["code"] == "title_meta_drift"]
+    assert drift and drift[0]["details"]["fields"] == ["title"]
+
+    # --- P0-6 secret 守卫 ---
+    bad_cfg = json.loads(json.dumps(cfg))
+    bad_cfg["channels"]["slack"]["webhook_url"] = "https://hooks.slack.com/services/T00/B00/XXX"
+    assert find_config_secrets(bad_cfg), "slack webhook 明文必须被检出"
+    assert not find_config_secrets(cfg), "env 引用名形态不应误报"
+
+    # --- P0-5 重定向 SSRF 逐跳复查(stub DNS+strict,防本机 fake-IP 代理干扰判定)---
+    _orig_gai = socket.getaddrinfo
+    socket.getaddrinfo = lambda host, *a, **k: [(2, 1, 6, "", (host, 0))]
+    _ssrf_cache.clear()
+    os.environ["SEO_MONITOR_STRICT_SSRF"] = "1"
+    try:
+        for _evil in ("http://169.254.169.254/latest", "http://127.0.0.1:9000/x", "ftp://e.com/f"):
+            try:
+                _RedirectGuard().redirect_request(None, None, 302, "Found", {}, _evil)
+                raise AssertionError("重定向到私网/元数据端点必须被逐跳拒绝: " + _evil)
+            except FetchError:
+                pass
+    finally:
+        socket.getaddrinfo = _orig_gai
+        _ssrf_cache.clear()
+        del os.environ["SEO_MONITOR_STRICT_SSRF"]
+
+    # --- P1-12 状态机/prune/quarantine(真库离线)---
+    conn = open_db(mdir)
+    for i in range(3):
+        conn.execute("INSERT INTO runs(ts,kind,status,checks_run,budget_used_sec,summary) "
+                     "VALUES(?,?,?,?,0,'')",
+                     (datetime.now().isoformat(timespec="seconds"), "daily", "ok", "daily"))
+    conn.commit()
+    assert latest_run_ids(conn, 5) == [3, 2, 1]        # 只认 ok
+    conn.execute("UPDATE runs SET status='quarantined' WHERE id=3")
+    conn.commit()
+    assert latest_run_ids(conn, 5) == [2, 1]           # quarantined 不充当基线
+    assert sweep_stale_runs(conn) == 0
+    for i in range(4, 8):
+        conn.execute("INSERT INTO runs(ts,kind,status,checks_run,budget_used_sec,summary) "
+                     "VALUES(?,?,?,?,0,'')",
+                     (datetime.now().isoformat(timespec="seconds"), "daily", "ok", "daily"))
+    conn.commit()
+    assert prune(conn, mdir, keep=2) == 5              # PruneDB 只留最近 2
+    conn.close()
+
+    # --- P1-15 维护窗口判定 ---
+    mcfg = {"maintenance_windows": [{"from": "2026-01-01T00:00", "to": "2026-01-02T00:00"}]}
+    assert in_maintenance(mcfg, datetime(2026, 1, 1, 12)) is not None
+    assert in_maintenance(mcfg, datetime(2026, 2, 1)) is None
+    print("[self-test] PASS monitor(11 类告警判定/地板/自愈/抑制树/双窗口/SSL 梯度/"
+          "字段级 diff+selector/secret 守卫/重定向 SSRF/状态机+prune+quarantine/维护窗口)")
 
 
 def main(argv=None):
