@@ -100,6 +100,13 @@
 - 每个页面都重复声明一整份 Organization，而不是用 `@id` 引用（见 [schema-examples.md](schema-examples.md)）。
 - 以为加了 schema，AI 就会更多地引用本站。
 
+## 完全装载:14 个稀有 JSON-LD 字段清单+选型矩阵+转义规则(百仓深扫)
+
+**稀有类型必填字段**(next-seo 组件库精读):ClaimReview(claimReviewed ≤140 字符+reviewRating+url)/Dataset(name+description)/DiscussionForumPosting(**author+datePublished**)/EmployerAggregateRating(itemReviewed+ratingValue,ratingCount 与 reviewCount 至少一)/ImageObject(**contentUrl+creator/creditText/copyrightNotice/license 至少其一**;多图用 @graph)/JobPosting(title/description/datePosted/hiringOrganization)/MerchantReturnPolicy(**独立顶层类型**;分场景运费三组 customerRemorse/itemDefect/seasonalOverride)/ProfilePage(mainEntity,含 **agentInteractionStatistic**——AEO 新字段)/Quiz(hasPart=Question[]{eduQuestionType:"Flashcard",text,acceptedAnswer})/VacationRental(**containsPlace+image 最低 8 张+经纬度**)/Carousel(ItemList,contentType∈Course|Movie|Recipe|Restaurant)。
+**JSON-LD 转义五字符**(防 `</script>` 逃逸,next-forge):`<`→\u003c、`>`→\u003e、`&`→\u0026、\u2028/\u2029——任何自建模板必带;Publii 补:`JSON.stringify().replace(/</g,'\u003c')`。
+**schema 选型矩阵**(maestro):Product(name/image/description/offers)/Article(headline/datePublished/author)/FAQPage(mainEntity)/Organization(name/url)/LocalBusiness(name/address/telephone)/Event(name/startDate/location);**meta keywords 2009 年起被忽略**——报告它=反模式。
+**实体放置规则**(kostja94):Organization schema 最优放根布局组件每页输出(**不要只放 About 页**);@id 用稳定 URL(/#organization);首页 Organization↔WebSite 互链。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

@@ -42,6 +42,12 @@
 - [awslabs/Log-Analyzer-with-MCP](https://github.com/awslabs/Log-Analyzer-with-MCP)(169★):MCP 服务器让 LLM 查日志——agent 化方向
 - Screaming Frog Log File Analyser(免费版含 bot 自动验证)
 
+## 完全装载:邮件认证信任信号/CrUX 双 origin/AI 爬虫先行指标(百仓深扫)
+
+**邮件认证=域名信任上游信号**(quien,SPF RFC 7208):SPF 查询预算 10 次(include 树展开)/void 2 次/深度 10;DKIM 15 个常用 selector 探测(default/google/selector1-2/k1/mandrill/s1-s2/sig1…);DMARC=\_dmarc. TXT;BIMI=default.\_bimi.(含 VMC 证书链)——AI 引用倾向的上游信任层。
+**CrUX 双 origin 回退**:先试重定向后最终 origin,再试输入域名("CrUX may index data under either");五指标阈值 LCP 2500/4000、INP 200/500、CLS 0.1/0.25、FCP 1800/3000、TTFB 800/1800;history 取 p75 时序画趋势。
+**AI 爬虫访问量=引用先行指标**(leopard):`grep -iE 'GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|PerplexityBot' access.log | awk '{print $1}' | wc -l`;无日志用 Cloudflare/Vercel 机器人分类;改后 14 天重测,比较时**剔除最近 2-3 天聚合延迟**;"旧数据能通过一切下限——监控值的日期而非值"。
+
 ## 来源
 
 官方:Google 状态码对爬虫影响/反向 DNS 验证/Bing IP 列表/evergreen Googlebot/Chrome agentic-browsing 文档。行业:Digital Applied 2026、Screaming Frog 22 法、Cloudflare Radar、HAProxy(Bytespider 90%)、F5(Bytespider 边缘封锁案例)、usegeon 实操。未证实项:"GPTBot/ClaudeBot 消费 sitemaps"仅 Reddit 单源;各 AI 流量份额口径互相矛盾只作粗基线;a11y 经 CWV 间接影响排名是假说无官方确认。

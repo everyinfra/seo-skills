@@ -126,6 +126,12 @@
 - **机会四分法**(各家口径归并):striking distance=位 4-20 且曝光≥20(或 11-20+高曝光+低 CTR);low_ctr=曝光≥50 且位次≤15 且期望−实际 CTR>2pp;content_decay=28 天 vs 前 28 天点击降幅 ≤−25%(<−50% 记 high);cannibalization=同 query≥2 落地页,加权位次=Σ(位次×曝光)/曝光。
 - **蚕食严重度公式**(claude-blog):severity = overlap_count × avg_search_volume × (1/position_gap),gap 最小取 1;四级聚类优先序 exact>stem>语义>subset。
 
+## 完全装载:GEO 难度公式/内容护城河/llm_mentions 决策(百仓深扫)
+
+**GEO 绝对难度公式**(OpenClaudia):`0.35×KD + 0.40×median 竞品页 UR + 0.25×targeting%`——用页级 UR 不用域级 DR(McKinsey 泛文不虚增分);客户相对三档:WON(top-3 或被 AIO 引)/FOOTHOLD(4-10)/NOT RANKING(附差距)。
+**llm_mentions 决策规则**:DataForSEO `ai_optimization/llm_mentions`(platform: google|chat_gpt;**Perplexity 不支持**);include_subdomains:true 否则裸域 0 结果;**返回 ≥20 条→跳过猜测直接差距分析;<20 作种子;0 才推测**;推测=gpt-4o-search-preview 实测(~$0.01/问,一次 $0.15-0.20,1-2s 串行)。
+**内容护城河公式**(Affitor):目标=TOP5 竞品(排除 Wikipedia/Reddit)平均页数×1.5;分档 <20 页 GREEN/20-50 YELLOW/50-100 ORANGE(收窄利基)/100+ RED;竞品页数用 site: 计数;加速杠杆=独家数据/格式优势/更新速度。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

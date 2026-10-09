@@ -72,6 +72,14 @@
 
 **评分输出**:多语言站逐语言各出一份评分(架构纪律);阈值冲突时以目标市场口径为准。
 
+## 完全装载:三个成品评分器(seomachine/SEOmator/gtm,百仓深扫)
+
+**seomachine 质量评分器**:六维权重 content 0.20/keywords 0.25/meta 0.15/structure 0.15/links 0.15/readability 0.10;**publishing_ready=总分≥80 且 0 个 critical**;扣分制:词数<2000 扣 30/标题缺关键词扣 20/前 100 词缺扣 15/密度>max×1.5 判 stuffing 扣 20/meta title 缺失扣 40/多 H1 扣 20/**>20% 句子超 37.5 词扣 10**/全文零列表扣 5。
+**首屏 700 字符"5 秒测试"**(above_fold_analyzer):四元素加权 headline 0.35/value_prop 0.25/cta 0.25/trust 0.15,≥70 过;弱标题正则黑名单(`^Welcome to`/`^The (best|ultimate)`/`^Introducing`/`^We (help|offer)`)各扣 30;CTA 首现 <300 字符 +20;标题健康区 20-80 字符。
+**信任信号计分**(trust_signal_analyzer):证言≤35(≥3 条 25 分+具体数字署名再+10)/社会证明≤30/风险反转≤25(**4 类中 3 类=strong 拿满**:free trial/no credit card/cancel anytime/guarantee)/权威≤10。
+**SEOmator 373 规则权重表**(20 类):Core SEO 11%/Performance 10%/Links 8%/Images 8%/Security 8%/Technical 7%/Crawlability 5%/Structured Data 5%/Content 5%/JS Rendering 5%/Accessibility 7%/Social 3%/E-E-A-T 3%/URL 3%/Redirects 3%/Mobile 2%/i18n 2%/HTML 验证 2%/**AI-GEO 2%**/Legal 1%;Pass=100/Warn=50/Fail=0;档位 90=A/70=B/50=C。
+**gtm 16 检查 142 分表**(audit-website-aeo):title 10(≥10 字符)/meta-description 10(≥50)/canonical 8/h1 8(恰好 1)/schema 8(≥1 JSON-LD)/og 8/内链 10(≥5)/image-alt 8(≥80%)/text-depth 12(≥250 词)/indexability 10/**ai-meta-tags 6(无 nosnippet/noai)**/heading-hierarchy 6/llms-txt 10(标题+链接+≥100 字符)/**ai-bot-access 12**/rss-feed 8;站点级通过=**80%+ 爬取页通过**;Foundational 50%(脚本)+Intelligence 50%(模型 6 维)。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

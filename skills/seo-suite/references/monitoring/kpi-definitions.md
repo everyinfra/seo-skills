@@ -68,6 +68,12 @@
 - 用工具的 DR 涨跌解释流量变化。
 - 凭某一次 AI 回答里有没有本站就下结论。
 
+## 完全装载:营销归因模型表+AI 流量盲区(百仓深扫)
+
+**归因模型表**(marketingskills attribution):first/last/last non-direct/linear/time-decay/position-based(40%首+40%末+20%中)/data-driven(Shapley);**Google Ads/GA4 已于 2023 弃用中间模型**只剩 DDA+last-click;DDA 门槛=200 转化+2,000 交互/30 天(低于此塌缩向 last-click);三范式:MTA(用户级)/MMM(需 2-3 年周度数据+真实预算波动)/Incrementality(geo holdout——"两个渠道争同一转化时的终审")。
+**对账五步**:单一真相源(CRM/backend)→**永不跨平台求和**("一次转化两个索赔人")→只读方向一致性→自报做 tiebreaker、**禁止乘数规则**(Meta 2× GA≠翻倍)→预算化 gap。
+**盲区四项**:direct(垃圾抽屉)/branded search(挪用上层功劳)/dark social/**AI 流量(经 branded search 或 direct 进入,AI touch 不可见)**——AI 归因只能靠 referrer 清单+日志三源下界估计。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

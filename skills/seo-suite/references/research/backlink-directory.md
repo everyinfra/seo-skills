@@ -100,3 +100,7 @@
 - 渠道数据与周同步 JSON：[alvinunreal/awesome-submitlist](https://github.com/alvinunreal/awesome-submitlist) `data/destinations.json`
 - 中文渠道全量+溯源约定：[flaqai/backlink_skills](https://github.com/flaqai/backlink_skills) `Free-backlink-list.md`
 - 分级格式（Easy/Medium/Hard 徽章）：[indie-hacking/Awesome-SEO-Backlinks](https://github.com/indie-hacking/Awesome-SEO-Backlinks)
+
+## 完全装载:寄生 SEO 平台分层(百仓深扫;kostja94 parasite-seo)
+
+**寄生 SEO(barnacle SEO)="分布式权重工程"**:借 DA 90+ 平台数天上首页。平台分层:Tier1 GEO 权威(Medium/Reddit/LinkedIn Articles/Quora——AI 引用 Very high)/Tier2 技术权威(GitHub/Stack Overflow/Dev.to)/Tier3-6 受控平台(WordPress.com/Blogger/HN)/wiki 层(**Grokipedia**)。战术:内容 1500+ 词/主词进标题+前 100 词/重发用 canonical;链接路径=Tier-2 反链→寄生内容→自有站。**风险红线:Google Site Reputation Abuse(2024)打击操纵性第三方内容**。

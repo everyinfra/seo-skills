@@ -81,6 +81,13 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 **SEOmator 实体图六查**:`schema-entity-id`(@id 须绝对)/rating-scope(AggregateRating 须可见)/entity-conflict(一 @id 两 logo)/entity-dangling(publisher/author 的 @id 须在爬取中声明)/entity-type-drift(同 @id 跨页 @type 一致)/entity-split(同名组织不挂两 @id);AI/GEO 13 规则含 **geo-pay-per-crawl(HTTP 402 且无 Pay/Crawler-Price 头才警)**、geo-markdown-response、Content-Signal 矛盾检测(ai-train=yes 但训练 bot 全 Disallow=矛盾)。
 **raw-vs-rendered 实现要点(SEOmator)**:HTTP 抓原始→$;Playwright 二抓→rendered$;UA 与 HTTP 爬虫一致;web-vitals 库在 goto 前注入(LCP/CLS 只在加载期发);INP 需交互故合成时标 inpSynthetic 不计分。
 
+## 完全装载:Indexing API 状态机/hreflang 簇矩阵/staging 检查/SERP 类型(百仓深扫)
+
+**Indexing API 提交器规格**(goenning,源码级):9 态状态机=Submitted and indexed/Duplicate without canonical/Crawled-not indexed/Discovered-not indexed/Page with redirect/URL unknown/RateLimited/Forbidden/Error;**可提交集合=后 6 态**;复查条件=状态在可提交集且上次检查 >14 天;幂等规则=先 GET urlNotifications/metadata,**404 才 POST publish**(每 URL 永不重复提交);批量 50/块并发块间串行;429 读请求线性退避 (3-n+1)×60s,写请求遇 429 直接退出;sitemap 经 GSC sites/{siteUrl}/sitemaps 列表再解析去重。
+**hreflang 簇矩阵输出模板**(notfair):每簇输出矩阵(行=页面,列=自引用/return tag/代码合法/200 可索引/canonical)✅/❌ + 每错误的可直接粘贴 `<link>` 修复块;**单条 return tag 断裂→整簇被忽略(#1 错误,先查)**;经典错码:en-UK(应 en-GB)/下划线 en_US;三载体(head/Link 头/sitemap)只能用一种。
+**staging 子域暴露检查**(JeffLi):test./staging./dev./preview./beta./uat. 公开可访问且镜像生产=fail。**llm_review_required 边界标志**:脚本判确定性项,LLM 只在边界时介入(H1 partial 匹配/title 关键词位置>30 字符/meta 有内容即评写作质量)——防幻觉的双层架构。
+**统一 SERP ResultType 20 枚举**(openserp):organic/ad/featured_snippet/knowledge_panel/people_also_ask/video/image/news/shopping/local/answer_box/**ai_summary**/related_questions/related_searches/sitelinks/videos/images_inline/calculator/weather;非自然模块独立成 SerpFeature(带 confidence);**absolute 位次=跨页含广告的 1-based 绝对位**;domain_info 分类(gov/edu/news/forum/marketplace/social)。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

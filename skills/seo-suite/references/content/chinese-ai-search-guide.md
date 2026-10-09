@@ -94,3 +94,8 @@
 - 68%/43% 高权站与 FAQ 引用占比：BrightEdge 1M AI 答案（经该仓库引用）
 - 第六节:微信公开课 PRO 2023(经创业邦转述)、卢松松博客(Peoplerank)、白杨SEO(收录规则)、知乎 CES 模型(经知乎专栏)、腾讯云开发者(抖音四因子/200 词实测)、CSDN 2026-07 豆包横评、凤凰财经(收录时滞)、CNPP 官方介绍页(免费申报)、[JingHao-Leon/geo-book](https://github.com/JingHao-Leon/geo-book)(2026-08-05 一手实测:知乎修正/风控/四硬指标)、Eververdants/douyin-seo-playbook
 - **二轮核验(2026-10-09)**:[ZhiMaHang/chinese-ai-engine-sources](https://github.com/ZhiMaHang/chinese-ai-engine-sources)(45 题×12 引擎按月公开信源快照;issue-11=13,203 引用/2,225 域名,自 2026-08 持续更新——**本指南新的持续数据源**);[JingHao-Leon/geo-research-cn](https://github.com/JingHao-Leon/geo-research-cn);微信公开课 2026 口径(经 codingtech 转述);Reditor(2026 流量机制);新榜智汇 2026-08;知乎专栏/网易(豆包 7 月改版);知乎(DeepSeek 5-29 限制);36氪/新浪(文心助手 2.0);腾讯新闻(百家号 App 更名);易观 2026-06(AI 搜索 MAU 6.8 亿,豆包+DeepSeek+千问 78%);QuestMobile 2026 半年报(AI 原生 App 4.99 亿,传统搜索次数 −19.1%)
+
+## 八、国内获客渠道清单与分发探针(百仓深扫完全装载)
+
+**国内提交式渠道**(1000UserGuide 精选,带规则):独立开发圈=GitHub 周刊 issue 投稿/小众软件发现频道/少数派 Tron 计划/新趣集(类 PH)/独立开发者前线(日 UV 500+)/中国独立开发者项目列表(**须网站或 App,纯 GitHub 库不算**)/微博开放平台(1-3 工作日审核,一工具一主体);AI 导航=ai-bot.cn(**不收镜像/套壳/课程,不保证收录**)/智鹭 AI(免费提交 24h 上"新上线")/5118.link(免费 1-2 工作日)/乐易(仅收原创博客+实用工具);社区=即刻产品安利社/V2EX 分享创造/HelloGitHub/电鸭/CSDN("对搜索引擎收录特别友好")。**收录门槛:必须免费/不在清单/有运营联系方式和隐私政策/有一定浏览量**。
+**分发站点技术探针八项**(GEOFlow HostedSiteTechnicalProbe):canonical 含站点根/JSON-LD 存在//about 200 且自链/robots 有 User-agent: */**llms.txt 200 且含 ## Site 段**/sitemap 结构——多站点分发的验收清单。

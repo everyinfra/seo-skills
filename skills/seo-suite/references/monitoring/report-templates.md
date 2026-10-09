@@ -63,6 +63,12 @@
 - 引用没有出处的行业基准。
 - 行动项没有负责人、截止日期和验证方式。
 
+## 完全装载:报告工程约束与锚定评分(百仓深扫)
+
+**自包含 HTML 报告硬约束**(every-app seo-report):禁外部资源/禁 script;图必须内联 SVG/CSS bar 且**数字同时印在文字里**;目标 <80KB、硬上限 500,000 字节;**禁反引号和 `${`**(模板字面量语法);链接一律 target="_blank";summary <2,500 字符(给不打开页面的读者);finding 三段 Problem/Change/Expected effect;**"二十条 findings 的报告是失败报告"**;固定收尾节 "How this report was made"(Tools/Verified 分列)。
+**六维营销评分+收入公式**(ai-marketing):Content 25%/Conversion 20%/SEO 20%/Competitive 15%/Brand 10%/Growth 10%;等级 85=A/70=B/55=C/40=D;审计前业务预分类 6 类(SaaS/电商/本地/创作者…);收入影响=月流量×转化率提升×客单价;影响分级 High>$5,000/mo 或>20%;每子维度 0-10 分带**五档锚定文案**(9-10="crystal clear"…0-2=无清晰标题)。
+**30/60/90 方案模板**(GEORank):输出要求=先判优先级/含负责人+交付物+验收指标/覆盖页面结构·答案式内容·FAQ·Schema·权威引用·AI 可见性·长尾·转化路径/标信息缺口;输入 13 字段(goal/brand/url/industry/audience/stage/timeline/resources/market/competitors/constraints/context/focus),5 项必填。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

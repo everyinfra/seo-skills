@@ -45,6 +45,13 @@
 - **INP(200ms)**:hydration backlog 与长任务是 React 系最大杀手;解法:RSC、岛屿/partial hydration、`scheduler.yield`。
 - **LCP**:CSR 空壳天然差(等 JS bundle);SSR/流式渲染;勿对首屏 LCP 图 lazy-load;hydration 重写 DOM 可引发 CLS。
 
+## 渲染工程三件套全文细节(百仓深扫完全装载)
+
+**rendertron(官方弃用遗产,参数仍可引用)**:动态渲染 UA 白名单 16 个(Baiduspider/bingbot/Embedly/facebookexternalhit/LinkedInBot/pinterest/quora/Slackbot/Telegrambot/Twitterbot/vkShare/WhatsApp 等——**名单里没有 Googlebot**,Google 不需要);静态扩展名豁免 45 项(.js/.css/.svg/.xml… 命中不代理);渲染硬预算 **10 秒**;中间件超时 11000ms;缓存默认 24h、datastore 下 >1000 条性能劣化;`<meta name="render:status_code">` 可控代理返回码;代理失败 next() 回落原 SPA 不 5xx。
+**react-snap 失败模式清单**:只支持 History 路由(hash 不可预渲染);snapSaveState 仅支持基本 JSON 类型(Date/Set/Map/NaN 会坏);Service Worker navigateFallback 须指 200.html 而非 index.html(否则他页闪首页);skipThirdPartyRequests 屏蔽 GA/Mapbox;爬取 UA 固定 "ReactSnap";JS 注入样式须关 speedy 才进 DOM;JSS 不支持 rehydration;决策三选——renderToString(锁库)/JSDOM(不支持 Blob,行为分叉)/headless(SSR 分叉 caveat)。
+**astro-paper(静态主题 SEO 基线)**:OG 图 satori+sharp 1200×630 内嵌本地字体(不外链 Google Fonts);**文章自带 ogImage 时跳过自动生成(自定义优先)**;草稿不生成;robots-as-code 三行式指向 sitemap-index;GSC 验证走环境变量非硬编码;极简 BlogPosting JSON-LD(无 publisher,刻意)。
+**CSR 落地(theninthsky)**:**Bing 不能渲染 JS→预渲染是 Bing/AI 可见性的实际前提**;Worker 按 UA 分流(bot 列表含 bingbot/yandex/twitterbot,**必须排除 googlebot**);Prerender.io 1000 次/月免费;"Vercel 组合过滤 65536(2^16) 种只能单文件"=SSG 反例;CSR 渲染即 JS 就绪、结构性免疫水合失焦。
+
 ## 来源
 
 官方:Google JS SEO 基础/懒加载/动态渲染文档、Next.js SEO 教程、Naver Search Advisor JS 指南、Yandex Webmaster rendering。行业:Patrick Stox、Onely(9× 抓取预算)、SearchVIU 2025(AI 爬虫渲染)、dev.to 2026 综述。GitHub:garmeeh/next-seo(8.5k★)、prerender-node(921★,维护中)/Rendertron(已归档,信号)。未证实项:WRS 具体 Chromium 版本(官方只说 evergreen);百度渲染官方文档缺失;渲染队列实际延迟无固定值;AI 爬虫渲染能力半年即可能过期。

@@ -122,3 +122,9 @@ NeurIPS Datasets & Benchmarks 2025；有公开代码/数据）考察问答与商
 - **覆盖台账八态**:discovered/selected/fetched/rendered/data-backed/failed/excluded/not checked——审计输出如实记态,不许"没查=通过";
 - **Google 2026 指引事实**(双源核对):llms.txt 对 Google 排名既不帮助也不损害;无 AI 专用 schema;无理想 AI 页长;**规模化操纵 AI 回答违反 spam 政策**(2026-05-15 起 spam 政策适用于生成式 AI 回答);
 - **算法更新台账**:`google-updates.json` 双区结构——`updates[]`(source 必须是 Google 自有域名)+ `unverified[]` 隔离区(第三方追踪器说法+primary_source_check;审计脚本不得编码未验证声明)+ last_verified。
+
+## 完全装载:审计输出 schema/预注册标定/文件治理(百仓深扫)
+
+**审计 JSON Schema**(qiaomu):顶层必填 7 项(schema_version/generated_at/scope/coverage/findings/action_plan/missing_evidence);scope.mode 7 枚举(advisory/page/template_sample/site_inventory/incident/migration/ai_search_extension);evidence_ref.kind 14 枚举(url/file/http/rendered_dom/search_console/server_log/crawl/serp/web_vitals_field/official_doc…)+observed_at;**finding 三轴:impact(5 档)/confidence(3 档)/effort(xs-xl)分立**;evidence_level=observed/inferred/missing 三分;**action 必须挂 finding_ids 且自带 verification**;source_review 必填 overdue_sources——过期来源显式暴露。
+**预注册标定纪律**(respectaso):评分曲线必须实测拟合而非手调——327 官方值+90 负样本、30% holdout(按 crc32 哈希切分防泄漏)、Spearman/Pearson/MAE 三指标;**预注册闸门**(见数前固定:held-out Spearman≥0.25 且超旧模型);三版本号独立 bump 才触发历史重算;"NEVER hand-tune these: refit under pre-registered gates"。任何套件评分器的维护纪律。
+**文件治理三法**(boraoztunc):①拒绝留痕——上游技能审计后拒绝理由全部写入 NOTICE("共享同一模板、描述不可区分→降低路由质量");②**一 trigger 一技能**(两个近同技能竞争同一 trigger 会降低路由);③采纳时纠错留痕(补 -webkit- 前缀/对齐参数,写明)。

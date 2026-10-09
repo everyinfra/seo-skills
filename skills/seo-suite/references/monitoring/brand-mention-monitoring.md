@@ -69,3 +69,10 @@
 
 - 品牌提及归一化=名称+别名+域名统一计数;原始引擎输出全存底供事后重算(elmo 模式);
 - **SEO×Ads 四桶 join**(Ryze seo-vs-ads):GSC query 维度×Ads 搜索词报告 90 天——**double-paying**(自然≤3 位还付费,品牌词无竞价者时最浪费)/defensible(竞对在投)/paid-only winners(广告转化但无自然排名=被钱预验证的内容路线图)/organic-only;省额=花费×自然点击保留率(保守 50-70%,明示估计);缺一侧账户时明说缺什么。
+
+## 完全装载:AI 引用面五层/prompt 六类/品牌答案监控闭环(百仓深扫)
+
+**AI 引用面 5 层模型**(seomachine ai-citation-targets):Tier1 软件评测目录(G2/Capterra/TrustRadius/Product Hunt/**AlternativeTo 对 "alternatives to" 类关键**/**Slant 对 "vs" 类关键**)/Tier2 行业目录/Tier3 "best X" listicle 外联(找作者,给更新数据换收录)/Tier4 Reddit(高赞老帖评论优于新帖,F5Bot 监控)+Medium/LinkedIn/Quora/YouTube(Perplexity 与 Gemini 交叉引视频)/Tier5 声誉平台(GBP/Trustpilot/应用商店)。监控 5 组 prompt 簇:通用/功能/场景/迁移切换/价格,季度复审。
+**6 类商业意图 prompt 生成法**(research-ai-citations):直接推荐/对比/功能/场景/价格/迁移——每类 15-20 条聚成 5-10 簇,实跑 10-15 条关键 prompt;记录品牌是否提及+位置/被引 URL/竞品/**主导来源类型分布(目录/listicle/官网/Reddit)**。
+**citation-recipe 反推法**(Ryze):抓自己被引 top 2-3 页反推配方(答案靠前/统计定义/干净标题/schema),再让"有机强但零 AI 引荐"的页照方重构。
+**品牌答案监控闭环**(irinabuht):固定品牌 prompt 面板(what is X/X pricing/X vs Y/is X good for Z/X alternatives)按计划跑,**周对周 diff**:新主张/消失提及/情绪漂移;每条错误主张溯源到具体页面;修正三层=出版商外联+自有 FAQ 明示+**changelog 式页面供 AI 爬虫拾取**。

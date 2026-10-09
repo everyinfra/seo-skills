@@ -63,3 +63,12 @@ W3C WebML CG 草案(编辑来自 Microsoft/Google),Chrome M149–M156 origin tri
 ## 七、未证实项
 
 ARD/OKF 无任何 AI 引擎宣布消费;WebMCP 单一消费者(ChatGPT 桌面浏览器);无对照研究链接 accessibility-tree 质量×agent 任务成功率;MCP Server Card 与 Content-Signal 状态可能已变化。
+
+## 完全装载:内容协商实现/端点家族/三层 AI 索引(百仓深扫)
+
+**Markdown 内容协商**(nuxt-ai-ready 源码级):默认只看 Accept;开 botNegotiation 后 **botInfo.category==='ai' 才返回 markdown**(getBotInfo 按 headers 判);**启发式不得覆盖显式拒绝**——Accept 匹配组全部 q===0 则维持原偏好;显式 .md 请求在 early 段 defer(避开站点 auth);API/JSON 请求排除;缓存规则="Freshness 只进 max-age"(**Cloudflare 在有 s-maxage 时禁用 stale serving**)→`public, max-age=N, stale-while-revalidate=M`;Cloudflare 静态头规则上限 **100** 条。
+**端点家族**(docs.page):`/{owner}/{repo}/llms.txt|llms-full.txt|mcp|robots.txt|sitemap.xml|search.json`+`.well-known/*`;单页加 .md 后缀取 raw;边缘缓存 ~5 分钟;大仓截断响应头 x-tree-truncated:1。
+**三层 AI 索引**(beihaili):manifest(机器可读能力声明)→content-index(内容索引,双语按课显式 availability 字段)→llms.txt(发现入口);本地免费 MCP 政策字段化(free/readOnly/paymentEnforcement:false);x402 延后付费($0.25 检查类)标 future-hosted 不执行;`ai:index/ai:publish/ai:verify` 进 CI。
+**llms.txt 消费端安全**(mcpdoc):远程 llms.txt 自动只放行其所在域;本地文件必须显式 --allowed-domains;**meta-refresh 重定向目标域也须过白名单**;官方两跳协议=list_doc_sources→fetch llms.txt→反思其中 URL→fetch 相关页。
+**单一事实源+CI 漂移门**(sceneview):llms.txt 为唯一源,MCP/派生知识全由它生成;CI `--check` 比对派生物,漂移即 fail build;部署时 rm 旧副本防影射——"published surface cannot drift by construction"。
+**电商 agent 接口**(aimeos):店铺自带 MCP 端点(搜索/增删产品/订单,OAuth)——AI 电商的 agent-readiness 实例。
