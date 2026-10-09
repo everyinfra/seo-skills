@@ -24,31 +24,17 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 7. 可执行层与样例
-- **scripts/**:`self_check.py`(自检:frontmatter/模板七段式/死链)、`link_check.py`(内部链接校验)、`text_units.py`(按市场计量单位统计:全角/字素/词)——规则的可执行版本;
-- **examples/**:`gold-standard-keyword-research.md`
-- **references/mining-archive/**:100 个最流行 SEO/GEO 开源仓的逐仓完整提取档案(_INDEX.md 索引+批次档案)——头部项已并入各能力文件,本层保证所有已提取内容可检索可溯源;查"某个具体工具/仓库的玩法细节"时先查这里。(金标准样例输出,合成数据)——交付标准的实体参照;其余模板按同结构产出。
-
-### 3. 统一输出
-默认输出结构：
-1. Summary(**首行注明目标市场/语言**;多市场任务逐市场各一组)
-2. Findings
-3. Priority
-4. Recommended actions
-5. Validation / Next checks
-
-### 4. 真实性优先
-- 不要报告页面上不存在的 schema、内容、功能或信号。
-- 不要基于不完整证据下绝对结论；缺数据时写明缺什么、怎么补。
-- 对于 schema 检查，不能只靠静态 HTML 抓取判断「没有 schema」。
-- 不承诺排名、流量或 AI 引用的提升幅度；工程上完成的改动只能称为「已上线待观察」。
-
-### 5. 市场维度(全球套件的运行方式)
-- **每个任务 = 市场 × 能力**:先定市场(引擎格局/工具栈/合规),再进 overview/research/content/technical/monitoring 能力路由。
-- **市场差异知识长在能力文件里**:各能力文件中带「市场差异」的小节是本套件的全球层,主干索引在 [多语言工作流](references/overview/multilingual-workflow.md)。
-- 面向用户的输出使用用户的语言;参考文件的语言不决定输出语言。
-- 多区域站点逐市场分开评分,不合并总分。
-
+### 7. 可执行层(实装脚本,AI 直接调用)
+规则已变成代码——对应任务先跑脚本,再按能力文件解读输出:
+- **site_audit.py URL [--market ja|en|zh]**:单页审计(title/desc/H1/canonical/robots/og/JSON-LD/llms.txt/sitemap/AI爬虫放行/staging 子域/词数 CJK 感知),CRITICAL 退出码 1;
+- **robots_posture.py robots-url [--signal visibility|protect-ip]**:AI 爬虫三层放行矩阵+Cloudflare 注入块检测+Content-Signal 建议;
+- **text_metrics.py [--market zh|en] [--scrub]**:CJK 词数/句长节奏(metronomic AI 签名)/中英 slop 词/Unicode 水印扫描与清除;
+- **gsc_mining.py 导出.csv [--mode matrix] [--decay cur.csv prev.csv]**:GSC 导出直接挖 striking distance/低 CTR 机会(期望 CTR 曲线)/蚕食/流量衰退,无需 API;
+- **schema_lint.py URL**:@id 绝对性/引用悬空/aggregateRating 范围/FAQ 空答案/占位符黑名单;
+- **llmstxt.py validate|check|generate**:v2 结构校验/线上探测(.md 孪生)/从 sitemap 生成骨架;
+- **serp_overlap.py 输入.csv**:四档聚类判据(7-10 同文/4-6 同簇/2-3 互链/0-1 分开);
+- **self_check.py / link_check.py / text_units.py**:套件自检/链接校验/市场计量单位。
+全部 stdlib-only 无依赖;来源方法论(百仓深扫)见 NOTICE。
 ## 6. 你需要自备什么
 - 本 Skill 不附带数据。需要数据的任务，使用你自己的数据源：Google Search Console、GA4、Bing Webmaster Tools 的导出，或你自己账号下的排名追踪、外链、爬虫工具的导出。
 - 可选的外部 API（例如 PageSpeed Insights API、Knowledge Graph Search API）需要你自己的 Key，Skill 不提供任何 Key。
