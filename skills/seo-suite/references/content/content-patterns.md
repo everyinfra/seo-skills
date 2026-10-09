@@ -2,6 +2,7 @@
 
 > 先读 [geo-evidence.md](geo-evidence.md)。下面的模式帮助读者快速找到答案，也让搜索和 AI 产品更容易准确理解页面；
 > 它们不保证获得精选摘要、AI 引用或排名。按真实用户问题选用，不要每页套全。
+> UGC 内容 SEO 与站内搜索优化（双模块）另见 [ugc-site-search.md](ugc-site-search.md)。
 
 ## 选哪个块
 

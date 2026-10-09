@@ -4,6 +4,8 @@
 
 技术审计、网站迁移、排查「页面不被编入索引 / 从结果里消失」时读。判断以 Google 的[HTTP 状态码与网络错误](https://developers.google.com/search/docs/crawling-indexing/http-network-errors)和[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)文档为准；其他搜索引擎的处理可能不同。
 
+> 本文管状态码语义与分级；重定向的**全类型用法、canonicalization 六场景、分页/facet 治理与审计操作**深入指南见 [redirects-canonical](redirects-canonical.md)。
+
 ## 一、Google 如何处理各类状态码
 
 | 状态码 | Google 的处理 | 什么时候用 |

@@ -1,6 +1,6 @@
 # LCP 诊断与优化要点
 
-用途：页面的 Largest Contentful Paint（LCP）偏慢时，按固定顺序定位原因并给出修复建议。INP 与 CLS 的诊断见文末链接。
+用途：页面的 Largest Contentful Paint（LCP）偏慢时，按固定顺序定位原因并给出修复建议。四指标全景、INP/CLS/TTFB 深度、第三方治理与优化优先级见 [cwv-playbook.md](cwv-playbook.md)。
 
 ## 定义与阈值
 

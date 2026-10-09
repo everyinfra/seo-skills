@@ -1,6 +1,6 @@
 # JS 渲染与 SPA SEO(2026 口径)
 
-> 建立于 2026-10-09。以 Google/Naver/Yandex 官方文档为基准;行业实测标注。与 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md) 的"SPA 空壳=P0"条目呼应,本文件是系统版。
+> 建立于 2026-10-09。以 Google/Naver/Yandex 官方文档为基准;行业实测标注。与 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md) 的"SPA 空壳=P0"条目呼应,本文件是系统版。移动端专项(移动优先索引/触摸目标/插页惩罚/AMP 遗产/移动 SERP)另见 [mobile-seo.md](mobile-seo.md)。
 
 ## 一、Google 渲染管线(现行口径)
 

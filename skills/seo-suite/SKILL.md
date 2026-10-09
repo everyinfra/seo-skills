@@ -202,6 +202,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `references/technical/site-type-templates.md`
 - `references/technical/mermaid-templates.md`
 - `references/technical/LCP.md`
+- `references/technical/cwv-playbook.md`
 - `references/technical/audit-tool-output.md`
 - `references/technical/event-library.md`
 - `references/technical/ga4-implementation.md`
@@ -219,6 +220,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 #### AI 爬虫与国际化
 - [AI 爬虫政策](references/technical/ai-crawler-policy.md)：引用型 vs 训练型 bot、四种典型 robots 配置、暗坑清单
 - [JS 渲染与 SPA SEO](references/technical/rendering-seo.md):两波索引已死的新口径、渲染策略决策表、**meta 注入红线(社交/AI 爬虫不执行 JS)**、五引擎渲染差异(Naver 官方建议 SSR/百度以抓取诊断实测)、SPA 审计 7 项与 cloaking 红线
+- [移动 SEO 专项](references/technical/mobile-seo.md):移动优先索引切换后现状(2024-07 起只抓 smartphone UA/**桌面独有内容=不存在**)、内容平价检查法与破裂诊断表、移动体验阈值速查(viewport/48px 触摸目标/16px 字体/插页惩罚豁免清单)、AMP 遗产与迁移 7 步、slow-4G/慢 3G 测试矩阵(引 markets 印尼基线)、移动 SERP 与 app 深度链接 2026 现实(Firebase 已死/官方"不改展示"口径)、审计 15 项
 - [服务器日志分析](references/technical/log-analysis.md):日志是 AI 到访的唯一可靠测量层(GA 看不见不执行 JS 的爬虫)、DNS 双重验证、**Bytespider 无视 robots 只能边缘封锁**、a11y×SEO 三分法(SEO 重叠/纯人类/agent 项)
 - [Agent-Readiness 操作层](references/technical/agent-readiness.md)：协议时代站点准备(ARD 三级发现链/WebMCP 页面工具/Web Bot Auth 签名/Lighthouse AGENTIC_BROWSING 七审计/语言中立层多语言部署/就绪决策表)
 - [hreflang 校验](references/technical/hreflang-validation.md)：八检框架、实现方式选择、内容平价

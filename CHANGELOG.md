@@ -3,6 +3,16 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.23.0 - 2026-10-09
+
+- **六缺口补全轮(审计驱动)**——5 个新模块:
+  - **[cwv-playbook.md](skills/seo-suite/references/technical/cwv-playbook.md)(264 行)**:四指标全景(五数据源选型)/INP 三段归因修法+scheduler.yield 兼容性红线/CLS 动态注入预留/第三方 ABC 三档治理/**GSC Page Experience 报告 2024-11 已移除**/优化优先级决策树;
+  - **[mobile-seo.md](skills/seo-suite/references/technical/mobile-seo.md)(228 行)**:移动优先 2024-07 起 Google 只抓 smartphone UA(桌面独有内容=不存在)/平价四法/Mobile Usability 报告已退役/AMP 迁移 7 步/slow-4G 基线/15 项审计清单;
+  - **[penalty-recovery.md](skills/seo-suite/references/monitoring/penalty-recovery.md)(262 行)**:**11 类手动动作全表**(含 SRA/scaled content)×触发×识别/三证据轴鉴别法/reconsideration 六要件+文书骨架/**disavow 2026 收紧至两情形**/负面 SEO 威胁重估(被黑>链攻)/九场景恢复周期数据;
+  - **[redirects-canonical.md](skills/seo-suite/references/technical/redirects-canonical.md)(246 行)**:五类型重定向边界+链式形态修法表/**canonical 六场景**(分页 2026 共识=自引用)/冲突矩阵 11 行(canonical+noindex 官方禁用)/facet 四层决策树+参数白名单;
+  - **[ugc-site-search.md](skills/seo-suite/references/content/ugc-site-search.md)(222 行)**:UGC 双刃四层差距(Reddit 赢在机制非偏好)/技术治理(验证才索引)/Reddit·Quora·知乎排名机制翻译表/内部 SERP 默认禁+四条件放行/零结果查询=内容缺口挖掘。
+  Six-gap completion: CWV playbook, mobile SEO, penalty recovery (11 manual-action types), redirects & canonicalization (6 scenarios + conflict matrix), UGC + site-search dual module.
+
 ## 0.22.0 - 2026-10-09
 
 - **新增 [域名策略](skills/seo-suite/references/research/domain-strategy.md)(279 行,用户指出缺口)**:七节——选域(TLD 官方口径:ccTLD 锁国/.com=新 gTLD 中性;EMD 三处残值;五步选域工作流)/域名历史与风险(**2024-03 Google 把过期域滥用写成显性垃圾政策**;七步尽调+四档判定;301 衰减数据表 90-99%)/域名迁移完整 checklist(预热/映射/一次 vs 分批/切流日动作/180 天窗口/六大死法)/国际域名架构(五国本地域名特殊要求+IDN punycode 陷阱)/品牌与 AI 引用(**AI 记品牌不记 URL:引用品牌名重叠 14% > 域名 4.4%——换域策略直接改写**;邮件域 warm-up)/技术细节(www 一致性/DNS/注册商迁移)/误区对照(品牌域 vs 关键词域 ROI 六维)。

@@ -2,6 +2,7 @@
 
 > 建立于 2026-10-09。架构与规则参考 [AgriciDaniel/claude-seo](https://github.com/Agrici/claude-seo)（MIT）`skills/seo-drift/`。按本套件证据约束改写。
 > 定位："SEO 的 Git"——先存基线，再定期对比，把静默劣化变成可归因事件。
+> 惩罚处置（手动动作类型学 / reconsideration 流程 / 负面 SEO 防御 / 恢复期策略）见 [penalty-recovery](penalty-recovery.md)——归因到 L5"处罚"分支后转该文件。
 
 ## 一、三命令模型
 
