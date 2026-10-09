@@ -3,6 +3,11 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.22.0 - 2026-10-09
+
+- **新增 [域名策略](skills/seo-suite/references/research/domain-strategy.md)(279 行,用户指出缺口)**:七节——选域(TLD 官方口径:ccTLD 锁国/.com=新 gTLD 中性;EMD 三处残值;五步选域工作流)/域名历史与风险(**2024-03 Google 把过期域滥用写成显性垃圾政策**;七步尽调+四档判定;301 衰减数据表 90-99%)/域名迁移完整 checklist(预热/映射/一次 vs 分批/切流日动作/180 天窗口/六大死法)/国际域名架构(五国本地域名特殊要求+IDN punycode 陷阱)/品牌与 AI 引用(**AI 记品牌不记 URL:引用品牌名重叠 14% > 域名 4.4%——换域策略直接改写**;邮件域 warm-up)/技术细节(www 一致性/DNS/注册商迁移)/误区对照(品牌域 vs 关键词域 ROI 六维)。
+  Domain strategy module: selection/history-risk/migration checklist/international/brand-AI-citation continuity/technical/myths.
+
 ## 0.21.0 - 2026-10-09
 
 - **三个维度补全(用户指出的缺口)**:
