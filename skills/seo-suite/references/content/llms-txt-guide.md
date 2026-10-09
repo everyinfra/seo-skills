@@ -83,3 +83,9 @@
 **edge case**(sceneview 案例):508KB 全量 API 参考 vs 精选链接的取舍——大站点用子路径分文件。
 **验证命令**:`npx @vercel/agent-readability audit <url>`(nuxt-seo 生态)。
 **Google 口径不变**:llms.txt 对 Google 排名既不帮助也不损害(qiaomu/seomachine 双源核对)——只作 OpenAI 系参考。
+
+## 生态实证与生成规范(llms-txt-hub/docs.page 精读,百仓深扫)
+
+**采用语料**(llms-txt-hub,1,515 条收录):developer-tools 610/ai-ml 573/data-analytics 202/infrastructure 67/security 63;跨度 2024-08→2026-09。**Google 侧证据**:SE Ranking 300k 域研究——AI 引用最多的 50 域中**仅 1 个有 /llms.txt**;OtterlyAI 日志——AI bot 仅 0.1% 请求 llms.txt(84/62,100);Mueller:"No AI system currently uses llms.txt"(2025),用例"a dead end"(2026);Google 官方文档 2026-06-15:"Google Search ignores them"。**但**开发者文档生态真消费(OpenAI/Anthropic/Gemini 自家文档都发布;Cursor/Cline 等 AI 编码 agent 确实读取);**翻案触发条件**:任一大厂确认消费/后续研究拐点/Mueller 收回——挂 source-registry 复查。
+**大规模实证写法模式**(curl 实抓):Anthropic=多语言站只给主语言全文(其他语言标注 "Visit website");Cloudflare=**递归分片**(每产品一个自己的 llms.txt);Vercel=面向 agent 的行为指令段("Ask for approval before changing account resources")+?from=llms-txt 追踪;LangChain=按页数分层递归索引;Docker=MCP+llms-full 双通道声明。
+**生成规范**(docs.page 路由级):`# {title}`→站描述→`## Docs`→每页 `- [{title}]({绝对URL}): {frontmatter description}`;Content-Type text/markdown;边缘缓存 ~5 分钟+SWR,浏览器 max-age=0 常取新;大仓截断时响应头 `x-tree-truncated: 1`。

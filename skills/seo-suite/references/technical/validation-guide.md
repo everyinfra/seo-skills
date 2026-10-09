@@ -71,6 +71,16 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 - **T 集反向映射**:内容团队须供给的输入(标题/H2 大纲/alt/YMYL 判断/OG 文案)反向映射到下游检查——审计前先收供给清单。
 - **清单治理**:检查 ID 永久不回收;同优先级+同抓取动作则合并。
 
+## 审计阈值补充(seonaut 70 项/SEOmator 实体图/tigerless 全文细则,百仓深扫)
+
+**seonaut 精确阈值表**(开源 Go 审计器实证):title <20/>60 字符;description <80/>160;单页链接 >100;词数 <200;**DOM >1500 节点**;TTFB >800ms;alt >100 字符;图片 >500KB;深度 >4 点击;跨页 14 项(body_hash 重复内容/hreflang 缺回链/canonical 指向不可索引页/孤儿页/重定向链与环)。
+**head 八元素白名单(C27)**:head 仅 title/meta/link/script/style/base/noscript/template 合法——遇非法元素 Google 即认为 head 结束、其后全部失效;高频祸首=追踪像素 img、tag-manager iframe、内联 SVG favicon;GTM 官方即放 body 顶部;关键机读标签放最前。
+**lastmod 三判定(C2 全文)**:Coverage=有 lastmod 条目占比应 1.0;Freshness=最新 ≤30 天;Truthfulness=最大单日簇占比且该日≠运行日(build 戳每天=今天必被抓);"假 lastmod 比没有更糟";储备判据=sitemap lastmod 与页 JSON-LD dateModified 打架;50k URL/50MB 超限**整文件作废**。
+**语言跳转拆除顺序(C26 全文)**:Googlebot 不发 Accept-Language→他语言版本"对爬虫不存在"(P0);修复顺序=先各语言独立 URL 直 200→补 hreflang→最后删跳(反序会两版短暂 404);内容页禁自动跳,根路径 / 作选择器可。
+**Disallow×noindex 不叠加**:不被爬则 noindex 读不到,仍可经外链无摘要索引;登录页应 200+noindex 而非 403。
+**SEOmator 实体图六查**:`schema-entity-id`(@id 须绝对)/rating-scope(AggregateRating 须可见)/entity-conflict(一 @id 两 logo)/entity-dangling(publisher/author 的 @id 须在爬取中声明)/entity-type-drift(同 @id 跨页 @type 一致)/entity-split(同名组织不挂两 @id);AI/GEO 13 规则含 **geo-pay-per-crawl(HTTP 402 且无 Pay/Crawler-Price 头才警)**、geo-markdown-response、Content-Signal 矛盾检测(ai-train=yes 但训练 bot 全 Disallow=矛盾)。
+**raw-vs-rendered 实现要点(SEOmator)**:HTTP 抓原始→$;Playwright 二抓→rendered$;UA 与 HTTP 爬虫一致;web-vitals 库在 goto 前注入(LCP/CLS 只在加载期发);INP 需交互故合成时标 inpSynthetic 不计分。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

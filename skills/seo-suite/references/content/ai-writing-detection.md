@@ -76,6 +76,13 @@
 
 AI 生成文本常携带零宽/不可见字符(既泄密又是水印):U+200B(ZWSP)/U+FEFF(BOM)/U+200C-U+200D(ZWNJ/ZWJ)/U+2060-U+2064(word joiner 等)/U+180E(Mongolian vowel sep)/U+202F(narrow nbsp)+ em-dash 置换——发布前 scrubber 扫描并清除(套件八语标记表的机械层)。
 
+## 英文 slop tell 全量(Yuzzyuk/marketing-os 精读,百仓深扫;补强八语表的英文行)
+
+**结构类 7 tell**:①"Not just X, but Y"构式;②reflexive tricolon 三连排比;③**metronomic sentence length——每句 12-18 词,人类节奏剧变**;④总结性 em-dash 从句(一篇一次是风格,三次是签名);⑤**symmetrical paragraphs 段长均一**;⑥question-then-answer 开头;⑦reassuring close("and that's what makes all the difference"式收尾)。
+**词表 10 类**:empty intensifiers(truly/genuinely)/frictionless(seamless/effortless)/transformation(revolutionise/supercharge)/journey(landscape/tapestry)/abstract plurals(solutions/capabilities)/corporate hedges(leverage/holistic/bespoke)/time filler(in today's fast-paced)/discourse glue(moreover/furthermore)/false humility(it's important to note)/vague scale(countless/myriad/a plethora of);重灾区:delve/navigate/foster/underscore/harness/pivotal。
+**语义类**:无指涉声明(industry-leading);该平却叠 hedge("can help potentially reduce up to 30%" vs "Cuts cost 31% at [customer]"——**every hedge is a small confession**);无机制收益;人口统计受众 vs 状态受众;**perfectly balanced both-sidesing(营销要站队)**;emoji as structure。
+**判据与测试**:"Register is not slop——test is emptiness, not formality"(合规正式语域 OK);over-correcting toward punchy is its own tell;read-aloud test+bar test;好文案="contains at least one fact that could be checked and disproved"。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

@@ -119,6 +119,13 @@
 
 **[要追加]/[要確認] 占位符协议**(全语区,源自 indiabiyori/seo-operator):关键词数据缺失或未验证时,输出写 `[要追加: 数据源]` / `[要確認: 来源]` 占位符,**禁止编造搜索量**——LLM 只写建议文,数字必须有可回溯出处。
 
+## 聚类判据与机会公式(百仓深扫:claude-seo 四档/crawlseo 曲线/every-app 阈值)
+
+- **SERP 重叠四档判据**(top-10 有机结果共享 URL 数):**7-10=同一篇文章、4-6=同簇、2-3=互链、0-1=分开**;种子扩 30-50 变体;pillar 2500-4000 词、spoke 1200-1800;每 spoke ≥3 入链且与 pillar 双向。
+- **期望 CTR 曲线**(可直接照抄用于潜力估算):pos1=0.28/pos2=0.15/pos3=0.11/pos4-5=0.07/pos6-10=0.03/pos11-20=0.01/>20=0.005;潜力=曝光×expectedCtr(max(1, 位次−3))。
+- **机会四分法**(各家口径归并):striking distance=位 4-20 且曝光≥20(或 11-20+高曝光+低 CTR);low_ctr=曝光≥50 且位次≤15 且期望−实际 CTR>2pp;content_decay=28 天 vs 前 28 天点击降幅 ≤−25%(<−50% 记 high);cannibalization=同 query≥2 落地页,加权位次=Σ(位次×曝光)/曝光。
+- **蚕食严重度公式**(claude-blog):severity = overlap_count × avg_search_volume × (1/position_gap),gap 最小取 1;四级聚类优先序 exact>stem>语义>subset。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

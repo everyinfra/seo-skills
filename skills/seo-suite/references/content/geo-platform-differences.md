@@ -106,3 +106,10 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 - **11 个 AI 爬虫 token 角色**(逐条带厂商出处):必须放行=OAI-SearchBot/ChatGPT-User/Claude-SearchBot/Claude-User/PerplexityBot;训练政策项=GPTBot/ClaudeBot/Google-Extended/Applebot-Extended;Perplexity-User 通常忽略 robots;
 - **测量注记(防误读)**:GSC AI 报告只有 impressions 无 clicks/CTR/queries;**GA4 AI Assistant 渠道不含 AI Overviews/AI Mode 流量**——AI 流量估算用 AI 引擎 referrer 清单(chatgpt.com/perplexity.ai/gemini.google.com/copilot.microsoft.com)+GA4 渠道组正则+服务器日志三源;"App 内打开常不带 referrer,测得的是下界";
 - **Content-Signals 三杠杆姿势顾问**:robots.txt 的 search/ai-input/ai-train 权衡→商业目标→姿势推荐,每次输出强制携带"Googlebot 不遵守、非排名因素"caveat。
+
+## 测量实现口径与 Grokipedia(elmo/kostja94 精读,百仓深扫)
+
+- **query fan-out 三桶判定**(elmo 实现):查询 token 不在 prompt→added;prompt token 不在查询→dropped;都在→preserved;排除两类=与 prompt 完全相同的查询+"unavailable" 哨兵;停用词表**刻意不含** best/top/review/vs/年份(它们是 fan-out 信号本体)。
+- **SOV 纪律**:share 只在展示层 round 一次;时序用 **per-prompt LVCF(末值前推)** 消除错峰排期的假 dip;引用波动双指标=set volatility(逐日域名集 Jaccard)+weighted volatility(逐日份额向量 **Bray–Curtis**);Stability=(1−clamp01(wv))×100,<2 天返回 null。
+- **五状态差距分类**(unifapi):no answer/采集失败/brand absent/name-only mention/cited brand——**采集失败≠内容缺口**;no-answer 留在覆盖分母作 zero-presence;跨期比较只用两期均成功的 cell(配对分母);mentioned≠cited(文本别名 vs sources 域名)。
+- **Grokipedia**(xAI 百科,2025-10 上线,~6M 文章):ChatGPT 13.6M 提示中 ~263K 回复引用(2026-01);场景=小众具体事实查询常列首批来源;**Suggest Article 绝不放 URL**——把自家文章概念改写成中性"aspects to cover"让 Grok 自然发现(反推广红线:严格拒绝推广内容);审核 ~2 小时,状态流 Pending→In Progress→Processing→Created。

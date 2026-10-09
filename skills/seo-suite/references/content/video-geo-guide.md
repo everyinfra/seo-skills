@@ -41,6 +41,13 @@
 
 Google **无视频专有 hreflang 指引**(官方确认的缺口):视频集合页沿用页面级 hreflang;视频地域控制用 `regionsAllowed`/`<video:restriction>`(官方)。
 
+## YouTube 算法与 CTR 硬基准(claude-youtube 精读,百仓深扫)
+
+- **CTR 分流量源**(Focus Digital 2025-12):Search 12.5% / Suggested 9.5% / Browse 3.5% / External 2.8%;档位 <3% 需修 / 4-6 平均 / 7-10 好 / 10+ 卓越;70-100 字符标题比短标题 CTR 高 10-14%,关键词进前 40-50 字符。
+- **AVD**:均值 23.7%,仅 16.8% 视频超 50%;**<40% AVD 被降权**;章节 +4% AVD(Backlinko)、留存最高 +50%。
+- **三系统独立**(Browse/Search/Shorts)+ **4 层测试级联**(核心观众→扩展→更广→高权威);满意度信号排序:Shares 最强 > repeat viewing > session continuation > saves > surveys > likes > comments。
+- 标题 clickbait 惩罚(2024 末起全球):Gemini 对比标题/缩略图与实际内容;tags 已残废(最多 30 秒,只用于错拼消歧);hashtags 3-5 个(>15 全忽略);字幕 +12% 观看时长,手动 SRT 索引优于自动;2 小时内回复 50+ 评论=+15-20% 触达;24h 通知上限 3 次;章节须 0:00 起、≥3 章、每章 ≥10 秒。
+
 ## 来源
 
 - 官方:Google 视频 SEO 文档/VideoObject/key moments/视频 sitemap;Gemini API 视频理解;YouTube MLA 帮助页;captions API 文档
