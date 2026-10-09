@@ -4,6 +4,7 @@
 > 目标是提高真实内容的可发现性、可理解性和可验证性，不把 HTML 形状、Schema、
 > 域名后缀或自发转载次数包装成已知的 AI 排名公式。
 > 本文件的证据约束优先于本包其他参考文件中的数字和字数建议。
+> 可引用的案例数字、行业研究与论文清单见 [geo-evidence-bank.md](geo-evidence-bank.md)（awesome-generative-engine-optimization 仓库吸收，2026-10-09）。
 
 ## 一、先区分证据范围
 
@@ -129,6 +130,8 @@ NeurIPS Datasets & Benchmarks 2025；有公开代码/数据）考察问答与商
 **预注册标定纪律**(respectaso):评分曲线必须实测拟合而非手调——327 官方值+90 负样本、30% holdout(按 crc32 哈希切分防泄漏)、Spearman/Pearson/MAE 三指标;**预注册闸门**(见数前固定:held-out Spearman≥0.25 且超旧模型);三版本号独立 bump 才触发历史重算;"NEVER hand-tune these: refit under pre-registered gates"。任何套件评分器的维护纪律。
 **文件治理三法**(boraoztunc):①拒绝留痕——上游技能审计后拒绝理由全部写入 NOTICE("共享同一模板、描述不可区分→降低路由质量");②**一 trigger 一技能**(两个近同技能竞争同一 trigger 会降低路由);③采纳时纠错留痕(补 -webkit- 前缀/对齐参数,写明)。
 
+预注册标定的完整展开(官方数据锚点法/crc32 按 term 切分/保序回归 PAV/三版本号重算/twin-row 一致性/新评分器上线十项清单):见 [scoring-calibration.md](../research/scoring-calibration.md)。
+
 ## 官方指引与内容政策增量(claude-seo 深读,2026-10-09)
 
 来源:[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-geo/references/google-ai-optimization-guide.md`、`skills/seo-agentic/references/vendor-matrix.md`(该仓自标"一手来源综合,2026-09-23 复核")。
@@ -139,3 +142,41 @@ NeurIPS Datasets & Benchmarks 2025；有公开代码/数据）考察问答与商
 4. **Merchant Center 两条可执行 AI 内容要求**(有具体执法面):AI 生成产品图必须带 IPTC `DigitalSourceType: TrainedAlgorithmicMedia` 元数据;AI 生成的产品标题与描述须在 feed 中单独指定并标注为 AI 生成。QRG §4.6.5(规模化内容滥用)/§4.6.6(低努力主内容)是对应罚则面。
 5. **厂商数字红旗**(vendor-matrix 明令不引用):Cloudflare 的 markdown token 削减数字为厂商来源;WebMCP"token 效率"百分比只追溯到营销帖、无可复核基准;WebArena 等 agent 基准测的是**模型**不是站点质量;无受控公开研究把 accessibility-tree 质量或 WebMCP 与 agent 任务成功率挂钩——全部按假设处理。
 6. **agent 客户端事实的保鲜纪律**(可借鉴的方法):该仓 vendor-matrix 每行带来源分级 P(一手)/S(二手)/C(冲突),60 天以上行引用前必须重查;`CHECKED_ON` 常量与文档同次提交更新——快变事实"只在带日期的表里活,不散落正文"。
+
+## 证据阶梯、测量纪律与知识治理执行面(qiaomu-seo 深读 2026-10-09b)
+
+来源:[joeseesun/qiaomu-seo](https://github.com/joeseesun/qiaomu-seo) `references/{ai-search,performance-measurement,execution-sampling,knowledge-freshness}.md` + `scripts/validate_{audit,knowledge}.py`。
+
+### AI 搜索证据六级阶梯(ai-search.md;替代笼统的"AI 可见性")
+
+`eligible`(按平台文档条件可访问)→ `retrieved`(系统确实使用/呈现了来源)→ `cited`(显式引用带链接)→ `mentioned`(实体/品牌被点名)→ `recommended`(进入优选短名单)→ `converted`(可测的下游用户行为)。**任何阶段不得坍缩成"AI 可见性提升"一句话**——mention≠推荐、一次引用测试≠未来答案、检索爬虫≠引用爬虫。观察协议必记:查询集及选择理由、provider+产品 surface、日期/市场/语言/设备/登录态、答案+引用+被引 URL+提及措辞+推荐态;结论重要时重复观测或独立复核。手工 prompt 检查按"抽样观察"归档,不按"排名报告"归档。OpenAI 三 bot 显名分立:`OAI-SearchBot`(自动搜索发现)/`GPTBot`(训练)/`ChatGPT-User`(用户触发,不一定遵守同套 robots);Perplexity 以 `PerplexityBot` 为搜索爬虫,bot 身份影响结论时核已公布 IP 段。
+
+### 知识分类修正:实为五类(knowledge-freshness.md)
+
+前批记"四分类",实际该仓是五行表:stable principle / current platform rule / observed market state / **estimate(第三方指标:关键词量、流量、外链、难度——必须带具名 provider+方法+日期,永不作为 ground truth 呈现)** / hypothesis。套件引用任何工具数字时按 estimate 类处理。
+
+### 官方文档冲突处理四则 + 特性生命周期
+
+冲突时:①对具名 surface 取"更新且更具体"的产品文档;②两个都可能是真的时不抹掉更宽的旧陈述(例:生成式 AI 专属报告与"生成式 AI 流量计入 Web 总报告"可并存,先核当前 property 再断言);③显式写出 rollout/账号可用性/地区/报告范围的不确定性;④不把产品公告直接转成普适实施要求。生命周期六态:`experimental/limited/supported/unsupported/deprecated/removed`;**分层命名**——某搜索特性废弃后 Schema.org 类型可能仍合法、SC 维度可能过渡期仍在,声明时指明是哪一层变了。
+
+### validate_knowledge.py 的执行面(比前批概念记录更硬)
+
+- stability 实为三档:stable/**mutable/volatile**(volatile 是最快过期档);每源必填 `reviewed_at`+`review_after_days`(正整数),逾期默认 warning,**`--strict-stale` 才 fail**——CI 可分档执法;
+- URL 强制**绝对 HTTPS**且域名必须在 `allowed_official_domains` 内;source id 与 URL 双重去重;
+- **`deprecated_claim_patterns` 禁用词机制**:把"已知过期说法"写成字符串模式,对 SKILL.md + references/*.md 做 casefold 子串扫描,命中即 fail——过期知识的淘汰从"靠自觉"变成"可执行词表";
+- 脚本自我声明边界:不抓网、不证明源内容未变,只查结构/域名政策/重复/逾期——validator 也诚实标注自己的证明力。
+
+### validate_audit.py 的执行面(schema 之外的硬约束)
+
+- `missing evidence` 级 finding 的 status 只能是 `warning/not_checked`,**不得是 pass 或 fail**——"没查"永远不能伪装成结论;
+- `observed/inferred` 级 finding 必须附 `evidence_refs`(kind+ref),空引用即 fail;
+- `template_sample` 模式缺 coverage.limitations → 警告;**六类 mutable 类目**(structured_data/commerce/image_search/video_search/ai_search/policy)存在 finding 而 `source_review` 缺失 → 警告——把"平台规则易变"编码进执法;
+- action 悬空引用(指向不存在的 finding id)、重复 finding/action id、非 advisory 模式空 targets,全部 fail。
+
+### 测量与取证的证据纪律(performance-measurement.md + execution-sampling.md)
+
+- **CWV**:field 数据定级、lab 数据诊断,两套不可互证;Lighthouse 分数不证明 field CWV、排名或业务影响;当前阈值(LCP 2.5/4.0s、INP 200/500ms、CLS 0.1/0.25,P75)在长期标准里使用前须重开官方源;CrUX/SC/RUM/PSI/Lighthouse 覆盖的 URL、人群、时段、设备可能全不同。
+- **Search Console 数据边界**(引用 SC 数字前的自查单):匿名查询进总量不进表;加维度会掉数据;API 返回的是内部限额下的 top 行而非穷举;页/媒体级聚合口径不同;average position 是聚合诊断量不是固定排名;**禁止用总量减过滤表,把差集当"完整隐藏关键词集"**。
+- **采集五层,用最轻够用层**:repo/config(路由/元数据/sitemap 逻辑)→ HTTP 静态响应 → 渲染后 DOM → 一方工具(SC/日志/CrUX)→ 当前 SERP 观察;静态与渲染证据是**不同工件**,finding 必须注明由哪层支撑。重跑清单记日期时区/市场/语言/设备/登录态/工具版本/失败与限流/输出校验和;**不存凭据、原始 cookie、私有查询串**。
+- **变更验证四里程碑**:`implemented`(源码改+测试过)→ `deployed and observable`(线上 HTTP/渲染输出已变)→ `processed by search platform`(抓取/索引/canonical/增强证据已反映)→ `outcome observed`(合格窗口后的效果数据)。**只有第四里程碑支持效果声明**;部署或重抓成功不是排名/流量/转化成功——本地改完 HTML 只能称工程验收。
+- **SEO 实验七要素**(可逆且多页面可比时):一个可证伪假设+机制、防交叉污染的处理单元(页/模板组)、看结果前定好人群/排除/分配/基线窗、主指标+护栏+最小实用效应+观测窗+停止规则、避免模板/内链/内容/埋点同时改(除非整包即处理)、监控实现均等与重抓进度、**正/负/零/不定结果全部报告,不把噪声改成胜利**;无可信对照的 before/after 只是观察性证据,迁移/事故类用变点证据+竞争解释并降置信度。

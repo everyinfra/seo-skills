@@ -62,3 +62,40 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · build/geo-content-optimizer/references/quotable-content-examples.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/build/geo-content-optimizer/references/quotable-content-examples.md)（Apache-2.0）
 - 一手资料：[Google：规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)、[Google：有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)
+
+## (kostja94 深读 2026-10-09b)精选摘要与 AI 引用的结构规格
+
+> 来源：[kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) 的 `seo/on-page/featured-snippet`、`content/article`、`seo/content/{eeat-signals,content-optimization}`、`content/copywriting`、`platforms/linkedin`。数字为该仓库口径（其 featured-snippet 数据引自 Semrush/SEJ，见其文末参考）。与本文件前半部分互补：前半讲"单段怎么写"，这里讲"页面级可引用构件"。
+
+### 段落被摘取的物理规格（featured-snippet）
+
+- 格式份额：段落 ~70% / 列表 ~19% / 表格 ~6% / 视频罕见；45 词是最常被摘的段落长度，目标区间 40-60 词，放 H2 后第一二句。
+- 列表：`<ol>`（步骤/排名）与 `<ul>`（无序项）用语义标签；**Google 可把整页 H2 拼装成列表摘要——H2 本身要能当列表项读**。
+- 表格：关键词进列/行头；语义 `<table>`；无空单元格、单位一致、数据现行。
+- 语气客观如词典条目：去观点、去情绪词，支持 E-A-T。
+- 争取条件：先排进前 ~20 蓝链，瞄准 2-5 位；长尾问式查询为主。Bing Q&A 有"记忆"：摘要一旦获得，蓝链下滑也可能保有。
+- 答案旁配优化图片（alt/文件名/图注齐全）可占缩略图位，CTR 最高翻倍。
+- 2025-26 现实（仓库口径）：AI Overviews 出现于 ~47% 美国搜索、取代 83%+ 精选摘要且 83% 搜索零点击——**目标从 CTR 转为"被引用"**；摘要结构优化同时服务 AI 引用与 PAA。
+
+### 文章级可引用构件（article-content）
+
+- **TL;DR（50-100 词加粗）或 Key Takeaways（5-7 条）二选一**，放导语后——AI 引擎更常引用带这些元素的内容。
+- **QAE 模式**：H2 问句 → 2 句答案 → 证据（数据/例子/列表）；答案块 100-200 词；每个 H2 后前 40-60 词给直接答案。
+- 段落 40-80 词；每 2-3 段插列表/H3/图/引注框打断长块。
+- **信息增益四源**（反"共识复读"）：反共识（须有证据支撑）/ 时效新鲜度（竞品内容与 LLM 截止之后的数据）/ 一线从业者（SME）引语 / 专有数据（自有调查、内部基准）。写前先审 SERP 列出"共识层"，只写缺口。
+- **内容密度 > 字数**：每 100 词的独特实体/数据点/洞见才是单位；800-1500 词含 3+ 独观点常胜长篇重述。
+- 意图词数基准：Validate 1200-2000 / Explore 2000-3500 / Compare 600-1200 / Do 900-1500 / Know 300-800。
+
+### E-E-A-T 可验证构件（eeat-signals）
+
+- **体验信号**：案例研究（挑战→方案→结果）、原创研究、第一手测试（"我们实测了 X"）、真实用户证言。
+- **作者块**：真名 + 头衔照 + 与文章主题挂钩的资历 + 可验证链接（LinkedIn/个人站，对齐 Person schema `sameAs`）；位置默认文末，新闻/YMYL 可置顶，侧栏必须做移动端回退；多作者标 "Written by / Reviewed by"。资历不得夸大或虚构。
+- **引用**：数据统计内联引用；≥5 条引用时文末列 References；内联链接优先、学术风格用编号；外链指向权威源。
+- YMYL（健康/财经/法律/安全）抬高全部门槛；AI 辅助内容发布前人审、核实并加引用。
+
+### 零散规格
+
+- 关键词密度 0.5-1.5% 为参考区间、**非排名因子**——超 ~2-3% 且读感生硬才需要降；优先自然落位：标题、H1、前 100 词、1-2 个 H2。
+- **LinkedIn About 按 40-60 词 answer-first 块写**：公开可索引、可被 AI 直接摘引；headline 当 title tag 写（主词+价值主张）；短 feed 帖登录墙内对搜索与 AI 均不可见，勿指望其 GEO。
+- 标题公式（copywriting）：How to [outcome] / [Number] Ways to [benefit] / [Problem]? Here's [solution] / [Before]→[After]；≤60 字符；数字+力量词 CTR +~36%。
+- 引语规则与本文件"示例五"互证：观点=[姓名]（[职务]，[机构]）在 [日期] 的 [出处] 指出——两来源格式一致，不可编造。

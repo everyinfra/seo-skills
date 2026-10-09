@@ -144,6 +144,8 @@
 
 **竞品词差三桶**(Ryze competitor-gap,替代单一大 gap 概念):Gap(对手 top-20、我零曝光→新建内容)/Behind(双排但对手领先 ≥5 位→改现有页)/Ahead(我反超——简要报,这是护城河)。对手排名是估算、我方 GSC 是实测,**输出必须标注哪个数是哪个口径**;竞品品牌词默认丢,除非要做 vs/alternative 页——单列候选。
 
+趋势判读要落到原始数据时,Google Trends 四分法与 Google Scholar organic 的字段级模型(主键/merge/去重/免费替代路径)见 [serp-data-models.md](serp-data-models.md)。
+
 **Impact × Confidence 双轴评分**(ericosiu content_attack_brief,可直接代码化,已同步进 scripts/gsc_mining.py 头注):Impact(0-10)=量档(≥10k+3/≥2k+2/≥500+1)+CPC 档($15+3/$5+2/$1+1)+漏斗档(BOFU+2/MOFU+1)+趋势档(>50%+2/>20%+1);Confidence(0-10)=KD 档(≤10+4/≤20+3/≤35+2/≤50+1)+现有位次(≤10+3/≤30+2/≤50+1)+主题权威加成(该词落在本站内容指纹主题内且指纹计数>5,+2);优先级=Impact×Confidence。**趋势判读**:12 个月量史取首 3 月均值 vs 末 3 月均值,>50%=Surging/>20%=Rising/>5%=Growing/±5%=Stable/≥-20%=Declining/更低=Falling。**漏斗词表**:BOFU 触发词=agency/services/hire/pricing/tools/software/best/vs/alternative/platform/cost/price/company/firms/consultant/consultancy/outsource;MOFU=how to/guide/strategy/examples/case study/roi/tutorial/template/checklist/tips/framework/what is/explained/overview/comparison。**执行路径分派**:KD≤20 且无页→全自动新建;已有页且 KD≤50→全自动刷新;KD≤40→半自动(AI 起草人审);KD≤60→人写 AI 优化;更高→专家写+外链。**衰退检测 28d vs 90d 口径**:90 天点击×(28/90) 归一成日均再比,仅 c90>5 才判,c28<c90×0.7(即降 >30%)记衰退。**竞品 gap 硬阈值**:对手 best_position ≤20 且我 >50(或零曝光),过相关性词表+噪音黑名单双滤(login/coupon/what is/wikipedia 类不进 gap)。
 
 ## 来源
@@ -154,3 +156,25 @@
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/keyword-research/references/keyword-intent-taxonomy.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/keyword-research/references/keyword-intent-taxonomy.md)（Apache-2.0）
 - 一手资料：[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
 - 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（西语 es-419 组合经 Google hreflang 文档核实；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）
+
+## (ericosiu 深读 2026-10-09c)转化信号词表/异议分类/闭环回读/意图交付闸门
+
+**交易意图的页面侧可机检词表**(conversion-ops `cro_audit.py`,946 行,纯 requests+BS4 无头浏览器外审计——反向用途:给交易/商业调研词的落地页做「意图满足度」静态打分):CTA 动词词表=get started/sign up/start free/try free/book a demo/schedule/download/buy now/add to cart/subscribe/join/register/request/claim/unlock/learn more/contact us/enroll/apply now/shop now(无任何命中即缺转化机制);社证词表=trusted by/used by/case stud/success stor/as seen in/logo+量化社证 `\d+\+?(users|customers|clients|companies)`;紧迫词表=limited time/only N/last chance/countdown/flash sale;信任词表=guarantee/money-back/refund/free trial/cancel anytime/GDPR/SOC 2/HIPAA/ISO/PCI/certified。**8 维权重**:CTA 可见性 0.20 最高,标题清晰/社证/表单摩擦各 0.15,信任/移动/速度各 0.10,**紧迫仅 0.05 且无紧迫时地板 35 分——紧迫非普适要素,按意图取舍**。表单摩擦分档:≤2 字段=90/3-4=75/5-6=55/7-10=35/>10=15,电话字段再 -10(弃填第一因),通用提交文案(submit/send)换利益导向文案。H1:无 H1 -30,词数<3 或>15 各 -10,多 H1 -10;首 CTA 位于页面前 30% HTML=above-fold 代理。行业基准(avg/上四分位):saas 62/78、ecommerce 58/74、agency 55/72、healthcare 52/68、b2b 56/73。
+
+**异议五类=BOFU 商业调研细分**(revenue-intelligence `gong_insight_pipeline.py`):销售通话异议分类 pricing/timing/competition/authority/need——每类对应一族 BOFU 内容词(价格类 price/cost、时机类 when to switch、竞品类 vs/alternative、决策权类 who decides、需求类 do I need);购买信号四枚=budget confirmed/timeline mentioned/decision maker engaged/champion identified;竞品提及带情感(positive/negative/neutral)→vs 页选题与措辞来源。**通话异议挖掘是 GSC 词表之外的 BOFU 词源**(搜索措辞 vs 口头措辞互补)。内容→收入归因三模型 first-touch/linear/time-decay;**漏斗某阶段零归因=内容缺口**,替代纯流量 gap。
+
+**闭环回读协议**(closed-loop-analytics-upgrade,SEO/AEO/GEO 层):追踪面=GSC clicks/impressions/CTR/位次/query×page 组合、GA4 sessions/engaged/conversions、Ahrefs 排名/外链/词移动、**AI 搜索可见度(AIO/ChatGPT 引用/Perplexity)**、**CMS 页面变更日志**(判定因果的锚)。每次晋升必填回读 12 字段:change/owner/baseline window/candidate window/source systems/primary metric/secondary metrics/winner/caveats/decision(promote|keep testing|rollback|unproven)/next patch/next readback date。晋升=候选赢**主指标**(先定主指标再看结果,否则 KPI 卡拉 OK)或暴露可复用信号且下行指标不显著变差;不晋升=量太低/归因太脏/季节性可解释/连接器失败/只有作者喜欢。只读拉数自由,外部写入(发布/CMS/广告/CRM)一律审批。
+
+**SEO 实验晋升闸门**(growth-engine `experiment-engine.py`):胜出=**p<0.05 且 lift≥15%** 双条件;统计=bootstrap CI(1000 次)+Mann-Whitney U;**SEO 类低流量需 30 样本/变体**(content/email 仅 10);赢家自动进 playbook,写新内容前先查 playbook 应用已证规则。
+
+**AI 写作检测=引用资格层**(x-longform-post 24 模式清单+content-ops `experts/humanizer.md`):第一红线=「不是 X,而是 Y」否定平行结构;禁词表(delve/leverage/seamless/robust/testament/pivotal/holistic/paradigm/tapestry/showcase…)在 **AEO/GEO 引用场景惩罚放大**——AI 概览倾向引用不像 AI 写的源;humanizer 专家在面板中权重 1.5x。发布闸门 CI 化(content-ops `scripts/content-quality-gate.py`):评分器先行→阈值过滤(默认 60,可调 75)→conservative 模式全部放行但带质量旗标→失败原因 top3 汇报;**0 篇通过不得静默**,必须提示降阈或改质量。
+
+**意图页面的元素级变体优化**(autoresearch,Karpathy 式):每元素(H1/副标/CTA/痛点段/社证)10 变体×3 轮进化+跨元素杂交,5 专家**单次 API 批打全部变体**;止损=80 分或 3 轮;<70 不发布/70-79 攻最弱维/85+ 放心发;5 轮仍不到 80=定位问题非措辞问题。落地页五维=first_impression/clarity/trust/urgency/would_convert;广告五维含 **relevance=匹配受众意图**;邮件=would_open/would_read/would_click/would_reply/spam_risk。
+
+**社媒分发打分**(podcast-ops+shortform-idea-grill):病毒分=**Novelty×0.4+Controversy×0.3+Utility×0.3**(80+优先发/60-79 填档/40-59 仅补空/<40 砍);短视频双轴独立打:virality(受众广度 25%/新颖 20%/赌注 20%/分享性 20%/证据 15%)、3 秒钩子(清晰 30%/具体 25%/张力 20%/可信 15%/回报对齐 10%),priority=0.4×virality+0.4×hook+0.2×payoff_confidence;**钩子必须可偿还**(3 秒前提成立、后续完整兑付)。竞品 outlier=>2× 频道均值;内容缺口优先「独特专长交集」或「独有数据」。播客→博客输出规范:主词+量/难度估、3-5 副词、meta 155 字符、H2 与 content atom 一一映射、1500-2500 词。
+
+**数据呈现选型**(growth-signal-charts):单一百分比→大数字标注/跨类目量级→条形/两时点两组→斜率图/时间序列→折线/成分合计→瀑布;每图左下角引用(出版方+短题+日期)。
+
+**组合增量**:①SEO 策略评审 10 专家面板(content-ops `experts/seo-strategy.md`)含 **AI/AEO 专家**(AI Overviews/ChatGPT 引用/Perplexity)与 4:1 ROI 闸门,评审判据=数据支撑/可执行具体性/ROI 估算质量/风险评估/可行性/优先级对齐;②视频资产组合脊柱公式 `[Viewer] should believe [verdict] because [proof], then use [framework] to reach [outcome]`——persona 层下游,质量闸 hook/clarity/proof/pacing/payoff 各 0-20;③内容生命周期状态机(content-os-portable-starter,fail-closed):SIGNAL→CANDIDATE→EVIDENCE_READY→DRAFT→REVIEW→APPROVED_FOR_DRAFT_WRITE→DRAFT_WRITTEN→APPROVED_FOR_PUBLISH→PUBLISHED→READBACK→LEARNING,每步持久化+可归因+幂等+缺审批即阻塞;④eval 基线回归模式:保存 score_pct 基线,后续运行比 Δ 即报警——关键词/CTR 监控同构可直接套用。
+
+本节来源(均为深读,2026-10-09):[ericosiu/ai-marketing-skills](https://github.com/ericosiu/ai-marketing-skills) 16 个目录——conversion-ops(cro_audit.py 源码)、revenue-intelligence、closed-loop-analytics-upgrade、growth-engine、autoresearch、content-eval、content-ops(SKILL.md+experts/seo-strategy.md+experts/humanizer 摘要+scripts/content-quality-gate.py 源码)、x-longform-post、podcast-ops、shortform-idea-grill(references/scoring-rubric.md)、short-form-pipeline、growth-signal-charts、video-content-engine、leveling-up-content-engine、content-os-portable-starter、eval(run-eval.ts);基准分/阈值/权重均为该仓内置常量,非独立研究,引用时注明出处。

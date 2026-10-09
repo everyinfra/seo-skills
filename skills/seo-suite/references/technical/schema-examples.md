@@ -104,3 +104,24 @@ WebPage 节点（`isPartOf`、`breadcrumb` 等关系）可以用来表达页面�
 
 - 思路参考：[coreyhaines31/marketingskills · skills/schema-markup/references/schema-examples.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/schema-markup/references/schema-examples.md)（MIT）
 - 一手资料：[结构化数据简介](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)、[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[Article](https://developers.google.com/search/docs/appearance/structured-data/article)、[Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)、[JSON-LD 1.1（W3C）](https://www.w3.org/TR/json-ld11/)、[schema.org](https://schema.org/)
+
+## 弃用类型替换决策与工具链时间线(claude-seo 深读 2026-10-09b)
+
+与上文"富结果状态速查"互补,聚焦**被问到弃用类型时给什么替代**:
+
+| 用户要 | 替代方案 |
+|---|---|
+| `ClaimReview` | 无 SERP 替代;新闻场景用 `Article`+`dateline`;Fact Check Explorer 仍在消费该标记,事实核查出版商可保留 |
+| `EstimatedSalary` | `JobPosting`+`baseSalary`(单职位口径) |
+| `LearningVideo` | `VideoObject`(仍展示) |
+| Course Info(单课详情) | **Course List 轮播**(Course+ItemList,仍支持) |
+| `SpecialAnnouncement` | 有时限用 `Event`;否则 `Article`/`WebPage` |
+| `VehicleListing` | `Product` 带车辆属性(仅线上在售时) |
+| `HowTo`(为 SERP) | 无;用文章结构+清晰 `<h2>` 步骤标题,排名收益不再由 schema 驱动 |
+| `FAQPage`(为 SERP) | 无(2026-05 全站停展);真实用户提交问答页用 `QAPage` |
+
+- **工具链下线时间线(别把用户送去死验证器)**:CourseInfo/EstimatedSalary/LearningVideo/SpecialAnnouncement/VehicleListing 于 **2025-09-09** 从 Search Console 富结果报告与富媒体搜索结果测试中移除(SC API 拖到 2025-12);Practice Problem 2025-11-05 发弃用通知,2026-01 起工具支持移除、2026-01-06 文档删除。
+- **反直觉存活项**:Book Actions **未弃用**——2025-06 的下线横幅 2025-11-05 撤回(仍有 Search 功能在用);Dataset 未停,只是仅 Dataset Search 消费;QAPage 2026-03-24 还**扩展**了评论线程属性;教育问答(Quiz/`eduQuestionType=Flashcard`)仍支持。
+- **JS 生成 schema 的时效警告**(官方指南 2025-12-10 版):JS 动态生成的 Product 标记会让 Shopping 抓取**更少、更不可靠**(快变的价格/库存)——时效敏感标记(尤其 Product/Offer)放进服务端首屏 HTML。
+- **检测陷阱**:无 `@context` 或 `@type` 的 JSON-LD 块无法挂到实体(块内 rating 到不了 Product);先复查是否 `@graph` 包裹(合法写法)再报错。
+- 生成侧校验补充:占位文本、相对 URL(应绝对)、非 ISO 8601 日期,均按错误处理;激励性评价必须在页面上**醒目披露**,否则拒绝生成 Review 标记。

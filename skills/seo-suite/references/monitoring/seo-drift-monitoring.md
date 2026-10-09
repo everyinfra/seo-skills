@@ -137,3 +137,11 @@ L4 校验项补:重定向须 1 跳且 301;受影响 URL 无 4xx/5xx 尖峰;sitem
 - **判定五态**:lift_lo>0→likely_positive;lift_hi<0→likely_negative;跨零→inconclusive;**treated pre<5→insufficient_data;控制页<3→insufficient_control——数据不足本身就是一种 verdict,不许硬给方向**。
 - **confounders 块**(每次必返):data_regime_breaks(GSC impression bug 2025-05-13~2026-04-30、num=100 弃用 2025-09-11,窗口重叠即检出)→position_reliable 标志;parallel_trends_assumption;algo_update_note——"查 Search Status Dashboard change_date 前后 ~2 周的 core/spam 更新;DiD 经控制组吸收全站性更新,吸收不了页面类型特定的更新"。
 - **iannuttall 变体**(equal-finalized-calendar-windows-v1):前后等长 finalized 日历窗(GSC America/Los_Angeles 时区),可选 controlScope/controlTarget;adjusted delta = control-ratio counterfactual;**置信度纪律:GSC 证据 partial→confidence 降一档;每窗 finalized 天 <7 或 after 窗被截→verdict=not-enough-data,不给方向**;caveats:position 是 impression-weighted;query 匿名化缺行≠零流量。
+
+## 操作参数与规则边界增量(claude-seo 深读 2026-10-09b)
+
+- **Rule 1 的弃用类型豁免**:schema 全消失时,仍受支持的类型(Product/Review/LocalBusiness 等)按"富结果将快速掉出 SERP"处理;**已停展类型(FAQ/HowTo 等)的消失不算富结果损失**,降级记录——避免把清理死标记误报成 CRITICAL。
+- **操作参数集**:baseline 可 `--skip-cwv`(无 API key 场景);compare 可 `--baseline-id N` 指定历史基线,**默认取最近一条**;history 支持 `--limit`;compare 完成后可把 JSON 结果喂报告器生成 HTML 漂移报告(人读交付物)。
+- **错误路径纪律**:无基线→提示先跑 baseline,不硬比;URL 不可达→报 fetch 错误,**不猜页面状态**;SSRF 拦截(私网 IP)→绝不绕过;SQLite 库不存在→首次使用自动建库(非错误);存储层查询一律参数化占位符,不做字符串拼接。
+- **交叉路由补全**(在现有四条之外):canonical 变更/移除→索引与规范化审计;状态码 2xx→4xx/5xx→技术诊断;OG 标签移除→社交分享分析;H1 结构变化→内容与 E-E-A-T 复核。
+- **CWV 采集失败的处理**:CWV 字段存 null 且比较时跳过 CWV 规则——缺数据跳过规则,而不是拿旧值顶替。

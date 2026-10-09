@@ -105,3 +105,11 @@
 - 框架与阈值：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-backlinks/SKILL.md`、`skills/seo/references/backlink-quality.md`（MIT）
 - 层级式源选择与"冲突时信高层但注明分歧"：[zubair-trzada/dataforseo-claude](https://github.com/zubair-trzada/dataforseo-claude) `agents/seo-backlinks.toml`
 - 免费源偏差与复合公式：claude-seo `skills/seo/references/free-backlink-sources.md`
+
+## 数字禁令与交付前自查(claude-seo 深读 2026-10-09b)
+
+- **Common Crawl 单源硬禁令(比 4/7 闸门更严)**:CC 是唯一数据源时,**任何数字分都不允许**——总分、因子分、"约/估"值一律禁止;每个本应是数字的位置写字面量 `Not Assessed`。理由:低数据量的数字分暗示"健康差",而真相只是"没数据"。
+- **一致性校验闸门**:出报告前跑结构校验(source_score_consistency)——两类 FAIL:①有数字分但无可计分源(CC-only 场景);②任何标 `source: not-assessed` 的发现携带数字字段。FAIL→把违规数字替换为 `Not Assessed` 重跑,通过后才许呈现。
+- **交付前事实核查清单**:`@type` 缺失的 JSON-LD 块先复查是否 `@graph` 包裹(合法,非畸形);**JS 渲染页的"链接消失"必须标 unverifiable_js 而非 link_removed**(假阴性);H1 疑似计数器/统计数字(非语义标题)时注明;**互链模式检测**——出链与已验证入链源比对,A↔B 互指即标记;健康分不足 4/7 因子→报"数据不足",永不给误导性数字分。
+- **来源标签纪律**:报告中每个指标带来源标签+置信度;每个"未找到"必须三分:**未爬取 / 低于阈值 / 错误**;社交媒体页面标 unverifiable_js;平台检测要与真实信号吻合(wp-content、Shopify CDN 等);总览的来链域数须与实际已验证链接清单一致——**无数据来源的主张不写**。
+- **免费源操作边界**:Moz 免费档限速 1 请求/10 秒(脚本内置等待);Bing 的双站对比仅当**两个属性都在同一 Bing API 账号下验证**;Keywords Everywhere 仅 rank 类指标(0-10 Open PageRank+来链域数),无锚文本与单链数据,有 Moz 时不得替代 Moz。

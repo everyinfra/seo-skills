@@ -82,3 +82,52 @@ curl -sIL https://example.com/old-page | grep -iE '^(HTTP/|location:)'
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/technical-seo-checker/references/http-status-codes.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/technical-seo-checker/references/http-status-codes.md)（Apache-2.0）
 - 一手资料：[HTTP 状态码与网络错误](https://developers.google.com/search/docs/crawling-indexing/http-network-errors)、[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)、[更改网址的网站迁移](https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes)、[规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)、[MDN HTTP 状态码](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
+
+## 安全头/缓存/状态码分级审计口径 (siteone-crawler 源码深读 2026-10-09b)
+
+> 来源：[janreges/siteone-crawler](https://github.com/janreges/siteone-crawler)（Rust，MIT）`src/analysis/security_analyzer.rs`、`caching_analyzer.rs`、`redirects_analyzer.rs`、`page404_analyzer.rs`、`content_type_analyzer.rs` 逐行深读。四档严重度：critical/warning/notice/OK。这是工具判定口径，非 Google 官方规则；安全头本身不是排名因子，但混合内容与 HTTPS 直接影响抓取和页面体验信号。
+
+### 安全响应头 16 项检查矩阵（SecurityAnalyzer，仅 HTML 响应）
+
+| 头 | 缺失 | 命中其他情形 | OK |
+|---|---|---|---|
+| Strict-Transport-Security | **critical**（仅 HTTPS 页检查） | `max-age=0`=critical；**max-age < 31 天（2,678,400s）=warning** | max-age ≥ 31 天 |
+| Content-Security-Policy | **critical** | 有但被削弱=warning：`'unsafe-inline'`（同指令内有 `'nonce-'`/`'sha256-'`/`'sha384-'`/`'sha512-'` 时浏览器忽略 unsafe-inline，不算弱点）、`'unsafe-eval'`、或 `default-src/script-src/object-src/style-src/frame-src/connect-src/worker-src/child-src/manifest-src` 里裸 `*` | 无上述弱点 |
+| X-Frame-Options | warning | `SAMEORIGIN`/`ALLOW-FROM`=notice；其他任意值=warning | `DENY` |
+| X-Content-Type-Options | warning | 非 `nosniff` 值=warning | `nosniff` |
+| Referrer-Policy | warning | 非法值=notice | 8 个合法值（no-referrer / no-referrer-when-downgrade / origin / origin-when-cross-origin / same-origin / strict-origin / strict-origin-when-cross-origin / unsafe-url） |
+| Permissions-Policy | warning | —（有值即 OK） | 有值 |
+| Feature-Policy（旧） | warning（Permissions-Policy 已设则降为 notice"够了"） | — | 有值 |
+| X-XSS-Protection（已弃用） | **不设=OK（现代正确行为）**；`0`=OK | 设了 `1`/`1; mode=block` 等=notice，建议改用 CSP | 不设或 `0` |
+| Access-Control-Allow-Origin | 不检查 | `*`=warning；其他非 same-origin/none 值=notice | `same-origin`/`none` |
+| COOP / COEP / CORP | notice（普及度低，不苛求） | — | 有值（如 `same-origin`/`require-corp`） |
+| Server | 不设/空=**推荐（OK）** | **含数字（暴露版本）=critical**；含 Apache/nginx/Microsoft-IIS 名=warning；其他值=notice | 不设 |
+| X-Powered-By | 不检查 | **含数字=critical**；无数字=warning | 不设 |
+
+- **Set-Cookie 逐条评估**（多个 Set-Cookie 分行各查各的；单条 Expires 里的逗号不拆分）：缺 `SameSite`=notice；缺 `HttpOnly`=warning；**HTTPS 页缺 `Secure`=critical**。
+- 判定只在 `is_allowed_for_crawling` 且 content-type=HTML 且 URL 不像静态文件的响应上跑——安全头审计口径应限定"页面"而非资产。
+
+### 混合内容（HTTPS 页面上的 http:// 引用）
+
+- **critical（主动混合内容，浏览器直接拦）**：`<form action=http://>`、`<iframe src=http://>`、`<script src=http://>`、`<link rel=stylesheet href=http://>`。
+- **warning（被动混合内容）**：`<img|audio|video|source src=http://>`。
+- `<link rel=canonical/alternate/preconnect/icon>` over http **不算**主动内容（不当 critical）——canonical 指 http 是规范化问题，不是混合内容。
+
+### 重定向与 404 分级
+
+- 重定向表收录 **301–308** 全量：重定向 URL + Location 目标 + 发现页（Found at URL）三列；站点级分级 0=OK / 1–2 / 3–9 / ≥10。对应本文"内链直指最终 URL"：3–9 条就该在迁移清单里处理。
+- 404 表同样带发现页；**分级：0=OK / 1–2=notice / 3–5=warning / ≥6=critical**——与 Google"4xx 一律视为不存在"不同，这是站内链接卫生口径（内链打出 404 = 浪费抓取与链接权重，见 C6"只报不在 sitemap 内的死链"互补）。
+
+### 缓存策略分级（CachingAnalyzer）
+
+- 静态资产三分类（限 status 200、本站、静态文件，**排除 JSON/XML 动态端点**——它们 no-store 是正确的）：
+  - **Uncacheable**（warning，"static-assets-uncacheable"）：`no-store` 或完全没有任何缓存头；
+  - **ShortOrRevalidate**（notice，"<1 天"）：`no-cache`、max-age < **86,400s（1 天）**、或只有 ETag/Last-Modified 无寿命；
+  - **LongLived**：max-age ≥ 1 天（指纹化静态资产的理想值）。
+- 输出按 content-type × cache-type、domain × cache-type 两张表，各带 avg/min/max lifetime。缓存寿命着色：≤0 红 / <600s 品红 / ≤86,400s 黄 / >1 天 绿。
+- 审计建议口径：HTML 主文档短缓存正常；**带指纹的 CSS/JS/图片应 LongLived（≥1 年 + immutable 更佳）**；未指纹资产用短 max-age + 协商缓存。
+
+### 状态码分桶与页面重量（ContentTypeAnalyzer）
+
+- 每类内容（HTML/Script/CSS/Image/Video/Audio/Font/Document/JSON/XML/Redirect/Other）统计 count/总字节/总耗时/**20x/30x/40x/42x(420–499)/50x/ERR 六桶**——按内容类型看 5xx 常只炸某一类（如 Image 全 503）。状态码着色：2xx 绿 / 3xx 黄 / 4xx 品红 / 5xx 与网络错误红。
+- **页面重量预算**（按 HTTP Archive 移动端中位数取整）：直接子资源传输总量 > **2.5MB（2,500,000 字节）**=warning；请求数 > **75**=notice。只计直接子资源（img/script/link/css/font/media），`<a href>`/重定向/初始 URL/sitemap 条目不算其他页面的重量——是保守下界。

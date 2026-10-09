@@ -42,3 +42,15 @@
 
 - 思路参考：[squirrelscan/skills · skills/audit-website/references/OUTPUT-FORMAT.md](https://github.com/squirrelscan/skills/blob/main/skills/audit-website/references/OUTPUT-FORMAT.md)（MIT）
 - 一手资料：[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview)、[PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started)、[Search Console API](https://developers.google.com/webmaster-tools)、[富媒体搜索结果测试](https://search.google.com/test/rich-results)
+
+## 读脚本化审计器的 JSON 输出（codex-seo 深读 2026-10-09b）
+
+来源仓库 codex-seo 的 `scripts/analyze_*.py` 是一类典型输入：无头环境跑的确定性审计脚本（technical / performance / content / schema / images 等）。读这类输出时，在本文既有规则之上补四条。
+
+**1. 统一信封字段。** 每个分析器返回同一套 JSON 骨架：`cache_type`、`analyzed_at`、`url`、`url_slug`、`score`（0-100）、`issues[]`、`recommendations[]`，再加各自域字段。解读时先看信封再看域字段；`score` 是本地评分公式的产物，只在本工具内可比。
+
+**2. 数据来源标注决定可信度。** performance 输出带 `data_source` 字段：`"pagespeed_api"`（真实 PSI/Lighthouse 数据）或 `"heuristic"`（确定性启发式）。heuristic 模式下 LCP/INP/CLS 全是公式合成值（如 LCP = 1200ms + TTFB×1.6 + 字节/300 + 脚本数×80，各设上限 5.2s / 500ms / 0.35，总分下限 35），TBT 直接取 INP×0.7——这些数字绝不能当实测 CWV 引用，报告里必须标注为「估算/启发式」。API 不可用时会自动降级，输出里若没有 data_source 字段，先确认是不是降级结果。
+
+**3. 扣分制评分的语义。** technical 分数 = 9 个类别等权平均（不是加权），每类从 100 起扣固定分：robots 缺失 -18、sitemap<80 -18、含非 200 URL -16；noindex -25、非 200 状态 -40、canonical 缺失 -12/不匹配 -10；安全 = 基础 40 + 每个 header 12；structured_data/js_rendering/indexnow 是三档离散值（92/62、90/60、85/68）。schema 分：无任何标记 -35、每个坏 JSON-LD 块 -20、每个弃用类型 -10、缺推荐类型每个 -8（上限 -24）。知道扣分表才能反推「82 分」到底缺什么。
+
+**4. 隐藏依赖与预置文案。** content 分析器会跨读 `.seo-cache/pages/{slug}/geo.json` 旧缓存参与打分；schema 分析器读 `.seo-cache/site-meta.json` 的 `business_type` 判断 FAQPage 是否违规——缓存过期会让结论过期。`issues`/`recommendations` 是脚本里预写好的字符串模板，不是针对本站的定制建议；`parse_html` 会静默丢弃解析失败的 JSON-LD 块，所以 schema 列表只含合法块，坏块数量要看专门的 invalid 计数字段。生成的 schema 草稿里的 `[Placeholder]` 记号必须替换后才能用。另有反模式可学：双 UA 抓取对比（Googlebot 内容 > 默认 UA 的 1.25 倍 → 动态渲染/隐藏嫌疑）和字数<120 + SPA 标记（`__next_data__`、`id="root"`、`ng-version` 等）判 JS 渲染风险。

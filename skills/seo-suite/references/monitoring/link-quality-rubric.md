@@ -76,3 +76,43 @@ DR、DA、Authority Score 等是各工具基于自己抓到的链接图算出来
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · monitor/backlink-analyzer/references/link-quality-rubric.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/monitor/backlink-analyzer/references/link-quality-rubric.md)（Apache-2.0）
 - 一手资料：[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)、[出站链接的 rel 属性](https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links)、[可抓取链接与锚文本](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[拒绝外链（Search Console 帮助）](https://support.google.com/webmasters/answer/2648487)
+
+## (irinabuht12 深读 2026-10-09c)审计增量：可达性战术层、AI 引用源与结构性外链
+
+> 来源：Ryze 系 49 技能仓库 [irinabuht12-oss/marketing-skills](https://github.com/irinabuht12-oss/marketing-skills) 的 `e2e-seo-assistant`、`citation-source-gap-finder`、`ai-visibility-audit`、`programmatic-seo-playbook` 深读。承接上文第五节「竞品外链差距」：差距筛出目标域名之后怎么选战术，以及 AI 搜索时代外链审计要多看两件事。数字均为该仓库口径（2026-09 自报，Ahrefs/站点地图），沿用本目录核验纪律。
+
+### 1. 机会类型 × 努力度（e2e-seo-assistant）
+
+第五节差距分析的输出是一批「链了竞品没链本站」的域名；对每个域名按下表选战术，而不是一律发外联邮件：
+
+| 机会类型 | 怎么找 | 努力度 |
+|---|---|---|
+| 资源页（resource pages） | 搜「[主题] + resources」 | 低 |
+| 未链接的品牌提及 | 品牌监控 | 低 |
+| 记者/专家引用（HARO 类） | 记者查询平台 | 低 |
+| 失效链接替换（broken link building） | 竞品外链里的 404 页 | 中 |
+| 客座发文 | 搜「[行业] + write for us」 | 中 |
+| 复制竞品外链 | Ahrefs/Semrush 差集 | 中 |
+
+### 2. AI 引用源可达性评分（citation-source-gap-finder / ai-visibility-audit）
+
+AI 助手的回答只引用一小撮来源——评测平台、对比/listicle 文章、Reddit 帖、官方文档、维基。审计方法：
+
+1. 对品类核心查询，收集 Perplexity / ChatGPT / Google AI Overviews 的回答及其引用 URL。
+2. 按来源类型聚类（评测平台 / listicle / 社区 / 编辑内容 / 文档），统计每类的**引用份额**。该仓库案例：某品类 62% 引用集中在 9 个 URL——先看头部集中度再谈覆盖面。
+3. 对每个聚类打**可达性分**并配一种战术：季度更新的 listicle → 直接投递更新；G2 类目录页 → 用评论量撬动；Reddit 帖 → 社区参与（有平台规则约束，不是发广告）。
+4. 竞品引用地图（ai-visibility-audit）：把竞品被引追溯到具体来源页，逐个判断「本站能否进入同一来源」，比泛泛做外链精准。
+
+判定链接价值时新增一问：**这条链接所在的页面/域名，是不是 AI 回答实际引用的那类来源**。同权重的两条外链，在被引来源上的那条溢出价值更高。
+
+### 3. 结构性外链：产品放出的链（programmatic-seo-playbook Play 5）
+
+审计外链组合时区分两类：内容挣来的链 vs **产品本身放出的链**（Mintlify 模式：产品渲染在客户域名上——文档、widget、托管页、徽章——每个实例默认带一条回链；2,506 个页面换来 19,800 个引用域、DR 90，该仓库 2026-09 口径）。审计自查问题：本站产品能否**默认**在客户站点留一条链？若能，这个杠杆优于任何内容外链；若不能，报告中注明这是组合缺口而非执行问题。
+
+### 4. AI 引用前置条件（对上表「真实流量」维度的补充）
+
+页面想被 AI 引用，除 Google 排名外还需：Bing 有索引（无 Bing 索引 → ChatGPT 不引）、至少一个第三方提及（listicle、Reddit 回答、伙伴文档）。审计高价值页时可把这两项列为检查项。
+
+### 来源（irinabuht12 深读 2026-10-09c）
+
+- [irinabuht12-oss/marketing-skills](https://github.com/irinabuht12-oss/marketing-skills)（49 个单文件技能）：`skills/e2e-seo-assistant/SKILL.md`（机会类型×努力度表）、`skills/citation-source-gap-finder/SKILL.md`（聚类+可达性评分流程与案例）、`skills/ai-visibility-audit/SKILL.md`（竞品引用地图）、`skills/programmatic-seo-playbook/SKILL.md`（Play 5 客户回链与 AI 引用检查，含 2026-09 Ahrefs/站点地图数字）。要点摘写，未复制原文。

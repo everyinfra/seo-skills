@@ -230,4 +230,27 @@ GeoReady 282 域均值 **56.4**(早前 750+ 样本均值 54.3/中位 56);GW Cont
 - **负面信号判定(audit_negative)**:CTA >5 个或 >1% 词密度=过高;弹窗类名清单(modal/popup/overlay/interstitial/lightbox/cookie-banner)与 data-modal/data-popup/data-overlay 属性;薄内容;断链 >3;**关键词堆积阈值 2.5%**(KEYWORD_STUFFING_THRESHOLD=0.025);无作者信号。
 - **Trust Stack 5 层 25 分**(独立于总分):Technical(HTTPS+2/HSTS/CSP/XFO)/Identity(署名+Organization+about/contact)/Social(sameAs 指向 8 大社交域)/Academic(**参考文献指向学术域名**(ncbi/pubmed/doi.org/scholar/arxiv/nature/science/jstor 等)+**统计语句正则**(百分比、N≥10 研究、"according to a study";最少 2 处匹配))/Consistency(品牌一致+无混合信号+日期);grade A≥22/B≥17/C≥11/D≥6。
 - **可复现性细节**:Flesch-Kincaid 公式常量直接内置(0.39/11.8/−15.59,"published formula, not magic numbers");TTR 词汇丰富度用 200 词窗口、阈值 0.40。
+
+## gtm-engineer 全管线:写作配方、六维先验与证据核验(gtm-engineer 深读 2026-10-09b)
+
+来源:[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills) 12 技能中余下 9 个全文(audit-content/build-backlinks/build-resource-pages/geo-content-planning/improve-aeo-geo/reddit-opportunity-research/research-brand/research-keywords/write-seo-geo-content)+ `audit-website-aeo/scripts/aeo-audit.mjs` 1,020 行逐读。前批已收 142 分 foundational 表(见 technical/scoring-rubric.md),本节只收可引用性/GEO 内容侧,覆盖"规划→写作→核验→提及"全管线。
+
+**块级写作配方(write-seo-geo-content,第一节五维的操作化)**:Quick Answer 块=问句式 H2+1-3 句+≤60 词,可整段抽出;**Brand Mention 块(40-80 词)独立成段且自辩护**("Compared with [竞品], [品牌]……")——品牌提及机制必须在动笔前声明且可辩护,页面撑不起提及就先改角度再写;每页 ≥2 个可脱离上下文引用的段落;对比页必须有表+明确 verdict("best for X");**FAQ 是条件件不是标配**——仅当命中问句式搜索/用户有真实异议/能写出正文未答的 3-6 个非重复问题时才加,正文已答、短产品页、变相重复=跳过(与"每页必加 FAQ"类建议相反,也与本文中文实测纯问答 −5.7% 互证;FAQ 内容比 FAQPage schema 更重要,富结果已停但机器可读性仍在);段落 ≤2-3 句,每 ~200 词一个表格/列表/引用块;结论=前状态→后状态+1 个数据+单一 CTA;禁词表:revolutionary/game-changing/best ever/industry-leading;title 50-60 字符、meta description 恰 150-160、主关键词进前 100 词;2,500 词起步(对比/指南 3,000+);**装饰性图片 SEO/GEO 价值≈0**,视觉只在带数据/讲流程/证主张时加。
+
+**增量统计(improve-aeo-geo 附研究表,本文件此前未收录,均已带一手出处)**:引语 +41%/统计 +33%/引用来源 +28%(KDD 2024 三 tactic 排序,引语为最强单手段;原排名 4-5 位站点加引用源最高 +115%)·**44.2% 的 ChatGPT 引用来自页面前 30%**(Kevin Indig 2026,1.2M 回答)·H2 之间 **120-180 词=引用 +70%**(SE Ranking 2025,2.3M 页;与第一节 134-167 词块长同源互证——节长与块长两个口径)·2,900+ 词 5.1 次引用 vs <800 词 3.2·FAQ 页 4.9 vs 4.4·3 个月内更新 6.0 vs 2 年+ 3.9·AI 引用比自然搜索结果**新 25.7%**(Ahrefs,17M 引用)·AIO 引用 85% 来自近两年(Seer)·ChatGPT 占 AI 推荐流量 87.4%(Conductor,3.3B 会话)。操作含义:每 150-200 词至少一个数据点;**alt 文本写结论不写形态**("柱状图"×,"GEO 优化页引用率高 41%(KDD 2024)"✓);图表必须配文本摘要+HTML 数据表——AI 引文本不引像素。
+
+**六维智能分的确定性先验公式(aeo-audit.mjs 源码级,脚本半场可复用)**:脚本先出 heuristic prior,再由 agent 用 LLM 六维重评替换(两段式,同"确定性/LLM 分开标注"纪律):
+- **answer-readiness** = 30×FAQ 式标题比 + 30×定义开头比 + 20×meta≥80 比 + 20×深度比;FAQ 式标题正则 `/\?|FAQ|how to|what is|guide/i`,定义开头=正文前 200 字符命中 `is/are/was/means/refers to/defined as`——"定义先行"的可执行判据;
+- **quotability** = 30×标题富集比(≥4 个 H2/H3)+ 25×深度 + 25×层级清洁 + 20×**意图对齐**(title 与 meta description/H1 的 token 重叠率均值——标题-摘要-正文说同一件事的量化);
+- **evidence-density** = 35×数字证据比 + 25×署名比 + 20×深度 + 20×内链密度(均值/12 封顶);数字证据=摘录含 `/\d/` 的页占比——**粗但确定性**,是"有源统计"的下界代理(不验源真伪);
+- content-depth = 35×深度 + 25×模板多样性(覆盖页型数/5)+ 25×内链 + 15×标题富集;freshness = 30×日期信号 + 25×RSS + 20×sitemap 发现率 + 15×抓取成功率 + 10×可索引;structural-clarity = 30×层级 + 25×title≥20 字符 + 25×单 H1 + 20×标题富集;
+- 实现细节:摘录剥离 nav/header/footer/form 后优先 `<main>/<article>`;LLM 复审页按 pageRichness 挑 5 页(摘要长+schema+作者+日期+标题数,blog/docs/product 页型加成);**robots 判定**:命名 bot 只读自己的组(`*` 组不继承,RFC 9309),仅 `Disallow: /` 且无 `Allow: /` 才算封——部分禁不算封,与 geo-platform-differences 的组选择暗坑一致。
+
+**证据核验层(audit-content,发布前的质量门)**:主张五判 PASS/BROKEN/MISMATCH/UNVERIFIABLE/UNSOURCED——**错误≠不可验证**(付费墙≠编造,分开报告);幻觉模式清单:整数化的"合理"数字、挂知名机构却找不到原始出处的统计、数字漂移(文章写 52% 原文 48%)、未来日期的研究、貌似真实的不存在 URL;公司主张以 brand DNA 文件为唯一事实源(不在其中且外部不可证即标记);内部一致性(同一统计前后不一、年份矛盾);arXiv 按 ID 核、带年份的报告核实该年存在。
+
+**规划与语言侧(geo-content-planning/research-keywords/reddit-opportunity-research)**:一页覆盖 1-3 关键词+3-6 相关 GEO prompt(**不做 prompt:页面 1:1 映射**);required_sections 枚举 direct_answer|comparison_table|who_this_is_for|how_it_works|use_cases|faqs|proof|objections,只选意图所需(对比页必 comparison_table,数据/money 页必 proof);prompt 分层 buy/solve/learn,优先 buy+solve。目标词**强制 1-3 词**(长句是博文题);KD 分档 easy_win 0-15/target 16-50/hard 50+;无付费数据时定性信号=自动补全存在+PAA+SERP 专页,ai_overview_present 单列为 GEO 信号。Reddit 研究把**用户原话**(非营销语言)喂给 H2/FAQ/异议措辞,讨论主题反推真实搜索与 AI prompt,只追反复出现的讨论模式(repeatability)。
+
+**品牌提及面(build-backlinks/research-brand)**:GEO 外链论题=在 AI 训练与检索来源处出现——HN/Quora/Wikipedia/GitHub/SO 对 AI 引擎高可见;**高流量 HN/Quora 线程单次提及>10 个低权威目录**(第二节 Brand Credibility 18 分的"怎么做"侧);机会打分 GEO 影响 40%/工作量 30%/相关 30%;品牌描述用第三方语言而非官方营销语。
+
+⚠️ **口径管理**:该仓 robots 建议放行全部 9 个 AI bot(含 GPTBot/ClaudeBot 训练型)——按套件分层,引用生死在检索型,全放是保守无害但非必要;meta description 三阈值并存(脚本及格线 ≥50/先验质量线 ≥80/编辑目标 150-160)是分层而非矛盾,引用时注明所在层。
 - **项目自评 rubric 同仓并存**(SCORING_RUBRIC.md):给工具本身版本质量打分,六维 Robustness 25%/Code 20%/Doc 20%/Idea 15%/UX 10%/Growth 10%,0–10 制、按 0.05 舍入、**逐版本同 rubric 对比防目标漂移**("no moving goalposts")——工具产品质量与被测内容质量分开计量,值得套件维护借鉴。

@@ -78,3 +78,19 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/competitor-analysis/references/battlecard-template.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/competitor-analysis/references/battlecard-template.md)（Apache-2.0）
 - 一手资料：[撰写高质量评测](https://developers.google.com/search/docs/specialty/ecommerce/write-high-quality-reviews)、[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)
+
+## 竞品情报：五路采集、场景定价与变化检测（goose-skills 深读 2026-10-09b）
+
+来源仓库 competitive-intel 与 research 两类共 10 余个技能，套路是「多路采集 → 归一化矩阵 → 分级变化检测 → 周期监控」，可整体移植到对照卡维护。
+
+**五路采集面**（battlecard-generator）：① 站点与信息（首页 / 定价 / 关于；搜 `"we help" OR "the only" OR "unlike"` 抓自述定位）；② 评价挖掘（G2/Capterra；搜 `"switched from"` 找流失原因）；③ 广告与内容——对方的 vs / alternative 页就是它竞品词布局的直接证据，同时记录它对比页里**漏掉了哪些竞品**；④ 社区信号（Reddit / X 的抱怨与功能请求）；⑤ 定价深挖（模型 / 套餐 / 免费额 / 隐性成本）。landing-page-intel 补第六路：直接解析对方 HTML——title / meta / OG / canonical / JSON-LD / hreflang、CMS 与 A/B 测试栈、`display:none` 和注释里的未发布功能（选题信号）。company-current-gtm-analysis 的内容类型清单可直接当对照表的「内容形态」枚举：产品更新 / 对比页 / 教程 / 案例 / 思想领导 / 行业报告 / SEO 清单文，另记发布频率、作者多样性、漏斗覆盖（顶部 / 中部 / 底部）。
+
+**卡片速览区**：先给 30 秒版（对方说什么 / 我们说什么 / 什么局面我们赢 / 什么局面我们输 / 开场一问），再进逐项对照；卡头标「最后更新日期 + 按数据新鲜度定的置信度」，与上文「整体可信度」一致。
+
+**场景定价而非牌面价**（competitive-pricing-intel）：按典型 ICP 用量算各家月成本（如「10 人团队、5000 联系人」），比列表价诚实。包装策略六分类：好中差三档 / 用量计费 / 按席位 / 免费增值 / 反向试用 / 平台+增购。**变化检测分级**：价格升降=高、套餐增删与功能门档移动=中、计费模型切换=关键；历史价位用 Wayback 快照核对（CDX 免费，约 15 请求/分钟）。
+
+**监控节奏**（competitor-monitoring-system）：每竞品一页 watchlist（博客 URL、G2/Capterra 主页、广告库页、创始人社媒）；周=内容+社区，双周=广告，月=评价与定价，季度=全量基线重跑。周报三段：关键变化 → 建议动作 → 逐竞品明细；「对方新发内容命中我方关键词」单列为 SEO 攻击警报。情报条目按九类归档（竞品动态 / 行业事件 / 趋势 / 监管 / 人事 / 技术 / 融资 / 痛点 / 内容机会）并标高 / 中 / 低相关，低相关默认丢弃——要信号不要音量；跨源去重时保留最丰富版本并注明「多源出现」（更高置信）。
+
+**评价挖掘五透镜**（review-intelligence-digest）：带数字的证明点 > 过程性好评；痛点原话按出现次数列表，直接进文案与选题；异议按频次成表（异议 / 频次 / 原话 / 应对）；竞品评价里的「我们换成了 X」= 替代词内容素材；用户自发的品类词与对比词（"compared to X"）= 关键词素材。月更即可，评价变化慢。VoC 合成（voice-of-customer-synthesizer）：主题按频次 × 严重度排序，每主题带代表性原话、受影响客群、根因假设与环比趋势。
+
+**边界**：定位陷阱、挖坑式提问、逐异议销售话术属内部工具，不进对外页面（同上文常见误区）；similarweb 级别的流量估算与职位信号只能标「估算 / 推断」，落卡时注明口径。

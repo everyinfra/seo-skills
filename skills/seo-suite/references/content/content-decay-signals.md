@@ -98,9 +98,18 @@
 - 把 SERP 模块变化造成的点击下降，当成内容质量问题来重写。
 - 一次改动太多，无法判断哪一项起了作用。
 
+## 量化触发阈值与归因(seomachine 深读 2026-10-09b)
+
+**候选触发(冷启动参照,按站点自身波动校准后替换)**:流量环比 −20% 入 declining 候选;关键词排名 11–20 视为「跌出首页」带(quick win,小改即可回收);展示量高而 CTR 偏低 → 判为 meta/标题衰退而非正文衰退,动作只改 title/description。降幅不足 20% 或仍在正常波动期内的页面先观察,不下结论。
+
+**参与度基准带(仅冷启动参照;本套件原则仍是以站点自身历史为基线,不套行业平均)**:bounce rate 30/40/50/60%(优/良/中/差),页面平均停留 180/120/60/30 秒;转化率按目标分档:trial 15/10/5/2%、demo 10/5/3/1%、lead(下载/订阅)30/20/10/5%。高 bounce + 短停留组合指向首屏与价值主张问题,而非字数问题。
+
+**五维归因(技术/季节排除后)**:对正文跑五维评分(humanity/specificity/structure/seo/readability),**加权亏分最多的维度即衰退主因**——specificity 崩=数据过时(刷新统计与事实);seo 维崩=meta/H1/字数不达标(见 [meta-tag-formulas.md](meta-tag-formulas.md));readability 崩=句长节奏与段落问题;humanity 崩=AI 味渗入。配合 SERP 字数对标(中位数/P75,见 [content-refresh-playbook.md](content-refresh-playbook.md))区分「深度被竞品超越」与「自身质量下滑」两种衰退。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/content-refresher/references/content-decay-signals.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/content-refresher/references/content-decay-signals.md)（Apache-2.0）
+- 深读补充：[TheCraigHewitt/seomachine · data_sources/modules](https://github.com/TheCraigHewitt/seomachine)(data_aggregator/landing_performance/content_scorer)
 - 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[Google 搜索状态面板](https://status.search.google.com/)、[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)、[HTTP 状态码与网络错误](https://developers.google.com/search/docs/crawling-indexing/http-network-errors)、[站点地图](https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview)

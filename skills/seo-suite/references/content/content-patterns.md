@@ -57,3 +57,15 @@
 
 - 思路参考：[coreyhaines31/marketingskills · skills/ai-seo/references/content-patterns.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/ai-seo/references/content-patterns.md)（MIT）
 - 一手资料：[Google：精选摘要](https://developers.google.com/search/docs/appearance/featured-snippets)、[Google：有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[Google：结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)
+
+## SXO:页型匹配与画像评分(claude-seo 深读 2026-10-09b)
+
+- **核心洞察**:页型错位先于一切内容优化——SERP 前 10 若有 8 个商品页+2 个对比页,博客文写得再好也进不去;先做 SERP 反推(把每条结果按 8 类页型分类),再谈页面本身。
+- **8 类页型与判定优先级**(信号重叠时按序取强):工具/交互 → 本地(地址+地图) → 对比(vs+矩阵表) → 商品(价格+购买钮) → 落地页(CTA 重+精简导航) → 服务页(流程+案例) → 混合(教育+CTA) → 博客(默认兜底)。
+- **失配严重度矩阵**:博客打商品词=CRITICAL(建商品页);博客打对比词=HIGH(重构成对比矩阵);商品页打信息词=HIGH(加教育内容层);落地页打工具词=HIGH(做交互组件);服务页打本地结果=MEDIUM(补本地信号+schema);类型对齐=拼深度与 UX。
+- **共识度判定**:某页型占比 >60%=强共识;40-60%=混合;<40%=碎片化(碎片化=差异化机会,注明即可)。
+- **用户故事从 SERP 信号推导(不许凭空编)**:PAA=知识缺口(定义型=认知阶段/评估型=考虑/对比型=决策);广告文案=商业触发与异议处理(无广告≈信息型词);相关搜索=搜索旅程(+限定词=收窄、去掉限定词=转向、"alternatives"=不满、"vs"=比价中、"reviews"=信任前置);精选摘要格式=期望答案结构(段落=定义/列表=步骤/表格=对比数据/视频=演示);AI Overview=Google 认可的权威综合(未被引用=内容不匹配其综合模型)。
+- **故事模板**:`As a [画像] / I want [目标] / because [情绪驱动] / but blocked by [障碍]`;情绪映射:"is X safe/scam"=怀疑、大量 vs 查询=选择过载、"not working"=对现方案不满、高广告密度+购物结果=准备购买;障碍类型对应页面必须解决的点:信息缺口/信任缺口/比较疲劳/价格敏感/技术困惑/时间压力。
+- **画像评分(4-7 个,每个必须追溯到信号簇)**:四维各 25 分——**Relevance**(是否解决该画像特定需求)/**Clarity**(**10 秒内能否找到答案**——首屏或首滚可见)/**Trust**(该画像所需的信任信号:同类客户证言/资质/担保)/**Action**(下一步是否匹配旅程阶段:认知期"learn more"、决策期"buy now");总分档 80+/60-79/40-59/0-39(0-39=Critical Mismatch,重构或另起页面);按估算搜索量份额加权(信息主导加权信息画像);优先修"最弱画像×最高量权"。
+- **SXO Gap 分独立于 SEO 健康分**:7 维=页型/内容深度/UX 信号/schema/媒体丰富度/权威信号各 15 分+新鲜度 10 分;"95 SEO+30 SXO=技术上完美但战略错位",两个分一起报。
+- **IST/SOLL 线框纪律**:占位符必须超具体——不是"加 CTA"而是"hero 下加 'Start Free Trial' 绿钮(#2d6a4f)链 /signup";移动 375px 优先设计,首屏 ~600px 内放该页型最关键元素;H2 章节应逐一对应 PAA 簇,FAQ 收录剩余 PAA 问题。

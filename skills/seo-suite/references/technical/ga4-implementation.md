@@ -59,3 +59,34 @@ POST https://www.google-analytics.com/mp/collect?measurement_id=G-XXXXXXX&api_se
 
 - 思路参考：[coreyhaines31/marketingskills · skills/analytics-tracking/references/ga4-implementation.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/analytics-tracking/references/ga4-implementation.md)（MIT）
 - 一手资料：[GA4 事件](https://support.google.com/analytics/answer/9322688)、[GA4 推荐事件](https://support.google.com/analytics/answer/9267735)、[GA4 Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
+
+## GA4/GSC 连接器操作纪律(notfair 深读 2026-10-09b)
+
+来源:nowork-studio/notfair-plugin 的 analytics/google-analytics、analytics/search-console 与 analytics/shared/operating-contract(MCP 连接器工作流)。
+
+### 资源定位(先于一切查询)
+
+- **GA4 资源只能用连接器返回的 `properties/123456789` 资源名**;绝不用 `G-` 衡量 ID 或 Google 账号 ID 替代。先列属性确认访问,再选资源。
+- **GSC 属性用连接器返回的确切已验证形式**:`sc-domain:example.com` 与 `https://example.com/` 是两个不同属性;优先域名属性(覆盖全部子域和协议)。
+- 平台未连或未授权→指引用户重连并**停止,不得声称拿到的是实时数据**。
+
+### 取证纪律(GA4)
+
+- 定义业务问题、主指标、转化/关键事件定义、**资源时区**、日期窗、对比窗,再拉数据;每个重要结论旁必须写明这些口径。
+- **一次宽批量读优于多次窄读**;尊重连接器当前暴露的维度/指标/fan-out/配额限制,不照搬别平台的限制。
+- 不熟的维度/指标组合先查元数据再猜;**检查响应元数据中的采样/阈值/配额告警**;出现 `(other)` 折叠行=明细行加总不等于总数,必须声明。
+- 当日/近期数据视为临时值并注明时区;**GA4 归因与广告平台归因分开报**,解释差异而不是混合不相容的数字;相关≠因果,无证据不得宣称渠道/页面变化导致了结果。
+- 结论结构:什么变了→在哪变→有证据的可能驱动因素→置信度→下一个测量或业务动作;附上报告定义以便他人复现。
+
+### 取证纪律(GSC)
+
+- **对账资源级 clicks/impressions 时去掉 `query` 维度拉总数**——匿名化低量词使 query 行天然不完整。
+- 近期 `all` 数据未定稿,标临时;**不要对已聚合的 CTR/position 行做朴素平均**;结果受行数上限约束时声明"top 行而非完整导出"。
+- URL Inspection 配额远紧于 Search Analytics,**按需用**;检查报告只反映索引状态,**不会请求索引**;排名波动是证据,不是某次算法更新的证明。
+- 结论以"最大实质性增/减→受影响词/页→有证据的假设→置信度→下一步 SEO 动作"开头。
+
+### 测量配置变更安全(与上面必查设置互补)
+
+- 改配置前展示:确切资源、当前状态、目标状态、对下游报表的影响、回滚方案,再请求批准。
+- **可逆性矩阵**:关键事件创建/删除互为可逆;**自定义维度归档在 GA4 不可逆且参数名不可复用**——必须获得点名"资源+维度名"的明确批准。
+- 写入后用返回的前后证据或新读确认;部分失败如实上报,**不盲重试**;连接器未明确支持并确认,不得声称"报告已保存/仪表板已发布"。

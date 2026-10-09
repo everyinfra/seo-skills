@@ -84,10 +84,23 @@
 
 **研究与复用纪律**(open-seo 项目上下文模式,适用于任何多轮缺口工作):同主题研究 30 天内做过→复用结果并说明,不重复付费;缺口发现的对手域/关键页**回写项目上下文**(下轮不再重找);竞品品牌词默认不进缺口,除非目标是 vs/alternative 页——那时单列。
 
+## open-seo 深读 2026-10-09b(竞品执行细节/本地缺口/审计取证)
+
+**审计取证四守则(seo-audit 实操层)**:①**先查爬虫是否坏死**——证书错误/5xx/只剩一页时,先查重定向与证书变体并搜公司名;死域名有活后继者时,整份建议翻转成"旧域 301 到新域"。②**页面家族从站点地图定,不从爬虫样本定**(产品/定价/对比/工具模板/指南/品类/服务/地区),每个家族至少读 2 页主内容:表现最好的一页+最差或典型一页;**模板换词检测**:只把名字/地点/关键词填进共享答案的页=家族级缺口信号;对比页与定价页是两个家族、两种购买问题,兄弟页并排读,表现悬殊要查原因,近顶部的兄弟页是保护对象。③**现场核查规范**:SERP 返回的 rank 含所有结果块,要自己数自然结果位次,写"第 N 位(第 1 页)",查前 20;查询失败=未知,不是"前 20 无";**决定头号建议的查询在成稿前重跑一次**,两次不一致写后者、先前值进括号——同日波动不是趋势,一次快照不是基线。④**单项证据一律不独立定案**:单条抽样查询的量、修复容易度、爬虫警告、假设的第一位流量、无实测流失的导航/重定向修理——全进"我们还查了什么"表,不进前三。成稿前给第二审阅者(另一 agent 或全新自审)任务清单:为最强落选行辩护、确认头号建议证据齐全、核对日期/地域/位次写法。
+
+**观察≠因果的表述纪律**(seo-audit 护栏,直接进交付物文案):相似内容+排名不均、爬虫警告、数据源缺行,都证明不了惩罚/排除索引/排名原因;**检索日期≠观测日期**,排名要么写观测时间要么写未知;外链或排名数据缺失="无记录",不是问题;难度和量是输入不是目标(小查询对高价值业务可能重要);报告收尾必须区分"工具报告的"与"自己验证的"。
+
+**单对手分析的执行链(competitor-analysis 增量)**:用户点名的对手先用 SERP 重叠度验证是不是真搜索对手(拿不准时跑关键词集级 overlap 工具,别手工数 SERP);对比自己时**自己的基线用 GSC 第一方数据**(已连接时绝不用第三方估算自己的站);排名关键词行用 maxRank/minSearchVolume/排除品牌词/结果类型四过滤器保持相关;**外链概况只在"权威度看起来解释了排名"时才拉**,拉不到就用 SERP+域名证据继续;页面级/内容形态断言必须有 SERP 或网页证据,**不能只凭关键词行推断**;永远不建议照抄对手内容——建议对同一意图给更强角度或更好答案;拿不到用户自己的域时,明确框定为"仅对手侧"分析。
+
+**市场读法增量(competitive-landscape)**:有关键词集时先跑 overlap 工具再人工数 SERP;自己域名在对比中且 GSC 已连接→用第一方点击/展示/CTR 锚定自己位置;收尾必须是"下一步跑什么"(单对手深钻/聚类/内容简报);**本地市场必须区分自然页赢家与 Maps/本地包赢家**,本地证据用本地工具(商户搜索+本地 SERP),organic SERP 只作补充;外链数据不可用时降级继续,不中断。
+
+**本地缺口框架(local-seo,第六类缺口:本地包/Maps)**:输入=商户名或 cid/placeId(最可靠,**全程用 cid/placeId 匹配,绝用名称匹配**——连锁与同名必撞)+坐标(从商户搜索行推导,歧义才问人)+1-3 条真实顾客词(不是品牌名)。流程:①宽半径一次搜全连锁拿快照(品类/评分/评论数/认领状态/坐标/cid);②目标词在商户坐标附近拉本地 SERP,记下前 3-5 对手与自己那行;③**只和最强 2 家逐项对比**:主品类+附加品类、评论量/新近度/业主回复率、营业时段完整度、照片数、认领状态、**网站链接是否深链到该位置页**(指到首页或旧域=缺陷);④双方拉评论看四指标;⑤**排名网格**:3x3=9 次付费查询,服务区确实宽才 5x5,先花格子钱前确认坐标=实体店面;网格回答"只在店门口排"还是"全服务区都排",每个点的 topResult 点名谁在你不在的地方赢;**某点缺排名要对照该点 resultsCount 读**:满结果集=被挤出局,近空结果集=稀疏 SERP 而非不可见。**优先级铁律:品类与认领问题永远压过发帖节奏**;Q&A 与发帖只在基础项已打平时才查(那时差距是互动不是配置)。**多地点经济学**:≤5 家全深钻;>5 家先给全链快照表,让用户挑 1-3 家深钻(默认推荐最密市场里档案最弱的那家)。红线:不建议评论门控/假评论/关键词塞商户名;不从全国性自然指标推断本地包实力。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 深读来源（R3 组，2026-10-09）：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/seo-audit/SKILL.md`、`competitive-landscape/SKILL.md`、`competitor-analysis/SKILL.md`、`keyword-research/SKILL.md`（Apache-2.0）；[Ryze-AI-Adgent/open-seo-mcp-skills](https://github.com/Ryze-AI-Adgent/open-seo-mcp-skills) `skills/seo-vs-ads/SKILL.md`、`competitor-gap/SKILL.md`
+- 深读来源（2026-10-09b 增补）：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/seo-audit/SKILL.md`（工作流与护栏全文）、`competitive-landscape/SKILL.md`、`competitor-analysis/SKILL.md`、`local-seo/SKILL.md`（Apache-2.0）
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/content-gap-analysis/references/gap-analysis-frameworks.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/content-gap-analysis/references/gap-analysis-frameworks.md)（Apache-2.0）
 - 一手资料：[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[GA4 事件](https://support.google.com/analytics/answer/9322688)

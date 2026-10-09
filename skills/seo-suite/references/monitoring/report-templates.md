@@ -75,3 +75,19 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · monitor/performance-reporter/references/report-templates.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/monitor/performance-reporter/references/report-templates.md)（Apache-2.0）
 - 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[排名系统指南](https://developers.google.com/search/docs/appearance/ranking-systems-guide)、[Core Web Vitals 与 Google 搜索](https://developers.google.com/search/docs/appearance/core-web-vitals)
+
+## 情报摘要类报告：骨架、信号类型学与样本量阶梯（goose-skills 深读 2026-10-09b）
+
+来源仓库 monitoring / research / outreach 的周期性 digest 技能（kol-content-monitor、newsletter-signal-scanner、review-intelligence-digest、sequence-performance、industry-scanner 等）共享一套骨架，可作为常规 SEO 周 / 月报之外「竞争与内容情报流」报告的补充模板。
+
+**通用骨架**：统计概要（N 个信源 / N 条命中 / 本期最热主题）→ 按信源或对象分节，每条带来源 + 日期 + 定长摘录 → 跨对象对比表 → 建议动作分「本周借势 / 下周抢跑」两层、各带角度建议 → 附录。
+
+**信号类型学**（kol-content-monitor）：Convergence=3 个以上独立信源同期谈同一主题（最强信号）；Spike=环比翻倍；Underdog=单一信源先行（标注「尚早，持续观察」，不写成趋势）；Controversy=评论 / 反应比异常高。主题按总互动排序并标方向（新出现 / 增长 / 持平）；跟势内容在峰值后 3 天内发布。
+
+**关键词战役式过滤**（newsletter-signal-scanner）：按四组建档——竞品名、ICP 痛点语言、市场迁移词、自有品牌词；命中只保留关键词前后约 50 字符的上下文，不整段复制；自有品牌词出现单独成节；条目按高 / 中 / 低相关过滤，低相关默认丢弃。**不强行给每条情报配策略**——多数只是「值得知道」，硬凑动作是噪音；只对真实可行动的聚簇出策略。
+
+**样本量置信阶梯**（sequence-performance）：<50=数据不足、50-100=方向性、100-250=可能胜出、250+=统计显著。A/B 结论（标题、摘要、模板改版）照此措辞，不提前宣布赢家。分层基准给区间不给单值（客群不同基准不同），并看「边际贡献」——该变体在剩余未响应样本中的增量，不把累计值当增量。报告要读原始样本（实际回复、实际查询、实际 URL），不只看聚合指标；「已送达 ≠ 已见效」与上文三状态一致。
+
+**节奏表**：周一晨=内容与社区情报、周五午后=趋势与 KOL 峰值、每月 1 日=定价 / 评价等慢变高影响项、季度=全量基线重跑并更新 watchlist；跨源去重时保留最丰富版本并注「多源出现」。
+
+**评价 / 口碑月报**（review-intelligence-digest）：证明点库（带数字优先）、痛点原话频次表、异议对照表（异议 / 频次 / 原话 / 应对）、竞品抱怨=替代内容素材、用户高频词汇表=文案与关键词素材；月更即可。

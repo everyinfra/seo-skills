@@ -70,3 +70,13 @@
 **SERP 占位层(审计必查"谁占着本国 SERP")**:土耳其=UGC 五霸(Ekşi Sözlük/DonanımHaber/Technopat/Akakçe/Şikayetvar);泰国=Pantip(评测词霸榜,声誉+排名双角色);印度=聚合器层(JustDial 1000+ 城市/IndiaMART/Sulekha);越南=Kaskus 衰而未亡;韩国=Naver 自有垂直。
 
 **声誉层通用模式**:品牌词 SERP 被本国投诉/UGC 平台占据(Şikayetvar/Pantip/Reclame Aqui/Отзовik/食べログ)——催生各国 ORM 产业;品牌词审计必查投诉站占位与情感。
+
+## 垂直检索面、页面变迁取证与数字 PR 外联（goose-skills 深读 2026-10-09b）
+
+来源仓库 research-tools / outreach 的通用技能，对本页有两点增量：SERP 之外另有一排「垂直检索面」值得观测；站外占位（评价站、对比页、第三方引用）靠外联流程争取，而不是靠标记。
+
+**垂直检索面清单**（multi-platform-search 类工具）：购物=Amazon / Walmart / eBay 站内搜索（各有独立排序因子，是 Google 购物卡之外的第二战场）；视频=YouTube 搜索 + 频道 + 字幕（字幕文本即视频关键词与 FAQ 素材，评论区=PAA 式追问挖掘）；应用=Apple App Store 搜索；本地 / 出行=TripAdvisor（类别与坐标过滤）、Airbnb；社交=TikTok / Instagram 档案页。广告库（Meta / Reddit / LinkedIn / TikTok）免费可查，是竞品付费创意与落地信息的监测源。观测任一引擎都记录引擎 + 查询 + 日期 + 地域参数，与上文「记录查看条件」同规矩。
+
+**页面变迁取证**（Wayback CDX，免费，约 15 请求/分钟）：prefix 匹配拉整域快照、按天去重、`id_` 后缀取原始 HTML。用途：核对竞品页面何时改版 / 改价、找回已下线的对比页与客户名单、为「变化开始的日期」提供独立证据，服务报告的时间线对齐。
+
+**数字 PR 外联的序列规则**（cold-email-outreach / outbound-prospecting-engine，移植到链接、评测与专家引用请求）：触达节奏 Day 1 / 5 / 12，每次换角度换框架（Signal-Proof-Ask → PAS → 社证）；个性化三档——合并字段 / 按细分 / 逐人定制（超过 50 人不做逐人）；硬规则：首句谈对方不谈自己、每次触达给新理由（禁止 just checking in）、每封一个低门槛 CTA、主题 50 字符以内无感叹号；联系人去重并缓存，不重复触达；发出前人工审核样信；效果分层看（送达 → 打开 → 回复 → 正向回复），基准按客群给区间。注意边界：外联争取的是**第三方页面上的位置**，SERP 槽位本身仍由搜索引擎决定，与上文三条通用原则不冲突。

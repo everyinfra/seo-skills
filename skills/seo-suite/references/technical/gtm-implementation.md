@@ -58,3 +58,14 @@ window.dataLayer.push({ event: 'cta_click', cta_id: 'hero-start', cta_position: 
 
 - 思路参考：[coreyhaines31/marketingskills · skills/analytics-tracking/references/gtm-implementation.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/analytics-tracking/references/gtm-implementation.md)（MIT）
 - 一手资料：[Google 跟踪代码管理器帮助](https://support.google.com/tagmanager)、[用 JavaScript 生成结构化数据](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript)、[富媒体搜索结果测试](https://search.google.com/test/rich-results)、[web.dev：INP](https://web.dev/articles/inp)
+
+## 连接器时代的变更纪律(notfair 深读 2026-10-09b)
+
+来源:nowork-studio/notfair-plugin 的 analytics/shared/operating-contract——衡量栈从"手改 GA4/GTM 后台"走向 MCP 连接器后,变更流程要补的纪律(与上面发布流程互补)。
+
+- **读取靠批量**:一次宽的批量读优于反复窄读;配额与 fan-out 上限以连接器当前声明的为准,不照搬另一平台的限制。
+- **事实/推断/建议三分**:观察到的数据、推断的原因、推荐的动作分开陈述;注明新鲜度、采样、阈值、行数上限、归因或跟踪局限。
+- **归因不混源**:GA4、Search Console、广告平台的归因口径互不相同,先对齐定义再比较数值(同上"GSC 为基准线+GA4 建模值并列 consent rate"的报表结构)。
+- **写前审批四件套**:确切资源、当前值、目标值、回滚路径,逐项展示并拿到明确批准后才动 sitemap 或测量配置类变更。
+- **写后验证**:用返回的前后证据或一次新读确认;**"分析、建议或配置草稿"在没有连接器实时确认前一律不得称为已发布**——对应 GTM 语义:预览通过≠已上线,版本说明里区分"已验证/已发布"。
+- **失败如实报**:部分成功按部分报,不盲目重试;重试同一逻辑动作时请求标识保持稳定,输入变了绝不复用旧标识(幂等纪律,来源同插件的 WordPress 连接器)。

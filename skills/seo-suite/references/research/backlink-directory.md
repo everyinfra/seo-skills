@@ -122,3 +122,74 @@
 ### 来源补充(R3 深读,2026-10-09)
 
 - [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) `skills/platforms/grokipedia/SKILL.md`(两战术+字段级表单模板+实测案例页)、`skills/seo/parasite-seo/SKILL.md`(平台执行细则);引用数据:The Verge 2026-01-31、SEO 工具 2026-01 统计
+
+## (kostja94 深读 2026-10-09b)外链方法论与渠道操作手册
+
+> 来源:同仓库余下 SEO/渠道技能(与上文寄生层互补,不重复):`seo/off-page/*`、`channels/*`、`platforms/{github,reddit,medium,linkedin}`、`strategies/commercial/open-source`、`strategies/launch/cold-start`、`analytics/seo/seo-monitoring`。数字均为该仓库口径,沿用本目录核验纪律。
+
+### 八种外链策略(link-building)
+
+| 策略 | 做法 |
+|---|---|
+| 内容营销 | 造可链资产:研究/工具/指南/数据/证言 |
+| 客座发文 | 相关刊物投稿,作者简介带链 |
+| 断链建设 | 找他人站死链,荐自家内容补位 |
+| 未链接品牌提及 | 监听提及→outreach 转链接 |
+| 记者请求 | 响应 #JournoRequest,供引语/素材 |
+| 目录+精选清单 | 见上文渠道表与下方操作细则 |
+| 数字 PR | 新闻/专家引语规模化赚权威链(兼打 E-E-A-T) |
+| 伙伴关系 | 互换链、联合营销 |
+
+**质量四因子**:相关性(同域站点)>权威;锚文本自然多样忌精确匹配堆砌;正文编辑性链接>页脚/侧栏链接农场。**Outreach**:逐条个性化、先给价值(内容/数据/引语)再要链、礼貌跟进、表格追踪。
+
+### 链接档案纪律(backlink-analysis + seo-monitoring)
+
+- **看 referring domains(独立域数)而非 backlinks 总数**;辅以 DR/DA、锚文本分布(品牌/通用/精确比例)、链接速度曲线。
+- 风险信号:毒性链→disavow 慎用(过度 disavow 反伤);短期暴增→排查;垃圾锚→自然多样化。
+- **链接缺口**:链向竞品而不链向你的站=首选目标。
+- 监控口径(seo-monitoring):目录链"量大利低"看 referring domains/backlinks 比值;链接按**引荐流量 ROI** 排优先级,低 ROI 停投——与本目录"反虚荣 KPI"一致。
+
+### 目录提交操作细则(directory-submission)
+
+- **质量优先**:10-15 个高质量目录>数百低质群发(群发即本目录反群发红线);DA/DR 50+;人工编辑目录优先(Helpful Content 偏向编辑性收录);垂直目录 30-60 天见效 vs 通用 60-120 天。
+- **文案分层**:one-liner ≤60 字符 / short 150-300 / long 400-600,一次备好按平台适配。
+- **反重复(GEO)**:每字段出 2-3 版——A 功能导向(Taaft/技术目录)、B 利益导向(PH/创作者)、C 对比导向(AlternativeTo/G2)、D 受众导向(垂直目录)。不同目录不同角度=避免重复内容+提升 AI 引用多样性。
+- **跨目录保持一致**:产品名拼写、核心定位、NAP。
+- 基准(仓库口径):referral 转化 ~1.8% B2C / 1.1% B2B / 1.3% SaaS;UTM 归因可提升度量转化 ~23%;~42% 企业提交后引荐流量上升。
+- **dofollow/nofollow 之外**:转化优先于权重——小目录单次 10 分钟提交带来三位数年订阅的案例存在;勿只盯链接属性。
+- 付费分层:listing→通讯 feature→广告→campaign 打包,逐层按 ROI 叠加;预算参考:小团队 $300-500/月,企业 $1500-3000/月。
+- **品牌词 SERP 占位**:目录 listing 常霸品牌搜索结果页;用户决策前平均查 5-7 个来源,第三方存在=合法性信号。
+
+### 重点平台数据(仓库口径)
+
+- **Taaft**:46K+ AI 工具、4M+ 月访、2.8M+ 通讯订阅;每条 listing 700-10K+ 保证访客;Taaft 首发奖励至 $300 PPC 额度。字段:Primary/Secondary Task 分类、图标 ≤500×500、pros/cons(诚实列 cons 反建信任)、默认 UTM `?ref=taaft&utm_source=taaft&utm_medium=referral`。
+- **Product Hunt**:tagline ≤60 字符忌 emoji;gallery 1270×760;demo <2 分钟;**首评故事型非功能列表**;周二-四 12:01am PT 开跑,全天 16+ 小时回复每条评论;勿求赞(shadowban 风险)。期望:200-400 赞≈Top10,800+≈POTD;仅 ~10% 上首页;转化 ~3%——定位"可见度放大器+信誉",非获客主渠道。
+- **DevHunt**:开发者工具的 PH 替代;GitHub 验证提交、免费、50+ 类目;配合 open-source-strategy。
+- **G2/Capterra**:B2B 评审平台;星级 rich snippet 进 SERP;域名邮箱验证;评审驱动展示优先级。
+- **精选清单(curated lists)**:"Best X" 榜单 outreach 作者;Awesome 清单提 PR 遵其格式;**一条编辑性清单反链>多条低质目录链**。
+- **社区转化对比(community-forum/cold-start)**:Indie Hackers ~23% 转化 vs PH ~3%,但需 4-6 个月真实经历帖持续投入;HN "Show HN: [产品]-[解决的具体问题]" 周二-四美国高峰,得流量尖峰非持续增长;Reddit 90/10 原则(自推 ≤1/6 帖)、karma 100-1000 后再推、赞踩比>绝对分;**多渠道协调发布(6-7 周节奏)比单渠道多 5-6× 用户**;AppSumo/LTD=快速现金+验证但价格敏感。
+- **品牌百科底层**:Wikipedia(中性+可引来源)、Quora(长期 SEO)、Stack Overflow(专业信号+反链)——免费可持续。
+- **自有 Discourse 论坛**:匿名可读(登录墙杀收录)、首帖承重写清晰标题、sitemap 自动生成、子域/子目录按基础设施选而非 SEO。
+
+### GitHub 仓库元数据(补上文寄生层)
+
+权重排序:repo 名+About≈最高,Topics 次之,README 高。About ≤350 字符(硬限,~128 最优);repo 名含主词用连字符;**Topics 6-20 个**——最被忽视的高效发现位。Awesome 清单生态:sindresorhus/awesome(441K★)为主清单,6500+ 子清单;条目格式 `- [Name](URL) - 为何棒`;AwesomeSearch/more-awesome 可检索;无既有清单覆盖再自建。Gist=长尾微内容;Pages user site `username.github.io` / project site 走 `/repo` 路径。**Star 战术**:无策略的星星=虚荣指标;多渠道协同(HN+Reddit+Dev.to),周二三美西上午常更优。
+
+### 合作渠道矩阵(partnerships)
+
+| 渠道 | 关键数字/规则 |
+|---|---|
+| PR | 记者仅用 ~3% 收到的稿件;倒金字塔,lead 50-75 词含 5W;引语给视角不复述事实;AP style |
+| Influencer | 转化 2-3× 传统广告、CAC 低 40-50%;分层 nano(1K-10K)/micro(10K-100K)/mid/macro;筛选看互动率>粉丝数 |
+| Affiliate | CPS 只按成交付费,ROI 5:1-10:1;SaaS 佣金 20-40%、cookie 60-90 天;`rel=sponsored` 标注;防品牌词竞价(条款禁止)+防欺诈(勿自动批准);招募=反向研究竞品的联盟伙伴 |
+| Referral | 用户转介转化 3-5% vs 广告 1-2%;被荐用户 LTV 高 30-50%;奖励≈产品价 10-30%;双向奖励参与度最高 |
+| Creator program | 长期共创(credits/免费/分成),3-6 个月见效,内容需真实使用产品 |
+| Education | ~65% 学生毕业后沿用职业工具——教育折扣=长期获客非让利 |
+
+### 市场店面(distribution-channels,补充渠道类型)
+
+AWS/GCP/Azure 等超算市场预计 2028 年 $85B+ 软件销售额。类目:Figma Community/Canva/Adobe Exchange、Chrome Web Store/Firefox、Shopify/Slack/Salesforce AppExchange/Zoom、GitHub Marketplace/WordPress、GPTs store、Pinterest Product Pins(需 Product Schema 或 Catalog)。listing 兼具店面+反链+企业采购通道(预批云预算、合并账单)。
+
+### 来源(kostja94 深读 2026-10-09b)
+
+- [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills):`skills/seo/off-page/{link-building,backlink-analysis}`、`skills/channels/community/{directory-submission,product-hunt-launch,community-forum}`、`skills/channels/distribution/distribution-channels`、`skills/channels/partnerships/{public-relations,influencer-marketing,affiliate-marketing,creator-program,referral-program,education-program}`、`skills/platforms/{github,reddit,medium}`、`skills/strategies/commercial/open-source`、`skills/strategies/launch/cold-start`、`skills/analytics/seo/seo-monitoring`。注:`skills/pages/*` 的页面生成技能已废弃(deprecated stub 迁往 kostja94/pagina),未吸收。

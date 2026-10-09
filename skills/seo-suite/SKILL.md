@@ -122,7 +122,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 
 #### 多语言 / 多市场站点(全球 SEO/GEO 一把做)
-- [多语言工作流](references/overview/multilingual-workflow.md):**全球主干**——市场总表(中/英/俄/韩/日/西/葡/阿/法/德/印尼)、逐市场工具栈映射、语言与内容规范(阈值不可互套)、检查顺序、合规速查、常见坑
+- **markets/ 语区门户(18 个)**:references/markets/ 每语区一份专项参考(渠道/语言机制/AI-GEO/信息源/红旗/工具,2026-10-09 定向研究)——目标市场命中时先读对应门户页;- [多语言工作流](references/overview/multilingual-workflow.md):**全球主干**——市场总表(中/英/俄/韩/日/西/葡/阿/法/德/印尼)、逐市场工具栈映射、语言与内容规范(阈值不可互套)、检查顺序、合规速查、常见坑
 - 区域知识已融入五类能力文件,按需读取:[多语言工作流](references/overview/multilingual-workflow.md)(引擎格局/工具栈/合规)、[AI 平台差异事实库](references/content/geo-platform-differences.md)第六节(Yandex Alice/Neuro、Naver AI Briefing、日语 AIO、引用语言绑定)、[AI 爬虫政策](references/technical/ai-crawler-policy.md)第三节(YandexAdditional、Naver 收录、Bing 日本)、[hreflang 校验](references/technical/hreflang-validation.md)(es-419 例外、RTL、市场码组合)、[关键词意图分类](references/research/keyword-intent-taxonomy.md)(Wordstat/DataLab/ラッコ 工具链与方言归组)、[intake 清单](references/overview/intake-checklists.md)(目标市场 intake 闸门)、[中文 AI 搜索指南](references/content/chinese-ai-search-guide.md)
 - 多区域站点逐市场分开评分,不合并总分
 
