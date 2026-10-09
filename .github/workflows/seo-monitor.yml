@@ -1,0 +1,135 @@
+# seo-monitor:持续监控守护(GitHub Actions 模板)
+# ----------------------------------------------------------------------------
+# 日检(cron 03:17 UTC)+ 周检(周一 04:23 UTC)。告警 diff 非零退出 → notify.py
+# 按级别路由(critical 即时发;warn/info 由 --flush 批量发;low 只进周报)。
+#
+# 使用前:
+#   1. 把本文件拷到你站点仓库的 .github/workflows/seo-monitor.yml
+#   2. 仓库 Variables 配 SEO_SITE(如 https://example.com)与 SEO_MARKET(如 us,可省)
+#   3. 仓库 Secrets 配告警渠道(任选):SEO_MONITOR_SLACK_WEBHOOK /
+#      SEO_MONITOR_DISCORD_WEBHOOK / SEO_MONITOR_TG_TOKEN+SEO_MONITOR_TG_CHAT
+#   4. GSC 流量问(可选):在 run 前把 GSC 导出放到 .seo-monitor/gsc.csv
+#      (可加一步用你自己的凭据拉取;没有该文件则该问自动跳过,不猜数)
+#
+# 状态持久化:monitor.db 通过 actions/cache 在 run 之间保留(缓存过期≈基线重置,
+# 会先出一轮"基线建立"的 info;改成提交回仓库即可彻底持久,见下方 ALT 注释)。
+#
+# ----------------------------------------------------------------------------
+# 本地/自托管三条替代路径(GitHub 不可用时):
+#
+# ALT-1 本地 cron(Linux/macOS 通用):
+#   crontab -e
+#   17 3 * * *  cd /path/to/site && python3 /path/to/seo-suite/scripts/monitor.py run --checks daily && \
+#     python3 /path/to/seo-suite/scripts/monitor.py diff --out .seo-monitor/alerts.json --format text; \
+#     rc=$?; [ $rc -ne 0 ] && python3 /path/to/seo-suite/scripts/notify.py --dir .seo-monitor \
+#       --alerts .seo-monitor/alerts.json --flush warn
+#   # diff 退出码:0=无告警 1=critical 2=warn 4=错误;只在前两者时通知
+#
+# ALT-2 macOS launchd(比 cron 更省电,守护长驻场景):
+#   ~/Library/LaunchAgents/com.seo.monitor.plist,ProgramArguments 指向一个包装脚本,
+#   StartCalendarCheck = { Hour = 3; Minute = 17; } ,内容同 ALT-1 的两行命令;
+#   `launchctl load ~/Library/LaunchAgents/com.seo.monitor.plist` 生效。
+#
+# ALT-3 claude -p 无头调 skill(把"自动完善"闭环交给 agent;Routines/Shortcuts 亦可用
+#   同一命令行定时触发)。成功标准必须写进 prompt,agent 才能自判收工:
+#
+#   claude -p "使用 seo-suite skill 的持续监控守护:\
+#   1) 运行 python3 scripts/monitor.py run --checks daily --dir .seo-monitor;\
+#   2) 运行 python3 scripts/monitor.py diff --dir .seo-monitor --format text --dry-run;\
+#   3) 若出现 critical/warn,按 references/monitoring/continuous-operations.md 对应级别 \
+#   playbook 起草修复(boundary=auto 的直接改;boundary=draft_pr 的只产 draft PR,禁止 merge,\
+#   禁止改线上配置);4) 输出:检查摘要+告警清单+已起草的修复。\
+#   成功标准:diff 完成且每条 critical/warn 都有对应 playbook 动作或 draft PR 链接;\
+#   失败标准:monitor.py 未解释的非零退出码,或存在无后续动作的 critical。"
+#
+# ----------------------------------------------------------------------------
+
+name: seo-monitor
+
+on:
+  schedule:
+    - cron: "17 3 * * *"    # 日检四问
+    - cron: "23 4 * * 1"    # 周一叠加周检(趋势)
+  workflow_dispatch:
+    inputs:
+      checks:
+        description: "daily | weekly"
+        required: false
+        default: "daily"
+
+# 防止误触发到模板仓库本身:拷贝后删掉这一行(if 放在 job 上)
+concurrency:
+  group: seo-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    if: github.repository != 'everyinfra/seo-skills'   # 拷贝后删除
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Restore monitor state (SQLite 基线)
+        uses: actions/cache@v4
+        with:
+          path: .seo-monitor
+          key: seo-monitor-${{ github.run_id }}
+          restore-keys: |
+            seo-monitor-
+
+      - name: init (首次自动建立 .seo-monitor/)
+        run: |
+          python3 skills/seo-suite/scripts/monitor.py init \
+            --site "${{ vars.SEO_SITE || 'https://example.com' }}" \
+            --market "${{ vars.SEO_MARKET || '' }}" || true
+        # ALT(彻底持久化,不用 cache):放开下面两步,并在 permissions 里给 contents: write
+        # - name: Commit monitor state
+        #   run: |
+        #     git config user.name "seo-monitor-bot" && git config user.email "bot@users.noreply.github.com"
+        #     git add .seo-monitor/monitor.db .seo-monitor/config.json || true
+        #     git diff --cached --quiet || git commit -m "chore(seo-monitor): state update [skip ci]" && git push
+
+      - name: run checks
+        run: |
+          python3 skills/seo-suite/scripts/monitor.py run \
+            --checks "${{ inputs.checks || 'daily' }}" \
+            --budget-minutes 5 --dir .seo-monitor
+
+      - name: diff (阈值告警;退出码 1=critical 2=warn)
+        id: diff
+        run: |
+          set +e
+          python3 skills/seo-suite/scripts/monitor.py diff \
+            --dir .seo-monitor --out .seo-monitor/alerts.json --format text
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: notify (critical 即时 + warn 日批;info 周批由周检 --flush info 发)
+        if: steps.diff.outputs.rc != '0' && steps.diff.outputs.rc != '4'
+        run: |
+          python3 skills/seo-suite/scripts/notify.py run \
+            --dir .seo-monitor --alerts .seo-monitor/alerts.json --flush warn
+        env:
+          SEO_MONITOR_SLACK_WEBHOOK: ${{ secrets.SEO_MONITOR_SLACK_WEBHOOK }}
+          SEO_MONITOR_DISCORD_WEBHOOK: ${{ secrets.SEO_MONITOR_DISCORD_WEBHOOK }}
+          SEO_MONITOR_TG_TOKEN: ${{ secrets.SEO_MONITOR_TG_TOKEN }}
+          SEO_MONITOR_TG_CHAT: ${{ secrets.SEO_MONITOR_TG_CHAT }}
+          SEO_MONITOR_SMTP_PASS: ${{ secrets.SEO_MONITOR_SMTP_PASS }}
+
+      - name: weekly report (job summary 里出周报)
+        if: inputs.checks == 'weekly' || github.event.schedule == '23 4 * * 1'
+        run: |
+          {
+            echo "## SEO 周报"
+            echo '```'
+            python3 skills/seo-suite/scripts/monitor.py report --days 7 --dir .seo-monitor
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

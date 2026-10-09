@@ -17,6 +17,16 @@ Future content or structure changes must bump the version and add a dated entry.
   - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
   S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
 
+## 0.26.0 - 2026-10-09
+
+- **持续监控守护层(用户核心诉求:从一次性审计→本地长期监控+自动完善)**:
+  - **monitor.py(1148 行)**:init/run/diff/report 四命令——日检四问(可见性/流量/索引/存活)+周检叠加(漂移/llms.txt/AI 爬虫矩阵);SQLite 三表(run 快照/snapshots/alerts);**四级告警×百分比阈值×cooldown 抑制**;--dry-run/--budget-minutes;SSRF 防护;
+  - **notify.py(377 行)**:slack/discord/telegram/SMTP 四渠道路由;critical 即时/warn 日批/info 周批/low 静默;
+  - **.github/workflows/seo-monitor.yml**:日/周 cron+cache 持久化+告警触发通知;注释含本地 cron/launchd/**claude -p 无头调 skill**(prompt 带成功标准)三条替代部署路径;
+  - **continuous-operations.md(145 行)**:分层监控表/四级×playbook×SLA/防疲劳三律/安全边界表(自动安全项 vs draft PR 人审项)/三部署形态对照;
+  - example.com 真实跑通全流程:init→run→diff(零告警)→注入 404 关键页→CRITICAL 触发(rc=1)→cooldown→修复→LOW 自愈→report 出趋势。
+  Continuous monitoring daemon: the suite is no longer one-shot — monitor.py + notify.py + GH Actions cron turn it into an always-on local platform with SQLite state, tiered alerts, and safe-auto/human-review boundaries.
+
 ## 0.25.0 - 2026-10-09
 
 - **薄文件深化轮(逐文件行数审计驱动,11 个 <70 行文件→全部 120+)**——3 个 agent 并行:

@@ -24,7 +24,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 7. 可执行层(33 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 7. 可执行层(35 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -69,6 +69,11 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `trend_scout.py`:HN+Reddit 趋势雷达(失败源明说不猜)
 - `freshness.py [DIR]`:证据保鲜(>90 天 stale/未来日期 error/--fail-stale)
 - `report_build.py --findings json --out html`:自包含报告(禁 script/80KB/>20 条=失败报告)
+
+**持续监控守护(从一次性审计到长期监控+自动完善)**
+- `monitor.py init|run|diff|report`:守护核心——日检四问(可见性 site: 抽查/流量 GSC/索引 robots+sitemap/存活状态码+混合内容)+周检趋势(title-meta 漂移/llms.txt/sitemap lastmod/AI 爬虫放行),SQLite 快照入库,diff 按百分比阈值×最小样本地板出四级告警(critical/warn/info/low=自愈);全模式 `--dry-run` + `--budget-minutes` 运行上限;部署模板见仓库 `.github/workflows/seo-monitor.yml`(本地 cron/launchd/claude -p 无头路径在注释里)
+- `notify.py`:告警分级路由器——slack/discord/telegram/SMTP 四渠道(secrets 走环境变量);critical 即时/warn 日批/info 周批/low 静默进报告
+- 方法论:[持续运营手册](references/monitoring/continuous-operations.md)(日四问/周趋势/月校准分层、四级 playbook、防疲劳三律、自动安全项 vs draft PR 人审边界)
 
 **套件自维护**
 - `self_check.py` / `link_check.py`
@@ -239,6 +244,8 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - SEO KPI monitoring
 
 优先参考：
+- `scripts/monitor.py`(持续监控守护入口:init 建库 → run 日检/周检 → diff 告警 → report 周报;通知走 `scripts/notify.py`)
+- [references/monitoring/continuous-operations.md](references/monitoring/continuous-operations.md)：持续运营手册——日四问/周趋势/月校准分层、告警四级×playbook、防疲劳三律、自动安全项 vs draft PR 人审边界、三种部署形态(GH Actions/本地 cron/claude -p headless 含 prompt 模板)
 - `references/monitoring/tracking-setup-guide.md`
 - `references/monitoring/link-quality-rubric.md`
 - `references/monitoring/outreach-templates.md`
@@ -268,6 +275,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 | 「重构网站结构和内链」 | technical |
 | 「做 programmatic SEO 方案」 | technical |
 | 「看排名变化和告警」 | monitoring |
+| 「本地起个守护,长期监控我的站并自动完善」 | monitoring(monitor.py+notify.py,continuous-operations.md) |
 | 「分析外链和权威度」 | monitoring |
 | 「不知道先做什么，帮我整体判断」 | overview |
 

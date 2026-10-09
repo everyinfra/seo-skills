@@ -16,3 +16,6 @@ Thumbs.db
 *.log
 __pycache__/
 node_modules/
+
+# seo-suite 持续监控状态(含告警 pending 与站点快照,不入库)
+.seo-monitor/
