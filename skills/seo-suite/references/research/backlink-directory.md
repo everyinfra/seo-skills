@@ -1,5 +1,6 @@
 # 外链渠道目录（分级+验证日期）
 
+> 站群/卫星站/PBN 的光谱定级、多站架构决策树、风险量化与存量站群审计见 [site-networks](site-networks.md)——本目录的卫星站定论与寄生平台分层是其子集,站间组织问题以该文件为准。
 > 建立于 2026-10-09。渠道收录与格式参考 [flaqai/backlink_skills](https://github.com/flaqai/backlink_skills)（中文，753★）、[alvinunreal/awesome-submitlist](https://github.com/alvinunreal/awesome-submitlist)（155★，339 目的地）、[indie-hacking/Awesome-SEO-Backlinks](https://github.com/indie-hacking/Awesome-SEO-Backlinks)（137★，双语）。**本文件的差异化：每条渠道带"最后核验日期"——市面上所有同类目录的通病是陈旧（indie-hacking 的流量数据冻结在 2024-02），持续核活是本套件的方法论。**
 > 提交纪律：不群发。执行前重访该站核对当前条款（收费/收录规则可能已变）。不承诺收录、Dofollow 或排名。
 

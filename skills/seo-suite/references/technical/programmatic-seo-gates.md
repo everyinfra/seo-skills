@@ -2,6 +2,7 @@
 
 > 建立于 2026-10-09。阈值参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）`skills/seo-programmatic/SKILL.md` 与 `skills/seo/references/quality-gates.md`。按本套件证据约束改写。
 > 背景：Google 的 scaled-content-abuse 政策针对"大量无独立价值页"，这些闸门是风险控制，不是流量保证。
+> 配套：全生命周期作战手册（选词→数据→URL→模板→内链→索引→风险→测量→四案例实测）见 [programmatic-seo-playbook.md](programmatic-seo-playbook.md)；12 种页面模式清单见 [playbooks.md](playbooks.md)。三层关系：playbooks 选模式 → playbook 跑生命周期 → 本文件卡质量红线。
 
 ## 一、核心闸门（数字硬规则）
 

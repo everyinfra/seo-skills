@@ -129,6 +129,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 #### 外链（backlinks）
 - [外链画像分析](references/research/backlink-profile-analysis.md)：七段式框架、数据源置信度级联、健康分与数据闸门、disavow 决策
 - [外链渠道目录](references/research/backlink-directory.md)：分级渠道清单（含核验日期）、提交纪律与反虚荣 KPI
+- [站群与多站点策略](references/research/site-networks.md)：多站光谱（合法多站→卫星站/PBN→泛站群）、多站架构决策树（ccTLD/子目录/子域、聚合 vs 隔离）、各市场站群实况、风险量化（SRA/传染性）、白帽等效对照、存量站群四层指纹审计清单
 #### 目录提交引擎（directory submissions）
 - [目录提交引擎](references/research/directory-submissions.md)：九问就绪闸门、13 层目录结构、追踪 CSV、反虚荣 KPI
 
@@ -223,6 +224,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - [hreflang 校验](references/technical/hreflang-validation.md)：八检框架、实现方式选择、内容平价
 #### 程序化与规模化
 - [程序化 SEO 闸门](references/technical/programmatic-seo-gates.md)：100/500 页闸门、页型地板、安全 vs 风险页型、索引膨胀控制
+- [程序化 SEO 作战手册](references/technical/programmatic-seo-playbook.md)：全生命周期九章（选词模式挖掘/数据层护城河/URL 与 sitemap 分片/模板工程防 doorway/内链规模化/索引与抓取预算/cohort 测量与 90 天淘汰/Wise·Zapier·Nextdoor·Webflow 四案例实测）
 
 
 ### monitoring

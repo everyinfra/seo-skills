@@ -1,6 +1,6 @@
 # 不同类型站点的信息架构要点
 
-用途：规划或审计站点结构时，先按站点类型确定主要页面类型、层级和 URL 规则，再细化导航与内链。通用原则见 [link-architecture-patterns.md](link-architecture-patterns.md)、[navigation-patterns.md](navigation-patterns.md)，画图见 [mermaid-templates.md](mermaid-templates.md)。
+用途：规划或审计站点结构时，先按站点类型确定主要页面类型、层级和 URL 规则，再细化导航与内链。各站型的 KPI/渠道/防死/pSEO 打法卡见 [site-type-playbooks.md](../overview/site-type-playbooks.md)。通用原则见 [link-architecture-patterns.md](link-architecture-patterns.md)、[navigation-patterns.md](navigation-patterns.md)，画图见 [mermaid-templates.md](mermaid-templates.md)。
 
 ## 通用规则
 

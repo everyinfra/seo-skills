@@ -3,6 +3,18 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.21.0 - 2026-10-09
+
+- **三个维度补全(用户指出的缺口)**:
+  - **[站型打法手册](skills/seo-suite/references/overview/site-type-playbooks.md)(新,345 行)**:8 种站型(SaaS/电商 DTC/媒体/本地/文档/工具/Marketplace/YMYL)各一张打法卡——页面清单/Schema 组合/核心 KPI/获取重点/典型死法/pSEO 机会,带 2026 基准(SaaS trial 转化中位 1.5-3%/Discover 占出版商 30-50%/YMYL 匿名作者无权重 2026-08 确认);
+  - **[pSEO 完整作战手册](skills/seo-suite/references/technical/programmatic-seo-playbook.md)(新,254 行)**:九章生命周期——模式发现正则表/数据层三级合规/URL·facet 架构/模板防 doorway 工程/内链规模化/索引与抓取预算(500 页探测期应对)/质量风险/ cohort 测量与 90 天处置阶梯/**四案例当日 sitemap 实测**(Wise 13×50K/Zapier 三层漏斗/Nextdoor 四级/Webflow 10 万 UGC);
+  - **[站群与多站策略](skills/seo-suite/references/research/site-networks.md)(新,259 行,教育·防御视角)**:五级光谱(合法多站→卫星→寄生→PBN→泛站群)×SpamBrain 三层检测/多站架构决策树(默认子目录)/四市场站群实况(中泛站群+清风·俄 Минусинск·日终结论·英 PBN)/风险量化(恢复 3 月-1 年+网络联坐)/**六目标灰帽→白帽等效对照表**/存量站群四层指纹审计清单。
+  Three dimension fills: site-type playbooks (8 cards), full pSEO playbook (9-stage lifecycle + 4 case studies), site-networks module (spectrum/decision tree/per-market/white-hat alternatives).
+
+## 0.20.0 - 2026-10-09
+
+- **新增 [站群与多站点策略](skills/seo-suite/references/research/site-networks.md)**(教育性/防御性,不提供规避检测指南):**六级光谱**(合法 ccTLD 网络/加盟多地点/品牌矩阵→卫星站→寄生→PBN→泛站群/doorway/链接轮,每级特征×动机×SpamBrain 三层检测)+伪装话术识别;**多站架构决策树**——权重聚合 vs 风险隔离权衡表、ccTLD/子目录/子域对照、反向拆分仅三种正当情形、四种误判;**四市场站群实况**(百度泛站群+清风/AI 低质专项、Yandex сателлиты+Минусинск 滤镜口径未换代、日语区卫星站终结论引用、英文区 PBN 市场化+忽略/降值为主);**风险量化**——恢复期 3 个月–1 年/Yandex 滤镜 6-12 月/传染性网络联坐/**SRA 2026-08-30 EEA 分叉核实**(EEA 内板块独立排序替代降权)+处罚模式速查表;**白帽等效对照**(6 目标×灰帽×白帽)+时间维度财务对照;**存量站群审计**——前置三问+四层指纹(WHOIS/基础设施/内容/链接)+A-D 分级处置+六件交付物。与既有卫星站定论/寄生分层/换城测试只引用不复述;backlink-directory 头部已加链接,SKILL.md 外链节已注册。
+
 ## 0.10.0 - 2026-10-09
 
 - **新增 [图片与视觉搜索 SEO](skills/seo-suite/references/content/image-search-seo.md)**(补图片层空白):Lens 月 ~200 亿(官方)+SC multimodal 过滤器(2026-09-24);**Backlinko 65,388 次 Lens 实证:alt 匹配仅 11.4%、与文字前 10 重叠仅 15%——视觉搜索是页面级 SEO 不是元数据游戏**;AIO 引用图只认已索引页的 `<img src>`(CSS 背景图永不索引)与首选图三信号;EXIF 官方明确不用;中国拍立淘/韩国 Naver 购物 Lens;Getty 商标索赔存活+TDMRep/Cloudflare 控制层。
