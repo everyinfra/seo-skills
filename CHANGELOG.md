@@ -3,6 +3,13 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.10.0 - 2026-10-09
+
+- **新增 [图片与视觉搜索 SEO](skills/seo-suite/references/content/image-search-seo.md)**(补图片层空白):Lens 月 ~200 亿(官方)+SC multimodal 过滤器(2026-09-24);**Backlinko 65,388 次 Lens 实证:alt 匹配仅 11.4%、与文字前 10 重叠仅 15%——视觉搜索是页面级 SEO 不是元数据游戏**;AIO 引用图只认已索引页的 `<img src>`(CSS 背景图永不索引)与首选图三信号;EXIF 官方明确不用;中国拍立淘/韩国 Naver 购物 Lens;Getty 商标索赔存活+TDMRep/Cloudflare 控制层。
+- **新增 [Discover 与新闻 SEO](skills/seo-suite/references/content/discover-news-seo.md)**:官方定位"补充渠道不作为基线";**2026-02 首个 Discover 专属核心更新(本地化+反标题党)对跨境出版商的冲击**;Follow/RSS 依赖;大图规范;Publisher Center 关闭后算法化收录;48h news sitemap;**日本新闻域名 2026-09 跌出 AI 引用总榜(百科/辞书压制)+79% 大新闻站屏蔽 AI 训练爬虫+Cloudflare Pay-Per-Crawl——新闻 GEO 从开放索引转向商业授权**;8 项实操清单。
+- **输出模板全面升级(14/14)**:七段式交付结构(借鉴 tronghieu insight-report/TerryFYL 学术三段/AgriciDaniel 数据新鲜度注记)——**标题=答案本身**、The answer 一段独立成立("只读这段的人不会错")、关键数字区带阈值、Evidence/Confidence 列、量化选项表(选择权在 owner)、**"What could change this conclusion" 节**(数据缺口/相关非因果附定案实验)、方法附注(数据源+抓取时间+已知坑);两个示范模板(keyword-research/full-seo-audit)全文重写,其余 12 个追加通用三节;[要追加]/[INVULLEN] 占位协议贯穿。
+  Image/visual-search SEO + Discover/news SEO + all 14 templates upgraded to answer-first deliverable structure.
+
 ## 0.9.1 - 2026-10-09
 
 - **基线拉平轮(baseline parity)**:审计发现 12 个能力文件仍是英文默认(title/meta 公式、可引用性打分、引用模式、审计评分、实体信号、知识图谱、GA4、内链架构、链接质量、外联、内容模式)——全部补上「市场差异」节:

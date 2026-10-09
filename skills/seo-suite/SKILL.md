@@ -134,6 +134,8 @@ description: 统一的 SEO / GEO 工作台。用于关键词研究、搜索意�
 #### GEO / AI 搜索（llms.txt 与可引用性）
 - [llms.txt 指南](references/content/llms-txt-guide.md)：格式规范、校验严重度、生成规则
 - [AI 平台差异事实库](references/content/geo-platform-differences.md)：五引擎引用行为、爬虫分类、优化侧重
+- [图片与视觉搜索 SEO](references/content/image-search-seo.md):Lens 月 ~200 亿次、SC multimodal 过滤器已上线;**视觉搜索优化≈页面级 SEO(权威+主题+移动)非元数据游戏**(alt 匹配仅 11.4%);AIO 引用图只认 `<img src>`(CSS 背景图永不索引);EXIF 官方明确不用;拍立淘/Naver 购物 Lens;Getty 判例与 C2PA
+- [Discover 与新闻 SEO](references/content/discover-news-seo.md):Discover 官方定位"补充渠道";**2026-02 首个专属核心更新=本地化+反标题党**;大图 1280×720/16:9+max-image-preview:large;Publisher Center 已关(算法化收录);48h news sitemap;**日本新闻域名跌出 AI 引用总榜(百科压制)+Cloudflare Pay-Per-Crawl 杠杆反转**
 - [视频 SEO/GEO](references/content/video-geo-guide.md):AI 引用视频的机制(Gemini 进片内/ChatGPT 整片)、**播放量不是门槛文本可及性才是**、人工字幕是唯一可控层、key moments 两法、MLA 多音轨、五市场平台格局(韩 Naver TV 已关停/俄 VK Video·RuTube 反超)
 - [电商 GEO 阶梯](references/content/ecommerce-geo-ladder.md):五级阶梯(产品数据→评价→内容→marketplace 分工→agent 交互)、Product schema 七个高频错误、七市场分叉表、AI 购物现状、UCP/ACP 双协议
 - [可引用性打分](references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
