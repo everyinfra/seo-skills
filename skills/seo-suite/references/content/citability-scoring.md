@@ -59,3 +59,18 @@
 - 五维块级与 134–167 词最优段：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-citability/SKILL.md`
 - 站点级分层/闸门/三态/抽样协议：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `rubric/v1.1.md`
 - 47 方法库（9 个出自 KDD 2024）：[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/geo-methods.md`
+
+## 市场差异:单位换算与阈值(拉平轮;英文基线的"词"不是通用单位)
+
+**134–167 词的最优引用段是英文衍生值**——其他语言按等价信息量换算:
+
+| 市场 | 计量单位 | 可引用块阈值 |
+|---|---|---|
+| 中文 | 字 | 答案块 40–60 字;FAQ 答 80–200 字;句 15–25 字(>35 难解析) |
+| 日语 | 全角字 | 答案块按体裁(MEO 500–1,200/一般 1,500–3,500/支柱 7,000–12,000);句 ≤25 词 |
+| 泰语 | 字素+分词 | 先 `Intl.Segmenter("th")` 再谈密度;句 ≤25 词 |
+| 俄语 | 词 | 答案首屏 40–60 词(Алиса 显 ~5 行) |
+| 印尼 | 字 | 结论前置 40–60 字;对比表 ≥5 维 |
+| 韩语 | 全角字 | description ≤80;疑问式 h2 ≥50%(t0mmy 规则,越区同) |
+
+**跨市场通用**:有源数字+定义块+对比块优于纯问答格式(中文实测:纯问答 −5.7%);评分时剥离导航/页脚再算(法区规则,通用)。完整阈值表见 multilingual-workflow 第四节。

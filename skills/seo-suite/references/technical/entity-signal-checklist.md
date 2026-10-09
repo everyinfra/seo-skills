@@ -55,6 +55,23 @@
 - 以为加了 Organization 标记就会出现知识面板。
 - 批量注册低质量目录。
 
+## 市场差异:实体源按市场换(拉平轮;Wikidata/Crunchbase 是英文基线)
+
+| 市场 | 实体权威源(替代/补充 Wikidata) |
+|---|---|
+| 韩语区 | **연관채널 sameAs 实体图谱**(官方域名清单:네이버TV/블로그/스마트스토어/지식iN/치지직+당근/Threads/Instagram/YouTube/Tistory/TikTok/Facebook/X)——Naver 官方机制,Google 无对应 |
+| 俄语区 | Яндекс Бизнес 卡片+Справочник;юридические данные(ИНН/ОГРН)是实体信任层(Vega 专家性信号) |
+| 中文 | 百度百科词条+百家号(百度 AI 引用前提);各 AI 引擎信源池见中文指南 |
+| 日语区 | Wikipedia JP+法人番号/会社概況页;業界ポータル NAP 一致(食べログ等) |
+| 德语区 | Impressum(§5 DDG)+Handwerkskammer 登记(手工业)——法定页=实体信任基件 |
+| 法语区 | mentions légales(LCEN 强制,含托管商)+societe.com/Pappers 注册数据 |
+| 意大利 | **P.IVA→Registro Imprese**(ATECO 码+省,公开 API 可查) |
+| 巴西 | CNPJ 页脚+职业委员会注册号(OAB/CRM) |
+| 印度 | JustDial/IndiaMART 商户条目(聚合器=实体层) |
+| 荷兰 | KvK(商会)号入 NAP |
+
+**通用**:40–60 词规范实体简介全平台逐字重复(法区规则,反向于长描述应变化);JSON-LD description 与事实卡逐字一致。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

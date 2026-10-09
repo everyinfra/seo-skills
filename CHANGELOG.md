@@ -3,6 +3,17 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.9.1 - 2026-10-09
+
+- **基线拉平轮(baseline parity)**:审计发现 12 个能力文件仍是英文默认(title/meta 公式、可引用性打分、引用模式、审计评分、实体信号、知识图谱、GA4、内链架构、链接质量、外联、内容模式)——全部补上「市场差异」节:
+  - title-formulas:各语言标题长度单位表(日 32 全角/泰字素/德 55–65/越词进前 30/阿 +20% RTL);
+  - meta-tag-formulas:各语言 meta 长度+本地格式(法 U+202F/德数字/印尼前 120 字符安全区);
+  - citability-scoring:**134–167 词是英文衍生值**——按等价信息量给中/日/泰/俄/印尼/韩换算表;
+  - ai-citation-patterns:各市场引用模式(日 9,891 引数据集/土 75.3% 绑定/印尼意图分流/意 Wikipedia 48.67%/韩 70% UGC);
+  - scoring-rubric:审计阈值换算表(句长/内链量/营销词/全角);entity-signal:实体源按市场(韩 연관채널/俄 ИНН/意 P.IVA/巴 CNPJ/荷 KvK);knowledge-graph:各引擎实体层;ga4:测量栈市场表(Metrica/Matomo/Piano+判例);link-architecture:日本流 noindex 惯例;link-quality:八市场红旗;outreach:渠道与语域;content-patterns:结构惯例。
+  至此全部能力文件与英文基线对齐——英文仍是默认层,但每个文件都知道自己的规则在哪個市场要换。
+  Baseline parity: all 12 English-default files gain market-difference sections — every capability file now knows where its rules change by market.
+
 ## 0.9.0 - 2026-10-09
 
 - **本地社区深挖轮(17 市场逐一,本地语言检索圈源:searchengines.guru/habr/r10.net/Pantip/Connect.gt/ABAKUS/brunch/站长圈/cmlabs/Frankwatching 等)**:主干新增「本地社区与信息源索引」——每市场的圈内信息源、本地独有共识(带数值与日期)、国际圈误解纠偏。要点:俄 76 条商业因子六块清单/区域 lr 码(位差 40 位)/AI 直接流量仅 0.02-0.25%;韩发帖时刻表/保存付费市场/GPS 实访 리뷰 政策;日内链数值惯例(3000 字 4-8 本/45 本上限)/GBP 投稿日历/MEO 与 SEO 十倍价差/民间 9,891 引用数据集(4 引擎域名重复仅 ~10%);中百度收录现役三通道/5118 MCP/假权重红旗/公众号入池;西外链商品化价目/拉美 WhatsApp 转化按钮;巴 ML 五支柱/IG DM 自动化;德月租链接+Abmahnung/横幅判例;法 AIO 晚德一年=红利窗口/Piano Analytics;印尼廉价服务真相;印三层外包/Discover>Search;意 guest post 价带;土 tanıtım yazısı 市场/UGC 五霸;越 backlink báo 产业/Cốc Cốc 双口径;泰 Pantip 双角色/หลังบ้าน 红线;波 Allegro 参数月更;荷 .nl 权威链原则。

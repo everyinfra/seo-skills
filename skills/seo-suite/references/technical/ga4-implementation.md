@@ -43,6 +43,16 @@ POST https://www.google-analytics.com/mp/collect?measurement_id=G-XXXXXXX&api_se
 2. 在实时报告中确认自然搜索会话能被正确归类。
 3. 上线一段时间后，抽查落地页报告中「(not set)」和异常引荐的占比。
 
+## 市场差异:测量栈与合规(拉平轮)
+
+| 市场 | 分析栈现实 |
+|---|---|
+| 俄语区 | **GA 因 152-ФЗ 实际不可用→Yandex Metrica**(免费含 Вебвизор 会话回放,ПФ 优化闭环:点击图/滚动图/表单分析) |
+| 德语区 | Matomo(德服务器)/Plausible 为默认;**cookie 横幅判例**:OLG Köln 2024-01(拒绝键须同等醒目)/VG Hannover 2025-03(首层"全部拒绝")——横幅设计是合规驱动 |
+| 法语区 | CNIL 2022 判 GA 转移违法;大企业默认 **Piano Analytics**(法企,Europrivacy 认证)+"数据主权"是采购决策词 |
+| 巴西 | LGPD:欧式"接受突出"横幅不构成有效同意→对称 opt-in;KPI 锚 GSC(免 consent) |
+| 通用 | **GSC(免 consent)为基准线+GA4 建模值并列 consent rate** 的报表结构;小流量站勿依赖 Advanced Consent Mode 建模;服务器端 GTM 为 EU 标配路径 |
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
