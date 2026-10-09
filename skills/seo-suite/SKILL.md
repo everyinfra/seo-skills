@@ -26,7 +26,8 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 ### 7. 可执行层与样例
 - **scripts/**:`self_check.py`(自检:frontmatter/模板七段式/死链)、`link_check.py`(内部链接校验)、`text_units.py`(按市场计量单位统计:全角/字素/词)——规则的可执行版本;
-- **examples/**:`gold-standard-keyword-research.md`(金标准样例输出,合成数据)——交付标准的实体参照;其余模板按同结构产出。
+- **examples/**:`gold-standard-keyword-research.md`
+- **references/mining-archive/**:100 个最流行 SEO/GEO 开源仓的逐仓完整提取档案(_INDEX.md 索引+批次档案)——头部项已并入各能力文件,本层保证所有已提取内容可检索可溯源;查"某个具体工具/仓库的玩法细节"时先查这里。(金标准样例输出,合成数据)——交付标准的实体参照;其余模板按同结构产出。
 
 ### 3. 统一输出
 默认输出结构：
