@@ -114,3 +114,11 @@ NeurIPS Datasets & Benchmarks 2025；有公开代码/数据）考察问答与商
 每条新增断言登记原始链接、日期、产品范围、证据类型及局限；无方法的百分比不进入实施要求。
 官方文档过期时就地纠正旧建议，不能在尾部追加与前文冲突的规则。
 吸收可核实的方法；不要把某个项目的运行快照（数据、截图、内部结论）复制进共享 Skill。
+
+## 证据保鲜机制(qiaomu-seo 基建,百仓扫描批 4;解决"官方事实何时过期")
+
+- **source-registry**:官方源 allowlist,每源标 `stability`(stable/mutable)与 `review_after_days`(365 或更短)——引用官方事实时先查登记;
+- **知识四分类**:stable principle(稳定原理)/ current platform rule(现行平台规则,必须带源+复核日期)/ observed market state(观察到的市场态)/ hypothesis(假设)——套件所有断言按此四分归档;
+- **覆盖台账八态**:discovered/selected/fetched/rendered/data-backed/failed/excluded/not checked——审计输出如实记态,不许"没查=通过";
+- **Google 2026 指引事实**(双源核对):llms.txt 对 Google 排名既不帮助也不损害;无 AI 专用 schema;无理想 AI 页长;**规模化操纵 AI 回答违反 spam 政策**(2026-05-15 起 spam 政策适用于生成式 AI 回答);
+- **算法更新台账**:`google-updates.json` 双区结构——`updates[]`(source 必须是 Google 自有域名)+ `unverified[]` 隔离区(第三方追踪器说法+primary_source_check;审计脚本不得编码未验证声明)+ last_verified。

@@ -97,3 +97,12 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 - 厂商事实与"禁 GPTBot 不阻止引用"：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`、[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
 - 平台侧重与统计：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
 - 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional、SoV）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest、lizck.com 定点综述（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）；Naver 官方博客 224296857688 与 help.naver.com/service/30056（AI Briefing 标准与메이트）；Peec AI（ChatGPT 5.6 格式）；Machine Relations（AIO/AI Mode）；微信公开课 PRO 2023、卢松松博客（Peoplerank）、极搜AI（元宝）、CSDN 2026-07 横评与 [geo-book](https://github.com/JingHao-Leon/geo-book)（豆包/知乎修正，一手）
+
+## 测量定义层(elmo/seo-monster/indranilbanerjee,百仓扫描批 3-4)
+
+- **query fan-out 分析**:引擎回答前跑了哪些搜索、改写了哪些词(增/删/留三桶)——AI 可见性诊断的第一层数据;
+- **引用 URL 五分类**:自有域/竞品域/社媒/Google 资产/机构源——share of voice 按此分层;
+- **品牌提及归一化**:名称+别名+域名统一计数;
+- **11 个 AI 爬虫 token 角色**(逐条带厂商出处):必须放行=OAI-SearchBot/ChatGPT-User/Claude-SearchBot/Claude-User/PerplexityBot;训练政策项=GPTBot/ClaudeBot/Google-Extended/Applebot-Extended;Perplexity-User 通常忽略 robots;
+- **测量注记(防误读)**:GSC AI 报告只有 impressions 无 clicks/CTR/queries;**GA4 AI Assistant 渠道不含 AI Overviews/AI Mode 流量**——AI 流量估算用 AI 引擎 referrer 清单(chatgpt.com/perplexity.ai/gemini.google.com/copilot.microsoft.com)+GA4 渠道组正则+服务器日志三源;"App 内打开常不带 referrer,测得的是下界";
+- **Content-Signals 三杠杆姿势顾问**:robots.txt 的 search/ai-input/ai-train 权衡→商业目标→姿势推荐,每次输出强制携带"Googlebot 不遵守、非排名因素"caveat。

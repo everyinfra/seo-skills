@@ -64,3 +64,8 @@
 - 7/5/3 提示词分类法：[OranAi-Ltd/orangeo-ai-visibility-skill](https://github.com/OranAi-Ltd/orangeo-ai-visibility-skill) `references/prompt-taxonomy.md`
 - 品牌提及 3x 相关性主张：geo-seo-claude README 市场数据表
 - 第六节：coreyhaines31/marketingskills（四级阶梯/格式动荡）；Amsive、SimilarWeb、Scrunch（推荐基准，观察性）；Reuters Institute DNR 2026、Pew（点击率）；Comscore、Goodie（碎片化）；JingHao-Leon/geo-book（风控，一手）；incognito-54/utsushi（Share of AI Voice/Sonar 探针）；Yandex Webmaster 官方（SoV）；Naver 메이트 帮助页（인용수 公开）
+
+## 增量:AI 归因与 SEO×付费重叠(百仓扫描批 1/4)
+
+- 品牌提及归一化=名称+别名+域名统一计数;原始引擎输出全存底供事后重算(elmo 模式);
+- **SEO×Ads 四桶 join**(Ryze seo-vs-ads):GSC query 维度×Ads 搜索词报告 90 天——**double-paying**(自然≤3 位还付费,品牌词无竞价者时最浪费)/defensible(竞对在投)/paid-only winners(广告转化但无自然排名=被钱预验证的内容路线图)/organic-only;省额=花费×自然点击保留率(保守 50-70%,明示估计);缺一侧账户时明说缺什么。

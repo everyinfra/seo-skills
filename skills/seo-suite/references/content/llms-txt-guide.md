@@ -71,3 +71,15 @@
 - 格式与严重度：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-llmstxt/SKILL.md`
 - 状态码判定与"不看体积"：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `SKILL.md`
 - 原始提案：[llmstxt.org](https://llmstxt.org)
+
+## llms.txt v2(2026-08 官方更新,百仓扫描批 2)
+
+**v2 新机制**(AnswerDotAI/llms-txt 2026-08):
+- **`.md` 孪生 URL**:page.html.md / page.md——每页的 markdown 版直接挂在 URL 上;
+- **发现链**:HTML `<link rel="alternate" type="text/markdown">` + `rel="describedby"`(HTML link 或 HTTP Link 头);
+- **子路径作用域**:/docs/llms.txt 覆盖 /docs/,多文件取最具体;
+- **Optional 段约定**;与 sitemap/robots/well-known 的边界;
+- 佐证:Lighthouse 已审计 llms.txt;OpenAI/Anthropic/Gemini 自发发布 llms.txt。
+**edge case**(sceneview 案例):508KB 全量 API 参考 vs 精选链接的取舍——大站点用子路径分文件。
+**验证命令**:`npx @vercel/agent-readability audit <url>`(nuxt-seo 生态)。
+**Google 口径不变**:llms.txt 对 Google 排名既不帮助也不损害(qiaomu/seomachine 双源核对)——只作 OpenAI 系参考。

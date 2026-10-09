@@ -78,3 +78,8 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 ## 六、来源
 
 - 13 元素/SQLite DDL/17 规则/归一化规则：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-drift/SKILL.md`、`references/comparison-rules.md`、`scripts/drift_baseline.py`
+
+## 增量:对照组归因与发布回归(百仓扫描批 2/4)
+
+- **对照组归因**(seo-monster rank_attribution):改动页 vs 匹配对照组的前后对比+置信区间——比单纯前后对比强一档;
+- **发布回归清单**(notfair seo-drift):基线快照→diff——**redeploy 覆盖了标题/元描述、canonical 或 noindex 翻转、schema 消失、索引页数下降**——每次发版后自动比对(与 13 元素基线互补:那个防漂移,这个防"改版踩坏")。

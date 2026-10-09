@@ -72,6 +72,10 @@
 
 **跨语言通用信号**:句长方差过低(均匀句长=AI 味)、段落结构过度平行、每段都以总起句开头。检测思路可迁移(日语六法则→各语建"人类上限频率"基线);**每语种表的建立需要母语者标注触发词**——表会过时,带日期维护。
 
+## Unicode 水印字符清单(seomachine content_scrubber,百仓扫描批 1)
+
+AI 生成文本常携带零宽/不可见字符(既泄密又是水印):U+200B(ZWSP)/U+FEFF(BOM)/U+200C-U+200D(ZWNJ/ZWJ)/U+2060-U+2064(word joiner 等)/U+180E(Mongolian vowel sep)/U+202F(narrow nbsp)+ em-dash 置换——发布前 scrubber 扫描并清除(套件八语标记表的机械层)。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。

@@ -74,3 +74,14 @@
 | 韩语 | 全角字 | description ≤80;疑问式 h2 ≥50%(t0mmy 规则,越区同) |
 
 **跨市场通用**:有源数字+定义块+对比块优于纯问答格式(中文实测:纯问答 −5.7%);评分时剥离导航/页脚再算(法区规则,通用)。完整阈值表见 multilingual-workflow 第四节。
+
+## 市场外增量:AIV 评分学(geo-score rubric v1.1 全量,百仓扫描批 4)
+
+**双分制**:Readiness(100 分可改)与 Citation performance(只报告不进分)。
+**三态分母**:scored / unobservable / not_applicable——后两者离开分母,不虚稀释。
+**三个 gate**(robots/reachable/ssr):仅 tier 0 违例时把归一化分封顶 40%;中层只扣分不封顶(套件 Reachable gate 同构)。
+**五支柱配分**:Reachable 15 / Understandable 22 / Content Citability 35 / Brand Credibility 18 / Answer Fit 10。
+**Band 阈值**:83/66/51/31(Leading/Solid/Growing/Early);findings 按"可恢复分数÷工作量"排序。
+**采样协议**:恰好 8 URL(首页 2/产品 2/文档 3?原文 2+2+3+1——按站型配比)。
+**中文换算**:答案段 50–200 字(英文 25–120 词)。
+**引用稳定性判定**:单次引用检查=掷硬币(arXiv:2604.07585)——**多次采样+Wilson 95% 置信区间**,区间跨判定界标 unstable(Auriti 4.18 同款)。
