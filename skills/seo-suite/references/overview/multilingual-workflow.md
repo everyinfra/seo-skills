@@ -171,6 +171,35 @@
 
 *(十八市场独到层全部填实:第一波 5 + 第二波 6 + 第三波 7。)
 
+## 十一、本地社区与信息源索引(2026-10-09 深挖轮:本地圈才知道的事)
+
+每市场的"圈内共识、信息源、国际圈最大误解"——这是套件区别于翻译型国际 SEO 内容的层:
+
+| 市场 | 圈内信息源 | 本地圈独有共识 | 国际圈最大误解(纠偏) |
+|---|---|---|---|
+| 俄语区 | **searchengines.guru**(最大论坛)、habr、vc.ru、SEONews、Topvisor/Keys.so 工具圈 | 商业因子 76 条清单按 6 块过站;区域 lr 码(莫斯科 213≠莫斯科州 1,全俄 225),区域间位差可达 40 位;Яндекс Бизнес 卡片=区域主信号(审核可能要拍楼体视频);Вебвизор 三图(点击/滚动/表单)是 ПФ 优化闭环;**AI 直接流量极小(Алиса 0.02%/ChatGPT 0.25%)——损失发生在搜索内部**;站长情绪已转向"进 Нейро 答案+买量" | 用 GA4 替代 Metrica;"каталоги 死了"=不做本地目录(实际迁移到了 Бизнес 卡片);不知道 ПФ 是一线因子 |
+| 韩语区 | 네이버 검색 공식블로그(官方)、brunch/tistory 实战圈、**아프니까 사장이다 카페**(43 万会员)、i-boss、Kmong、블랙키위 工具 | 发文时刻表(午夜=스마트블록/6 时=인기글,8-9 时反映;行业黄金时段各异);글자수 1,500-2,000;지수설(非官方指数段位);"최적화 기간"3-6 个月;**플레이스 저장有 30 元/单的付费市场,日 30-50 渐增"显自然"**;2025-05 起 GPS 实访 clip 리뷰 才信任展示;AI 인용 ~70% 来自博客/카페 UGC | Google SEO 可移植(Naver 是平台生态非外链生态);"Naver=搜索引擎"(实为 UGC 编排门户) |
+| 日语区 | **海外SEO情報ブログ**(铃木谦一,日更)、検索エンジン情報ラウンジ、SEMリサーチ、Web担当者Forum、SEOラボ(京大联合) | 内链 1 見出し 1-2 本/3000 字 4-8 本/单页 45 本上限/3 クリック以内;タグ页·作者归档 noindex 国民级惯例;GBP 投稿週 1-2 回(每篇仅显示 ~7 天,月曜=推荐品/木金=周末预约);**口コミ:"星5つでお願い"本身构成要件(QR 王道/LINE 次日 follow);Ask Maps 2026-08-07 上线,AI 直接读口コミ本文选店**;SEO 月费 10-50 万円 vs **MEO 代行仅 1-5 万**(10 倍价差);民间 life-from2020 数据集(9,891 引):4 引擎域名重复率仅 ~10%,AI 推荐 No.1 有 45% 在 SEO 圈外 | 要单独做 Yahoo! Japan(=Google 索引);低估 MEO/口コミ 文化;直译=本地化(全半角/外来语归一) |
+| 中文 | 站长圈(卢松松/白杨SEO)、5118/爱站/chinaz 工具圈、知乎实操帖 | **"快速收录"已死→"快速抓取"仅 VIP;现役=API 推送(配额有限)+sitemap**;5118 已出 MCP(36 API 接 Claude);假权重灰产识别(刷冷僻高指数词→爱站权重虚高→卖链);友链平台 2898(权4 站 30-50 元/月);公众号"入池"机制(初始池→点击率/完读率升级);**蜘蛛池只抓不录且会被盯上(百度官方定性黑产)** | 必须 .cn/备案才上百度(错);百度=中文 Google(JS 渲染更弱);meta keywords 有效(过时);最大盲区:忽视搜一搜/小红书 |
+| 西语 | 西:**SEOPLUS 大会**/Campamento Web 播客/Human Level;拉美:Nubimetrics Academy/Telegram 群 | 外链高度商品化(niche 博客 50€→大媒体 1,500-5,000€,新闻稿 7€/媒体起);拉美 **Facebook 本地页+WhatsApp 是事实转化按钮**(QR 到店+WA 索评);拉美托管常在欧洲→CDN 是本地 SEO 前置 | "一份中性西语通吃"(auto/coche/carro 不可互换);"拉美=低竞争"(墨城金融电商词竞争激烈) |
+| 葡语(巴西) | **Conversion《Guia de SEO》**(圈圣经)/SEO Happy Hour 播客/MestreCast | ML listing:60 字符标题+ficha técnica 全字段+**问答响应速度是排名因子**+投诉率<1% 保 Mercado Líder;troca de links 无安全阈值(改三角链);**IG"姓名字段放关键词"+"评论 X 发链接"DM 自动化(Meta 已出免费原生版,一个素材一个词)**;AIO 2024-08-15 上线且无需 Search Labs 全量 | 翻译≠本地化;hreflang 用 pt 而非 pt-BR;点击后信任差(Pix/boleto/本地徽章) |
+| 德语区 | **ABAKUS 论坛**(4.5 万会员)、SISTRIX 博客、Seokratie;SEO Campixx/SEOkomm 大会 | 链接实为**月租制**(119€/月起);软文不标"Werbung"→**竞争对手 Abmahnung 律师函风险大于 Google 惩罚**;OLG Köln 2024 判例:拒绝键须与接受键同等醒目;Matomo/Plausible 为默认;DE AIO 覆盖 ~20% 且早法一年多 | "德国受监管没人买链"(租链常态化);"Ecosia 需单独优化"(=Google 索引) |
+| 法语 | **Abondance**(1998 起)/WebRankInfo 论坛 | 链接平台市场成熟(€3-10/条起,降值优先于惩罚的共识);**AIO 2026-07-22 才上线(比德晚一年多)——法国多出一年经典 SEO 窗口期**;Qwant<1% 且 2025-08 起转 Bing 索引;Piano Analytics(法企)是大企业默认,"数据主权"是采购决策词 | 法国=泛欧盟口径;Qwant 重要;<1%;GA 在法被"禁"(DPF 后是配置问题) |
+| 印尼 | **cmlabs**(风向标)/DailySEO ID/ads.id 论坛 | **jasa SEO murah 廉价圈真相:Rp50 万/月 vs 正规 Rp600 万,修复烂摊子成本常超服务费**;PBN 公开叫卖+".ac.id 付费链接"商品化;Tokopedia 官方 Analisis Pencarian 工具;JNews 主题(印尼团队)统治新闻站;nulled 主题文化是真实入侵向量 | "先优化 Google"(商品发现始于 marketplace/TikTok 站内);廉价 SEO 无害;Kaskus 已死(衰而未亡仍排 SERP) |
+| 印地/印度 | Google **Search Central Live Bengaluru 2026**/SaaS SEO Alliance/Telegram SEOhindi 频道 | 外包三层($99 PBN 层/Clutch 白标层/$100-300 编辑链层);**中型出版商 Discover 流量已超 Google Search,WhatsApp 次之**;聚合器占位层(JustDial 1000+ 城市/IndiaMART/Sulekha)挤掉本地词页 1——实操是"入驻聚合器+GBP";泰米尔有文字圈,泰卢固几乎全是 YouTube(蓝海) | "印度 SEO=垃圾链"(分层是价格不是国籍);把印度当单一英语市场 |
+| 意大利 | **Connect.gt 论坛**(14.6k 帖)/SERP Conf Rome/Search Tech 大会/SEOZoom | guest post 15-30€(走量)/40-100€(单篇),新闻稿 6€(Press-Delivery);**Amazon.it 份额无公开数(勿引用传闻)**;意语关键词池比德法小得多;内容外包 25-80€/篇(约英语圈一半) | 直译关键词;高估关键词体量;低估本土论坛话语权 |
+| 土耳其 | **r10.net**(交易中枢)/İlyas Teker/Antalya Search 'n Stuff 大会 | 外链主形态=**tanıtım yazısı**(新闻站赞助文,90₺ 垃圾层→13,500₺ 全国媒体);Trendyol 九信号(单量转化最强/content score 传 80-90+/断货即掉/标题公式 Marka+Ürün+Model+Özellik);**土语 SERP 被 UGC 碾压(Ekşi Sözlük #1/DonanımHaber/Akakçe);品牌词被 Şikayetvar 占据催生 ORM 产业** | "Yandex 26% ⇒ 必须做"(本地实操几乎没人做,看客群);TR 链接=guest post(实为 tanıtım 市场) |
+| 越南 | **IDVS 论坛**(持牌)/Brands Vietnam/卖家 FB 群 | **backlink báo 产业**:22-30 省级国家级新闻域 sidebar 链,1,500-3,500 VND/条(规模化购链,话术包装成 E-E-A-T——Google 链接垃圾政策范围);Cốc Cốc 搜索份额仅 ~6% 但浏览器 ~25%("装机多用得少",价值在数据面年度报告) | Cốc Cốc 是"必优化第二引擎"(优先级低于 FB 群/Zalo);买新闻外链=白帽 |
+| 泰国 | **Pantip**(真活跃)/ThaiSEOBoard(交易区)/FB 群 | 本地黑话"**หลังบ้าน(后门)=灰黑帽链网**",赌博站 hack 排名手法,被罚后恢复以年计;Pantip 帖在"รีวิว/คววรซื้อไหม"类词常年霸榜(排名占有者+声誉层双角色);Lazada 给长描述内容分、Shopee 重转化速度;TikTok 口播词被索引 | Pantip=外链来源(实为声誉/UGC 占位);低价外包安全(被灰链把持) |
+| 波兰 | Planeta SEO 聚合/Senuto/Silesia SEM 大会(十几年) | WhitePress/LinkHouse 中介常态(100-1,000 zł/篇);**Allegro"Trafność"算法:参数填满且逐月更新(常新增参数,过时即掉)**;AIO 波语名 Przeglądy od AI(2025-03-26,~28.95% 单源) | 波兰=便宜买链黑帽可行(本地已转向 E-E-A-T);"只做 Allegro 就够"(实为双轨) |
+| 荷兰 | **Frankwatching**(第一本营)/Marketingfacts/Yoast | 外链 €150-350/条;**一条权威 .nl 链>数百条进口链(荷语 Google 拒收批量进口链)**;NL 的 AIO 触发率信息类仅 6.43%(2025-06,远低于美,交易词暂安全);发现层:LinkedIn 14M=第 2 渠道 | "荷兰人英语好→英文内容即可"(交易发生在荷语) |
+
+**深挖轮跨区新原则**:
+24. **每市场有"本地链接市场价"**:从 $1.5(越)到 5,000€(西大媒体)——报价审计先锚本地价带,防被当作"高价值链接"的进口溢价坑。
+25. **投诉/UGC 平台的声誉层占位是新兴通用模式**:土耳其 Şikayetvar、泰国 Pantip、巴西 Reclame Aqui、俄 Отзовik、日食べログ——品牌词 SERP 审计必查"本国投诉站占位"。
+26. **marketplace 站内 SEO 是独立学科**(ML/Trendyol/Allegro/bol/Shopee 各有算法+工具+官方学院)——"电商 SEO"在多数市场=marketplace 内优化×官网双轨。
+27. **AIO 上线时间就是市场红利窗口**:法(2026-07)比德(2025)晚一年——后上线市场多吃一年经典 SEO 收益,发布日历按各国上线日重排。
+
 ### 跨区迁移矩阵(某市场验证过的方法 → 可迁移到哪些市场;迁移后必须本地实测)
 
 | 源方法(起源市场) | 可迁移市场 | 迁移条件 |

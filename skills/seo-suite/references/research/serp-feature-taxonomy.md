@@ -62,3 +62,11 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/serp-analysis/references/serp-feature-taxonomy.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/serp-analysis/references/serp-feature-taxonomy.md)（Apache-2.0）
 - 一手资料：[精选摘要](https://developers.google.com/search/docs/appearance/featured-snippets)、[AI 功能与网站](https://developers.google.com/search/docs/appearance/ai-features)、[摘要与 meta description](https://developers.google.com/search/docs/appearance/snippet)、[结构化数据类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)、[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)、[Product](https://developers.google.com/search/docs/appearance/structured-data/product)、[Google 图片 SEO](https://developers.google.com/search/docs/appearance/google-images)、[视频 SEO](https://developers.google.com/search/docs/appearance/video)、[电商网站](https://developers.google.com/search/docs/specialty/ecommerce)、[富媒体搜索结果测试](https://search.google.com/test/rich-results)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
+
+## 市场差异:各市场 AIO 覆盖与 SERP 占位层(2026-10-09 深挖轮)
+
+**AIO 上线时间线(=市场红利窗口)**:印尼/巴西 2024-08 → 波兰 2025-03-26(Przeglądy od AI,~28.95% 单源)→ 德国 ~2025(覆盖 ~20%,Sistrix)→ **法国 2026-07-22(比德晚一年多——后上线市场多吃一年经典 SEO 窗口)**;巴西 AI Mode 2025-09-08 免 Search Labs 全量;荷兰触发率信息类仅 6.43%(2025-06,远低于美);意大利 48-54%(两家口径,标区间)。
+
+**SERP 占位层(审计必查"谁占着本国 SERP")**:土耳其=UGC 五霸(Ekşi Sözlük/DonanımHaber/Technopat/Akakçe/Şikayetvar);泰国=Pantip(评测词霸榜,声誉+排名双角色);印度=聚合器层(JustDial 1000+ 城市/IndiaMART/Sulekha);越南=Kaskus 衰而未亡;韩国=Naver 自有垂直。
+
+**声誉层通用模式**:品牌词 SERP 被本国投诉/UGC 平台占据(Şikayetvar/Pantip/Reclame Aqui/Отзовik/食べログ)——催生各国 ORM 产业;品牌词审计必查投诉站占位与情感。

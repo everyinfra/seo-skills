@@ -30,6 +30,18 @@ GMC 联动:free listings 默认覆盖 Shopping tab/Search/Images,**2025–26 正
 | 土耳其 | Trendyol(34–40%,月活 41.3M) | marketplace 页仅占 AIO 引用 2.5%→官网品牌词+内容层仍有空间 |
 | 俄罗斯 | Ozon/Wildberries(WB ~52% 订单) | **低优先级**:2026 基础设施风险高(EU 制裁金融实体+仓库受损;Reuters/AP);Ozon AI 助手测试中 |
 
+## 三点五、marketplace 站内 SEO 分叉(2026-10-09 深挖轮;各平台算法均为社区口径非官方)
+
+| 平台(市场) | 站内排名清单(圈内版) |
+|---|---|
+| **Mercado Libre**(拉美) | 标题用满 60 字符(产品+品牌+型号+属性);ficha técnica 全字段喂过滤器;**问答响应速度/质量是排名因子**;转化率="女王指标";**投诉率<1% 保 Mercado Líder;Premium 曝光>Clássico**;工具 Nubimetrics(官方 partner) |
+| **Trendyol**(土耳其) | 九信号:单量转化最强/评分与投诉时效/标题公式 Marka+Ürün+Model+Özellik/Hızlı Teslimat 徽章/**断货即时掉**/行为信号/新品窗口/广告间接/价格力;**content score 传 80-90+**(卖家口径);工具 pazarus.io+Trendyol Akademi |
+| **Allegro**(波兰) | "Trafność"算法:标题匹配/**参数填满且逐月更新——常新增参数,过时即掉曝光**/缩略图+换算价/Allegro Analytics 迭代 |
+| **bol.com**(荷兰) | 先做 zoekterm 研究再组标题(~100 字符);官方 Zoekalgoritme 页基准;zoektrends 数据库 |
+| **Shopee**(越/泰/东南亚) | 关键词×**店铺指标**(回复率/粉丝/转化速度)+free ongkir;Lazada 给长描述更多内容分(分工) |
+| **Tokopedia**(印尼) | 官方 Analisis Pencarian 工具;商品名+直播+短视频标题优先;TikTok Shop SEO 并入 University |
+| **Salla/Zid**(沙特) | 平台级 SEO 偏弱需手动(sitemap/robots/抓取);App 生态 RankX;年费 SAR 990-2,990 |
+
 ## 四、AI 购物现状(2026-10 可证实口径)
 
 - **Google**:AIO/AI Mode 集成 Merchant Center 与 Shopping Graph;AIO 内直接展示 free product listings 属测试中(官方确认路径,细节为行业观察)。

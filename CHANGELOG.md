@@ -3,6 +3,13 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.9.0 - 2026-10-09
+
+- **本地社区深挖轮(17 市场逐一,本地语言检索圈源:searchengines.guru/habr/r10.net/Pantip/Connect.gt/ABAKUS/brunch/站长圈/cmlabs/Frankwatching 等)**:主干新增「本地社区与信息源索引」——每市场的圈内信息源、本地独有共识(带数值与日期)、国际圈误解纠偏。要点:俄 76 条商业因子六块清单/区域 lr 码(位差 40 位)/AI 直接流量仅 0.02-0.25%;韩发帖时刻表/保存付费市场/GPS 实访 리뷰 政策;日内链数值惯例(3000 字 4-8 本/45 本上限)/GBP 投稿日历/MEO 与 SEO 十倍价差/民间 9,891 引用数据集(4 引擎域名重复仅 ~10%);中百度收录现役三通道/5118 MCP/假权重红旗/公众号入池;西外链商品化价目/拉美 WhatsApp 转化按钮;巴 ML 五支柱/IG DM 自动化;德月租链接+Abmahnung/横幅判例;法 AIO 晚德一年=红利窗口/Piano Analytics;印尼廉价服务真相;印三层外包/Discover>Search;意 guest post 价带;土 tanıtım yazısı 市场/UGC 五霸;越 backlink báo 产业/Cốc Cốc 双口径;泰 Pantip 双角色/หลังบ้าน 红线;波 Allegro 参数月更;荷 .nl 权威链原则。
+- **backlink-directory 新增 14 市场本地外链价带与风险表**(越南 1,500 VND/条→西语大媒体 5,000€;每市场的红旗与合规买法);**ecommerce-geo-ladder 新增七大 marketplace 站内 SEO 分叉表**(ML/Trendyol/Allegro/bol/Shopee/Tokopedia/Salla);**serp-feature-taxonomy 新增各市场 AIO 覆盖时间线与 SERP 占位层/声誉层通用模式**;中文指南补收录加速三通道+5118 MCP+入池机制;intake 加外包价格锚与廉价服务红旗;**融合原则扩至 27 条**(新增:本地链接市场价/投诉平台声誉层/marketplace 独立学科/AIO 上线窗口)。
+- README 双语能力表全面刷新至 0.9 全貌(视频/渲染/日志/电商/算法归因/persona 全部入表)。
+  Local-community deep-dive round: 17 markets re-mined in native languages; community index, link-price bands, marketplace in-store SEO forks, AIO timelines, SERP occupancy layers.
+
 ## 0.8.0 - 2026-10-09
 
 - **新增 [视频 SEO/GEO 指南](skills/seo-suite/references/content/video-geo-guide.md)**(补最大缺口——YouTube 是多市场 AI 引用第一源):AI 读视频的双通道机制(Gemini 进片内时间戳引用/ChatGPT 整片选择/关键帧+transcript);**播放量不是被引门槛,文本可及性才是**(被引视频 41% 播放<1,000);人工校对字幕是唯一可控层(captions API 官方仅所有者可取);key moments 两法;8 项视频 GEO 清单;五市场平台格局(**韩国 Naver TV 已关停只剩 YouTube;俄 VK Video/RuTube 日活反超 YouTube**);MLA 多音轨。

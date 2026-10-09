@@ -4,11 +4,13 @@
 
 **免费下载，用你自己的 AI 工具和模型。**
 
-EveryInfra SEO Skills 的版本为 `0.8.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+EveryInfra SEO Skills 的版本为 `0.9.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
 
 **独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十几个单市场工具——本套件把 **18 个语言市场**放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、英文、俄语区（Yandex/Alice）、韩语区（Naver/AI Briefing）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）、印地语（Hinglish 三种书写）、意大利语（it-CH 独立 locale）、土耳其语（第二个 Yandex 市场，~26%）、越南语（有调/无调+Coc Cốc）、泰语（无空格分词）、波兰语（变音符规范化）、荷兰语（nl-NL/nl-BE 弗拉芒）。**全球能力不做成独立模块，而是融入五类能力文件的每一类**——主干是 `overview/multilingual-workflow.md`（市场总表、逐市场工具栈、语言规范、合规速查）。
 
 **0.5 系列:市场 × 能力双维度架构 + 18 市场逐一深挖。** 每个任务先定市场再进能力路由;`multilingual-workflow.md` 内含**十八市场独到方法索引**(每市场"只有在这里才需要做"的做法,如中文的搜一搜 Peoplerank/小红书 CES 分、韩国的 `nosourceinfo` 官方 AI 引用退出、巴西的 Reclame Aqui 22.3% 被引、日本的「AI 臭」密度检测、泰国的 `Intl.Segmenter` 分词定论)与**跨区融合 23 条原则**(断言半衰期、口径冲突并记、主权助手模式、语域双轨模板等)。
+
+**0.9 深挖轮:本地社区层。** 17 个市场逐一用本地语言挖了"圈内才知道的事"——主干新增「本地社区与信息源索引」(每市场信息源/圈内共识/国际圈误解纠偏),如俄罗斯的 76 条商业因子清单与区域 lr 码、韩国的发帖时刻表与保存市场、日本的内链数值惯例与 MEO 十倍价差、德语区的 Abmahnung 法律战、土耳其的 tanıtım yazısı 链接市场、泰国的"หลังบ้าน"灰链红线、法国 AIO 晚德一年=红利窗口;**外链市场价带表**(从越南 1,500 VND/条到西语大媒体 5,000€)、**七大 marketplace 站内 SEO 分叉**、融合原则扩至 27 条。
 
 ## 为什么是现在 / Why now
 
@@ -61,10 +63,10 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 | 能力集合 | 典型任务 |
 |---|---|
 | overview | 整站 SEO 诊断、路线图与优先级排序、不知道先做什么时的分诊、目标市场 intake 闸门 |
-| research | 关键词研究与搜索意图（含各市场工具链：Wordstat/DataLab/ラッコ）、SERP 分析、内容缺口、竞品分析、替代方案 / vs 页面规划、专题集群与内容策略 |
-| content | SEO 内容 brief 与写作、标题与 meta 描述、GEO / AI 搜索可见度优化（含区域 AI 平台：Alice/Neuro、AI Briefing、日语 AIO）、中文 AI 搜索、内容质量检查、旧内容刷新 |
-| technical | 技术 SEO 与单页审计、robots.txt 与 AI 爬虫政策（含 YandexAdditional/Naver/Bing 日）、hreflang 国际化（含 es-419/RTL）、结构化数据（Schema）、内链与站点架构、实体与知识图谱、Programmatic SEO、Core Web Vitals（LCP）、审计工具输出解读、SEO 归因埋点（GA4 / GTM） |
-| monitoring | 排名追踪设置、外链质量评估与外联起草、SEO / GEO 指标、告警阈值、效果报告 |
+| research | 关键词研究与搜索意图（各市场工具链+persona×意图 SXO 层）、SERP 分析（含各市场 AIO 覆盖与 SERP 占位层）、内容缺口、竞品、目录提交引擎、外链画像 |
+| content | SEO 内容 brief 与写作、标题与 meta 描述、GEO / AI 搜索可见度优化（含区域 AI 平台）、中文 AI 搜索、**视频 SEO/GEO**（YouTube 被引机制/人工字幕层）、**电商 GEO 五级阶梯+七大 marketplace 站内 SEO**（ML/Trendyol/Allegro/bol/Shopee）、内容质量、旧内容刷新 |
+| technical | 技术 SEO 与单页审计、robots.txt 与 AI 爬虫政策（含区域爬虫/MistralAI/Bytespider）、hreflang 国际化、结构化数据（含富结果状态速查）、内链与架构、实体、Programmatic SEO、Core Web Vitals、**JS 渲染与 SPA SEO**（五引擎渲染差异）、**Agent-Readiness 协议层**（ARD/WebMCP）、**服务器日志分析**（AI 到访测量/a11y 三分法）、归因埋点 |
+| monitoring | 排名追踪、外链（含 14 市场本地外链价带与风险表）、品牌提及（四级引用阶梯+各市场监控通道）、**算法更新归因**（官方时间线/数据文件）、SEO 漂移监控、指标与报告 |
 
 **全球能力不是独立模块,而是融在每个能力集合里**：`overview/multilingual-workflow.md` 是全球主干（11 个市场的引擎格局、逐市场工具栈、语言规范、合规速查），各能力文件按需携带对应区域知识。
 
