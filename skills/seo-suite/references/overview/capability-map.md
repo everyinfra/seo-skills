@@ -175,3 +175,21 @@ seo-suite
 | market-copy / market-brand / market-emails / market-social / market-ads / market-launch | content（文案与内容生产） |
 | market-funnel（转化路径+RPV） | monitoring（转化/归因面）+ overview |
 | market-report / market-report-pdf（汇编+PDF 契约渲染） | monitoring（报告） |
+
+## Search 工具版图:向量库/混合检索/RAG 调试类(tensorchord/Awesome-LLMOps 深读 2026-10-09d)
+
+来源:[tensorchord/Awesome-LLMOps](https://github.com/tensorchord/Awesome-LLMOps) README `## Search` 段全条目(Hybrid search 2 项 + Vector search 23 项)。定位:本套件自身不做检索,但当审计对象/客户要建"站点内容被 AI 检索到"的自有基础设施(站内语义搜索、知识库 RAG、给 AI 爬虫供数的 API)时,从这张图里选型,并据此理解**客户站点的 AI 可见性最终跑在什么检索栈上**。
+
+**向量库(按部署形态分组,README 全 23 项)**:
+
+- **Postgres 系(复用现有 PG,运维最省)**:pgvector(开源向量相似搜索)、VectorChord(tensorchord 自家,pgvecto.rs 后继,磁盘友好)、pgvecto.rs(Rust 插件)、ParadeDB(PG 上的事务型 ES 替代)、Rivestack(托管 PG+pgvector,免费 2GB)。
+- **专用向量库**:Milvus(大规模相似检索)、Qdrant(引擎+云)、Weaviate(对象+向量同存,结构化过滤,GraphQL/REST)、Epsilla、Vald(分布式)、Vearch(分布式 embedding 检索)、Awadb(AI 原生 embedding 库)、AquilaDB(潜在向量+JSON 元数据 kNN)。
+- **嵌入式/serverless(无独立服务)**:Chroma(开源 embedding 数据库)、LanceDB(serverless 长期记忆)、VectorDB(jina-ai,"够用就行"的 Python 库)、Infino(Parquet 上的嵌入式检索:BM25+向量+RRF 混合+SQL,跑对象存储)。
+- **图+向量一体(实体与关系同查)**:Omnigraph(类 Git 分支合并的 typed 图库,S3 原生 Rust,遍历+向量+BM25 同运行时)、SynapCores(自托管:向量+Cypher 图+内嵌 GGUF 推理+SQL;源码闭源仅社区二进制)。
+- **AI 原生全家桶**:Infinity(infiniflow,向量+全文)、Marqo(tensor search)。
+
+**混合检索(词法+语义,2 项)**:Airweave(把任意应用数据变成 LLM 可搜的统一入口——即 RAG 摄取层)、MemorySync(面向 AI 编码助手的多租户持久记忆层+MCP server,50ms 内混合召回)。向量清单内也含混合能力:Infino 的 RRF、Infinity 的全文+向量、Vellum(Vellum 检索:托管文档摄取+混合语义/关键词,自带 OCR、分块、embedding 模型实验、元数据过滤)。
+
+**RAG 调试/评估类(Search 段内无独立小节,可归入此类的条目)**:txtai(语义搜索应用框架,含 RAG 管道)、Vellum(embedding 模型实验+分块策略=检索质量调参面)、Airweave(摄取连通性即 RAG 数据面调试)。**版图缺口提示**:README 的 Search 段只覆盖"库与引擎",检索质量评估、坏例挖掘、引用归因类专用工具未收录——做 GEO 咨询时客户问"我的 RAG 为什么引不到官网内容",答案仍在本套件的引用采样与抽取块体检,不在 Awesome-LLMOps 这张图里。
+
+**选型速记**:已有 PG → pgvector/VectorChord 起步;要图关系(GEO 实体图谱、品牌-产品-评价关联)→ Weaviate 过滤式起步、图+向量一体(Omnigraph/SynapCores)进阶;纯原型 → Chroma/LanceDB/VectorDB;要"一个引擎全都要"(BM25+向量+SQL+对象存储) → Infino/Infinity/SynapCores。

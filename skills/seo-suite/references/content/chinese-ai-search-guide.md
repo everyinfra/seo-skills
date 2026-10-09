@@ -167,3 +167,21 @@ ChatGPT 引用最少但单条吸收深度是 Google 的 5.64x、Perplexity 的 4
 - **robots 判定须按 RFC 9309 语义,逐行正则会漏三种真实封禁**:①`*` 组 Disallow 全站封掉所有无专属组的 AI 爬虫(最常见无意封禁);②多 UA 行共享一组规则,逐行正则会把第一个 UA 判成空规则;③专属组存在时通配符组整组失效(不看顺序)。
 - 节奏:页面体检每周/答案采样每两周或每月(采样有成本+指标有噪声,跑太密看不出信号);无官网与双市场竞品清单分开(漏真实对手会高估名次)。
 - 上游生态:数据=yaojingang/geo-citation-lab(海外 01 实验报告/国内 03 数据集/54 篇论文库);海外三平台论文 arXiv:2604.25707、中文四产品八界面论文 arXiv:2607.15771;姊妹工具 GEORank(自托管工作台)/GEOFlow(规模化生产分发)。
+
+## GEOrank 自托管工作台的五件套与 30/60/90 方案生成(GEORank 深读 2026-10-09d)
+
+来源:[yaojingang/GEORank](https://github.com/yaojingang/GEORank) `README.md` + `skills/georank/`(SKILL/references)+ `cli/georank_cli/`。把上文"姊妹工具 GEORank"展开:它是面向 GEO 的开源工作台(monorepo:静态前台+Next.js 管理台+FastAPI/Celery 后端;数据面 PostgreSQL/Redis/Qdrant/Neo4j/MinIO——**检索底座是向量+图谱双库**),工作流七步:发现→诊断→问答→规划→拓展→结构化→管理。
+
+**GEO 工具五件套**(README「GEO 工具」行原文清单):
+
+| 工具 | 作用 | 与本指南的对应 |
+|---|---|---|
+| JSON-LD 生成器 | 结构化标记产出 | 上文 schema 体检的修复出口 |
+| llms.txt 生成器 | AI 抓取摘要文件 | 见 llms-txt 指南 |
+| AI 友好度评分 | 站点对 AI 摘要/引用的适配打分 | 与页面体检表互补的自动化版 |
+| GEO 标题生成器 | 面向 AI 引用的标题改写 | 上文"标题用用户原话"规则的工具化 |
+| 知识库生成器 | 把关键词/问答/教程沉淀为可复用资产 | 对应"资产化/阵地沉淀"环节 |
+
+诊断维度官方口径:Schema、页面结构、Meta 信息、内容可读性、引用信号、AI 搜索可见性;拓词工作台从业务词扩**问题词/场景词/商业意图词/推荐型词**。API 面(FastAPI):`POST /api/companies/submit`(提交即触发抓取+AI 分析)、`POST /api/diagnostics/`(返回 report_id,轮询 pipeline-status)、`POST /api/solutions/chat`、`POST /api/keywords/expand`;配套 CLI 是 typer 骨架(auth login / company submit / diagnostic run 三命令)。运维 Skill 的安全设计值得抄:**登录永不传角色**、`/api/auth/me` 是唯一角色权威、写操作默认 dry-run 须 `--execute`、管理员写加 `APPLY_ADMIN_CHANGE`、删除加 `DELETE:<精确路径>` 确认短语、密钥只走隐藏输入/环境变量/文件不进 argv。
+
+**30/60/90 增量**:README 的 GEO 方案模块按"目标、网站、资源、限制条件"四输入生成 30/60/90 天计划(仓库未公开计划内文);结合其工作流七步与本指南的 P0→P2 优先级轴,映射如下——**30 天(诊断+门票)**:跑网站诊断六维、修 P0 门票(robots/SPA 空壳/sitemap)与 P0 事实错误,用五件套先产出 JSON-LD+llms.txt 两类低风险新增资产;**60 天(承接+外部)**:补 P1 抽取块缺口、为高价值问题建承接页,拓词工作台扩问题词/场景词并转内容选题,启动外部信源建设(官网只占 1.37%,外部信源是 P1 不是 P2);**90 天(资产化+复诊)**:知识库生成器沉淀问答与教程为长期资产,答案采样对比 30 天基线,把诊断-方案循环固化为季度节奏。三档共同纪律:高风险技术改造(动 robots/noindex)即使 P0 也要备份+小批量+回滚,改后立即重跑体检。

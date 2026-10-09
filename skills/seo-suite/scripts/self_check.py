@@ -26,9 +26,16 @@ for t in templates:
 r = subprocess.run([sys.executable, os.path.join(BASE, 'scripts', 'link_check.py')], capture_output=True, text=True)
 if r.returncode != 0:
     fail.append('link check failed:\n' + r.stdout)
+golden = os.path.join(BASE, 'tests', 'run_tests.py')
+if os.path.exists(golden):
+    t = subprocess.run([sys.executable, golden], capture_output=True, text=True)
+    if t.returncode != 0:
+        fail.append('golden tests failed:\n' + (t.stdout + t.stderr)[-4000:])
+else:
+    fail.append(f'missing {golden}')
 if fail:
     print('SELF-CHECK FAILED:')
     for f in fail:
         print(' -', f)
     sys.exit(1)
-print(f'OK: frontmatter compliant, {len(templates)} templates carry the 7-section structure, links clean')
+print(f'OK: frontmatter compliant, {len(templates)} templates carry the 7-section structure, links clean, golden tests green')

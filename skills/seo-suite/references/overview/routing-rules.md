@@ -143,3 +143,25 @@ REQUIRED_FILES 硬契约(22 个必在文件,含 evals/trigger_cases.json、schem
 **分层降级与配额纪律。** seo-google 分 Tier 0/1/2(API key → +service account → +GA4),每层列出可执行的具体命令;seo-maps 分 Tier 0/1(免费 Nominatim/Overpass vs DataForSEO),Tier 0 时把缺失的 geo-grid 维度权重 25% 重分配(+10 GBP/+10 评论/+5 跨平台),评分体系不因数据缺失而空转。付费调用前必须过 `dataforseo_costs.py check`(approved/needs_approval/blocked 三态,needs_approval 要上报编排器);image-gen 永不自动生成图片,只输出计划(成本控制)。
 
 **防重复路由与代理间总线。** 每个代理写明「不做什么」:seo-maps 明确不重复 seo-local 的页面分析、不重复 seo-geo 的 AI 可见性,改推荐 `/seo local <url>` 交还给对应代理;seo-technical 把 hreflang 细查 defer 给子技能。代理间用 `.seo-cache/` 共享缓存传递上下文(site-meta.json 的 business_type 会影响 schema 分析结论、audit-scores.json、pages/{slug}/*.json),读取三态:找到则引用并注明日期 / 缺失或损坏则当不存在 / 用户说 refresh 则整体忽略——与上文 qiaomu 的闸门思路互补:一个管「放行」,一个管「复用与去重」。
+
+## 技术审计代理的标准作业程序(josstei/maestro-orchestrate 深读 2026-10-09d)
+
+来源:[josstei/maestro-orchestrate](https://github.com/josstei/maestro-orchestrate) `src/agents/seo-specialist.md`(40 个代理定义之一,全文 129 行)。该代理是**只读+shell 跑审计工具**的定位(Lighthouse/结构化数据校验器;不修改代码只出报告),temperature 0.2、max_turns 20、8 分钟超时;产出按下游分叉:coder 要可直接插入的 JSON-LD 片段+精确文件位置,copywriter 要内容级发现(薄内容/缺 alt/标题结构)。Handoff 契约分 Task Report(状态/文件/决策/验证)与 Downstream Context(接口/模式/假设/警告)两段。其三套决策框架可直接作为本套件技术审计的路由附件。
+
+**可抓性审计五步(先验证"能被抓",再看内容质量——顺序即规则)**:①robots.txt 审查:按全部 user-agent 解析规则,标记封掉关键内容的过宽 Disallow;②sitemap 校验:存在性、XML 合法性、URL 数 vs 实际页面数、lastmod 准确性;③canonical 链分析:逐页追链,标记超过 1 跳的链、指向非 200 页的自指 canonical、冲突信号;④重定向审计:超过 2 跳的 301/302 链、循环、软 404;⑤渲染检查:识别无 JS 执行就不被索引的 JS 依赖内容(与 meta-tag-formulas 的"渲染态审计警告"同源)。**路由含义:请求落在①–⑤任一步的验证上 → 技术审计,不进内容/文案集合。**
+
+**严重度三级(与上文的 H/M/L 不同粒度,审计报告用这级)**:**Critical**=页面完全无法索引(robots disallow、关键页 noindex、canonical 链断裂);**Major**=可索引但信号劣化(缺 canonical、重定向链、结构化数据不完整);**Minor**=优化机会(缺可选 meta、标题层级欠优)。排序铁律:按**实际搜索影响**排,不按理论最佳实践;依据现行引擎指南,不用过时 SEO 迷信。
+
+**schema 选型矩阵(7 行,按页面主内容用途选型)**:
+
+| 页面类型 | 主 schema | 必填 | 可选增强 |
+|---|---|---|---|
+| 产品页 | `Product` | name, image, description, offers | aggregateRating, review, brand |
+| 文章/博客 | `Article` | headline, datePublished, author | image, dateModified, publisher |
+| FAQ 页 | `FAQPage` | mainEntity(Question+Answer 对) | — |
+| 指南/教程 | `HowTo` | name, step | image, totalTime, tool |
+| 组织 | `Organization` | name, url | logo, contactPoint, sameAs |
+| 本地商家 | `LocalBusiness` | name, address, telephone | openingHours, geo, priceRange |
+| 活动 | `Event` | name, startDate, location | image, offers, performer |
+
+校验以 **Google Rich Results Test 要求**为准——schema.org 允许的属性多于 Google 实际用于富结果的范围。反模式清单(路由到"拒答/纠偏"而非执行):关键词堆砌或精确密度目标(现代引擎用语义理解)、报缺 meta keywords(2009 年起被主流引擎忽略)、schema 与页面实际内容不符、所有页等权对待(按业务价值排序)、任何损害用户体验的 SEO 手法(隐藏文本/堆砌标题/桥页)。
