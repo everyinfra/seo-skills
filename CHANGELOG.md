@@ -3,6 +3,15 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.29.0 - 2026-10-10
+
+- **新增 [信源监控体系](skills/seo-suite/references/overview/intel-sources.md)**(回答"要持续领先该重点监控搜索哪些信源",三路 agent 深度调研):
+  - **四层清单**:①官方引擎 top20(Search Central Blog/文档 changelog/GSC/Status Dashboard/Lighthouse/ARD/WebMCP/Schema.org/CrUX/StatCounter 国家页/Yandex·Naver·Baidu——各带频率与 RSS/哈希/API 抓取方式);②研究数据层(arXiv 周扫检索式+五家数据团队系列名+已知 GEO 论文脉络);③社区与 18 市场本地信源(每市场至少 1 个+Google Blog 语言版兜底);④竞品观察名单(7 仓活跃度+**黑马 niubigeo 5 周 6,140★**+新仓双周扫描检索式);
+  - **信源→模块映射表**(哪个信源变了改哪个文件——把监控变成维护 SOP);
+  - **风险信号**:2026 spam 已 4 轮+6 月起明文覆盖操纵 AI 回答+8/28 壙站声誉修订→内容模块合规边界需跟;
+  - **风向标**:竞品重心从 SEO 审计转向 AI 可见性监测+MCP 化;GSC 官方 AI 报告=数据层最大变量。
+  Intel sources system: 4-tier monitoring list (top-20 official / research / 18-market local / competitor watchlist) with source→module mapping — the answer to "what to monitor to keep improving."
+
 ## 0.28.0 - 2026-10-09
 
 - **孤儿文件清零 + market_lint v3(完善度清单第 2、3 项)——special_checks 机检映射 24→52 条 + v3 常开机检 12 项(检查函数注册表共 64),golden 测试 62→71**:
