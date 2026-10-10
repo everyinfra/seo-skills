@@ -3,6 +3,15 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.30.1 - 2026-10-10
+
+- **全面体检+修复(逐文件扫描)**:
+  - intel_check.py 403 修复:GSC 公告页 404→改用 Search Blog RSS;Yandex en/new-features 404→改用 ru/new-features(200);**18/18 源全部可用**;
+  - 全套件体检:12 个文件修复——残留空文件删除/SKILL.md 脚本数 37→38+补 intel_check 路由+标题序号/geo-evidence-bank 的 AIO CTR 口径统一(34.5% 2025-04→58% 2026-02 标注测量日期)/**14 处 zubair-trzada→zubair-trabzada 拼写修正**(原拼写 404)/NOTICE 补登 10 个漏记仓库/README 双语数字更新(38 脚本/71 测试/18 市场/0.24-0.30 系列);
+  - 38 脚本全编译零第三方;71 tests 全绿;markets.json 与门户页数字一致;市场总表 11+7=18=门户数;
+  - 未修的结构性发现:capability-map/playbooks 追加式组织债/多时间戳倒挂/README 系列段排序——记录待重构。
+  Full health check: 12 files fixed (URL 404s, spelling 404s, version counts, date annotations), 18/18 intel sources functional, all 38 scripts compile, 71 tests green.
+
 ## 0.30.0 - 2026-10-10
 
 - **自更新循环落地(信源→直接更新 skill,不只是知识)**:
@@ -258,7 +267,7 @@ Future content or structure changes must bump the version and add a dated entry.
 
 - 新增 8 个参考资料:外链画像分析(七段式框架+数据闸门)、外链渠道目录(分级+核验日期)、llms.txt 指南(格式+校验严重度)、AI 平台差异事实库(五引擎+爬虫分类)、可引用性打分(五维块级+就绪度分层)、AI 爬虫政策(引用型 vs 训练型 bot)、hreflang 八检、品牌提及监控(五平台加权+买家提示词集)。
   Eight new reference files: backlink profile analysis (7-section framework with a data-sufficiency gate), graded backlink directory with verification dates, llms.txt guide, AI platform differences fact base, citability scoring, AI crawler policy (citation vs training bots), hreflang 8-check validation, and brand-mention monitoring.
-- 框架要点参考 AgriciDaniel/claude-seo、zubair-trzada/geo-seo-claude、jianruntech/geo-score、Auriti-Labs/geo-optimizer-skill、flaqai/backlink_skills、alvinunreal/awesome-submitlist、indie-hacking/Awesome-SEO-Backlinks、OranAi/orangeo(均在各文件末尾附来源)。借要点摘要与原文链接,见 NOTICE。
+- 框架要点参考 AgriciDaniel/claude-seo、zubair-trabzada/geo-seo-claude、jianruntech/geo-score、Auriti-Labs/geo-optimizer-skill、flaqai/backlink_skills、alvinunreal/awesome-submitlist、indie-hacking/Awesome-SEO-Backlinks、OranAi/orangeo(均在各文件末尾附来源)。借要点摘要与原文链接,见 NOTICE。
   Framework points borrowed (summary + link only, see NOTICE) from the repos above.
 
 ## 0.1.0 - 2026-09-29

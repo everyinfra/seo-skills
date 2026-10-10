@@ -24,7 +24,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 7. 可执行层(37 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(38 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -79,9 +79,10 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 **套件自维护**
 - `self_check.py` / `link_check.py`
+- `intel_check.py init|check [--source 名]`:信源变更检测(18 源注册表:RSS top-item+页面 hash,与 [信源监控体系](references/overview/intel-sources.md) 同步维护)——check 拉全部源与 `.intel-state.json` 基线 diff,按 source→module 映射输出应更新的套件文件;退出码 1=有变更,按[自更新协议](references/overview/self-update-protocol.md)执行更新
 
 来源方法论见 NOTICE(百仓深扫改写,非复制代码)。
-## 6. 你需要自备什么
+### 4. 你需要自备什么
 - 本 Skill 不附带数据。需要数据的任务，使用你自己的数据源：Google Search Console、GA4、Bing Webmaster Tools 的导出，或你自己账号下的排名追踪、外链、爬虫工具的导出。
 - 可选的外部 API（例如 PageSpeed Insights API、Knowledge Graph Search API）需要你自己的 Key，Skill 不提供任何 Key。
 - 需要看渲染后页面时，使用你的 AI 工具自带的浏览器能力，或由你提供渲染后的 HTML / 截图。

@@ -1,6 +1,6 @@
 # 品牌提及监控（AI 搜索时代的"外链"）
 
-> 建立于 2026-10-09。权重与平台分布参考 [zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `geo-brand-mentions` 技能，按本套件证据约束改写。
+> 建立于 2026-10-09。权重与平台分布参考 [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `geo-brand-mentions` 技能，按本套件证据约束改写。
 > 背景事实：AI 引擎排名中品牌提及与结果的相关性约为外链的 3 倍（行业研究，非官方算法声明）。监控品牌提及因此成为 GEO 监控域的自然延伸。
 
 ## 一、五平台加权（0–100 品牌权威分）
@@ -60,7 +60,7 @@
 
 ## 七、来源
 
-- 五平台权重与 0.737 相关性：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-brand-mentions/SKILL.md`
+- 五平台权重与 0.737 相关性：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-brand-mentions/SKILL.md`
 - 7/5/3 提示词分类法：[OranAi-Ltd/orangeo-ai-visibility-skill](https://github.com/OranAi-Ltd/orangeo-ai-visibility-skill) `references/prompt-taxonomy.md`
 - 品牌提及 3x 相关性主张：geo-seo-claude README 市场数据表
 - 第六节：coreyhaines31/marketingskills（四级阶梯/格式动荡）；Amsive、SimilarWeb、Scrunch（推荐基准，观察性）；Reuters Institute DNR 2026、Pew（点击率）；Comscore、Goodie（碎片化）；JingHao-Leon/geo-book（风控，一手）；incognito-54/utsushi（Share of AI Voice/Sonar 探针）；Yandex Webmaster 官方（SoV）；Naver 메이트 帮助页（인용수 公开）

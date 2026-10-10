@@ -1,6 +1,6 @@
 # llms.txt 指南：格式、校验与生成
 
-> 建立于 2026-10-09。格式要点参考 [zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude)（开源）`skills/geo-llmstxt` 与 [jianruntech/geo-score](https://github.com/jianruntech/geo-score) 的判定规则，交叉 [AnswerEngines spec](https://llmstxt.org)。按本套件的证据约束改写。
+> 建立于 2026-10-09。格式要点参考 [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude)（开源）`skills/geo-llmstxt` 与 [jianruntech/geo-score](https://github.com/jianruntech/geo-score) 的判定规则，交叉 [AnswerEngines spec](https://llmstxt.org)。按本套件的证据约束改写。
 > llms.txt 是给 AI 检索系统的内容地图，不是收录保证。没有任何引擎公开承诺"有 llms.txt 就优先引用"。
 
 ## 一、llms.txt 是什么、不是什么
@@ -68,7 +68,7 @@
 
 ## 七、来源
 
-- 格式与严重度：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-llmstxt/SKILL.md`
+- 格式与严重度：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-llmstxt/SKILL.md`
 - 状态码判定与"不看体积"：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `SKILL.md`
 - 原始提案：[llmstxt.org](https://llmstxt.org)
 

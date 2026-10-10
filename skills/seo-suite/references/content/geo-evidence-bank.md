@@ -45,7 +45,7 @@
 
 ### 点击、流量与引用行为
 
-- Ahrefs：AIO 使点击下降 34.5%（CTR 影响分析）。[ahrefs.com/blog/ai-overviews-reduce-clicks](https://ahrefs.com/blog/ai-overviews-reduce-clicks/)，2026-10-09 读取。
+- Ahrefs：AIO 使首位点击下降 34.5%（2025-04 测量）；同方法 2026-02 复测为 ~58%——一年前后对照，勿单引旧值。[ahrefs.com/blog/ai-overviews-reduce-clicks](https://ahrefs.com/blog/ai-overviews-reduce-clicks/)，2026-10-09 读取；与 [discover-news-seo.md](discover-news-seo.md) 及 [intel-sources.md](../overview/intel-sources.md) 口径一致。
 - Ahrefs：63% 网站收到 AI 流量（3,000 站研究）。[ahrefs.com/blog/ai-traffic-study](https://ahrefs.com/blog/ai-traffic-study/)
 - Ahrefs 75K 品牌分析：传统流量指标只能解释约 5% 的 AI 引用行为（95% 未被解释——相关性研究，非因果）。[ahrefs.com/blog/ai-overview-brand-correlation](https://ahrefs.com/blog/ai-overview-brand-correlation/)
 - Kevin Indig《State of AI Search Optimization 2026》：24% ChatGPT 响应未联网抓取；发布 <3 个月的内容被引用概率 3×。[growth-memo.com](https://www.growth-memo.com/p/state-of-ai-search-optimization-2026)，2026 年。

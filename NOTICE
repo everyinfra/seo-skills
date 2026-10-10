@@ -50,7 +50,7 @@ skills/seo-suite/references/ 下的参考资料由 EveryInfra 自行编写。部
 ## 0.2.0 新增参考的第三方来源(仅摘要+链接)
 
 - AgriciDaniel/claude-seo (MIT): backlink 7-section framework, hreflang 8 checks, sitemap rules
-- zubair-trzada/geo-seo-claude (open): llms.txt spec, citability weights, platform playbooks, brand authority
+- zubair-trabzada/geo-seo-claude (open): llms.txt spec, citability weights, platform playbooks, brand authority
 - jianruntech/geo-score (open): AIV rubric structure, vendor crawler facts, sampling protocol
 - Auriti-Labs/geo-optimizer-skill (open): citation vs training bot taxonomy
 - flaqai/backlink_skills (open): channel list conventions, provenance six-field, submission discipline
@@ -79,3 +79,21 @@ Temso、Weglot、Yandex Webmaster 官方文档、Naver 官方 PR/Help、arXiv:23
 ## 0.13.0 百仓深扫(20 agent 版)深读来源
 
 逐仓精读的新增来源(全文级):every-app/open-seo、TheCraigHewitt/seomachine、goenning/google-indexing-script、garmeeh/next-seo(14 稀有 JSON-LD)、zubair geo-seo-claude 三个未吸收模块、aFarkas/lazysizes、GoogleChrome/rendertron、stereobooster/react-snap、satnaing/astro-paper、yaojingang/GEOFlow、nowork-studio/notfair(3 技能)、ericosiu(3 脚本)、aaron-he-zhu(CITE 40+CORE-EEAT 80)、AnswerDotAI/llms-txt、docmd-io/docmd、AgriciDaniel/claude-blog(蚕食+门禁)、AminForou/mcp-gsc、karust/openserp、harlan-zw/nuxt-seo、sceneview、onvoyage、retlehs/quien、gooseworks、kostja94(parasite/Grokipedia)、Auriti 4.18.x、Bhanunamikaze、rampstack、siteone-crawler、llms-txt-hub、teles、jdevalk 三页、indranilbanerjee、seonaut、JeffLi1993、aigclink/geolook v2.0.1、tigerless(C 集全文)、leopard measure.md、OpenClaudia、Affitor、crawlseo、geo-score CLI、beihaili、unifapi、iannuttall、Yuzzyuk(slop 全文)、seo-monster(DiD)、amplifying-ai(证据库)、respectaso(标定纪律)、GEORank、cablate(三指标)、SEOmator、qiaomu(schema)、claude-youtube、elmo(fan-out 实现)、boraoztunc(NOTICE 法)。完整判定见仓库外 top100-deepscan-ledger.md。
+
+## 0.18.0–0.19.0 及后续批次补充深读来源(摘要+链接,2026-10 登记补全)
+
+此前各深读轮引用但未入本登记表的仓库,统一补记(均经 GitHub API 核实存在):
+- rampstackco/claude-skills (open): 运营层 15 工作流、审计编排六阶段(capability-map/playbooks 深读节)
+- every-app/open-seo 补充三件 (Apache-2.0): seo-coach 分诊/seo-project-setup 上下文模型/observability-triage
+- zubair-trabzada/ai-marketing-claude (MIT): 三层编排、文件产物总线、诊断/生成/编译分域
+- zubair-trabzada/dataforseo-claude (open): SERP 数据源接入模式
+- AgriciDaniel/codex-seo (open): codex 侧 SEO 技能对照
+- LeoYeAI/openclaw-marketing-skills (open): 营销技能编排对照
+- tensorchord/Awesome-LLMOps (CC-BY-4.0): Search 段向量库/混合检索版图(capability-map 选型节)
+- nuxt/vue-meta (MIT): SPA meta 层实现深读
+- josstei/maestro-orchestrate (open): 编排模式对照
+- joeseesun/qiaomu-seo (open): schema 工程细节(0.12 已记 qiaomu-seo,此处补全 owner)
+- JingHao-Leon/geo-research-cn / ZhiMaHang/chinese-ai-engine-sources (open): 中文 AI 引擎生态事实
+- liangdabiao/GEO-Content-Optimizer-Skill / Ryze-AI-Adgent/open-seo-mcp-skills / ReScienceLab/opc-skills (open): GEO 实施与评测对照
+
+协议与规范类链接(ARD/UCP/ACP/NLWeb/robots.txt 等)属公开文档引用,不构成代码或框架借鉴,不在此列。

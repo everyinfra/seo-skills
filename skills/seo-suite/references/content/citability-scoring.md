@@ -1,6 +1,6 @@
 # 可引用性打分（内容能否被 AI 引用）
 
-> 建立于 2026-10-09。框架参考 [zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `geo-citability` 技能与 [jianruntech/geo-score](https://github.com/jianruntech/geo-score) rubric v1.1，按本套件证据约束改写。
+> 建立于 2026-10-09。框架参考 [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `geo-citability` 技能与 [jianruntech/geo-score](https://github.com/jianruntech/geo-score) rubric v1.1，按本套件证据约束改写。
 > 打分衡量的是内容**形状**是否便于引用，不是引用结果本身——好分数不保证被引。
 
 ## 一、五维块级打分（0–100）
@@ -56,7 +56,7 @@
 
 ## 五、来源
 
-- 五维块级与 134–167 词最优段：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-citability/SKILL.md`
+- 五维块级与 134–167 词最优段：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-citability/SKILL.md`
 - 站点级分层/闸门/三态/抽样协议：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `rubric/v1.1.md`
 - 47 方法库（9 个出自 KDD 2024）：[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/geo-methods.md`
 
@@ -116,7 +116,7 @@
 
 ## 第二套站点级评分学:六类合成 + 确定性子分细则(geo-seo-claude 深读,2026-10-09)
 
-来源:[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `docs/scoring-methodology.md` 全文 + `skills/geo-audit/SKILL.md`。与第二节 AIV 五支柱并列的第二套完整评分学;该文档自带三条 caveat(确定性/观点权重/诊断非保证),照录。
+来源:[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `docs/scoring-methodology.md` 全文 + `skills/geo-audit/SKILL.md`。与第二节 AIV 五支柱并列的第二套完整评分学;该文档自带三条 caveat(确定性/观点权重/诊断非保证),照录。
 
 **六类合成权重**:Citability 25% / Brand 20% / E-E-A-T 20% / Technical 15% / Schema 10% / Platform 10%。分档:90+ Excellent / 75+ Good / 60+ Fair / 40+ Poor / <40 Critical。Citability 类内部再复合四组件:**Citability 35% / Brand Mention 30% / Crawler Access 25% / llms.txt 10%**。
 

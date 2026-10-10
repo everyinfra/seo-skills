@@ -1,6 +1,6 @@
 # 外链画像分析框架
 
-> 建立于 2026-10-09。框架要点参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）的 `seo-backlinks` 技能与 [zubair-tradzada/dataforseo-claude](https://github.com/zubair-trzada/dataforseo-claude) 的层级式数据源选择，按本套件的证据约束改写。
+> 建立于 2026-10-09。框架要点参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）的 `seo-backlinks` 技能与 [zubair-tradzada/dataforseo-claude](https://github.com/zubair-trabzada/dataforseo-claude) 的层级式数据源选择，按本套件的证据约束改写。
 > 本文件是分析框架，不是数据服务：所有数据来自你自己的工具导出或 API 账号。不承诺外链数量、排名或流量的提升。
 
 ## 一、开始前：数据源检测级联
@@ -103,7 +103,7 @@
 ## 五、来源
 
 - 框架与阈值：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-backlinks/SKILL.md`、`skills/seo/references/backlink-quality.md`（MIT）
-- 层级式源选择与"冲突时信高层但注明分歧"：[zubair-trzada/dataforseo-claude](https://github.com/zubair-trzada/dataforseo-claude) `agents/seo-backlinks.toml`
+- 层级式源选择与"冲突时信高层但注明分歧"：[zubair-trabzada/dataforseo-claude](https://github.com/zubair-trabzada/dataforseo-claude) `agents/seo-backlinks.toml`
 - 免费源偏差与复合公式：claude-seo `skills/seo/references/free-backlink-sources.md`
 
 ## 数字禁令与交付前自查(claude-seo 深读 2026-10-09b)

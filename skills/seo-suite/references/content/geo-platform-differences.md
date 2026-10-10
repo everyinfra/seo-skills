@@ -1,6 +1,6 @@
 # AI 搜索平台差异事实库
 
-> 建立于 2026-10-09。事实来源：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`（一手厂商文档级，2026-10-04 复核）与 [zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) 平台优化技能。按证据约束改写：厂商文档级事实与社区观察分开标注；未证实处明写。
+> 建立于 2026-10-09。事实来源：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`（一手厂商文档级，2026-10-04 复核）与 [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) 平台优化技能。按证据约束改写：厂商文档级事实与社区观察分开标注；未证实处明写。
 > 这些是各引擎的**公开行为差异**，不是排名公式。优化建议由此推导，但不应承诺引用结果。
 
 ## 一、厂商文档级事实（最可信层）
@@ -95,7 +95,7 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 ## 七、来源
 
 - 厂商事实与"禁 GPTBot 不阻止引用"：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`、[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
-- 平台侧重与统计：[zubair-trzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
+- 平台侧重与统计：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
 - 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional、SoV）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest、lizck.com 定点综述（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）；Naver 官方博客 224296857688 与 help.naver.com/service/30056（AI Briefing 标准与메이트）；Peec AI（ChatGPT 5.6 格式）；Machine Relations（AIO/AI Mode）；微信公开课 PRO 2023、卢松松博客（Peoplerank）、极搜AI（元宝）、CSDN 2026-07 横评与 [geo-book](https://github.com/JingHao-Leon/geo-book)（豆包/知乎修正，一手）
 
 ## 测量定义层(elmo/seo-monster/indranilbanerjee,百仓扫描批 3-4)
@@ -139,7 +139,7 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 
 ## 爬虫访问层补充与角色混淆警示(geo-seo-claude 深读,2026-10-09)
 
-来源:[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trzada/geo-seo-claude) `skills/geo-crawlers/SKILL.md`(387 行,三层爬虫参考)。
+来源:[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-crawlers/SKILL.md`(387 行,三层爬虫参考)。
 
 1. **封锁率基线**(Originality.ai 2025):top-1000 网站中 **35%+ 封至少一个主要 AI 爬虫,5–10% 全封**——多为继承自旧 SEO 配置的激进 robots;封锁 AI 爬虫是"从 AI 答案消失"的最快单一途径。审计时把"意外封锁"当默认怀疑项。
 2. **⚠️ 角色混淆警示(方法论样本)**:该仓(高星流行仓库)的爬虫角色表与厂商文档存在三处硬冲突——把 GPTBot 说成"ChatGPT 搜索的动力,封它则 ChatGPT 搜索不收录"(实际搜索是 OAI-SearchBot;禁 GPTBot 不阻止 ChatGPT 引用);把 ClaudeBot 说成"live search/citation"(实际是 Claude-SearchBot;ClaudeBot 是训练);把 Google-Extended 说成"控制 AI Overviews"(实际不管 AIO)。**爬虫角色事实只从厂商 bots 文档取**,流行技能仓库的角色表须逐条对照我们的第三节。
