@@ -4,6 +4,8 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Scope: {域名/抽查页数/工具} �
 
 > 多市场站点:逐市场各出一份本报告,不合并。
 
+> 三模式渲染:按受众 exec/dev/prospect 裁剪,规范见 [report-modes.md](report-modes.md);输出必带 Today's priorities 节与建议四字段。
+
 ## Verdict
 
 {fit for ranking growth / fixable blockers first / penalized-or-deindexed risk} — {一句话+三大结论规模数字。}

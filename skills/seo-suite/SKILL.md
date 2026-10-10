@@ -27,7 +27,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(43 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(46 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -38,6 +38,9 @@ metadata:
 - `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
 - `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威
 - `core_eeat.py FILE`:CORE-EEAT 机械化(GEO/SEO 双分+veto 封顶 59)
+- `content_score.py --draft 文件 --competitors c1,c2,c3 --keyword 主词`:透明内容评分器——MarketMuse 公式(50 话题×min 提及,2)+Surfer 双轨(SEO 轨+AI 轨前三查)+意图系数;竞品<3 拒评;术语表(重要度/典型区间/缺失清单)
+- `fix_plan.py --url|--audit audit.json`:审计→修复物生成器(6 类 FixItem:robots/llms/schema/meta/ai_discovery/content);默认 dry-run,--apply 只写 ./seo-fixes/;--estimate 收益预估
+- `grounding_page.py --facts brand.yaml`:品牌实体事实页生成(Rankscale 11 条:dl 事实/FAQ 含名/volatile 独立/is-NOT 消歧/JSON-LD 镜像);--check 校验已有页
 
 **技术 SEO**
 - `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
@@ -311,6 +314,9 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/monitor/ai-visibility-monthly.md`(月报五节:Executive Summary/Visibility/Competitive/Content Health 三分/Recommendations 恰好 3 动作)
 - `templates/monitor/citation-outreach-brief.md`(引用缺口外联简报)
 - `templates/research/prompt-bank.md`(GEO 采样 prompt 库:20 条漏斗×视角矩阵+persona 前缀+fanout 六类型+5+3+2 配方)
+- `templates/content/content-brief.md`(三段式简报:证据头/执行摘要/大纲六件套+9 内容类型变体)
+- `templates/content/pre-publish-checklist.md`(发布前 27 条闸:meta/结构/内容/AI 可引性四组,机检条目挂真实脚本)
+- `templates/audit/report-modes.md`(报告三模式:exec/dev/prospect 一表三裁+Today's priorities+建议四字段)
 - `templates/monitor/alert-playbook.md`
 
 ## 常见请求如何路由
