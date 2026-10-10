@@ -12,7 +12,7 @@
 
 ## 〇、解释层规范(Sitebulb 式,2026-10-10 增补)
 
-> 结构与文案纪律来自 [borrow-specs.md](../research/borrow-specs.md) A2 节(Sitebulb 九节结构 + SF 320 条 issue 矩阵实证)。**各节表格仍是全量索引、永不删行**;解释层第一波覆盖 P0/P1(79 条)、第二波增补 medium/low 高价值家族(44 条)、第三批收口可用性与卫生家族(47 条:Technical SEO 10/Security 6/Mobile 6/Links 6/HTML Validation 5/Content 5/Redirects 3/Core SEO 2/Crawlability 2/i18n 1/Performance 1),本版累计 **170 条**,其余规则见文末"未覆盖规则"。
+> 结构与文案纪律来自 [borrow-specs.md](../research/borrow-specs.md) A2 节(Sitebulb 九节结构 + SF 320 条 issue 矩阵实证)。**各节表格仍是全量索引、永不删行**;解释层第一波覆盖 P0/P1(79 条)、第二波增补 medium/low 高价值家族(44 条)、第三批收口可用性与卫生家族(47 条:Technical SEO 10/Security 6/Mobile 6/Links 6/HTML Validation 5/Content 5/Redirects 3/Core SEO 2/Crawlability 2/i18n 1/Performance 1)、第四批收口 E-E-A-T·Accessibility·实体图·Legal(50 条:E-E-A-T 14/Accessibility 32/Structured Data 实体图六查 3/Legal 1),本版累计 **220 条**,其余规则见文末"未覆盖规则"。
 
 - **字段固定**:每条目 = 规则 ID 标题 + 元信息行(名称/类型/优先级/输出)+ what/why/trigger/caveat/fix/export/seealso 八段。条目标题层级随所属节深一级(一/三节 `###`,四节 `####`)。
 - **两轴哲学**:类型(issue|warning|opportunity)× 优先级(critical|high|medium|low|insight)独立打分。**Opportunity 永不给 critical**(SF 320 条矩阵实证);"坏信号>缺信号"——主动矛盾(信号冲突/指向坏目标)排 critical-high,单纯缺失排 medium-low。
@@ -552,6 +552,148 @@ Disallow: /search/      +     <meta name="robots" content="noindex">
 | `eeat-nap-consistency` | NAP 一致性 ⛏ | warn | 同一组织名在整站爬取中只挂一个电话+地址;不同名=不同主体;需 crawl |
 
 **结构拆法**:16 条 = 信任基建 5(about/contact/privacy/ToS/address)+ 作者维度 2(byline/expertise)+ 内容维度 3(dates/citations/disclaimers)+ 商业披露 1(affiliate)+ 治理 1(editorial-policy)+ 信号 1(trust-signals)+ 检测器 2(YMYL/geo-meta)+ 跨页一致性 1(NAP)。**eeat-ymyl-detection 是开关型 info 规则**——它给 YMYL 判定供数给 disclaimers 等,呼应我们 seo-ops T4"拿不准即标 true"。
+
+**解释层(14 条,第四批;ID 为源目录原文;privacy+ToS、physical-address+geo-meta 各并一条家族条)**
+
+### eeat-author-byline
+- 名称/类型: 作者署名缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn)
+**这意味(what)**: 内容页(文章/指南/评测)没有可见的作者归属——无 byline,也无链接到作者档案的署名元素。
+**为什么(why)**: E-E-A-T 的前两格(Experience/Expertise)都落在"人"上:质量评估对匿名内容(尤其 YMYL 与话题敏感类)默认按低可信处理;署名同时是 author 结构化数据的锚点——引擎要求 schema 与可见内容一致,没有可见署名,author 字段就成了无源之水。AI 引用侧同理:带作者的来源在引文完整度上更占优。
+**触发(trigger)**: 1) 页面属内容模板(文章/博客/新闻形态,判定口径源表未公布[待核]);2) 无作者名文本或指向作者档案的署名链接即 warn。
+**不修的条件(caveat)**: 署名不是直接排名因素,然而它是整条 E-E-A-T 评估链的入口,所以一般建议内容页必配。但公司公告/产品页/工具页以组织身份发布是正当形态,author 用 Organization 代替 Person 即可。
+**修复(fix)**: 内容模板加可见 byline 并链接到作者档案页;与 Article schema 的 author 字段同源输出;匿名编辑部的站至少给"编辑团队"一个实体页。
+**导出(export)**: Reports > E-E-A-T > Missing Author Byline
+**关联(seealso)**: eeat-author-expertise、sd-required-fields;[content-patterns.md](../content/content-patterns.md)、[geo-evidence.md](../content/geo-evidence.md)
+
+### eeat-author-expertise
+- 名称/类型: 作者资历标记缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;作者凭证+简历+资历页)
+**这意味(what)**: 有作者署名,但作者资历不可验证——无 bio、无凭证(头衔/资质/从业背景)、无独立作者页。
+**为什么(why)**: 署名回答"谁写的",资历回答"凭什么信":官方质量评估把内容创作者的专业度列为独立评分维度,YMYL 类尤甚;Person schema 的 jobTitle/knowsAbout/alumniOf 把资历机器可读化,供实体图与 AI 引用消费。作者页还是 author 实体 @id 的落点——缺它,署名实体在实体图里悬空(联动 sd-entity-reference 的 dangling 判定)。
+**触发(trigger)**: 1) 页面存在署名;2) 站内无对应作者档案页,或 bio 缺凭证要素(要素清单口径[待核])即 warn。
+**不修的条件(caveat)**: 资历呈现对非 YMYL 内容的常规排名影响有限,所以一般建议按内容风险分级:YMYL 全配,普通内容至少 bio+头衔。但个人品牌站(域名即作者本人)可弱化独立作者页。
+**修复(fix)**: 建作者档案页(bio/凭证/同主题其他文章);Article 的 author 指向该页 Person 的 @id;补 jobTitle/knowsAbout 字段。
+**导出(export)**: Reports > E-E-A-T > Author Expertise Missing
+**关联(seealso)**: eeat-author-byline、sd-entity-reference;[entity-signal-checklist.md](entity-signal-checklist.md)、[knowledge-graph-guide.md](knowledge-graph-guide.md)
+
+### eeat-content-dates
+- 名称/类型: 内容日期缺失/更新机制缺位 —— warning · 优先级 medium · 输出 WARN(源表 warn;datePublished/dateModified,Article schema 或 `<time>`)
+**这意味(what)**: 内容页没有发布/更新日期,或日期只有视觉层没有机器可读载体(Article schema 的 datePublished/dateModified 或 `<time datetime>`)。
+**为什么(why)**: 新鲜度是查询依赖的排名输入:信息敏感查询优先服务近因内容;机器可读日期同时供 SERP 展示与抓取调度参考。可见日期与机器可读日期要一致——三处年份打架另归 content-agreement。运营层的正解是"真实更新+真实 dateModified"的更新机制,而非机械刷新时间戳——后者会被 crawl-sitemap-date-drift 的交叉比对识破。
+**触发(trigger)**: 1) 内容模板页无 datePublished(或等价 `<time>`)即 warn;2) 有发布无更新日期是否单判[待核:源表按 Article 必填口径]。
+**不修的条件(caveat)**: 日期不是全场景排名因素(常青内容挂显眼旧日期反而降 CTR),所以一般建议信息敏感内容配全、常青内容可只留发布年月。但把构建时间当修改时间写入是必须清掉的造假形态。
+**修复(fix)**: CMS 把真实 updated_at 输出到 Article schema 的 datePublished/dateModified 与 `<time>`;内容保鲜流程见 [content-refresh-playbook.md](../content/content-refresh-playbook.md)。
+**导出(export)**: Reports > E-E-A-T > Missing Content Dates
+**关联(seealso)**: eeat-author-byline、content-agreement、crawl-sitemap-lastmod;[content-refresh-playbook.md](../content/content-refresh-playbook.md)、[content-decay-signals.md](../content/content-decay-signals.md)
+
+### eeat-citations
+- 名称/类型: 权威引用缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;链向权威源 .gov/.edu/论文/行业出版物)
+**这意味(what)**: 内容页的论断没有外部权威来源支撑——无出站引用,或引用全指向低可信源。
+**为什么(why)**: 引用是 Trust 的外部化:质量评估要求重要论断有来源(YMYL 硬要求);出站引用 .gov/.edu/同行评审论文/行业出版物是内容可信度的可验证信号,AI 引用链同样倾向有据可查的来源。注意与 links-nofollow-external 的联动:把引用链接全 nofollow 等于亲手关掉这个信号。
+**触发(trigger)**: 内容页出站引用中权威源(.gov/.edu/论文域名/行业出版物清单[清单口径待核])计数=0 即 warn。
+**不修的条件(caveat)**: 引用密度不是排名公式(不是每页都得挂 .gov),所以一般建议论断型内容配引用、叙事型内容不强求。但为凑权威链接硬引不相关来源,反而稀释主题相关度。
+**修复(fix)**: 数据/论断处补一手来源链接(正常 follow);证据分级规范见 [geo-evidence.md](../content/geo-evidence.md);死引用按 links-external-reachability 定期清理。
+**导出(export)**: Reports > E-E-A-T > Missing Citations
+**关联(seealso)**: links-nofollow-external、eeat-disclaimers;[geo-evidence.md](../content/geo-evidence.md)、[geo-evidence-bank.md](../content/geo-evidence-bank.md)
+
+### eeat-about-page
+- 名称/类型: About 页缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn)
+**这意味(what)**: 站点没有 About/About Us 页,或有但无实质组织信息。
+**为什么(why)**: About 页是"这个站是谁、凭什么"的第一声明位:信任评估从这里开始;它也是 Organization 实体叙事(使命/团队/历史)的载体,与 Organization schema 互为表里。缺 About 页的站点在"匿名 vs 实名"之间被默认按前者处理。
+**触发(trigger)**: 站内导航/页脚无可达的 About 页(URL 形态 /about、/about-us 等[路径词表待核])即 warn;crawl 模式全站判,单页审计按页脚链接判。
+**不修的条件(caveat)**: About 页不是排名因素本身,然而它是信任链地基,所以一般建议全站必配。但纯内部工具无所谓;个人博客可用"关于我"页等价满足。
+**修复(fix)**: 建 About 页:组织是谁/做什么/凭什么可信(团队/历史/认证);页脚全局链接;与 Organization schema 同源输出。
+**导出(export)**: Reports > E-E-A-T > Missing About Page
+**关联(seealso)**: eeat-contact-page、eeat-editorial-policy;[knowledge-graph-guide.md](knowledge-graph-guide.md)
+
+### eeat-contact-page
+- 名称/类型: 联系页缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;email/电话/表单/地址至少其一)
+**这意味(what)**: 站点没有联系页,或联系页没有任何可用通道(源表口径:email/电话/表单/地址至少其一)。
+**为什么(why)**: 联系信息是 Trust 的底线证据:质量评估把"无法联系经营者"列为低信任信号,电商/服务类尤甚;多数辖区的消费者保护法也要求可识别的经营者与联系方式。通道的真实可用性比数量重要——一个真实表单胜过四个死邮箱。
+**触发(trigger)**: 站内无可达联系页,或联系页四类通道(email/电话/表单/地址)计数=0 即 warn。
+**不修的条件(caveat)**: 联系页不影响常规排名,然而缺失在 YMYL/电商场景是信任硬伤,所以一般建议必配。但开源项目站用 GitHub issue 等单一通道替代是可接受形态。
+**修复(fix)**: 建联系页(≥1 真实通道);页脚全局链接;电话/地址与 LocalBusiness/PostalAddress schema 同源(见 eeat-physical-address)。
+**导出(export)**: Reports > E-E-A-T > Missing Contact Page
+**关联(seealso)**: eeat-about-page、eeat-physical-address;[knowledge-graph-guide.md](knowledge-graph-guide.md)
+
+### eeat-privacy-tos(家族条:privacy-policy+terms-of-service)
+- 名称/类型: 隐私政策/服务条款链接缺失 —— warning · 优先级 low · 输出 WARN(源表各=warn:页脚隐私政策链接、页脚 ToS 链接)
+**这意味(what)**: 页脚缺隐私政策或服务条款链接(两条同构:均为页脚法定页存在性检查,并作一条)。
+**为什么(why)**: 两页是商业信任与合规的基建:装任何追踪脚本后隐私政策是法定要求(GDPR/CCPA 系),ToS 划定内容与交易权责;引擎侧它们是"真实经营实体"的辅助证据,用户侧是转化前的信任确认。缺失还联动 legal-cookie-consent——有追踪无隐私政策是双重扣分形态。
+**触发(trigger)**: 页脚(或全站级导航)无 Privacy Policy / Terms of Service 链接即各 warn。
+**不修的条件(caveat)**: 法定页本身不是排名因素,然而隐私政策缺失在多数辖区是合规缺口,所以一般建议全站配。但无 cookie 无收集的纯静态个人站可从简——从简不等于没有。
+**修复(fix)**: 页脚模板级补两链接(勿逐页手写);隐私政策覆盖实际收集行为并与 CMP 配置一致(见 legal-cookie-consent)。
+**导出(export)**: Reports > E-E-A-T > Missing Privacy / ToS Links
+**关联(seealso)**: legal-cookie-consent、eeat-contact-page;[validation-guide.md](validation-guide.md)
+
+### eeat-physical-address(吸收 eeat-geo-meta)
+- 名称/类型: 实体地址标记缺失 —— warning · 优先级 low · 输出 WARN(源表:physical-address warn,PostalAddress(Organization/LocalBusiness schema);geo-meta warn,有 local-business schema 的页也应设 geo meta 标签)
+**这意味(what)**: Organization/LocalBusiness schema 没有 PostalAddress,或 LocalBusiness 页面缺 geo meta(geo.region/geo.position/ICBM)标签——源表把 geo meta 作为 local-business schema 的伴生要求。
+**为什么(why)**: 地址是线下可信实体与本地相关度的双重信号:LocalBusiness 富结果与本地意图查询都吃地址数据;geo meta 与 schema 坐标同源时给本地化内容多一层机器可读声明。单点标记不等于有效——NAP 跨载体一致才有价值(见 eeat-nap-consistency)。
+**触发(trigger)**: 1) 页面有 Organization/LocalBusiness schema 但无 PostalAddress 即 warn;2) 页面有 LocalBusiness schema 但无 geo meta 标签即 warn(geo-meta 条)。
+**不修的条件(caveat)**: 纯线上业务无实体地址是正当形态,PostalAddress 可只到城市/国家级;家庭办公地址公开与否是隐私取舍,可用 areaServed(服务区域)替代。但本地商户缺地址标记等于放弃本地搜索资格。
+**修复(fix)**: Organization/LocalBusiness 挂 PostalAddress(streetAddress/postalCode/addressLocality/addressCountry);LocalBusiness 页补 geo.position(与 schema 的 geo 同源);模板见 [schema-templates.md](schema-templates.md)。
+**导出(export)**: Reports > E-E-A-T > Missing Physical Address
+**关联(seealso)**: eeat-nap-consistency、eeat-contact-page;[schema-templates.md](schema-templates.md)、[knowledge-graph-guide.md](knowledge-graph-guide.md)
+
+### eeat-affiliate-disclosure
+- 名称/类型: 联盟披露缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;FTC 口径 "This post contains affiliate links.")
+**这意味(what)**: 含联盟/付费推广链接的页面没有披露声明(FTC 要求的显式披露,如 "This post contains affiliate links.")。
+**为什么(why)**: 商业关系透明是 Trust 硬项:引擎的链接语义体系(rel=sponsored)与消费者保护法(FTC 披露义务)方向一致;未披露的联盟内容面临法务风险与用户信任双输。披露要"清晰显眼"(链接前/页首)——埋页脚等于没有,这也是质量评估对联盟内容页的重点检查形态。
+**触发(trigger)**: 1) 页面含联盟链接特征(amazon.*/tag=、/aff/、?aff_id= 等形态[特征表待核]);2) 无披露文本即 warn。
+**不修的条件(caveat)**: 披露不影响链接本身的排名语义(那是 rel=sponsored 的职责),然而它是合规义务,所以一般建议凡有佣金链接必配。但自然外链与联盟链接要分清——无商业关系的推荐不需要披露。
+**修复(fix)**: 联盟链接统一 rel="sponsored";页首/链接前置披露声明;模板级注入勿逐页手写。
+**导出(export)**: Reports > E-E-A-T > Missing Affiliate Disclosure
+**关联(seealso)**: links-nofollow-internal、eeat-disclaimers;[deprecated-signals.md](deprecated-signals.md)
+
+### eeat-disclaimers
+- 名称/类型: YMYL 免责声明缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;医疗/财务/法律内容须有相应免责声明)
+**这意味(what)**: YMYL 内容(医疗/财务/法律等)没有对应免责声明("本内容不构成医嘱/投资建议/法律意见")。
+**为什么(why)**: YMYL 内容受最高 E-E-A-T 标准审视(判定开关见 eeat-ymyl-detection):免责声明是"知道自己的边界"的信号——它框定内容的专业责任范围,缺失时内容被当作无保留的专业建议,风险与信任双输;AI 引用侧同理,有边界的来源更可引用。
+**触发(trigger)**: 1) 页面被 YMYL 检测判为医疗/财务/法律类;2) 无对应免责声明文本即 warn(声明匹配词表[待核])。
+**不修的条件(caveat)**: 免责声明不是免责金牌(内容质量仍是主体),所以一般建议声明+引用+作者资历三件套同配,单挂声明救不了薄内容。但非 YMYL 内容不需要泛化免责——全站挂"仅供参考"反而稀释。
+**修复(fix)**: 按主题配医疗/财务/法律三类声明;放内容首屏或结论前;与 eeat-citations、eeat-author-expertise 构成 E-E-A-T 三角。
+**导出(export)**: Reports > E-E-A-T > Missing YMYL Disclaimers
+**关联(seealso)**: eeat-ymyl-detection、eeat-citations;[scoring-rubric.md](scoring-rubric.md)
+
+### eeat-editorial-policy
+- 名称/类型: 编辑政策页缺失 —— warning · 优先级 low · 输出 WARN(源表 warn;内容标准/事实核查流程)
+**这意味(what)**: 站点没有编辑政策页——内容来源标准、事实核查流程、更正机制的公开声明。
+**为什么(why)**: 治理透明是出版级内容的差异化信号:新闻/知识类内容被评估时,"谁核查、怎么更正"与作者资历同权重;更正机制还与 dateModified 语义联动——有政策的站,内容更新才可信。多数竞品不会配的加分项而非底线项,故 low。
+**触发(trigger)**: 站内无编辑政策/内容标准/事实核查类页面(URL 与标题词表[待核])即 warn。
+**不修的条件(caveat)**: 编辑政策对单人小站不是必需(署名+资历已覆盖信任链),所以一般建议内容团队 ≥2 人或新闻类站配。但为配而配的空政策页(无真实流程)不产生信任价值。
+**修复(fix)**: 建编辑政策页:来源标准/核查流程/更正机制/作者资历要求;页脚或 About 页链接;与作者档案页互链。
+**导出(export)**: Reports > E-E-A-T > Missing Editorial Policy
+**关联(seealso)**: eeat-about-page、eeat-content-dates;[content-patterns.md](../content/content-patterns.md)
+
+### eeat-trust-signals
+- 名称/类型: 信任信号缺失 —— warning · 优先级 low · 输出 WARN(源表 warn;评论/认证/安全徽章/媒体报道)
+**这意味(what)**: 站点没有任何可验证的信任信号:用户评论、第三方认证、安全徽章、媒体报道引用。
+**为什么(why)**: 第三方背书是 Trust 的社会化证据:真实评论既是转化证据也是页面新鲜度来源;认证与媒体报道是独立实体的确认链,可同步进 Organization schema(award/subjectOf)让背书机器可读。信号要"可验证"——无链接的 logo 墙与购买来的评论是负信号。
+**触发(trigger)**: 全站(或关键模板)评论/认证/徽章/媒体报道四类信号计数=0 即 warn(计入粒度口径[待核])。
+**不修的条件(caveat)**: 信任信号是加法不是底线,所以一般建议按业务形态选配(电商重评论,B2B 重认证与报道)。但伪造信号(假评论/未授权徽章)比没有更糟,是信任硬伤。
+**修复(fix)**: 接真实评论系统(schema 配页面可见评分,可见性判定见 sd-rating-scope);认证挂权威来源链接;媒体报道用 subjectOf/citation 进 schema。
+**导出(export)**: Reports > E-E-A-T > Missing Trust Signals
+**关联(seealso)**: sd-rating-scope、eeat-author-expertise;[entity-signal-checklist.md](entity-signal-checklist.md)
+
+### eeat-ymyl-detection
+- 名称/类型: YMYL 检测器 —— opportunity · 优先级 insight · 输出 INFO(源表 info;仅识别不扣分)
+**这意味(what)**: 页面被识别为 YMYL(Your Money or Your Life)内容——健康/财务/安全/法律等直接影响读者重大利益的题材。
+**为什么(why)**: 开关型 info 规则:它不评价页面,而是给 eeat-disclaimers 等下游规则供数——YMYL 判定成立时整组 E-E-A-T 规则的建议权重上浮(官方质量评估对 YMYL 用最严标准)。审计输出它让站主知道"哪些页面正按最严标准被审视",呼应 seo-ops T4 的"拿不准即标 true":宁多判不漏判。Opportunity/Insight 永不进扣分——两轴哲学样板。
+**触发(trigger)**: 页面内容/主题命中 YMYL 题材词表(医疗/金融/法律/重大新闻等类目[词表口径待核])即 info,不扣分。
+**不修的条件(caveat)**: YMYL 没有官方机器可读清单,词表判定必有边缘误差(健身食谱算不算健康类),所以 info 不扣分、人工复核定类。但漏判的代价(按普通标准处理 YMYL)大于误判,方向上从严。
+**修复(fix)**: 无需修复——把 YMYL 页面清单交给 E-E-A-T 加固流程:作者资历/免责声明/权威引用三件套(见 eeat-disclaimers)。
+**导出(export)**: Reports > E-E-A-T > YMYL Pages(Insight)
+**关联(seealso)**: eeat-disclaimers、eeat-author-expertise;[scoring-rubric.md](scoring-rubric.md)
+
+### eeat-nap-consistency ⛏
+- 名称/类型: NAP 一致性 —— warning · 优先级 medium · 输出 WARN(源表 warn;仅 crawl 模式;同一组织名在整站爬取中只挂一个电话+地址,不同名=不同主体)
+**这意味(what)**: 同一组织的名称/地址/电话(NAP)在整站爬取中不一致——同名组织出现多个电话/地址组合。
+**为什么(why)**: NAP 是本地实体确认的基石:引擎靠跨页一致的名称-地址-电话三元组把线上信息与线下实体锚定,不一致会分裂实体信号(同一门店被当两家)。源表判定边界照抄:同一组织名只挂一个电话+地址;不同名=不同主体(合法多品牌)。与 schema 的 PostalAddress/telephone 是表里关系——可见层与结构层要同源。
+**触发(trigger)**: ⛏ 1) crawl 全站提取 NAP 三元组;2) 同名组织的电话或地址组合 >1 即 warn;3) 不同名不做归并判定。
+**不修的条件(caveat)**: 合法场景:连锁多店(同名组织每店独立地址电话是真实业务形态[分型口径待核:命中后需人工确认是否连锁])、品牌更名过渡期新旧名并存。所以一般建议命中后人工核对再改。
+**修复(fix)**: NAP 单一数据源(CMS 站点信息表)注入页脚/联系页/schema 三处;连锁站每店独立页+独立 NAP;先改可见层再同步 schema。
+**导出(export)**: Reports > E-E-A-T > NAP Consistency
+**关联(seealso)**: eeat-physical-address、sd-entity-consistency;[knowledge-graph-guide.md](knowledge-graph-guide.md)、[entity-signal-checklist.md](entity-signal-checklist.md)
 
 ---
 
@@ -1506,7 +1648,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 
 缺 JSON-LD=warn;JSON 语法坏=fail;缺 @type=warn;类型必填字段=warn;Article 须 headline/author/datePublished/image;BreadcrumbList(非首页,**≥2 个 itemListElement**)=info;FAQPage 每个 Question 须 name+acceptedAnswer.text=fail;LocalBusiness 须 name/address/telephone/geo;Organization 须 name/logo/sameAs;Product 须 offers(price/priceCurrency/availability)=fail;Review 须 itemReviewed/author/reviewRating;VideoObject 须 name/thumbnailUrl/uploadDate(时长 ISO 8601 如 PT1M30S);WebSite SearchAction 含 `{search_term_string}`=info。**实体图六查已吸收于 [entity-signal-checklist.md](entity-signal-checklist.md) 与 [validation-guide.md](validation-guide.md)**:entity-id(@id 绝对)/rating-scope(AggregateRating 不在 legal/account URL 且 ratingValue 可见)/entity-conflict(一 @id 两 logo/两电话)/entity-dangling(publisher/author/isPartOf 的 @id 须在爬取中声明)/entity-type-drift(同 @id 跨页同 @type)/entity-split(同名组织不挂两 @id)。
 
-**解释层(5 条;ID 未公布原文的按家族命名法推得并标 [待核])**
+**解释层(8 条;ID 未公布原文的按家族命名法推得并标 [待核];第四批补实体图六查 3 条,细则深读见 [entity-signal-checklist.md](entity-signal-checklist.md))**
 
 #### sd-jsonld-missing [待核 ID]
 - 名称/类型: 缺 JSON-LD —— warning · 优先级 low · 输出 WARN(源表 warn)
@@ -1557,6 +1699,36 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: WebSite schema 配 SearchAction,target 用真实搜索 URL+{search_term_string};搜索结果页模板加 noindex。
 **导出(export)**: Reports > Structured Data > SearchAction
 **关联(seealso)**: url-search-indexed;[schema-templates.md](schema-templates.md)
+
+#### sd-entity-reference [待核 ID](entity-id + entity-dangling)
+- 名称/类型: 实体引用完整性(@id 形态+悬空引用) —— issue/warning · 优先级 high · 输出 WARN(源表:entity-id @id 绝对;entity-dangling: publisher/author/isPartOf 的 @id 须在爬取中声明;档位未单列[待核])
+**这意味(what)**: 实体的 @id 不是绝对 URL,或页面引用的实体 @id(publisher/author/isPartOf)在整站爬取中从未被任何页面声明——悬空引用。
+**为什么(why)**: @id 是实体图的节点主键:绝对 URL 形态让它可跨页跨源稳定合并;悬空引用(指了没人声明的 @id)让 author/publisher 连不上具体 Person/Organization,实体消歧退回按名字猜——同名不同人就此混淆。六查的一号位:id 体系错,后面五查全部失真。
+**触发(trigger)**: 1) @id 值非绝对 URL(含 scheme)即触发;2) 出向引用的 @id 在爬取全集中无对应声明节点即 dangling(两档分型[待核])。
+**不修的条件(caveat)**: 单页审计只能判 @id 形态,dangling 需 crawl 全集;指向外部权威实体(Wikidata @id)是推荐做法,不算 dangling——"爬取中声明"应含已知外部实体源[口径待核]。
+**修复(fix)**: @id 用站内稳定绝对 URL(https://site/#organization);声明与引用两侧用同一模板变量;人/组织实体挂 Wikidata sameAs 作外部锚。
+**导出(export)**: Reports > Structured Data > Entity Reference Integrity
+**关联(seealso)**: sd-entity-consistency、eeat-author-expertise;[entity-signal-checklist.md](entity-signal-checklist.md)
+
+#### sd-entity-consistency [待核 ID](entity-conflict + entity-type-drift + entity-split)
+- 名称/类型: 实体一致性(conflict/type-drift/split) —— issue/warning · 优先级 high · 输出 WARN/CRITICAL(源表:entity-conflict 一 @id 两 logo/两电话;entity-type-drift 同 @id 跨页同 @type;entity-split 同名组织不挂两 @id;分档未单列[待核];仅 crawl 模式)
+**这意味(what)**: 同一实体在站内自相矛盾:一个 @id 挂两个 logo/两个电话(conflict);同 @id 在不同页面是不同 @type——组织页是 Organization、文章页变 Person(type-drift);同名组织拆成两个 @id(split)。
+**为什么(why)**: 实体图的全部价值取决于一致性:引擎按 @id 合并属性,冲突值要么随机取一要么降低实体置信度;type 漂移让节点身份不稳;split 把同一组织的信任信号(外链/评价/资质)摊薄到两个幽灵实体。三条是同一病(模板各自为政)的三张化验单,与 eeat-nap-consistency 的可见层判定互为表里。
+**触发(trigger)**: ⛏ crawl 聚合:1) 同 @id 的 logo/telephone 值 >1 即 conflict;2) 同 @id 的 @type 集合 >1 即 drift;3) 同名(name 归一化)组织的 @id >1 即 split。
+**不修的条件(caveat)**: 合法多值场景除外:同组织多电话(总机+售后)是真数据——conflict 的属性白名单按源表 logo/电话口径[待核];多子品牌同名应加后缀区分而非共用 name。
+**修复(fix)**: Organization/Person 属性单一数据源(CMS 站点信息表)全站注入;@type 与 @id 定死在模板常量;品牌子体用独立 name+独立 @id。
+**导出(export)**: Reports > Structured Data > Entity Consistency
+**关联(seealso)**: sd-entity-reference、eeat-nap-consistency、sd-rating-scope;[entity-signal-checklist.md](entity-signal-checklist.md)
+
+#### sd-rating-scope [待核 ID](rating-scope)
+- 名称/类型: 评分作用域错配 —— issue · 优先级 high · 输出 CRITICAL/WARN(源表:AggregateRating 不在 legal/account URL 且 ratingValue 可见;分档未单列[待核])
+**这意味(what)**: AggregateRating 挂错了地方:出现在法律页/账户页等无评分语境的 URL,或 schema 声明了 ratingValue 但页面渲染后看不见对应评分(暗评)。
+**为什么(why)**: 评分是本地/电商富结果与实体信任的硬信号,也是结构化数据滥用重灾区:对"看不见的评分"(schema 有、页面无),Google 按结构化数据违规处理,严重时整站富结果资格受罚;legal/account URL 上的评分则是全站 footer schema 带评分类的模板泄漏。两轴口径:主动错配(评分挂错页/暗评)是坏信号,排 high。
+**触发(trigger)**: 1) URL 属 legal/account 类(路径词表[待核])却含 AggregateRating 即触发;2) 有 ratingValue 声明但渲染后页面无可见评分文本/星标即触发(可见性判定口径[待核])。
+**不修的条件(caveat)**: 站点级 AggregateRating(组织整体评分)在首页/关于页展示可见即可;Review/AggregateRating 分层数据必须真实——刷出来的评分是负信号不是增益。
+**修复(fix)**: 评分 schema 只挂在有可见评分的产品/店铺页;数据源接真实评价系统;legal/account 模板剥离评分块;资格用富结果测试类工具复验。
+**导出(export)**: Reports > Structured Data > Rating Scope
+**关联(seealso)**: sd-entity-consistency、eeat-trust-signals;[validation-guide.md](validation-guide.md)、[schema-examples.md](schema-examples.md)
 
 ### Content(27 条,权重 5%)
 
@@ -1763,6 +1935,328 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 ### Accessibility(36 条,权重 7%)
 
 对比度 **≥4.5:1 正文/3:1 大字**;触控目标 **≥44×44 CSS px**(WCAG 2.5.8);交互元素须可访问名(aria-label/文本/title);focus 样式可见;表单 label(placeholder 不算);标题不跳级;landmark(main/nav/header/footer);描述性链接文本;skip-to-content 链接;表格 th+scope;视频字幕/文稿;viewport 禁缩放(user-scalable=no/maximum-scale=1)=fail;aria-hidden 包可聚焦元素=fail;**ARIA 角色/属性拼错浏览器静默丢弃(aria-lable→aria-label)=fail**;accesskey 唯一;**ID 重复致 aria-labelledby/label for 解析到第一个匹配=fail(svg 内 url(#id) 引用的 clipPath 豁免)**;空标题=fail;一控件一 label;同文本链接须同目的地;iframe/object 须 title/替代文本;`<input type=image>` 须 alt;**可访问名须含可见文本(语音用户"说所见")**;按钮有名;email/tel 输入配对 autocomplete token;lang 与 xml:lang 一致;html/body 禁 aria-hidden;ARIA widget 须有所需父子角色(tab 在 tablist 内/option 在 listbox 内);列表只含 li;**恰一个 main landmark**;role=none/presentation 不被 ARIA/可聚焦性反证;alt 不重复相邻链接/图注文本;img 角色 SVG 须可访问名;表格用 caption 不用跨列首行;**tabindex 禁正值**;元素级 lang 合法 BCP 47。
+
+**解释层(32 条,第四批;ID 未公布原文,按家族命名法推得并标 [待核]。归并边界:alt 家族已归 Images 节 images-alt 三条、语言码两条已并入 i18n-lang-consistency、viewport 禁缩放已并入 mobile-viewport-config,不重复。每条 why 按双理由写——无障碍(真实用户如何受损)+SEO(机器如何误读),Sitebulb 口径:可访问性问题几乎总是"人类用户与爬虫同时看不懂"的双面问题)**
+
+#### a11y-contrast [待核 ID]
+- 名称/类型: 文本对比度不足 —— warning · 优先级 medium · 输出 WARN(源表:≥4.5:1 正文/3:1 大字;档位未单列[待核])
+**这意味(what)**: 文本与背景的前景/背景对比度低于阈值:正文 <4.5:1,大字(约 ≥18pt/14pt 粗体) <3:1。
+**为什么(why)**: 双理由。无障碍:低对比对低视力/老年/强光环境用户直接不可读,4.5:1 是 WCAG 2.1 AA(1.4.3)硬阈值;SEO:对比度本身不是排名因素(Sitebulb 口径把它列为"内容可读性"问题而非排名问题),但极端低对比(灰字白底 2:1)常与"为凑字数的次要内容"同现,且可读性差的页停留/回退等行为信号随之恶化。
+**触发(trigger)**: 渲染后计算文本节点 computed 前景/背景对比度(图片背景的采样口径[待核]):正文 <4.5:1、大字 <3:1 即 warn。
+**不修的条件(caveat)**: 对比度不(直接)影响排名,然而 4.5:1 是可读性工程下限,所以一般建议正文全站达标。但 disabled 态/水印等非必要信息文本豁免;改版走设计系统调 token,别逐页打补丁。
+**修复(fix)**: 设计 token 化色对并预检 ≥4.5:1;灰阶层压进合规区间;CI 对主题色组合跑对比度断言。
+**导出(export)**: Reports > Accessibility > Low Contrast Text
+**关联(seealso)**: mobile-font-size、content-readability;[semantic-html.md](semantic-html.md)、[validation-guide.md](validation-guide.md)
+
+#### a11y-touch-target [待核 ID]
+- 名称/类型: 触控目标过小 —— warning · 优先级 medium · 输出 WARN(源表:≥44×44 CSS px,WCAG 2.5.8;档位未单列[待核])
+**这意味(what)**: 可点击/可触摸元素(按钮/链接/表单控件)的触达区域小于 44×44 CSS 像素。
+**为什么(why)**: 双理由。无障碍:小目标是运动障碍与触屏用户的共同敌人,44×44 是 WCAG 2.5.8(2.2 AA)最低尺寸;SEO:移动优先索引下,过小过密的目标伤移动可用性与真实交互信号——误触率高的页面行为数据恶化;插页关闭钮过小还直接联动 mobile-interstitial(关闭目标 ≥44px)。
+**触发(trigger)**: 渲染后测量交互元素的可触达盒(含 padding/伪元素扩展):<44×44 即 warn(相邻目标间距的豁免口径[待核:WCAG 2.5.8 有 spacing 例外])。
+**不修的条件(caveat)**: 触控尺寸不影响桌面排名,然而移动端它是可用性硬阈值,所以一般建议交互件全站达标。但正文行内文字链的密排形态天然豁免——本条管的是按钮/控件/导航项等关键交互件。
+**修复(fix)**: 按钮/控件最小热区 44×44(padding 或伪元素扩展,视觉尺寸可小);间距 ≥8px 防误触;图标按钮扩热区而非放大图标。
+**导出(export)**: Reports > Accessibility > Small Touch Targets
+**关联(seealso)**: mobile-interstitial、mobile-font-size;[mobile-seo.md](mobile-seo.md)
+
+#### a11y-accessible-name [待核 ID]
+- 名称/类型: 交互元素无可访问名 —— warning · 优先级 high · 输出 WARN(源表:aria-label/文本/title;档位未单列[待核])
+**这意味(what)**: 链接/按钮/输入等交互元素没有可访问名(accessible name)——无文本内容、无 aria-label、无 title。
+**为什么(why)**: 双理由。无障碍:屏幕阅读器按可访问名朗读控件,无名控件只念"按钮",用户不知道会发生什么;语音控制用户更是无法下指令("点'提交'按钮"落空)。SEO:可访问名是引擎理解非文本交互的主要文本面——图标按钮/汉堡菜单的名字同时是语义锚点;纯图标链缺名与缺 alt 同构(见 images-alt)。
+**触发(trigger)**: 交互元素(a/button/input/select/textarea)按 accessible name 算法(内容文本→aria-label→aria-labelledby→title)计算:结果为空即 warn。
+**不修的条件(caveat)**: 可访问名不影响排名本身,然而它是无障碍合规与语义完整性的交叉点,所以一般建议全配。但 aria-hidden 标记的装饰性冗余控件不判——那是 a11y-aria-hidden 家族的辖区。
+**修复(fix)**: 图标按钮加 aria-label("打开菜单");文本按钮靠内容文本;title 只作兜底(触屏不可见);配合 a11y-name-contains-visible 的"名含可见文本"要求。
+**导出(export)**: Reports > Accessibility > Missing Accessible Names
+**关联(seealso)**: a11y-button-name、a11y-svg-name、images-alt;[semantic-html.md](semantic-html.md)
+
+#### a11y-button-name [待核 ID]
+- 名称/类型: 按钮无名 —— warning · 优先级 medium · 输出 WARN(源表:按钮有名;与 a11y-accessible-name 同族,按钮为最高频命中面)
+**这意味(what)**: `<button>` 元素没有任何可访问名(空文本且无 aria-label)。
+**为什么(why)**: 双理由。无障碍:无名按钮在 SR 里是一列"按钮、按钮",播放器/弹窗/表单里的图形按钮全部不可用;SEO:按钮是页内最高频的无文本交互元素,批量无名按钮几乎总是组件库没接 i18n 文案或图标没配 label——它是模板质量的可见症状,也常与 js-runtime-hygiene 的渲染失败(文案注入整批挂掉)同现。
+**触发(trigger)**: `<button>`(含 role=button)accessible name 计算为空即 warn。
+**不修的条件(caveat)**: 单个命中可能是刻意的装饰冗余(双重关闭按钮),所以一般建议模板级批量治理而非逐个补。但 aria-hidden 标记的冗余控件不判。
+**修复(fix)**: 组件库给图标按钮内置 aria-label 槽位;文案缺失(空 i18n key)构建期报错;验收用 SR 模式抽查关键流程。
+**导出(export)**: Reports > Accessibility > Unnamed Buttons
+**关联(seealso)**: a11y-accessible-name、a11y-form-label;[semantic-html.md](semantic-html.md)
+
+#### a11y-name-contains-visible [待核 ID]
+- 名称/类型: 可访问名不含可见文本 —— warning · 优先级 low · 输出 WARN(源表:可访问名须含可见文本,语音用户"说所见";档位未单列[待核])
+**这意味(what)**: 元素的可访问名(aria-label/aria-labelledby)与其可见文本不一致——可见写"购买",可访问名却是"加入购物车 submit"。
+**为什么(why)**: 双理由。无障碍:语音控制用户"说所见"——对着屏幕念"点击购买"命中不了名为"加入购物车"的按钮;SR 用户听到的与看到的也不同,两套词两套认知。SEO:aria-label 覆写可见文本是把关键词塞进可访问名的常见通道(可见"更多"→aria-label"SEO 工具 优惠 2026")——引擎按可见内容为准评估,注水的可访问名零收益还留操纵痕迹。
+**触发(trigger)**: 1) 元素同时有可见文本与 aria-label/aria-labelledby;2) 可访问名归一化后不包含可见文本字符串即 warn(源表"须含"口径,即扩写方向合法、替换方向违例)。
+**不修的条件(caveat)**: 合法的扩写场景:可见文本是缩写/短词,aria-label 给完整表述("菜单"→"主导航菜单")——名 ⊃ 可见文本合法;名与可见文本无关才是问题。
+**修复(fix)**: 默认不覆写——有可见文本就不加 aria-label;确需扩写时保留原词;关键词堆砌进 aria-label 的全部清除。
+**导出(export)**: Reports > Accessibility > Name Mismatch with Visible Text
+**关联(seealso)**: a11y-accessible-name、links-anchor-generic;[semantic-html.md](semantic-html.md)
+
+#### a11y-focus-visible [待核 ID]
+- 名称/类型: 焦点样式不可见 —— warning · 优先级 medium · 输出 WARN(源表:focus 样式可见;档位未单列[待核])
+**这意味(what)**: 可聚焦元素被聚焦时没有任何可见指示——`outline:none` 且无替代 focus 样式。
+**为什么(why)**: 双理由。无障碍:键盘用户(运动障碍/高级用户/部分 AT)靠焦点环知道"现在在哪",全局删 outline 等于蒙眼操作;SEO:焦点不可见是键盘可达性差的门面,而键盘可达性差的页面常伴 onclick 导航、div 按钮等引擎也读不懂的交互(links-onclick)——同一批模板债的两张面孔。
+**触发(trigger)**: 1) 样式表出现 :focus{outline:none/0} 且无 :focus-visible 替代即触发;2) 渲染后聚焦元素无可感知的指示变化(判定口径[待核])即 warn。
+**不修的条件(caveat)**: 焦点样式不影响排名,然而全局删焦点环是"看起来更干净"的经典反模式,所以一般建议 :focus-visible 替代而非删除。但鼠标点击态的 :focus 抑制(focus-visible 分流)是正当精细化,不判。
+**修复(fix)**: :focus-visible 给 ≥2px 对比指示(outline/box-shadow);别全局 outline:none;验收标准=纯键盘走通主流程(登录→下单)。
+**导出(export)**: Reports > Accessibility > Invisible Focus Indicators
+**关联(seealso)**: a11y-tabindex、links-onclick;[semantic-html.md](semantic-html.md)
+
+#### a11y-tabindex [待核 ID]
+- 名称/类型: 正值 tabindex —— warning · 优先级 medium · 输出 WARN(源表:tabindex 禁正值;档位未单列[待核])
+**这意味(what)**: 元素带正整数 tabindex(tabindex="1"/"3"),覆盖文档流的自然 Tab 顺序。
+**为什么(why)**: 双理由。无障碍:正 tabindex 把焦点顺序钉死在作者想象的顺序上,DOM 变化(插组件/异步内容)后跳转顺序错乱,键盘用户在页面里"瞬移";SEO:错乱焦点顺序几乎总伴 DOM 顺序与视觉顺序不一致——这正是引擎内容提取与用户所见漂移的形态(SPA 动态插节点是重灾区),与 content-mime-broken"不同工具看到的页面不一样"同族。
+**触发(trigger)**: 任一元素 tabindex 属性值为正整数即 warn(tabindex=0/-1 合法:0 加入自然序、-1 可编程聚焦)。
+**不修的条件(caveat)**: 正 tabindex 不影响排名,然而它几乎没有正当用例(模态框焦点管理用 -1+focus()),所以一般建议全站清零。但遗留 widget 库依赖正值的,先建组件焦点管理再清。
+**修复(fix)**: 删正值——自然顺序靠 DOM 顺序表达;自定义组件用 tabindex=-1 + element.focus();模态框做 focus trap。
+**导出(export)**: Reports > Accessibility > Positive Tabindex
+**关联(seealso)**: a11y-focus-visible、a11y-aria-parent-child;[semantic-html.md](semantic-html.md)
+
+#### a11y-skip-link [待核 ID]
+- 名称/类型: 缺 skip-to-content 链接 —— warning · 优先级 low · 输出 WARN(源表:skip-to-content 链接;档位未单列[待核])
+**这意味(what)**: 页面没有"跳到主内容"链接——键盘/SR 用户每页都要 Tab 过整条导航才能到正文。
+**为什么(why)**: 双理由。无障碍:键盘用户每次换页从页头 Tab 二十几个导航链接,skip 链是 WCAG 2.4.1 的经典达标手段;SEO:skip 链的 href="#main" 与恰一个 main landmark(见 a11y-single-main)互为表里——它同时是"主内容区在哪"的显式路标:引擎的主内容提取(剥导航/页脚 boilerplate)与无障碍的主内容定位,是同一个问题的两种消费者。
+**触发(trigger)**: 页面首部(body 前几个焦点元素)无指向主内容锚点的跳转链接(href="#main"/#content 形态[待核])即 warn。
+**不修的条件(caveat)**: 短导航页(≤5 个链接)的 skip 链价值低,所以一般建议导航项多的模板配。但配了就别 display:none 隐藏——要"聚焦时可见"。
+**修复(fix)**: body 首元素加 `<a href="#main" class="skip-link">跳到主内容</a>`;CSS 默认移出视口、:focus 时归位;与 main landmark 同步(见 a11y-landmarks)。
+**导出(export)**: Reports > Accessibility > Missing Skip Link
+**关联(seealso)**: a11y-landmarks、a11y-single-main;[semantic-html.md](semantic-html.md)
+
+#### a11y-accesskey [待核 ID]
+- 名称/类型: accesskey 重复 —— warning · 优先级 low · 输出 WARN(源表:accesskey 唯一;档位未单列[待核])
+**这意味(what)**: 多个元素绑定了同一个 accesskey 快捷键。
+**为什么(why)**: 双理由。无障碍:重复 accesskey 只有浏览器选中的那个生效,用户记住的快捷键在半数页面失灵;accesskey 还与浏览器/AT 自身快捷键冲突(Alt+字母多被占用),现代最佳实践已弱化它;SEO:无直接影响——收录本条是因为它与重复 ID(见 a11y-duplicate-id)同属"作者意图与运行时行为分裂"的家族,是模板卫生的可见症状。
+**触发(trigger)**: 全页收集 accesskey 属性值;同一字符出现 ≥2 次即 warn。
+**不修的条件(caveat)**: accesskey 不影响 SEO 且现代站点多数已弃用,所以一般建议直接清理而非修复映射。但确要保留(工具型内网应用)时保证全站唯一并公示键位表。
+**修复(fix)**: 优先删除 accesskey(改可见快捷键说明);保留时全站唯一并避开浏览器保留组合。
+**导出(export)**: Reports > Accessibility > Duplicate Accesskeys
+**关联(seealso)**: a11y-duplicate-id、a11y-focus-visible;[semantic-html.md](semantic-html.md)
+
+#### a11y-form-label [待核 ID]
+- 名称/类型: 表单控件无 label —— warning · 优先级 high · 输出 WARN(源表:表单 label,placeholder 不算;档位未单列[待核])
+**这意味(what)**: 表单控件(input/select/textarea)没有关联 label——无 `<label for>`、无 aria-label(ledBy);placeholder 占位文本不算 label。
+**为什么(why)**: 双理由。无障碍:SR 对 placeholder 的支持参差,且输入后 placeholder 消失——用户回改时字段名没了;label 的点击命中区同时扩大触控目标。SEO:表单是转化与 lead 生成的核心件,无 label 表单的放弃率直接吃掉页面价值;label 文本还是控件的语义描述,自动填充(见 a11y-autocomplete-token)与机器理解都吃它。
+**触发(trigger)**: 每个 input(除 hidden/button/submit 等自带语义型[豁免清单待核])/select/textarea 计算 label 关联(for=id 匹配/aria-label/aria-labelledby):结果为空即 warn;placeholder 存在不豁免。
+**不修的条件(caveat)**: 极简搜索框(放大镜图标+placeholder)是广被接受的形态,可用 aria-label 补名;但任何收集关键信息(地址/支付)的表单没有 label 都是硬伤。
+**修复(fix)**: `<label for>` 绑定;图标-only 控件用 aria-label;placeholder 只作示例提示;一控件一 label(见 a11y-one-label-per-control)。
+**导出(export)**: Reports > Accessibility > Missing Form Labels
+**关联(seealso)**: a11y-one-label-per-control、a11y-autocomplete-token、a11y-accessible-name;[semantic-html.md](semantic-html.md)
+
+#### a11y-one-label-per-control [待核 ID]
+- 名称/类型: 一控件多 label —— warning · 优先级 low · 输出 WARN(源表:一控件一 label;档位未单列[待核])
+**这意味(what)**: 同一表单控件被多个 label 关联(多个 for 指向同一 id,或嵌套 label 与显式 for 并存)。
+**为什么(why)**: 双理由。无障碍:多 label 时 AT 读取行为不一(读首个/拼接),用户听到的字段名不可预期;SEO:label 冗余与 ID 重复常同源——多个 label for 同一 id 多半是复制粘贴事故,它标记模板失控而非设计意图,与 core-canonical-multiple(多 canonical)同构:重复声明的歧义比缺失更糟(坏信号>缺信号)。
+**触发(trigger)**: 按 for=id 聚合:任一控件的关联 label 计数 >1 即 warn(嵌套+显式并存的计数口径[待核])。
+**不修的条件(caveat)**: 多 label 极少有正当用例,所以一般建议收敛为一。但控件用 aria-labelledby 引用多个 id 是合法的多源命名(如"账单 地址"),不属本条。
+**修复(fix)**: 每控件一个 label for;辅助说明文字改 aria-describedby(描述而非命名);CI 断言 for 值与控件 id 一一对应。
+**导出(export)**: Reports > Accessibility > Multiple Labels per Control
+**关联(seealso)**: a11y-form-label、a11y-duplicate-id;[semantic-html.md](semantic-html.md)
+
+#### a11y-autocomplete-token [待核 ID]
+- 名称/类型: email/tel 输入缺 autocomplete token —— warning · 优先级 low · 输出 WARN(源表:email/tel 输入配对 autocomplete token;档位未单列[待核])
+**这意味(what)**: type=email 的输入框没配 autocomplete="email",type=tel 没配 autocomplete="tel"。
+**为什么(why)**: 双理由。无障碍:autocomplete token 是 AT 与密码管理器/浏览器自动填充的对接协议——正确 token 让运动障碍用户一次完成表单,自编 token(autocomplete="email-address")静默失效;SEO/转化:自动填充成功的表单完成率显著更高,注册/结账流失随之下降——"无障碍修复直接产生收入"的样板条目。
+**触发(trigger)**: type=email 的 autocomplete 不含 "email"、type=tel 不含 "tel"(精确 token 按 HTML 规范词表[待核:源表按这两个 token 判])即 warn。
+**不修的条件(caveat)**: token 配错与没配等效,所以一般建议整表按 HTML autocomplete 词表配全(name/street-address 等同族)。但一次性验证码输入配 autocomplete="one-time-code" 或禁填充属安全设计。
+**修复(fix)**: email→autocomplete="email";tel→autocomplete="tel"(区号分体用 tel-national 系);整表按词表补全并做密码管理器回归。
+**导出(export)**: Reports > Accessibility > Missing Autocomplete Tokens
+**关联(seealso)**: a11y-form-label;[semantic-html.md](semantic-html.md)
+
+#### a11y-landmarks [待核 ID]
+- 名称/类型: landmark 角色缺失 —— warning · 优先级 medium · 输出 WARN(源表:landmark main/nav/header/footer;档位未单列[待核])
+**这意味(what)**: 页面缺 HTML5 landmark 语义:无 `<main>`/`<nav>`/`<header>`/`<footer>`(或对应 role),整页是 div 沙漠。
+**为什么(why)**: 双理由。无障碍:SR 用户靠 landmark 区跳转(到导航/到主内容),无 landmark 只能逐元素线性听;SEO:landmark 是引擎主内容识别与页面分区的语义依据——main 圈定主内容区(剥模板 boilerplate),nav/header/footer 标记导航 chrome;links-chrome-inbound 的"正文链才算票"判定同样依赖这层语义。
+**触发(trigger)**: 渲染后解析 landmark 元素(main/nav/header/footer/aside 及对应 role):main 或 nav 计数为 0 即 warn(header/footer 缺失是否同判[待核:footer 常并入分组判定])。
+**不修的条件(caveat)**: landmark 不(直接)影响排名,然而它是语义 HTML 骨架层,所以一般建议模板级配齐。但组件化页面滥用 header/footer(每卡片一个)会稀释语义——main 的唯一性另由下条管。
+**修复(fix)**: 模板用原生 landmark 元素(role 兜底仅限 div 不可避免时);导航区用 aria-label 区分(主导航/面包屑/页脚导航);main 恰一个(见 a11y-single-main)。
+**导出(export)**: Reports > Accessibility > Missing Landmarks
+**关联(seealso)**: a11y-single-main、a11y-skip-link、links-chrome-inbound;[semantic-html.md](semantic-html.md)
+
+#### a11y-single-main [待核 ID]
+- 名称/类型: main landmark 数量错误 —— warning · 优先级 medium · 输出 WARN(源表:恰一个 main landmark;档位未单列[待核])
+**这意味(what)**: 页面的 main landmark 数量 ≠1:零个(缺失面与 a11y-landmarks 重叠)或多个(组件化误用)。
+**为什么(why)**: 双理由。无障碍:SR 的"跳到主内容"以第一个 main 为目标,多个 main 时后续的被忽略——后半页内容对快捷键用户不可达;SEO:main 是主内容提取的锚:引擎与摘要把"main 里"当"这页主要讲什么",多 main 等于声明两个主体、提取漂移,零 main 则回退启发式猜测(导航/页脚文本混进摘要)。
+**触发(trigger)**: 渲染后 `<main>`/role=main 计数 0 或 >1 即 warn(0 个已由 a11y-landmarks 报缺失,本条侧重 >1 与计数口径)。
+**不修的条件(caveat)**: 合法例外是切换式视图(同一时刻只有一个 main 可见)——SPA 若 DOM 同时存在多个视图,用 hidden 属性保证只一个对 AT 与爬虫暴露。
+**修复(fix)**: 模板级恰一个 `<main>`;SPA 路由切换时旧视图加 hidden 或移除;组件不私自包 main(插槽组件用 div)。
+**导出(export)**: Reports > Accessibility > Main Landmark Count
+**关联(seealso)**: a11y-landmarks、a11y-skip-link;[semantic-html.md](semantic-html.md)
+
+#### a11y-heading-hierarchy [待核 ID]
+- 名称/类型: 标题跳级(无障碍视角) —— warning · 优先级 low · 输出 WARN(源表:标题不跳级;Content 节同构条已写 content-heading-family,本条为 Accessibility 类计分视角,阈值同源不重抄)
+**这意味(what)**: 标题层级跳跃(H1 直接 H3、H2 掉到 H5),语义树断档。
+**为什么(why)**: 双理由。无障碍:SR 用户按标题级别导航(按 2 级跳/按 3 级跳),跳级让导航树缺枝——H1 后直接 H3,按 2 级导航的用户整节内容不可达;SEO:与 content-heading-family 是同一事实的两面(引擎与 AI 摘要的章节切分同样吃标题树);两条分属 Accessibility/Content 两类计分,修复一次双绿。
+**触发(trigger)**: 相邻标题级别差 >1 即触发(阈值与 content-heading-family 同源照抄,不另立)。
+**不修的条件(caveat)**: 设计系统组件自带级别造成的技术性跳级,豁免口径见 content-heading-family;修复优先级低于空标题(下条)。
+**修复(fix)**: 见 content-heading-family(模板按语义排级、组件级别参数化)。
+**导出(export)**: Reports > Accessibility > Heading Level Skips
+**关联(seealso)**: content-heading-family、a11y-empty-heading;[semantic-html.md](semantic-html.md)
+
+#### a11y-empty-heading [待核 ID]
+- 名称/类型: 空标题 —— issue · 优先级 medium · 输出 CRITICAL(源表 fail;两轴校准:输出随源表 fail,建议优先级按卫生级降 medium——存在但残缺的坏信号,非主动矛盾)
+**这意味(what)**: 标题元素(h1-h6)存在但内容为空——无文本、无可访问名(aria-label)。
+**为什么(why)**: 双理由。无障碍:空标题在 SR 标题列表里显示为空行,按标题速览的用户遇到"无名节",导航价值归零还制造噪音;SEO:空标题几乎总是模板空字段(组件没数据还渲染了壳),与 content-deploy-hygiene 的 {{ }} 残渣同族——"半渲染页面"的可见症状;源表判 fail 的逻辑同 sd-json-syntax:存在但残缺比缺失更隐蔽。
+**触发(trigger)**: 任一 h1-h6 的文本(含 img alt 贡献与 aria-label)归一化后为空即 fail 档。
+**不修的条件(caveat)**: 刻意的纯图标节标题可用 aria-label 补名后豁免;真无内容的标题应条件渲染跳过,而不是渲染空壳。
+**修复(fix)**: 空字段时整个标题元素不渲染(v-if/条件模板);图标节标题加 aria-label;CI 对渲染产物断言无空标题。
+**导出(export)**: Reports > Accessibility > Empty Headings
+**关联(seealso)**: a11y-heading-hierarchy、content-deploy-hygiene、content-heading-family;[semantic-html.md](semantic-html.md)
+
+#### a11y-link-text [待核 ID]
+- 名称/类型: 链接文本无信息量 —— warning · 优先级 medium · 输出 WARN(源表:描述性链接文本;Links 节 links-anchor-generic 同源,本条从 Accessibility 类计分补判)
+**这意味(what)**: 链接的可访问名不含目标信息——泛化词(click here/read more)、裸 URL 或无意义图标。
+**为什么(why)**: 双理由。无障碍:SR 用户常调出"链接列表"脱离上下文浏览,一列 "read more" 完全不可用——链接文本就是它的全部语境;SEO:与 links-anchor-generic 同一事实(锚文本是相关度信号);本条补判裸 URL 形态:裸 URL 作锚文本,相关度信号趋零还常在窄屏溢出(联动 mobile-overflow)。
+**触发(trigger)**: 链接可访问名命中泛化词表或为纯 URL 字符串即 warn(词表与 links-anchor-generic 共用[待核])。
+**不修的条件(caveat)**: 转化文案锚("免费试用")的取舍豁免见 links-anchor-generic;本条不重复修复细则,修复一次两规则双绿。
+**修复(fix)**: 见 links-anchor-generic(锚含目标主题、图标链补 aria-label);裸 URL 换描述性锚或页面标题。
+**导出(export)**: Reports > Accessibility > Non-descriptive Link Text
+**关联(seealso)**: links-anchor-generic、a11y-name-contains-visible;[semantic-html.md](semantic-html.md)
+
+#### a11y-link-consistency [待核 ID]
+- 名称/类型: 同文本链接不同目的地 —— issue/warning · 优先级 medium · 输出 WARN(源表:同文本链接须同目的地;档位未单列[待核])
+**这意味(what)**: 页面里两处链接的可访问名完全相同,href 却指向不同地址。
+**为什么(why)**: 双理由。无障碍:SR/语音用户按链接名操作,同名不同目的地让指令二义——念"产品页"命中哪个全凭 Tab 位置;SEO:引擎按"锚文本→目标"建立相关度映射,同名多目标互相污染:同一锚的投票被分给两个 URL,两个目标页对该词的相关度信号同时被稀释。
+**触发(trigger)**: 全页按可访问名归一化聚合链接;同名的 href 集合去重后 >1 即 warn(大小写/空白归一化口径[待核])。
+**不修的条件(caveat)**: 同目的地的同名重复链接(面包屑末级与正文链)不判;"阅读更多"指向不同文章的形态该修锚文本而非删链接——与 links-anchor-generic 联手覆盖。
+**修复(fix)**: 同目的地保持一致;不同目的地的链接文本差异化(带目标主题);模板循环变量注入锚文本。
+**导出(export)**: Reports > Accessibility > Inconsistent Link Destinations
+**关联(seealso)**: a11y-link-text、links-anchor-generic;[semantic-html.md](semantic-html.md)
+
+#### a11y-table-headers [待核 ID]
+- 名称/类型: 数据表缺表头关联 —— warning · 优先级 medium · 输出 WARN(源表:表格 th+scope;档位未单列[待核])
+**这意味(what)**: 数据表(对比表/报价表/规格表)的单元格没有表头关联:无 `<th>`,或有 th 但缺 scope 属性/headers-id 映射。
+**为什么(why)**: 双理由。无障碍:SR 按表头+单元格报坐标("价格 第3列 ¥299"),无 scope 的表读出来是一串无上下文的数字,复杂数据表等于不可用;SEO:表格是引擎提取结构化事实(规格/价格对比)的高价值块,th/scope 让行列语义机器可读——AI 摘要引用表格数据时同样依赖这层映射;表头语义完整时表格内容才有机会进入更丰富的结构化理解。
+**触发(trigger)**: `<table>` 含 ≥2 列数据(简单双列键值表豁免口径[待核])但表头单元格无 scope(或无 headers/id 映射)即 warn。
+**不修的条件(caveat)**: 布局用表(邮件模板遗留)与数据表要分开——布局表该删不该补 scope;双列键值表(`<th>键</th><td>值</td>`)天然可读,缺 scope 影响小。
+**修复(fix)**: 表头单元格 `<th scope="col"/"row">`;复杂表加 id/headers 映射;布局表改 CSS grid;配 caption(见 a11y-table-caption)。
+**导出(export)**: Reports > Accessibility > Table Headers Missing
+**关联(seealso)**: a11y-table-caption、a11y-landmarks;[semantic-html.md](semantic-html.md)
+
+#### a11y-table-caption [待核 ID]
+- 名称/类型: 表格标题用跨列首行替代 —— warning · 优先级 low · 输出 WARN(源表:表格用 caption 不用跨列首行;档位未单列[待核])
+**这意味(what)**: 表格标题被写成第一行的跨列单元格(`<td colspan=全表宽>`),而不是 `<caption>` 元素。
+**为什么(why)**: 双理由。无障碍:SR 进入表格前先播报 caption——用首行单元格冒充标题时,用户进了表还不知道表是什么,跨列首行在导航模式里只是普通数据格;SEO:caption 是表格的机器可读标题,引擎与摘要把"表名+表"作为完整语义单元提取;跨列首行被当一条数据行,表的主题信息丢失——与 figure/figcaption 的配对逻辑同构:视觉等价 ≠ 语义等价。
+**触发(trigger)**: 表格首行为跨全部列的单单元格文本(疑似标题)且无 `<caption>` 即 warn(疑似标题的判定口径[待核])。
+**不修的条件(caveat)**: 首行若是真实数据(日期行/首条记录)不判;存量表格批量改造收益有限时,优先保证新表用 caption。
+**修复(fix)**: 跨列首行改 `<caption>`(可 CSS 定位到任意位置);新表模板默认开 caption 槽位。
+**导出(export)**: Reports > Accessibility > Table Caption Missing
+**关联(seealso)**: a11y-table-headers;[semantic-html.md](semantic-html.md)
+
+#### a11y-media-transcripts [待核 ID]
+- 名称/类型: 视频缺字幕/文稿 —— warning · 优先级 medium · 输出 WARN(源表:视频字幕/文稿;档位未单列[待核])
+**这意味(what)**: 页面内嵌视频(`<video>`/iframe 播放器)没有字幕轨道(track)或页内文稿(transcript)。
+**为什么(why)**: 双理由。无障碍:聋哑/重听用户与静音自动播放场景(社交分发常态)完全依赖字幕——无字幕的视频内容对这部分用户不存在;SEO:引擎不"看"视频画面——VideoObject 的字幕与页内 transcript 是它理解视频主题的文本面(视频搜索匹配与 AI 引用都吃它);本地 track 与页内文稿还给页面本身增加可索引文本。
+**触发(trigger)**: 1) `<video>` 无 `<track kind="captions|subtitles">` 即 warn;2) iframe 嵌入按页内有无 transcript 文本判(判定口径[待核])。
+**不修的条件(caveat)**: 第三方平台 iframe 的字幕你控制不了,能做的是页内文稿与描述;自动生成字幕质量差时,重要视频补人工校对版。
+**修复(fix)**: `<track kind="captions" srclang label>` 本地字幕;页内 transcript 与 VideoObject 同源;视频分发全案见 [video-geo-guide.md](../content/video-geo-guide.md)。
+**导出(export)**: Reports > Accessibility > Missing Captions & Transcripts
+**关联(seealso)**: sd-required-fields(VideoObject);[video-geo-guide.md](../content/video-geo-guide.md)
+
+#### a11y-iframe-title [待核 ID]
+- 名称/类型: iframe/object 缺 title —— warning · 优先级 medium · 输出 WARN(源表:iframe/object 须 title/替代文本;档位未单列[待核])
+**这意味(what)**: `<iframe>`(或 `<object>`)没有 title 属性(或等价替代文本)。
+**为什么(why)**: 双理由。无障碍:SR 把 iframe 当独立浏览区,进入前读 title——无名框架只报"框架",用户不知道里面是广告、表单还是地图,键盘焦点进入无名框架时尤其迷失;SEO:iframe 内容按独立文档处理(默认不算本页内容),title 是本页对嵌入物唯一的语义描述——无名嵌入物是语义黑洞,第三方嵌入(地图/视频/评论)的 title 同时帮引擎理解页面组成。
+**触发(trigger)**: 任一 `<iframe>`/`<object>` 无 title 或 title 空白即 warn(装饰性隐藏框架的豁免口径[待核])。
+**不修的条件(caveat)**: 技术 iframe(埋点/支付回调)用 title="(hidden)" 或 aria-hidden+height=0 处理,不影响判定;视觉无框嵌入(无缝地图)更需要 title 说明身份。
+**修复(fix)**: `<iframe title="Google 地图:公司位置">`——每处嵌入给具体身份而非"iframe";装饰性技术框架加 hidden 语义。
+**导出(export)**: Reports > Accessibility > Untitled Iframes
+**关联(seealso)**: a11y-accessible-name、sd-required-fields(VideoObject);[semantic-html.md](semantic-html.md)
+
+#### a11y-svg-name [待核 ID]
+- 名称/类型: img 角色 SVG 缺可访问名 —— warning · 优先级 medium · 输出 WARN(源表:img 角色 SVG 须可访问名;档位未单列[待核])
+**这意味(what)**: 承载信息的内联 SVG(role=img 或视觉等价于内容图)没有可访问名——无 `<title>`/`<desc>`、无 aria-label。
+**为什么(why)**: 双理由。无障碍:SR 默认跳过纯图形,role=img 后会尝试播报但无名则读不出内容——信息图形对盲用户完全不存在;SEO:内联 SVG 是引擎能直接读 DOM 的图形(与 img 的 alt 对应),`<title>` 是其文本描述面,图标/图表的语义由此进入页面理解。装饰 SVG 该 aria-hidden、信息 SVG 该有名字——两者都不做才是问题。
+**触发(trigger)**: 内联 svg 带 role="img"(或被判为信息图形[判定口径待核])且 accessible name(svg>title 或 aria-label)为空即 warn。
+**不修的条件(caveat)**: 装饰性 SVG 的正确做法是 aria-hidden="true"(跳过)而非补名——补名反而制造噪音;判定标准是"这图形承载信息吗"。
+**修复(fix)**: 信息 SVG:`<svg role="img" aria-label="描述">` 或内嵌 `<title>`;装饰 SVG:aria-hidden="true";可交互 SVG 图标按 a11y-accessible-name 给名。
+**导出(export)**: Reports > Accessibility > Unnamed Informational SVG
+**关联(seealso)**: a11y-accessible-name、images-alt;[semantic-html.md](semantic-html.md)
+
+#### a11y-alt-duplicate [待核 ID]
+- 名称/类型: alt 复读相邻文本 —— warning · 优先级 low · 输出 WARN(源表:alt 不重复相邻链接/图注文本;档位未单列[待核])
+**这意味(what)**: 图片的 alt 与紧邻的链接文本或 figcaption 图注完全相同——SR 用户同一句话听两遍。
+**为什么(why)**: 双理由。无障碍:图文卡片(图+标题链)是最常见布局,alt=标题文本时 SR 逐卡片读两遍标题,信息零增量、耐心双倍消耗;SEO:alt 与相邻文本全同不产生新的语义信号(引擎按同义去重),"alt 补充图内信息"(标题说"发布会",alt 说"台上三位高管")才扩展页面的语义覆盖面。
+**触发(trigger)**: img 的 alt 与同容器内链接文本或 figcaption 归一化后相同即 warn(相邻范围的判定口径[待核])。
+**不修的条件(caveat)**: 图注已完整描述图意时,alt 可刻意留空(alt="")——图注就是描述,不判缺失(images-alt 的口径);本条抓的是"复读"而非"缺失"。
+**修复(fix)**: alt 写图内信息(与文字标题互补);图注完整时 alt="";卡片组件模板化——标题进链接、图片描述进 alt,两变量分工。
+**导出(export)**: Reports > Accessibility > Alt Duplicates Adjacent Text
+**关联(seealso)**: images-alt、images-alt-generic;[semantic-html.md](semantic-html.md)
+
+#### a11y-aria-typo [待核 ID]
+- 名称/类型: ARIA 属性/角色拼错 —— issue · 优先级 high · 输出 CRITICAL(源表 fail;浏览器静默丢弃)
+**这意味(what)**: aria-* 属性名或 role 值拼错:aria-lable(丢 e)、aria-labeledby(应为 labelledby)、role="buton"——浏览器静默丢弃,不报任何错。
+**为什么(why)**: 双理由。无障碍:拼错的 ARIA 等于没写,且零报错渠道——开发者以为配了无障碍,用户端什么都没发生,是"最自信的失效";SEO:同一机制吞掉语义信号——role 拼错让引擎同样拿不到该区域语义(ARIA 与原生语义同源消费);判 fail 的依据同 sd-json-syntax 家族:存在但残缺、静默失效的坏信号档。
+**触发(trigger)**: 1) aria-* 属性名不在 WAI-ARIA 已知属性表;2) role 值不在 ARIA 角色表;3) 属性-角色搭配非法(role=img 上用 aria-expanded)——命中任一即 fail 档(校验表口径[待核])。
+**不修的条件(caveat)**: 属性名对但引用值错(aria-labelledby 指向不存在的 id)归 a11y-duplicate-id 关联家族;本条只管词法层。data-* 自定义属性不判。
+**修复(fix)**: IDE 装 ARIA 校验(eslint-plugin-jsx-a11y 类);CI 加 ARIA 词法 lint(属性表+角色表白名单);评审对 aria-* 一律查表。
+**导出(export)**: Reports > Accessibility > Misspelled ARIA
+**关联(seealso)**: a11y-aria-parent-child、a11y-accessible-name;[semantic-html.md](semantic-html.md)
+
+#### a11y-aria-hidden [待核 ID]
+- 名称/类型: aria-hidden 包裹可聚焦元素 —— issue · 优先级 critical · 输出 CRITICAL(源表 fail)
+**这意味(what)**: aria-hidden="true" 的容器里有可聚焦元素(链接/按钮/输入)——视觉可见、可 Tab 到,但 SR 完全不播报。
+**为什么(why)**: 双理由。无障碍:键盘用户 Tab 进"不存在"的元素——焦点静默消失、所见与所听分裂,是 ARIA 的头号误用;SEO:aria-hidden 同时是对机器语义层的隐藏声明——引擎按无障碍树理解页面时,被隐藏区的内容不进语义层:你以为的内容,机器按"作者声明应隐藏"处理,索引与摘要都可能漏掉;主动矛盾(可交互却声明隐藏)是最重的坏信号档(critical)。
+**触发(trigger)**: aria-hidden=true 的元素子树内含可聚焦元素(无 disabled/tabindex=-1 豁免)即 fail。
+**不修的条件(caveat)**: 合法做法是先禁再隐:元素 disabled 或 tabindex=-1 后再 aria-hidden(折叠菜单收起态);纯装饰容器(无交互)aria-hidden 永远合法。
+**修复(fix)**: 隐藏前先移出 Tab 序(tabindex=-1/disabled/条件渲染);折叠类组件用 hidden 属性(视觉+语义双收)替代 aria-hidden;根级禁令见 a11y-aria-hidden-root。
+**导出(export)**: Reports > Accessibility > Focusable in aria-hidden
+**关联(seealso)**: a11y-aria-hidden-root、a11y-tabindex;[semantic-html.md](semantic-html.md)
+
+#### a11y-aria-hidden-root [待核 ID]
+- 名称/类型: html/body 级 aria-hidden —— issue · 优先级 critical · 输出 CRITICAL(源表:html/body 禁 aria-hidden;档位未单列[待核],按 aria-hidden 家族 fail 档从重,两轴校准注明)
+**这意味(what)**: `<html>` 或 `<body>` 元素上出现 aria-hidden 属性(常见 true——SPA 加载态/新手引导插件的遗产)。
+**为什么(why)**: 双理由。无障碍:根级隐藏让整页对 AT 消失——浏览器里正常显示,SR 用户听到的却是空页面,是能写出的最重无障碍事故之一;SEO:根级 aria-hidden 等于声明整页语义隐藏——引擎的语义层拿到的也是空页,与 technical-empty-html(200 空 HTML)同级的"假正常"形态;常由加载遮罩组件忘记复位造成,批量页面同时中招。
+**触发(trigger)**: `<html>` 或 `<body>` 元素带 aria-hidden 属性即触发(无论值)。
+**不修的条件(caveat)**: 无豁免——任何"暂时隐藏全页"的实现都该用视觉遮罩(overlay)而不是根级语义隐藏;命中即最高优先级修。
+**修复(fix)**: 排查加载态/引导(tour)组件对 body 的属性操作,改视觉层(opacity/overlay);CI 断言 html/body 永不带 aria-hidden。
+**导出(export)**: Reports > Accessibility > aria-hidden on Root
+**关联(seealso)**: a11y-aria-hidden、js-runtime-hygiene;[semantic-html.md](semantic-html.md)
+
+#### a11y-aria-parent-child [待核 ID]
+- 名称/类型: ARIA widget 父子角色缺失 —— warning · 优先级 medium · 输出 WARN(源表:ARIA widget 须有所需父子角色,tab 在 tablist 内/option 在 listbox 内;档位未单列[待核])
+**这意味(what)**: ARIA 复合控件的角色结构不完整:role=tab 不在 role=tablist 内、role=option 不在 role=listbox 内、menuitem 不在 menu 内。
+**为什么(why)**: 双理由。无障碍:复合控件的 AT 行为(方向键导航/选中播报)由完整角色树驱动——孤儿 tab 退化为普通元素,键盘用户按方向键没反应;SEO:ARIA 角色树与引擎的组件语义理解同构,完整的 tablist/combobox 结构让交互模式机器可读;残缺结构标记"手搓 ARIA 半途而废",与标题跳级同族:语义树断枝。
+**触发(trigger)**: 需容器角色清单(tab/option/menuitem/menuitemcheckbox 等[清单待核])中的角色,其祖先链内无对应 required parent 角色即 warn。
+**不修的条件(caveat)**: 原生元素优先(`<select><option>` 天生完整)——能用原生就不要手搓 ARIA;本条命中常提示该换原生组件。
+**修复(fix)**: 补容器角色(tab→tablist、option→listbox、menuitem→menu)或换原生元素;复合控件优先用角色树内置的成熟组件库。
+**导出(export)**: Reports > Accessibility > Orphan ARIA Roles
+**关联(seealso)**: a11y-aria-typo、a11y-list-structure;[semantic-html.md](semantic-html.md)
+
+#### a11y-list-structure [待核 ID]
+- 名称/类型: 列表子元素非法 —— warning · 优先级 low · 输出 WARN(源表:列表只含 li;档位未单列[待核])
+**这意味(what)**: `<ul>`/`<ol>` 的直接子元素不是 `<li>`——塞了 div/p/文本节点,或 `<li>` 裸奔在列表容器外。
+**为什么(why)**: 双理由。无障碍:SR 播报列表先报"列表,共 N 项"再逐项读——非法子元素打断计数,项数与实际不符,用户对内容量失去预期;SEO:列表语义(有序/无序/项数)是内容结构的机器声明,面包屑/步骤/要点列表还有 schema 联动(BreadcrumbList 的 itemListElement 对应 li 结构);div 沙漠列表退化为普通文本块。
+**触发(trigger)**: `<ul>`/`<ol>` 的 Element 直接子节点标签 ∉ {li, script, template}(HTML 规范豁免口径[待核])即 warn。
+**不修的条件(caveat)**: 历史模板里 ul 套 div 分组的布局用法,视觉无碍低风险,可排期修;display:list-item 的 div 不算——语义看 DOM 不看样式。
+**修复(fix)**: 分组需求用嵌套 li(ul>li>ul>li);包裹层移到 ul 外;模板 lint 列表子元素白名单。
+**导出(export)**: Reports > Accessibility > Invalid List Structure
+**关联(seealso)**: a11y-aria-parent-child、sd-breadcrumblist;[semantic-html.md](semantic-html.md)
+
+#### a11y-role-presentation [待核 ID]
+- 名称/类型: role=none/presentation 被反证 —— warning · 优先级 low · 输出 WARN(源表:role=none/presentation 不被 ARIA/可聚焦性反证;档位未单列[待核])
+**这意味(what)**: 元素声明 role="none"/"presentation"(意图:从无障碍树抹掉),但它带全局 ARIA 属性(aria-label 等)或含可聚焦子元素——声明与实态互相反驳。
+**为什么(why)**: 双理由。无障碍:presentation 说"我是装饰",aria-label 说"我有名字"——AT 按规范丢弃矛盾的角色声明回退隐式语义,行为不可预期;可聚焦子元素更让"隐藏"名存实亡(与 a11y-aria-hidden 同族矛盾)。SEO:角色声明同时喂语义层——被反证的 presentation 让引擎对该区域"装饰还是内容"的判定摇摆;表格误抹 presentation 时(布局表该抹、数据表不该抹)语义提取随之漂移。
+**触发(trigger)**: 1) role=none/presentation 元素带全局 aria-* 属性或含可聚焦子元素即 warn;2) `<table role=presentation>` 内含 th/scope(表头是内容信号,布局表不该有)同类触发[表格分型待核]。
+**不修的条件(caveat)**: role=presentation 的正确用法(装饰图/布局表抹除)不受影响——本条只抓"声明与实态矛盾";命中多半该删 role 而非删属性。
+**修复(fix)**: 真装饰:去掉矛盾属性、聚焦子元素先移出;真内容:删 role=恢复语义;布局表抹 presentation 时确保内部无 th。
+**导出(export)**: Reports > Accessibility > Contradicted Presentation Role
+**关联(seealso)**: a11y-aria-hidden、a11y-aria-typo;[semantic-html.md](semantic-html.md)
+
+#### a11y-input-image-alt [待核 ID]
+- 名称/类型: 图像提交按钮缺 alt —— warning · 优先级 medium · 输出 WARN(源表:`<input type=image>` 须 alt;档位未单列[待核])
+**这意味(what)**: `<input type="image">`(图像形式的提交按钮)没有 alt 属性。
+**为什么(why)**: 双理由。无障碍:图像按钮的可访问名只能来自 alt——无名时 SR 只读"提交按钮 图像"或文件名,用户不知道点了会提交什么;SEO:input image 是老表单的主流提交件,alt 是其唯一文本面(与 img 的 alt 同构);且它几乎总该换成 `<button>`(可访问名/样式/图标自由度全面更优)——本条命中常是遗留代码信号。
+**触发(trigger)**: `<input type="image">` 无 alt 或 alt 空白即 warn。
+**不修的条件(caveat)**: 注意与装饰 img 相反:此处空 alt(alt="")不合规——提交按钮必须有名字;遗留表单至少补 alt="搜索" 类动作名。
+**修复(fix)**: 首选换 `<button type="submit">`(内嵌图标+文本);遗留表单补动作名 alt。
+**导出(export)**: Reports > Accessibility > Image Input Missing Alt
+**关联(seealso)**: a11y-accessible-name、images-alt、a11y-form-label;[semantic-html.md](semantic-html.md)
+
+#### a11y-duplicate-id [待核 ID]
+- 名称/类型: ID 重复 —— issue · 优先级 high · 输出 CRITICAL(源表 fail;svg 内 url(#id) 引用的 clipPath 豁免)
+**这意味(what)**: 同一文档里 id 属性值出现多次——aria-labelledby/label for/fragment 锚点全部解析到第一个匹配,其余静默失效。
+**为什么(why)**: 双理由。无障碍:aria-labelledby 与 `<label for>` 按 id 查找,重复 id 让第二个以后的元素失去命名/标签关联——SR 读到的是别人的名字;SEO:id 锚点是深链与 AI 引用定位的坐标(#section 断链见 links-broken-anchor),重复 id 让"指哪"变成"指第一个";模板循环组件复用固定 id(每卡片同 id)是最常见肇因,批量产生。源表豁免边界照抄:svg 内 url(#id) 引用的 clipPath/gradient 等 defs 资源不判(图形引用按 first-match 本就是预期行为)。
+**触发(trigger)**: 1) 全文档 id 值去重后仍 >1 即 fail 档;2) svg defs 族的 url(#id) 引用豁免。
+**不修的条件(caveat)**: 豁免仅限 SVG defs 族;HTML 层的重复 id 没有正当形态——第三方组件注入的重复 id 也该报给组件方修。
+**修复(fix)**: 组件 id 加实例后缀(useId() 类工具);label/aria 引用与 fragment 统一走 id 注册表;CI 断言全文档 id 唯一。
+**导出(export)**: Reports > Accessibility > Duplicate IDs
+**关联(seealso)**: a11y-form-label、links-broken-anchor、a11y-one-label-per-control;[semantic-html.md](semantic-html.md)
 
 ### Social(9 条,权重 3%)
 
@@ -2081,6 +2575,18 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 
 `legal-cookie-consent`:检测 CMP(CookieYes/OneTrust/Cookiebot/Termly/Quantcast);有 CMP 或无追踪脚本=pass,有追踪无 CMP=warn。
 
+**解释层(1 条,第四批;ID 为源目录原文)**
+
+#### legal-cookie-consent
+- 名称/类型: 追踪脚本无 CMP —— warning · 优先级 medium · 输出 WARN(源表:有 CMP 或无追踪脚本=pass,有追踪无 CMP=warn)
+**这意味(what)**: 页面加载了追踪脚本(GA/GTM/广告类)却没有检测到任何 CMP(consent management platform:CookieYes/OneTrust/Cookiebot/Termly/Quantcast)。
+**为什么(why)**: 双重后果:合规面,欧盟 GDPR/ePrivacy 系要求追踪前取得同意,无 CMP 的追踪直接踩监管红线(罚款案例常态化);数据面,无同意框架时 Google 标签在 EEA 按未同意降级处理——consent mode 缺失(见 technical-tagging)连带信号缺失,SEO 决策依赖的流量数据也失真。判定按"追踪器脚本指纹+CMP 特征 DOM"双查,不读 Cookie 值。
+**触发(trigger)**: 1) 页面脚本命中追踪器指纹(GA/GTM/Meta Pixel 等[清单口径待核]);2) DOM/脚本无已知 CMP 特征(CookieYes/OneTrust/Cookiebot/Termly/Quantcast);两者同时成立即 warn;无追踪脚本则 pass。
+**不修的条件(caveat)**: 无 cookie 同意强制要求的辖区,无 CMP 不构成当地合规问题,然而境外流量接入后即暴露;纯必要 Cookie(会话/安全)无 CMP 是合法形态,不判。
+**修复(fix)**: 部署 CMP 并接 consent mode(gtag consent default+update,见 technical-tagging);追踪器一律经 CMP 门控加载;隐私政策同步(见 eeat-privacy-tos)。
+**导出(export)**: Reports > Legal > Tracking without Consent
+**关联(seealso)**: technical-tagging、eeat-privacy-tos;[gtm-implementation.md](gtm-implementation.md)、[validation-guide.md](validation-guide.md)
+
 ---
 
 ## 五、吸收备注(去重边界)
@@ -2094,9 +2600,9 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 
 ## 六、未覆盖规则(扩写边界与进度)
 
-- 解释层本版覆盖 **170 条**:第一波 79 条 P0/P1(Crawlability 34/i18n 13/Core SEO 18/Links 4/Redirects 4/Content 重复族 4/Images alt 1/Social og:url 1,聚焦 canonical·noindex·重复内容·断链·重定向·sitemap·hreflang·title/H1 结构家族)+ 第二波 44 条 medium/low 高价值(Crawlability 分页 2/Links 6/Content 6/Images 5/Social 3/Performance 8/Structured Data 5/URL 5/JS Rendering 4)+ 第三批 47 条(Technical SEO 10:5xx·超时·空 HTML·soft-404·非 404 4xx·自定义 404·robots.txt·sitemap 存在性·Content-Type·URL 一致性·埋点卫生;Security 6:HTTPS/混合内容·安全头族·TLS/证书·Cookie·链接引用安全·内容危险信号;Mobile 6:字号·viewport 配置·横向滚动·插页·image maps·parity 五条;Links 6:无内链·外链可达·畸形 href 家族·断锚点·onclick·外链 nofollow;HTML Validation 5:文档结构·多 title/description·head 非法元素·base·体积与 lorem;Content 5:文本比·可读性·相对薄·标题模式·MIME 破损;Redirects 3:静态资源·大小写规范化·资源链;Core SEO 2:viewport/favicon;Crawlability 2:pdf-size/crawl-delay 收口 38 条全量;i18n 1:lang 一致性;Performance 1:preconnect)。
-- **其余约 200 条仍以表格/浓缩表形式维护,是唯一事实来源**:阈值以表格为准,条目与表格冲突时改条目不改表。E-E-A-T 16 条、Accessibility 34 条(语言码两条已并入 i18n)、Images/Structured Data 表内剩余同构条、AI/GEO 13 条等未扩写类的判定阈值都在第四节浓缩表与被吸收的专项文档(LCP.md/validation-guide.md/ai-crawler-policy.md 等)里。
-- 后续扩写按同规范增量进行:优先级次序建议为 E-E-A-T 16 条(信任基建+作者维度+YMYL 开关)→ Accessibility 剩余(对比度/触控目标/ARIA 族)→ Images/Structured Data 表内剩余同构条 → Legal 1 条;每扩一批,更新本节数字。
+- 解释层本版覆盖 **220 条**:第一波 79 条 P0/P1(Crawlability 34/i18n 13/Core SEO 18/Links 4/Redirects 4/Content 重复族 4/Images alt 1/Social og:url 1,聚焦 canonical·noindex·重复内容·断链·重定向·sitemap·hreflang·title/H1 结构家族)+ 第二波 44 条 medium/low 高价值(Crawlability 分页 2/Links 6/Content 6/Images 5/Social 3/Performance 8/Structured Data 5/URL 5/JS Rendering 4)+ 第三批 47 条(Technical SEO 10:5xx·超时·空 HTML·soft-404·非 404 4xx·自定义 404·robots.txt·sitemap 存在性·Content-Type·URL 一致性·埋点卫生;Security 6:HTTPS/混合内容·安全头族·TLS/证书·Cookie·链接引用安全·内容危险信号;Mobile 6:字号·viewport 配置·横向滚动·插页·image maps·parity 五条;Links 6:无内链·外链可达·畸形 href 家族·断锚点·onclick·外链 nofollow;HTML Validation 5:文档结构·多 title/description·head 非法元素·base·体积与 lorem;Content 5:文本比·可读性·相对薄·标题模式·MIME 破损;Redirects 3:静态资源·大小写规范化·资源链;Core SEO 2:viewport/favicon;Crawlability 2:pdf-size/crawl-delay 收口 38 条全量;i18n 1:lang 一致性;Performance 1:preconnect)+ 第四批 50 条(E-E-A-T 14:byline·资历·日期/更新机制·引用·about·contact·隐私+ToS·地址+geo meta·联盟披露·免责·编辑政策·信任信号·YMYL 检测器·NAP,16 条全量;Accessibility 32:对比度·触控目标·可访问名·按钮名·名含可见文本·焦点·tabindex·skip 链·accesskey·表单 label·一控件一 label·autocomplete token·landmark·恰一 main·标题跳级·空标题·链接文本·同链同的·表格 th+scope·caption·字幕文稿·iframe title·SVG 名·alt 复读·ARIA 拼错·aria-hidden 聚焦·根级 aria-hidden·widget 父子角色·列表结构·role 反证·input image alt·重复 ID,34 条规则全量[alt 归 Images、语言码归 i18n、禁缩放归 mobile];Structured Data 3:实体引用·实体一致性·评分作用域,六查全量;Legal 1:cookie consent 收口 20 类全覆盖)。
+- **其余约 150 条仍以表格/浓缩表形式维护,是唯一事实来源**:阈值以表格为准,条目与表格冲突时改条目不改表。AI/GEO 13 条(细则已吸收于 [validation-guide.md](validation-guide.md) 与 [ai-crawler-policy.md](ai-crawler-policy.md),仅存目)与各节表内剩余同构细分条(Performance minify 子项、Mobile parity 子项、Links 入链族切面等)的判定阈值都在第四节浓缩表与被吸收的专项文档(LCP.md/validation-guide.md/ai-crawler-policy.md 等)里。
+- 后续扩写按同规范增量进行:第四批后 20 类主要规则均有解释层覆盖,剩余为 AI/GEO 13 条(细则在专项文档,存目即可)与各节同构细分条(逐条单列的扩写价值低);后续批次以源目录变动核对、[待核] 阈值复核与新增规则补录为主——每扩一批,更新本节数字。
 - 新增条目必须照抄源表阈值并遵守〇节 ID 纪律与两轴哲学;来源变动的核对入口是 intel_check.py 的 google-updates 源(映射到本文)。
 
 

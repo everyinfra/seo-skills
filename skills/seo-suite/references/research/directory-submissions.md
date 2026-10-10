@@ -120,7 +120,7 @@ AI 搜索引擎（ChatGPT/Perplexity/Gemini/Copilot/Claude）**不排名、只�
 | 权威语气 | +25% | | ~~关键词堆砌~~ | **−10%，禁用** |
 | 易于理解 | +20% | | | |
 
-最佳组合：**流畅度 + 统计数据**。FAQPage schema 自述 +40% AI 可见度[待核:测量月;系 AI 可见面主张,与 SERP 富结果退役无关]。
+最佳组合：**流畅度 + 统计数据**。FAQPage schema 自述 +40% AI 可见度[未证实:引用时须注明二手来源——未找到把 +40% 单独归到 FAQPage schema 的一手研究,二手口径混杂(Princeton GEO 的 +40% 系"引用来源"因子/Semrush"被引页 40% 带结构化数据"系占比非增益/Milestone 2023 系富结果曝光);系 AI 可见面主张,与 SERP 富结果退役无关]。
 
 ### Phase 0 闸门扩展：AI 爬虫放行清单
 
@@ -128,7 +128,7 @@ robots.txt 须放行：Googlebot、Bingbot、PerplexityBot、ChatGPT-User、Clau
 
 ### 平台分因子（其 platform-algorithms.md 汇编）
 
-- **ChatGPT**（SE Ranking 129K 域研究，逆向推断;研究发布约 2025-12,头部引用源占比与 Profound 2025-06 口径同值,两源勿混[待核]）：引荐域名数是最强预测因子（>350K 域≈8.4 平均引用）；域信任分 91–96≈6 引用、97–100≈8.4；**30 天内更新的内容获 3.2x 引用**；品牌官方域比第三方被引多 11.1 个百分点；头部引用源 Wikipedia 7.8% / Reddit 1.8% / Forbes 1.1%。
+- **ChatGPT**（SE Ranking 129K 域研究(129,000 域/216,524 页/20 领域),研究发布 2025-11-24,来源:seranking.com;SEJ 2025-11-26 转述）：引荐域名数是最强预测因子（>350K 域≈8.4 平均引用;>32K 域处引用翻倍 2.9→5.6）;**近 3 个月更新内容引用 ≈1.7x(6.0 vs 3.6;2026-10-11 复核纠正——原文无"30 天 3.2x"口径)**;"域信任分 91–96≈6/97–100≈8.4"与"官方域 +11.1pp"未在该研究原文/SEJ 转述中找到[未证实:引用时须注明二手来源];头部引用源 Wikipedia 7.8% / Reddit 1.8% / Forbes 1.1% 系 **Profound** ChatGPT 口径(测量于 2024-08~2025-06,发布 2025-06-05,来源:tryprofound.com)——两源勿混,勿记在 SE Ranking 名下。
 - **Perplexity**：放行 PerplexityBot + FAQ schema（更高引用率）+ **站内托管 PDF（被优先引用）** + 语义相关优先于关键词。
 - **Google AI Overview**：E-E-A-T + 结构化数据 + 专题权威（内容簇+内链）+ 权威引用（+132% 可见度）。
 - **Copilot/Bing**：**Bing 索引是引用前提**；LinkedIn/GitHub 提及有助力；页速 <2s；清晰实体定义。

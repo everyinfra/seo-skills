@@ -42,6 +42,22 @@
           #   runs/<id>.json 双写);硬违例整批原子拒绝;score --rubric 打印
           #   压缩判定要点(代码内常量,不读 md,standalone)
 
+v4(借鉴 niubigeo,出处逐条标注 references/research/niubigeo-deep-read.md §3):
+  N1 提及检测   record --answer-file ANSWER: URL 掩码+实体词表自动判定 mentioned/
+                rank(引用链接里的域名不算正文提及;sentiment 恒 neutral);report 增
+                提及检测标注节。旧 run.csv 口径不动,检测只填空缺/加扩展键。
+  N2 指标切片   report 按 prompt.branded 分 branded_or_direct / organic_unbranded
+                两栏(每指标 {numerator,denominator,value},分母=0 → null 永不报 0%)
+                + 交叉错配计数;无 branded 标注按"prompt 含品牌名"自动判定,
+                report --brand 可覆盖自动判定的品牌名(显式标注不受影响)。
+  N5 意图冻结   init 冻结分母档案 panel['denominator_freeze'] 并校验 intents 非空;
+                分母成员由档案(candidate_applicable≠False)决定,不由答案结果决定
+                → coverage_frozen/sov_frozen 新口径;record 存每 run 冻结 hash,
+                面板/run 与档案不一致时 report 警示分母漂移。
+  N6 配对差分   record 存探针指纹 run['fingerprint'](engine+brand+prompt 集+规则
+                版本);diff 增配对门: 只对同 prompt×engine 且同指纹的配对算 Δ,
+                未配对单列不入 Δ;跨引擎/跨指纹强制标注"不可比"。
+
 run.csv 列: prompt, mentioned, cited, cited_urls[, state][, rank]
   mentioned/cited ∈ {0,1};cited_urls 分号分隔;state 可显式给 failed/no_answer
   或三态之一覆盖,否则由 mentioned/cited 推导;cited=1 蕴含 mentioned=1;
@@ -82,8 +98,9 @@ STATES = ("no_answer", "failed", "brand_absent", "name_only_mention", "cited_bra
 Z = 1.96
 
 # ---------- v2 扩展常数(出处见各节注释) ----------
-# prompts 对象化(references/research/borrow-specs.md B3)
-PROMPT_FIELDS = ("text", "topic", "tags", "stage", "branded", "region", "lang")
+# prompts 对象化(references/research/borrow-specs.md B3;+ v4 N5 意图档案字段)
+PROMPT_FIELDS = ("text", "topic", "tags", "stage", "branded", "region", "lang",
+                 "intents", "candidate_applicable", "recommendation_applicable")
 PROMPT_COL_KEYS = ("prompt", "prompts", "query", "text", "提示词", "模板", "整句",
                    "prompt 句", "模板(整句)")          # 命中任一列名 → 该列为 prompt 文本
 STAGE_COLS = ("stage", "阶段", "漏斗")                  # prompt-bank.md 主矩阵的漏斗列
@@ -109,6 +126,23 @@ DECAY_MIN_PEAK_SAMPLES = 5    # 资格闸门 2: 峰值窗内采样≥5(官方)
 DECAY_NO_REBOUND_DAYS = 14    # 半衰确认: ≤50%peak 后连续 14 天无反弹(官方)
 DECAY_LATE_START_DAYS = 30    # 资格闸门 4: 首采距窗起点>30 天剔除(官方)
 OFFICIAL_MEDIAN_HALF_LIFE = 11   # 官方常数: 中位半衰期 11 天(参照行/先验)
+
+# ---------- v4 扩展常数(出处: references/research/niubigeo-deep-read.md §3) ----------
+MENTION_RULES_VERSION = "mask-url-v1"      # N1 提及检测规则版本(进 N6 指纹)
+TARGETING_RULES_VERSION = "targeting-v1"   # N2 branded 自动判定规则版本
+DENOM_FREEZE_VERSION = "denom-freeze-v1"   # N5 分母冻结协议版本
+DIFF_PAIRING_VERSION = "pairing-v1"        # N6 配对差分协议版本
+# N1 句子边界集(深读原文口径 ".。!?!?\n",ASCII+CJK 标点+换行)
+SENTENCE_BOUNDARIES = set(".。!?!?\n")
+# N1 URL 掩码正则(stdlib 近似 linkify-it;三选一):
+#   1) scheme://…   2) www.…   3) 裸域+路径(裸域无路径视为行文提及不掩[推断])
+URL_TOKEN_RE = re.compile(
+    r"(?:(?:https?|ftp)://|www\.)[^\s<>\"'\)\]]+"
+    r"|[A-Za-z0-9][A-Za-z0-9-]*(?:\.[A-Za-z0-9][A-Za-z0-9-]+)+/\S*")
+# N5 prompt 意图档案字段(prompts 对象化新增,全部可选,旧数据不受影响)
+INTENT_FIELDS = ("intents", "candidate_applicable", "recommendation_applicable")
+# N2 targeting 切片标签(品牌词与中性词永不混进同一个分)
+TARGETING_LABELS = ("branded_or_direct", "organic_unbranded")
 
 SL_TLD = {"co.uk", "org.uk", "ac.uk", "gov.uk", "com.au", "net.au", "co.jp", "ne.jp",
           "or.jp", "com.cn", "net.cn", "org.cn", "com.br", "com.mx", "com.tr",
@@ -188,6 +222,17 @@ def prompt_obj(p):
         if p.get("branded") is not None:
             obj["branded"] = (p["branded"] if isinstance(p["branded"], bool)
                               else str(p["branded"]).strip().lower() in ("1", "true", "yes", "y", "是"))
+        # v4(niubigeo-deep-read.md N5)意图档案字段: 全部可选,仅在输入给出时携带
+        raw_intents = p.get("intents")
+        if raw_intents is not None:
+            lst = raw_intents if isinstance(raw_intents, list) else re.split(r"[;,，、]", str(raw_intents))
+            ints = [str(x).strip() for x in lst if str(x).strip()]
+            if ints:                     # 空档案不落键(init 校验按"带 profile 无 intents"拒绝)
+                obj["intents"] = ints
+        for f in ("candidate_applicable", "recommendation_applicable"):
+            if p.get(f) is not None:
+                obj[f] = (p[f] if isinstance(p[f], bool)
+                          else str(p[f]).strip().lower() in ("1", "true", "yes", "y", "是"))
         return obj
     return {"text": str(p).strip(), "tags": []}
 
@@ -250,6 +295,12 @@ def _row_to_prompt(cells, header):
         obj["tags"] = [t.strip() for t in re.split(r"[;,，、]", m["tags"]) if t.strip()]
     if m.get("branded", "").strip():
         obj["branded"] = m["branded"].strip().lower() in ("1", "true", "yes", "y", "是")
+    # v4(niubigeo-deep-read.md N5)意图档案列(intents/candidate/recommendation_applicable)
+    if m.get("intents", "").strip():
+        obj["intents"] = [t.strip() for t in re.split(r"[;,，、]", m["intents"]) if t.strip()]
+    for f in ("candidate_applicable", "recommendation_applicable"):
+        if m.get(f, "").strip():
+            obj[f] = m[f].strip().lower() in ("1", "true", "yes", "y", "是")
     return obj
 
 
@@ -329,7 +380,9 @@ def persona_fanout(core_query, personas, existing=None):
         obj = {"text": "%s%s%s" % (prefix, core, FANOUT_SUFFIX),
                "tags": ["persona-fanout", persona]}
         if base:
-            for f in ("topic", "stage", "branded", "region", "lang"):
+            # v4: 连 N5 意图档案字段一起继承(同 core query 的变体分母资格一致)
+            for f in ("topic", "stage", "branded", "region", "lang",
+                      "intents", "candidate_applicable", "recommendation_applicable"):
                 if base.get(f) is not None:
                     obj[f] = base[f]
         out.append(obj)
@@ -398,6 +451,20 @@ def cmd_init(args):
         print("错误: 需要 --prompts 或 --prompts-file(或 --persona-fanout)提供 prompt",
               file=sys.stderr)
         return 1
+    # v4(niubigeo-deep-read.md N5)意图档案校验非空: 带 intents/candidate_applicable/
+    # recommendation_applicable 任一字段的 prompt,intents 必须非空——冻结档案不许
+    # 空标签进基线(防分母成员资格无据可查)
+    bad_intents = []
+    for e in prompts:
+        if not isinstance(e, dict):
+            continue
+        if any(e.get(f) is not None for f in INTENT_FIELDS) and not prompt_obj(e).get("intents"):
+            bad_intents.append(prompt_text(e))
+    if bad_intents:
+        print("错误: %d 条 prompt 带意图档案字段但 intents 为空(niubigeo-deep-read.md "
+              "N5: 基线冻结不许空标签): %s" % (len(bad_intents), "; ".join(bad_intents[:3])),
+              file=sys.stderr)
+        return 1
     if os.path.exists(args.panel) and not args.force:
         print("面板已存在: %s(用 --force 覆盖)" % args.panel, file=sys.stderr)
         return 1
@@ -414,6 +481,14 @@ def cmd_init(args):
     if args.competitors:
         panel["competitors"] = [c.strip().lower() for c in args.competitors.split(",")
                                 if c.strip()]
+    # v4(niubigeo-deep-read.md N5)意图冻结分母: init 时点冻结 eligible 集(此后只读
+    # 不静默重写;prompt 增删/改措辞造成的漂移由 report 警示,不自动吸收)
+    frz = denominator_freeze(panel)
+    panel["denominator_freeze"] = {
+        "version": frz["version"], "freeze_hash": frz["freeze_hash"],
+        "eligible_prompts": frz["eligible_prompts"],
+        "ineligible_prompts": frz["ineligible_prompts"],
+        "frozen_at": datetime.now().isoformat(timespec="seconds")}
     os.makedirs(runs_dir_for(args.panel), exist_ok=True)
     save_panel(args.panel, panel)
     print("面板已建立: %s(brand=%s, domain=%s, prompts=%d, engines=%s)"
@@ -454,7 +529,10 @@ def normalize_result(row, warnings, prompt):
     return out
 
 
-def read_run_csv(path, panel):
+def read_run_csv(path, panel, explicit=None):
+    """run.csv → ({prompt: result}, warnings)。
+    explicit(v4 N1,可选 dict)回填 {prompt: 是否人工显式填了 mentioned/state}
+    —— --answer-file 自动判定只覆盖非显式 cell,人工列永远优先。"""
     warnings, results = [], {}
     known = {prompt_text(p) for p in panel.get("prompts", [])}
     with open(path, newline="", encoding="utf-8-sig") as f:
@@ -464,6 +542,9 @@ def read_run_csv(path, panel):
             if not prompt:
                 continue
             results[prompt] = normalize_result(row, warnings, prompt)
+            if explicit is not None:
+                explicit[prompt] = bool((row.get("mentioned") or "").strip()
+                                        or (row.get("state") or "").strip())
             if prompt not in known:
                 warnings.append("prompt 不在面板 prompts 列表中: %s" % prompt)
     return results, warnings
@@ -474,11 +555,51 @@ def cmd_record(args):
     if args.engine not in panel["engines"]:
         panel["engines"].append(args.engine)
         print("[i] 引擎 %s 不在面板引擎列表,已追加" % args.engine)
-    results, warnings = read_run_csv(args.file, panel)
+    explicit = {} if args.answer_file else None
+    results, warnings = read_run_csv(args.file, panel, explicit=explicit)
     if not results:
         print("错误: %s 中没有有效行(需 prompt,mentioned,cited,cited_urls 列)" % args.file,
               file=sys.stderr)
         return 1
+    # v4(niubigeo-deep-read.md N1)URL 掩码提及检测: --answer-file 给出纯文本回答时
+    # 自动判定 mentioned/rank(只填空缺,人工显式列永远优先并告警差异)
+    if args.answer_file:
+        try:
+            answers = load_answers(args.answer_file)
+        except (OSError, ValueError) as e:
+            print("错误: 读取 --answer-file 失败: %s" % e, file=sys.stderr)
+            return 1
+        if not answers:
+            print("错误: %s 中没有回答(需 prompt,answer 列 CSV 或 {prompt: 回答} JSON)"
+                  % args.answer_file, file=sys.stderr)
+            return 1
+        for prompt, ans in answers.items():
+            cell = results.get(prompt)
+            if cell is None:
+                warnings.append("answer-file 的 prompt 不在 run.csv,已忽略: %s" % prompt)
+                continue
+            if cell["state"] in ("failed", "no_answer"):
+                warnings.append("state=%s 但 answer-file 有该 prompt 的回答文本,复核: %s"
+                                % (cell["state"], prompt))
+                continue
+            det = detect_mentions(ans, panel)
+            cell["mention_detection"] = det
+            if det["mentioned"] != cell["mentioned"]:
+                if explicit.get(prompt):
+                    warnings.append("URL 掩码检测 mentioned=%d 与人工列 %d 不一致,"
+                                    "以人工列为准(复核 answer-file): %s"
+                                    % (det["mentioned"], cell["mentioned"], prompt))
+                elif cell["cited"]:
+                    # cited=1 蕴含 mentioned=1(面板口径: 引用即出现);掩码只测正文,
+                    # 差异留在 detection 里作 cited_without_prose_mention 原料,面板值不动
+                    pass
+                else:
+                    cell["mentioned"] = det["mentioned"]
+                    cell["state"] = "name_only_mention" if det["mentioned"] else "brand_absent"
+                    warnings.append("掩码检测自动填 mentioned=%d(answer-file): %s"
+                                    % (det["mentioned"], prompt))
+            if "rank" not in cell and det["rank_position"] is not None:
+                cell["rank"] = det["rank_position"]    # 首现排位(品牌 vs 竞品域实体)
     date = args.date or datetime.now().isoformat(timespec="seconds")
     run_id = args.run_id or re.sub(r"[^\w.-]+", "-", "%s-%s" % (args.engine, date))
     existing = {r["run_id"] for r in panel["runs"]}
@@ -488,6 +609,9 @@ def cmd_record(args):
         n += 1
     run = {"run_id": run_id, "engine": args.engine, "date": date,
            "brand": panel["brand"], "results": results}
+    # v4(niubigeo-deep-read.md N6/N5)run 时点快照: 探针指纹 + 分母冻结 hash
+    run["fingerprint"] = run_fingerprint(run)
+    run["denominator_freeze_hash"] = denominator_freeze(panel)["freeze_hash"]
     panel["runs"].append(run)
     save_panel(args.panel, panel)
     rdir = runs_dir_for(args.panel)
@@ -518,7 +642,7 @@ def wilson_ci(k, n):
     return p, lo, hi, (lo < 0.5 < hi)
 
 
-def compute_stats(panel, engine=None, _per_engine=True):
+def compute_stats(panel, engine=None, _per_engine=True, brand_override=None):
     runs = [r for r in panel.get("runs", []) if not engine or r["engine"] == engine]
     state_counts = Counter()
     cells = mentioned_sum = brand_hits = domain_total = 0
@@ -530,6 +654,29 @@ def compute_stats(panel, engine=None, _per_engine=True):
     comp_hits = Counter()          # 每 cell 每竞品域至多计 1 次(SoV 分母用)
     cited_urls_sum = 0             # citation_rate 分子(显式引用次数)
     rank_cells = wins = 0          # win_rate(Peec: 排第一次数/响应数)
+    # ---- v4(N2)targeting 切片累积器: 品牌词与中性词永不混进同一个分 ----
+    tgt = {lb: _new_targeting_slice() for lb in TARGETING_LABELS}
+    tgt_basis = Counter()
+    tgt_cache = {}
+    _seen_prompts = []
+    _pmap = {}                                   # text → 原始 prompt 对象(保 branded 等标注)
+    for p in panel.get("prompts", []):
+        t = prompt_text(p)
+        if t not in _pmap:
+            _pmap[t] = p
+            _seen_prompts.append(t)
+    # ---- v4(N5)意图冻结分母累积器: 成员=冻结档案 eligible 集,与答案结果无关 ----
+    frz = denominator_freeze(panel)
+    _elig = set(frz["eligible_prompts"])
+    f_num = f_den = f_brand = f_comp = 0
+    for run in runs:
+        for prompt in run["results"]:
+            if prompt not in _seen_prompts:
+                _seen_prompts.append(prompt)   # 面板外 prompt 也按其文本归切片
+    for t in _seen_prompts:
+        lb, basis = _targeting_of(panel, _pmap.get(t, t), tgt_cache, brand_override)
+        tgt[lb]["prompts"] += 1
+        tgt_basis[basis] += 1
     for run in runs:
         for prompt, res in run["results"].items():
             cells += 1
@@ -539,7 +686,8 @@ def compute_stats(panel, engine=None, _per_engine=True):
             doms.discard("")
             cited_urls_sum += len(res.get("cited_urls") or [])
             domain_total += len(doms)
-            if brand_dom and brand_dom in doms:
+            brand_hit = bool(brand_dom and brand_dom in doms)
+            if brand_hit:
                 brand_hits += 1
             for d in doms:
                 if d != brand_dom:
@@ -554,6 +702,36 @@ def compute_stats(panel, engine=None, _per_engine=True):
             if res["state"] != "failed":
                 agg["n"] += 1
                 agg["k"] += res["mentioned"]
+            # ---- v4(N2)切片累积(旧指标键不动) ----
+            lb, _ = _targeting_of(panel, _pmap.get(prompt, prompt), tgt_cache,
+                                  brand_override)
+            sl = tgt[lb]
+            sl["cells"] += 1
+            if res["state"] != "failed":
+                sl["denominator"] += 1
+                sl["mentioned_sum"] += res["mentioned"]
+                sl["cited_cells"] += res["cited"]
+                if res["state"] != "no_answer":
+                    sl["answers"] += 1
+                if res["mentioned"] and not res["cited"]:
+                    sl["mentioned_without_official_citation"] += 1
+                det = res.get("mention_detection")
+                if (isinstance(det, dict) and det.get("mentioned") == 0
+                        and brand_hit):
+                    sl["cited_without_prose_mention"] += 1
+                if isinstance(rk, int) and rk > 0:
+                    sl["rank_cells"] += 1
+                    sl["wins"] += (rk == 1)
+                if brand_hit:
+                    sl["brand_hits"] += 1
+                sl["comp_hits"] += sum(1 for d in doms if d in competitors)
+            # ---- v4(N5)冻结分母累积(仅 eligible prompt 的 cell) ----
+            if prompt in _elig and res["state"] != "failed":
+                f_den += 1
+                f_num += res["mentioned"]
+                if brand_hit:
+                    f_brand += 1
+                f_comp += sum(1 for d in doms if d in competitors)
     denom = cells - state_counts["failed"]
     answers = denom - state_counts["no_answer"]
     coverage = (mentioned_sum / denom) if denom else None
@@ -576,6 +754,17 @@ def compute_stats(panel, engine=None, _per_engine=True):
             sub = compute_stats({**panel, "runs": [r for r in runs if r["engine"] == eng]},
                                 _per_engine=False)
             per_engine[eng] = sub
+    # ---- v4(N2/N5)新口径键(旧键全部保留;分母=0 → value=None 永不报 0%) ----
+    for sl in tgt.values():
+        sl["mention_rate"] = metric_triple(sl["mentioned_sum"], sl["denominator"])
+        sl["citation_rate"] = metric_triple(sl["cited_cells"], sl["answers"])
+        sl["first_position_rate"] = metric_triple(sl["wins"], sl["rank_cells"])
+        sl["share_of_voice"] = metric_triple(sl["brand_hits"],
+                                             sl["brand_hits"] + sl["comp_hits"])
+    stored_hash = (panel.get("denominator_freeze") or {}).get("freeze_hash")
+    run_hash_drift = [r.get("run_id") for r in runs
+                      if stored_hash and r.get("denominator_freeze_hash")
+                      and r["denominator_freeze_hash"] != stored_hash]
     return {"runs": len(runs), "cells": cells, "state_counts": state_counts,
             "denominator": denom, "mentioned_sum": mentioned_sum, "coverage": coverage,
             "brand_hits": brand_hits, "domain_total": domain_total, "share": share,
@@ -586,7 +775,21 @@ def compute_stats(panel, engine=None, _per_engine=True):
             "competitors": sorted(competitors), "comp_hits": comp_hits, "sov": sov,
             "rank_cells": rank_cells, "wins": wins, "win_rate": win_rate,
             "brand_visibility": coverage, "source_visibility": source_visibility,
-            "visibility_gap_pp": gap_pp}
+            "visibility_gap_pp": gap_pp,
+            # v4(N2)targeting 切片: branded_or_direct / organic_unbranded 两栏分报
+            "targeting": {"labels": list(TARGETING_LABELS),
+                          "rule": TARGETING_RULES_VERSION,
+                          "brand_used": str(brand_override or panel.get("brand") or ""),
+                          "basis_counts": dict(tgt_basis), "slices": tgt},
+            # v4(N5)意图冻结分母: coverage_frozen/sov_frozen 只数 eligible prompt
+            "frozen": {"version": DENOM_FREEZE_VERSION, "freeze_hash": frz["freeze_hash"],
+                       "eligible_count": len(_elig),
+                       "ineligible_prompts": frz["ineligible_prompts"],
+                       "mention_rate": metric_triple(f_num, f_den),
+                       "share_of_voice": metric_triple(f_brand, f_brand + f_comp),
+                       "panel_freeze_stored": stored_hash,
+                       "drift": bool(stored_hash is not None and stored_hash != frz["freeze_hash"]),
+                       "run_hash_drift": run_hash_drift}}
 
 
 def _pct(x):
@@ -612,6 +815,22 @@ def render_report(panel, stats, engine=None):
     L.append("-- mention coverage --")
     L.append("  Σmentioned=%d / 成功 cell=%d(=cells−failed;no_answer 计 0 留分母)= %s"
              % (stats["mentioned_sum"], stats["denominator"], _pct(stats["coverage"])))
+    # v4(N1)提及检测标注节: 有 mention_detection 扩展键才出现(旧面板整节不出现)
+    det_rows = mention_detection_rows(panel, engine)
+    if det_rows:
+        L.append("-- 提及检测(URL 掩码自动判定;niubigeo-deep-read.md N1;规则 %s) --"
+                 % MENTION_RULES_VERSION)
+        L.append("  [i] 引用链接里的域名不算正文提及(先掩码后匹配);"
+                 "sentiment 恒 neutral(宁缺勿猜,情感留给语义层)")
+        for eng, prompt, det in det_rows[:10]:
+            terms = ", ".join("%s×%d@%d" % (h["term"], h["count"], h["first_index"])
+                              for h in det.get("terms_hit", [])) or "(掩码后无实体命中)"
+            L.append("  %-10s %-28.28s mentioned=%d rank=%s count=%d urls_masked=%d | %s"
+                     % (eng, prompt, det.get("mentioned", 0),
+                        det.get("rank_position") if det.get("rank_position") is not None else "-",
+                        det.get("count", 0), det.get("urls_masked", 0), terms))
+        if len(det_rows) > 10:
+            L.append("  …另有 %d 个检测 cell(略)" % (len(det_rows) - 10))
     L.append("-- citation share(每答案每品牌至多计 1 次,各品牌恒和 100%)--")
     if panel.get("domain"):
         if stats["share"] is None:
@@ -668,6 +887,54 @@ def render_report(panel, stats, engine=None):
     else:
         L.append("  brand_visibility(被提)= %s,source_visibility(被引)= %s(缺 --domain 时被引为 N/A)"
                  % (_pct(bv), _pct(sv)))
+    # v4(N2)指标切片: prompt_targeting 两栏分报(品牌词与中性词永不混进同一个分)
+    tgt = stats.get("targeting") or {}
+    if tgt:
+        L.append("-- 指标切片: prompt_targeting(niubigeo-deep-read.md N2;"
+                 "品牌词与中性词永不混进同一个分) --")
+        basis = tgt.get("basis_counts", {})
+        L.append("  判定: 显式 prompt.branded=%d 条,自动判定=%d 条(规则 %s;品牌名=%s,"
+                 "report --brand 可覆盖自动判定)"
+                 % (basis.get("explicit", 0), basis.get("auto", 0), tgt.get("rule"),
+                    tgt.get("brand_used") or "(未设)"))
+        for lb in TARGETING_LABELS:
+            sl = tgt["slices"][lb]
+            L.append("  [%s] prompts=%d cells=%d(成功分母 %d)"
+                     % (lb, sl["prompts"], sl["cells"], sl["denominator"]))
+            L.append("    mention_rate   = %s" % _fmt_triple(sl["mention_rate"]))
+            L.append("    citation_rate  = %s" % _fmt_triple(sl["citation_rate"]))
+            L.append("    first_position = %s" % _fmt_triple(sl["first_position_rate"]))
+            L.append("    share_of_voice = %s" % _fmt_triple(sl["share_of_voice"]))
+            L.append("    交叉错配: mentioned_without_official_citation=%d | "
+                     "cited_without_prose_mention=%d"
+                     % (sl["mentioned_without_official_citation"],
+                        sl["cited_without_prose_mention"]))
+        L.append("  [i] cited_without_prose_mention 需 record --answer-file 的 URL 掩码检测;"
+                 "旧口径 cited=1 蕴含 mentioned=1 → 无检测数据时恒 0")
+    # v4(N5)意图冻结分母: 分母成员由冻结档案决定,答案结果无权改变
+    frz = stats.get("frozen") or {}
+    if frz:
+        L.append("-- 意图冻结分母(niubigeo-deep-read.md N5;分母成员由冻结 prompt 档案决定,"
+                 "答案结果无权改变) --")
+        stored = frz.get("panel_freeze_stored")
+        src = ("面板 denominator_freeze 已冻结(init 时点)" if stored
+               else "legacy 面板未冻结,按当前 prompts 现算(不回写)")
+        L.append("  档案: eligible=%d ineligible=%d hash=%s(%s)"
+                 % (frz["eligible_count"], len(frz["ineligible_prompts"]),
+                    frz["freeze_hash"], src))
+        L.append("    coverage_frozen = %s(仅 eligible prompt 的成功 cell;全 eligible 时=coverage)"
+                 % _fmt_triple(frz["mention_rate"]))
+        L.append("    sov_frozen      = %s(冻结分母下的 SoV,口径同 SoV 引用域代理)"
+                 % _fmt_triple(frz["share_of_voice"]))
+        if frz.get("ineligible_prompts"):
+            L.append("    不入分母(candidate_applicable=False): %s"
+                     % "; ".join(frz["ineligible_prompts"][:5]))
+        if frz.get("drift"):
+            L.append("    [!] 分母漂移: 面板 prompts 与冻结档案不一致(改措辞/增删 prompt "
+                     "会改变跨期分母口径,对比前先确认口径)")
+        if frz.get("run_hash_drift"):
+            L.append("    [!] run 漂移: %s(采样时点分母档案≠面板冻结档案)"
+                     % ", ".join(str(x) for x in frz["run_hash_drift"]))
     L.extend(render_geo_section(panel, engine))
     L.append("-- 分引擎(报告按 AI 引擎分列,不合并统计) --")
     for eng, sub in stats["per_engine"].items():
@@ -680,7 +947,8 @@ def render_report(panel, stats, engine=None):
 
 def cmd_report(args):
     panel = load_panel(args.panel)
-    stats = compute_stats(panel, engine=args.engine)
+    # v4(N2): --brand 覆盖 branded 缺省时自动判定所用品牌名(显式 prompt.branded 不受影响)
+    stats = compute_stats(panel, engine=args.engine, brand_override=(args.brand or None))
     print(render_report(panel, stats, engine=args.engine))
     return 0
 
@@ -778,23 +1046,39 @@ def diff_runs(run_a, run_b):
     res_a, res_b = run_a["results"], run_b["results"]
     prompts = set(res_a) | set(res_b)
     paired, miss_a, miss_b = [], 0, 0
+    # v4(N6)未配对明细: 单列展示原因,不入 Δ(旧 excluded 计数键保留)
+    unpaired = {"only_in_run1": [], "only_in_run2": [],
+                "failed_in_run1": [], "failed_in_run2": []}
     for p in prompts:
         a, b = res_a.get(p), res_b.get(p)
         if a is None:
             miss_a += 1
+            unpaired["only_in_run2"].append(p)
         elif b is None:
             miss_b += 1
+            unpaired["only_in_run1"].append(p)
         elif a["state"] == "failed" or b["state"] == "failed":
             miss_a += (a["state"] == "failed")
             miss_b += (b["state"] == "failed")
+            if a["state"] == "failed":
+                unpaired["failed_in_run1"].append(p)
+            if b["state"] == "failed":
+                unpaired["failed_in_run2"].append(p)
         else:
             paired.append(p)
     new_mentions = [p for p in paired if res_b[p]["mentioned"] and not res_a[p]["mentioned"]]
     gone = [p for p in paired if res_a[p]["mentioned"] and not res_b[p]["mentioned"]]
     k1 = sum(res_a[p]["mentioned"] for p in paired)
     k2 = sum(res_b[p]["mentioned"] for p in paired)
+    # v4(N6)配对门: 只对同 prompt×engine 且同探针指纹的配对算 Δ,否则标注不可比
+    fp_a, fp_b = run_fingerprint(run_a), run_fingerprint(run_b)
+    engine_matched = (run_a.get("engine") or "") == (run_b.get("engine") or "")
     return {"paired": paired, "excluded": {"missing_in_a": miss_a, "missing_in_b": miss_b},
-            "k1": k1, "k2": k2, "new_mentions": new_mentions, "disappeared": gone}
+            "k1": k1, "k2": k2, "new_mentions": new_mentions, "disappeared": gone,
+            "engine_matched": engine_matched,
+            "fingerprint_a": fp_a, "fingerprint_b": fp_b,
+            "comparable": engine_matched and fp_a == fp_b,
+            "unpaired": unpaired}
 
 
 def cmd_diff(args):
@@ -811,6 +1095,33 @@ def cmd_diff(args):
     print("run2: %s (%s, %s)" % (rb.get("run_id"), rb.get("engine"), rb.get("date")))
     print("配对 cell: %d | 排除: run1 侧 %d,run2 侧 %d(失败或缺测)"
           % (n, d["excluded"]["missing_in_a"], d["excluded"]["missing_in_b"]))
+    # v4(N6)配对差分纪律节: 同 prompt×engine 且同指纹才可比;未配对单列不入 Δ
+    same_fp = d.get("fingerprint_a") == d.get("fingerprint_b")
+    print("-- 配对差分纪律(niubigeo-deep-read.md N6: 只对同 prompt×engine 且同指纹的配对算 Δ) --")
+    print("  engine: %s %s %s" % (ra.get("engine"), "==" if d.get("engine_matched") else "!=",
+                                  rb.get("engine")))
+    print("  探针指纹: %s / %s(%s;同指纹≠范围一致——不含别名/上游模型版本)"
+          % (d.get("fingerprint_a"), d.get("fingerprint_b"), "一致" if same_fp else "不同"))
+    if d.get("comparable"):
+        print("  可比: 是(同引擎+同指纹)")
+    else:
+        why = []
+        if not d.get("engine_matched"):
+            why.append("跨引擎")
+        if not same_fp:
+            why.append("指纹不同(prompt 集/brand/规则版本变更)")
+        print("  [!] 不可比(%s): 上述 Δ 与下述 signals 仅作跨口径对照,不下结论"
+              % "+".join(why))
+    up = d.get("unpaired") or {}
+    up_total = sum(len(v) for v in up.values())
+    if up_total:
+        parts = [("%s=%s" % (lbl, ",".join(sorted(v)))) for lbl, v in
+                 (("仅run1", up.get("only_in_run1")), ("仅run2", up.get("only_in_run2")),
+                  ("run1失败", up.get("failed_in_run1")), ("run2失败", up.get("failed_in_run2")))
+                 if v]
+        print("  未配对单列(%d,不入 Δ): %s" % (up_total, "; ".join(parts)))
+    else:
+        print("  未配对单列(0,不入 Δ): 无")
     if n:
         print("mention: run1 %d/%d=%.1f%% → run2 %d/%d=%.1f%%"
               % (d["k1"], n, 100 * d["k1"] / n, d["k2"], n, 100 * d["k2"] / n))
@@ -821,10 +1132,12 @@ def cmd_diff(args):
     if n < 10:
         print("[!] 配对 cell=%d <10:样本太小,结论只能当方向" % n)
     sig = diff_signals(ra, rb, d, panel)
+    not_cmp = "" if d.get("comparable", True) else " [不可比]"   # v4(N6)跨口径强制标注
     print("-- signals(Scrunch Signals 口径:|Δ|≥5pp 且配对 n≥10 才报) --")
     for s in sig["signals"]:
-        print("  [signal] %-9s engine=%s topic=%s Δ=%+.1fpp n=%d fp=%s"
-              % (s["metric"], s["engine"], s["topic"], s["delta_pp"], s["n"], s["fingerprint"]))
+        print("  [signal] %-9s engine=%s topic=%s Δ=%+.1fpp n=%d fp=%s%s"
+              % (s["metric"], s["engine"], s["topic"], s["delta_pp"], s["n"],
+                 s["fingerprint"], not_cmp))
     for s in sig["insufficient"]:
         print("  [样本不足] %-9s engine=%s topic=%s Δ=%+.1fpp n=%d(<10,不下结论)"
               % (s["metric"], s["engine"], s["topic"], s["delta_pp"], s["n"]))
@@ -1423,6 +1736,222 @@ def render_geo_section(panel, engine=None):
     return L
 
 
+# ---------- v4 扩展: 借鉴 niubigeo(出处逐条标注 references/research/niubigeo-deep-read.md §3) ----------
+# 纪律: 全部为增量口径,五状态/Wilson CI/decay/signals 旧键与旧行为不动;新口径只新增键。
+
+# ---- N1 提及检测: URL 掩码 + 实体词表(niubigeo-deep-read.md 第 1 条) ----
+
+def entity_terms(panel):
+    """实体词表 = {品牌名, 完整域名, 域名根(拆 "." 取首段且长度≥3), 全部别名},
+    trim 后去重(忽略大小写)。降级注明: github repo 名无独立面板字段,经 --aliases
+    承载(深读原文实体词表含 repo 名,本面板 schema 无此键)。"""
+    terms = []
+    brand = str(panel.get("brand") or "").strip()
+    if brand:
+        terms.append(brand)
+    domain = str(panel.get("domain") or "").strip().lower()
+    if domain:
+        terms.append(domain)
+        root = domain.split(".")[0]
+        if len(root) >= 3:                      # 域名根过短(<3)不入词表(假阳性)
+            terms.append(root)
+    for a in panel.get("aliases") or []:
+        a = str(a).strip()
+        if a:
+            terms.append(a)
+    out, seen = [], set()
+    for t in terms:
+        if t and t.lower() not in seen:
+            seen.add(t.lower())
+            out.append(t)
+    return out
+
+
+def mask_urls(text):
+    """URL 掩码: 正文中所有 URL 的字符等长替换成空格(保索引),再子串匹配——
+    引用链接里的域名不算正文提及(防假阳性核心)。stdlib 正则近似 linkify-it:
+    scheme://… / www.… / 裸域+路径;裸域无路径(行文 "acme.ai 是…")不掩,
+    完整域名实体可作正文提及[推断: 对 linkify-it 的保守近似]。返回(掩码文, URL 数)。"""
+    n = [0]
+
+    def _blank(m):
+        n[0] += 1
+        return " " * len(m.group(0))
+
+    return URL_TOKEN_RE.sub(_blank, text), n[0]
+
+
+def detect_mentions(answer, panel):
+    """掩码后子串提及判定(忽略大小写)。返回 {mentioned, terms_hit[{term,
+    first_index, count}], rank_position, count, context, urls_masked,
+    sentiment, rules}:
+    - rank_position = 品牌首个命中在全部实体(品牌词表 + 竞品域)按 first index
+      排序中的名次(1 起);竞品只匹配完整域字符串(面板竞品是域,非品牌名)
+    - count = Σ各实体词非重叠出现次数(不同实体词重叠区间会重复计,逐词统计)
+    - context = 首命中点前 240/后 520 字符,句边界(SENTENCE_BOUNDARIES)内收
+    - sentiment 恒 neutral——宁缺勿猜,情感判定留给上层语义评审"""
+    raw = str(answer or "")
+    masked, n_urls = mask_urls(raw)
+    low = masked.lower()
+    hits = []
+    for t in entity_terms(panel):
+        tl = t.lower()
+        first = low.find(tl)
+        if first >= 0:
+            hits.append({"term": t, "first_index": first, "count": low.count(tl)})
+    comp_first = []
+    for c in panel.get("competitors") or []:
+        cl = str(c).strip().lower()
+        if cl:
+            i = low.find(cl)
+            if i >= 0:
+                comp_first.append(i)
+    rank_position = None
+    first_hit = None
+    if hits:
+        first_hit = min(h["first_index"] for h in hits)
+        rank_position = 1 + sum(1 for i in comp_first if i < first_hit)
+        start, end = max(0, first_hit - 240), min(len(raw), first_hit + 520)
+        seg = raw[start:end]
+        if start > 0:                            # 前窗截断 → 内收到首个句边界之后
+            for j, ch in enumerate(seg):
+                if ch in SENTENCE_BOUNDARIES:
+                    seg = seg[j + 1:]
+                    break
+        if end < len(raw):                       # 后窗截断 → 内收到末个句边界
+            for j in range(len(seg) - 1, -1, -1):
+                if seg[j] in SENTENCE_BOUNDARIES:
+                    seg = seg[:j + 1]
+                    break
+        context = seg.strip()
+    else:
+        context = ""
+    return {"mentioned": 1 if hits else 0, "terms_hit": hits,
+            "rank_position": rank_position,
+            "count": sum(h["count"] for h in hits), "context": context,
+            "urls_masked": n_urls, "sentiment": "neutral",
+            "rules": MENTION_RULES_VERSION}
+
+
+def load_answers(path):
+    """--answer-file 回答文件 → {prompt: 回答文本}。支持 JSON {prompt: 回答} 对象
+    与 CSV(表头含 prompt/query 与 answer/回答/正文 列;引号字段可含换行)。"""
+    if path.lower().endswith(".json"):
+        with open(path, encoding="utf-8-sig") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            raise ValueError("JSON answer-file 需为 {prompt: 回答} 对象")
+        return {str(k).strip(): str(v) for k, v in data.items() if str(k).strip()}
+    out = {}
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        for raw in csv.DictReader(f):
+            row = {(k or "").strip().lower(): (v or "") for k, v in raw.items()}
+            prompt = (row.get("prompt") or row.get("query") or "").strip()
+            ans = (row.get("answer") or row.get("回答") or row.get("正文") or "")
+            if prompt:
+                out[prompt] = ans.strip()
+    return out
+
+
+def mention_detection_rows(panel, engine=None):
+    """runs → [(engine, prompt, detection)];report 的 N1 标注节数据源。"""
+    rows = []
+    for run in panel.get("runs", []):
+        if engine and run.get("engine") != engine:
+            continue
+        for prompt, res in run.get("results", {}).items():
+            det = res.get("mention_detection")
+            if isinstance(det, dict):
+                rows.append((run.get("engine", "?"), prompt, det))
+    return rows
+
+
+# ---- N2 指标切片: 显式分子分母 + branded/unbranded 分报(niubigeo-deep-read.md 第 2 条) ----
+
+def metric_triple(num, den):
+    """指标三元组 {numerator, denominator, value};denominator=0 → value=None
+    永不报 0%(niubigeo metrics-engine 同路数: null=不能计算)。"""
+    return {"numerator": num, "denominator": den, "value": (num / den) if den else None}
+
+
+def _new_targeting_slice():
+    return {"prompts": 0, "cells": 0, "denominator": 0, "mentioned_sum": 0,
+            "cited_cells": 0, "answers": 0, "rank_cells": 0, "wins": 0,
+            "brand_hits": 0, "comp_hits": 0,
+            "mentioned_without_official_citation": 0, "cited_without_prose_mention": 0}
+
+
+def prompt_targeting(panel, p, brand_override=None):
+    """branded 判定 → (label, basis)。显式 prompt.branded 优先;缺省按"prompt 文本
+    含品牌名/别名/主域(忽略大小写子串)"自动判定;report --brand 覆盖自动判定所用
+    品牌名(不覆盖显式标注)。降级注明: 深读原文切片键为 prompt_targeting
+    (organic_unbranded vs branded_or_direct),标签沿用;winner 逐 run 累计未实现
+    (现有 win_rate 按排位口径,不重复建指标)。"""
+    o = prompt_obj(p)
+    if o.get("branded") is not None:
+        return ("branded_or_direct" if o["branded"] else "organic_unbranded"), "explicit"
+    text = o["text"].lower()
+    names = {str(brand_override or panel.get("brand") or "").strip().lower()}
+    names |= {str(a).strip().lower() for a in panel.get("aliases") or [] if str(a).strip()}
+    dom = str(panel.get("domain") or "").strip().lower()
+    if dom:
+        names.add(dom)
+    hit = any(n and n in text for n in names)
+    return ("branded_or_direct" if hit else "organic_unbranded"), "auto"
+
+
+def _targeting_of(panel, p, cache, brand_override):
+    """按 prompt 文本缓存 targeting 判定(p 可为对象或字符串,缓存键统一取 text)。"""
+    key = p if isinstance(p, str) else prompt_text(p)
+    if key not in cache:
+        cache[key] = prompt_targeting(panel, p, brand_override=brand_override)
+    return cache[key]
+
+
+def _fmt_triple(t):
+    if t["value"] is None:
+        return "null(分母=0 → null,永不报 0%)"
+    return "%d/%d = %s" % (t["numerator"], t["denominator"], _pct(t["value"]))
+
+
+# ---- N5 意图冻结分母(niubigeo-deep-read.md 第 5 条) ----
+
+def denominator_freeze(panel):
+    """冻结分母档案: eligible = prompts 中 candidate_applicable≠False 者(ineligible
+    单列),hash=sha256(版本|brand|sorted(eligible))[:16]。init 时点写入
+    panel['denominator_freeze'] 后只读不静默重写;分母成员由档案决定,不由每次
+    会变的答案决定——coverage/SoV 的冻结口径(compute_stats['frozen'])只数
+    eligible prompt 的成功 cell。降级注明: 深读原文的 12 意图多标签分类器不引入
+    (prompt-bank 模板不在本脚本管辖),档案字段由 prompts 对象可选携带。"""
+    eligible, ineligible = [], []
+    for p in panel.get("prompts", []):
+        o = prompt_obj(p)
+        (ineligible if o.get("candidate_applicable") is False else eligible).append(o["text"])
+    h = hashlib.sha256(("%s|%s|%s" % (DENOM_FREEZE_VERSION, panel.get("brand") or "",
+                                      "\n".join(sorted(eligible)))).encode("utf-8")
+                       ).hexdigest()[:16]
+    return {"version": DENOM_FREEZE_VERSION, "eligible_prompts": eligible,
+            "ineligible_prompts": ineligible, "freeze_hash": h}
+
+
+# ---- N6 配对差分门 + 探针指纹(niubigeo-deep-read.md 第 6 条) ----
+
+def run_fingerprint(run):
+    """探针指纹 = sha256(配对协议版本|提及规则版本|engine(=provider/model)|
+    subject(=brand)|keywordSetHash(sorted prompts))[:16]。record 时写入
+    run['fingerprint'](已存则直读);diff 用它配对门: 跨指纹强制标注不可比。
+    诚实声明(抄自原文): 同指纹≠范围一致——不含别名/实际上游模型版本;
+    预算账本纪律(--budget-usd)属 monitor.py,本脚本不打 API 不涉及。"""
+    if run.get("fingerprint"):
+        return run["fingerprint"]
+    kw = hashlib.sha256("\n".join(sorted(run.get("results", {}))).encode("utf-8")
+                        ).hexdigest()[:16]
+    return hashlib.sha256("|".join([DIFF_PAIRING_VERSION, MENTION_RULES_VERSION,
+                                    str(run.get("engine") or ""),
+                                    str(run.get("brand") or ""), kw]).encode("utf-8")
+                          ).hexdigest()[:16]
+
+
 # ---------- CLI / 自测 ----------
 
 def build_parser():
@@ -1452,12 +1981,19 @@ def build_parser():
     p = sub.add_parser("record", help="记录一次采样运行")
     p.add_argument("--engine", required=True)
     p.add_argument("--file", required=True, help="run.csv(prompt,mentioned,cited,cited_urls[,state][,rank])")
+    p.add_argument("--answer-file", default="",
+                   help="纯文本回答文件(CSV: prompt,answer 列;或 JSON {prompt: 回答});"
+                        "URL 掩码提及检测自动填 mentioned/rank,人工显式列优先"
+                        "(niubigeo-deep-read.md N1)")
     p.add_argument("--run-id", default="")
     p.add_argument("--date", default="")
     p.add_argument("--panel", default="panel.json")
     p.set_defaults(func=cmd_record)
     p = sub.add_parser("report", help="输出面板报告")
     p.add_argument("--engine", default=None)
+    p.add_argument("--brand", default="",
+                   help="覆盖 branded 缺省时自动判定所用品牌名(niubigeo-deep-read.md N2;"
+                        "显式 prompt.branded 标注不受影响)")
     p.add_argument("--panel", default="panel.json")
     p.set_defaults(func=cmd_report)
     p = sub.add_parser("diff", help="两组 run 配对对比(文件路径或 run_id;含 signals 节)")
@@ -1644,10 +2180,56 @@ def _self_test():
     sec = render_geo_section({"runs": [geo_run]})
     assert any("geo cells=2 scored=1" in x for x in sec) and any("均值=80.0" in x for x in sec)
     assert any("反通胀" in x for x in sec)         # 均值>75 → 反通胀提示行
+
+    # ---- v4(niubigeo-deep-read.md;详细用例见 tests/test_niubigeo_panel.py) ----
+    npanel = {"brand": "Acme", "domain": "acme.ai", "aliases": [],
+              "competitors": ["comp.com"]}
+    det = detect_mentions("comp.com leads. Acme is solid. Source: https://acme.ai/g", npanel)
+    assert det["mentioned"] == 1 and det["rank_position"] == 2 and det["sentiment"] == "neutral"
+    det2 = detect_mentions("See https://acme.ai/guide and www.acme.ai/x for details.",
+                           {"brand": "Acme", "domain": "acme.ai", "aliases": []})
+    assert det2["mentioned"] == 0 and det2["urls_masked"] == 2   # 链接域名不算正文提及
+    tpanel = {"brand": "Acme", "domain": "acme.ai", "aliases": [],
+              "prompts": [{"text": "is acme worth it"}, {"text": "top crm"}]}
+    assert prompt_targeting(tpanel, tpanel["prompts"][0])[0] == "branded_or_direct"
+    assert prompt_targeting(tpanel, tpanel["prompts"][1])[0] == "organic_unbranded"
+    assert prompt_targeting(tpanel, {"text": "zoho vs hubspot"},
+                            brand_override="Zoho")[0] == "branded_or_direct"  # --brand 覆盖
+    fr = denominator_freeze(dict(sig_panel, prompts=[{"text": "k%d" % i,
+                                                      "candidate_applicable": i != 0}
+                                                     for i in range(3)]))
+    assert len(fr["freeze_hash"]) == 16 and fr["ineligible_prompts"] == ["k0"]
+    fp_a = run_fingerprint(ra)
+    assert fp_a == run_fingerprint(ra) and len(fp_a) == 16
+    assert run_fingerprint(rb) == fp_a                    # 同 engine/brand/prompt 集
+    rb2 = dict(rb, results=dict(rb["results"], pz={"state": "brand_absent", "mentioned": 0,
+                                                   "cited": 0, "cited_urls": []}))
+    assert run_fingerprint(rb2) != fp_a                   # prompt 集变 → 指纹变
+    d6 = diff_runs(ra, rb)
+    assert d6["comparable"] and d6["engine_matched"]      # 同引擎+同指纹 → 可比
+    d7 = diff_runs(ra, dict(rb, engine="perplexity"))
+    assert not d7["comparable"] and not d7["engine_matched"]   # 跨引擎不配对
+    d8 = diff_runs(ra, rb2)
+    assert not d8["comparable"]                         # 跨指纹 → 不可比
+    st4 = compute_stats({"brand": "Acme", "domain": "acme.ai", "aliases": [],
+                         "prompts": [{"text": "acme q", "branded": True},
+                                     {"text": "plain q"}],
+                         "runs": [{"engine": "chatgpt", "date": "2026-10-01",
+                                   "results": {"acme q": {"state": "name_only_mention",
+                                                          "mentioned": 1, "cited": 0,
+                                                          "cited_urls": []},
+                                               "plain q": {"state": "brand_absent",
+                                                           "mentioned": 0, "cited": 0,
+                                                           "cited_urls": []}}}]})
+    tslices = st4["targeting"]["slices"]
+    assert tslices["branded_or_direct"]["mention_rate"]["value"] == 1.0
+    assert tslices["organic_unbranded"]["mention_rate"]["value"] == 0.0
+    assert st4["frozen"]["mention_rate"]["value"] == 0.5   # 全 eligible → =coverage
     print("[self-test] PASS citation_panel(9 cells, coverage=62.5%, share=60.0%, "
           "wilson unstable 案例, 配对 diff, cited/mentioned 纠正; "
           "v2: prompts 对象化/signals/decay 半衰/指标族; "
-          "v3: geo 写回/硬 cap 机检/top_pick 佐证降级/反通胀聚合)")
+          "v3: geo 写回/硬 cap 机检/top_pick 佐证降级/反通胀聚合; "
+          "v4: niubigeo N1 掩码提及检测/N2 targeting 切片/N5 冻结分母/N6 配对差分门)")
 
 
 def main(argv=None):

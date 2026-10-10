@@ -50,11 +50,11 @@
 | Otterly/Goodie/Athena/Rankscale/Bluefish($68M)/50+ 长尾 | — | 赛道进入洗牌期;价值从"监测面板"向"监测→归因→执行闭环"迁移 |
 
 **关键行业数据(引用时附来源)**:
-- AIO 对点击的影响:Pew 8% vs 15%(2025-07);Ahrefs 更新为 **-58%**(2026-02);ipullrank:AIO 查询零点击 80-83%[待核:测量月]
+- AIO 对点击的影响:Pew 8% vs 15%(2025-07);Ahrefs 更新为 **-58%**(2026-02);AIO 查询零点击 80-83%(Similarweb 口径:中位 ~80%/均值 ~83%,测量于 2026-03,来源:similarweb.com;ipullrank 自研 Datos 研究(13B 事件,2024-10~2025-12,2026-07-30 发布)全量零点击为 46.96%——两源勿混)
 - Semrush:AI 搜索访客转化率是自然搜索的 **4.4 倍**(量小质高;测量于 2025-06)
-- 75% 被 AIO 引用的域同时位列自然结果 top12(Botify)——GEO 是 SEO 的延伸不是替代[待核:测量月]
+- 75% 被 AIO 引用的域同时位列自然结果 top12(Botify Q4 2024 研究,测量于 2024-12,来源:botify.com;SEL 2024-12-11 转述)——GEO 是 SEO 的延伸不是替代;注意数字已老化:2026 年 Ahrefs 86.3 万 SERP 口径 top10 重叠仅 ~38%(来源:ahrefs.com)
 - **llms.txt 裁决**(三份实证):Otterly 90 天实验 0.1% 请求率;Ahrefs 13.7 万域研究 97% 文件整月零请求(AI 消费者最大头是 GPTBot 和 **Claude-Code**);Google 官方"非必需"——**定位为编程 agent 基础设施而非可见性杠杆**
-- 什么真提升引用:统计数据/引语/来源 +40%(KDD 2024);Q&A 格式 +25.5%[待核:测量月];促销语气 **-26.2%**[待核:测量月];前 30% 内容贡献 55% 的 AIO 引用[待核:测量月];Wikipedia+YouTube+Reddit+Amazon 占 AIO 引用 38%[待核:测量月]
+- 什么真提升引用:统计数据/引语/来源 +40%(KDD 2024);Q&A 格式 +25.5%、促销语气 **-26.2%**(Semrush 337,785 URL 内容研究,测量于 2026-01,来源:semrush.com);前 30% 内容贡献 55% 的 AIO 引用(CXL 100 页抽样,测量于 2026-03,来源:cxl.com);Wikipedia+YouTube+Reddit+Amazon 占 AIO 引用 38%(测量于 2025-03~08,来源:thedigitalbloom.com——一手口径为含 Google 自有域的五组合计 38%)
 
 **指标通行做法**:mention(含未链接)与 citation 必须分开;ChatGPT=品牌提及渠道(少链接),Perplexity/AIO=引用流量渠道;visibility 只能比竞品(无行业绝对基准);prompt 库 15-50 条起步、跑 3 次取多数并标方差;**AI 流量归因**:GA4 原生只覆盖部分引擎,Claude/Perplexity 需自建 channel 正则,AIO 点击 referrer 是 google.com 无法区分,一切 AI referrer 数字当下限看。
 
