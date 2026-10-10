@@ -4,7 +4,7 @@
 
 **Free to download. Use your own AI tool and model.**
 
-EveryInfra SEO Skills is version `0.31.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
+EveryInfra SEO Skills is version `0.32.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
 
 **The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
 
@@ -69,6 +69,17 @@ A single entry point: unified intake (site, market, goals, known issues, availab
 Global capability is **woven into every capability set**, not a separate module: `overview/multilingual-workflow.md` is the spine (engine landscape, per-market tool stacks, language conventions and compliance across markets), and each capability file carries the regional knowledge relevant to it.
 
 Evidence-first: never reports signals that are not on the page; never promises ranking, traffic or AI citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
+
+## Install
+
+**Claude Code / ZCode (one line, recommended)** — this repo ships a plugin manifest (`.claude-plugin/`):
+
+```bash
+claude plugin marketplace add everyinfra/seo-skills
+claude plugin install seo-suite@everyinfra-seo-skills
+```
+
+**Any Agent Skills host (Cursor, Codex, Gemini CLI, Copilot, …):** copy `skills/seo-suite` into the tool's skills directory, e.g. `~/.agents/skills/` (the Agent Skills open standard is supported by 25+ tools). Form-factor analysis: [PACKAGING.md](PACKAGING.md).
 
 ## License & attribution
 

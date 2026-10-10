@@ -165,6 +165,8 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - [站群与多站点策略](references/research/site-networks.md)：多站光谱（合法多站→卫星站/PBN→泛站群）、多站架构决策树（ccTLD/子目录/子域、聚合 vs 隔离）、各市场站群实况、风险量化（SRA/传染性）、白帽等效对照、存量站群四层指纹审计清单
 #### 目录提交引擎（directory submissions）
 - [目录提交引擎](references/research/directory-submissions.md)：九问就绪闸门、13 层目录结构、追踪 CSV、反虚荣 KPI
+#### 竞品全景（landscape）
+- [竞品全景](references/research/competitive-landscape.md)：五类形态(企业闭源/主流 SaaS/内容工作台/GEO 创业/开源)的功能设计与打分口径速查、2025-2026 行业共识数据(AIO 点击影响/llms.txt 裁决/AI 归因)、20 项借鉴清单(含现状对照)——做方案对比、选型建议、向管理层论证时引用
 
 
 ### content

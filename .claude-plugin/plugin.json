@@ -1,0 +1,11 @@
+{
+  "name": "seo-suite",
+  "version": "0.32.0",
+  "description": "Agent-native SEO/GEO workbench: 18 language markets, 38 stdlib scripts, self-updating intel loop, continuous monitoring daemon, 75 golden tests. Knowledge + workflow + local computation for Claude Code / ZCode / any Agent Skills host.",
+  "author": {
+    "name": "EveryInfra"
+  },
+  "homepage": "https://github.com/everyinfra/seo-skills",
+  "license": "MIT",
+  "keywords": ["seo", "geo", "aeo", "ai-visibility", "multilingual", "audit", "monitoring"]
+}

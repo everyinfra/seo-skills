@@ -3,6 +3,15 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.32.0 - 2026-10-10
+
+- **竞品全景调研(6 agent 并行) + Plugin/Marketplace 打包 + intel_check 抖动抑制**:
+  - **新 references/research/competitive-landscape.md**:五类形态全景(企业闭源 7 家/主流 SaaS 6 家打分口径速查/内容工作台 6 家/GEO 创业赛道 13 家含融资事件/开源 10 项,stars 经 GitHub API 复核)+ 2025-2026 行业共识数据(AIO 点击 -58%、llms.txt 三份实证裁决、AI 归因方法)+ 20 项借鉴清单(逐条标注现有/缺失);
+  - **Plugin/Marketplace 打包**:新增 `.claude-plugin/plugin.json`+`marketplace.json`(2 个 JSON,一条命令安装/更新/版本钉扎),README 双语加 Plugin 安装节,仓库根新增 **PACKAGING.md**(Skill/Plugin/MCP/CLI/GH Action 五形态对比矩阵与结论:Skill 是内容、Plugin 是包装、MCP 是数据接口——不自研 MCP server,声明式接第三方);
+  - **intel_check hash 源二次拉取确认**:检出变更后立即重拉,两次一致才算真变更;JS 渲染动态页(StatCounter 图表)自动按噪音跳过且不动基线(streak 计数);同轮同 URL 去重;self-update-protocol 与 intel-sources 同步说明;
+  - **4 个金标测试新增**(intel_check 首次有覆盖:抖动抑制/真变更检出/属性洗牌稳定/RSS 新条目),71→**75 tests**;
+  - 赛道信号:同类 claude-seo 8 个月 18,626★(GitHub API 复核)验证 Plugin 形态流量。
+
 ## 0.31.0 - 2026-10-10
 
 - **10 agent 体检+全面修复**:4 个测试团队(真实用户场景/脚本工具链/知识准确性/架构债)找问题 → 修复团队执行(12 项 P0+4 项 P1 全完成):
