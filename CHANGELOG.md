@@ -3,6 +3,18 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.34.0 - 2026-10-10
+
+- **33 agent 六波实施(施工图 borrow-specs.md 全面落地)**——38→**52 脚本**、14→**22 模板**、75→**426 测试**,全部纯 stdlib:
+  - **wave1 审计与健康分**:health_score.py(Ahrefs 主分+Lumar 六大类树+Ryte impact 两栏+--ignore/--severity)/traffic_funnel.py(六阶段漏斗+Simhash+DeepRank)/site_audit AI Search Health 子分(Semrush 8 bot+183 天+BLUF+rendering 5 检查)/规则目录 79 条 Sitebulb 式解释层/deprecated-signals 看门表+16 正则 canonical facts 回归/robots_posture 27bot+CITATION_BOTS 两级评分/AI 可见性周月报模板;
+  - **wave2 GEO 可见性**:citation_panel decay 子命令(Profound 半衰期协议:4 道闸门/重写队列)+signals 化 diff(5pp+n≥10/fingerprint)+SoV 指标族+prompts 对象化/citation_gaps.py 引用缺口+外联简报/oracle_check.py 品牌事实核查(Athena 口径)/ai_referral_log 四桶+归因工具箱/prompt-bank/brand-records/五维打分卡;
+  - **wave3 内容**:content_score.py(MarketMuse 公式+Surfer 双轨+意图系数,竞品<3 拒评)/fix_plan.py(6 类修复物+dry-run 默认+隔离目录+收益预估)/grounding_page.py(Rankscale 11 条)/content-brief+pre-publish-checklist+report-modes 模板;
+  - **wave4 监控与 CI**:monitor P0(页面级 noindex[Conductor 头号触发器]+canonical 目标健康度连击防抖)/notify 按类型路由+incident 生命周期+redact/sensor_volatility.py 波动分/audit_compare.py+ci_format.py(SARIF/JUnit/github)+action.yml PR 门禁/ci-gates 手册;
+  - **wave5 工作流**:forecast.py(seoClarity 六步+三 scenario+校准持久化)/prioritize.py(18 条条件规则+放大器+segment 重算)/changelog.py(5 枚举事件+周折叠)/doctor.py(凭证分层 T0-T3+全输出 redact)/monitor P1(segments/accepted_codes/diff --ci/sample-keypages/baseline 警告);
+  - **wave6 文档产品化**:data-source-contract.md(52 脚本数据/降级/反编造合同表)/examples/ 规范化(真实 example.com 审计全链+合成面板演示)/规则目录第二批 44 条(累计 123)/capability-map 重写(52 脚本+6 子系统闭环+10 条任务路由);
+  - 测试框架升级:run_tests.py 自动发现 tests/test_*.py(各 agent 零冲突并行);self_check 22 模板七段式全过。
+
+
 ## 0.33.0 - 2026-10-10
 
 - **13 agent 竞品深读 + 多宿主适配**:

@@ -53,7 +53,7 @@ intel_check.py 输出 `[CHANGED] <源名>: <详情>` + `→ 应更新: <文件�
 ### 第三步:验证
 
 ```bash
-python3 skills/seo-suite/scripts/self_check.py   # 必须 OK(75 tests)
+python3 skills/seo-suite/scripts/self_check.py   # 必须 OK(全部金标测试通过)
 python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references --lines 3  # 无过期
 ```
 

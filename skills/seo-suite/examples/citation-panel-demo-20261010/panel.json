@@ -1,0 +1,405 @@
+{
+  "brand": "Nimbus Analytics",
+  "aliases": [
+    "Nimbus"
+  ],
+  "domain": "nimbus.example",
+  "prompts": [
+    {
+      "text": "best product analytics tools for SaaS",
+      "topic": "product-analytics",
+      "stage": "awareness",
+      "tags": [
+        "comparison"
+      ],
+      "branded": false
+    },
+    {
+      "text": "how to reduce SaaS churn with cohort analysis",
+      "topic": "churn",
+      "stage": "awareness",
+      "tags": [
+        "how-to"
+      ],
+      "branded": false
+    },
+    {
+      "text": "top tools for funnel analysis",
+      "topic": "funnel-analysis",
+      "stage": "consideration",
+      "tags": [
+        "comparison"
+      ],
+      "branded": false
+    },
+    {
+      "text": "cheapest alternative to enterprise analytics suites",
+      "topic": "pricing",
+      "stage": "decision",
+      "tags": [
+        "alternative"
+      ],
+      "branded": false
+    },
+    {
+      "text": "product analytics tools pricing comparison",
+      "topic": "pricing",
+      "stage": "decision",
+      "tags": [
+        "comparison"
+      ],
+      "branded": false
+    },
+    {
+      "text": "open source product analytics options",
+      "topic": "open-source",
+      "stage": "awareness",
+      "tags": [
+        "discovery"
+      ],
+      "branded": false
+    }
+  ],
+  "engines": [
+    "chatgpt",
+    "perplexity"
+  ],
+  "created": "2026-10-10T17:43:10",
+  "runs": [
+    {
+      "run_id": "chatgpt-2026-10-07",
+      "engine": "chatgpt",
+      "date": "2026-10-07",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "best product analytics tools for SaaS": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/blog/analytics-101",
+            "https://docs.dataschool.io/bi-basics"
+          ],
+          "rank": 3
+        },
+        "how to reduce SaaS churn with cohort analysis": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top tools for funnel analysis": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://blog.growthnotes.dev/funnels",
+            "https://rival.example/funnels"
+          ],
+          "rank": 1
+        },
+        "cheapest alternative to enterprise analytics suites": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics tools pricing comparison": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://docs.dataschool.io/pricing",
+            "https://nimbus.example/pricing"
+          ],
+          "rank": 5
+        },
+        "open source product analytics options": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        }
+      }
+    },
+    {
+      "run_id": "perplexity-2026-10-07",
+      "engine": "perplexity",
+      "date": "2026-10-07",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "best product analytics tools for SaaS": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/blog/analytics-101",
+            "https://docs.dataschool.io/bi-basics",
+            "https://rival.example/landing"
+          ],
+          "rank": 2
+        },
+        "how to reduce SaaS churn with cohort analysis": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top tools for funnel analysis": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://blog.growthnotes.dev/funnels",
+            "https://nimbus.example/funnel-guide"
+          ],
+          "rank": 4
+        },
+        "cheapest alternative to enterprise analytics suites": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics tools pricing comparison": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/pricing",
+            "https://handbook.devops.to/dashboards"
+          ],
+          "rank": 3
+        },
+        "open source product analytics options": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        }
+      }
+    },
+    {
+      "run_id": "chatgpt-2026-10-08",
+      "engine": "chatgpt",
+      "date": "2026-10-08",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "best product analytics tools for SaaS": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/blog/analytics-101",
+            "https://rival.example/landing"
+          ],
+          "rank": 2
+        },
+        "how to reduce SaaS churn with cohort analysis": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top tools for funnel analysis": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://handbook.devops.to/dashboards"
+          ],
+          "rank": 1
+        },
+        "cheapest alternative to enterprise analytics suites": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/alternatives",
+            "https://rival.example/pricing",
+            "https://docs.dataschool.io/stack"
+          ],
+          "rank": 4
+        },
+        "product analytics tools pricing comparison": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        }
+      }
+    },
+    {
+      "run_id": "perplexity-2026-10-08",
+      "engine": "perplexity",
+      "date": "2026-10-08",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "best product analytics tools for SaaS": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://rival.example/landing",
+            "https://nimbus.example/blog/analytics-101"
+          ],
+          "rank": 3
+        },
+        "how to reduce SaaS churn with cohort analysis": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top tools for funnel analysis": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cheapest alternative to enterprise analytics suites": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics tools pricing comparison": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/pricing",
+            "https://rival.example/pricing"
+          ],
+          "rank": 3
+        },
+        "open source product analytics options": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        }
+      }
+    },
+    {
+      "run_id": "chatgpt-2026-10-09",
+      "engine": "chatgpt",
+      "date": "2026-10-09",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "best product analytics tools for SaaS": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "how to reduce SaaS churn with cohort analysis": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top tools for funnel analysis": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics"
+          ],
+          "rank": 1
+        },
+        "cheapest alternative to enterprise analytics suites": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics tools pricing comparison": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/pricing",
+            "https://blog.growthnotes.dev/benchmarks"
+          ],
+          "rank": 4
+        },
+        "open source product analytics options": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        }
+      }
+    },
+    {
+      "run_id": "perplexity-2026-10-09",
+      "engine": "perplexity",
+      "date": "2026-10-09",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "best product analytics tools for SaaS": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/blog/analytics-101",
+            "https://blog.growthnotes.dev/marketing-stack"
+          ],
+          "rank": 2
+        },
+        "how to reduce SaaS churn with cohort analysis": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top tools for funnel analysis": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://docs.dataschool.io/bi-basics",
+            "https://nimbus.example/funnel-guide",
+            "https://rival.example/funnels"
+          ],
+          "rank": 5
+        },
+        "cheapest alternative to enterprise analytics suites": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics tools pricing comparison": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://handbook.devops.to/dashboards",
+            "https://nimbus.example/pricing"
+          ],
+          "rank": 2
+        },
+        "open source product analytics options": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        }
+      }
+    }
+  ],
+  "competitors": [
+    "rival.example"
+  ]
+}

@@ -126,7 +126,7 @@ detect_tier 纯本地文件判断:T0 无凭证纯静态→T1 PSI/CrUX key→T2 G
 FAQPage 富结果 2026-05-07 全站退役(存量标 Info 不标 Critical,不建议删除/新增;真问答用 QAPage)/HowTo 2023-09/Course·EstimatedSalary 等 2025-06-12/SpecialAnnouncement 2025-07/PracticeProblem 2026-01;**INP 不提 FID**(2024-03 替代;无 VSI/无 CWV2.0/LCP 未降 2.0s——全是第三方幻觉)/Lighthouse12 删 PWA/GSC Page Experience 报告已移除/GSC 数据 2025-05-13~2026-04-27 不可靠/AI Mode 流量并入 Web totals/GBP chat 2024-07-31/sitemap priority·changefreq 弃用/Indexing API 仅限 JobPosting·BroadcastEvent;**配套 test_canonical_facts.py**:(regex,为何错,一手来源)三元组参数化扫描全部文档,匹配已知错误陈述即 fail
 
 ### E6. 数据源标注五段合同(open-seo-mcp-skills,与我们最同构)
-每 skill/脚本声明:Requires(依赖什么数据)/Workflow(内联精确调用)/Output(verdict 先行+表格列定义)/**Fallback 四降级模式**(等价工具重建+附完整条件/供应商链降级/可选增强静默跳过/**停止并指名缺什么**)/反编造守则("Never invent volumes;真实数据优先,估算打 [est] 标")——落地:SKILL.md 的 38 脚本条目各加三行微标注(数据/降级/反编造)
+每 skill/脚本声明:Requires(依赖什么数据)/Workflow(内联精确调用)/Output(verdict 先行+表格列定义)/**Fallback 四降级模式**(等价工具重建+附完整条件/供应商链降级/可选增强静默跳过/**停止并指名缺什么**)/反编造守则("Never invent volumes;真实数据优先,估算打 [est] 标")——落地:SKILL.md 的 52 脚本条目各加三行微标注(数据/降级/反编造)——✅ 已落地为 references/overview/data-source-contract.md
 
 ### E7. facts 实体页(Rankscale)与 Brand Records(Profound 六记录)
 - facts 页结构:Status/Entity type/Updated 头部+一句话 lead definition(被 AI 逐字引用的目标句)+Core facts+**Volatile facts 独立区块**+is-NOT 消歧+FAQ(每答含实体名)+Sources

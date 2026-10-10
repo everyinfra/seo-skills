@@ -1,0 +1,150 @@
+{
+ "audited": 1,
+ "critical": 2,
+ "results": {
+  "https://example.com": {
+   "verdict": "fail",
+   "findings": [
+    {
+     "severity": "WARN",
+     "area": "title",
+     "message": "14 chars <20"
+    },
+    {
+     "severity": "CRITICAL",
+     "area": "description",
+     "message": "缺失"
+    },
+    {
+     "severity": "CRITICAL",
+     "area": "h1",
+     "message": "无 H1"
+    },
+    {
+     "severity": "WARN",
+     "area": "canonical",
+     "message": "缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "og",
+     "message": "og:title 缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "og",
+     "message": "og:description 缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "og",
+     "message": "og:image 缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "content",
+     "message": "词数 27 <200(soft-thin)"
+    },
+    {
+     "severity": "WARN",
+     "area": "schema",
+     "message": "无 JSON-LD"
+    },
+    {
+     "severity": "INFO",
+     "area": "rendering",
+     "message": "无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页"
+    },
+    {
+     "severity": "INFO",
+     "area": "rendering",
+     "message": "服务端内容弱:纯文本 171 字(需>500)或无 article/main/section"
+    },
+    {
+     "severity": "INFO",
+     "area": "headings",
+     "message": "H2 仅 0 个(<2)——AI 分块依赖标题层级(H1==1 且 H2>=2)"
+    },
+    {
+     "severity": "INFO",
+     "area": "robots",
+     "message": "//robots.txt 不可达"
+    },
+    {
+     "severity": "INFO",
+     "area": "sitemap",
+     "message": "//sitemap.xml 不可达"
+    },
+    {
+     "severity": "INFO",
+     "area": "llms.txt",
+     "message": "//llms.txt 不可达"
+    },
+    {
+     "severity": "INFO",
+     "area": "semantic-html",
+     "message": "语义 HTML 比值 0.0% <10%(阈值自定,官方未公开)"
+    }
+   ],
+   "meta": {
+    "title": "Example Domain",
+    "title_len": "14 chars/60",
+    "desc_len": "0 chars/155",
+    "words": 27,
+    "h1": 0,
+    "jsonld": 0,
+    "links": 0
+   },
+   "ai_search_health": {
+    "score": 70,
+    "bots": {
+     "allowed": [
+      "ChatGPT-User",
+      "OAI-SearchBot",
+      "Googlebot",
+      "Google-Extended",
+      "Perplexity-User",
+      "PerplexityBot",
+      "Claude-User",
+      "Claude-SearchBot"
+     ],
+     "blocked": []
+    },
+    "last_modified_days": 0,
+    "semantic_ratio": 0.0,
+    "checks": [
+     {
+      "id": "bots",
+      "pass": true,
+      "detail": "robots.txt 不可达,默认放行"
+     },
+     {
+      "id": "llms_txt",
+      "pass": false,
+      "detail": "/llms.txt 缺失/404(notice)"
+     },
+     {
+      "id": "freshness",
+      "pass": true,
+      "detail": "Last-Modified 0 天前(>183 天=6 个月触发,Semrush 官方)"
+     },
+     {
+      "id": "semantic_html",
+      "pass": false,
+      "detail": "语义标签比值 0.0%(<10% 触发;阈值自定[推断],官方未公开)"
+     },
+     {
+      "id": "content_length",
+      "pass": true,
+      "detail": "词数 27(>15000 触发内容过长;阈值自定[推断])"
+     },
+     {
+      "id": "bluf",
+      "pass": true,
+      "detail": "score 0.50(pass≥0.5);首块 171 字(>100),直答短语未见,li 0 个(≤3)"
+     }
+    ]
+   }
+  }
+ }
+}

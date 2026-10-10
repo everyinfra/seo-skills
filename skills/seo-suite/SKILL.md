@@ -27,7 +27,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(53 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(52 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -265,6 +265,7 @@ metadata:
 - [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位);P0/P1 79 条已扩 Sitebulb 式解释层(what/why/trigger/caveat/fix/export 九字段)
 - [Brand Records 品牌事实档案](references/content/brand-records.md):六记录(含批准术语/never-do)+YAML 格式+缺口协议+Grounding Page 11 条——内容起草前必读,oracle_check.py 的输入
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
+- [数据源合同表](references/overview/data-source-contract.md):全 52 脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
 - [CI 质量门手册](references/monitoring/ci-gates.md):三件套命令地图(site_audit→audit_compare→ci_format→action.yml)/siteone 阈值全表/LHCI 断言 schema/采样协议/防假 0 三律/三部署配方——进 CI 或定时审计前读
 - [过时信号看门表](references/technical/deprecated-signals.md):官方已停用/勿再推荐清单(带时间戳与一手来源)——**涉及 schema/富结果/CWV/GSC 口径的建议前必查**;tests/test_canonical_facts.py 用 16 条正则钉死已知错误陈述(套件内文档命中即测试失败)
 - [Naver Search Advisor 蒸馏](references/technical/naver-searchadvisor.md):55 篇官方指南全量蒸馏(每节 guid 可对勘原文)
@@ -326,6 +327,9 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/content/pre-publish-checklist.md`(发布前 27 条闸:meta/结构/内容/AI 可引性四组,机检条目挂真实脚本)
 - `templates/audit/report-modes.md`(报告三模式:exec/dev/prospect 一表三裁+Today's priorities+建议四字段)
 - `templates/monitor/forecast-report.md`(管理层提案:五级漏斗+三档 scenario+省钱/赚钱双结构+ROI 五法)
+
+### 4. 示例库(examples/)
+带日期目录的真实/合成示例(REPORT.md verdict-first+evidence/ 编号回溯+快照免责声明):site-audit-chain-example.com(真实站审计→健康分→修复计划全链)/citation-panel-demo(合成面板);新增示例的规范见 examples/CONVENTIONS.md
 - `templates/monitor/alert-playbook.md`
 
 ## 常见请求如何路由

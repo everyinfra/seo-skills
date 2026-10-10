@@ -1,0 +1,7 @@
+prompt,mentioned,cited,cited_urls,state,rank
+best product analytics tools for SaaS,1,1,https://nimbus.example/blog/analytics-101;https://docs.dataschool.io/bi-basics,cited_brand,3
+how to reduce SaaS churn with cohort analysis,0,0,,brand_absent,
+top tools for funnel analysis,1,1,https://nimbus.example/funnel-guide;https://blog.growthnotes.dev/funnels;https://rival.example/funnels,cited_brand,1
+cheapest alternative to enterprise analytics suites,1,0,,name_only_mention,
+product analytics tools pricing comparison,1,1,https://docs.dataschool.io/pricing;https://nimbus.example/pricing,cited_brand,5
+open source product analytics options,0,0,,brand_absent,

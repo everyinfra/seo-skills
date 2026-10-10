@@ -150,3 +150,36 @@
 **RAG 调试/评估类(Search 段内无独立小节,可归入此类的条目)**:txtai(语义搜索应用框架,含 RAG 管道)、Vellum(embedding 模型实验+分块策略=检索质量调参面)、Airweave(摄取连通性即 RAG 数据面调试)。**版图缺口提示**:README 的 Search 段只覆盖"库与引擎",检索质量评估、坏例挖掘、引用归因类专用工具未收录——做 GEO 咨询时客户问"我的 RAG 为什么引不到官网内容",答案仍在本套件的引用采样与抽取块体检,不在 Awesome-LLMOps 这张图里。
 
 **选型速记**:已有 PG → pgvector/VectorChord 起步;要图关系(GEO 实体图谱、品牌-产品-评价关联)→ Weaviate 过滤式起步、图+向量一体(Omnigraph/SynapCores)进阶;纯原型 → Chroma/LanceDB/VectorDB;要"一个引擎全都要"(BM25+向量+SQL+对象存储) → Infino/Infinity/SynapCores。
+
+---
+
+# (v0.34.0 新子系统设计依据速查)一行表
+
+> v0.34.0 扩容(38→52 脚本)新增子系统的设计依据与口径来源,全部指向 [borrow-specs.md](../research/borrow-specs.md) 对应节(borrow-specs 内【官方】=一手口径,[推断]=我们自定并注明)。开发新脚本或扩展现有脚本前先查该库,公式/阈值/字段契约不要凭记忆写。
+
+| 新能力(落点) | 设计依据与口径来源(borrow-specs.md 节) |
+|---|---|
+| health_score.py 分层健康分 | A1:Lumar 六大类树(缺数据源 N/A 不计总分)+Ahrefs 主分公式(仅 Error 扣分/Weak-Fair-Good-Excellent 四档)+Ryte impact 排序两栏 |
+| traffic_funnel.py 六阶段漏斗 | A1:SEO 六阶段流量漏斗【官方判定】(uniqueness 相似度阈值未公开→Simhash 0.9 自定;无 GSC 截断+coverage 声明) |
+| site_audit AI Search Health 子分 | A3:Semrush 8 bot 名单+Last-Modified 183 天【官方】;rendering 5 检查与 BLUF 密度公式取自 A4(geo-aeo-tracker 源码) |
+| content_score.py 内容评分 | C1:MarketMuse 50 话题计分公式【官方】+Surfer 双轨(竞品<3 拒评)+意图系数表(100 万 SERP 研究) |
+| fix_plan.py 修复闭环 | C3:geo-optimizer 源码级 6 类 FixItem+安全契约(默认 dry-run/隔离目录/anti-SSRF)+收益预估公式 |
+| audit_compare.py 回归门 | C3+A1:--baseline-gate 回归门语义;D2:CI 断言 schema(level/minScore/minMax 聚合口径) |
+| ci_format.py CI 输出 | D1(diff --ci 输出契约:passed/checks/exit 0-1)+D2(LHCI 断言 schema,SARIF/JUnit 挂载点) |
+| forecast.py 商业提案 | E1:seoClarity 六步【官方】(校准系数持久化是四家唯一自校准;三 scenario 官方枚举;省钱+赚钱双结构) |
+| prioritize.py 条件优先级 | E2:Botify 条件规则【官方阈值示例】(放大器/条件依赖型/segment 切换重算) |
+| changelog.py 页面变更审计 | D1:Conductor 事件 schema【官方】(5 枚举 change_type/字段白名单/14 天日粒度更早周粒度) |
+| doctor.py 环境自检 | E3:claude-seo detect_tier(T0 纯静态→T3 GA4)+redact 纪律(只探键名不读值/渠道名不打值) |
+| citation_panel decay 子命令 | B1:Profound citation decay 协议【官方】(中位半衰期 11 天/资格闸门 4 道/重写队列/跨引擎相关仅 0.03-0.09) |
+| citation_panel diff signals 与 SoV 指标族 | B4:Scrunch Signals(Δ≥5pp 且配对 n≥10 才报/fingerprint/url_movers)+Peec SoV·win_rate·citation_rate 公式【官方】 |
+| citation_gaps.py 引用缺口 | B2:geo-aeo-tracker 算法直译(hasCompetitorRun=唯一高优先判据;外联简报七字段) |
+| oracle_check.py 品牌事实核查 | B4:Athena Oracle 差异检测(KB≥25 条门槛/finding 状态机/Inaccuracy%·model_accuracy) |
+| ai_referral_log.py bot 四桶+归因 | B5:Profound/Otterly/Peec 三家四桶口径合并+锚定官方域名的归因正则(AIO 点击 referrer 不可分的下界声明) |
+| robots_posture.py 27 bot 两级评分 | C3:robots 27 bot 模板(三层 training 13/search 10/user 5;CITATION_BOTS 5 个两级评分,通配符只拿部分分) |
+| monitor 页面级 noindex/canonical/segments | D1:Conductor 告警模型(头号触发器"Pages became non-indexable"/5 参数)与 monitor 缺口清单 P0-1/P0-2/P1 |
+| notify.py 分级+按类型路由 | D1:P0-3 channels route(codes→channel)+incident 生命周期(恢复发 resolved/24h 无新增自动关闭) |
+| sensor_volatility.py 波动分 | D1:P0-4 波动上下文(每词日均绝对位次变化均值→0-10,档 0-2/2-5/5-8/8-10【官方】;z30 疑似算法更新降级) |
+| grounding_page.py 事实页 | A4:Rankscale Grounding Page 11 条 checklist【官方】;E7:facts 页结构(volatile 独立区块/is-NOT 消歧) |
+| 新模板四批(prompt-bank/content-brief/pre-publish/report-modes/周月报/外联简报/forecast-report) | B3(prompt 对象化+stage 5+3+2 配方)/C2(content-brief 三段式 MarketMuse 官方字段)/B6(Scrunch 周报六段:>5pp 才点名)/E1(forecast-report 五级漏斗) |
+
+> 与本表配套:全链路脚本条目与任务→脚本链路由见 [capability-map.md](capability-map.md);施工时另需过 [scoring-calibration.md](../research/scoring-calibration.md) 的预注册闸门(新建评分/调权重先过闸,权重不许手调)。
