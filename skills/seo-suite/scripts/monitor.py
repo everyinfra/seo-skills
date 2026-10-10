@@ -20,11 +20,25 @@ low=自愈(上次告警本次恢复)。cooldown:critical 12h / warn 24h / info 1
          [--dir .seo-monitor] [--force]
   run    [--checks daily|weekly] [--dry-run] [--budget-minutes N] [--dir D]
   diff   [--run-id N] [--prev-run-id M] [--format json|text] [--out FILE] [--dry-run] [--dir D]
+         [--ci [--ci-format json|junit]]   # CI 门:checks 结构化阈值结果,任一失败 exit 10
   report [--days 7] [--json] [--dir D]
   quarantine RUN_ID [--undo] [--dir D]   # 隔离坏 run(基线污染防护),diff 不再用它对比
   maintenance --from F --to T [--reason R] [--clear] [--dir D]  # 维护窗口:窗口内 diff 只记快照不产告警
+  sample-keypages [--urls FILE] [--per-group N] [--seed S] [--write] [--dir D]
+         # sitemap(或 URL 清单)→末段 slug 归一→按模板分组→每组随机抽 N ∪ 手工 key_pages;
+         # 只打印建议,--write 才合并进 config;建议路由超 maxRoutes=200 截断并警告
+
+config 可选扩展(D1 P1):
+  segments:[{name,match:"regex",importance:"static|gsc_clicks"}]
+         # key_pages 运行时按 regex 自动归属首个命中 segment;受影响度=Σimportance
+         # (无 GSC 页级数据时每页 importance=1),替代纯页数地板;
+         # 规则 pages_left_segment:segment 内健康页掉 ≥10%(Conductor 7 档中的 10% 档)→warn
+  accepted_codes:["code" 或 "code:key 指纹"]
+         # 已知可接受告警白名单:命中→降 low+标 accepted:true(不计入 counts/退出码),
+         # 接受≠消失——周报单独列"已接受告警数",仍计数
 
 退出码:diff → 1=有 critical,2=有 warn(无 critical),0=无,4=用法/数据错误;
+diff --ci → 0=全部 check 通过,10=任一 check 失败(siteone 契约);
 run → 0 正常,3=run 未完成(partial/failed)。SSRF 防护:仅 http(s)+私网拒连
 +TLS 恒验证+重定向逐跳复查(302 穿墙已堵)。
 
@@ -33,11 +47,15 @@ run 先落 status='running' 再跑检查,终态 ok/partial/failed;卡死 run 由
 sweep_stale_runs(>30min)回收;diff 的 prev 只取 status='ok';坏 run 用
 quarantine 隔离;历史按 PruneDB 纪律保留最近 400 次 run。
 cooldown 命中的告警标 suppressed:只进报告,不进通知路径(counts/退出码同排除)。
+双窗口降级的响亮失败模式:库龄>7 天却取不到 7 天基线时,diff 向 stderr 打大写
+WARNING 并在 payload 记 baseline_missing:true——绝不静默降级为单窗口判定。
 
 用法:
   python3 monitor.py init --site https://example.com --market us
   python3 monitor.py run --checks daily
   python3 monitor.py diff --format text
+  python3 monitor.py diff --ci --ci-format junit   # CI 门(任一阈值 check 失败 exit 10)
+  python3 monitor.py sample-keypages --per-group 8 # 从 sitemap 抽样建议 key_pages
   python3 monitor.py report --days 7
   python3 monitor.py --self-test
 """
@@ -48,6 +66,7 @@ import hashlib
 import ipaddress
 import json
 import os
+import random
 import re
 import socket
 import sqlite3
@@ -61,6 +80,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
 from html import unescape
+from xml.sax.saxutils import escape as _xml_escape
 
 UA = "Mozilla/5.0 (compatible; seo-suite-monitor/1.0; +https://example.com/bot)"
 DEFAULT_DIR = ".seo-monitor"
@@ -68,6 +88,8 @@ FETCH_TIMEOUT = 15
 MAX_BYTES = 2_000_000
 SITEMAP_CAP = 5000          # loc→lastmod 字典上限(防大库)
 SITEMAP_INDEX_CAP = 5       # sitemap index 递归层数上限
+MAX_ROUTES = 200            # sample-keypages 建议路由上限(Next.js maxRoutes 惯例;超即截断+警告)
+GSC_PAGE_CAP = 1000         # gsc.csv 页级点击字典上限(防快照膨胀)
 
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot",
                "PerplexityBot", "CCBot", "Google-Extended", "Bytespider", "Meta-ExternalAgent"]
@@ -82,6 +104,9 @@ DEFAULT_THRESHOLDS = {
     "gsc_clicks_drop_pct": 20,     "gsc_min_clicks": 5,
     "latency_increase_pct": 100,   "latency_min_ms": 500,
     "mixed_content_min": 3,
+    # D1 P1:segment 健康页流失档位,抄 Conductor segment 型敏感度 7 档
+    # (0/1/5/10/25/50/75%)中的 10% 档;受影响度=Σimportance(非纯页数)
+    "pages_left_segment_pct": 10,
 }
 
 # report 用:告警码 → 修复动作与安全边界(自动=可直接执行;draft PR=人审)
@@ -109,15 +134,18 @@ PLAYBOOK = {
     "noindex_added":        ("自动安全项:回滚引入 noindex 的发布/模板改动(若非有意下线)", "auto"),
     "noindex_removed":      ("自愈信号,记录即可;顺手排查此前为何被误加 noindex", "human"),
     "canonical_target_broken": ("核对 canonical 目标是否被移动/删除:修正指向或恢复目标页(draft PR)", "draft_pr"),
+    "pages_left_segment":   ("定位 segment 内批量掉出健康集的页面(部署/模板/权限回退);逐页看 key_page_down/noindex_added 详情", "human"),
 }
 
 # 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
 # 格式:根告警码 → (被抑制码..., 作用域) 作用域 sitewide=抑制一切;same_key=仅同 key。
 # D1 P0-1:页面级 noindex_added 属派生信号——robots 全站误封/首页宕机这类 sitewide 根因
 # 在场时折叠(同一部署事故的次级表现,单独重复通知只会稀释根因)。
+# D1 P1:pages_left_segment(segment 聚合流失)同属 sitewide 根因的派生聚合,一并折叠。
 INHIBITS = {
-    "homepage_down":        (("key_page_down", "content_regression", "mixed_content", "noindex_added"), "sitewide"),
-    "robots_sitewide_block": (("noindex_added",), "sitewide"),
+    "homepage_down":        (("key_page_down", "content_regression", "mixed_content", "noindex_added",
+                              "pages_left_segment"), "sitewide"),
+    "robots_sitewide_block": (("noindex_added", "pages_left_segment"), "sitewide"),
     "fetch_error_confirmed": (("title_meta_drift", "content_regression", "mixed_content", "latency_spike"), "same_key"),
 }
 
@@ -423,6 +451,11 @@ def cmd_init(args):
             "阈值是经验起点,按 alert-threshold-guide.md 用本站基线校准",
             "key_pages 支持对象形式: {\"path\": \"/p\", \"expect_substring\": \"Price\", "
             "\"selector\": \"h1\" 或 \"re:<regex>\"}(关键词在场断言+字段级 diff 圈定)",
+            "segments(可选): [{\"name\":\"docs\",\"match\":\"^/docs/\",\"importance\":"
+            "\"static|gsc_clicks\"}]——key_pages 按 regex 自动归属,健康页掉≥10% 告警 "
+            "pages_left_segment(受影响度=Σimportance);名单可用 sample-keypages 子命令抽样建议",
+            "accepted_codes(可选): [\"code\" 或 \"code:key\"]——已知可接受告警白名单,"
+            "命中降 low+标 accepted(接受≠消失,周报仍单独计数)",
             "heartbeat: 配 healthchecks.io 类 ping URL 后,run 成功 ping /ok、失败 ping /fail;"
             "grace 建议 ≈ cron 间隔×2+典型运行时长",
         ],
@@ -549,6 +582,53 @@ def parse_key_page(entry):
     if isinstance(entry, dict):
         return (entry.get("path") or "/", entry.get("expect_substring"), entry.get("selector"))
     return (str(entry) if str(entry).startswith("/") else "/" + str(entry), None, None)
+
+
+# ---------- D1 P1:segments 模型(Conductor segment 型敏感度) ----------
+
+def segment_of(path, cfg):
+    """key page 路径 → 首个 regex 命中的 segment 配置 dict(无 segments/不命中/坏 regex → None)。
+    归属在 compute_alerts 运行时进行(config 改 segments 即刻生效,不用重建快照)。"""
+    for seg in cfg.get("segments") or []:
+        if not isinstance(seg, dict):
+            continue
+        pat = seg.get("match")
+        if not pat:
+            continue
+        try:
+            if re.search(pat, path):
+                return seg
+        except re.error:
+            continue      # 坏 regex:跳过该 segment,不让监控崩
+    return None
+
+
+def page_healthy(m):
+    """快照页值 → 是否健康:state ok(旧快照无 state 键按 ok)+ status<400 + 可索引
+    (indexable False=noindex,退出健康集)。缺字段按最好情况猜不出 False(与 P0-1 兼容口径一致)。"""
+    if not isinstance(m, dict):
+        return False
+    if m.get("state") not in (None, "ok"):
+        return False
+    st = m.get("status")
+    if isinstance(st, int) and st >= 400:
+        return False
+    if m.get("indexable") is False:
+        return False
+    return True
+
+
+def page_importance(seg, path, page_clicks):
+    """segment 页重要度(D1 P1:受影响度=Σimportance,替代纯页数地板):
+    static(默认)=1;gsc_clicks=GSC 页级点击数(无 gsc 数据/页未列出=1,不猜 0)。"""
+    mode = str((seg or {}).get("importance") or "static").lower()
+    if mode == "gsc_clicks" and isinstance(page_clicks, dict) and page_clicks:
+        try:
+            v = page_clicks.get(path, 1)
+            return float(v) if isinstance(v, (int, float)) else 1.0
+        except (TypeError, ValueError):
+            return 1.0
+    return 1.0
 
 
 def mixed_content_count(url, html):
@@ -721,14 +801,24 @@ def check_gsc(mdir):
         out["metrics"] = {"error": "gsc.csv 缺 Clicks 列"}
         return out
     total = 0
+    page_col = cols.get("page")     # D1 P1:页级导出(列 Page)→ segment importance=gsc_clicks
+    page_clicks = {}
     for row in rows:
         try:
-            total += int(float((row.get(click_col) or "0").replace(",", "")))
+            c = int(float((row.get(click_col) or "0").replace(",", "")))
         except ValueError:
-            pass
+            continue
+        total += c
+        if page_col and len(page_clicks) < GSC_PAGE_CAP:
+            pu = (row.get(page_col) or "").strip()
+            if pu:
+                p_path = urllib.parse.urlparse(pu).path or "/"   # 页 URL → 路径(别遮蔽 csv 的 path)
+                page_clicks[p_path] = page_clicks.get(p_path, 0) + c
     out["state"] = "ok"
     out["metrics"] = {"clicks_total": total, "queries": len(rows),
                       "file_mtime": datetime.fromtimestamp(os.path.getmtime(path)).isoformat(timespec="seconds")}
+    if page_clicks:
+        out["metrics"]["page_clicks"] = page_clicks
     out["notes"].append("口径:导出文件全期合计;每次 run 前刷新文件,比较的是两次 run 之间")
     return out
 
@@ -1183,6 +1273,138 @@ def apply_inhibition(alerts, inhibited_out=None):
     return kept
 
 
+def oldest_ok_run_age_days(conn, now=None):
+    """库龄:最老 status='ok' 的 run 距今天数(无 ok run/时间不可解析 → None)。"""
+    row = conn.execute("SELECT MIN(ts) AS m FROM runs WHERE status='ok'").fetchone()
+    if not row or not row["m"]:
+        return None
+    try:
+        return ((now or datetime.now()) - datetime.fromisoformat(row["m"])).total_seconds() / 86400.0
+    except ValueError:
+        return None
+
+
+def apply_accepted(alerts, cfg):
+    """D1 P1:accepted_codes 白名单——"接受≠消失":命中(裸 code 或 code:key 指纹)→
+    降 low + 标 accepted:true(不计入 counts/退出码、不走 cooldown 抑制,每次 diff 照常
+    入库);周报单独列"已接受告警数",仍计数。返回命中条数。"""
+    acc = set(cfg.get("accepted_codes") or [])
+    if not acc:
+        return 0
+    n = 0
+    for a in alerts:
+        fp = "%s:%s" % (a["code"], a["key"])
+        if a["code"] in acc or fp in acc:
+            a["from_level"] = a["level"]
+            a["level"] = "low"
+            a["accepted"] = True
+            a["message"] = "已接受(接受≠消失,周报仍计数): " + a["message"]
+            n += 1
+    return n
+
+
+def build_ci_checks(prev, curr, cfg, counts, alerts):
+    """D1 P1:diff --ci 的结构化阈值结果——每条阈值规则一行(通过项也列出):
+    {metric, operator, threshold, actual, passed}。口径:
+    - *_drop_pct:* operator "<"(actual=观察到的降幅%,超出即失败);
+    - 地板类(*_min_sample/_min_clicks)operator ">="(CI 口径=数据充分性门,样本在场但
+      低于地板即失败;数据完全缺失 actual=None → 通过,不猜);
+    - latency_min_ms/mixed_content_min 在 CI 中视为预算(operator "<",actual=观察极值);
+    - 聚合行 critical_alerts/warn_alerts operator "==" 0(覆盖无阈值规则的关键告警)。
+    actual 均四舍五入 1 位;bool 不当数字用。"""
+    th = cfg.get("thresholds", DEFAULT_THRESHOLDS)
+    rows = []
+
+    def num(v):
+        return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+    def drop_pct(a, b):
+        d = pct_drop(num(a), num(b))
+        return round(d * 100, 1) if d is not None else None
+
+    def row(metric, operator, threshold, actual):
+        if actual is None:
+            passed = True                        # 无数据/不适用 → 不猜,不失败
+        elif operator == "<":
+            passed = actual < threshold
+        elif operator == "==":
+            passed = actual == threshold
+        else:                                    # ">=" 及其它:地板方向
+            passed = actual >= threshold
+        rows.append({"metric": metric, "operator": operator, "threshold": threshold,
+                     "actual": actual, "passed": bool(passed)})
+
+    def g(snap, check, key):
+        return ((snap.get(check) or {}).get(key) or {})
+
+    cv, pv = g(curr, "visibility", "site"), g(prev, "visibility", "site")
+    row("visibility_drop_pct", "<", th.get("visibility_drop_pct", 30),
+        drop_pct(pv.get("visible_pages"), cv.get("visible_pages")))
+    row("visibility_min_sample", ">=", th.get("visibility_min_sample", 3), num(pv.get("visible_pages")))
+    csm, psm = g(curr, "sitemap", "index"), g(prev, "sitemap", "index")
+    row("sitemap_urls_drop_pct", "<", th.get("sitemap_urls_drop_pct", 15),
+        drop_pct(psm.get("url_count"), csm.get("url_count")))
+    row("sitemap_min_sample", ">=", th.get("sitemap_min_sample", 20), num(psm.get("url_count")))
+    cg, pg = g(curr, "gsc", "file"), g(prev, "gsc", "file")
+    cc, pc = num(cg.get("clicks_total")), num(pg.get("clicks_total"))
+    row("gsc_clicks_drop_pct", "<", th.get("gsc_clicks_drop_pct", 20), drop_pct(pc, cc))
+    row("gsc_min_clicks", ">=", th.get("gsc_min_clicks", 5),
+        min(pc, cc) if (pc is not None and cc is not None) else None)
+    inc = mx = mc = None
+    for k, c in (curr.get("pages") or {}).items():
+        pl = num((prev.get("pages") or {}).get(k, {}).get("latency_ms"))
+        cl = num(c.get("latency_ms"))
+        d = pct_drop(pl, cl) if pl else None
+        if isinstance(d, float) and d < 0:
+            inc = round(-d * 100, 1) if inc is None else max(inc, round(-d * 100, 1))
+        if cl is not None:
+            mx = round(cl, 1) if mx is None else max(mx, round(cl, 1))
+        v = num(c.get("mixed_content"))
+        if v is not None:
+            mc = v if mc is None else max(mc, v)
+    row("latency_increase_pct", "<", th.get("latency_increase_pct", 100), inc)
+    row("latency_min_ms", "<", th.get("latency_min_ms", 500), mx)
+    row("mixed_content_min", "<", th.get("mixed_content_min", 3), mc)
+    seg_pcts = [num((a.get("details") or {}).get("pct")) for a in alerts
+                if a.get("code") == "pages_left_segment"]
+    seg_pcts = [p for p in seg_pcts if p is not None]
+    if cfg.get("segments"):
+        row("pages_left_segment_pct", "<", th.get("pages_left_segment_pct", 10),
+            max(seg_pcts) if seg_pcts else 0.0)
+    row("critical_alerts", "==", 0, int(counts.get("critical", 0)))
+    row("warn_alerts", "==", 0, int(counts.get("warn", 0)))
+    return rows
+
+
+def ci_junit_xml(ci):
+    """--ci --ci-format junit:checks → JUnit XML(独立实现,不 import ci_format;
+    每 check 一个 testcase,失败带 ThresholdBreached failure 消息)。"""
+    def x(s):
+        return _xml_escape(str(s), {'"': "&quot;", "'": "&apos;"})
+
+    checks = ci.get("checks") or []
+    fails = [c for c in checks if not c["passed"]]
+    cases = []
+    for c in checks:
+        name = x("%s %s %s" % (c["metric"], c["operator"], c["threshold"]))
+        if c["passed"]:
+            cases.append('    <testcase name="%s" classname="monitor.diff"/>' % name)
+        else:
+            msg = x("actual=%s 期望 %s %s" % (c["actual"], c["operator"], c["threshold"]))
+            cases.append('    <testcase name="%s" classname="monitor.diff">'
+                         '<failure type="ThresholdBreached" message="%s"/></testcase>' % (name, msg))
+    n, nf = len(checks), len(fails)
+    props = ('  <properties>\n'
+             '    <property name="site" value="%s"/>\n'
+             '    <property name="curr_run" value="%s"/>\n'
+             '    <property name="prev_run" value="%s"/>\n'
+             '  </properties>' % (x(ci.get("site", "")), ci.get("curr_run"), ci.get("prev_run")))
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites name="monitor-diff" tests="%d" failures="%d">\n%s\n'
+            '  <testsuite name="monitor-diff" tests="%d" failures="%d">\n%s\n  </testsuite>\n'
+            '</testsuites>\n' % (n, nf, props, n, nf, "\n".join(cases)))
+
+
 def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
     """prev/curr 为扁平快照;baseline(可选)= ~7 天前 ok run 的快照,双窗口判定用。
     返回 list[dict(level/code/key/message/details/action,boundary))]。"""
@@ -1257,6 +1479,42 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                 "%s canonical 指向 %s 目标——首选 URL 不可达,索引信号自相矛盾" % (label, shown),
                 {"canonical": c.get("canonical"), "target_status": cts,
                  "fail_streak": c.get("canonical_fail_streak")})
+
+    # --- D1 P1:segments 受影响度(Σimportance)与 pages_left_segment(Conductor 10% 档)---
+    # key_pages 运行时按 regex 归属首个命中 segment;健康页流失按 Σimportance 加权判档
+    # (无 gsc 页级数据时每页 importance=1),替代纯页数地板;页面不在 curr(停止监控)
+    # 不计入流失(不猜)。
+    segs = [s for s in (cfg.get("segments") or [])
+            if isinstance(s, dict) and s.get("name") and s.get("match")]
+    if segs:
+        page_clicks = ((curr.get("gsc") or {}).get("file") or {}).get("page_clicks") or {}
+        prev_pages, curr_pages = prev.get("pages") or {}, curr.get("pages") or {}
+        page_seg = {}
+        for p in set(prev_pages) | set(curr_pages):
+            seg = segment_of(p, cfg)
+            if seg is not None:
+                page_seg[p] = str(seg.get("name"))
+        for seg in segs:
+            name = str(seg["name"])
+            members = sorted(p for p, n in page_seg.items() if n == name)
+            prev_h = [p for p in members if p in prev_pages and page_healthy(prev_pages[p])]
+            dropped = [p for p in prev_h if p in curr_pages and not page_healthy(curr_pages[p])]
+            if not prev_h or not dropped:
+                continue
+            total_imp = sum(page_importance(seg, p, page_clicks) for p in prev_h)
+            drop_imp = sum(page_importance(seg, p, page_clicks) for p in dropped)
+            if total_imp <= 0:
+                continue
+            pct = drop_imp / total_imp
+            if pct * 100 >= float(th.get("pages_left_segment_pct", 10)):
+                add("warn", "pages_left_segment", "segment:" + name,
+                    "segment %s 健康页 %d → %d(−%.0f%%;受影响度 Σimportance %.1f/%.1f,档位 %s%%)"
+                    % (name, len(prev_h), len(prev_h) - len(dropped), pct * 100, drop_imp, total_imp,
+                       th.get("pages_left_segment_pct", 10)),
+                    {"segment": name, "prev_healthy": len(prev_h),
+                     "curr_healthy": len(prev_h) - len(dropped), "dropped": dropped,
+                     "dropped_importance": round(drop_imp, 2),
+                     "total_importance": round(total_imp, 2), "pct": round(pct * 100, 1)})
 
     # --- 4 存活/3 索引:robots ---
     cr, pr = (curr.get("robots") or {}).get("robots", {}), (prev.get("robots") or {}).get("robots", {})
@@ -1439,8 +1697,18 @@ def cmd_diff(args):
         # 双窗口(P1-9):再取 ~7 天前的 ok run 当长窗基线(库龄不足则为 None=保持原级别)
         baseline_id = pick_baseline_run(conn, {curr_id, prev_id}, days=7)
         baseline = load_snapshot(conn, baseline_id) if baseline_id else None
+        # D1 P1:baseline 缺失响亮警告——库龄>7 天却取不到基线(绝不静默降级为单窗口)
+        baseline_missing = False
+        if baseline_id is None:
+            age_days = oldest_ok_run_age_days(conn, now)
+            if age_days is not None and age_days > 7:
+                baseline_missing = True
+                print("[!] WARNING: 无 7 天基线(库龄 %.1fd),双窗口降级未生效" % age_days,
+                      file=sys.stderr)
         inhibited = []
         alerts = compute_alerts(prev, curr, cfg, baseline=baseline, inhibited_out=inhibited)
+        # D1 P1:accepted_codes 白名单(接受≠消失:降 low+标 accepted,周报仍计数)
+        n_accepted = apply_accepted(alerts, cfg)
 
         cooldowns = cfg.get("cooldown_hours", COOLDOWN_HOURS)
         cur_fps = {("%s:%s" % (a["code"], a["key"])) for a in alerts}
@@ -1448,6 +1716,8 @@ def cmd_diff(args):
             "SELECT id, code, key, level, ts FROM alerts WHERE resolved=0 AND level!='low'").fetchall()
         healed, suppressed = [], []
         for a in alerts:
+            if a.get("accepted"):
+                continue      # 已接受:不入 cooldown 抑制路径,每次 diff 照常入库供周报计数
             fp = "%s:%s" % (a["code"], a["key"])
             for row in unresolved:
                 if row["code"] + ":" + row["key"] == fp:
@@ -1470,21 +1740,24 @@ def cmd_diff(args):
         active = [a for a in alerts if not a.get("suppressed")]
         payload = {"generated": now.isoformat(timespec="seconds"), "site": cfg["site"],
                    "market": cfg.get("market"), "curr_run": curr_id, "prev_run": prev_id,
-                   "baseline_run": baseline_id,
+                   "baseline_run": baseline_id, "baseline_missing": baseline_missing,
                    "alerts": alerts, "healed": healed, "suppressed": suppressed,
-                   "inhibited": inhibited,
+                   "inhibited": inhibited, "accepted": n_accepted,
                    "counts": {l: sum(1 for a in active if a["level"] == l) for l in LEVELS}}
 
         if not args.dry_run:
             for a in alerts:
                 if a.get("suppressed"):
                     continue  # 冷却期内的重复指纹不重复入库(原未结行已代表它)
+                det = {"details": a.get("details"), "action": a.get("action"),
+                       "boundary": a.get("boundary")}
+                if a.get("accepted"):
+                    det["accepted"] = True          # 周报"已接受告警数"据此计数
                 conn.execute(
                     "INSERT INTO alerts(run_id, ts, level, code, key, message, details, suppressed) "
                     "VALUES(?,?,?,?,?,?,?,0)",
                     (curr_id, now.isoformat(timespec="seconds"), a["level"], a["code"], a["key"],
-                     a["message"], json.dumps({"details": a.get("details"), "action": a.get("action"),
-                                               "boundary": a.get("boundary")}, ensure_ascii=False)))
+                     a["message"], json.dumps(det, ensure_ascii=False)))
             for row in unresolved:
                 if row["code"] + ":" + row["key"] not in cur_fps:
                     conn.execute("UPDATE alerts SET resolved=1, resolved_run=? WHERE id=?",
@@ -1498,6 +1771,23 @@ def cmd_diff(args):
                          json.dumps({"prev_level": row["level"]}, ensure_ascii=False)))
             conn.commit()
         conn.close()
+
+    # D1 P1:diff --ci(CI 门,siteone 契约):结构化阈值 checks,任一失败 exit 10
+    if getattr(args, "ci", False):
+        checks = build_ci_checks(prev, curr, cfg, payload["counts"], alerts)
+        ci_payload = {"generated": payload["generated"], "site": cfg["site"],
+                      "curr_run": curr_id, "prev_run": prev_id,
+                      "passed": all(c["passed"] for c in checks), "checks": checks}
+        ci_payload["exit_code"] = 10 if not ci_payload["passed"] else 0
+        if args.ci_format == "junit":
+            body = ci_junit_xml(ci_payload)
+        else:
+            body = json.dumps(ci_payload, ensure_ascii=False, indent=2)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as f:
+                f.write(body + ("" if body.endswith("\n") else "\n"))
+        print(body, end="")
+        return ci_payload["exit_code"]
 
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
@@ -1529,6 +1819,14 @@ def cmd_diff(args):
 
 
 # ---------- report ----------
+
+def _alert_details(alert_row):
+    """alerts 表行 → details dict(容错坏 JSON)。"""
+    try:
+        return json.loads(alert_row["details"] or "{}")
+    except (TypeError, ValueError):
+        return {}
+
 
 def cmd_report(args):
     mdir = args.dir
@@ -1564,6 +1862,7 @@ def cmd_report(args):
                "alerts": [{"level": a["level"], "code": a["code"], "message": a["message"],
                            "suppressed": bool(a["suppressed"]), "resolved": bool(a["resolved"])}
                           for a in alerts],
+               "accepted_alerts": sum(1 for a in alerts if _alert_details(a).get("accepted")),
                "trend": trend}
         conn.close()
         print(json.dumps(out, ensure_ascii=False, indent=2))
@@ -1579,6 +1878,11 @@ def cmd_report(args):
             lines.append("  %-8s %d 条(抑制 %d / 已自愈 %d)" % (l, len(by_level[l]), sup, res))
             for a in by_level[l][:10]:
                 lines.append("    - %s: %s" % (a["code"], a["message"]))
+    # D1 P1:accepted_codes 语义——"接受≠消失":已接受告警单独计数,不因白名单而蒸发
+    acc_n = sum(1 for a in alerts if _alert_details(a).get("accepted"))
+    lines.append("-- 已接受告警 --")
+    lines.append("  %d 条(accepted_codes 白名单命中,已降 low;接受≠消失,周报仍计数)"
+                 % acc_n)
     lines.append("-- 趋势(从快照取值)--")
     for label, check, key, metric in [("可见页", "visibility", "site", "visible_pages"),
                                       ("sitemap URL 数", "sitemap", "index", "url_count"),
@@ -1680,6 +1984,98 @@ def cmd_maintenance(args):
     return 0
 
 
+# ---------- sample-keypages(D1 P1) ----------
+
+def slug_template(url):
+    """URL/路径 → 路由模板:路径 parts 最后一段非空则替换为 'slug'(查询/锚点丢弃;
+    尾斜杠/根路径原样保留)。/blog/seo-tips → /blog/slug;/blog/ → /blog/;/ → /。"""
+    path = urllib.parse.urlparse(str(url)).path or "/"
+    parts = path.split("/")
+    if parts and parts[-1]:
+        parts[-1] = "slug"
+    return "/".join(parts)
+
+
+def sample_keypages(urls, per_group, existing_paths, rng):
+    """locs → slug 模板分组 → 每组随机抽 per_group ∪ 现有手工 key_pages(去重保序)。
+    返回 {templates: {tpl: n}, picked: 手工∪新增, new: 不在手工清单中的增量}。"""
+    groups = {}
+    for u in urls:
+        groups.setdefault(slug_template(u), set()).add(u)
+    existing = list(dict.fromkeys(existing_paths))     # 手工清单保序去重,永远保留
+    seen = set(existing)
+    added = []
+    for tpl in sorted(groups):
+        members = sorted(groups[tpl])
+        take = members if len(members) <= per_group else rng.sample(members, per_group)
+        for u in take:
+            path = urllib.parse.urlparse(u).path or "/"
+            if path not in seen:
+                seen.add(path)
+                added.append(path)
+    return {"templates": {t: len(groups[t]) for t in sorted(groups)},
+            "picked": existing + added,
+            "new": added}
+
+
+def cmd_sample_keypages(args):
+    """D1 P1:sitemap(或 --urls 文件)→ 模板归一分组抽样,建议 key_pages 清单;
+    只打印不写 config(--write 才合并);建议路由超 maxRoutes=200 截断并响亮警告。"""
+    mdir = args.dir
+    cfg = load_config(mdir)
+    site = cfg["site"]
+    if args.urls:
+        try:
+            with open(args.urls, encoding="utf-8") as f:
+                urls = [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
+        except OSError as e:
+            print("错误: 读不了 --urls 文件: %s" % e, file=sys.stderr)
+            return 4
+    else:
+        robots = check_robots(site, cfg.get("market"))
+        sm = check_sitemap(site, robots.get("metrics", {}), Budget(None))
+        locs = (sm.get("metrics") or {}).get("locs") or {}
+        if sm.get("state") != "ok" or not locs:
+            print("错误: 未取到 sitemap URL(state=%s);也可用 --urls FILE 提供清单"
+                  % sm.get("state"), file=sys.stderr)
+            return 4
+        urls = list(locs)
+    if not urls:
+        print("错误: URL 清单为空", file=sys.stderr)
+        return 4
+    existing = [parse_key_page(e)[0] for e in (cfg.get("key_pages") or [])]
+    res = sample_keypages(urls, max(1, args.per_group), existing, random.Random(args.seed))
+    if len(res["new"]) > MAX_ROUTES:
+        print("[!] WARNING: 建议新增路由 %d 条超过 maxRoutes=%d 上限,已截断前 %d 条"
+              "(监控 budget 会先耗尽;收紧 --per-group 或缩小 sitemap 范围)"
+              % (len(res["new"]), MAX_ROUTES, MAX_ROUTES), file=sys.stderr)
+        res["new"] = res["new"][:MAX_ROUTES]
+        res["picked"] = existing + res["new"]
+    print("== sample-keypages: %s ==" % site)
+    print("输入 URL %d 条 → %d 个模板(每组抽 ≤%d,seed=%d 可复现)"
+          % (len(urls), len(res["templates"]), args.per_group, args.seed))
+    for tpl in sorted(res["templates"]):
+        print("  %-40s %5d 页" % (tpl, res["templates"][tpl]))
+    print("建议 key_pages(抽样 ∪ 现有手工 %d 条,共 %d):" % (len(existing), len(res["picked"])))
+    for p in res["picked"]:
+        mark = "" if p in set(existing) else "  ← 新增"
+        print("  %s%s" % (p, mark))
+    if args.write:
+        merged = list(cfg.get("key_pages") or [])
+        have = {parse_key_page(e)[0] for e in merged}
+        for p in res["picked"]:
+            if p not in have:
+                merged.append(p)
+                have.add(p)
+        cfg["key_pages"] = merged
+        save_config(mdir, cfg)
+        print("已合并进 config.key_pages: %d 条(原有 %d 保留,新增 %d)"
+              % (len(merged), len(existing), len(merged) - len(existing)))
+    else:
+        print("[i] 只打印建议,未写 config;确认后加 --write 合并(保留现有条目,去重)")
+    return 0
+
+
 # ---------- CLI / 自测 ----------
 
 def build_parser():
@@ -1707,6 +2103,10 @@ def build_parser():
     p.add_argument("--format", choices=["json", "text"], default="text")
     p.add_argument("--out", default="", help="把告警 JSON 写到文件(供 notify.py)")
     p.add_argument("--dry-run", action="store_true", help="计算但不落 alerts 表")
+    p.add_argument("--ci", action="store_true",
+                   help="CI 门模式(siteone 契约):输出 {passed,exit_code,checks[]},任一 check 失败 exit 10")
+    p.add_argument("--ci-format", dest="ci_format", choices=["json", "junit"], default="json",
+                   help="--ci 的输出格式(默认 json;junit=JUnit XML)")
     p.add_argument("--dir", default=DEFAULT_DIR)
     p.set_defaults(func=cmd_diff)
     p = sub.add_parser("report", help="周报:趋势+告警汇总+建议 PR")
@@ -1726,6 +2126,15 @@ def build_parser():
     p.add_argument("--clear", action="store_true", help="清空全部维护窗口")
     p.add_argument("--dir", default=DEFAULT_DIR)
     p.set_defaults(func=cmd_maintenance)
+    p = sub.add_parser("sample-keypages",
+                       help="sitemap(或 --urls 清单)→slug 模板分组→每组随机抽 N,建议 key_pages")
+    p.add_argument("--urls", default="", help="URL 清单文件(每行一个,# 注释;缺省则抓 sitemap)")
+    p.add_argument("--per-group", dest="per_group", type=int, default=8,
+                   help="每个模板抽几个(默认 8)")
+    p.add_argument("--seed", type=int, default=0, help="随机种子(默认 0=可复现)")
+    p.add_argument("--write", action="store_true", help="把建议合并进 config.key_pages(默认只打印)")
+    p.add_argument("--dir", default=DEFAULT_DIR)
+    p.set_defaults(func=cmd_sample_keypages)
     return ap
 
 
@@ -1975,9 +2384,39 @@ def _self_test():
     mcfg = {"maintenance_windows": [{"from": "2026-01-01T00:00", "to": "2026-01-02T00:00"}]}
     assert in_maintenance(mcfg, datetime(2026, 1, 1, 12)) is not None
     assert in_maintenance(mcfg, datetime(2026, 2, 1)) is None
+
+    # --- D1 P1:segments / accepted_codes / --ci checks / sample-keypages ---
+    assert slug_template("/blog/seo-tips") == "/blog/slug"
+    assert slug_template("/blog/") == "/blog/" and slug_template("/") == "/"
+    assert slug_template("https://x.com/p/1?utm=y") == "/p/slug"
+    seg_cfg = {"segments": [{"name": "docs", "match": "^/docs/", "importance": "static"}],
+               "thresholds": dict(DEFAULT_THRESHOLDS)}
+    seg_prev = {"pages": {"/docs/p%02d" % i: {"status": 200, "indexable": True} for i in range(10)}}
+    seg_curr = json.loads(json.dumps(seg_prev))
+    seg_curr["pages"]["/docs/p04"] = {"status": 404}
+    seg_alerts = compute_alerts(seg_prev, seg_curr, seg_cfg)
+    seg_hit = [a for a in seg_alerts if a["code"] == "pages_left_segment"]
+    assert seg_hit and seg_hit[0]["level"] == "warn" and seg_hit[0]["details"]["pct"] == 10.0
+    assert not any(a["code"] == "pages_left_segment"
+                   for a in compute_alerts(seg_prev, json.loads(json.dumps(seg_prev)), seg_cfg))
+    acc = [{"level": "warn", "code": "gsc_clicks_drop", "key": "file", "message": "m",
+            "details": {}, "action": "a", "boundary": "human"}]
+    assert apply_accepted(acc, {"accepted_codes": ["gsc_clicks_drop"]}) == 1
+    assert acc[0]["level"] == "low" and acc[0]["accepted"] and acc[0]["from_level"] == "warn"
+    ci_checks = build_ci_checks(seg_prev, seg_curr, {"thresholds": dict(DEFAULT_THRESHOLDS)},
+                                {"critical": 0, "warn": 1}, seg_alerts)
+    ci_map = {c["metric"]: c for c in ci_checks}
+    assert ci_map["critical_alerts"]["passed"] and not ci_map["warn_alerts"]["passed"]
+    assert set(ci_map["visibility_drop_pct"]) == {"metric", "operator", "threshold", "actual", "passed"}
+    junit = ci_junit_xml({"site": "s", "curr_run": 2, "prev_run": 1, "checks": ci_checks})
+    assert junit.startswith("<?xml") and "ThresholdBreached" in junit and "monitor-diff" in junit
+    sk = sample_keypages(["https://x.com/blog/a", "https://x.com/blog/b", "https://x.com/about"],
+                         8, ["/pricing"], random.Random(0))
+    assert len(sk["picked"]) == 4 and "/pricing" in sk["picked"] and sk["picked"].count("/pricing") == 1
     print("[self-test] PASS monitor(11 类告警判定/地板/自愈/抑制树/双窗口/SSL 梯度/"
           "字段级 diff+selector/secret 守卫/重定向 SSRF/状态机+prune+quarantine/维护窗口/"
-          "noindex 检测+canonical 目标健康度(D1 P0-1/P0-2))")
+          "noindex 检测+canonical 目标健康度(D1 P0-1/P0-2)/"
+          "segments+accepted_codes+--ci checks+sample-keypages(D1 P1))")
 
 
 def main(argv=None):

@@ -27,7 +27,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(49 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(53 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -43,7 +43,11 @@ metadata:
 - `grounding_page.py --facts brand.yaml`:品牌实体事实页生成(Rankscale 11 条:dl 事实/FAQ 含名/volatile 独立/is-NOT 消歧/JSON-LD 镜像);--check 校验已有页
 - `audit_compare.py --old a.json --new b.json`:两次审计对比(新增/已修复/delta 三清单+页级 changed);--baseline-gate N 回归门(Lumar Protect 语义)
 - `ci_format.py audit.json --format sarif|junit|github`:CI 输出格式化(SARIF 挂 Code Scanning/JUnit 挂测试报告/github 注解);配仓库根 action.yml 一站式 PR 门禁
-- `sensor_volatility.py --gsc gsc.csv`:自有词集 SERP 波动分(0-10 四档+z30 异常日);--context 供 monitor 告警附注"疑似算法更新而非站点问题" 
+- `sensor_volatility.py --gsc gsc.csv`:自有词集 SERP 波动分(0-10 四档+z30 异常日);--context 供 monitor 告警附注"疑似算法更新而非站点问题"
+- `forecast.py --kws kws.csv`:SEO 商业提案六步(seoClarity 官方):est_traffic→校准系数持久化→三 scenario(rank3/pct10/pos2,>30 位不预测)→orders/value/acquisition_value;省钱+赚钱双结构;配 templates/monitor/forecast-report.md
+- `prioritize.py --audit audit.json`:条件优先级引擎(Botify 口径):18 条声明式规则+放大器+条件依赖型(noindex 意图/canonical PageRank)+segment 切换重算;"立即处理/值得探索"两栏
+- `changelog.py --db monitor.db`:页面变更审计追踪(Conductor 口径):5 枚举事件+字段白名单+14 天日/更早周粒度;根因诊断"流量下跌那天页面改了什么"
+- `doctor.py`:环境自检+凭证分层探测(T0 纯静态→T3 GA4,只探键名不读值)+全输出 redact;退出码 0=ready/3=需处理;报告按 tier 自动声明数据覆盖范围 
 
 **技术 SEO**
 - `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
@@ -321,6 +325,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/content/content-brief.md`(三段式简报:证据头/执行摘要/大纲六件套+9 内容类型变体)
 - `templates/content/pre-publish-checklist.md`(发布前 27 条闸:meta/结构/内容/AI 可引性四组,机检条目挂真实脚本)
 - `templates/audit/report-modes.md`(报告三模式:exec/dev/prospect 一表三裁+Today's priorities+建议四字段)
+- `templates/monitor/forecast-report.md`(管理层提案:五级漏斗+三档 scenario+省钱/赚钱双结构+ROI 五法)
 - `templates/monitor/alert-playbook.md`
 
 ## 常见请求如何路由
