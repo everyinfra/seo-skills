@@ -1,0 +1,864 @@
+{
+ "_contract": {
+  "what": "评分模型冻结 fixture(borrow-specs E8:geo-optimizer 契约模式)",
+  "rule": "改口径必须 bump schema_version 并重生成 fixture",
+  "how": "python3 tests/test_scoring_contracts.py --regenerate",
+  "sample": "healthy(health_score main_score>=70;content_score total>=67 strong 档)",
+  "anti_drift": "fixture 的存在即防静默漂移机制:任何计分语义变化若未 bump schema_version 且未重生成 fixture,本契约测试的逐键比对(浮点 tol 1e-9)必炸;合成输入定义在 tests/test_scoring_contracts.py 顶部",
+  "path_placeholder": "payload 中的 <TMPDIR> 是生成时临时目录的占位,非数据",
+  "schema_versions": {
+   "health_score": "1.0",
+   "content_score": "1",
+   "site_audit": 1
+  }
+ },
+ "health_score": {
+  "schema_version": "1.0",
+  "main_score": 80.0,
+  "band": "Good",
+  "composite_score": 99.5,
+  "warn_score": 20.0,
+  "info_score": 60.0,
+  "category_scores": {
+   "availability": {
+    "score": 100.0,
+    "reason": null,
+    "weight": 3.0
+   },
+   "indexability": {
+    "score": 100.0,
+    "reason": null,
+    "weight": 12.0
+   },
+   "uniqueness": {
+    "score": 99.6,
+    "reason": null,
+    "weight": 1.0
+   },
+   "discoverability": {
+    "score": 99.8,
+    "reason": null,
+    "weight": 2.5
+   },
+   "rankability": {
+    "score": 98.9,
+    "reason": null,
+    "weight": 15.75
+   },
+   "experience": {
+    "score": null,
+    "reason": "data_source_missing",
+    "weight": 0.0
+   }
+  },
+  "impacts": [
+   {
+    "rule": "h1",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "CRITICAL",
+    "hit_urls": 1,
+    "total_urls": 5,
+    "impact": 1.8,
+    "action": "立即处理"
+   },
+   {
+    "rule": "duplicate_title",
+    "category": "uniqueness",
+    "subgroup": "duplicate_title",
+    "severity": "WARN",
+    "hit_urls": 2,
+    "total_urls": 5,
+    "impact": 1.6,
+    "action": "立即处理"
+   },
+   {
+    "rule": "a11y",
+    "category": "discoverability",
+    "subgroup": "internationalization",
+    "severity": "WARN",
+    "hit_urls": 1,
+    "total_urls": 5,
+    "impact": 0.8,
+    "action": "立即处理"
+   },
+   {
+    "rule": "headings",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "WARN",
+    "hit_urls": 1,
+    "total_urls": 5,
+    "impact": 0.8,
+    "action": "立即处理"
+   },
+   {
+    "rule": "og",
+    "category": "rankability",
+    "subgroup": "social_tags",
+    "severity": "WARN",
+    "hit_urls": 1,
+    "total_urls": 5,
+    "impact": 0.8,
+    "action": "立即处理"
+   },
+   {
+    "rule": "bluf",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "INFO",
+    "hit_urls": 1,
+    "total_urls": 5,
+    "impact": 0.2,
+    "action": "立即处理"
+   },
+   {
+    "rule": "semantic-html",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "INFO",
+    "hit_urls": 1,
+    "total_urls": 5,
+    "impact": 0.2,
+    "action": "立即处理"
+   },
+   {
+    "rule": "ai-bots",
+    "category": "indexability",
+    "subgroup": "non_indexable",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "canonical",
+    "category": "indexability",
+    "subgroup": "canonicalization",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "content",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "WARN",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "description",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "fetch",
+    "category": "availability",
+    "subgroup": "server_errors",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "freshness",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "INFO",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "images",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "WARN",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "links",
+    "category": "discoverability",
+    "subgroup": "internal_linking",
+    "severity": "WARN",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "llms.txt",
+    "category": "discoverability",
+    "subgroup": "sitemaps",
+    "severity": "INFO",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "rendering",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "WARN",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "robots",
+    "category": "indexability",
+    "subgroup": "non_indexable",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "schema",
+    "category": "rankability",
+    "subgroup": "structured_data",
+    "severity": "WARN",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "sitemap",
+    "category": "discoverability",
+    "subgroup": "sitemaps",
+    "severity": "INFO",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "staging",
+    "category": "indexability",
+    "subgroup": "non_indexable",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   },
+   {
+    "rule": "title",
+    "category": "rankability",
+    "subgroup": "page_content",
+    "severity": "CRITICAL",
+    "hit_urls": 0,
+    "total_urls": 5,
+    "impact": 0.0,
+    "action": "opportunity 值得探索"
+   }
+  ],
+  "ignored": [],
+  "unmapped": [
+   {
+    "area": "zz-unmapped-sample",
+    "severity": "WARN",
+    "hit_urls": 1
+   }
+  ],
+  "coverage_note": "基于样本,分数不可与全站直接比较",
+  "urls_total": 5,
+  "urls_clean": 4,
+  "urls_refused": 1
+ },
+ "content_score": {
+  "schema_version": "1",
+  "keyword": "露营装备清单",
+  "intent": "definition",
+  "intent_coefficient": 0.271,
+  "intent_note": "该意图下内容分预测力,作优先级参考不改分值",
+  "density_scored": false,
+  "term_model": {
+   "n_terms": 50,
+   "source": "serp",
+   "n_competitors": 3,
+   "competitor_files": [
+    "<TMPDIR>/c1.md",
+    "<TMPDIR>/c2.md",
+    "<TMPDIR>/c3.md"
+   ]
+  },
+  "seo": {
+   "score": 80.5,
+   "dims": {
+    "term_coverage": {
+     "weight": 0.35,
+     "score": 54.0,
+     "note": "命中 54/100(min(提及,2) 封顶)——MarketMuse 50 话题×2=满分 100"
+    },
+    "term_importance": {
+     "weight": 0.1,
+     "score": 100.0,
+     "note": "8+ 术语命中 28/28(强制计入)"
+    },
+    "structure": {
+     "weight": 0.1,
+     "score": 85.7,
+     "note": "词数 325(中位 267,在带内); 标题数: 竞品中位 0 → N/A; 段落数 15(中位 10,带外 ×1.50)"
+    },
+    "title_h1": {
+     "weight": 0.05,
+     "score": 100.0,
+     "note": "title「露营装备清单:三天两夜全套配置」/H1「露营装备清单:三天两夜全套配置」命中: title=精确,H1=精确"
+    },
+    "images_alt": {
+     "weight": 0.05,
+     "score": 100.0,
+     "note": "图片 1 张,alt 覆盖 1"
+    },
+    "internal_links": {
+     "weight": 0.05,
+     "score": 100.0,
+     "note": "相对内链 2 条(≥2 满)"
+    },
+    "keyword_variations": {
+     "weight": 0.1,
+     "score": 100.0,
+     "note": "H2-H4 命中变体 6/14: 露营, 营装, 装备, 露营装, 营装备"
+    },
+    "bolded": {
+     "weight": 0.05,
+     "score": 100.0,
+     "note": "术语加粗 3 处(≥2 满)"
+    },
+    "schema_focused": {
+     "weight": 0.05,
+     "score": 100.0,
+     "note": "schema 类型 1 种 ['Article']"
+    }
+   }
+  },
+  "ai": {
+   "score": 100.0,
+   "dims": {
+    "facts_coverage": {
+     "weight": 0.6,
+     "score": 100.0,
+     "note": "事实覆盖 6/6(--facts 清单 6 条)"
+    },
+    "upfront_intent": {
+     "weight": 0.4,
+     "score": 100.0,
+     "note": "首句含主词或同义词:过; 首 100 词含数字/具体事实:过; 先答案后展开(结论性句式):过"
+    }
+   }
+  },
+  "total": 90.3,
+  "band": "strong",
+  "band_range": "67+",
+  "target": {
+   "competitor_average": 53.4,
+   "competitor_scores": [
+    59.8,
+    46.8,
+    53.5
+   ],
+   "recommended": 70.0,
+   "cap": 85.0
+  },
+  "term_table": [
+   {
+    "term": "装备清单",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 3,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "折叠桌椅",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "离线地图",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "露营装备",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 3,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "万毫安",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "保温箱",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "充电宝",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "营地灯",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "防潮垫",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "急救包",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "止血带",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "消毒片",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "火力稳",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "防晒霜",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "驱蚊液",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "帐篷",
+    "importance": 10,
+    "recommended_range": "2-3",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "系统",
+    "importance": 10,
+    "recommended_range": "1-4",
+    "used": 3,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "头灯",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "睡袋",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "炉具",
+    "importance": 10,
+    "recommended_range": "1-2",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "厨房",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "温标",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "照明",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "电池",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "睡眠",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 2,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "背包",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 2,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "锅具",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "食材",
+    "importance": 10,
+    "recommended_range": "1-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "体气炉火力稳",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "分体气炉火力",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "地图提前下载",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "地灯选充电式",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "头灯每人一盏",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "离线地图提前",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "线地图提前下",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "营地灯选充电",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "spf50",
+    "importance": 7,
+    "recommended_range": "0-0",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "保温箱夏季",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "备用电池",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "按人数配",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "火力稳定",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "睡眠系统",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": true,
+    "source": "serp"
+   },
+   {
+    "term": "睡袋温标",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "纸质地图",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "低亮档",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "充气垫",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "创可贴",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "帐篷选",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "桌椅选",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 1,
+    "in_heading": false,
+    "source": "serp"
+   },
+   {
+    "term": "营地选",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "used": 0,
+    "in_heading": false,
+    "source": "serp"
+   }
+  ],
+  "missing_terms": [
+   {
+    "term": "体气炉火力稳",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "分体气炉火力",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "地图提前下载",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "离线地图提前",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "线地图提前下",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "spf50",
+    "importance": 7,
+    "recommended_range": "0-0",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "备用电池",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "纸质地图",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "低亮档",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "充气垫",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "创可贴",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "低共识话题:在 FAQ 或结尾延伸段自然补齐 1 次即可"
+   },
+   {
+    "term": "营地选",
+    "importance": 7,
+    "recommended_range": "0-1",
+    "suggestion": "并入现有小节「照明与电力:头灯、营地灯、充电宝」自然提及 1-2 次(标题共现)"
+   }
+  ],
+  "notes": [
+   "关键词密度不计分(Surfer 与 MarketMuse 官方明确否定)"
+  ]
+ }
+}

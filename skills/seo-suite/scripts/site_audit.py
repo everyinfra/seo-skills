@@ -19,6 +19,7 @@ from urllib.parse import urljoin, urlparse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.1)"
+SCHEMA_VERSION = 1   # --json 顶层 schema 版本(评分契约,borrow-specs E8);改输出结构必须 bump 并重生成 tests/fixtures/scoring_v1.json
 # Semrush 官方 8 bot 检查名单(AI Search Health 口径,查这 8 个而非 27 个全量):
 # 4 个搜索引用 + Googlebot + Google-Extended + Perplexity-User + Claude-User。
 # Google-Extended 是 robots token 不是爬虫 → 单列(WARN 级);GPTBot/ClaudeBot 训练型
@@ -485,7 +486,8 @@ def main():
                 "meta": meta,
                 "ai_search_health": ai_h}
     if as_json:
-        print(json.dumps({"audited": len(urls), "critical": crit, "results": results},
+        print(json.dumps({"schema_version": SCHEMA_VERSION,
+                          "audited": len(urls), "critical": crit, "results": results},
                          ensure_ascii=False, indent=1))
     sys.exit(1 if crit else 0)
 

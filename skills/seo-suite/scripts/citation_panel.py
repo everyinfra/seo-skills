@@ -35,6 +35,12 @@
           # citation decay 判定(Profound 官方方法论,2026-09 88.3 万页研究;阈值抄自官方):
           # 7 点滚动均值(官方 14 天,采样密度低取 7)/ 资格闸门 4 道 /
           # 半衰=peak 后平滑≤50%peak 且连续 14 天无反弹 / 状态机 5 态 / 重写队列
+  score   (--run RUNID | --last) --scores scores.json [--panel PATH]
+          # geo 打分写回(geo-scoring-rubric 五维打分卡,references/content/):
+          #   agent 按卡语义打分 → 机检硬规则(硬 cap/枚举/top_pick 佐证/字段白名单/
+          #   越界 clamp)→ 写回该 run 每条 result 的 geo 扩展键(panel.json 与
+          #   runs/<id>.json 双写);硬违例整批原子拒绝;score --rubric 打印
+          #   压缩判定要点(代码内常量,不读 md,standalone)
 
 run.csv 列: prompt, mentioned, cited, cited_urls[, state][, rank]
   mentioned/cited ∈ {0,1};cited_urls 分号分隔;state 可显式给 failed/no_answer
@@ -55,6 +61,7 @@ prompts 对象化: panel.prompts 支持对象 {text, topic, tags[], stage, brand
   python3 citation_panel.py report
   python3 citation_panel.py diff runs/r1.json runs/r2.json
   python3 citation_panel.py decay --engine chatgpt [--json]
+  python3 citation_panel.py score --last --scores scores.json
   python3 citation_panel.py --self-test
 """
 import argparse
@@ -586,7 +593,7 @@ def _pct(x):
     return "N/A" if x is None else "%.1f%%" % (100 * x)
 
 
-def render_report(panel, stats):
+def render_report(panel, stats, engine=None):
     L = []
     L.append("== AI 可见性面板报告: %s ==" % panel["brand"])
     L.append("prompts=%d runs=%d cells=%d engines=%s"
@@ -661,6 +668,7 @@ def render_report(panel, stats):
     else:
         L.append("  brand_visibility(被提)= %s,source_visibility(被引)= %s(缺 --domain 时被引为 N/A)"
                  % (_pct(bv), _pct(sv)))
+    L.extend(render_geo_section(panel, engine))
     L.append("-- 分引擎(报告按 AI 引擎分列,不合并统计) --")
     for eng, sub in stats["per_engine"].items():
         L.append("  %-12s cells=%-3d coverage=%-7s share=%s"
@@ -673,7 +681,7 @@ def render_report(panel, stats):
 def cmd_report(args):
     panel = load_panel(args.panel)
     stats = compute_stats(panel, engine=args.engine)
-    print(render_report(panel, stats))
+    print(render_report(panel, stats, engine=args.engine))
     return 0
 
 
@@ -1027,6 +1035,394 @@ def cmd_decay(args):
     return 0
 
 
+# ---------- geo 打分写回(geo-scoring-rubric 五维打分卡) ----------
+# 出处: references/content/geo-scoring-rubric.md(2026-10-10;oneglanse 441 行骨架 +
+# 本套件证据约束)。geo 是**分析层扩展键**,写进 results.<prompt>.geo;采集层口径
+# 不动——compute_stats/diff/decay 只读 state/mentioned/cited/cited_urls/rank,geo 键
+# 被忽略,打分写回不改变 coverage/share,也不触发 diff signals(geo 变化是分析层
+# 判定变化,不是采集层指标变化)。schema(rubric 十一节,键序一致):
+#   {geo_score, presence, position{absolute_rank,mentions,first_occurrence_pct},
+#    sentiment, recommendation, competitors[{brand,absolute_rank,mentions,sentiment}],
+#    risks[]}
+# 机检分层: 硬违例(枚举外值/白名单外字段/类型错/prompt 对不上/failed cell)→ 整批
+# 原子拒绝不落盘;可机修的(硬 cap 封顶/越界 clamp/top_pick 缺佐证降级/缺席置 null)
+# → 警告后落盘。presence→面板 state 映射(rubric 十一节): refused→no_answer、
+# echo_only→brand_absent,其余同名(细粒度值只活在 geo 块里)。
+
+GEO_PRESENCE = ("refused", "no_answer", "echo_only", "brand_absent",
+                "name_only_mention", "cited_brand")
+GEO_RECOMMENDATIONS = ("top_pick", "recommended", "honorable_mention",
+                       "neutral", "discouraged", "absent")
+GEO_RISKS = ("outdated_info", "factual_error", "brand_confusion",
+             "negative_association", "missing_from_response")
+GEO_KEYS = ("geo_score", "presence", "position", "sentiment",
+            "recommendation", "competitors", "risks")
+GEO_POSITION_KEYS = ("absolute_rank", "mentions", "first_occurrence_pct")
+GEO_COMPETITOR_KEYS = ("brand", "absolute_rank", "mentions", "sentiment")
+GEO_ABSENT_PRESENCE = ("refused", "no_answer", "brand_absent")  # 缺席不打分 → geo_score=null
+GEO_SCORED_PRESENCE = ("name_only_mention", "cited_brand")      # 应产出数值 geo_score
+GEO_PRESENCE_TO_STATE = {"refused": "no_answer", "echo_only": "brand_absent"}  # 其余同名
+# rubric 第四节硬 cap(封顶不是扣分,多条命中取最严)
+GEO_CAP_SINGLE_MENTION = 50          # 仅 1 次提及
+GEO_CAP_ECHO_ONLY = 10               # 只出现在问题/回声里
+GEO_CAP_COMPARATIVE_NEGATIVE = 35    # 对比性负面(机检代理: discouraged 或 sentiment≤20)
+GEO_ANTI_INFLATION_MEAN = 75         # 反通胀提示线(rubric 九节: LLM 系统性打高分)
+GEO_SCORE_BANDS = ((0, 35), (36, 55), (56, 75), (76, 100))
+# 分布档含义(rubric 锚点带): 0-35=硬 cap 区(单提及/负面/回声)/36-55=平均列名带/
+# 56-75=正向无最高级/76-100=最高级与强推荐带
+
+GEO_RUBRIC_DIGEST = """== geo-scoring-rubric 压缩判定要点(代码内常量,standalone;全文见 references/content/geo-scoring-rubric.md) ==
+质量闸(先过闸再打分): refusal/no_answer → 不打分(presence=refused/no_answer;面板 state=no_answer);
+  echo_only(品牌只出现在复述问题的回声句,论证部分零出现)→ 不算提及(presence=echo_only;面板 mentioned=0/state=brand_absent)。
+五维加权(各维 0-100): A 覆盖 25%(纯列名 20/单属性 40/2-3 属性 60/多属性+事实 80/专属小节 100)
+  B 首现位置 25%(全文绝对排名映射 #1→100/#2→85/#3→70/#4→55/#5→40/#6+→30;子类目第 1 ≠ 全文第 1)
+  C 结构显著性 20%(标题级 100/列表表格条目 80/段首或表列名 60/行文中段 40/长段深处 20)
+  D 频次 15%(1 次=30/2-3 次=55/4-5 次=75/≥6 次=90;回声不计入)
+  E 语境角色 15%(明确推荐 100/对比胜出 80/中立并列 60/仅反例 40/被警告 20/被劝退 0)
+硬 cap 表(加权分先过这张表;封顶不是扣分,多条命中取最严): 仅 1 次提及 ≤50;只出现在回声里 ≤10;对比性负面 ≤35。
+情感校准(决策树自上而下): 显式最高级词 → 81-100(没有 → 封顶 79);同屏 pro+con → ≤79;
+  纯列表无评价词 → 50-55;负向主导 → 21-45(明确劝退 0-20);"贵"单独出现按混合 21-45。
+recommendation 六级: top_pick=全文绝对 #1+显式最高级措辞(缺一降级)/recommended(入围推荐非首选)/
+  honorable_mention(列名无评语)/neutral(并列中性)/discouraged(上榜但负面或被劝退)/absent(未被提及,含 echo_only)。
+竞品去重: 子产品先并入父品牌再排名(位次取各子产品最早,情感按提及次数加权平均);去重先于排名编号。
+反通胀纪律: LLM 打分系统性偏高——"pretty good/decent"落 61-75 不是 80+;平均列名 45-55 不是 70+;
+  情感 81+ 必须有原文显式最高级词;一批大多 70+ → 回锚点重校,不顺手下调。
+risks 五型枚举: outdated_info/factual_error/brand_confusion/negative_association/missing_from_response。
+缺席不打分: refused/no_answer/echo_only/brand_absent → geo_score=null 不入任何均值;failed cell 不打分不入分母;
+  单次打分=掷硬币,prompt 级结论取 3 次采样多数档,分歧大标 unstable。"""
+
+
+def _geo_num(v, field, prompt, errors):
+    """数值字段提取(bool/str 拒绝——schema 要数值)。失败记 error 并返回 None。"""
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        errors.append("%s: %s 需要数值,得到 %r" % (prompt, field, v))
+        return None
+    return float(v)
+
+
+def _geo_clamp(val, lo, hi, field, prompt, warnings):
+    """越界值拉回 [lo,hi](hi=None 只限下界)+ 警告(越界 clamp,不整条拒绝)。"""
+    if val < lo:
+        warnings.append("%s: %s=%s 越界,已 clamp 到 %s" % (prompt, field, val, lo))
+        return float(lo)
+    if hi is not None and val > hi:
+        warnings.append("%s: %s=%s 越界,已 clamp 到 %s" % (prompt, field, val, hi))
+        return float(hi)
+    return val
+
+
+def validate_geo(geo, prompt, cell, errors, warnings):
+    """geo-scoring-rubric 硬规则机检(防 agent 打分违例)。硬违例记 errors(调用方
+    整批原子拒绝不落盘);可机修项(硬 cap 封顶/越界 clamp/top_pick 缺佐证降级/
+    缺席置 null)记 warnings 后照常落盘。返回规范化 geo 块(errors 非空时返回 None)。"""
+    if not isinstance(geo, dict):
+        errors.append("%s: geo 块需要 {geo_score,presence,...} 对象,得到 %r" % (prompt, geo))
+        return None
+    unknown = sorted(set(geo) - set(GEO_KEYS))
+    if unknown:
+        errors.append("%s: 未知字段 %s(schema 白名单: %s)"
+                      % (prompt, ",".join(unknown), ",".join(GEO_KEYS)))
+    if cell.get("state") == "failed":
+        errors.append("%s: 该 cell state=failed,不打分不入分母(rubric 十二节)" % prompt)
+        return None
+    presence = geo.get("presence")
+    if presence not in GEO_PRESENCE:
+        errors.append("%s: presence=%r 不在枚举 %s" % (prompt, presence, list(GEO_PRESENCE)))
+    rec = geo.get("recommendation")
+    if rec not in GEO_RECOMMENDATIONS:
+        errors.append("%s: recommendation=%r 不在六枚举 %s"
+                      % (prompt, rec, list(GEO_RECOMMENDATIONS)))
+    risks_in = geo.get("risks")
+    risks = []
+    if risks_in is not None:
+        if not isinstance(risks_in, list):
+            errors.append("%s: risks 需要 list,得到 %r" % (prompt, risks_in))
+        else:
+            for rk in risks_in:
+                if rk not in GEO_RISKS:
+                    errors.append("%s: risks=%r 不在五型枚举 %s"
+                                  % (prompt, rk, list(GEO_RISKS)))
+                elif rk in risks:
+                    warnings.append("%s: risks 重复项 %s 已去重" % (prompt, rk))
+                else:
+                    risks.append(rk)
+    # position(可缺;字段白名单 + 越界 clamp)
+    pos_out, pos_mentions = None, None
+    pos = geo.get("position")
+    if pos is not None:
+        if not isinstance(pos, dict):
+            errors.append("%s: position 需要对象,得到 %r" % (prompt, pos))
+        else:
+            p_unknown = sorted(set(pos) - set(GEO_POSITION_KEYS))
+            if p_unknown:
+                errors.append("%s: position 未知字段 %s(白名单: %s)"
+                              % (prompt, ",".join(p_unknown), ",".join(GEO_POSITION_KEYS)))
+            else:
+                pos_out = {}
+                if pos.get("absolute_rank") is not None:
+                    v = _geo_num(pos["absolute_rank"], "position.absolute_rank", prompt, errors)
+                    if v is not None:
+                        pos_out["absolute_rank"] = int(round(_geo_clamp(
+                            v, 1, None, "position.absolute_rank", prompt, warnings)))
+                if pos.get("mentions") is not None:
+                    v = _geo_num(pos["mentions"], "position.mentions", prompt, errors)
+                    if v is not None:
+                        pos_mentions = int(round(_geo_clamp(
+                            v, 0, None, "position.mentions", prompt, warnings)))
+                        pos_out["mentions"] = pos_mentions
+                if pos.get("first_occurrence_pct") is not None:
+                    v = _geo_num(pos["first_occurrence_pct"], "position.first_occurrence_pct",
+                                 prompt, errors)
+                    if v is not None:
+                        pos_out["first_occurrence_pct"] = int(round(_geo_clamp(
+                            v, 0, 100, "position.first_occurrence_pct", prompt, warnings)))
+    # sentiment(可缺;0-100 clamp)
+    sent = None
+    if geo.get("sentiment") is not None:
+        v = _geo_num(geo["sentiment"], "sentiment", prompt, errors)
+        if v is not None:
+            sent = int(round(_geo_clamp(v, 0, 100, "sentiment", prompt, warnings)))
+    # competitors(可缺;brand 必填,字段白名单 + clamp)
+    comps_out = None
+    comps = geo.get("competitors")
+    if comps is not None:
+        if not isinstance(comps, list):
+            errors.append("%s: competitors 需要 list,得到 %r" % (prompt, comps))
+        else:
+            comps_out = []
+            for c in comps:
+                if not isinstance(c, dict) or not str(c.get("brand") or "").strip():
+                    errors.append("%s: competitor 条目需要非空 brand,得到 %r" % (prompt, c))
+                    continue
+                c_unknown = sorted(set(c) - set(GEO_COMPETITOR_KEYS))
+                if c_unknown:
+                    errors.append("%s: competitor(%s)未知字段 %s(白名单: %s)"
+                                  % (prompt, c["brand"], ",".join(c_unknown),
+                                     ",".join(GEO_COMPETITOR_KEYS)))
+                    continue
+                cc = {"brand": str(c["brand"]).strip()}
+                if c.get("absolute_rank") is not None:
+                    v = _geo_num(c["absolute_rank"], "competitor.absolute_rank", prompt, errors)
+                    if v is not None:
+                        cc["absolute_rank"] = int(round(_geo_clamp(
+                            v, 1, None, "competitor.absolute_rank", prompt, warnings)))
+                if c.get("mentions") is not None:
+                    v = _geo_num(c["mentions"], "competitor.mentions", prompt, errors)
+                    if v is not None:
+                        cc["mentions"] = int(round(_geo_clamp(
+                            v, 0, None, "competitor.mentions", prompt, warnings)))
+                if c.get("sentiment") is not None:
+                    v = _geo_num(c["sentiment"], "competitor.sentiment", prompt, errors)
+                    if v is not None:
+                        cc["sentiment"] = int(round(_geo_clamp(
+                            v, 0, 100, "competitor.sentiment", prompt, warnings)))
+                comps_out.append(cc)
+    # geo_score: null=缺席不打分;数值 0-100 clamp 后过 rubric 第四节硬 cap 表
+    gs = geo.get("geo_score")
+    if isinstance(gs, bool) or not (gs is None or isinstance(gs, (int, float))):
+        errors.append("%s: geo_score 需要数值或 null,得到 %r" % (prompt, gs))
+        gs = None
+    elif gs is not None:
+        gs = _geo_clamp(float(gs), 0, 100, "geo_score", prompt, warnings)
+    if presence in GEO_ABSENT_PRESENCE and gs is not None:
+        warnings.append("%s: presence=%s 缺席不打分,geo_score=%s 已置 null(rubric 十一节)"
+                        % (prompt, presence, gs))
+        gs = None
+    if gs is None and presence in GEO_SCORED_PRESENCE:
+        warnings.append("%s: presence=%s 应产出数值 geo_score,得到 null(rubric 十一节)"
+                        % (prompt, presence))
+    if gs is not None:
+        caps = []
+        if pos_mentions == 1:
+            caps.append((GEO_CAP_SINGLE_MENTION, "仅 1 次提及"))
+        if presence == "echo_only":
+            caps.append((GEO_CAP_ECHO_ONLY, "只出现在问题/回声里"))
+        if rec == "discouraged" or (sent is not None and sent <= 20):
+            caps.append((GEO_CAP_COMPARATIVE_NEGATIVE,
+                         "对比性负面提及(discouraged 或 sentiment≤20)"))
+        for cap, why in sorted(caps, key=lambda x: x[0]):    # 多条命中取最严
+            if gs > cap:
+                warnings.append("%s: geo_score=%d 违反硬 cap(%s → ≤%d),已封顶到 %d"
+                                "(cap 是封顶不是扣分)" % (prompt, gs, why, cap, cap))
+                gs = cap
+    # top_pick 佐证机检: 必须有 position 绝对排名 #1,否则降 honorable_mention
+    if rec == "top_pick" and (pos_out is None or pos_out.get("absolute_rank") != 1):
+        warnings.append("%s: top_pick 无 position 绝对排名 #1 佐证,已降级 honorable_mention"
+                        "(rubric 七节: 全文绝对 #1+显式最高级,缺佐证不认)" % prompt)
+        rec = "honorable_mention"
+    if rec == "absent" and presence in GEO_SCORED_PRESENCE:
+        warnings.append("%s: presence=%s 已被提及但 recommendation=absent(复核;"
+                        "未提及/echo_only 才记 absent)" % (prompt, presence))
+    # presence ↔ 面板 state 映射软校验(refused→no_answer,echo_only→brand_absent)
+    if presence in GEO_PRESENCE:
+        expected = GEO_PRESENCE_TO_STATE.get(presence, presence)
+        if cell.get("state") and cell["state"] != expected:
+            warnings.append("%s: presence=%s 按映射应对应 state=%s,该 cell 实为 state=%s"
+                            "(复核采集列与打分是否同一 cell)"
+                            % (prompt, presence, expected, cell["state"]))
+    if errors:
+        return None
+    out = {"geo_score": (int(gs) if gs is not None else None), "presence": presence}
+    if pos_out is not None:
+        out["position"] = pos_out
+    if sent is not None:
+        out["sentiment"] = sent
+    out["recommendation"] = rec
+    if comps_out is not None:
+        out["competitors"] = comps_out
+    if risks:
+        out["risks"] = risks
+    return out
+
+
+def load_scores(path):
+    """scores.json → {prompt: geo 块}。支持 {prompt: {...geo...}} 对象形态与
+    [{"prompt": ..., **geo}] 列表形态(prompt 是包装字段,不进 geo 块)。"""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    if isinstance(data, dict):
+        return {str(k): v for k, v in data.items()}
+    if isinstance(data, list):
+        out = {}
+        for e in data:
+            if not isinstance(e, dict) or "prompt" not in e:
+                raise ValueError("scores 列表项需要 prompt 字段: %r" % (e,))
+            out[str(e["prompt"])] = {k: v for k, v in e.items() if k != "prompt"}
+        return out
+    raise ValueError("scores.json 需为 {prompt: geo} 对象或带 prompt 字段的对象列表")
+
+
+def cmd_score(args):
+    if args.rubric:
+        print(GEO_RUBRIC_DIGEST)
+        return 0
+    if args.last and args.run:
+        print("错误: --run 与 --last 二选一", file=sys.stderr)
+        return 1
+    if not args.scores:
+        print("错误: score 需要 --scores scores.json(或单独 --rubric 打印判定要点)",
+              file=sys.stderr)
+        return 1
+    if not args.run and not args.last:
+        print("错误: score 需要 --run RUNID 或 --last 指定目标 run", file=sys.stderr)
+        return 1
+    panel = load_panel(args.panel)
+    if not panel.get("runs"):
+        print("错误: 面板尚无 runs,先 record 录入采样: %s" % args.panel, file=sys.stderr)
+        return 1
+    if args.last:
+        run = panel["runs"][-1]              # 最近一条(append 序=时间序)
+    else:
+        run = next((r for r in panel["runs"] if r.get("run_id") == args.run), None)
+        if run is None:
+            print("错误: 面板内找不到 run_id=%s" % args.run, file=sys.stderr)
+            return 1
+    run_id = run.get("run_id")
+    try:
+        scores = load_scores(args.scores)
+    except (OSError, ValueError) as e:
+        print("错误: 读取 scores 失败: %s" % e, file=sys.stderr)
+        return 1
+    if not scores:
+        print("错误: %s 中没有打分条目" % args.scores, file=sys.stderr)
+        return 1
+    errors, warnings, cleaned = [], [], {}
+    for prompt, geo in scores.items():
+        cell = run.get("results", {}).get(prompt)
+        if cell is None:
+            errors.append("%s: 不在 run %s 的 results 中(prompt 需与采样 prompt 一致)"
+                          % (prompt, run_id))
+            continue
+        c = validate_geo(geo, prompt, cell, errors, warnings)
+        if c is not None:
+            cleaned[prompt] = c
+    if errors:                               # 原子拒绝: 有硬违例整批不落盘(防半写)
+        print("错误: %d 条硬违例,整批拒绝未写回(修正 scores.json 后重跑):"
+              % len(errors), file=sys.stderr)
+        for e in errors:
+            print("  [reject] %s" % e, file=sys.stderr)
+        return 1
+    rescored = sum(1 for p in cleaned if "geo" in run["results"][p])
+    for prompt, c in cleaned.items():
+        run["results"][prompt]["geo"] = c
+    save_panel(args.panel, panel)
+    rpath = os.path.join(runs_dir_for(args.panel), run_id + ".json")
+    with open(rpath, "w", encoding="utf-8") as f:      # 与 record 同步双写 run 文件
+        json.dump(run, f, ensure_ascii=False, indent=2)
+    null_n = sum(1 for c in cleaned.values() if c["geo_score"] is None)
+    print("geo 打分已写回 run %s: %d/%d 条(缺席 null=%d,重打 %d)→ %s"
+          % (run_id, len(cleaned), len(run["results"]), null_n, rescored, rpath))
+    for w in warnings:
+        print("  [!] %s" % w)
+    vals = [c["geo_score"] for c in cleaned.values() if c["geo_score"] is not None]
+    if vals:
+        mean = sum(vals) / len(vals)
+        print("  本 run geo_score 均值=%.1f(scored=%d;null 缺席不入均值)" % (mean, len(vals)))
+        if mean > GEO_ANTI_INFLATION_MEAN:
+            print("  [!] 均值>75: LLM 系统性打高分,复核是否虚高(rubric 反通胀纪律)")
+    return 0
+
+
+def aggregate_geo(panel, engine=None):
+    """geo 扩展键聚合(rubric 输出层)。按引擎分列——跨引擎不合并是既定纪律
+    (与 decay 脚注同源: 跨引擎相关仅 0.03-0.09)。geo_score=null(缺席)与无 geo
+    键的旧 result 不入任何均值(缺席不是 0 分回答,是没有可打分的呈现)。"""
+    per_engine = {}
+    for run in panel.get("runs", []):
+        if engine and run["engine"] != engine:
+            continue
+        agg = per_engine.setdefault(run["engine"], {"cells": 0, "scores": [],
+                                                    "presence": Counter(),
+                                                    "recommendation": Counter()})
+        for r in run.get("results", {}).values():
+            geo = r.get("geo")
+            if not isinstance(geo, dict):
+                continue
+            agg["cells"] += 1
+            agg["presence"][geo.get("presence", "(缺 presence)")] += 1
+            if geo.get("recommendation"):
+                agg["recommendation"][geo["recommendation"]] += 1
+            gs = geo.get("geo_score")
+            if isinstance(gs, (int, float)) and not isinstance(gs, bool):
+                agg["scores"].append(float(gs))
+    return {e: a for e, a in per_engine.items() if a["cells"]}
+
+
+def render_geo_section(panel, engine=None):
+    """report 的 geo 聚合节;无任何 geo 键时返回 [](旧面板整节不出现,向后兼容)。
+    均值>75 → 反通胀提示行(rubric 九节: LLM 系统性打高分)。"""
+    geo = aggregate_geo(panel, engine)
+    if not geo:
+        return []
+    L = ["-- GEO 打分聚合(geo-scoring-rubric 写回;按引擎分列不合并;null 缺席不入均值)--"]
+    for eng in sorted(geo):
+        agg = geo[eng]
+        pres = ", ".join("%s=%d" % (p, agg["presence"][p])
+                         for p in GEO_PRESENCE if agg["presence"].get(p))
+        L.append("  %-12s geo cells=%d scored=%d presence: %s"
+                 % (eng, agg["cells"], len(agg["scores"]), pres or "(无)"))
+        if agg["scores"]:
+            mean = sum(agg["scores"]) / len(agg["scores"])
+            bands = [0] * len(GEO_SCORE_BANDS)
+            for s in agg["scores"]:
+                for i, (lo, hi) in enumerate(GEO_SCORE_BANDS):
+                    if s <= hi or i == len(GEO_SCORE_BANDS) - 1:
+                        bands[i] += 1
+                        break
+            L.append("    geo_score 均值=%.1f 分布: %s" % (
+                mean, " ".join("%d-%d:%d" % (lo, hi, bands[i])
+                               for i, (lo, hi) in enumerate(GEO_SCORE_BANDS))))
+            if mean > GEO_ANTI_INFLATION_MEAN:
+                L.append("    [!] 均值>75: LLM 系统性打高分,复核是否虚高(rubric 反通胀纪律)")
+        recs = ", ".join("%s=%d" % (r, agg["recommendation"][r])
+                         for r in GEO_RECOMMENDATIONS if agg["recommendation"].get(r))
+        if recs:
+            L.append("    recommendation: %s" % recs)
+    L.append("  [i] geo 是分析层扩展键: 不进 coverage/share/diff/signals 口径"
+             "(采集层只读 state/mentioned/cited;diff 不因 geo 键变化触发信号)")
+    return L
+
+
 # ---------- CLI / 自测 ----------
 
 def build_parser():
@@ -1076,6 +1472,17 @@ def build_parser():
     p.add_argument("--json", action="store_true", help="输出 JSON(默认 markdown)")
     p.add_argument("--panel", default="panel.json")
     p.set_defaults(func=cmd_decay)
+    p = sub.add_parser(
+        "score", help="geo 打分写回(geo-scoring-rubric;校验后写 results.<prompt>.geo)")
+    p.add_argument("--run", default="", help="目标 run_id(与 --last 二选一)")
+    p.add_argument("--last", action="store_true", help="写回最近一条 run")
+    p.add_argument("--scores", default="",
+                   help="scores.json: {prompt: {geo_score,presence,position,sentiment,"
+                        "recommendation,competitors,risks}}(agent 按 rubric 打好的分)")
+    p.add_argument("--rubric", action="store_true",
+                   help="打印 rubric 压缩判定要点后退出(代码内常量,不读 md,standalone)")
+    p.add_argument("--panel", default="panel.json")
+    p.set_defaults(func=cmd_score)
     return ap
 
 
@@ -1200,9 +1607,47 @@ def _self_test():
     assert st2["source_visibility"] is not None and st2["answers"] == 7
     st3 = compute_stats({**panel, "competitors": ["other.org"]})
     assert abs(st3["sov"] - 3 / (3 + 1)) < 1e-9   # other.org 在 1 个 cell 被引 → 3/4
+
+    # ---- geo 打分写回(详细用例见 tests/test_geo_writeback.py) ----
+    errs, warns = [], []
+    g = validate_geo({"geo_score": 72, "presence": "name_only_mention",
+                      "position": {"absolute_rank": 2, "mentions": 1,
+                                   "first_occurrence_pct": 40},
+                      "sentiment": 60, "recommendation": "recommended"},
+                     "P1", {"state": "name_only_mention"}, errs, warns)
+    assert g["geo_score"] == 50 and not errs       # 仅 1 次提及 → 硬 cap≤50 封顶
+    g = validate_geo({"geo_score": 45, "presence": "echo_only",
+                      "recommendation": "absent"}, "P2", {"state": "brand_absent"},
+                     errs, warns)
+    assert g["geo_score"] == 10                    # echo_only → 硬 cap≤10
+    g = validate_geo({"geo_score": 90, "presence": "cited_brand", "sentiment": 85,
+                      "position": {"absolute_rank": 3, "mentions": 4},
+                      "recommendation": "top_pick"}, "P3", {"state": "cited_brand"},
+                     errs, warns)
+    assert g["recommendation"] == "honorable_mention"   # top_pick 无 #1 佐证 → 降级
+    g = validate_geo({"geo_score": 88, "presence": "cited_brand", "sentiment": 90,
+                      "position": {"absolute_rank": 1, "mentions": 3},
+                      "recommendation": "top_pick"}, "P4", {"state": "cited_brand"},
+                     errs, warns)
+    assert g["recommendation"] == "top_pick" and g["geo_score"] == 88   # 有佐证不降级
+    assert validate_geo({"geo_score": 50, "presence": "cited_brand",
+                         "recommendation": "neutral", "extra": 1},
+                        "PX", {"state": "cited_brand"}, errs, []) is None
+    assert errs and "未知字段" in errs[-1]         # 白名单外字段 → 硬拒绝
+    geo_run = {"engine": "chatgpt", "results": {
+        "a": {"state": "cited_brand", "mentioned": 1, "cited": 1, "cited_urls": [],
+              "geo": {"geo_score": 80, "presence": "cited_brand",
+                      "recommendation": "top_pick"}},
+        "b": {"state": "brand_absent", "mentioned": 0, "cited": 0, "cited_urls": [],
+              "geo": {"geo_score": None, "presence": "brand_absent",
+                      "recommendation": "absent"}}}}
+    sec = render_geo_section({"runs": [geo_run]})
+    assert any("geo cells=2 scored=1" in x for x in sec) and any("均值=80.0" in x for x in sec)
+    assert any("反通胀" in x for x in sec)         # 均值>75 → 反通胀提示行
     print("[self-test] PASS citation_panel(9 cells, coverage=62.5%, share=60.0%, "
           "wilson unstable 案例, 配对 diff, cited/mentioned 纠正; "
-          "v2: prompts 对象化/signals/decay 半衰/指标族)")
+          "v2: prompts 对象化/signals/decay 半衰/指标族; "
+          "v3: geo 写回/硬 cap 机检/top_pick 佐证降级/反通胀聚合)")
 
 
 def main(argv=None):
