@@ -1,6 +1,9 @@
 ---
 name: seo-suite
 description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SERP 分析、内容缺口、竞品与替代方案页规划、内容与标题描述优化、AI 搜索可见度(GEO)、技术审计、Schema、内链与架构、实体信号、Programmatic SEO、Core Web Vitals、归因埋点、排名监控、外链分析、报告。先统一 intake,再按 overview/research/content/technical/monitoring 路由;每个任务先定市场(18 个语言市场)。Use for SEO, GEO / AI search visibility, keyword research, SERP analysis, content optimization, technical SEO audits, schema markup, internal linking, site architecture, programmatic SEO, Core Web Vitals, rank tracking, backlink analysis, SEO reporting, llms.txt, AI crawler robots.txt policy, hreflang and international SEO, global market-by-market SEO (Yandex Russia, Naver Korea, Yahoo Japan, es-419 LatAm, pt-BR, Arabic RTL, Bill 96, DACH Sie/du, Indonesian baku/gaul, Hinglish), video SEO, image and visual search, Google Discover and news SEO, ecommerce GEO ladder, algorithm-update attribution, local SEO by vertical. Not for paid ads management or non-search content writing.
+metadata:
+  adapted-hosts: claude-code, codex, cursor, copilot, gemini-cli, windsurf, goose, amp, kiro, zcode
+  install: https://github.com/everyinfra/seo-skills#安装
 ---
 
 # SEO Suite
@@ -167,6 +170,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - [目录提交引擎](references/research/directory-submissions.md)：九问就绪闸门、13 层目录结构、追踪 CSV、反虚荣 KPI
 #### 竞品全景（landscape）
 - [竞品全景](references/research/competitive-landscape.md)：五类形态(企业闭源/主流 SaaS/内容工作台/GEO 创业/开源)的功能设计与打分口径速查、2025-2026 行业共识数据(AIO 点击影响/llms.txt 裁决/AI 归因)、20 项借鉴清单(含现状对照)——做方案对比、选型建议、向管理层论证时引用
+- [借鉴实施规格库](references/research/borrow-specs.md)：竞品深读后的**施工图**——health_score/content_score/fix_plan/forecast/prioritize/citation decay 的公式与字段、SF/Sitebulb 文案结构、27 bot 名单、Conductor 告警模型、monitor 缺口清单;开发新脚本或扩展现有脚本前先查此库
 
 
 ### content

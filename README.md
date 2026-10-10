@@ -4,7 +4,7 @@
 
 **免费下载，用你自己的 AI 工具和模型。**
 
-EveryInfra SEO Skills 的版本为 `0.32.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+EveryInfra SEO Skills 的版本为 `0.33.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
 
 **独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十几个单市场工具——本套件把 **18 个语言市场**放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、英文、俄语区（Yandex/Alice）、韩语区（Naver/AI Briefing）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）、印地语（Hinglish 三种书写）、意大利语（it-CH 独立 locale）、土耳其语（第二个 Yandex 市场，~26%）、越南语（有调/无调+Coc Cốc）、泰语（无空格分词）、波兰语（变音符规范化）、荷兰语（nl-NL/nl-BE 弗拉芒）。**全球能力不做成独立模块，而是融入五类能力文件的每一类**——主干是 `overview/multilingual-workflow.md`（市场总表、逐市场工具栈、语言规范、合规速查）。
 
@@ -85,7 +85,15 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 ## 安装
 
-先获取本仓库：在 GitHub 仓库页面用 **Code → Download ZIP** 下载并解压，或者克隆：
+**一行安装（推荐，自动检测已装的宿主并逐一适配）**：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
+```
+
+真源装到 `~/.agents/skills/seo-suite`（Codex/Cursor/Gemini CLI/Goose/Amp/Copilot/ZCode 直读），并向检测到的宿主（Claude Code/Windsurf/Kiro 等）建 symlink；`--all` 装全部、`--agent` 指定、`--uninstall` 卸载。各宿主的调用与验证方式见 [HOSTS.md](HOSTS.md)。
+
+手动方式: 在 GitHub 仓库页面用 **Code → Download ZIP** 下载并解压，或者克隆：
 
 ```bash
 git clone https://github.com/everyinfra/seo-skills.git
@@ -93,9 +101,9 @@ git clone https://github.com/everyinfra/seo-skills.git
 
 下面的命令假设仓库目录名是 `seo-skills`；用 ZIP 解压时目录名可能是 `seo-skills-main`，替换成实际目录即可。
 
-### Claude Code / ZCode：Plugin 一条命令（推荐）
+### Claude Code / ZCode：Plugin 一条命令
 
-本仓库自带 Plugin/Marketplace 清单（`.claude-plugin/`），支持一条命令安装与更新：
+本仓库自带 Plugin/Marketplace 清单（`.claude-plugin/` 与 `.zcode-plugin/`），支持一条命令安装与更新：
 
 ```bash
 claude plugin marketplace add everyinfra/seo-skills
@@ -127,7 +135,7 @@ cp -R seo-skills/skills/seo-suite ~/.claude/skills/
 
 在 Claude Code 中用 `/seo-suite` 调用，或直接描述 SEO 任务，由 Claude Code 按 Skill 描述选用。
 
-其他兼容 Skill 的工具，把同一个文件夹放到该工具文档说明的 Skill 目录即可。参考：[Build skills — Codex](https://developers.openai.com/codex/build-skills) · [Extend Claude with skills](https://code.claude.com/docs/en/skills)
+其他兼容 Skill 的工具（Cursor/VS Code Copilot/Gemini CLI/Windsurf/Goose/Amp/Kiro 等）的目录与调用对照见 [HOSTS.md](HOSTS.md)。参考：[Build skills — Codex](https://developers.openai.com/codex/build-skills) · [Extend Claude with skills](https://code.claude.com/docs/en/skills)
 
 ## 目录结构
 

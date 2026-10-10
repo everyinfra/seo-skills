@@ -24,3 +24,5 @@ node_modules/
 .seo-monitor-*/
 .intel-state.json
 skills/seo-suite/.intel-state.json
+# research clones (never commit)
+claude-seo/

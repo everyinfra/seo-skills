@@ -3,6 +3,14 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.33.0 - 2026-10-10
+
+- **13 agent 竞品深读 + 多宿主适配**:
+  - **多宿主适配(用户点名)**:SKILL.md 本体零适配(Agent Skills 开放标准);install.sh 重写为**多宿主安装器**(真源 ~/.agents/skills + 向检测到的宿主建 symlink;--all/--agent/--uninstall;每宿主打印验证方式);新建 **HOSTS.md**(10 宿主适配矩阵:目录/调用/验证/注意事项);`.zcode-plugin/plugin.json` 薄清单(ZCode 原生插件形态);SKILL.md 加标准 `metadata.adapted-hosts`(全宿主安全的自定义位);README 安装节重写;
+  - **新 references/research/borrow-specs.md(实施规格库)**:13 agent 深读的施工图——Lumar 六大类树+Ahrefs 主分公式+Ryte impact 排序(health_score)/SF 320 条 issue 矩阵+Sitebulb 九节文案结构(规则解释层)/Semrush 8 bot+183 天阈值(AI Search Health)/Profound citation decay 官方方法论(半衰期 11 天/四道闸门/重写队列)/citation_gaps 算法/prompt 库三维框架+fanout 六类型/五维打分+硬 cap/Peec SoV·win rate 公式/Athena Oracle/MarketMuse 计分公式+意图系数表/content-brief 三段式字段/fix_plan 6 类 FixItem+27 bot 模板/seoClarity 六步 forecast/Botify 条件规则/Conductor 告警 5 参数模型+monitor 14 条缺口清单/LHCI 断言 schema/凭证分层+doctor+redact/可证伪 4 字段/过时信号全表+test_canonical_facts 机制/数据源标注五段合同/Brand Records 六记录/Rankscale grounding page 11 条;
+  - 修正:claude-seo 实测 35 命令(文档 34)/seranking 161★(agent 初报夸大)/本机 ~/.agents 安装副本为无脚本旧版(待刷新);
+  - install.sh 修 bash3.2 local 展开序 bug;bash -n+--dry-run 实测通过。
+
 ## 0.32.0 - 2026-10-10
 
 - **竞品全景调研(6 agent 并行) + Plugin/Marketplace 打包 + intel_check 抖动抑制**:
