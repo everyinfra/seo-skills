@@ -11,16 +11,25 @@
   - 无 referrer 请求数 → 提示:App 内打开常不带 referrer,测得的是下界
   - --bot-ua:同时统计 AI 爬虫 UA(GPTBot / OAI-SearchBot / ChatGPT-User /
     ClaudeBot / Claude-SearchBot / PerplexityBot)的到访(先行指标:先爬后引)
+  - --classify:bot 四桶分类(Profound/Otterly/Peec 三家口径合并)——
+    on_demand_fetcher / search_index / training / agent_visits(宽匹配)/
+    unclassified(未知 UA 单列);KPI 扩展:failure_rate(4xx+5xx 占比,按 bot 与
+    按桶两级)+ 每桶访问数 Top URL + bot×status 矩阵 + llms.txt 双基线
+    (Otterly 90 天实验参考值)+ retrieval vs training 分层结论
+  - --attribution:归因工具箱输出——GA4 custom channel 正则(锚定官方域名)+
+    三条纪律注记 + "自报归因"问卷模板两问
 
-combined 格式:
-  IP - user [time] "METHOD path HTTP/x" status bytes "referer" "user-agent"
+日志格式:combined(CLF)或每行一个 JSON 对象
+  (path/uri/url、status/status_code、user_agent/ua、referer/referrer 等常见键名)。
 
 用法:
   cat access.log | python3 ai_referral_log.py
-  python3 ai_referral_log.py access.log [--top 20] [--bot-ua]
+  python3 ai_referral_log.py access.log [--top 20] [--bot-ua] [--classify] [--attribution]
+  python3 ai_referral_log.py --attribution          # 只输出归因工具箱,无需日志
   python3 ai_referral_log.py --self-test
 """
 import argparse
+import json
 import re
 import sys
 import traceback
@@ -37,8 +46,105 @@ LOG_RE = re.compile(
 
 BOT_UA_RE = re.compile("|".join(re.escape(b) for b in BOT_UAS))
 
+# ---- bot 四桶分类(B5:Profound/Otterly/Peec 三家口径合并) ----
+# on_demand_fetcher:按用户请求实时抓取(AI 答案直接取材源)
+# search_index:AI 搜索/答案的专用索引爬虫(封 = 可见性失败)
+# training:基础模型训练(封 = 授权决策,不影响引用)
+# agent_visits:其余 AI agent UA 宽匹配;未知 UA 单列 unclassified
+BOT_TIERS = {
+    "on_demand_fetcher": ("ChatGPT-User", "Claude-User", "Perplexity-User",
+                          "Gemini-Deep-Research", "MistralAI-User", "Manus-User",
+                          "Meta-ExternalFetcher"),
+    "search_index": ("PerplexityBot", "OAI-SearchBot", "Claude-SearchBot",
+                     "AzureAI-SearchBot", "Amzn-SearchBot"),
+    "training": ("GPTBot", "ClaudeBot", "Claude-Web", "CCBot", "Google-Extended",
+                 "GoogleOther", "Bytespider", "DeepSeekBot", "GrokBot"),
+}
+TIER_ORDER = ("on_demand_fetcher", "search_index", "training",
+              "agent_visits", "unclassified")
+# 其余 AI agent UA token(宽匹配,不在显式三桶名单内)→ agent_visits
+AGENT_UA_TOKENS = ("Meta-ExternalAgent", "MistralAI-Index", "MistralAI-Training",
+                   "Amazonbot", "Applebot-Extended", "DuckAssistBot", "YouBot",
+                   "cohere-ai", "AI2Bot", "Diffbot", "Timpibot", "iaskspider",
+                   "omgili", "Google-CloudVertexBot", "Panscient",
+                   "VelenPublicWebCrawler", "Awakari")
+
+_BOT_TIER_OF = {b: t for t, bs in BOT_TIERS.items() for b in bs}
+_BOT_TOKEN_RE = re.compile("|".join(re.escape(b) for b in
+                                    sorted(_BOT_TIER_OF, key=len, reverse=True)))
+_AGENT_UA_RE = re.compile("|".join(re.escape(a) for a in
+                                   sorted(AGENT_UA_TOKENS, key=len, reverse=True)))
+
+
+def classify_ua(ua):
+    """UA → (命中的 token 或 None, 桶名)。显式映射优先,再 AI agent 宽匹配;
+    未命中 → unclassified。"""
+    if ua and ua != "-":
+        m = _BOT_TOKEN_RE.search(ua)
+        if m:
+            return m.group(0), _BOT_TIER_OF[m.group(0)]
+        m = _AGENT_UA_RE.search(ua)
+        if m:
+            return m.group(0), "agent_visits"
+    return None, "unclassified"
+
+
+# ---- 归因工具箱(B5:GA4 custom channel 正则锚定官方域名) ----
+ATTR_REFERRER_DOMAINS = ("chat.openai.com", "chatgpt.com", "perplexity.ai",
+                         "gemini.google.com", "copilot.microsoft.com", "claude.ai",
+                         "grok.com", "i.meta.ai")
+ATTR_SOURCE_REGEX = "|".join(d.replace(".", r"\.") for d in ATTR_REFERRER_DOMAINS)
+
+
+def _parse_json_line(line):
+    """每行一个 JSON 对象(path/uri/url、status/status_code、user_agent/ua、
+    referer/referrer 等常见键名,兼容 request 为字符串或对象)。缺 path/status → None。"""
+    s = line.strip()
+    if not s.startswith("{"):
+        return None
+    try:
+        obj = json.loads(s)
+    except ValueError:
+        return None
+    if not isinstance(obj, dict):
+        return None
+
+    def pick(*keys):
+        for k in keys:
+            v = obj.get(k)
+            if v not in (None, ""):
+                return v
+        return None
+
+    path = pick("path", "uri", "url")
+    req = obj.get("request")
+    if isinstance(req, dict):
+        path = path or req.get("path") or req.get("uri")
+    elif isinstance(req, str) and req.strip():
+        parts = req.split(" ")
+        path = path or (parts[1] if len(parts) >= 2 else parts[0])
+    if path is None:
+        return None
+    path = str(path)
+    if "://" in path:                       # 完整 url 形态 → 取 path 部分
+        tail = path.split("://", 1)[1]
+        path = "/" + tail.split("/", 1)[1] if "/" in tail else "/"
+    status = pick("status", "status_code", "response_status")
+    if status is None:
+        return None
+    return {"ip": str(pick("ip", "client_ip", "remote_addr") or "-"),
+            "ts": str(pick("time", "ts", "timestamp", "date") or "-"),
+            "path": path, "status": str(status),
+            "referer": str(pick("referer", "referrer", "http_referer") or "-"),
+            "ua": str(pick("user_agent", "ua", "agent", "http_user_agent") or "-")}
+
 
 def parse_line(line):
+    line = (line or "").strip()
+    if line.startswith("{"):
+        rec = _parse_json_line(line)
+        if rec:
+            return rec
     m = LOG_RE.match(line)
     if not m:
         return None
@@ -72,7 +178,13 @@ def analyze(lines, with_bots=False):
     stats = {d: {"hits": 0, "paths": Counter()} for d in AI_REFERRER_DOMAINS}
     all_paths = Counter()
     total = parsed = no_ref = 0
-    bots = {b: {"hits": 0, "ips": set(), "first": None, "last": None} for b in BOT_UAS}
+    # 显式名单全集(含旧 6 个,旧 --bot-ua 视图键恒在,向后兼容)
+    bots = {b: {"hits": 0, "ips": set(), "first": None, "last": None}
+            for bs in BOT_TIERS.values() for b in bs}
+    tiers = {t: {"hits": 0, "fail": 0, "paths": Counter()} for t in TIER_ORDER}
+    bot_rows = {}                      # token → 桶级行(hits/fail/statuses 矩阵)
+    llms = {"hits": 0, "bot_hits": 0}  # /llms.txt 请求(总/AI bot)
+    ai_bot_total = 0
     for line in lines:
         line = (line or "").rstrip("\n")
         if not line.strip():
@@ -90,20 +202,139 @@ def analyze(lines, with_bots=False):
         if dom:
             stats[dom]["hits"] += 1
             stats[dom]["paths"][rec["path"]] += 1
-        if with_bots:
-            m = BOT_UA_RE.search(rec["ua"])
-            if m:
-                b = m.group(0)
-                bots[b]["hits"] += 1
-                bots[b]["ips"].add(rec["ip"])
-                bots[b]["first"] = bots[b]["first"] or rec["ts"]
-                bots[b]["last"] = rec["ts"]
+        token, tier = classify_ua(rec["ua"])
+        code = rec["status"]
+        is_fail = code[:1] in ("4", "5")
+        tiers[tier]["hits"] += 1
+        tiers[tier]["paths"][rec["path"]] += 1
+        if is_fail:
+            tiers[tier]["fail"] += 1
+        if tier != "unclassified":
+            ai_bot_total += 1
+            row = bot_rows.setdefault(
+                token, {"tier": tier, "hits": 0, "fail": 0, "ips": set(),
+                        "first": None, "last": None, "statuses": Counter()})
+            row["hits"] += 1
+            row["statuses"][code] += 1
+            row["ips"].add(rec["ip"])
+            row["first"] = row["first"] or rec["ts"]
+            row["last"] = rec["ts"]
+            if is_fail:
+                row["fail"] += 1
+            if with_bots and token in bots:   # 旧 --bot-ua 视图数据
+                bots[token]["hits"] += 1
+                bots[token]["ips"].add(rec["ip"])
+                bots[token]["first"] = bots[token]["first"] or rec["ts"]
+                bots[token]["last"] = rec["ts"]
+        if rec["path"].split("?", 1)[0] == "/llms.txt":
+            llms["hits"] += 1
+            if tier != "unclassified":
+                llms["bot_hits"] += 1
     return {"total": total, "parsed": parsed, "no_ref": no_ref,
             "stats": stats, "all_paths": all_paths, "bots": bots,
-            "ai_total": sum(s["hits"] for s in stats.values())}
+            "ai_total": sum(s["hits"] for s in stats.values()),
+            "tiers": tiers, "bot_rows": bot_rows, "llms": llms,
+            "ai_bot_total": ai_bot_total,
+            "site_avg_per_page": (parsed / len(all_paths)) if all_paths else 0.0}
 
 
-def render(res, top=20, with_bots=False):
+def _rate(fail, hits):
+    return (100.0 * fail / hits) if hits else 0.0
+
+
+def render_classify(res, top=3):
+    """四桶 + failure_rate 两级 + 每桶 Top URL + bot×status 矩阵。"""
+    L = ["-- bot 四桶(Profound/Otterly/Peec 三家口径合并) --"]
+    for t in TIER_ORDER:
+        s = res["tiers"][t]
+        tops = " ".join("%s(%d)" % (p, c) for p, c in s["paths"].most_common(top))
+        L.append("  %-18s hits=%-6d fail(4xx+5xx)=%-5d failure=%5.1f%%  top: %s"
+                 % (t, s["hits"], s["fail"], _rate(s["fail"], s["hits"]),
+                    tops or "-"))
+    L.append("-- 按 bot 的 failure rate(4xx+5xx 占比) --")
+    rows = sorted(res["bot_rows"].items(), key=lambda kv: (-kv[1]["hits"], kv[0]))
+    for token, row in rows:
+        L.append("  %-22s [%s] hits=%-6d fail=%-5d failure=%5.1f%%"
+                 % (token, row["tier"], row["hits"], row["fail"],
+                    _rate(row["fail"], row["hits"])))
+    if not rows:
+        L.append("  [i] 未检出已知 AI bot UA(全部请求计入 unclassified)")
+    L.append("-- bot×status 矩阵 --")
+    if rows:
+        codes = sorted({c for r in res["bot_rows"].values() for c in r["statuses"]})
+        L.append("  %-22s %s  %5s"
+                 % ("bot", "  ".join("%5s" % c for c in codes), "total"))
+        for token, row in rows:
+            L.append("  %-22s %s  %5d"
+                     % (token,
+                        "  ".join("%5d" % row["statuses"].get(c, 0) for c in codes),
+                        row["hits"]))
+    else:
+        L.append("  [i] 无 AI bot 请求,矩阵为空")
+    return L
+
+
+def render_llms_baseline(res):
+    """llms.txt 双基线(Otterly 90 天实验口径);无 /llms.txt 请求时不输出。"""
+    if not res["llms"]["hits"]:
+        return []
+    pct = (100.0 * res["llms"]["bot_hits"] / res["ai_bot_total"]) \
+        if res["ai_bot_total"] else 0.0
+    return [
+        "-- llms.txt 双基线(Otterly 90 天实验口径) --",
+        "  /llms.txt 请求 %d(其中 AI bot %d;AI bot 请求合计 %d)"
+        % (res["llms"]["hits"], res["llms"]["bot_hits"], res["ai_bot_total"]),
+        "  基线 1: 占总 AI bot 请求 %.2f%%(实测参考值 0.1%%)" % pct,
+        "  基线 2: llms.txt %d 次 vs 站均页面访问 %.1f 次/页(参考值: 84 vs 265)"
+        % (res["llms"]["hits"], res["site_avg_per_page"]),
+        "  结论: llms.txt 是编程 agent 基础设施非可见性杠杆",
+    ]
+
+
+def render_policy(res):
+    """retrieval vs training 分层结论:封 training=授权决策([i] 只提示);
+    封 on_demand/search=可见性失败([!] WARN);显式分开。"""
+    t_tr = res["tiers"]["training"]
+    ret_hits = (res["tiers"]["on_demand_fetcher"]["hits"]
+                + res["tiers"]["search_index"]["hits"])
+    ret_fail = (res["tiers"]["on_demand_fetcher"]["fail"]
+                + res["tiers"]["search_index"]["fail"])
+    L = ["-- retrieval vs training: 封禁立场分层(显式分开) --",
+         "  [i] training 桶(GPTBot/ClaudeBot/Claude-Web/CCBot/Google-Extended/"
+         "GoogleOther/Bytespider/DeepSeekBot/GrokBot): 封=授权决策,只提示不告警"
+         "(当前 failure rate %.1f%%)" % _rate(t_tr["fail"], t_tr["hits"]),
+         "  [!] on_demand_fetcher + search_index 桶(AI 答案/引用直接取材源): "
+         "封=可见性失败 WARN",
+         "  [i] 封 GPTBot ≠ 封 ChatGPT 引用——引用走 OAI-SearchBot"]
+    if ret_fail:
+        L.append("  [!] WARN 实测: retrieval 层(on_demand+search)failure rate "
+                 "%.1f%%(%d/%d)= 事实上的可见性被封;排查 WAF/robots"
+                 % (_rate(ret_fail, ret_hits), ret_fail, ret_hits))
+    else:
+        L.append("  [i] retrieval 层 bot 当前干净(未观测到 4xx/5xx)")
+    return L
+
+
+def render_attribution():
+    """归因工具箱:GA4 custom channel 正则 + 三条纪律注记 + 自报归因问卷两问。"""
+    return [
+        "-- AI 归因工具箱(GA4 custom channel,可直接粘贴) --",
+        "  规则 1 referrer 匹配正则:",
+        "    " + ATTR_SOURCE_REGEX,
+        "  规则 2 source 匹配正则(utm_source 同名匹配,同域名单):",
+        "    " + ATTR_SOURCE_REGEX,
+        "  [纪律] AIO 点击 referrer=google.com 无法与自然结果区分,"
+        "用 Search Console 看侧影(AIO 曝光/点击)",
+        "  [纪律] 一切 AI referrer 数字当下限(App 内打开常不带 referrer)",
+        "  [纪律] 不要给入站 AI 链接发明 UTM(只认真实 utm/自报数据)",
+        "  [自报归因问卷] 首选补充,放注册/结账表单:",
+        "    Q1 从哪听说我们?(选项: ChatGPT/Claude/Perplexity/Gemini/Copilot/"
+        "Grok/搜索引擎/口碑推荐/其他)",
+        "    Q2 你问了 AI 什么?(自由文本,记录用户原 prompt)",
+    ]
+
+
+def render(res, top=20, with_bots=False, classify=False):
     L = ["== AI 引用流量日志分析 =="]
     L.append("日志行 %d | 可解析 %d | 无 referrer %d"
              % (res["total"], res["parsed"], res["no_ref"]))
@@ -135,6 +366,10 @@ def render(res, top=20, with_bots=False):
         if not any_bot:
             L.append("  [i] 未检出已知 AI 爬虫 UA")
         L.append("  [i] 爬虫到访 ≠ 已被引用;引用看 referrer,到访看 UA")
+    if classify:
+        L.extend(render_classify(res))
+        L.extend(render_llms_baseline(res))
+        L.extend(render_policy(res))
     return "\n".join(L)
 
 
@@ -147,6 +382,16 @@ SAMPLE_LOG = "\n".join([
     '3.3.3.3 - - [09/Oct/2026:11:00:00 +0800] "GET /api/data HTTP/1.1" 200 32 "-" "Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)"',
     '4.4.4.4 - - [09/Oct/2026:11:01:00 +0800] "GET /api/data HTTP/1.1" 200 32 "-" "Mozilla/5.0 (compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexity-bot)"',
     'garbage line that does not parse',
+])
+
+TIER_SAMPLE = "\n".join([
+    '1.1.1.1 - - [09/Oct/2026:12:00:00 +0800] "GET /a HTTP/1.1" 200 64 "-" "Mozilla/5.0 (compatible; GPTBot/1.0)"',
+    '1.1.1.1 - - [09/Oct/2026:12:01:00 +0800] "GET /a HTTP/1.1" 404 64 "-" "Mozilla/5.0 (compatible; GPTBot/1.0)"',
+    '2.2.2.2 - - [09/Oct/2026:12:02:00 +0800] "GET /b HTTP/1.1" 403 64 "-" "Mozilla/5.0 ChatGPT-User/1.0"',
+    '3.3.3.3 - - [09/Oct/2026:12:03:00 +0800] "GET /c HTTP/1.1" 200 64 "-" "Mozilla/5.0 (compatible; Meta-ExternalAgent/1.0)"',
+    '4.4.4.4 - - [09/Oct/2026:12:04:00 +0800] "GET /d HTTP/1.1" 200 64 "-" "Mozilla/5.0"',
+    '5.5.5.5 - - [09/Oct/2026:12:05:00 +0800] "GET /llms.txt HTTP/1.1" 200 64 "-" "Mozilla/5.0 PerplexityBot/1.0"',
+    '{"path": "/j", "status": 200, "user_agent": "Mozilla/5.0 (compatible; ClaudeBot/1.0)", "referer": "-", "ip": "6.6.6.6", "time": "2026-10-09T12:06:00Z"}',
 ])
 
 
@@ -177,8 +422,35 @@ def _self_test():
     out = render(res, top=20, with_bots=True)
     assert "下界" in out and "GPTBot" in out and "chatgpt.com" in out
     assert "未检出" not in out.split("AI 爬虫到访")[1].split("[i]")[0]
+    # B5 扩展: 四桶(含未知)/failure_rate 两级/llms.txt 双基线/归因工具箱/JSON 行
+    res2 = analyze(TIER_SAMPLE.splitlines())
+    t2 = res2["tiers"]
+    assert t2["training"]["hits"] == 3 and t2["training"]["fail"] == 1  # GPTBot×2+ClaudeBot(JSON)
+    assert t2["on_demand_fetcher"]["hits"] == 1 and t2["on_demand_fetcher"]["fail"] == 1
+    assert t2["search_index"]["hits"] == 1                              # PerplexityBot
+    assert t2["agent_visits"]["hits"] == 1                              # Meta-ExternalAgent
+    assert t2["unclassified"]["hits"] == 1
+    assert res2["ai_bot_total"] == 6 and res2["llms"] == {"hits": 1, "bot_hits": 1}
+    assert res2["bot_rows"]["GPTBot"]["statuses"] == {"200": 1, "404": 1}
+    assert classify_ua("x ChatGPT-User/1.0") == ("ChatGPT-User", "on_demand_fetcher")
+    assert classify_ua("x GrokBot/1.0") == ("GrokBot", "training")
+    assert classify_ua("x Meta-ExternalFetcher/1.0") == ("Meta-ExternalFetcher", "on_demand_fetcher")
+    assert classify_ua("x Meta-ExternalAgent/1.0") == ("Meta-ExternalAgent", "agent_visits")
+    assert classify_ua("Mozilla/5.0") == (None, "unclassified")
+    assert classify_ua("-") == (None, "unclassified")
+    out2 = render(res2, classify=True)
+    for frag in ("bot 四桶", "50.0%", "33.3%", "bot×status 矩阵", "84 vs 265",
+                 "0.1%", "llms.txt 是编程 agent 基础设施非可见性杠杆",
+                 "授权决策", "可见性失败", "WARN 实测"):
+        assert frag in out2, frag
+    att = "\n".join(render_attribution())
+    assert "chat\\.openai\\.com" in att and "i\\.meta\\.ai" in att
+    assert "utm_source" in att and "从哪听说我们" in att and "你问了 AI 什么" in att
+    rec_j = parse_line('{"path":"/j","status":404,"user_agent":"x","referer":"-"}')
+    assert rec_j and rec_j["path"] == "/j" and rec_j["status"] == "404"
     print("[self-test] PASS ai_referral_log(7 行解析,4 域命中,无 referrer=3,"
-          "bot UA 先行指标,子域匹配,anti 误匹配)")
+          "bot UA 先行指标,子域匹配,anti 误匹配;"
+          "B5: 四桶分类/failure 两级/llms.txt 双基线/归因工具箱/JSON 行)")
 
 
 def read_lines(args_input):
@@ -195,6 +467,12 @@ def main(argv=None):
     ap.add_argument("--top", type=int, default=20, help="热门路径 top N(默认 20)")
     ap.add_argument("--bot-ua", dest="bot_ua", action="store_true",
                     help="同时统计 AI 爬虫 UA 到访(先行指标)")
+    ap.add_argument("--classify", dest="classify", action="store_true",
+                    help="bot 四桶分类 + failure rate(按 bot/按桶)+ 每桶 Top URL + "
+                         "bot×status 矩阵 + llms.txt 双基线 + retrieval/training 分层结论")
+    ap.add_argument("--attribution", dest="attribution", action="store_true",
+                    help="输出 AI 归因工具箱(GA4 custom channel 正则 + 纪律注记 + "
+                         "自报归因问卷;无日志也可单独使用)")
     ap.add_argument("--self-test", action="store_true", help="冒烟自测(不联网)")
     args = ap.parse_args(argv)
     if args.self_test:
@@ -206,10 +484,16 @@ def main(argv=None):
             print("[self-test] FAIL ai_referral_log")
             return 1
     if args.input is None and sys.stdin.isatty():
+        if args.attribution:              # 工具箱可独立使用,无需日志
+            print("\n".join(render_attribution()))
+            return 0
         ap.error("需要日志文件参数,或通过管道传入(如 cat access.log | %s)"
                  % sys.argv[0])
     res = analyze(read_lines(args.input), with_bots=args.bot_ua)
-    print(render(res, top=args.top, with_bots=args.bot_ua))
+    out = render(res, top=args.top, with_bots=args.bot_ua, classify=args.classify)
+    if args.attribution:
+        out += "\n" + "\n".join(render_attribution())
+    print(out)
     return 0
 
 

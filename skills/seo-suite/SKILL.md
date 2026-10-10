@@ -27,7 +27,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(40 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(43 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -64,9 +64,11 @@ metadata:
 - `text_units.py`:按市场计量单位统计
 
 **AI/GEO 测量**
-- `citation_panel.py init|record|report|diff`:采样面板(五状态/配对分母/Wilson CI)
+- `citation_panel.py init|record|report|diff|decay`:采样面板(五状态/配对分母/Wilson CI);**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期/重写队列,官方常数 11 天);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
 - `fanout_analysis.py 输入.csv`:query fan-out 三桶(added/dropped/preserved)
-- `ai_referral_log.py < access.log`:AI referrer 下界分析(+--bot-ua 先行指标)
+- `ai_referral_log.py < access.log`:AI referrer 下界分析(+--bot-ua 先行指标);**bot 四桶分类**(on_demand/search_index/training/agent)+failure_rate 两级+llms.txt 双基线;--attribution 出 GA4 正则+归因纪律+自报问卷
+- `citation_gaps.py --panel panel.json --brand-domains a.com`:引用缺口(竞品被引你没被的 URL+外联简报;has_competitor_run 高优先)→ 配 citation-outreach-brief.md 模板,与 cite_domain.py 串联
+- `oracle_check.py --facts brand.yaml --responses responses.json`:AI 回答 vs 品牌事实核查(Athena 口径:25 条门槛/finding 状态机/Inaccuracy%/按引擎 model_accuracy)
 - `cite_domain.py --input json`:CITE 40 项域名评级(veto BLOCK)
 
 **归因与管道**
@@ -251,6 +253,8 @@ metadata:
 - [重定向与 Canonicalization](references/technical/redirects-canonical.md):重定向全类型+canonical 六场景深度指南(信号合并/迁移/跨域)
 - [Agent 协议速查卡](references/technical/agent-protocols.md):14 协议一页对照(Content Signals/WebMCP/ARD…每卡:规则数字/验证命令/状态)
 - [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位);P0/P1 79 条已扩 Sitebulb 式解释层(what/why/trigger/caveat/fix/export 九字段)
+- [Brand Records 品牌事实档案](references/content/brand-records.md):六记录(含批准术语/never-do)+YAML 格式+缺口协议+Grounding Page 11 条——内容起草前必读,oracle_check.py 的输入
+- [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
 - [过时信号看门表](references/technical/deprecated-signals.md):官方已停用/勿再推荐清单(带时间戳与一手来源)——**涉及 schema/富结果/CWV/GSC 口径的建议前必查**;tests/test_canonical_facts.py 用 16 条正则钉死已知错误陈述(套件内文档命中即测试失败)
 - [Naver Search Advisor 蒸馏](references/technical/naver-searchadvisor.md):55 篇官方指南全量蒸馏(每节 guid 可对勘原文)
 - `references/technical/event-library.md`
@@ -305,6 +309,8 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/monitor/performance-report.md`
 - `templates/monitor/ai-visibility-weekly.md`(Scrunch 六段周报:>5pp 才点名/恰好一条动作/全平则 stable no action needed)
 - `templates/monitor/ai-visibility-monthly.md`(月报五节:Executive Summary/Visibility/Competitive/Content Health 三分/Recommendations 恰好 3 动作)
+- `templates/monitor/citation-outreach-brief.md`(引用缺口外联简报)
+- `templates/research/prompt-bank.md`(GEO 采样 prompt 库:20 条漏斗×视角矩阵+persona 前缀+fanout 六类型+5+3+2 配方)
 - `templates/monitor/alert-playbook.md`
 
 ## 常见请求如何路由
