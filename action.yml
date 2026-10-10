@@ -1,0 +1,178 @@
+# ============================================================================
+# action.yml — seo-suite 站点审计 composite action(stdlib 零依赖,无需 pip install)
+# ----------------------------------------------------------------------------
+# 输入:
+#   url         被审计 URL(必填;空格分隔可传多个)
+#   min-score   主分(Ahrefs 口径 0-100,无 CRITICAL URL 占比×100)低于该值即
+#               ::error + exit 1;默认 0 = 不启用
+#   format      json(默认)| sarif | junit | github(github = ::error/warning/notice
+#               注解,直接渲染在 run 日志与 PR 里)
+#   report-path 报告文件路径(不含扩展名;默认 seo-audit-report)
+# 输出(step outputs + ::notice):
+#   main-score / ai-search-health
+#
+# 使用示例 1 —— PR 门禁(每次 pull_request 审计,min-score 挡跌分,github 注解
+#               直接标在 PR 的 Annotations 里):
+#   jobs:
+#     seo-gate:
+#       runs-on: ubuntu-latest
+#       steps:
+#         - uses: actions/checkout@v4
+#         - uses: everyinfra/seo-skills@main     # 本 action(仓库根 action.yml)
+#           with:
+#             url: https://example.com
+#             min-score: 80
+#             format: github
+#
+# 使用示例 2 —— 定时巡检(schedule + sarif 报告 artifact 留档):
+#   on:
+#     schedule:
+#       - cron: "41 2 * * *"
+#   #   ...(jobs 里同上)- uses: everyinfra/seo-skills@main
+#   #       with: {url: https://example.com, format: sarif}
+#
+# 使用示例 3 —— 手动触发(workflow_dispatch 传参):
+#   on:
+#     workflow_dispatch:
+#       inputs:
+#         url: {description: 被审计 URL, required: true, default: "https://example.com"}
+#   #   ...(jobs 里)- uses: everyinfra/seo-skills@main
+#   #       with: {url: "${{ inputs.url }}", format: junit}
+#
+# 说明:
+# - 步骤 1 的 checkout 检出的是**调用方**仓库;脚本解析顺序:调用方仓库根的
+#   skills/seo-suite(vendored/submodule)优先,否则回退 $GITHUB_ACTION_PATH
+#   (即本仓库),两种用法都开箱即跑。
+# - sarif 只走 upload-artifact 留档,**不**直接上传 GitHub Code Scanning。要进
+#   Code Scanning 需在调用方 workflow 自加 permissions 与上传步骤:
+#     permissions:
+#       security-events: write
+#     - uses: github/codeql-action/upload-sarif@v3
+#       with:
+#         sarif_file: seo-audit-report.sarif
+# - site_audit 的"CRITICAL 存在退出码 1"是审计结论而非运行失败:本 action 不因此
+#   失败,门禁交给 min-score,可视化交给 format=github/sarif。
+# ============================================================================
+name: seo-site-audit
+description: 单页/多页 SEO + AI Search Health 审计(stdlib 零依赖),输出 json/sarif/junit/github 注解
+
+inputs:
+  url:
+    description: "被审计 URL(空格分隔可传多个)"
+    required: true
+  min-score:
+    description: "主分(Ahrefs 口径 0-100)低于该值即 ::error + exit 1;0=不启用"
+    required: false
+    default: "0"
+  format:
+    description: "json(默认)| sarif | junit | github"
+    required: false
+    default: "json"
+  report-path:
+    description: "报告文件路径,不含扩展名(artifact 名会追加 -sarif;不要带路径分隔符)"
+    required: false
+    default: "seo-audit-report"
+
+outputs:
+  main-score:
+    description: "Ahrefs 口径主分(无 CRITICAL URL 占比×100;无可评分 URL 为空)"
+    value: ${{ steps.scores.outputs.main_score }}
+  ai-search-health:
+    description: "AI Search Health 均值(0-100;无数据为空)"
+    value: ${{ steps.scores.outputs.ai_search_health }}
+
+runs:
+  using: composite
+  steps:
+    - name: checkout(调用方仓库;skills/ 可 vendored 在其中)
+      uses: actions/checkout@v4
+
+    - name: setup python 3.12(site_audit 纯 stdlib,无需 pip install)
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: resolve script path(vendored 优先,回退本 action 仓库)
+      shell: bash
+      run: |
+        SCRIPT="skills/seo-suite/scripts/site_audit.py"
+        if [ ! -f "$SCRIPT" ] && [ -f "$GITHUB_ACTION_PATH/skills/seo-suite/scripts/site_audit.py" ]; then
+          SCRIPT="$GITHUB_ACTION_PATH/skills/seo-suite/scripts/site_audit.py"
+        fi
+        if [ ! -f "$SCRIPT" ]; then
+          echo "::error::找不到 skills/seo-suite/scripts/site_audit.py(调用方仓库与本 action 仓库均无)"
+          exit 1
+        fi
+        echo "AUDIT_SCRIPT=$SCRIPT" >> "$GITHUB_ENV"
+        echo "CI_FORMAT=$(dirname "$SCRIPT")/ci_format.py" >> "$GITHUB_ENV"
+
+    - name: run site_audit(零依赖,不 pip install)
+      shell: bash
+      run: |
+        set +e
+        python3 "$AUDIT_SCRIPT" ${{ inputs.url }} --json > audit.json
+        rc=$?
+        set -e
+        if [ ! -s audit.json ]; then
+          echo "::error title=SEO::site_audit 未产出 audit.json(退出码 $rc;检查 URL/网络/--market)"
+          exit 1
+        fi
+        # site_audit 退出码 1 = 存在 CRITICAL finding,属审计结论而非运行失败:
+        # 门禁交给 min-score,注解交给 format=github / sarif,这里不因 rc=1 失败。
+        echo "site_audit rc=$rc(CRITICAL 存在时为 1,属审计结论);audit.json 已产出"
+
+    - name: ci_format convert(按 format 产出报告;github 注解走 stdout/tee)
+      shell: bash
+      run: |
+        FMT="${{ inputs.format }}"
+        case "$FMT" in
+          json)   cp audit.json "${{ inputs.report-path }}.json" ;;
+          sarif)  python3 "$CI_FORMAT" audit.json --format sarif > "${{ inputs.report-path }}.sarif" ;;
+          junit)  python3 "$CI_FORMAT" audit.json --format junit > "${{ inputs.report-path }}.xml" ;;
+          # github 格式的 :: 注解必须出现在日志流里才会渲染,故不重定向,tee 落一份副本
+          github) python3 "$CI_FORMAT" audit.json --format github | tee "${{ inputs.report-path }}.txt" ;;
+          *)      echo "::error::未知 format '$FMT'(json|sarif|junit|github)"; exit 2 ;;
+        esac
+
+    - name: extract scores(→ step outputs + ::notice)
+      id: scores
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import os
+        import sys
+        sys.path.insert(0, os.path.dirname(os.environ.get("CI_FORMAT")
+                                           or "skills/seo-suite/scripts/ci_format.py"))
+        import ci_format as cf
+        d = cf.load_payload("audit.json")
+        ms, ai = cf.main_score(d), cf.ai_health_mean(d)
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+            f.write("main_score=%s\n" % ("" if ms is None else ms))
+            f.write("ai_search_health=%s\n" % ("" if ai is None else ai))
+        print("::notice title=SEO::main_score=%s ai_search_health=%s" % (ms, ai))
+        PY
+
+    - name: min-score gate(低于即 ::error + exit 1;0=不启用)
+      shell: bash
+      run: |
+        MIN="${{ inputs.min-score }}"
+        if [ -z "$MIN" ] || [ "$MIN" = "0" ]; then
+          echo "min-score 未启用(=0),跳过门禁"
+          exit 0
+        fi
+        MS="${{ steps.scores.outputs.main_score }}"
+        MS="${MS:-0}"
+        if python3 -c "import sys; sys.exit(0 if float('$MS') < float('$MIN') else 1)"; then
+          echo "::error title=SEO::主分 $MS 低于 min-score $MIN(Ahrefs 口径 = 无 CRITICAL URL 占比×100)"
+          exit 1
+        fi
+        echo "min-score 门禁通过($MS >= $MIN)"
+
+    # 只 upload-artifact 留档;进 Code Scanning 需调用方自加 upload-sarif 步骤
+    # 与 security-events: write 权限(见文件头部说明)。
+    - name: upload sarif artifact(留档;不上传 Code Scanning)
+      if: ${{ inputs.format == 'sarif' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.report-path }}-sarif
+        path: ${{ inputs.report-path }}.sarif

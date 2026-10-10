@@ -62,6 +62,8 @@ on:
   schedule:
     - cron: "17 3 * * *"    # 日检四问
     - cron: "23 4 * * 1"    # 周一叠加周检(趋势)
+  pull_request:             # PR 审计门:只触发下方 audit-pr-gate job(monitor 有 if 守卫)
+    branches: [main]
   workflow_dispatch:
     inputs:
       checks:
@@ -75,7 +77,8 @@ permissions:
 
 jobs:
   monitor:
-    if: github.repository != 'everyinfra/seo-skills'   # 拷贝后删除
+    # 拷贝后删除仓库守卫;&& PR 守卫保证 pull_request 触发只跑 audit-pr-gate,monitor 行为不变
+    if: github.repository != 'everyinfra/seo-skills' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -226,3 +229,121 @@ jobs:
           SEO_MONITOR_TG_TOKEN: ${{ secrets.SEO_MONITOR_TG_TOKEN }}
           SEO_MONITOR_TG_CHAT: ${{ secrets.SEO_MONITOR_TG_CHAT }}
           SEO_MONITOR_WEBHOOK_URL: ${{ secrets.SEO_MONITOR_WEBHOOK_URL }}
+
+  # ── PR 审计门(references/monitoring/ci-gates.md §一命令地图 + §六配方 A)────
+  # Pull Request 触发:对 SITE_URL 现场审计(site_audit --json)→ ci_format github
+  # 注解 → min-score / max-criticals / min-pages 门。exit 契约:0 过 / 10 失败
+  # (siteone 口径)。只读门禁:不写库、不通知、不 commit——基线与告警归 monitor job;
+  # 门回答"这次改动有没有退步",monitor 回答"站点今天有没有事",两门并存。
+  audit-pr-gate:
+    if: github.event_name == 'pull_request' && github.repository != 'everyinfra/seo-skills'   # 拷贝后删除
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read    # 覆盖 workflow 级 contents:write——PR 门只读,最小权限
+    env:
+      SITE_URL: ${{ vars.SEO_AUDIT_URL || 'https://example.com' }}   # 审计目标(预发环境)
+      MIN_SCORE: "80"   # health_score 主分下限(Good 档 71+ 起步,先松后紧)
+      MIN_PAGES: "1"    # 样本地板:可评分页 <N 直接失败,防"只爬 1 页也绿灯";多页门按站调大
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # rc=1(存在 CRITICAL)不是步骤失败——计数交给门步骤判;rc=2 用法错才直接红
+      - name: site_audit --json (现场审计;fetch guard 拒审≠失败)
+        run: |
+          set +e
+          python3 skills/seo-suite/scripts/site_audit.py "$SITE_URL" --json > audit.json
+          rc=$?
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::site_audit 用法/输入错误(exit 2)"
+            exit 2
+          fi
+          echo "audit_rc=$rc" >> "$GITHUB_ENV"
+
+      # 基线纪律(ci-gates.md §七):脚本缺位=响亮 WARNING + 跳过,绝不静默
+      - name: ci_format github 注解 (缺位则响亮警告并跳过)
+        run: |
+          if [ -f skills/seo-suite/scripts/ci_format.py ]; then
+            python3 skills/seo-suite/scripts/ci_format.py audit.json --format github
+          else
+            echo "::warning::ci_format.py 缺位——PR 注解步骤跳过(绝不静默);门主体照常执行"
+          fi
+
+      # exit 1=主分档 Weak,同样交给门判(阈值用 MIN_SCORE,不用档位);exit 2 输入错直接红
+      - name: health_score (0-100 主分)
+        run: |
+          set +e
+          python3 skills/seo-suite/scripts/health_score.py --input audit.json --json > health.json
+          rc=$?
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::health_score 输入错误(exit 2)"
+            exit 2
+          fi
+          exit 0
+
+      - name: min-score / max-criticals / min-pages 门 (失败 exit 10)
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+
+          def load(path, needle):
+              # site_audit --json 前部混有逐 URL 文本行(health_score.load_audit 同法):
+              # 从每个 '{' 起点试解,取含 needle 的末位完整 blob
+              try:
+                  text = open(path, encoding="utf-8").read()
+              except OSError:
+                  return None
+              try:
+                  return json.loads(text)
+              except json.JSONDecodeError:
+                  data = None
+                  for i, ch in enumerate(text):
+                      if ch != "{":
+                          continue
+                      try:
+                          cand = json.loads(text[i:])
+                      except json.JSONDecodeError:
+                          continue
+                      if isinstance(cand.get(needle), (dict, int, float)):
+                          data = cand
+                  return data
+
+          audit = load("audit.json", "results")
+          if audit is None:
+              print("::error::audit.json 解析失败(无含 results 的 JSON——site_audit 未跑成?)")
+              sys.exit(10)
+          refused = sum(1 for r in audit["results"].values() if r.get("verdict") == "refused")
+          scored = len(audit["results"]) - refused          # fetch guard 拒审不进分母
+          crit = audit.get("critical") or 0
+          hs = load("health.json", "main_score") or {}
+          score = hs.get("main_score")
+          min_pages, min_score = int(os.environ["MIN_PAGES"]), float(os.environ["MIN_SCORE"])
+
+          # checks 行(LHCI/diff --ci 同构:{metric,operator,threshold,actual,passed})
+          rows = [
+              ("min-pages", ">=", min_pages, scored, scored >= min_pages),
+              ("max-criticals", "==", 0, crit, crit == 0),
+              ("min-score", ">=", min_score, score,
+               score is not None and score >= min_score),
+          ]
+          summary = ["## SEO PR 门(%s)" % os.environ.get("SITE_URL", "?"),
+                     "", "| check | operator | threshold | actual | passed |",
+                     "|---|---|---|---|---|"]
+          for m, o, t, a, p in rows:
+              summary.append("| %s | %s | %s | %s | %s |" % (m, o, t, a, "pass" if p else "FAIL"))
+          summary += ["", "拒审未计入: %d; audits: %d" % (refused, audit.get("audited", 0))]
+          print("\n".join(summary[2:]))                     # 控制台同步可见
+          with open(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"), "a") as f:
+              f.write("\n".join(summary) + "\n")
+          failed = [m for m, _o, _t, _a, p in rows if not p]
+          if failed:
+              for m, o, t, a, p in rows:
+                  if not p:
+                      print("::error::SEO 门失败: %s %s %s(actual=%s)" % (m, o, t, a))
+              sys.exit(10)                                  # siteone 契约:0 过 / 10 失败
+          print("audit-pr-gate: all checks passed")
+          PY

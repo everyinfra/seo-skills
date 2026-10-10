@@ -6,6 +6,9 @@
   1 可见性  关键页 site: 抽查(Bing HTML 端点;被拦=skipped 不告警,不猜)
   2 流量    .seo-monitor/gsc.csv(GSC 导出,有才查;无数据源=skipped)
   3 索引    robots.txt 哈希/误封检测 + sitemap URL 数/lastmod
+           +页面级 noindex(meta robots / X-Robots-Tag 响应头,D1 P0-1:
+            Conductor 头号触发器 "Pages became non-indexable")
+           +canonical 目标健康度(HEAD 探测,连续 3 次失败才告警,D1 P0-2)
   4 存活    首页+关键页状态码/时延/https 混合内容
 周检叠加:标题/meta 漂移哈希、llms.txt 变更、sitemap lastmod 对比、AI 爬虫放行矩阵。
 
@@ -103,16 +106,26 @@ PLAYBOOK = {
     "ssl_cert_expiry":      ("续期证书;检查自动续期任务为何没跑", "human"),
     "content_regression":   ("核对 expect_substring 断言;查空白渲染/软 404/误改版(draft PR)", "draft_pr"),
     "dead_man":             ("监控自身停摆:查 cron/Actions 是否被禁、机器是否休眠", "human"),
+    "noindex_added":        ("自动安全项:回滚引入 noindex 的发布/模板改动(若非有意下线)", "auto"),
+    "noindex_removed":      ("自愈信号,记录即可;顺手排查此前为何被误加 noindex", "human"),
+    "canonical_target_broken": ("核对 canonical 目标是否被移动/删除:修正指向或恢复目标页(draft PR)", "draft_pr"),
 }
 
 # 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
 # 格式:根告警码 → (被抑制码..., 作用域) 作用域 sitewide=抑制一切;same_key=仅同 key。
+# D1 P0-1:页面级 noindex_added 属派生信号——robots 全站误封/首页宕机这类 sitewide 根因
+# 在场时折叠(同一部署事故的次级表现,单独重复通知只会稀释根因)。
 INHIBITS = {
-    "homepage_down":        (("key_page_down", "content_regression", "mixed_content"), "sitewide"),
+    "homepage_down":        (("key_page_down", "content_regression", "mixed_content", "noindex_added"), "sitewide"),
+    "robots_sitewide_block": (("noindex_added",), "sitewide"),
     "fetch_error_confirmed": (("title_meta_drift", "content_regression", "mixed_content", "latency_spike"), "same_key"),
 }
 
-# 关键页字段级 diff 的比对字段(audit 17,changedetection.io 字段级指纹)
+# 关键页字段级 diff 的比对字段(audit 17,changedetection.io 字段级指纹)。
+# D1 P0-1/P0-2 新快照字段(indexable/noindex_source/canonical_target_status/
+# canonical_fail_streak)刻意不进本清单:各有专用规则(noindex_added/removed、
+# canonical_target_broken),进字段漂移会双报;且旧 monitor.db 快照缺这些字段,
+# 会被当 "(None→有值)" 漂移,升级后首个 diff 全网误报。
 PAGE_DIFF_FIELDS = ("title", "meta_desc", "canonical", "og_title", "og_desc", "watch")
 
 
@@ -193,6 +206,26 @@ def _redact_url(u):
     return re.sub(r"^(https?://[^/\s]+).*$", r"\1/[REDACTED]", str(u))
 
 
+def _headers_of(msg):
+    """响应头对象 → 扁平 dict(键小写,重复键逗号并值)。D1 P0-1 需读 X-Robots-Tag;
+    对 None/异常对象容错(旧测试桩/特殊响应路径可能无头)。"""
+    out = {}
+    if msg is None:
+        return out
+    try:
+        keys = list(msg.keys())
+    except Exception:
+        return out
+    for k in keys:
+        try:
+            vals = msg.get_all(k) or []
+        except Exception:
+            continue
+        if vals:
+            out[str(k).lower()] = ", ".join(v.strip() for v in vals if v is not None)
+    return out
+
+
 def http_get(url, timeout=FETCH_TIMEOUT):
     p = urllib.parse.urlparse(url)
     if p.scheme not in ("http", "https"):
@@ -204,13 +237,41 @@ def http_get(url, timeout=FETCH_TIMEOUT):
         with _opener.open(req, timeout=timeout) as r:
             body = r.read(MAX_BYTES)
             return {"status": r.status, "final_url": r.geturl(), "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
-                    "body": body.decode("utf-8", "replace")}
+                    "body": body.decode("utf-8", "replace"), "headers": _headers_of(r.headers)}
     except urllib.error.HTTPError as e:
         body = e.read(MAX_BYTES) if e.fp else b""
         return {"status": e.code, "final_url": url, "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
-                "body": body.decode("utf-8", "replace")}
+                "body": body.decode("utf-8", "replace"), "headers": _headers_of(e.headers)}
     except (urllib.error.URLError, OSError, TimeoutError) as e:
         raise FetchError("抓取失败 %s: %s" % (_redact_url(url), e))
+
+
+def http_head(url, timeout=FETCH_TIMEOUT):
+    """HEAD 探测(D1 P0-2 canonical 目标健康度):复用 http_get 的 SSRF 防御/超时/
+    重定向逐跳复查;405/501(站点不支持 HEAD)降 GET 只读头——不下载 body。
+    返回 {"status": int};网络层失败抛 FetchError(由调用方按 "error" 记,防抖在 diff)。"""
+    p = urllib.parse.urlparse(url)
+    if p.scheme not in ("http", "https"):
+        raise FetchError("仅允许 http(s): %s" % url)
+    ssrf_guard(p.hostname)
+
+    def once(method):
+        req = urllib.request.Request(url, headers={"User-Agent": UA}, method=method)
+        try:
+            with _opener.open(req, timeout=timeout) as r:
+                return int(r.status)          # GET 降级也只取状态,不读 body
+        except urllib.error.HTTPError as e:
+            if e.fp:
+                with contextlib.suppress(Exception):
+                    e.read(512)
+            return int(e.code)
+    try:
+        status = once("HEAD")
+        if status in (405, 501):
+            status = once("GET")
+        return {"status": status}
+    except (urllib.error.URLError, OSError, TimeoutError) as e:
+        raise FetchError("HEAD 失败 %s: %s" % (_redact_url(url), e))
 
 
 def pct_drop(prev_v, curr_v):
@@ -403,6 +464,54 @@ def extract_head(html):
     return title, meta, canonical, prop("og:title"), prop("og:description")
 
 
+# noindex 指令 token:词边界匹配——命中 "noindex"/"noindex,nofollow"/"googlebot: noindex",
+# 不命中 "nonoindex"/自定义词(D1 P0-1)
+_NOINDEX_TOKEN_RE = re.compile(r"(?<![\w-])noindex(?![\w-])", re.I)
+
+
+def meta_robots_noindex(html):
+    """<meta name=robots content=...> 含 noindex 指令(属性两种顺序均支持,大小写不敏感)。"""
+    m = re.search(r'<meta[^>]+name=["\']robots["\'][^>]*content=["\'](.*?)["\']', html, re.I) or \
+        re.search(r'<meta[^>]+content=["\'](.*?)["\'][^>]*name=["\']robots["\']', html, re.I)
+    return bool(m and _NOINDEX_TOKEN_RE.search(m.group(1)))
+
+
+def header_noindex(headers):
+    """X-Robots-Tag 响应头含 noindex(多 directive/agent 前缀如 googlebot:noindex 均命中;
+    headers 为 http_get 保留的扁平小写键 dict,键大小写不敏感,None/缺键=无)。"""
+    h = headers or {}
+    v = h.get("x-robots-tag")
+    if v is None:
+        for k, val in h.items():
+            if str(k).lower() == "x-robots-tag":
+                v = val
+                break
+    return bool(_NOINDEX_TOKEN_RE.search(v or ""))
+
+
+def canonical_failure(status):
+    """canonical 目标探测值是否算失败:网络不可达("error")或最终状态 ≥4xx
+    (重定向已被跟随,以最终落点为准)。None/2xx/3xx → False。"""
+    return status == "error" or (isinstance(status, int) and status >= 400)
+
+
+def probe_canonical_target(page_url, final_url, canonical):
+    """D1 P0-2:canonical 目标健康度探测(check_page 内调用=每页每 run 恰一次)。
+    HEAD 复用 http_head(SSRF 防御/超时/逐跳复查);自指 canonical(目标=本页/最终
+    URL,健康站的常态)→ None:本页自身 status 已在监控中,不发重复请求;
+    无 canonical → None;网络失败 → "error"(防抖交给 canonical_fail_streak)。"""
+    if not canonical:
+        return None
+    target = urllib.parse.urljoin(final_url or page_url, canonical)
+    norm = lambda u: (u or "").rstrip("/")
+    if norm(target) in (norm(page_url), norm(final_url)):
+        return None
+    try:
+        return http_head(target)["status"]
+    except FetchError:
+        return "error"
+
+
 def extract_selector(html, sel):
     """最小 selector 引擎(stdlib,audit 17 字段级 diff):支持 "tag" / "#id" / "tag#id" /
     ".class" / "tag.class" / "re:<regex>"(取第一处匹配,有分组取组 1)。圈定关注区,
@@ -450,7 +559,9 @@ def mixed_content_count(url, html):
 
 
 def check_page(url, expect=None, selector=None):
-    """首页/关键页通用:状态码/时延/title/混合内容/(可选)expect_substring 断言+selector 圈定。"""
+    """首页/关键页通用:状态码/时延/title/混合内容/(可选)expect_substring 断言+selector 圈定
+    +页面级 noindex 检测(D1 P0-1:meta robots / X-Robots-Tag → indexable)
+    +canonical 目标健康度(D1 P0-2:非自指目标 HEAD 一次,存 canonical_target_status)。"""
     out = {"check": "page", "state": "ok", "metrics": {}, "notes": []}
     try:
         r = http_get(url)
@@ -459,10 +570,17 @@ def check_page(url, expect=None, selector=None):
         out["metrics"] = {"error": str(e)}
         out["notes"].append("网络层失败≠站点宕机:单次记 info,连续两次才升 warn")
         return out
+    headers = r.get("headers") or {}   # 旧桩/旧路径可能无该键,容错
     title, meta, canonical, og_title, og_desc = extract_head(r["body"])
+    nm, nh = meta_robots_noindex(r["body"]), header_noindex(headers)
     m = {"status": r["status"], "latency_ms": r["elapsed_ms"], "title": title,
          "meta_desc": meta, "canonical": canonical, "og_title": og_title, "og_desc": og_desc,
-         "final_url": r["final_url"]}
+         "final_url": r["final_url"],
+         "indexable": not (nm or nh)}                                   # D1 P0-1
+    if nm or nh:
+        m["noindex_source"] = "meta+header" if (nm and nh) else ("meta" if nm else "header")
+        out["notes"].append("noindex 指令在场(来源 %s):页面退出索引" % m["noindex_source"])
+    m["canonical_target_status"] = probe_canonical_target(url, r.get("final_url"), canonical)
     if expect is not None:
         m["expect_ok"] = (expect in r["body"])
         if not m["expect_ok"]:
@@ -854,6 +972,10 @@ def cmd_run(args):
             conn.close()
             raise
         snap = snapshot_from_results(results)
+        # D1 P0-2 防抖:canonical 目标失败连击(当前 run 尚为 running,latest_run_ids
+        # 取到的必是上一 ok run)——diff 侧连续 3 次失败才告警
+        _prev_ok = latest_run_ids(conn, 1)
+        apply_canonical_streaks(load_snapshot(conn, _prev_ok[0]) if _prev_ok else None, snap)
 
         states = {}
         for grp in ("robots", "home", "visibility", "gsc", "sitemap", "llms_txt", "ssl"):
@@ -982,6 +1104,25 @@ def snapshot_from_results(results):
     return snap
 
 
+def apply_canonical_streaks(prev_snap, snap):
+    """D1 P0-2 防抖:canonical 目标失败连击计数(连续 3 次失败才告警)。
+    prev_snap = 上一 ok run 的快照(None/旧格式缺字段均从 1 起数,不崩);
+    失败 → prev 连击+1,成功/无 canonical → 清 0。写回 snap 各页 canonical_fail_streak,
+    diff 侧只认 streak≥3。"""
+    prev_pages = (prev_snap or {}).get("pages") or {}
+    for path, m in (snap.get("pages") or {}).items():
+        if not isinstance(m, dict):
+            continue
+        if canonical_failure(m.get("canonical_target_status")):
+            try:
+                prev_streak = int((prev_pages.get(path) or {}).get("canonical_fail_streak") or 0)
+            except (TypeError, ValueError):
+                prev_streak = 0
+            m["canonical_fail_streak"] = prev_streak + 1
+        else:
+            m["canonical_fail_streak"] = 0
+
+
 # ---------- diff(阈值告警引擎) ----------
 
 def load_snapshot(conn, run_id):
@@ -1096,6 +1237,26 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                 and max(pl or 0, cl or 0) >= int(th.get("latency_min_ms", 500)):
             add("info", "latency_spike", k, "%s 时延 %.0fms→%.0fms(+%.0f%%)"
                 % (label, pl, cl, -d * 100), {"prev_ms": pl, "curr_ms": cl})
+        # D1 P0-1:页面级 noindex(Conductor 头号触发器)。旧快照缺 indexable(=None)
+        # 不参与判定——升级 monitor 后首个 diff 不误报、不崩。
+        ci, pi = c.get("indexable"), p.get("indexable")
+        if ci is False and pi is True:
+            add("critical", "noindex_added", k,
+                "%s 新增 noindex(来源:%s)——若非有意下线立即回滚"
+                % (label, c.get("noindex_source") or "unknown"),
+                {"source": c.get("noindex_source"), "canonical": c.get("canonical"),
+                 "url": site + k})
+        elif ci is True and pi is False:
+            add("info", "noindex_removed", k,
+                "%s noindex 已移除,恢复可索引(自愈信号)" % label, {"url": site + k})
+        # D1 P0-2:canonical 目标健康度(防抖:连续 3 次失败才告警,单次/两次不动)
+        cts = c.get("canonical_target_status")
+        if canonical_failure(cts) and int(c.get("canonical_fail_streak") or 0) >= 3:
+            shown = "%d" % cts if isinstance(cts, int) else "不可达(error)"
+            add("warn", "canonical_target_broken", k,
+                "%s canonical 指向 %s 目标——首选 URL 不可达,索引信号自相矛盾" % (label, shown),
+                {"canonical": c.get("canonical"), "target_status": cts,
+                 "fail_streak": c.get("canonical_fail_streak")})
 
     # --- 4 存活/3 索引:robots ---
     cr, pr = (curr.get("robots") or {}).get("robots", {}), (prev.get("robots") or {}).get("robots", {})
@@ -1690,6 +1851,83 @@ def _self_test():
     drift = [a for a in fd_alerts if a["code"] == "title_meta_drift"]
     assert drift and drift[0]["details"]["fields"] == ["title"]
 
+    # --- D1 P0-1:页面级 noindex 检测(meta robots / X-Robots-Tag)---
+    assert meta_robots_noindex("<meta name='robots' content='noindex, nofollow'>")
+    assert meta_robots_noindex("<meta content='NOINDEX' name='Robots'>")   # 属性反序+大小写
+    assert not meta_robots_noindex("<meta name='robots' content='index, follow'>")
+    assert not meta_robots_noindex("<meta name='description' content='noindex word'>")
+    assert header_noindex({"x-robots-tag": "noindex, noarchive"})
+    assert header_noindex({"X-Robots-Tag": "googlebot: noindex"})          # agent 前缀
+    assert not header_noindex({}) and not header_noindex({"x-robots-tag": "max-snippet:-1"})
+    ni_prev = {"pages": {"/p": {"status": 200, "indexable": True}}}
+    ni_curr = {"pages": {"/p": {"status": 200, "indexable": False, "noindex_source": "meta"}}}
+    ni_alerts = compute_alerts(ni_prev, ni_curr, cfg)
+    ni_hit = [a for a in ni_alerts if a["code"] == "noindex_added"]
+    assert ni_hit and ni_hit[0]["level"] == "critical" and "来源:meta" in ni_hit[0]["message"]
+    assert any(a["code"] == "noindex_removed" and a["level"] == "info"
+               for a in compute_alerts(ni_curr, ni_prev, cfg))              # 反向=自愈
+    # 旧快照(无 indexable)→ 无法确认"新增",不告警不崩
+    assert not any(a["code"] == "noindex_added"
+                   for a in compute_alerts({"pages": {"/p": {"status": 200}}}, ni_curr, cfg))
+    # 抑制树:sitewide 根因(robots 全站误封/首页宕机)折叠页面级 noindex
+    ni_storm = {"robots": {"robots": {"sitewide_block": True}},
+                "pages": {"/p": {"status": 200, "indexable": False, "noindex_source": "meta"}}}
+    inhib_ni = []
+    assert not any(a["code"] == "noindex_added"
+                   for a in compute_alerts(ni_prev, ni_storm, cfg, inhibited_out=inhib_ni))
+    assert any(i["code"] == "noindex_added" and i["inhibited_by"] == "robots_sitewide_block"
+               for i in inhib_ni)
+    hd_storm = {"pages": {"/": {"status": 503},
+                          "/p": {"status": 200, "indexable": False, "noindex_source": "meta"}}}
+    inhib_hd = []
+    assert not any(a["code"] == "noindex_added"
+                   for a in compute_alerts({"pages": {"/": {"status": 200}, "/p": {"status": 200, "indexable": True}}},
+                                           hd_storm, cfg, inhibited_out=inhib_hd))
+    assert any(i["code"] == "noindex_added" and i["inhibited_by"] == "homepage_down" for i in inhib_hd)
+
+    # --- D1 P0-2:canonical 目标健康度(HEAD 探测+连击 3 次防抖)---
+    assert canonical_failure("error") and canonical_failure(404)
+    assert not canonical_failure(301) and not canonical_failure(200) and not canonical_failure(None)
+    assert probe_canonical_target("https://x/p", "https://x/p", "https://x/p") is None   # 自指不探测
+    assert probe_canonical_target("https://x/p", None, "") is None                       # 无 canonical
+    _g = globals()
+    _orig_head = _g["http_head"]
+    _orig_get = _g["http_get"]
+    _g["http_head"] = lambda u, timeout=FETCH_TIMEOUT: {"status": 404}
+    _g["http_get"] = lambda url, timeout=FETCH_TIMEOUT: {
+        "status": 200, "final_url": url, "elapsed_ms": 1.0,
+        "body": "<title>t</title><meta name='robots' content='noindex'>"
+                "<link rel='canonical' href='https://x/other'>",
+        "headers": {"x-robots-tag": "noindex"}}
+    try:
+        assert probe_canonical_target("https://x/p", "https://x/p", "https://x/other") == 404
+        cp = check_page("https://x/p")
+    finally:
+        _g["http_head"], _g["http_get"] = _orig_head, _orig_get
+    assert cp["metrics"]["indexable"] is False
+    assert cp["metrics"]["noindex_source"] == "meta+header"
+    assert cp["metrics"]["canonical_target_status"] == 404
+    cn_base = {"pages": {"/p": {"status": 200, "indexable": True,
+                                "canonical": "https://x/c", "canonical_target_status": 404}}}
+    for streak in (1, 2):
+        cn_try = json.loads(json.dumps(cn_base))
+        cn_try["pages"]["/p"]["canonical_fail_streak"] = streak
+        assert not any(a["code"] == "canonical_target_broken"
+                       for a in compute_alerts(ni_prev, cn_try, cfg)), "streak=%d 不该告警" % streak
+    cn_try["pages"]["/p"]["canonical_fail_streak"] = 3
+    cn_hit = [a for a in compute_alerts(ni_prev, cn_try, cfg) if a["code"] == "canonical_target_broken"]
+    assert cn_hit and cn_hit[0]["level"] == "warn" and "指向 404 目标" in cn_hit[0]["message"]
+    # 连击计数:失败续数/成功清零/旧库(无 prev)从 1 起
+    snap_a = {"pages": {"/p": {"canonical_target_status": 404}}}
+    apply_canonical_streaks({"pages": {"/p": {"canonical_fail_streak": 2}}, }, snap_a)
+    assert snap_a["pages"]["/p"]["canonical_fail_streak"] == 3
+    snap_b = {"pages": {"/p": {"canonical_target_status": 200}}}
+    apply_canonical_streaks(snap_a, snap_b)
+    assert snap_b["pages"]["/p"]["canonical_fail_streak"] == 0
+    snap_c = {"pages": {"/p": {"canonical_target_status": "error"}}}
+    apply_canonical_streaks(None, snap_c)
+    assert snap_c["pages"]["/p"]["canonical_fail_streak"] == 1
+
     # --- P0-6 secret 守卫 ---
     bad_cfg = json.loads(json.dumps(cfg))
     bad_cfg["channels"]["slack"]["webhook_url"] = "https://hooks.slack.com/services/T00/B00/XXX"
@@ -1738,7 +1976,8 @@ def _self_test():
     assert in_maintenance(mcfg, datetime(2026, 1, 1, 12)) is not None
     assert in_maintenance(mcfg, datetime(2026, 2, 1)) is None
     print("[self-test] PASS monitor(11 类告警判定/地板/自愈/抑制树/双窗口/SSL 梯度/"
-          "字段级 diff+selector/secret 守卫/重定向 SSRF/状态机+prune+quarantine/维护窗口)")
+          "字段级 diff+selector/secret 守卫/重定向 SSRF/状态机+prune+quarantine/维护窗口/"
+          "noindex 检测+canonical 目标健康度(D1 P0-1/P0-2))")
 
 
 def main(argv=None):
