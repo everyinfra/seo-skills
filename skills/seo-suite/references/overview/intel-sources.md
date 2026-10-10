@@ -25,6 +25,9 @@
 | 20 | robots.txt RFC 9309+文档 | 年 | 哈希季 | 爬虫政策底层 |
 
 注:旧"ranking updates history"页 2025 已下线,改盯 Blog+Dashboard。
+注:StatCounter 图表页是 JS 渲染,服务端 HTML 每次拉取都在抖——intel_check 对 hash 源做
+**二次拉取确认**(两次一致才算变更,抖动自动按噪音跳过);StatCounter 的 CSV 端点
+(chart.php?csv=1)实测返回空数据,不可依赖,份额以页面变更触发人工核对为准。
 
 ## 二、研究与数据层
 

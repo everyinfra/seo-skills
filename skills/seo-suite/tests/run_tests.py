@@ -863,5 +863,62 @@ class NotifyHardeningTests(unittest.TestCase):
         self.assertEqual((dm["code"], dm["level"]), ("dead_man", "warn"))
 
 
+class IntelCheckTests(unittest.TestCase):
+    """信源检查器:hash 源二次确认(动态页抖动抑制) / canonicalize 属性洗牌稳定 / RSS 新条目"""
+
+    def setUp(self):
+        import intel_check
+        self.ic = intel_check
+        self._orig_fetch = intel_check.fetch
+        self._orig_cache = intel_check._body_cache
+        intel_check._body_cache = {}
+
+    def tearDown(self):
+        self.ic.fetch = self._orig_fetch
+        self.ic._body_cache = self._orig_cache
+
+    def _cfg(self, url="https://example.com/p", mtype="hash"):
+        return {"url": url, "type": mtype, "modules": ["content/x.md"]}
+
+    def test_hash_jitter_suppressed(self):
+        """每次拉取内容都变(JS渲染动态页)→ 两次不一致 → 按噪音跳过,基线不动,streak 计数。"""
+        seq = {"i": 0}
+
+        def jitter(url, timeout=20, cache=True):
+            seq["i"] += 1
+            return f"<html><body>session-{seq['i']}</body></html>"
+
+        self.ic.fetch = jitter
+        ch, detail, ns = self.ic.check_source("x", self._cfg(), {"hash": "old", "ts": "2026-01-01"})
+        self.assertFalse(ch)
+        self.assertTrue(detail.startswith("unstable"), detail)
+        self.assertEqual(ns["hash"], "old")            # 基线保留
+        self.assertEqual(ns["unstable_streak"], 1)
+
+    def test_hash_stable_change_detected(self):
+        """两次拉取一致且≠基线 → 真变更(退出码 1 之路径)。"""
+        self.ic.fetch = lambda url, timeout=20, cache=True: "<html><body>brand new content</body></html>"
+        ch, detail, ns = self.ic.check_source("x", self._cfg(), {"hash": "old"})
+        self.assertTrue(ch)
+        self.assertIn("hash:", detail)
+        self.assertNotEqual(ns["hash"], "old")
+
+    def test_canonicalize_attr_shuffle_stable(self):
+        """CDN 属性顺序漂移不触发假变更(此前 Google 页面永久假阳性的根因)。"""
+        a = '<div class="x" id="y">hello</div>'
+        b = '<div id="y" class="x">hello</div>'
+        self.assertEqual(self.ic.content_hash(a), self.ic.content_hash(b))
+
+    def test_rss_new_top_reported(self):
+        rss = ('<rss><channel><item><title>New Post A</title><link>l1</link></item>'
+               '<item><title>Old Post</title></item></channel></rss>')
+        self.ic.fetch = lambda url, timeout=20, cache=True: rss
+        ch, detail, ns = self.ic.check_source(
+            "x", self._cfg(mtype="rss"), {"top": "Old Post", "seen": ["Old Post"]})
+        self.assertTrue(ch)
+        self.assertIn("New Post A", detail)
+        self.assertEqual(ns["top"], "New Post A")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

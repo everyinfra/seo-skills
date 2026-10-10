@@ -22,12 +22,16 @@ intel_check.py 输出 `[CHANGED] <源名>: <详情>` + `→ 应更新: <文件�
 
 1. **获取变更内容**:
    - RSS 源:读新条目标题+链接,fetch 原文确认;
-   - hash 源:fetch 页面,diff 关键区块(搜上次已知关键词定位变了什么);
+   - hash 源:已过**二次拉取确认**(两次一致才算变更,报告里的就是稳定新内容),fetch 页面定位具体变了什么;
 2. **判断影响级**:
    - **P0 规则级**:阈值/官方规则变了(如"CWV 阈值更新"→cwv-playbook 的数字要改)——必须改文件;
    - **P1 事实级**:数据/份额/统计变了(如 StatCounter 份额)——更新对应门户页+总览表;
    - **P2 事件级**:新功能/新公告(如"Search Console 新报告")——在对应模块加条目+来源;
    - **P3 噪声**:页面重构/无关变更——跳过,记录"确认无影响"。
+
+> `unstable(连续N次)` 报告≠变更:intel_check 对 hash 源做了二次拉取确认,两次拉取结果不一致
+> (JS渲染/动态页,如 StatCounter 图表页)自动按噪音跳过且不动基线——**无需任何处理**;
+> 连续 3 次以上 unstable 的源只是"偶尔人工看一眼",不要据此更新文件。
 
 ### 第二步:按映射表更新文件
 
@@ -49,7 +53,7 @@ intel_check.py 输出 `[CHANGED] <源名>: <详情>` + `→ 应更新: <文件�
 ### 第三步:验证
 
 ```bash
-python3 skills/seo-suite/scripts/self_check.py   # 必须 OK(71 tests)
+python3 skills/seo-suite/scripts/self_check.py   # 必须 OK(75 tests)
 python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references --lines 3  # 无过期
 ```
 

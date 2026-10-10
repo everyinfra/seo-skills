@@ -5,6 +5,8 @@
   intel_check.py check             # 拉全部源→diff→报告(变更源列表+受影响模块映射)
   intel_check.py check --source google-blog  # 只查指定源
 输出: 变更源+变更摘要+应更新的套件文件列表(基于 source→module 映射)
+hash 源二次确认: 检出变更后立即重拉一次,两次一致才算真变更;
+动态页(JS渲染,如 statcounter 图表)两次不同 → 按噪音跳过,不动基线。
 退出码: 0=无变更 / 1=有变更(触发更新流程) / 2=错误"""
 import sys, os, json, re, hashlib, urllib.request, xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -52,10 +54,18 @@ SOURCES = {
         "modules": ["monitoring/penalty-recovery.md", "technical/rendering-seo.md"]},
 }
 
-def fetch(url, timeout=20):
+_body_cache = {}
+
+def fetch(url, timeout=20, cache=True):
+    # 同一轮里同 URL 只拉一次(google-blog/gsc-announce 共用一个 feed);
+    # 二次确认场景传 cache=False 强制真拉
+    if cache and url in _body_cache:
+        return _body_cache[url]
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read(2_000_000).decode("utf-8", "replace")
+        body = r.read(2_000_000).decode("utf-8", "replace")
+    _body_cache[url] = body
+    return body
 
 def get_rss_items(xml_text, limit=5):
     """提取 RSS/Atom 最近 N 条: (title, link, date)"""
@@ -143,7 +153,19 @@ def check_source(name, cfg, prev):
     now = datetime.now(timezone.utc).isoformat()
     if cfg["type"] == "hash":
         if prev and prev.get("hash") == h:
+            if prev.get("unstable_streak"):
+                return False, "", {**prev, "unstable_streak": 0, "ts": now}
             return False, "", None
+        # 与基线不同 → 立即二次拉取确认:两次一致才是真变更(动态页每次渲染
+        # 都在抖,如 statcounter 的 JS 图表页),两次不一致按噪音跳过且不动基线
+        try:
+            h2 = content_hash(fetch(cfg["url"], cache=False))
+        except Exception:
+            h2 = h  # 二次拉取失败时退回单次结果
+        if h2 != h:
+            streak = (prev or {}).get("unstable_streak", 0) + 1
+            note = "连续抖动,疑似JS渲染/动态页,按P3处理,偶尔人工复核即可" if streak >= 3 else "页面抖动,本次跳过"
+            return False, f"unstable(连续{streak}次): {note}", {**(prev or {}), "unstable_streak": streak, "ts": now}
         return (prev is not None), f"hash:{h[:12]}", {"hash": h, "ts": now}
     # rss
     items = get_rss_items(body)
@@ -205,8 +227,9 @@ def main():
             ch, detail, new_state = check_source(name, cfg, prev)
             if ch:
                 changed_sources.append((name, detail, cfg["modules"]))
-                if new_state: state["sources"][name] = new_state
-            elif detail.startswith("fetch_error"):
+            if new_state:
+                state["sources"][name] = new_state
+            if detail.startswith("fetch_error") or detail.startswith("unstable"):
                 errors.append((name, detail))
         except Exception as e:
             errors.append((name, str(e)))
@@ -223,8 +246,8 @@ def main():
         print("\n下一步: 按 self-update-protocol.md 逐个更新 → self_check → commit")
         sys.exit(1)
     else:
-        print(f"无变更(已查 {len([n for n in SOURCES if not only or n == only])} 源;{len(errors)} 错误)")
-        for n, e in errors[:3]: print(f"  err {n}: {e}")
+        print(f"无变更(已查 {len([n for n in SOURCES if not only or n == only])} 源;{len(errors)} 错误/抖动)")
+        for n, e in errors[:5]: print(f"  skip {n}: {e}")
         sys.exit(0)
 
 if __name__ == "__main__": main()
