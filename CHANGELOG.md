@@ -5,12 +5,12 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 0.31.0 - 2026-10-10
 
-- **10 agent 体验测试+全面修复**:4 个测试团队(真实用户场景/脚本工具链/知识准确性/架构债)找问题 → 修复团队执行(12 项 P0+4 项 P1 全完成):
+- **10 agent 体检+全面修复**:4 个测试团队(真实用户场景/脚本工具链/知识准确性/架构债)找问题 → 修复团队执行(12 项 P0+4 项 P1 全完成):
   - **P0**:site_audit **fetch 质量守卫**(403/挑战页/<200 bytes→SKIP 拒绝假 CRITICAL)/intel_check **hash canonical 化**(属性排序+去 script 再哈希——永久误报修复)/install.sh **--help/--dry-run/--force**(不再 --help 触发真装)/11 个脚本补 **--help**(gsc_mining 等不再 traceback)/SKILL.md **补 19 处 markets 路由**(31 个缺失文件挂入)/capability-map **重写**(195→精简,4 个深读笔记拆至 appendix)/intel-sources 死链修/Reddit 塌陷更新(→0.5% 2026-08)/llmstxt HTML **PASS/FAIL** 判定;
   - **P1**:gsc_mining+site_audit+market_lint **--json** 结构化输出/citability-scoring 加"用哪套"入口行/README 系列段时序+数字统一/multilingual 第十二节去代号;
   - **知识准确性**:26 条声明抽查 24 准确/92.3%;18 URL 17 有效(死链修);
   - 25 文件改动+446/-224 行;71 tests 全绿。
-  10-agent experience testing + full fix: 12 P0 + 4 P1 all resolved; 92.3% fact accuracy on spot-check.
+  10-agent health check + full fix: 12 P0 + 4 P1 all resolved; 92.3% fact accuracy on spot-check.
 
 ## 0.30.1 - 2026-10-10
 
