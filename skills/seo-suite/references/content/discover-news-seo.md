@@ -62,9 +62,11 @@ curl -sI https://example.com/news-sitemap.xml | head -1
 curl -s https://example.com/news/article | grep -i 'noindex' || echo OK
 ```
 
-**Fact Check 标签实操(ClaimReview,2026-10 现行路径)**:
+**Fact Check 标签实操(ClaimReview,口径更新 2026-10-10)**:
 
-- 触发机制:页面上的 schema.org **ClaimReview** JSON-LD → Google Search 显示 Fact Check 富结果、Google News 识别事实核查文章(官方文档+Google 官方博客);
+> ⚠️ **富结果已退役**:ClaimReview 的 Google Search **Fact Check 富结果 2025-06-12 起全站退役**(Rich Results Test/GSC 2025-09-09 起亦不再报告该类型,见 technical/deprecated-signals.md)。**不再建议为 SERP 富结果目的新增 ClaimReview**;但 ClaimReview 标记本身仍有两个存续价值:① Google News 识别事实核查文章的结构化信号;② Fact Check Tools API/ClaimReview Project 生态消费。下述实操按此定位执行——为生态而非富结果。
+
+- 触发机制(退役前):页面上的 schema.org **ClaimReview** JSON-LD → Google Search 显示 Fact Check 富结果、Google News 识别事实核查文章(官方文档+Google 官方博客);
 - **两条实现路径**:①手写 JSON-LD(按官方 factcheck 文档,必填:被核查的声明 `claimReviewed`、结论 `reviewRating`、核查文 URL `url`);②**Fact Check Markup Tool**(toolbox.google.com/factcheck/markuptool)——表单式生成,**门槛=Search Console 验证站点所有权**,单个声明标记耗时 <30 秒(ClaimReview Project 用户指南口径);
 - **批量/程序化路径:Fact Check Tools API**(Read/Write)可编程增删改 ClaimReview 标记——适合核查量大的新闻室;
 - 最佳实践:**一页一 ClaimReview** 为主;一页多声明可用 `ItemList` 包多个 ClaimReview(官方支持);只核查可验证的具体声明(非观点);rating 建议用文字结论(如 "False")而非裸数字;

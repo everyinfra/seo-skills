@@ -920,5 +920,34 @@ class IntelCheckTests(unittest.TestCase):
         self.assertEqual(ns["top"], "New Post A")
 
 
+# ---- 自动发现 tests/test_*.py(独立测试文件:standalone、自带助手、不改本文件) ----
+_EXTRA_LOADED = False
+
+def _load_extra_tests():
+    global _EXTRA_LOADED
+    if _EXTRA_LOADED:
+        return
+    _EXTRA_LOADED = True
+    import glob
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))
+    for path in sorted(glob.glob(os.path.join(here, "test_*.py"))):
+        modname = os.path.basename(path)[:-3]
+        try:
+            spec = importlib.util.spec_from_file_location(modname, path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            for attr in dir(mod):
+                obj = getattr(mod, attr)
+                if isinstance(obj, type) and issubclass(obj, unittest.TestCase) and obj.__module__ == modname:
+                    key = f"{modname}_{attr}"
+                    if key not in globals():
+                        globals()[key] = obj
+        except Exception as e:
+            print(f"[!] 加载 {modname} 失败: {e}", file=sys.stderr)
+
+_load_extra_tests()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

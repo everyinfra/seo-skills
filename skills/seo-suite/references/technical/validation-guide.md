@@ -211,7 +211,7 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 - 图片分级阈值:缩略图目标<50KB/警>100/危>200;内容图<100/警>200/危>500;hero<200/警>300/危>700;alt 长度 10–125 字符;**首屏/LCP 图禁 lazy-load**,加 `fetchpriority="high"`。
 - sitemap:单文件 <50k URL(协议限);`priority`/`changefreq` 已被 Google 忽略(Info 级);lastmod 全同=低信号;含 noindex/重定向 URL=High。
 - 内链:孤儿=入链 ≤1;入链<3 的页面占爬取页 ≥10% 警告;单页出链>100 警告;内链 nofollow=Info(浪费权重);柱页目标入链 10+。
-- schema 状态表(2026-02 口径):FAQ 仅政府/医疗权威站;HowTo(2023-09 移除)、SpecialAnnouncement(2025-07 弃用)、CourseInfo/EstimatedSalary/LearningVideo/ClaimReview/VehicleListing(2025-06 退役)、Practice Problem/Dataset(2025 末退役)一律**不再推荐**;Book Actions 弃用又回滚(仍可用,历史注记)。
+- schema 状态表(口径更新 2026-10-10):**FAQPage 富结果 2026-05-07 全站退役**(存量标 Info 不标 Critical,不建议删除或为 SERP 新增,真问答页用 QAPage);HowTo(2023-09 移除)、SpecialAnnouncement(2025-07 弃用)、CourseInfo/EstimatedSalary/LearningVideo/ClaimReview/VehicleListing(2025-06 退役)、PracticeProblem(2026-01 起 GSC 移除)一律**不再推荐**;**Dataset 未退役**(仅被 Dataset Search 消费,勿当被杀);Book Actions 弃用又回滚(仍可用,历史注记);详见 deprecated-signals.md。
 
 ### GEO 判定口径(引用时标"行业研究,非官方")
 

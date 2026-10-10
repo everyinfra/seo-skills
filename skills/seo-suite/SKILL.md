@@ -27,11 +27,13 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(38 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(40 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
-- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知
+- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节)
+- `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
+- `traffic_funnel.py --audit audit.json --gsc gsc.csv`:六阶段页面流失漏斗(available⊃indexable⊃uniqueness[Simhash+DeepRank]⊃in_serps⊃with_clicks⊃good_ux);无 GSC 自动截断+coverage 声明
 - `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical
 - `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
 - `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威
@@ -41,7 +43,7 @@ metadata:
 - `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
 - `hreflang_cluster.py URL...`:簇矩阵(es-419 放行/jp 拒绝/单断全废提示)
 - `redirect_chain.py URL`:逐跳链/循环/301 检查
-- `robots_posture.py URL`:AI 爬虫三层矩阵+Cloudflare 注入检测+Content-Signal
+- `robots_posture.py URL`:AI 爬虫矩阵——**27 bot 三层名单**(training/search/user)+CITATION_BOTS 5 个**两级评分**(通配符 Allow 只拿部分分,专属规则才满分)+RFC 9309 四态判定+Cloudflare 注入检测+Content-Signal;--fix-robots 打印可追加的修复块
 - `llmstxt.py validate|check|generate`:v2 校验/线上探测/生成
 - `schema_lint.py URL`:@id/悬空引用/自评评分/占位符黑名单
 - `head_check.py URL|FILE`:head 元素检查——元素顺序/charset 位置(>1024B)/弃用 meta 堆叠(twitter:* 全套/x-ua-compatible/fb:app_id)/og:image 绝对 URL;`--market zh` 门控微信/QQ itemprop 中文场景检查
@@ -248,7 +250,8 @@ metadata:
 - [head 元素完整参考](references/technical/head-elements.md):HTML head 全元素 2026 口径(joshbuchea/HEAD 重组;含弃用清单与平台私有 meta)
 - [重定向与 Canonicalization](references/technical/redirects-canonical.md):重定向全类型+canonical 六场景深度指南(信号合并/迁移/跨域)
 - [Agent 协议速查卡](references/technical/agent-protocols.md):14 协议一页对照(Content Signals/WebMCP/ARD…每卡:规则数字/验证命令/状态)
-- [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位)
+- [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位);P0/P1 79 条已扩 Sitebulb 式解释层(what/why/trigger/caveat/fix/export 九字段)
+- [过时信号看门表](references/technical/deprecated-signals.md):官方已停用/勿再推荐清单(带时间戳与一手来源)——**涉及 schema/富结果/CWV/GSC 口径的建议前必查**;tests/test_canonical_facts.py 用 16 条正则钉死已知错误陈述(套件内文档命中即测试失败)
 - [Naver Search Advisor 蒸馏](references/technical/naver-searchadvisor.md):55 篇官方指南全量蒸馏(每节 guid 可对勘原文)
 - `references/technical/event-library.md`
 - `references/technical/ga4-implementation.md`
@@ -300,6 +303,8 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/monitor/rank-report.md`
 - `templates/monitor/backlink-report.md`
 - `templates/monitor/performance-report.md`
+- `templates/monitor/ai-visibility-weekly.md`(Scrunch 六段周报:>5pp 才点名/恰好一条动作/全平则 stable no action needed)
+- `templates/monitor/ai-visibility-monthly.md`(月报五节:Executive Summary/Visibility/Competitive/Content Health 三分/Recommendations 恰好 3 动作)
 - `templates/monitor/alert-playbook.md`
 
 ## 常见请求如何路由
