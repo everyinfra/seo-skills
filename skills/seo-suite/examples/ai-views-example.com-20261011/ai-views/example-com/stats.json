@@ -1,0 +1,27 @@
+{
+ "tool": "ai_views",
+ "source": "inputs/example.com.html",
+ "slug": "example-com",
+ "generated": "2026-10-11T04:21:07",
+ "deploy": "manual-only(从不部署,人审后自行部署到如 /ai/ 路径)",
+ "tokens": {
+  "original": 144,
+  "ai_html": 72,
+  "ai_md": 43,
+  "reduction_pct": 50.0
+ },
+ "blocks": {
+  "converted": 0,
+  "removed": 2,
+  "kept": 1,
+  "attrs_stripped": 0,
+  "meta_dropped": 3
+ },
+ "meta": {
+  "title": "Example Domain",
+  "description": null,
+  "canonical": null,
+  "og": {},
+  "lang": "en"
+ }
+}

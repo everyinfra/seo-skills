@@ -347,3 +347,195 @@ jobs:
               sys.exit(10)                                  # siteone 契约:0 过 / 10 失败
           print("audit-pr-gate: all checks passed")
           PY
+
+  # ── envelope-report(定时 envelope 三源聚合 + 月度匿名基准;borrow-specs E4/E8)──
+  # 与 monitor 同 cadence(schedule 两个 cron 均触发;workflow_dispatch 可手动干跑;
+  # pull_request 不触发——与 monitor job 同守卫)。链路:对 env SITE_URL 现场
+  # site_audit --json → 当日快照按日归档 artifacts/baseline/YYYY-MM-DD.json(cache
+  # 持久化;重跑同日覆盖,幂等)→ 有上期基线则 audit_compare --baseline-gate 跌幅门
+  # (ci-gates.md §七:基线缺失=响亮 WARNING + skipped(baseline_missing),绝不静默)→
+  # envelope 三源聚合(audit+health+priority)→ upload-artifact 保留 90 天。
+  # 月度基准:每月第一次运行时对归档目录跑 benchmark_report --audits(每个日期
+  # 快照=一个样本;匿名聚合,偏差自白已内置于脚本输出,不另造口径);样本 <5 脚本
+  # 自拒(rc=2)→ ::warning 优雅跳过,下月自动重试。
+  #
+  # Continue-on-error 策略(明确声明):本 job 与 monitor 互不 needs、无共享状态——
+  # GitHub Actions 独立 job 天然隔离,envelope 失败/超时绝不阻断监控主 job,故不加
+  # continue-on-error(那会吞掉本 job 自己该红的红)。job 内:脚本 exit 2(用法/
+  # 输入错)直接红;rc=1 数据态(site_audit 有 CRITICAL / health_score Weak 档)是
+  # 审计结论不红,交报告呈现;基线门触发放到 upload 之后才 exit 1——产物先保全。
+  #
+  # secrets/变量缺省:SITE_URL 未配(Variables: SEO_ENVELOPE_URL 或复用
+  # SEO_AUDIT_URL)→ ::warning + 优雅跳过(job 绿,不审计 example.com 占位站)。
+  # cache 被驱逐只损失基准样本量(月度报告自动跳过),当日 envelope/门不受影响;
+  # 权威基线仍是 monitor job 的 monitor.db commit-back,本 job 只产报告不写库。
+  #
+  # 本地等价命令(仓库根;scripts/ 指 skills/seo-suite/scripts/):
+  #   python3 skills/seo-suite/scripts/site_audit.py "$SITE_URL" --json > audit.json
+  #   python3 skills/seo-suite/scripts/health_score.py --input audit.json --json > health.json
+  #   python3 skills/seo-suite/scripts/prioritize.py --audit audit.json --json > priority.json
+  #   python3 skills/seo-suite/scripts/envelope.py --audit audit.json --health health.json \
+  #     --priority priority.json --out-dir envelope/
+  #   python3 skills/seo-suite/scripts/audit_compare.py --old baseline/<上期日期>.json \
+  #     --new audit.json --baseline-gate 3
+  #   python3 skills/seo-suite/scripts/benchmark_report.py --audits baseline/ \
+  #     --out benchmark-$(date +%Y-%m).md
+  envelope-report:
+    if: github.event_name != 'pull_request' && github.repository != 'everyinfra/seo-skills'   # 拷贝后删除
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read    # 覆盖 workflow 级 contents:write——本 job 只读+产报告,最小权限
+    concurrency:         # 快照归档串行写;排队不取消(每个快照都是月度基准样本)
+      group: seo-envelope-report
+      cancel-in-progress: false
+    env:
+      SITE_URL: ${{ vars.SEO_ENVELOPE_URL || vars.SEO_AUDIT_URL || '' }}   # 缺省=优雅跳过
+      BASELINE_GATE: "3"  # 主分跌幅门(ci-gates.md §二:起步 3-5 分)
+      BASELINE_DIR: artifacts/baseline   # 按日归档:YYYY-MM-DD.json(平铺;benchmark_report --audits 兼容)
+      OUT_DIR: artifacts/envelope        # 本期产物(audit/health/priority/envelope/compare)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve dates & config guard (SITE_URL 缺省 → 优雅跳过)
+        run: |
+          echo "TODAY=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+          echo "MONTH=$(date -u +%Y-%m)" >> "$GITHUB_ENV"
+          if [ -z "$SITE_URL" ]; then
+            echo "::warning::SITE_URL 未配置(Variables 配 SEO_ENVELOPE_URL 或 SEO_AUDIT_URL)——envelope-report 优雅跳过(本 job 绿;monitor 主 job 不受影响)"
+            echo "SKIP_ENVELOPE=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Restore dated baseline archive (cache 持久化;驱逐只损样本量)
+        if: env.SKIP_ENVELOPE != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: artifacts/baseline
+          key: envelope-baseline-${{ github.run_id }}
+          restore-keys: |
+            envelope-baseline-
+
+      - name: site_audit --json (现场审计;当日快照归档 baseline/)
+        if: env.SKIP_ENVELOPE != 'true'
+        run: |
+          mkdir -p "$BASELINE_DIR" "$OUT_DIR"
+          set +e
+          python3 skills/seo-suite/scripts/site_audit.py "$SITE_URL" --json > "$OUT_DIR/audit.json"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::site_audit 用法/输入错误(exit 2)"
+            exit 2
+          fi
+          # rc=1(存在 CRITICAL)是审计结论——交 compare/envelope 呈现,本步不红
+          cp "$OUT_DIR/audit.json" "$BASELINE_DIR/$TODAY.json"
+          echo "当日快照已归档: $BASELINE_DIR/$TODAY.json"
+
+      # 快照写完即存 cache:后续任何步骤失败都不丢归档(显式 save,不等 post 步骤)
+      - name: Save dated baseline archive
+        if: env.SKIP_ENVELOPE != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: artifacts/baseline
+          key: envelope-baseline-${{ github.run_id }}
+
+      - name: audit_compare --baseline-gate (有上期基线才比对;缺失=响亮跳过)
+        id: compare
+        if: env.SKIP_ENVELOPE != 'true'
+        run: |
+          PREV=$(ls "$BASELINE_DIR" 2>/dev/null \
+            | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}\.json$' | grep -v "^${TODAY}\.json$" \
+            | sort | tail -n 1 || true)
+          if [ -z "$PREV" ]; then
+            echo "::warning::上期基线缺失——compare 跳过 skipped(baseline_missing)(ci-gates.md §七:缺失永不静默;本期快照已归档,下轮起可比)"
+            echo "gate_tripped=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "上期基线: $BASELINE_DIR/$PREV"
+          set +e
+          python3 skills/seo-suite/scripts/audit_compare.py \
+            --old "$BASELINE_DIR/$PREV" --new "$OUT_DIR/audit.json" \
+            --baseline-gate "$BASELINE_GATE" > "$OUT_DIR/compare.md"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::audit_compare 输入错误(exit 2)"
+            exit 2
+          fi
+          if [ "$rc" -eq 1 ]; then
+            echo "gate_tripped=true" >> "$GITHUB_OUTPUT"
+            echo "::error::基线门触发:主分跌幅 > $BASELINE_GATE(详见 compare.md;门判定延后到 upload 之后,先保全产物)"
+          else
+            echo "gate_tripped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: envelope 三源聚合 (audit+health+priority → envelope/)
+        if: env.SKIP_ENVELOPE != 'true'
+        run: |
+          set +e
+          python3 skills/seo-suite/scripts/health_score.py \
+            --input "$OUT_DIR/audit.json" --json > "$OUT_DIR/health.json"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::health_score 输入错误(exit 2)"
+            exit 2
+          fi
+          # rc=1 = 主分档 Weak——报告事实,不红(audit-pr-gate 同策略)
+          python3 skills/seo-suite/scripts/prioritize.py \
+            --audit "$OUT_DIR/audit.json" --json > "$OUT_DIR/priority.json"
+          python3 skills/seo-suite/scripts/envelope.py \
+            --audit "$OUT_DIR/audit.json" --health "$OUT_DIR/health.json" \
+            --priority "$OUT_DIR/priority.json" --out-dir "$OUT_DIR/envelope"
+          {
+            echo "## SEO envelope($SITE_URL @ $TODAY)"
+            echo '```'
+            sed -n '1,30p' "$OUT_DIR/envelope/REPORT.md"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 月度基准 benchmark_report --audits (每月第一次运行时)
+        if: env.SKIP_ENVELOPE != 'true'
+        run: |
+          # 本月今日之前已有快照 → 非月度首跑,跳过基准
+          PRIOR_THIS_MONTH=$(ls "$BASELINE_DIR" 2>/dev/null \
+            | grep -E "^${MONTH}-[0-9]{2}\.json$" | grep -v "^${TODAY}\.json$" | head -n 1 || true)
+          if [ -n "$PRIOR_THIS_MONTH" ]; then
+            echo "本月已有更早快照($PRIOR_THIS_MONTH),非月度首跑——基准跳过"
+            exit 0
+          fi
+          set +e
+          python3 skills/seo-suite/scripts/benchmark_report.py \
+            --audits "$BASELINE_DIR" --out "$OUT_DIR/benchmark-${MONTH}.md"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::warning::基准拒出(rc=2:样本 <5 或输入侧错误——小样本分位数误导,脚本纪律)。偏差自白已内置于报告本身;下月自动重试"
+            exit 0
+          fi
+          {
+            echo "## 月度匿名基准($MONTH;偏差自白见报告首尾)"
+            echo '```'
+            sed -n '1,25p' "$OUT_DIR/benchmark-${MONTH}.md"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload envelope artifacts (保留 90 天)
+        if: env.SKIP_ENVELOPE != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: envelope-report-${{ env.TODAY }}
+          path: artifacts/envelope/
+          retention-days: 90
+          if-no-files-found: warn   # compare.md 仅在有上期基线时存在;benchmark 仅月度
+
+      # 门判定放 upload 之后:触发时 job 红(独立 job,不连坐 monitor),产物已保全
+      - name: baseline gate verdict (触发才红;产物已上传)
+        if: env.SKIP_ENVELOPE != 'true' && steps.compare.outputs.gate_tripped == 'true'
+        run: |
+          echo "::error::envelope-report 基线门触发(主分跌幅 > $BASELINE_GATE)——详见 artifact compare.md。监控主 job 不受影响(独立 job 天然隔离)"
+          exit 1

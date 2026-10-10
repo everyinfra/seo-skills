@@ -1,0 +1,757 @@
+{
+  "brand": "Nimbus Analytics",
+  "aliases": [
+    "Nimbus"
+  ],
+  "domain": "nimbus.example",
+  "prompts": [
+    "ai agent security checklist",
+    "best webhook monitoring tools",
+    "top product analytics platforms",
+    "cheap analytics alternatives list",
+    "how to build a data warehouse",
+    "etl vs elt explained",
+    "cohort retention analysis guide",
+    "product analytics benchmarks report",
+    "open source product analytics options",
+    "self-hosted analytics comparison",
+    "best crm for startups",
+    "crm implementation mistakes",
+    "product analytics fundamentals tutorial",
+    "funnel analysis best practices"
+  ],
+  "engines": [
+    "chatgpt",
+    "perplexity"
+  ],
+  "created": "2026-10-11T04:23:00",
+  "runs": [
+    {
+      "run_id": "chatgpt-2026-10-09",
+      "engine": "chatgpt",
+      "date": "2026-10-09",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "ai agent security checklist": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best webhook monitoring tools": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top product analytics platforms": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/product-analytics",
+            "https://rival.example/platform",
+            "https://en.wikipedia.org/wiki/Web_analytics"
+          ]
+        },
+        "cheap analytics alternatives list": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/cheap-analytics-tools",
+            "https://handbook.devops.to/cheap-stack"
+          ]
+        },
+        "how to build a data warehouse": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "etl vs elt explained": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cohort retention analysis guide": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics benchmarks report": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.reddit.com/r/productanalytics"
+          ]
+        },
+        "self-hosted analytics comparison": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best crm for startups": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm",
+            "https://rival.example/crm"
+          ],
+          "rank": 2
+        },
+        "crm implementation mistakes": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm-mistakes",
+            "https://blog.growthnotes.dev/crm-mistakes"
+          ],
+          "rank": 3
+        },
+        "product analytics fundamentals tutorial": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/fundamentals",
+            "https://docs.dataschool.io/analytics-101"
+          ],
+          "rank": 1
+        },
+        "funnel analysis best practices": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics",
+            "https://blog.growthnotes.dev/funnels"
+          ],
+          "rank": 1
+        }
+      },
+      "fingerprint": "5b17edbb3ef9234c",
+      "denominator_freeze_hash": "7c2606d9bb97d4b2"
+    },
+    {
+      "run_id": "chatgpt-2026-10-10",
+      "engine": "chatgpt",
+      "date": "2026-10-10",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "ai agent security checklist": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best webhook monitoring tools": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top product analytics platforms": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/product-analytics",
+            "https://rival.example/platform"
+          ]
+        },
+        "cheap analytics alternatives list": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/cheap-analytics-tools",
+            "https://handbook.devops.to/cheap-stack"
+          ]
+        },
+        "how to build a data warehouse": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "etl vs elt explained": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cohort retention analysis guide": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics benchmarks report": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": [
+            "https://nimbus.example/open-source",
+            "https://www.reddit.com/r/productanalytics"
+          ]
+        },
+        "self-hosted analytics comparison": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best crm for startups": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm",
+            "https://rival.example/crm"
+          ],
+          "rank": 1
+        },
+        "crm implementation mistakes": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm-mistakes",
+            "https://blog.growthnotes.dev/crm-mistakes"
+          ],
+          "rank": 2
+        },
+        "product analytics fundamentals tutorial": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/fundamentals",
+            "https://docs.dataschool.io/analytics-101"
+          ],
+          "rank": 3
+        },
+        "funnel analysis best practices": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics",
+            "https://blog.growthnotes.dev/funnels"
+          ],
+          "rank": 3
+        }
+      },
+      "fingerprint": "5b17edbb3ef9234c",
+      "denominator_freeze_hash": "7c2606d9bb97d4b2"
+    },
+    {
+      "run_id": "chatgpt-2026-10-11",
+      "engine": "chatgpt",
+      "date": "2026-10-11",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "ai agent security checklist": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best webhook monitoring tools": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top product analytics platforms": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/product-analytics",
+            "https://techcrunch.com/2026/product-analytics-landscape"
+          ]
+        },
+        "cheap analytics alternatives list": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "how to build a data warehouse": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "etl vs elt explained": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cohort retention analysis guide": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics benchmarks report": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "self-hosted analytics comparison": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": [
+            "https://en.wikipedia.org/wiki/Business_intelligence"
+          ]
+        },
+        "best crm for startups": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm",
+            "https://rival.example/crm"
+          ],
+          "rank": 3
+        },
+        "crm implementation mistakes": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm-mistakes",
+            "https://blog.growthnotes.dev/crm-mistakes"
+          ],
+          "rank": 1
+        },
+        "product analytics fundamentals tutorial": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/fundamentals",
+            "https://docs.dataschool.io/analytics-101"
+          ],
+          "rank": 5
+        },
+        "funnel analysis best practices": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics",
+            "https://blog.growthnotes.dev/funnels"
+          ],
+          "rank": 5
+        }
+      },
+      "fingerprint": "5b17edbb3ef9234c",
+      "denominator_freeze_hash": "7c2606d9bb97d4b2"
+    },
+    {
+      "run_id": "perplexity-2026-10-09",
+      "engine": "perplexity",
+      "date": "2026-10-09",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "ai agent security checklist": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best webhook monitoring tools": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top product analytics platforms": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/product-analytics",
+            "https://rival.example/platform"
+          ]
+        },
+        "cheap analytics alternatives list": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/cheap-analytics-tools",
+            "https://handbook.devops.to/cheap-stack"
+          ]
+        },
+        "how to build a data warehouse": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "etl vs elt explained": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cohort retention analysis guide": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics benchmarks report": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "self-hosted analytics comparison": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": [
+            "https://en.wikipedia.org/wiki/Business_intelligence"
+          ]
+        },
+        "best crm for startups": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm",
+            "https://rival.example/crm"
+          ],
+          "rank": 2
+        },
+        "crm implementation mistakes": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm-mistakes",
+            "https://blog.growthnotes.dev/crm-mistakes"
+          ],
+          "rank": 4
+        },
+        "product analytics fundamentals tutorial": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/fundamentals",
+            "https://docs.dataschool.io/analytics-101"
+          ],
+          "rank": 2
+        },
+        "funnel analysis best practices": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics",
+            "https://blog.growthnotes.dev/funnels"
+          ],
+          "rank": 2
+        }
+      },
+      "fingerprint": "4b1e159fc84c0c02",
+      "denominator_freeze_hash": "7c2606d9bb97d4b2"
+    },
+    {
+      "run_id": "perplexity-2026-10-10",
+      "engine": "perplexity",
+      "date": "2026-10-10",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "ai agent security checklist": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best webhook monitoring tools": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top product analytics platforms": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/product-analytics",
+            "https://rival.example/platform"
+          ]
+        },
+        "cheap analytics alternatives list": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "how to build a data warehouse": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "etl vs elt explained": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cohort retention analysis guide": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics benchmarks report": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.reddit.com/r/productanalytics"
+          ]
+        },
+        "self-hosted analytics comparison": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best crm for startups": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/best-crms-for-startups",
+            "https://hubspot.com/crm/buyers-guide"
+          ]
+        },
+        "crm implementation mistakes": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/crm-mistakes",
+            "https://blog.growthnotes.dev/crm-mistakes"
+          ],
+          "rank": 2
+        },
+        "product analytics fundamentals tutorial": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/fundamentals",
+            "https://docs.dataschool.io/analytics-101"
+          ],
+          "rank": 4
+        },
+        "funnel analysis best practices": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics",
+            "https://blog.growthnotes.dev/funnels"
+          ],
+          "rank": 4
+        }
+      },
+      "fingerprint": "4b1e159fc84c0c02",
+      "denominator_freeze_hash": "7c2606d9bb97d4b2"
+    },
+    {
+      "run_id": "perplexity-2026-10-11",
+      "engine": "perplexity",
+      "date": "2026-10-11",
+      "brand": "Nimbus Analytics",
+      "results": {
+        "ai agent security checklist": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best webhook monitoring tools": {
+          "state": "failed",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "top product analytics platforms": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/product-analytics"
+          ]
+        },
+        "cheap analytics alternatives list": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/categories/cheap-analytics-tools",
+            "https://handbook.devops.to/cheap-stack"
+          ]
+        },
+        "how to build a data warehouse": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "etl vs elt explained": {
+          "state": "no_answer",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "cohort retention analysis guide": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "product analytics benchmarks report": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "open source product analytics options": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "self-hosted analytics comparison": {
+          "state": "name_only_mention",
+          "mentioned": 1,
+          "cited": 0,
+          "cited_urls": []
+        },
+        "best crm for startups": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://www.g2.com/best-crms-for-startups"
+          ]
+        },
+        "crm implementation mistakes": {
+          "state": "brand_absent",
+          "mentioned": 0,
+          "cited": 0,
+          "cited_urls": [
+            "https://kpiwiki.io/crm-glossary"
+          ]
+        },
+        "product analytics fundamentals tutorial": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/fundamentals",
+            "https://docs.dataschool.io/analytics-101"
+          ],
+          "rank": 6
+        },
+        "funnel analysis best practices": {
+          "state": "cited_brand",
+          "mentioned": 1,
+          "cited": 1,
+          "cited_urls": [
+            "https://nimbus.example/funnel-guide",
+            "https://docs.dataschool.io/bi-basics",
+            "https://blog.growthnotes.dev/funnels"
+          ],
+          "rank": 6
+        }
+      },
+      "fingerprint": "4b1e159fc84c0c02",
+      "denominator_freeze_hash": "7c2606d9bb97d4b2"
+    }
+  ],
+  "competitors": [
+    "rival.example"
+  ],
+  "denominator_freeze": {
+    "version": "denom-freeze-v1",
+    "freeze_hash": "7c2606d9bb97d4b2",
+    "eligible_prompts": [
+      "ai agent security checklist",
+      "best webhook monitoring tools",
+      "top product analytics platforms",
+      "cheap analytics alternatives list",
+      "how to build a data warehouse",
+      "etl vs elt explained",
+      "cohort retention analysis guide",
+      "product analytics benchmarks report",
+      "open source product analytics options",
+      "self-hosted analytics comparison",
+      "best crm for startups",
+      "crm implementation mistakes",
+      "product analytics fundamentals tutorial",
+      "funnel analysis best practices"
+    ],
+    "ineligible_prompts": [],
+    "frozen_at": "2026-10-11T04:23:00"
+  }
+}

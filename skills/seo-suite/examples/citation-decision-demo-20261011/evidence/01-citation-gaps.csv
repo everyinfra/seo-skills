@@ -1,0 +1,12 @@
+Domain,URL,Citations,Prompts,Providers,Competitors Mentioned,Priority
+g2.com,https://www.g2.com/categories/product-analytics,6,top product analytics platforms,"chatgpt,perplexity","rival.example,techcrunch.com,wikipedia.org",High
+devops.to,https://handbook.devops.to/cheap-stack,4,cheap analytics alternatives list,"chatgpt,perplexity",g2.com,High
+rival.example,https://rival.example/platform,4,top product analytics platforms,"chatgpt,perplexity","g2.com,wikipedia.org",High
+g2.com,https://www.g2.com/categories/cheap-analytics-tools,4,cheap analytics alternatives list,"chatgpt,perplexity",devops.to,High
+g2.com,https://www.g2.com/best-crms-for-startups,2,best crm for startups,perplexity,hubspot.com,High
+wikipedia.org,https://en.wikipedia.org/wiki/Web_analytics,1,top product analytics platforms,chatgpt,"g2.com,rival.example",High
+hubspot.com,https://hubspot.com/crm/buyers-guide,1,best crm for startups,perplexity,g2.com,High
+techcrunch.com,https://techcrunch.com/2026/product-analytics-landscape,1,top product analytics platforms,chatgpt,g2.com,High
+reddit.com,https://www.reddit.com/r/productanalytics,3,open source product analytics options,"chatgpt,perplexity",,Standard
+wikipedia.org,https://en.wikipedia.org/wiki/Business_intelligence,2,self-hosted analytics comparison,"chatgpt,perplexity",,Standard
+kpiwiki.io,https://kpiwiki.io/crm-glossary,1,crm implementation mistakes,perplexity,,Standard

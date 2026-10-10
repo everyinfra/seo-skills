@@ -8,6 +8,9 @@
 |---|---|---|
 | [site-audit-chain-example.com-20261010/](site-audit-chain-example.com-20261010/REPORT.md) | `site_audit.py --json` → `health_score.py --input` → `fix_plan.py --audit --estimate`(真实抓取 https://example.com) | dev 模式审计报告(REPORT.md)+ 3 份编号证据(审计 JSON/健康分/修复计划 dry-run) |
 | [citation-panel-demo-20261010/](citation-panel-demo-20261010/REPORT.md) | `citation_panel.py init → record ×6 → report`(合成数据,显式声明) | AI 可见性面板报告(REPORT.md)+ 工具原样 report 输出(evidence/01)+ panel.json/runs/inputs 原始层 |
+| [envelope-chain-example.com-20261011/](envelope-chain-example.com-20261011/REPORT.md) | `site_audit.py --json` → `health_score.py --json` → `prioritize.py --json` → `envelope.py`(三源聚合;真实抓取 https://example.com) | dev 模式 envelope 报告(REPORT.md)+ 4 步编号证据,含 envelope 落盘树(evidence/04:audit-data.json + REPORT.md + findings/*.md 3/3 类别,部分落盘契约形态) |
+| [ai-views-example.com-20261011/](ai-views-example.com-20261011/REPORT.md) | `ai_views.py --html --apply --json`(真实抓取的 HTML 离线重放,零网络) | AI 视图层报告(REPORT.md;token 缩减 144→72/50.0%、Scrunch 对标未达标如实报、人审后部署边界)+ evidence 4 件(JSON/stats/视图/净化前后 diff) |
+| [citation-decision-demo-20261011/](citation-decision-demo-20261011/REPORT.md) | `citation_panel.py init → record ×6` → `citation_gaps.py --owned-relevance --domain-class` → `cite_domain.py --input`(合成数据,显式声明) | 七叉决策演示报告(REPORT.md;14 prompt 覆盖全 7 分支×2)+ gaps 三形态证据(md/csv/json)+ g2.com 评级证据(90.0/A)+ panel/runs/inputs 原始层 |
 | [gold-standard-keyword-research.md](gold-standard-keyword-research.md) | 无脚本(人工交付金标准,合成数据) | 关键词研究七段式单文件样例 |
 
 ## How to read an example(三层结构)

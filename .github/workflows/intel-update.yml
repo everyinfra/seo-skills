@@ -141,3 +141,92 @@ jobs:
           curl -s -X POST "$SEO_INTEL_SLACK_WEBHOOK" \
             -H 'Content-Type: application/json' \
             -d '{"text":"📚 SEO skill intel-update: sources changed. See .intel-update-task.md in repo."}' || true
+
+  # ── capability-drift(CAPABILITY_MATRIX ↔ 文件系统漂移门;零 secret 零网络)────
+  # 与 check-and-flag 同一 cron 触发(每日 UTC 01:11 之后串行:needs + !cancelled(),
+  # 前者成败都不拦本检查——漂移门独立于信源抓取,不因抓取失败而静默)。跑
+  # python3 skills/seo-suite/tests/test_capability_matrix.py:矩阵与 scripts/、
+  # templates/ 漂移(典型:新增脚本未登记 CAPABILITY_MATRIX)→ 测试非零退出 →
+  # job 红,并上传 diff 说明 artifact(双向差集 + 修复指引);无漂移 → 全绿静默。
+  #
+  # Continue-on-error 策略(明确声明):漂移必须响亮——本 job 不加 continue-on-error,
+  # 失败即红;它是 check-and-flag 的下游 job,自身成败不影响已跑完的信源检查,
+  # 与其互不写库互不通知(不 commit、不开 issue——修复由人/agent 按
+  # CAPABILITY_MATRIX.md 维护规则执行,self_check 全绿后提交)。
+  #
+  # secrets/变量:本 job 零依赖(缺省即全功能,不存在需跳过的场景)。
+  # 本地等价命令(仓库根):
+  #   python3 skills/seo-suite/tests/test_capability_matrix.py
+  capability-drift:
+    needs: check-and-flag          # 在现有 cron job 之后(同一 schedule)
+    if: ${{ !cancelled() }}        # 前序 job 取消/失败也照跑(漂移检查不静默)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read    # 覆盖 workflow 级 contents:write——只读检查+上传说明,最小权限
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # unittest 漂移即非零退出 → 步骤红(job 随之红);stdout/stderr 落 log 供 artifact
+      - name: Run capability matrix drift test (漂移即失败)
+        id: matrix
+        run: |
+          set +e
+          python3 skills/seo-suite/tests/test_capability_matrix.py 2>&1 | tee matrix-drift.log
+          rc=${PIPESTATUS[0]}
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+
+      - name: Explain drift diff (job 已红;给出可操作的双向差集)
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, json, os
+
+          BASE = "skills/seo-suite"
+          data = json.load(open(os.path.join(BASE, "data", "capability-matrix.json"), encoding="utf-8"))
+          entries = data["entries"]
+          listed_scripts = {e["script"] for e in entries if e.get("type") == "script"}
+          disk_scripts = {f for f in os.listdir(os.path.join(BASE, "scripts"))
+                          if f.endswith(".py") and f != "__pycache__"}
+          listed_tpl = {e["path"] for e in entries if e.get("type") == "template"}
+          disk_tpl = {os.path.relpath(p, BASE).replace(os.sep, "/")
+                      for p in glob.glob(os.path.join(BASE, "templates", "**", "*.md"),
+                                         recursive=True)}
+
+          lines = [
+              "# CAPABILITY_MATRIX 漂移说明(自动生成)", "",
+              "test_capability_matrix.py 失败:矩阵与文件系统不一致。",
+              "最常见原因:**新增脚本未登记 CAPABILITY_MATRIX**。", "",
+              "## scripts/ 双向差集",
+              "- 磁盘有、矩阵无(须同步登记 `data/capability-matrix.json` 与 "
+              "`CAPABILITY_MATRIX.md`,含 tests_file/summary 计数): %s"
+              % (sorted(disk_scripts - listed_scripts) or "无"),
+              "- 矩阵有、磁盘无(脚本被删/改名未同步矩阵): %s"
+              % (sorted(listed_scripts - disk_scripts) or "无"),
+              "",
+              "## templates/ 双向差集",
+              "- 磁盘有、矩阵无: %s" % (sorted(disk_tpl - listed_tpl) or "无"),
+              "- 矩阵有、磁盘无: %s" % (sorted(listed_tpl - disk_tpl) or "无"),
+              "",
+              "修复:按 CAPABILITY_MATRIX.md 维护规则补登记(summary 计数与 tests_file "
+              "字段须同步改);改完 self_check 全绿再提交。完整失败明细见 matrix-drift.log。",
+          ]
+          with open("CAPABILITY_DRIFT.md", "w", encoding="utf-8") as f:
+              f.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY
+
+      - name: Upload drift explanation artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capability-drift-explanation
+          path: |
+            CAPABILITY_DRIFT.md
+            matrix-drift.log
+          if-no-files-found: error

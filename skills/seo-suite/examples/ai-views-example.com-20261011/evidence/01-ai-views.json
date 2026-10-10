@@ -1,0 +1,39 @@
+{
+ "tool": "ai_views",
+ "source": "inputs/example.com.html",
+ "slug": "example-com",
+ "out_dir": "ai-views/example-com",
+ "mode": "applied",
+ "deploy": "manual-only",
+ "files": {
+  "ai-view.html": "ai-views/example-com/ai-view.html",
+  "ai-view.md": "ai-views/example-com/ai-view.md",
+  "stats.json": "ai-views/example-com/stats.json"
+ },
+ "tokens": {
+  "original": 144,
+  "ai_html": 72,
+  "ai_md": 43,
+  "reduction_pct": 50.0
+ },
+ "benchmark": {
+  "scrunch_pct": 98.9,
+  "ours_pct": 50.0,
+  "meets": false
+ },
+ "blocks": {
+  "converted": 0,
+  "removed": 2,
+  "kept": 1,
+  "attrs_stripped": 0,
+  "meta_dropped": 3
+ },
+ "meta": {
+  "title": "Example Domain",
+  "description": null,
+  "canonical": null,
+  "og": {},
+  "lang": "en"
+ },
+ "diff": null
+}

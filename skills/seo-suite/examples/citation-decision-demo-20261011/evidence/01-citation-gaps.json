@@ -1,0 +1,574 @@
+{
+  "tool": "citation_gaps.py",
+  "panel": "/Users/xiaoyu/.zcode/workspace/default/seo-skills-work/skills/seo-suite/examples/citation-decision-demo-20261011/panel.json",
+  "brand": "Nimbus Analytics",
+  "brand_domains": [
+    "nimbus-cdn.example",
+    "nimbus.example"
+  ],
+  "stats": {
+    "runs": 6,
+    "cells": 84,
+    "qualifying": 18,
+    "urls": 11,
+    "domains": 8,
+    "high_priority": 8,
+    "own_cited": 1
+  },
+  "domains": [
+    {
+      "domain": "g2.com",
+      "count": 12,
+      "pages": [
+        "https://www.g2.com/best-crms-for-startups",
+        "https://www.g2.com/categories/cheap-analytics-tools",
+        "https://www.g2.com/categories/product-analytics"
+      ],
+      "prompts": [
+        "best crm for startups",
+        "cheap analytics alternatives list",
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "devops.to",
+        "hubspot.com",
+        "rival.example",
+        "techcrunch.com",
+        "wikipedia.org"
+      ],
+      "priority": "High",
+      "source_class": "UGC",
+      "class_basis": "override",
+      "class_action": "社区运营:官方账号真实参与讨论与答疑,不做硬广"
+    },
+    {
+      "domain": "devops.to",
+      "count": 4,
+      "pages": [
+        "https://handbook.devops.to/cheap-stack"
+      ],
+      "prompts": [
+        "cheap analytics alternatives list"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com"
+      ],
+      "priority": "High",
+      "source_class": "Editorial",
+      "class_basis": "override",
+      "class_action": "PR outreach:媒体投稿/新闻源/专家引言,争取编辑报道"
+    },
+    {
+      "domain": "rival.example",
+      "count": 4,
+      "pages": [
+        "https://rival.example/platform"
+      ],
+      "prompts": [
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com",
+        "wikipedia.org"
+      ],
+      "priority": "High",
+      "source_class": "Corporate",
+      "class_basis": "default:corporate[推断]",
+      "class_action": "合作目录:争取合作方目录、集成市场、对比页收录"
+    },
+    {
+      "domain": "wikipedia.org",
+      "count": 3,
+      "pages": [
+        "https://en.wikipedia.org/wiki/Business_intelligence",
+        "https://en.wikipedia.org/wiki/Web_analytics"
+      ],
+      "prompts": [
+        "self-hosted analytics comparison",
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com",
+        "rival.example"
+      ],
+      "priority": "High",
+      "source_class": "Reference",
+      "class_basis": "known:wikipedia.org",
+      "class_action": "更正词条:核对词条事实,补充自有可靠来源"
+    },
+    {
+      "domain": "hubspot.com",
+      "count": 1,
+      "pages": [
+        "https://hubspot.com/crm/buyers-guide"
+      ],
+      "prompts": [
+        "best crm for startups"
+      ],
+      "providers": [
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com"
+      ],
+      "priority": "High",
+      "source_class": "Corporate",
+      "class_basis": "default:corporate[推断]",
+      "class_action": "合作目录:争取合作方目录、集成市场、对比页收录"
+    },
+    {
+      "domain": "techcrunch.com",
+      "count": 1,
+      "pages": [
+        "https://techcrunch.com/2026/product-analytics-landscape"
+      ],
+      "prompts": [
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com"
+      ],
+      "priority": "High",
+      "source_class": "Editorial",
+      "class_basis": "known:techcrunch.com",
+      "class_action": "PR outreach:媒体投稿/新闻源/专家引言,争取编辑报道"
+    },
+    {
+      "domain": "reddit.com",
+      "count": 3,
+      "pages": [
+        "https://www.reddit.com/r/productanalytics"
+      ],
+      "prompts": [
+        "open source product analytics options"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": false,
+      "competitors": [],
+      "priority": "Standard",
+      "source_class": "UGC",
+      "class_basis": "known:reddit.com",
+      "class_action": "社区运营:官方账号真实参与讨论与答疑,不做硬广"
+    },
+    {
+      "domain": "kpiwiki.io",
+      "count": 1,
+      "pages": [
+        "https://kpiwiki.io/crm-glossary"
+      ],
+      "prompts": [
+        "crm implementation mistakes"
+      ],
+      "providers": [
+        "perplexity"
+      ],
+      "has_competitor_run": false,
+      "competitors": [],
+      "priority": "Standard",
+      "source_class": "Reference",
+      "class_basis": "token:wiki",
+      "class_action": "更正词条:核对词条事实,补充自有可靠来源"
+    }
+  ],
+  "urls": [
+    {
+      "url": "https://www.g2.com/categories/product-analytics",
+      "domain": "g2.com",
+      "count": 6,
+      "prompts": [
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "rival.example",
+        "techcrunch.com",
+        "wikipedia.org"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://handbook.devops.to/cheap-stack",
+      "domain": "devops.to",
+      "count": 4,
+      "prompts": [
+        "cheap analytics alternatives list"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://rival.example/platform",
+      "domain": "rival.example",
+      "count": 4,
+      "prompts": [
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com",
+        "wikipedia.org"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://www.g2.com/categories/cheap-analytics-tools",
+      "domain": "g2.com",
+      "count": 4,
+      "prompts": [
+        "cheap analytics alternatives list"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "devops.to"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://www.g2.com/best-crms-for-startups",
+      "domain": "g2.com",
+      "count": 2,
+      "prompts": [
+        "best crm for startups"
+      ],
+      "providers": [
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "hubspot.com"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Web_analytics",
+      "domain": "wikipedia.org",
+      "count": 1,
+      "prompts": [
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com",
+        "rival.example"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://hubspot.com/crm/buyers-guide",
+      "domain": "hubspot.com",
+      "count": 1,
+      "prompts": [
+        "best crm for startups"
+      ],
+      "providers": [
+        "perplexity"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://techcrunch.com/2026/product-analytics-landscape",
+      "domain": "techcrunch.com",
+      "count": 1,
+      "prompts": [
+        "top product analytics platforms"
+      ],
+      "providers": [
+        "chatgpt"
+      ],
+      "has_competitor_run": true,
+      "competitors": [
+        "g2.com"
+      ],
+      "priority": "High"
+    },
+    {
+      "url": "https://www.reddit.com/r/productanalytics",
+      "domain": "reddit.com",
+      "count": 3,
+      "prompts": [
+        "open source product analytics options"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": false,
+      "competitors": [],
+      "priority": "Standard"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Business_intelligence",
+      "domain": "wikipedia.org",
+      "count": 2,
+      "prompts": [
+        "self-hosted analytics comparison"
+      ],
+      "providers": [
+        "chatgpt",
+        "perplexity"
+      ],
+      "has_competitor_run": false,
+      "competitors": [],
+      "priority": "Standard"
+    },
+    {
+      "url": "https://kpiwiki.io/crm-glossary",
+      "domain": "kpiwiki.io",
+      "count": 1,
+      "prompts": [
+        "crm implementation mistakes"
+      ],
+      "providers": [
+        "perplexity"
+      ],
+      "has_competitor_run": false,
+      "competitors": [],
+      "priority": "Standard"
+    }
+  ],
+  "outreach_tips": {
+    "g2.com": "竞品 devops.to,hubspot.com,rival.example,techcrunch.com,wikipedia.org 在 g2.com 被引用——考虑贡献内容或争取列表位直接竞争",
+    "devops.to": "竞品 g2.com 在 devops.to 被引用——考虑贡献内容或争取列表位直接竞争",
+    "rival.example": "竞品 g2.com,wikipedia.org 在 rival.example 被引用——考虑贡献内容或争取列表位直接竞争",
+    "wikipedia.org": "竞品 g2.com,rival.example 在 wikipedia.org 被引用——考虑贡献内容或争取列表位直接竞争",
+    "hubspot.com": "竞品 g2.com 在 hubspot.com 被引用——考虑贡献内容或争取列表位直接竞争",
+    "techcrunch.com": "竞品 g2.com 在 techcrunch.com 被引用——考虑贡献内容或争取列表位直接竞争",
+    "reddit.com": "AI 模型在 1 个追踪 prompt 引用 reddit.com,获得收录可提升 AI 可见性",
+    "kpiwiki.io": "AI 模型在 1 个追踪 prompt 引用 kpiwiki.io,获得收录可提升 AI 可见性"
+  },
+  "source_class_counts": {
+    "UGC": 2,
+    "Editorial": 2,
+    "Corporate": 2,
+    "Reference": 2
+  },
+  "source_class_overrides": [
+    "devops.to",
+    "g2.com"
+  ],
+  "gap_labels": [
+    {
+      "prompt": "ai agent security checklist",
+      "code": "no_valid",
+      "label": "No completed AI answers",
+      "action": "数据不足:0 条有效回答——先修采集(重跑/换引擎),再谈缺口",
+      "valid_answers": 0,
+      "mentioned": 0,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": null,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "best webhook monitoring tools",
+      "code": "no_valid",
+      "label": "No completed AI answers",
+      "action": "数据不足:0 条有效回答——先修采集(重跑/换引擎),再谈缺口",
+      "valid_answers": 0,
+      "mentioned": 0,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": null,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "cheap analytics alternatives list",
+      "code": "competitor_owned",
+      "label": "Competitors own this AI answer space",
+      "action": "最高优先:对标竞品产出内容/对比页,争取进入该词的答案",
+      "valid_answers": 6,
+      "mentioned": 0,
+      "own_cited": 0,
+      "competitor_only_runs": 4,
+      "mention_rate": 0.0,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "top product analytics platforms",
+      "code": "competitor_owned",
+      "label": "Competitors own this AI answer space",
+      "action": "最高优先:对标竞品产出内容/对比页,争取进入该词的答案",
+      "valid_answers": 6,
+      "mentioned": 0,
+      "own_cited": 0,
+      "competitor_only_runs": 6,
+      "mention_rate": 0.0,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "etl vs elt explained",
+      "code": "absent",
+      "label": "Target absent from AI answers",
+      "action": "品类词缺席:补该主题的 grounding 页面与可引用事实",
+      "valid_answers": 3,
+      "mentioned": 0,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": 0.0,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "how to build a data warehouse",
+      "code": "absent",
+      "label": "Target absent from AI answers",
+      "action": "品类词缺席:补该主题的 grounding 页面与可引用事实",
+      "valid_answers": 6,
+      "mentioned": 0,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": 0.0,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "cohort retention analysis guide",
+      "code": "owned_not_reflected",
+      "label": "Owned content is not reflected",
+      "action": "自有内容没进答案:检查页面可引用性(结构化事实/数据密度)",
+      "valid_answers": 6,
+      "mentioned": 2,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": 0.3333333333333333,
+      "owned_relevance": 0.8
+    },
+    {
+      "prompt": "product analytics benchmarks report",
+      "code": "owned_not_reflected",
+      "label": "Owned content is not reflected",
+      "action": "自有内容没进答案:检查页面可引用性(结构化事实/数据密度)",
+      "valid_answers": 6,
+      "mentioned": 2,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": 0.3333333333333333,
+      "owned_relevance": 0.65
+    },
+    {
+      "prompt": "open source product analytics options",
+      "code": "mention_no_citation",
+      "label": "Mentioned without official citation",
+      "action": "仅提及无引用:强化可引用资产(数据页/研究/文档)",
+      "valid_answers": 6,
+      "mentioned": 6,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": 1.0,
+      "owned_relevance": 0.9
+    },
+    {
+      "prompt": "self-hosted analytics comparison",
+      "code": "mention_no_citation",
+      "label": "Mentioned without official citation",
+      "action": "仅提及无引用:强化可引用资产(数据页/研究/文档)",
+      "valid_answers": 6,
+      "mentioned": 4,
+      "own_cited": 0,
+      "competitor_only_runs": 0,
+      "mention_rate": 0.6666666666666666,
+      "owned_relevance": 0.75
+    },
+    {
+      "prompt": "best crm for startups",
+      "code": "competitor_sporadic",
+      "label": "Competitors still appear without target",
+      "action": "偶发竞品独现:巩固既有覆盖,补竞品占位的子话题",
+      "valid_answers": 6,
+      "mentioned": 4,
+      "own_cited": 4,
+      "competitor_only_runs": 2,
+      "mention_rate": 0.6666666666666666,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "crm implementation mistakes",
+      "code": "competitor_sporadic",
+      "label": "Competitors still appear without target",
+      "action": "偶发竞品独现:巩固既有覆盖,补竞品占位的子话题",
+      "valid_answers": 6,
+      "mentioned": 5,
+      "own_cited": 5,
+      "competitor_only_runs": 1,
+      "mention_rate": 0.8333333333333334,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "funnel analysis best practices",
+      "code": "covered",
+      "label": "Covered in this audit",
+      "action": "已覆盖:保持监测,暂不动",
+      "valid_answers": 6,
+      "mentioned": 6,
+      "own_cited": 6,
+      "competitor_only_runs": 0,
+      "mention_rate": 1.0,
+      "owned_relevance": null
+    },
+    {
+      "prompt": "product analytics fundamentals tutorial",
+      "code": "covered",
+      "label": "Covered in this audit",
+      "action": "已覆盖:保持监测,暂不动",
+      "valid_answers": 6,
+      "mentioned": 6,
+      "own_cited": 6,
+      "competitor_only_runs": 0,
+      "mention_rate": 1.0,
+      "owned_relevance": null
+    }
+  ],
+  "owned_relevance_available": true
+}

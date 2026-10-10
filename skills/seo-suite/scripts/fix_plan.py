@@ -395,9 +395,24 @@ def view_from_audit_file(path):
     robots 由 8 bot 放行名单合成 robots_posture 报告,缺失/结构不可见处一律保守不臆断。"""
     try:
         with open(path, encoding="utf-8") as f:
-            data = json.load(f)
-    except (OSError, ValueError) as e:
+            raw = f.read()
+    except OSError as e:
         raise BadInput(f"审计文件不可读 {path}: {e}")
+    # site_audit 的 --json 输出前可能带人类可读文本行——与链上其他消费者同款容错:从每个 '{' 试解
+    data, err = None, None
+    for i, ch in enumerate(raw):
+        if ch == "{":
+            try:
+                cand = json.loads(raw[i:])
+            except ValueError as e:
+                err = e
+                continue
+            if isinstance(cand, dict) and cand.get("results"):
+                data = cand
+                break
+            data = data or cand
+    if not (isinstance(data, dict) and data.get("results")):
+        raise BadInput(f"审计文件不可读 {path}(未找到含 results 的 JSON): {err or 'no JSON'}")
     results = data.get("results") or {}
     if not results:
         raise BadInput("审计文件无 results 节(需要 site_audit --json 的输出结构)")

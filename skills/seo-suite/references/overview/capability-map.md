@@ -23,19 +23,19 @@ seo-suite
 | 关键词研究、SERP 分析、内容缺口、竞品分析、竞品/替代方案页规划、内容策略、域名策略、目录提交 | research |
 | SEO 内容写作、GEO 内容优化、标题与描述、内容质量（E-E-A-T）、内容评分与发布闸、内容刷新、竞品页文案、可引用性打分、品牌事实页与 AI 回答核查 | content |
 | 单页审计、技术 SEO 检查、结构化数据、内链、站点架构、实体优化、Programmatic SEO、Core Web Vitals / 性能、审计工具输出解读、修复物生成、SEO 归因埋点 | technical |
-| 排名追踪、外链分析、效果报告、告警、域名权威度评估、惩罚恢复、本地网格排名、引用面板与衰减、SERP 波动、页面变更审计 | monitoring |
+| 排名追踪、外链分析、效果报告、告警、域名权威度评估、惩罚恢复、本地网格排名、引用面板与衰减、引用缺口诊断、SERP 波动、页面变更审计 | monitoring |
 
-## 可执行层(52 个 stdlib 脚本 + markets.json 数据层)
+## 可执行层(55 个 stdlib 脚本 + markets.json 数据层)
 
-脚本清单以 SKILL.md 第 3 节为唯一事实来源;★ = v0.34.0 新增(38→52)。**对应任务先跑脚本拿事实,再按能力文件解读。**
+脚本清单以 SKILL.md 第 3 节为唯一事实来源;★ = v0.34.0 新增(38→52),◆ = v0.34.1 新增(52→55)。**对应任务先跑脚本拿事实,再按能力文件解读。**
 
 | 脚本组 | 脚本 |
 |---|---|
-| 审计与页面质量(17) | site_audit / ★health_score / ★traffic_funnel / quality_rater / above_fold / trust_signals / core_eeat / ★content_score / ★fix_plan / ★grounding_page / ★audit_compare / ★ci_format / ★sensor_volatility / ★forecast / ★prioritize / ★changelog / ★doctor |
+| 审计与页面质量(20) | site_audit / ★health_score / ★traffic_funnel / quality_rater(UTF-16 证据核验+同形字检出) / above_fold / trust_signals / core_eeat / ★content_score(observed-consensus 词筛+D/K 事实分级) / ★fix_plan / ★grounding_page / ★audit_compare / ★ci_format / ★sensor_volatility / ★forecast / ★prioritize / ★changelog / ★doctor / ◆ai_views / ◆envelope / ◆benchmark_report |
 | 技术 SEO(7) | sitemap_audit / hreflang_cluster / redirect_chain / robots_posture(27 bot 两级评分) / llmstxt / schema_lint / head_check |
 | 关键词与 SERP(7) | gsc_mining / serp_overlap / keyword_variants / payment_intent / geo_difficulty / serp_occupancy / grid_rank |
 | 多语言实装(4) | market_lint / local_format / text_metrics / text_units(markets.json 18 市场数据层共读) |
-| AI/GEO 测量(6) | citation_panel(decay/signals) / fanout_analysis / ai_referral_log(bot 四桶) / ★citation_gaps / ★oracle_check / cite_domain |
+| AI/GEO 测量(6) | citation_panel(decay/score/--answer-file 提及检测/branded·unbranded 分报/意图冻结分母/配对指纹) / fanout_analysis / ai_referral_log(bot 四桶) / ★citation_gaps(来源五分类+gapLabel 七叉) / ★oracle_check / cite_domain(引用证据清单) |
 | 归因与管道(6) | did_attribution / seo_vs_ads / yt_outlier / trend_scout / freshness / report_build |
 | 持续监控守护(2) | monitor(页面级 noindex/canonical/segments/CI 门) / notify(分级+按类型路由) |
 | 套件自维护(3) | self_check / link_check / intel_check |
@@ -54,13 +54,15 @@ seo-suite
 | forecast | overview(+monitoring 报告面) | 商业提案 |
 | doctor | overview(环境自检) | 全链路前置 |
 
+**v0.34.1 新增(52→55)**:ai_views(AI 视图层,content+technical 双面)/ envelope(三源统一封套+部分落盘契约,overview 编排)/ benchmark_report(匿名基准聚合,monitoring 报告面)。同期按 [niubigeo 深读](../research/niubigeo-deep-read.md) N1-N9 给五个存量脚本补强:citation_panel(--answer-file 提及检测/branded·unbranded 分报/意图冻结分母/配对指纹)、citation_gaps(来源五分类+gapLabel 七叉)、cite_domain(引用证据清单)、content_score(observed-consensus+D/K 分级)、quality_rater(UTF-16 证据核验)。
+
 ## 六个子系统能力(跨脚本闭环,v0.34.0 起)
 
 1. **健康分体系(审计→分→漏斗→优先级)**:site_audit(原始 findings + AI Search Health 独立子分)→ health_score(Ahrefs 主分仅 CRITICAL 扣分/Lumar 六大类树缺源 N/A/Ryte impact 两栏排序)→ traffic_funnel(available⊃indexable⊃uniqueness⊃in_serps⊃with_clicks⊃good_ux 六阶段流失)→ prioritize(18 条声明式条件规则+segment 切换重算)。输入输出均为审计器 JSON 信封,外部爬虫导出经 audit-tool-output 字段映射后同链复用。
 2. **修复闭环(audit→fix_plan)**:site_audit 或任意 audit JSON → fix_plan 生成 6 类 FixItem(robots/llms/schema/meta/ai_discovery/content);默认 dry-run,`--apply` 只写 `./seo-fixes/` 隔离目录,`--estimate` 出收益预估;人审部署后由 audit_compare 验证收敛。
 3. **CI 门体系(compare→ci_format→action)**:site_audit 两次 → audit_compare `--baseline-gate`(新增/已修复/delta 三清单回归门)→ ci_format(SARIF/JUnit/github 注解三格式)→ 仓库根 action.yml 的 PR 门禁;定时侧 monitor `diff --ci` 同构输出。手册见 [ci-gates.md](../monitoring/ci-gates.md)。
-4. **内容评分体系(草稿→竞品校准→发布闸)**:content_score(MarketMuse 话题公式+Surfer 双轨+意图系数,竞品<3 拒评并出术语表)配 content-brief 三段式模板;发布闸 above_fold(首屏 5 秒测试)/quality_rater(六维)/core_eeat(veto 封顶)挂进 pre-publish-checklist 27 条。
-5. **GEO 可见性闭环(panel→decay→gaps→outreach)**:citation_panel init/record 采样(prompt-bank 供 prompts 对象)→ report/diff(SoV/win_rate/signals 阈值 |Δ|≥5pp 且 n≥10)→ decay(7 点平滑/4 道闸门/半衰期/重写队列)→ citation_gaps(竞品被引而己方未被引的 URL+外联简报)→ citation-outreach-brief 模板 → cite_domain 对目标域评级。旁路三件:ai_referral_log(AI 引荐流量下界+bot 四桶)、oracle_check(AI 回答 vs 品牌事实)、grounding_page(实体事实页生成/校验)。
+4. **内容评分体系(草稿→竞品校准→发布闸)**:content_score(MarketMuse 话题公式+Surfer 双轨+意图系数,竞品<3 拒评并出术语表;observed-consensus 共识词筛——术语须在 ≥2 竞品正文精确定位才入推荐层;`--facts` D/K 事实分级,点名声明与中性观察分报)配 content-brief 三段式模板;发布闸 above_fold(首屏 5 秒测试)/quality_rater(六维+UTF-16 证据核验与同形字检出,标注层不改分数)/core_eeat(veto 封顶)挂进 pre-publish-checklist 27 条。
+5. **GEO 可见性闭环(panel→decay→gaps→outreach)**:citation_panel init/record 采样(prompt-bank 供 prompts 对象;`--answer-file` URL 掩码自动提及检测;init 意图冻结分母——分母不随答案漂移)→ report/diff(SoV/win_rate/signals 阈值 |Δ|≥5pp 且 n≥10;branded·unbranded 分报;配对门——同 prompt×engine 同指纹才算 Δ,跨指纹标注"不可比")→ decay(7 点平滑/4 道闸门/半衰期/重写队列)→ citation_gaps(竞品被引而己方未被引的 URL+来源五分类+gapLabel 七叉决策树)→ citation-outreach-brief 模板 → cite_domain 对目标域评级(引用证据清单:三类来源分离+5 家引擎字段路径)。旁路三件:ai_referral_log(AI 引荐流量下界+bot 四桶)、oracle_check(AI 回答 vs 品牌事实)、grounding_page(实体事实页生成/校验)。
 6. **商业提案(forecast)**:gsc_mining 出词表 → forecast 六步(CTR 曲线→校准系数持久化→三 scenario→orders/value)→ forecast-report 模板(省钱+赚钱双结构,管理层五级漏斗)。
 
 ## 模板层(22 个;★ = v0.34.0 新增,14→22)
@@ -86,7 +88,7 @@ seo-suite
 | 合规驱动 | 法语(Bill 96)、俄语区(152-ФЗ/erid)、欧盟(GDPR)、日本(ステマ規制) | 合规先于内容 |
 | 基线 | 英文 | 全球默认层,其他市场在此之上做差异 |
 
-## 任务类型→脚本链(10 条典型链)
+## 任务类型→脚本链(11 条典型链)
 
 | # | 任务类型 | 能力组合 | 脚本链 |
 |---|---|---|---|
@@ -100,6 +102,7 @@ seo-suite
 | 8 | AI 流量归因与四桶画像 | monitoring(+technical) | ai_referral_log(access.log+--bot-ua)→ 归因正则/自报问卷 → seo_vs_ads / did_attribution 量化 |
 | 9 | 排名/流量下滑根因 | monitoring + research + technical | monitor diff → sensor_volatility(z30 判疑似算法更新)→ changelog(下跌日页面变更)→ gsc_mining --decay → 定位到 content/technical |
 | 10 | SEO 商业提案/预算答辩 | overview + monitoring | gsc_mining(词表)→ forecast 六步三 scenario → forecast-report 模板 |
+| 11 | 引用缺口诊断链 | content(GEO)+ monitoring | citation_panel(record --answer-file/report 分报)→ citation_gaps(来源五分类+gapLabel 七叉定位缺口)→ cite_domain 评级(证据清单)→ citation-outreach-brief 外联 |
 
 分诊细则见 [routing-rules.md](routing-rules.md);开局先认站型见 [site-type-playbooks.md](site-type-playbooks.md);持续守护(monitor/notify 部署形态)见 [continuous-operations.md](../monitoring/continuous-operations.md)。
 

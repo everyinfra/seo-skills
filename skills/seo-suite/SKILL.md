@@ -28,17 +28,17 @@ metadata:
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
 ### 3. 可执行层(55 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
-规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
+规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
 
 **审计与页面质量**
 - `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节)
 - `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
 - `traffic_funnel.py --audit audit.json --gsc gsc.csv`:六阶段页面流失漏斗(available⊃indexable⊃uniqueness[Simhash+DeepRank]⊃in_serps⊃with_clicks⊃good_ux);无 GSC 自动截断+coverage 声明
-- `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical
+- `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical;证据行 UTF-16 偏移核验+同形字/孤立代理风险标注(标注层,不改六维分数)
 - `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
 - `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威
 - `core_eeat.py FILE`:CORE-EEAT 机械化(GEO/SEO 双分+veto 封顶 59)
-- `content_score.py --draft 文件 --competitors c1,c2,c3 --keyword 主词`:透明内容评分器——MarketMuse 公式(50 话题×min 提及,2)+Surfer 双轨(SEO 轨+AI 轨前三查)+意图系数;竞品<3 拒评;术语表(重要度/典型区间/缺失清单)
+- `content_score.py --draft 文件 --competitors c1,c2,c3 --keyword 主词`:透明内容评分器——MarketMuse 公式(50 话题×min 提及,2)+Surfer 双轨(SEO 轨+AI 轨前三查)+意图系数;竞品<3 拒评;术语表(重要度/典型区间/缺失清单+observed-consensus 共识词筛:≥2 竞品正文精确定位才入推荐层,落选留排除码);`--facts` D/K 事实分级(行首 D: 点名声明/K: 中性观察,分报不混算)
 - `fix_plan.py --url|--audit audit.json`:审计→修复物生成器(6 类 FixItem:robots/llms/schema/meta/ai_discovery/content);默认 dry-run,--apply 只写 ./seo-fixes/;--estimate 收益预估
 - `grounding_page.py --facts brand.yaml`:品牌实体事实页生成(Rankscale 11 条:dl 事实/FAQ 含名/volatile 独立/is-NOT 消歧/JSON-LD 镜像);--check 校验已有页
 - `audit_compare.py --old a.json --new b.json`:两次审计对比(新增/已修复/delta 三清单+页级 changed);--baseline-gate N 回归门(Lumar Protect 语义)
@@ -77,12 +77,12 @@ metadata:
 - `text_units.py`:按市场计量单位统计
 
 **AI/GEO 测量**
-- `citation_panel.py init|record|report|diff|decay`:采样面板(五状态/配对分母/Wilson CI);**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期/重写队列,官方常数 11 天);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
+- `citation_panel.py init|record|report|diff|decay|score`:采样面板(五状态/配对分母/Wilson CI);record `--answer-file` 自动提及检测(URL 掩码+实体词表自动填 mentioned/position);init 意图冻结分母(denominator_freeze 档案,分母不随答案漂移);report 按 branded·unbranded 分报(targeting 两栏各出全套指标+交叉错配计数);diff 配对差分(只对同 prompt×engine 且同指纹配对算 Δ,跨指纹强制标注"不可比");**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期/重写队列,官方常数 11 天);score=五维打分写回(硬 cap 机检+反通胀聚合);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
 - `fanout_analysis.py 输入.csv`:query fan-out 三桶(added/dropped/preserved)
 - `ai_referral_log.py < access.log`:AI referrer 下界分析(+--bot-ua 先行指标);**bot 四桶分类**(on_demand/search_index/training/agent)+failure_rate 两级+llms.txt 双基线;--attribution 出 GA4 正则+归因纪律+自报问卷
-- `citation_gaps.py --panel panel.json --brand-domains a.com`:引用缺口(竞品被引你没被的 URL+外联简报;has_competitor_run 高优先)→ 配 citation-outreach-brief.md 模板,与 cite_domain.py 串联
+- `citation_gaps.py --panel panel.json --brand-domains a.com`:引用缺口(竞品被引你没被的 URL+外联简报;has_competitor_run 高优先)+来源五分类(Editorial/Corporate/UGC/Reference/Own,逐域定性+行动提示)+gapLabel 七叉决策树(逐 prompt 诊断标签,competitor_owned 最高优先)→ 配 citation-outreach-brief.md 模板,与 cite_domain.py 串联
 - `oracle_check.py --facts brand.yaml --responses responses.json`:AI 回答 vs 品牌事实核查(Athena 口径:25 条门槛/finding 状态机/Inaccuracy%/按引擎 model_accuracy)
-- `cite_domain.py --input json`:CITE 40 项域名评级(veto BLOCK)
+- `cite_domain.py --input json`:CITE 40 项域名评级(veto BLOCK)+引用证据清单(三类来源分离:仅 provider_citation 计入 engines_cited;5 家引擎原始 JSON 字段路径,报告尾部与 --json citation_evidence 均输出)
 
 **归因与管道**
 - `did_attribution.py --pre --post`:DiD 对照归因(56/28/7 参数/三态判定/断代检测)
@@ -269,7 +269,7 @@ metadata:
 - [Brand Records 品牌事实档案](references/content/brand-records.md):六记录(含批准术语/never-do)+YAML 格式+缺口协议+Grounding Page 11 条——内容起草前必读,oracle_check.py 的输入
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
 - [niubigeo 深读](references/research/niubigeo-deep-read.md):6,848★ 五周爆发竞品(2026-09 创建)的架构深读与 Top 10 借鉴(提及检测 URL 掩码/gapLabel 七叉决策树/意图冻结分母/配对差分指纹/observed-consensus 词筛/D·K 纪律)——做 GEO 可见性功能前先查
-- [数据源合同表](references/overview/data-source-contract.md):全 52 脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
+- [数据源合同表](references/overview/data-source-contract.md):全部脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
 - [CI 质量门手册](references/monitoring/ci-gates.md):三件套命令地图(site_audit→audit_compare→ci_format→action.yml)/siteone 阈值全表/LHCI 断言 schema/采样协议/防假 0 三律/三部署配方——进 CI 或定时审计前读
 - [过时信号看门表](references/technical/deprecated-signals.md):官方已停用/勿再推荐清单(带时间戳与一手来源)——**涉及 schema/富结果/CWV/GSC 口径的建议前必查**;tests/test_canonical_facts.py 用 16 条正则钉死已知错误陈述(套件内文档命中即测试失败)
 - [Naver Search Advisor 蒸馏](references/technical/naver-searchadvisor.md):55 篇官方指南全量蒸馏(每节 guid 可对勘原文)

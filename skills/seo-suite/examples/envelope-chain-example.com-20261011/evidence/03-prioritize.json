@@ -1,0 +1,135 @@
+{
+ "schema_version": "1.0",
+ "input_format": "site_audit",
+ "segment": null,
+ "coverage_note": "基于样本,优先级不可外推到未爬取页面(Ryte/Botify 口径)",
+ "urls_refused": 0,
+ "urls_matched_segment": 1,
+ "urls_total": 1,
+ "fix_now": [
+  {
+   "rule": "desc_missing",
+   "category": "meta_tags",
+   "severity": "CRITICAL",
+   "hit_urls": 1,
+   "total_urls": 1,
+   "impact": 3.0,
+   "amplifier": null,
+   "conditional": null,
+   "fix_instruction": "补 meta description(~155 字符)",
+   "url_query": [
+    "https://example.com"
+   ]
+  },
+  {
+   "rule": "h1_missing",
+   "category": "content",
+   "severity": "CRITICAL",
+   "hit_urls": 1,
+   "total_urls": 1,
+   "impact": 3.0,
+   "amplifier": null,
+   "conditional": null,
+   "fix_instruction": "补唯一 H1(与 title 呼应但不重复)",
+   "url_query": [
+    "https://example.com"
+   ]
+  },
+  {
+   "rule": "thin_content",
+   "category": "content",
+   "severity": "WARN",
+   "hit_urls": 1,
+   "total_urls": 1,
+   "impact": 2.0,
+   "amplifier": null,
+   "conditional": {
+    "question": "模板页(联系/法务/登录)词数低是合理的——命中后先分型再修",
+    "needs_human": false
+   },
+   "fix_instruction": "thin content<100 词:增补实质内容(模板页除外)【Botify 官方阈值】",
+   "url_query": [
+    "https://example.com"
+   ]
+  },
+  {
+   "rule": "title_short",
+   "category": "meta_tags",
+   "severity": "WARN",
+   "hit_urls": 1,
+   "total_urls": 1,
+   "impact": 2.0,
+   "amplifier": null,
+   "conditional": null,
+   "fix_instruction": "title<50 字符:扩到 50-60(保留主关键词,自然语句)【Botify 官方阈值】",
+   "url_query": [
+    "https://example.com"
+   ]
+  }
+ ],
+ "explore": [],
+ "no_hit_rules": [
+  "canonical_invalid",
+  "desc_short",
+  "fetch_error",
+  "noindex_intent",
+  "staging_exposed",
+  "title_missing",
+  "url_long"
+ ],
+ "degraded_rules": [
+  {
+   "rule": "depth_deep",
+   "reason": "缺 depth 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "inlinks_low",
+   "reason": "缺 inlinks 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "duplicate_body",
+   "reason": "缺 similarity 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "canonical_mismatch",
+   "reason": "缺 canonical_similarity 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "canonical_pagerank",
+   "reason": "缺 canonical_other 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "redirect_canonical_conflict",
+   "reason": "缺 redirect_and_canonical_other 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "not_indexed_with_traffic",
+   "reason": "缺 not_indexed 数据(输入 audit 无该页面级字段),规则未生效"
+  }
+ ],
+ "degradation_notes": [],
+ "context": {
+  "gsc": false,
+  "pagerank_compare": false,
+  "field_coverage": {
+   "canonical_other": 0,
+   "canonical_pagerank": 0,
+   "canonical_similarity": 0,
+   "canonical_target": 0,
+   "depth": 0,
+   "desc_len": 1,
+   "gsc_clicks": 0,
+   "indexed": 0,
+   "inlinks": 0,
+   "noindex": 1,
+   "not_indexed": 0,
+   "pagerank": 0,
+   "redirect": 0,
+   "redirect_and_canonical_other": 0,
+   "similarity": 0,
+   "title_len": 1,
+   "url_len": 1,
+   "words": 1
+  }
+ }
+}

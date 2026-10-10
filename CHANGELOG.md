@@ -3,6 +3,18 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.34.2 - 2026-10-11
+
+- **第 8 波(10 agent,3+3+4 批)——niubigeo 借鉴落地+治理闭环,613→643 测试**:
+  - **citation_panel 四项增强**(URL 掩码提及检测 --answer-file/branded·unbranded 分报切片/意图冻结分母/配对差分跨指纹"不可比"标注);**citation_gaps 来源五分类+gapLabel 七叉决策树**+cite_domain 证据清单(N3 五家字段路径);**content_score 共识词筛+D/K 事实分级**(分数零变化,纯纪律层);**quality_rater UTF-16 证据核验**(同形字/孤立代理检出);
+  - **CAPABILITY_MATRIX 治理**:data/capability-matrix.json 89 条+人读版+test_capability_matrix 五检接入 self_check(新增脚本不登记即红);
+  - **规则目录第四批 50 条(累计 220)**:E-E-A-T 16 全量+Accessibility 34 全量(双理由)+实体图六查+Legal;
+  - **freshness 回填**:9 处补测量月(纠 2 处误归属:ipullrank→Similarweb、Profound 数字误挂 SE Ranking),6 处诚实升级[未证实];
+  - **workflow 接入**:seo-monitor 加 envelope-report job(日基线归档+baseline-gate+月度匿名基准)+intel-update 加 capability-drift job;
+  - **examples 扩到 5 例**(envelope 全链/AI 视图离线重放/七叉决策演示);**端到端集成测试 30 条**(全链零网络)——并揪出 2 个真实互操作断裂已修:fix_plan 吃不了 raw stdout JSON、citation_gaps 对象化 prompt 崩溃(均修复+回归测试)。
+
+
+
 ## 0.34.1 - 2026-10-11
 
 - **第 7 波(9 agent,小批量重跑)——52→55 脚本,523→545 测试**:

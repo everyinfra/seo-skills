@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Noindex Landing Page for Canonical Fixture</title>
+<meta name="description" content="This page is the canonical target of the chain fixture and deliberately carries a noindex directive so the audit robots check fires.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://chain-fixture.test/noindex-target">
+<meta property="og:title" content="Noindex Landing Page">
+<meta property="og:description" content="Fixture canonical target page">
+<meta property="og:image" content="https://chain-fixture.test/og.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Noindex Landing"}</script>
+</head>
+<body>
+<main>
+<article>
+<h1>Noindex Landing</h1>
+<p>The noindex landing page exists to serve as the canonical target of the problem page in this synthetic fixture. Search engines that follow the canonical link from the problem page should consolidate ranking signals here, while the robots directive keeps the page out of the index on purpose. The body copy is intentionally long enough to clear the two hundred word soft thin content threshold, so the audit reports exactly one critical issue on this URL and nothing else that would count as a warning level finding in the health scoring stage of the chain.</p>
+<h2>Why this page exists</h2>
+<p>Canonical chains that point at a noindexed target are a classic silent visibility killer, and the integration chain wants a deterministic way to prove that the audit stage detects the directive, that the health scoring stage maps it into the indexability category, and that the priority engine treats noindex as a conditional rule that needs human judgement instead of a blind critical verdict. Everything on this page is therefore deliberately clean apart from the single robots directive in the head section above.</p>
+<h2>What happens after the fix</h2>
+<p>In the second audit of the comparison stage the very same page returns without the noindex meta tag, which flips the verdict from fail to pass, adds the robots issue to the fixed list of the compare report, and lifts the site main score from zero back to one hundred. The rest of the markup including the title, the description, the canonical link, the open graph tags, the structured data block, and these three paragraphs of body copy stays byte identical between the two runs so that the diff stage sees exactly one meaningful change per URL.</p>
+</article>
+</main>
+</body>
+</html>

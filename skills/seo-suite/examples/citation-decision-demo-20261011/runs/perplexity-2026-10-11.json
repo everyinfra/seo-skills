@@ -1,0 +1,112 @@
+{
+  "run_id": "perplexity-2026-10-11",
+  "engine": "perplexity",
+  "date": "2026-10-11",
+  "brand": "Nimbus Analytics",
+  "results": {
+    "ai agent security checklist": {
+      "state": "no_answer",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "best webhook monitoring tools": {
+      "state": "failed",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "top product analytics platforms": {
+      "state": "brand_absent",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": [
+        "https://www.g2.com/categories/product-analytics"
+      ]
+    },
+    "cheap analytics alternatives list": {
+      "state": "brand_absent",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": [
+        "https://www.g2.com/categories/cheap-analytics-tools",
+        "https://handbook.devops.to/cheap-stack"
+      ]
+    },
+    "how to build a data warehouse": {
+      "state": "brand_absent",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "etl vs elt explained": {
+      "state": "no_answer",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "cohort retention analysis guide": {
+      "state": "brand_absent",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "product analytics benchmarks report": {
+      "state": "name_only_mention",
+      "mentioned": 1,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "open source product analytics options": {
+      "state": "name_only_mention",
+      "mentioned": 1,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "self-hosted analytics comparison": {
+      "state": "name_only_mention",
+      "mentioned": 1,
+      "cited": 0,
+      "cited_urls": []
+    },
+    "best crm for startups": {
+      "state": "brand_absent",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": [
+        "https://www.g2.com/best-crms-for-startups"
+      ]
+    },
+    "crm implementation mistakes": {
+      "state": "brand_absent",
+      "mentioned": 0,
+      "cited": 0,
+      "cited_urls": [
+        "https://kpiwiki.io/crm-glossary"
+      ]
+    },
+    "product analytics fundamentals tutorial": {
+      "state": "cited_brand",
+      "mentioned": 1,
+      "cited": 1,
+      "cited_urls": [
+        "https://nimbus.example/fundamentals",
+        "https://docs.dataschool.io/analytics-101"
+      ],
+      "rank": 6
+    },
+    "funnel analysis best practices": {
+      "state": "cited_brand",
+      "mentioned": 1,
+      "cited": 1,
+      "cited_urls": [
+        "https://nimbus.example/funnel-guide",
+        "https://docs.dataschool.io/bi-basics",
+        "https://blog.growthnotes.dev/funnels"
+      ],
+      "rank": 6
+    }
+  },
+  "fingerprint": "4b1e159fc84c0c02",
+  "denominator_freeze_hash": "7c2606d9bb97d4b2"
+}

@@ -1,0 +1,39 @@
+{
+  "referring_domains": 950,
+  "dr_distribution": {
+    "0-30": 350,
+    "30-50": 350,
+    "50-70": 180,
+    "70-100": 70
+  },
+  "anchor_exact_ratio": 0.22,
+  "c_block_concentration": 0.12,
+  "months": [
+    {"month": "2026-04", "links": 35},
+    {"month": "2026-05", "links": 40},
+    {"month": "2026-06", "links": 38},
+    {"month": "2026-07", "links": 42},
+    {"month": "2026-08", "links": 45},
+    {"month": "2026-09", "links": 41}
+  ],
+  "engines_cited": {
+    "chatgpt": 18,
+    "perplexity": 11,
+    "gemini": 4
+  },
+  "reviews": [
+    "G2 grid report saved us weeks of vendor research",
+    "best place to compare analytics tools side by side",
+    "G2 reviews helped us shortlist three vendors",
+    "the G2 category pages are a great starting point",
+    "pricing data on G2 is more current than vendor sites",
+    "we trust G2 verified user reviews more than marketing pages",
+    "ok directory but the G2 UX is dated",
+    "found two integrations via G2 marketplace"
+  ],
+  "brand": "G2",
+  "outbound_links": 620,
+  "editorial_ratio": 0.68,
+  "link_traffic_coherent": true,
+  "manual_penalty": false
+}

@@ -1,0 +1,164 @@
+{
+  "tool": "cite_domain.py",
+  "input": "/Users/xiaoyu/.zcode/workspace/default/seo-skills-work/skills/seo-suite/examples/citation-decision-demo-20261011/inputs/answers-g2-com.json",
+  "brand": "G2",
+  "items": [
+    {
+      "group": "C",
+      "code": "C1",
+      "name": "引用域数量",
+      "pts": 10,
+      "label": "≥500",
+      "value": 950.0
+    },
+    {
+      "group": "C",
+      "code": "C2",
+      "name": "DR50+ 份额",
+      "pts": 10,
+      "label": "DR50+ ≥20%",
+      "value": 0.2631578947368421
+    },
+    {
+      "group": "C",
+      "code": "C3",
+      "name": "出站链接数",
+      "pts": 10,
+      "label": "出链<1000",
+      "value": 620.0
+    },
+    {
+      "group": "C",
+      "code": "C4",
+      "name": "链接增速平滑度",
+      "pts": 10,
+      "label": "峰值≤3×月均",
+      "value": 1.120331950207469
+    },
+    {
+      "group": "C",
+      "code": "C5",
+      "name": "跨引擎被引广度",
+      "pts": 10,
+      "label": "≥2 引擎≥10 查询被引",
+      "value": 2
+    },
+    {
+      "group": "C",
+      "code": "C6",
+      "name": "编辑链占比",
+      "pts": 10,
+      "label": "编辑链≥60%",
+      "value": 0.68
+    },
+    {
+      "group": "I",
+      "code": "I1",
+      "name": "品牌词行数(reviews)",
+      "pts": 10,
+      "label": "品牌词行 ≥5",
+      "value": 7
+    },
+    {
+      "group": "I",
+      "code": "I2",
+      "name": "品牌词行占比",
+      "pts": 10,
+      "label": "占比≥50%",
+      "value": 0.875
+    },
+    {
+      "group": "T",
+      "code": "T1",
+      "name": "C-block 集中度",
+      "pts": 10,
+      "label": "≤20%",
+      "value": 0.12
+    },
+    {
+      "group": "T",
+      "code": "T2",
+      "name": "精确匹配锚文本比",
+      "pts": 10,
+      "label": "精确锚≤30%",
+      "value": 0.22
+    },
+    {
+      "group": "T",
+      "code": "T3",
+      "name": "链接·流量相干性(人工标记)",
+      "pts": 10,
+      "label": "相干",
+      "value": true
+    },
+    {
+      "group": "T",
+      "code": "T4",
+      "name": "人工处罚记录",
+      "pts": 10,
+      "label": "无",
+      "value": false
+    },
+    {
+      "group": "E",
+      "code": "E1",
+      "name": "跨引擎被引查询总量",
+      "pts": 5,
+      "label": "被引查询 20-50",
+      "value": 33.0
+    },
+    {
+      "group": "E",
+      "code": "E2",
+      "name": "公开评论量",
+      "pts": 5,
+      "label": "评论 3-10",
+      "value": 8
+    }
+  ],
+  "vetoes": [],
+  "groups": {
+    "C": 100.0,
+    "I": 100.0,
+    "T": 100.0,
+    "E": 50.0
+  },
+  "total": 90.0,
+  "band": "A(优)",
+  "capped": false,
+  "blocked": false,
+  "citation_evidence": {
+    "source_classes": {
+      "provider_citation": "Provider 本次响应确证被引(计入 engines_cited → C5/E1)",
+      "provider_search_result": "仅出现在搜索工具返回,不证明被答案引用(不计入)",
+      "answer_text_url": "仅正文出现 URL,不证明检索或引用(不计入)"
+    },
+    "providers": [
+      {
+        "engine": "openai-chat",
+        "family": "OpenAI Chat Completions",
+        "payload_path": "choices[0].message.annotations[].url | .url_citation.url"
+      },
+      {
+        "engine": "openai-responses",
+        "family": "OpenAI Responses API",
+        "payload_path": "output[i].content[j].annotations[]"
+      },
+      {
+        "engine": "anthropic",
+        "family": "Anthropic Messages",
+        "payload_path": "content[i].citations[].url"
+      },
+      {
+        "engine": "perplexity",
+        "family": "Perplexity",
+        "payload_path": "citations[] + search_results[].url"
+      },
+      {
+        "engine": "gemini",
+        "family": "Google Gemini",
+        "payload_path": "candidates[0].groundingMetadata.groundingChunks[].web.uri"
+      }
+    ]
+  }
+}

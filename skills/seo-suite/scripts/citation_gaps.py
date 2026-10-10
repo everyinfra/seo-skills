@@ -226,12 +226,17 @@ def gap_label_of(agg, owned_rel):
     return 6
 
 
+def _prompt_key(p):
+    """prompts 支持字符串与对象两种形态(citation_panel 对象化);键统一取 text。"""
+    return p["text"] if isinstance(p, dict) else p
+
+
 def compute_gap_labels(panel, brand_domains, owned_relevance=None):
     """逐 prompt 七叉标签;owned_relevance={prompt: 0-1} 或 None(分支 3 不可判,降级注明)。
     返回按标签严重度(下标)升序的行列表,同标签按 prompt 名排序。"""
-    owned_relevance = owned_relevance or {}
+    owned_relevance = {_prompt_key(k): v for k, v in (owned_relevance or {}).items()}
     per = _agg_gap_cells(panel, brand_domains)
-    prompts = list(panel.get("prompts") or [])
+    prompts = [_prompt_key(p) for p in (panel.get("prompts") or [])]
     prompts += sorted(p for p in per if p not in prompts)
     rows = []
     for p in prompts:

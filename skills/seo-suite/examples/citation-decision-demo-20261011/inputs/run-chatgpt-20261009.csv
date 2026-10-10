@@ -1,0 +1,15 @@
+prompt,mentioned,cited,cited_urls,state,rank
+ai agent security checklist,0,0,,failed,
+best webhook monitoring tools,0,0,,failed,
+top product analytics platforms,0,0,https://www.g2.com/categories/product-analytics;https://rival.example/platform;https://en.wikipedia.org/wiki/Web_analytics,brand_absent,
+cheap analytics alternatives list,0,0,https://www.g2.com/categories/cheap-analytics-tools;https://handbook.devops.to/cheap-stack,brand_absent,
+how to build a data warehouse,0,0,,brand_absent,
+etl vs elt explained,0,0,,brand_absent,
+cohort retention analysis guide,1,0,,name_only_mention,
+product analytics benchmarks report,0,0,,brand_absent,
+open source product analytics options,1,0,https://www.reddit.com/r/productanalytics,name_only_mention,
+self-hosted analytics comparison,1,0,,name_only_mention,
+best crm for startups,1,1,https://nimbus.example/crm;https://rival.example/crm,cited_brand,2
+crm implementation mistakes,1,1,https://nimbus.example/crm-mistakes;https://blog.growthnotes.dev/crm-mistakes,cited_brand,3
+product analytics fundamentals tutorial,1,1,https://nimbus.example/fundamentals;https://docs.dataschool.io/analytics-101,cited_brand,1
+funnel analysis best practices,1,1,https://nimbus.example/funnel-guide;https://docs.dataschool.io/bi-basics;https://blog.growthnotes.dev/funnels,cited_brand,1
