@@ -19,10 +19,11 @@ v3 新增(2026-10-09,检查函数注册表 24→64):
   结构类(H2 疑问式占比/列表密度/标题关键词位次)、格式类(日期格式/电话前缀/货币符号)、
   语言类(ru 西里尔/ko 谚文/th 泰文字符占比)、robots 类(页面级 noai/noimageai/nosnippet)。
 --report 尾部打印该市场 special_checks 的 AUTO 比例(AUTO-OK+AUTO-FAIL / 总数)。
-用法: python3 market_lint.py --market ja FILE [--url URL] [--report]
+用法: python3 market_lint.py --market ja FILE [--url URL] [--report] [--json]
 FILE=HTML(<title>+meta description)或纯文本(title:/desc: 前缀行,其余正文;无前缀则第 1 行 title、第 2 行 desc)。
+--json: 结构化输出(market/exit_code/critical/warn/output 行数组,供 agent 消费)。
 超限即 CRITICAL,退出码 1。"""
-import sys, os, re, json, math, unicodedata, urllib.request
+import sys, os, re, json, math, unicodedata, urllib.request, io, contextlib
 from collections import Counter
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -924,6 +925,36 @@ RUNNERS = {
 }
 
 def main():
+    args = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(__doc__.strip())
+        return
+    if "--market" not in args:
+        sys.stderr.write(__doc__.strip() + "\n")
+        sys.exit(2)
+    if "--json" in args:
+        # 结构化输出:捕获全部文本行 + 摘要(计数由输出行前缀统计,所见即所报)
+        argv = [a for a in args if a != "--json"]
+        sys.argv = [sys.argv[0]] + argv
+        buf = io.StringIO()
+        code = 0
+        with contextlib.redirect_stdout(buf):
+            try:
+                _lint()
+            except SystemExit as e:
+                code = e.code if isinstance(e.code, int) else 0
+        lines = buf.getvalue().splitlines()
+        market = argv[argv.index("--market") + 1] if "--market" in argv else None
+        print(json.dumps({
+            "market": market,
+            "exit_code": code,
+            "critical": sum(1 for l in lines if l.startswith("[CRITICAL]")),
+            "warn": sum(1 for l in lines if l.startswith("[WARN]")),
+            "output": lines}, ensure_ascii=False, indent=1))
+        sys.exit(code)
+    _lint()
+
+def _lint():
     args = sys.argv[1:]
     if "--market" not in args:
         sys.exit(__doc__)

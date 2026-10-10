@@ -81,10 +81,47 @@ def get_rss_items(xml_text, limit=5):
     return items[:limit]
 
 def content_hash(text):
-    # 去时间戳/随机段后哈希,减假阳性
+    # 去时间戳/nonce/随机段 + HTML canonical 化(属性排序/去 script·style·注释)后哈希,减假阳性
     text = re.sub(r"\d{4}-\d{2}-\d{2}T[\d:.+Z-]+", "", text)
-    text = re.sub(r"csrf|nonce|_token|cache[-_]?bust\w*", "", text, flags=re.I)
-    return hashlib.sha256(text.encode()).hexdigest()[:32]
+    text = re.sub(r"""csrf[\w-]*|nonce(-[\w/=+]+|\s*=\s*("[^"]*"|[\w/=+-]+))?|_token|cache[-_]?bust\w*""", "", text, flags=re.I)
+    return hashlib.sha256(canonicalize(text).encode()).hexdigest()[:32]
+
+def canonicalize(text):
+    """HTML canonical 化(防 hash 误报):
+    1) 删 script/style/注释;2) 标签名小写、属性名排序去重、挥发性属性值遮蔽
+       (nonce/integrity/随机 token 形态的值只留属性名);3) 标签多重集排序(元素顺序
+       洗牌不触发假变更)+ 可见文本压空白。
+    CDN 属性顺序漂移/内联脚本轮换/每请求随机 id/等价 link 元素重排不再触发假变更;
+    真实内容变更(文本变/新增链接或元素)仍改变哈希。非 HTML 内容原样返回。"""
+    if not re.search(r"<(script|style|!|html|body|div|meta|a\b|head)", text, re.I):
+        return text
+    text = re.sub(r"(?is)<script\b[^>]*>.*?</script>", " ", text)
+    text = re.sub(r"(?is)<script\b[^>]*>", " ", text)          # 未闭合残段
+    text = re.sub(r"(?is)<style\b[^>]*>.*?</style>", " ", text)
+    text = re.sub(r"(?s)<!--.*?-->", " ", text)
+    VOLATILE_ATTRS = {"nonce", "integrity", "csrf"}
+    RAND_TOKEN = re.compile(r"[A-Za-z0-9_-]{16,}")          # 每请求轮换的随机 token
+    COUNTER_ID = re.compile(r"[A-Za-z0-9_-]*\d{4,}[A-Za-z0-9_-]*")  # 会话计数器 id(dc-86127/input-186042212)
+    ATTR_RE = re.compile(r"""([^\s=/>]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?""")
+    def _clean_attr(name, val):
+        n = name.lower()
+        if not val:
+            return n
+        v = val.strip("\"'")
+        if n in ("href", "src"):
+            v = re.sub(r"#.*", "", v)  # 去锚点/混淆哈希(cdn-cgi/l/email-protection#…)
+        if n in VOLATILE_ATTRS or RAND_TOKEN.fullmatch(v) or COUNTER_ID.fullmatch(v):
+            return n  # 挥发性属性/随机 token/会话计数器值只留属性名
+        return n + "=" + v
+    def _norm_tag(m):
+        name = m.group(1).lower()
+        attrs = sorted(set(_clean_attr(n, v) for n, v in ATTR_RE.findall(m.group(2) or "")), key=str.lower)
+        return "<%s %s>" % (name, " ".join(attrs)) if attrs else "<%s>" % name
+    text = re.sub(r"(?is)<([a-zA-Z][a-zA-Z0-9:-]*)((?:\s+[^\s=>]+(?:\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+))?)*)\s*/?>",
+                  _norm_tag, text)
+    tags = sorted(re.findall(r"<[a-zA-Z][^>]*>", text))
+    visible = re.sub(r"<[^>]+>", " ", text)
+    return "TAGS: " + " ".join(tags) + " TEXT: " + re.sub(r"\s+", " ", visible).strip()
 
 def load_state():
     if os.path.exists(STATE_FILE):
@@ -96,34 +133,46 @@ def save_state(state):
     json.dump(state, open(STATE_FILE, "w"), indent=1)
 
 def check_source(name, cfg, prev):
-    """返回 (changed:bool, detail:str)"""
+    """返回 (changed:bool, detail:str, new_state)。new_state 用本次同一 body 建,
+    不二次 fetch——两次 check 之间页面微抖不再让基线与对比体错位。"""
     try:
         body = fetch(cfg["url"])
     except Exception as e:
-        return False, f"fetch_error: {type(e).__name__}"
+        return False, f"fetch_error: {type(e).__name__}", None
     h = content_hash(body)
+    now = datetime.now(timezone.utc).isoformat()
     if cfg["type"] == "hash":
         if prev and prev.get("hash") == h:
-            return False, ""
-        return (prev is not None), f"hash:{h[:12]}"
+            return False, "", None
+        return (prev is not None), f"hash:{h[:12]}", {"hash": h, "ts": now}
     # rss
     items = get_rss_items(body)
     if not items:
         # fallback: hash comparison if rss parsing failed
         if prev and prev.get("hash") == h:
-            return False, ""
-        return (prev is not None and "top" not in (prev or {})), f"hash:{h[:12]}"
+            return False, "", None
+        return (prev is not None and "top" not in (prev or {})), f"hash:{h[:12]}", {"hash": h, "ts": now}
     top = items[0][0]
     if prev and prev.get("top") == top:
-        return False, ""
-    new_items = [t for t, _, _ in items if not (prev and t in prev.get("seen", []))]
-    return True, " | ".join(t[:60] for t in new_items[:3]) or f"top: {top[:60]}"
+        return False, "", None
+    old_seen = (prev or {}).get("seen", [])
+    seen = old_seen + [t for t, _, _ in items if t not in old_seen]
+    new_items = [t for t, _, _ in items if not (prev and t in old_seen)]
+    detail = " | ".join(t[:60] for t in new_items[:3]) or f"top: {top[:60]}"
+    return True, detail, {"top": top, "seen": seen[-50:], "ts": now}
+
+def usage():
+    print(__doc__.strip())
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    argv = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in argv):
+        usage()
+        return
+    args = [a for a in argv if not a.startswith("--")]
     only = None
-    if "--source" in sys.argv:
-        only = sys.argv[sys.argv.index("--source") + 1]
+    if "--source" in argv:
+        only = argv[argv.index("--source") + 1]
     state = load_state()
     if args and args[0] == "init":
         sources = state["sources"]
@@ -143,6 +192,9 @@ def main():
         save_state(state)
         print("基线已建;下次 check 检测变更")
         return
+    if args and args[0] != "check":
+        usage()
+        sys.exit(2)
     # check mode
     changed_sources = []
     errors = []
@@ -150,19 +202,10 @@ def main():
         if only and name != only: continue
         prev = state["sources"].get(name)
         try:
-            ch, detail = check_source(name, cfg, prev)
+            ch, detail, new_state = check_source(name, cfg, prev)
             if ch:
                 changed_sources.append((name, detail, cfg["modules"]))
-                # update state
-                body = fetch(cfg["url"])  # refetch for state
-                if cfg["type"] == "rss":
-                    items = get_rss_items(body)
-                    old_seen = state["sources"].get(name, {}).get("seen", [])
-                    seen = old_seen + [t for t, _, _ in items if t not in old_seen]
-                    state["sources"][name] = {"top": items[0][0] if items else content_hash(body),
-                                              "seen": seen[-50:], "ts": datetime.now(timezone.utc).isoformat()}
-                else:
-                    state["sources"][name] = {"hash": content_hash(body), "ts": datetime.now(timezone.utc).isoformat()}
+                if new_state: state["sources"][name] = new_state
             elif detail.startswith("fetch_error"):
                 errors.append((name, detail))
         except Exception as e:

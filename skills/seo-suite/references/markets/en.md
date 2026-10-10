@@ -55,6 +55,7 @@
 
 ### 1. Reddit 在 ChatGPT 的引用份额塌陷——本页最重要修正
 
+- **最新口径(2026-08,Semrush 数据/Search Engine Land 报道):ChatGPT 引用中 Reddit 份额已跌至 ~0.5%**——塌陷仍在加深,下列早期数字(~10%)是过程不是终点。
 - 5WPR《State of AI Citations 2026》:ChatGPT 的 Reddit 引用份额**从 ~60% 跌至 ~10%**。
 - Ahrefs Brand Radar 口径:ChatGPT 内 Reddit 引用**降 ~86%**。
 - Strivelabs 六研究汇总:**YouTube 已取代 Reddit 成 ChatGPT 第一大被引域**(滚动追踪 YouTube ~26.47% / Reddit ~17.39%)。

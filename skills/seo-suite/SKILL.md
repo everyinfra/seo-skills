@@ -98,6 +98,7 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 参考：
 - [references/overview/capability-map.md](references/overview/capability-map.md)
 - [references/overview/routing-rules.md](references/overview/routing-rules.md)
+- [站型打法手册](references/overview/site-type-playbooks.md):八张站型卡(SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL)——开局先认站型再取 KPI/渠道/防死清单
 
 ### research
 适用于：
@@ -119,6 +120,9 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `references/research/competitor-content-architecture.md`
 - `references/research/competitor-section-templates.md`
 - `references/research/content-strategy-framework.md`
+- [references/research/domain-strategy.md](references/research/domain-strategy.md):选域·历史风险与过期域尽调·迁移 checklist·国际域名架构·"AI 记品牌不记 URL"
+- [references/research/scoring-calibration.md](references/research/scoring-calibration.md):评分器校准方法论——新建评分/调权重/改阈值曲线先过预注册闸门(权重不许手调)
+- [references/research/serp-data-models.md](references/research/serp-data-models.md):Google Trends / Google Scholar 抓取数据模型(字段级:主键/合并/去重规则)
 
 输出模板：
 - `templates/research/keyword-research-output.md`
@@ -131,7 +135,26 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 
 
 #### 多语言 / 多市场站点(全球 SEO/GEO 一把做)
-- **markets/ 语区门户(18 个)**:references/markets/ 每语区一份专项参考(渠道/语言机制/AI-GEO/信息源/红旗/工具,2026-10-09 定向研究)——目标市场命中时先读对应门户页;- [信源监控体系](references/overview/intel-sources.md):**持续完善本套件该盯什么**——四层信源(官方引擎 top20/研究数据/18 市场本地/竞品观察名单)+信源→模块映射表+新仓扫描检索式;
+- **markets/ 语区门户(18 个)**:references/markets/ 每语区一份专项参考(渠道/语言机制/AI-GEO/信息源/红旗/工具,2026-10-09 定向研究)——目标市场命中时先读对应门户页:
+  - [references/markets/zh.md](references/markets/zh.md):中文区——百度/微信搜一搜格局、公众号引用经济学、百家号/知乎生态、ICP 与可爬性
+  - [references/markets/en.md](references/markets/en.md):英文区(基线层)——Reddit 引用塌陷与 YouTube 被引、AIO 品牌词波动、段落级可引性
+  - [references/markets/ru.md](references/markets/ru.md):俄语区——Yandex 生态为主战场(Alice/Neuro)、76 条商业因子、erid/152-ФЗ 透明层
+  - [references/markets/ko.md](references/markets/ko.md):韩语区——Naver Blog/Cafe/지식iN 三入口、AI Briefing 引用条件、nosourceinfo 退出
+  - [references/markets/ja.md](references/markets/ja.md):日语区——Yahoo! Japan+Google 索引依赖、AIO 76.9%、全角规范、ステマ規制
+  - [references/markets/es.md](references/markets/es.md):西语区——es-ES 与 es-419 拉美分裂、方言归组、词汇分流与 ¿H2 惯例
+  - [references/markets/pt.md](references/markets/pt.md):巴西葡语区——ChatGPT 最强采用市场、Reclame Aqui 投诉站、PIX/CNPJ 骗局词
+  - [references/markets/ar.md](references/markets/ar.md):阿语区——RTL 全链路、MSA/方言分层、阿印 vs 欧洲数字统一、双向文本隔离
+  - [references/markets/fr.md](references/markets/fr.md):法语区——Bill 96 合规、courriel 术语表、:;!? 前窄空格、AIO 晚德一年红利窗
+  - [references/markets/de.md](references/markets/de.md):德语区(DACH)——Sie/du 语域、Impressum、Abmahnung 法律风险、1.000,00 数字格式
+  - [references/markets/id.md](references/markets/id.md):印尼语区——baku/gaul 语域分流、EYD V 规范、低价机型/slow-4G 性能基线
+  - [references/markets/hi.md](references/markets/hi.md):印地语区(印度)——Hinglish 三种书写现实、罗马化文本 AI 处理损耗、语音查询、lakh 分组
+  - [references/markets/it.md](references/markets/it.md):意大利语区——it-CH 独立 locale、P.IVA/估算声明、it 市场工具栈
+  - [references/markets/tr.md](references/markets/tr.md):土耳其语区——第二个 Yandex 市场(~26%)、İ/ı 大小写陷阱、tanıtım yazısı 披露、Trendyol 站内搜索
+  - [references/markets/vi.md](references/markets/vi.md):越南语区——有调/无调变体跟踪、标题词前 30 字符规则、Coc Cốc 本土引擎
+  - [references/markets/th.md](references/markets/th.md):泰语区——无空格分词(Intl.Segmenter 定论)、字素计长、佛历日期、ครับ/ค่ะ 语体
+  - [references/markets/pl.md](references/markets/pl.md):波兰语区——变音符规范化归组、sierotki 行首禁则、本地论坛生态
+  - [references/markets/nl.md](references/markets/nl.md):荷兰语区——nl-NL/nl-BE 弗拉芒分叉、je/u 语域、KvK 与占位符红线
+- [信源监控体系](references/overview/intel-sources.md):**持续完善本套件该盯什么**——四层信源(官方引擎 top20/研究数据/18 市场本地/竞品观察名单)+信源→模块映射表+新仓扫描检索式;
 - [多语言工作流](references/overview/multilingual-workflow.md):**全球主干**——市场总表(中/英/俄/韩/日/西/葡/阿/法/德/印尼)、逐市场工具栈映射、语言与内容规范(阈值不可互套)、检查顺序、合规速查、常见坑
 - 区域知识已融入五类能力文件,按需读取:[多语言工作流](references/overview/multilingual-workflow.md)(引擎格局/工具栈/合规)、[AI 平台差异事实库](references/content/geo-platform-differences.md)第六节(Yandex Alice/Neuro、Naver AI Briefing、日语 AIO、引用语言绑定)、[AI 爬虫政策](references/technical/ai-crawler-policy.md)第三节(YandexAdditional、Naver 收录、Bing 日本)、[hreflang 校验](references/technical/hreflang-validation.md)(es-419 例外、RTL、市场码组合)、[关键词意图分类](references/research/keyword-intent-taxonomy.md)(Wordstat/DataLab/ラッコ 工具链与方言归组)、[intake 清单](references/overview/intake-checklists.md)(目标市场 intake 闸门)、[中文 AI 搜索指南](references/content/chinese-ai-search-guide.md)
 - 多区域站点逐市场分开评分,不合并总分
@@ -180,6 +203,8 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - [视频 SEO/GEO](references/content/video-geo-guide.md):AI 引用视频的机制(Gemini 进片内/ChatGPT 整片)、**播放量不是门槛文本可及性才是**、人工字幕是唯一可控层、key moments 两法、MLA 多音轨、五市场平台格局(韩 Naver TV 已关停/俄 VK Video·RuTube 反超)
 - [电商 GEO 阶梯](references/content/ecommerce-geo-ladder.md):五级阶梯(产品数据→评价→内容→marketplace 分工→agent 交互)、Product schema 七个高频错误、七市场分叉表、AI 购物现状、UCP/ACP 双协议
 - [可引用性打分](references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
+- [GEO 证据银行](references/content/geo-evidence-bank.md):可引用的案例数字/行业研究/论文——每条带链接与日期,按证据分级决定用法
+- [UGC 与站内搜索](references/content/ugc-site-search.md):UGC 内容怎么排上名+站内搜索怎么处理与挖掘(同一批 URL 的双模块)
 #### 中文 AI 搜索（独有能力）
 - [中文 AI 搜索指南](references/content/chinese-ai-search-guide.md)：引用经济学（品牌官网仅 1.37%）、各引擎护城河、CJK 阈值、15 项就绪清单
 
@@ -214,6 +239,11 @@ description: 统一的 SEO / GEO 工作台:关键词研究、搜索意图与 SER
 - `references/technical/LCP.md`
 - `references/technical/cwv-playbook.md`
 - [审计工具输出解读](references/technical/audit-tool-output.md)：用户提供 Screaming Frog / Lighthouse / Sitebulb / Ahrefs / GSC 导出时先读——各工具字段对照、脚本化审计器 JSON 信封、跨工具字段映射与 findings 合并七步、严重度重映射(P0-P3)
+- [head 元素完整参考](references/technical/head-elements.md):HTML head 全元素 2026 口径(joshbuchea/HEAD 重组;含弃用清单与平台私有 meta)
+- [重定向与 Canonicalization](references/technical/redirects-canonical.md):重定向全类型+canonical 六场景深度指南(信号合并/迁移/跨域)
+- [Agent 协议速查卡](references/technical/agent-protocols.md):14 协议一页对照(Content Signals/WebMCP/ARD…每卡:规则数字/验证命令/状态)
+- [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位)
+- [Naver Search Advisor 蒸馏](references/technical/naver-searchadvisor.md):55 篇官方指南全量蒸馏(每节 guid 可对勘原文)
 - `references/technical/event-library.md`
 - `references/technical/ga4-implementation.md`
 - `references/technical/gtm-implementation.md`
@@ -257,6 +287,8 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `references/monitoring/kpi-definitions.md`
 - `references/monitoring/report-templates.md`
 - `references/monitoring/alert-threshold-guide.md`
+- [本地网格排名](references/monitoring/local-grid-ranking.md):geo-grid 三指标 ARP/ATRP/SoLV 源码级口径+网格参数公式+GBP 信号权重
+- [惩罚识别与恢复](references/monitoring/penalty-recovery.md):手动动作类型学全清单/鉴别诊断/reconsideration 全流程/负面 SEO 防御
 
 输出模板：
 - `templates/monitor/rank-report.md`

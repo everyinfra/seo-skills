@@ -33,8 +33,19 @@ def parse_groups(txt):
 def matches(rule, dummy_path="/"):
     return rule in ("", "/")
 
+USAGE = """usage: robots_posture.py URL [--signal visibility|protect-ip]
+URL 通常是 https://site/robots.txt(给站点根也行,自动拼 /robots.txt)。
+读取 robots.txt,输出检索/建议/训练三类爬虫放行矩阵+Cloudflare 注入检测+Content-Signal 建议。"""
+
 def main():
-    url = sys.argv[1]
+    a = sys.argv[1:]
+    if any(x in ("-h", "--help") for x in a):
+        print(USAGE)
+        return
+    if not a or a[0].startswith("-"):
+        sys.stderr.write(USAGE + "\n")
+        sys.exit(2)
+    url = a[0].rstrip("/") + "/robots.txt" if not a[0].rstrip("/").endswith("robots.txt") else a[0]
     mode = "visibility"
     if "--signal" in sys.argv:
         mode = sys.argv[sys.argv.index("--signal")+1]

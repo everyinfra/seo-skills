@@ -34,8 +34,11 @@ def check(root):
     for p in ("/llms.txt", "/llms-full.txt", "/index.md", "/index.html.md"):
         try:
             s, body = fetch(root + p)
-            head = body[:80].replace("\n", " ")
-            print(f"{p:<18} {s}  {head}")
+            head = body.lstrip()
+            if head[:1] == "<" or re.search(r"<(html|head|body|!DOCTYPE)\b", head[:2000], re.I):
+                print(f"{p:<18} {s}  [FAIL] llms.txt is HTML not markdown")
+            else:
+                print(f"{p:<18} {s}  [PASS] {body[:80].replace(chr(10), ' ')}")
         except Exception as e:
             print(f"{p:<18} ✗ {type(e).__name__}")
 
@@ -50,12 +53,18 @@ def generate(sitemap, title, desc):
 
 def main():
     a = sys.argv[1:]
-    if a[0] == "validate": validate(a[1])
-    elif a[0] == "check": check(a[1])
-    elif a[0] == "generate":
+    if not a or a[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        sys.exit(0)
+    if a[0] == "validate" and len(a) > 1: validate(a[1])
+    elif a[0] == "check" and len(a) > 1: check(a[1])
+    elif a[0] == "generate" and "--sitemap" in a:
         i = a.index("--sitemap"); sm = a[i+1]
         t = a[a.index("--title")+1] if "--title" in a else "Site"
         d = a[a.index("--desc")+1] if "--desc" in a else "Site description"
         generate(sm, t, d)
+    else:
+        print(__doc__.strip(), file=sys.stderr)
+        sys.exit(2)
 
 if __name__ == "__main__": main()

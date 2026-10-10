@@ -16,8 +16,20 @@ def grapheme_approx(t):  # 泰文等组合文字:合并标记不计
 def words(t):
     return len(t.split())
 
-market = sys.argv[1] if len(sys.argv) > 1 else 'en'
-t = sys.stdin.read()
-stats = {'chars': len(t), 'visible_fullwidth': visible_length(t), 'graphemes': grapheme_approx(t), 'words': words(t)}
-unit = {'ja': 'visible_fullwidth', 'ko': 'visible_fullwidth', 'th': 'graphemes', 'zh': 'chars', 'en': 'words', 'ru': 'words', 'id': 'words'}.get(market, 'chars')
-print(f"market={market} unit={unit} value={stats[unit]}  (all: {stats})")
+USAGE = """usage: cat text | text_units.py <market>
+按目标市场的计量单位统计文本(market ∈ en|zh|ja|th|ko|ru|id);
+全角=1、半角=0.5 向上取整(日/韩),泰文按字素(基字符+组合标记计 1)。"""
+
+def main():
+    a = sys.argv[1:]
+    if any(x in ("-h", "--help") for x in a):
+        print(USAGE)
+        return
+    market = a[0] if a and not a[0].startswith("-") else 'en'
+    t = sys.stdin.read()
+    stats = {'chars': len(t), 'visible_fullwidth': visible_length(t), 'graphemes': grapheme_approx(t), 'words': words(t)}
+    unit = {'ja': 'visible_fullwidth', 'ko': 'visible_fullwidth', 'th': 'graphemes', 'zh': 'chars', 'en': 'words', 'ru': 'words', 'id': 'words'}.get(market, 'chars')
+    print(f"market={market} unit={unit} value={stats[unit]}  (all: {stats})")
+
+if __name__ == "__main__":
+    main()

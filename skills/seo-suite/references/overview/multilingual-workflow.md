@@ -246,7 +246,7 @@
 
 ### 韩语区专项
 
-**独家渠道**(leopard NEO 实测+官方蒸馏):AI Briefing 引用条件=标签-值网格(合同金额/期间/对手方)压过散文块、页面声明一手来源并链接原文、事件后分钟级上线抢引用、关键事实在移动首屏;博客双轨=Naver 品牌博客养生态信任/停留,自有域做事实账本,AI Briefing 最终引结构化数据页。**语言机制实操**:description ≤80 全角;합니다体全站统一;RSS 须含最新文全文提交;robots 按 User-agent 管 Yeti、勿按 IP 封(IP 段随时变);연관채널 channel markup 声明社媒账号。**本圈信息源**:naver-searchadvisor-expert(56 篇官方指南全量蒸馏仓)、네이버 검색 공식블로그、아프니까 사장이다 카페。**红旗**:官方垃圾政策点名——自动互邻/评论交换是垃圾过滤器头号目标、宏与多账号刷评=操纵违规、频繁编辑-删除循环侵蚀文档信任分;站长优化度报告是 AI 评分间接指标≠排名保证;B2B/金融类周末 dip 本身是真实需求证据(非异常)。
+**独家渠道**(fire-your-seo-agency 仓实测+官方蒸馏):AI Briefing 引用条件=标签-值网格(合同金额/期间/对手方)压过散文块、页面声明一手来源并链接原文、事件后分钟级上线抢引用、关键事实在移动首屏;博客双轨=Naver 品牌博客养生态信任/停留,自有域做事实账本,AI Briefing 最终引结构化数据页。**语言机制实操**:description ≤80 全角;합니다体全站统一;RSS 须含最新文全文提交;robots 按 User-agent 管 Yeti、勿按 IP 封(IP 段随时变);연관채널 channel markup 声明社媒账号。**本圈信息源**:naver-searchadvisor-expert(56 篇官方指南全量蒸馏仓)、네이버 검색 공식블로그、아프니까 사장이다 카페。**红旗**:官方垃圾政策点名——自动互邻/评论交换是垃圾过滤器头号目标、宏与多账号刷评=操纵违规、频繁编辑-删除循环侵蚀文档信任分;站长优化度报告是 AI 评分间接指标≠排名保证;B2B/金融类周末 dip 本身是真实需求证据(非异常)。
 
 官方文档蒸馏层(收录机制/robots·sitemap·RSS 规范/Yeti 特性/제휴 依赖/双通道/工具清单,55 篇全量带 guid):[naver-searchadvisor.md](../technical/naver-searchadvisor.md)
 
@@ -310,9 +310,9 @@
 
 **独家渠道**:协议层 agent-readiness(ARD/ai-catalog.json/WebMCP/Web Bot Auth——英文站全开,其他语区只保留 llms.txt 类等价物);三类 AI 爬虫按目的分策(training:GPTBot/ClaudeBot/Google-Extended;search indexing:OAI-SearchBot/PerplexityBot;live fetch:ChatGPT-User 类)——封训练连带封掉引用流量是最常见误杀。**语言机制实操**:句 15–20 词;hype 词(unlock/seamless 类)≤3/页;段落级可引性=[主体+数字+as-of 日期+方法学]——Naver AI Briefing 与 Perplexity 都精确以此粒度截取;一手数字源策略=给数字命名+稳定 URL 作引用地址。**本圈信息源**:Google Search Central、Search Engine Land、r/SEO、Ahrefs/Sistrix 研究;qiaomu 证据阶梯六级(eligible→retrieved→cited→mentioned→recommended→converted)是计量范本。**红旗**:inauthentic mentions(买提及)是 Google 官方点名的 spam 风险;逐长尾变体建页=Scaled Content Abuse;llms.txt 对 Google 无效(不帮不伤)——别当排名手段卖。
 
-## 十二、NEO 车道的度量协议与内容流水线(leopard fire-your-seo-agency 深读,2026-10-09)
+## 十二、韩区度量协议与内容流水线(fire-your-seo-agency 深读,2026-10-09)
 
-韩区 NEO 玩法(AI Briefing 引用条件/博客双轨/垃圾红线)已入第十节韩语区专项;本节收编该仓**跨车道通用的两套协议**——度量闭环与内容流水线,任何语区照抄。
+韩区 Naver 车道(NEO)玩法(AI Briefing 引用条件/博客双轨/垃圾红线)已入第十节韩语区专项;本节收编该仓**跨车道通用的两套协议**——度量闭环与内容流水线,任何语区照抄。
 
 ### 12.1 度量闭环:"改完"不是终点,数字动了才是
 
@@ -340,7 +340,7 @@
 
 **度量口径**:"N 篇/月"是产出不是结果——**被看见或被引的份额**(发布文中 28 天曝光>0 的比例/AI 被引比例)、每篇 28 天曝光/点击/均位、5-10 个目标问题的 AI 引用 O/X、积压消耗率 vs 流入率(积压空了=该重读查询数据了)。信号→动作:曝光升点击降→改 title/description;发布 14 天零曝光→查索引(sitemap/noindex/SSR/IndexNow);卡位 5-15→强化直答/表格/as-of+加内链;有曝光无 AI 引用→查竞争原始源/段落自足性/llms.txt 收录;曝光降 30%→触发刷新。
 
-### 12.3 五车道方法论与其余车道参考(leopard 深读 2026-10-09b)
+### 12.3 五车道方法论与其余车道参考(fire-your-seo-agency 深读,2026-10-09b)
 
 en/ 目录余下四文件(seo/aeo/geo/llmo)+ SKILL.md 正文的收编;与既有内容的去重边界:三类 AI 爬虫分策、段落级可引性、一手数字源命名+稳定 URL 已在英文区专项,五页型/问题积压/发布闸门在 12.2,韩区 NEO 玩法在第十节——本节不重录。
 

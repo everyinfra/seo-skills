@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | 1 | [Search Central Blog](https://developers.google.com/search/blog)(RSS: /blog/feed.xml) | 周 | RSS | 核心更新/新功能→全部模块 |
 | 2 | [Search 文档 changelog](https://developers.google.com/search/updates) | 周 | 页面 diff | 文档级变更→技术审计规则 |
-| 3 | [GSC announcements](https://support.google.com/webmasters/announcements) | 月 | diff | AI Reporting 等新功能→监控层 |
+| 3 | GSC/Search 功能公告(旧 [support.google.com/webmasters/announcements](https://support.google.com/webmasters/announcements) **已 404 下线**,2026-10 确认)→ 改盯 [Search Blog RSS](https://developers.google.com/search/blog/feed.xml) | 月 | RSS | AI Reporting 等新功能→监控层 |
 | 4 | [Status Dashboard](https://status.search.google.com/) | 事件 | 哈希 10min | 算法/事故时间线→算法归因 |
 | 5 | [Lighthouse releases](https://github.com/googlechrome/lighthouse/releases) | 4 周 | GH RSS | AGENTIC_BROWSING 演进→agent-readiness |
 | 6 | [Bing Webmaster Blog](https://blogs.bing.com/webmaster)(RSS) | 月 | RSS | Copilot 引用数据(2026-02 AI Performance)→测量层 |

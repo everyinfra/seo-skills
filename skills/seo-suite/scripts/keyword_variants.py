@@ -45,7 +45,13 @@ def canon(word):
             w = nd
     return w, rules
 
+USAGE = """usage: cat words.txt | keyword_variants.py [--json]
+跨语言变体归组(阿正书/越声调/全半角/土 İ/俄 ё);--json 输出分组结构。"""
+
 def main():
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print(USAGE)
+        return
     as_json = "--json" in sys.argv
     words = [ln.strip() for ln in sys.stdin if ln.strip() and not ln.startswith("#")]
     groups = {}

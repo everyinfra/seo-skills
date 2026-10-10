@@ -20,8 +20,19 @@ def walk(node, fn):
     elif isinstance(node, list):
         for v in node: walk(v, fn)
 
+USAGE = """usage: schema_lint.py URL
+提取页面全部 JSON-LD 块,检查:@id 绝对性/引用悬空/同名实体分裂/占位符黑名单/
+aggregateRating 范围/FAQPage 空答案。"""
+
 def main():
-    url = sys.argv[1]
+    a = sys.argv[1:]
+    if any(x in ("-h", "--help") for x in a):
+        print(USAGE)
+        return
+    if not a or a[0].startswith("-"):
+        sys.stderr.write(USAGE + "\n")
+        sys.exit(2)
+    url = a[0]
     html = fetch(url)
     blocks = re.findall(r"<script[^>]*type=[\"']application/ld\+json[\"'][^>]*>(.*?)</script>", html, re.S | re.I)
     if not blocks:

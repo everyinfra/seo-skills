@@ -27,8 +27,15 @@ def wc(text):
     cjk = sum(1 for c in text if is_cjk(c))
     return cjk + len(re.findall(r"[A-Za-z0-9']+", text))
 
+USAGE = """usage: cat page.txt | text_metrics.py [--market zh|en|ja] [--scrub]
+CJK 感知词数/句长节奏(metronomic AI 签名)/em-dash 密度/slop 词/Unicode 水印扫描;
+--scrub 清除水印输出到 stdout,分析输出到 stderr。"""
+
 def main():
     args = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(USAGE)
+        return
     market = "zh" if "--market" not in args else args[args.index("--market")+1]
     scrub = "--scrub" in args
     text = sys.stdin.read()

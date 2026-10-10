@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-"""skill 自检:frontmatter 规范 + 模板七段式 + 死链。任何一项失败即退出码 1。"""
+"""skill 自检:frontmatter 规范 + 模板七段式 + 死链 + golden 测试。任何一项失败即退出码 1。
+用法: python3 self_check.py [-h]"""
 import os, re, sys, subprocess
+
+if any(a in ("-h", "--help") for a in sys.argv[1:]):
+    print(__doc__.strip())
+    sys.exit(0)
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 s = open(os.path.join(BASE, 'SKILL.md')).read()
 fail = []

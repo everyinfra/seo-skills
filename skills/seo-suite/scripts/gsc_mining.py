@@ -40,7 +40,13 @@ references/research/keyword-intent-taxonomy.md"深读补充"节)——扩本脚�
   (trends.google.com/trending/rss?geo=US) 与 Brave site:twitter.com 查询可再补两源
 ────────────────────────────────────────────────────────────────────────────
 """
-import sys, csv
+import sys, csv, json
+
+USAGE = """usage: gsc_mining.py queries.csv [--mode query] [--json]      # 单表: Query,Clicks,Impressions,CTR,Position
+       gsc_mining.py matrix.csv --mode matrix [--json]     # Query,Page,Clicks,Impressions,CTR,Position
+       gsc_mining.py cur.csv prev.csv --decay [--json]     # 两期对比
+GSC 导出挖掘: striking distance / 低 CTR / 蚕食 / 流量衰退。CTR 接受 '3.2%' 或 0.032。
+--json: 结构化输出(sections 数组,供 agent 消费)。"""
 
 EXP_CTR = [(1,.28),(2,.15),(3,.11),(5,.07),(10,.03),(20,.01),(999,.005)]
 def expected_ctr(pos):
@@ -66,8 +72,15 @@ def get(r, *names):
 
 def main():
     a = sys.argv[1:]
+    if any(x in ("-h", "--help") for x in a):
+        print(USAGE)
+        return
+    as_json = "--json" in a
     decay = "--decay" in a; matrix = "--mode" in a and "matrix" in a
     a = [x for x in a if not x.startswith("--")]
+    if not a:
+        sys.stderr.write(USAGE + "\n")
+        sys.exit(2)
     if decay and len(a) >= 2:
         cur, prev = read(a[0]), read(a[1])
         pc = {}
@@ -79,10 +92,14 @@ def main():
             q = get(r, "query", "top queries")
             c = float(get(r, "clicks") or 0)
             if pc.get(q, 10) >= 10 and pc[q] > 0 and (c - pc[q]) / pc[q] <= -0.25:
-                out.append((q, int(pc[q]), int(c), f"{(c-pc[q])/pc[q]:.0%}"))
-        out.sort(key=lambda x: x[1]-x[2], reverse=True)
+                out.append({"query": q, "prev": int(pc[q]), "cur": int(c),
+                            "delta": f"{(c-pc[q])/pc[q]:.0%}"})
+        out.sort(key=lambda x: x["prev"]-x["cur"], reverse=True)
+        if as_json:
+            print(json.dumps({"mode": "decay", "declined": out[:30]}, ensure_ascii=False, indent=1))
+            return
         print("== 流量衰退(28d vs 28d, ≤-25%) ==")
-        for q, p, c, d in out[:30]: print(f"{q:<40} {p:>6}→{c:<6} {d}")
+        for o in out[:30]: print(f"{o['query']:<40} {o['prev']:>6}→{o['cur']:<6} {o['delta']}")
         return
     rows = read(a[0])
     if not matrix:
@@ -97,6 +114,12 @@ def main():
                 gap = expected_ctr(pos) - ctr
                 if gap > 0.02: lw.append((get(r, "query"), pos, impr, ctr, gap))
         sd.sort(key=lambda x: -x[2]); lw.sort(key=lambda x: -x[4]*x[2])
+        if as_json:
+            print(json.dumps({"mode": "query",
+                              "striking_distance": [{"query": q, "pos": p, "impressions": int(i), "clicks": int(c)} for q, p, i, c in sd[:30]],
+                              "low_ctr": [{"query": q, "pos": p, "impressions": int(i), "ctr": round(c, 4), "gap": round(g, 4)} for q, p, i, c, g in lw[:30]]},
+                             ensure_ascii=False, indent=1))
+            return
         print(f"== striking distance(pos5-20, 曝光≥20): {len(sd)} 词 ==")
         for q, p, i, c in sd[:30]: print(f"{q:<40} pos{p:<5.1f} impr{int(i):<7} clicks{int(c)}")
         print(f"\n== 低CTR机会(期望-实际>2pp): {len(lw)} 词 ==")
@@ -112,9 +135,12 @@ def main():
             if len(pages) >= 2 and max(p[2] for p in pages) >= 20:
                 tot = sum(p[2] for p in pages)
                 wpos = sum(p[1]*p[2] for p in pages)/tot
-                cann.append((q, len(pages), wpos))
-        cann.sort(key=lambda x: -x[2])
+                cann.append({"query": q, "pages": len(pages), "weighted_pos": round(wpos, 1)})
+        cann.sort(key=lambda x: -x["weighted_pos"])
+        if as_json:
+            print(json.dumps({"mode": "matrix", "cannibalization": cann[:30]}, ensure_ascii=False, indent=1))
+            return
         print(f"== 蚕食(同query≥2页, 加权位次): {len(cann)} 组 ==")
-        for q, n, w in cann[:30]: print(f"{q:<40} {n}页 加权pos{w:.1f}")
+        for o in cann[:30]: print(f"{o['query']:<40} {o['pages']}页 加权pos{o['weighted_pos']}")
 
 if __name__ == "__main__": main()

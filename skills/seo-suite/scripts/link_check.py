@@ -2,6 +2,13 @@
 """校验 skill 内部 markdown 链接全部可达(SKILL.md 的 references/ 风格 + 参考文件间的相对链接)。"""
 import os, re, sys, glob
 
+USAGE = """usage: link_check.py [-h]
+校验 skill 内部 markdown 链接全部可达(SKILL.md 的 references/ 风格 + 参考文件间的相对链接);
+断链退出码 1。"""
+if any(a in ("-h", "--help") for a in sys.argv[1:]):
+    print(USAGE)
+    sys.exit(0)
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 broken = []
 for f in glob.glob(os.path.join(BASE, '**', '*.md'), recursive=True):

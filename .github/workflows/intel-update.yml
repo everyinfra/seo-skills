@@ -1,0 +1,143 @@
+# intel-update: SEO skill 自更新 cron(信源变更 → agent 更新 skill → commit+push)
+# ----------------------------------------------------------------------------
+# 每日 UTC 01:11 跑一次。拉 18 个信源(intel_check.py)检测变更,
+# 有变更 → 生成"待更新任务文件" → commit(触发人工/agent 后续处理)。
+#
+# 这是 self-update 循环的 CI 端:检测+标记自动;文件级更新由 agent(或你)
+# 在收到通知后按 self-update-protocol.md 执行——P0 规则级自动改,
+# P1 事实级自动改,行为性变更(评分权重/检查阈值)标 [HUMAN-REVIEW]。
+#
+# 使用(两种方式):
+#
+# A. GitHub Actions(推荐,免费):
+#   1. 把本文件拷到你的 seo-skills fork 的 .github/workflows/intel-update.yml
+#   2. (可选)配 Secrets: SEO_INTEL_SLACK_WEBHOOK / SEO_INTEL_TG_TOKEN+
+#      SEO_INTEL_TG_CHAT —— 变更时收通知,然后手动或 agent 处理
+#   3. fork 即用,无需其他配置
+#
+# B. 本地 cron / launchd / Claude Code 定时(你在自己的机器上):
+#   crontab -e 加一行(每天 09:11 本地):
+#     11 9 * * * cd /path/to/seo-skills && python3 skills/seo-suite/scripts/intel_check.py check >> .intel-cron.log 2>&1 && [ $? -eq 1 ] && python3 skills/seo-suite/scripts/notify.py --alerts .seo-monitor/alerts.json
+#   或用 Claude Code 的定时任务功能,发送指令模板:
+#     "检查信源并更新 SEO skill:cd /path/to/seo-skills && python3
+#      skills/seo-suite/scripts/intel_check.py check → 有变更按
+#      skills/seo-suite/references/overview/self-update-protocol.md 处理 →
+#      self_check 全绿 → git commit + push → 中文总结"
+#
+# C. Codex 定时(同理):
+#   用系统 cron 调 codex exec 或 claude -p 无头执行上述指令模板,
+#   prompt 里必须写明成功标准(无头模式无人可追问):
+#     成功标准 = intel_check 退出码为 0 或已完成全部更新且 self_check 通过
+#     失败标准 = fetch_error 超过 5 个源或 self_check FAIL
+#
+# ----------------------------------------------------------------------------
+
+name: intel-update
+on:
+  schedule:
+    - cron: '11 1 * * *'  # 每日 UTC 01:11(非整点减撞车)
+  workflow_dispatch: {}     # 手动触发按钮
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: intel-update
+  cancel-in-progress: false
+
+jobs:
+  check-and-flag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore intel state
+        uses: actions/cache@v4
+        with:
+          path: skills/seo-suite/.intel-state.json
+          key: intel-state-${{ github.run_id }}
+          restore-keys: intel-state-
+
+      - name: Run intel check
+        id: intel
+        run: |
+          cd skills/seo-suite
+          python3 scripts/intel_check.py check || echo "changed=true" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Generate update task file
+        if: steps.intel.outputs.changed == 'true'
+        run: |
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M)
+          cat > .intel-update-task.md << 'EOF'
+          # Intel Update Task (auto-generated)
+          Generated: ${TIMESTAMP}
+
+          intel_check.py detected source changes.
+          Follow skills/seo-suite/references/overview/self-update-protocol.md to update.
+
+          ## Changed sources
+          EOF
+          cd skills/seo-suite && python3 scripts/intel_check.py check >> ../../.intel-update-task.md 2>&1 || true
+
+      - name: Commit state + task
+        if: steps.intel.outputs.changed == 'true'
+        run: |
+          git config user.name "seo-intel-bot"
+          git config user.email "intel@local"
+          git add skills/seo-suite/.intel-state.json .intel-update-task.md
+          git commit -m "intel-update: sources changed, task file generated — follow self-update-protocol.md" || exit 0
+          git push
+
+      - name: Open/flag issue
+        if: steps.intel.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'intel-update-pending',
+              state: 'open'
+            });
+            if (issues.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '📚 Intel sources changed — skill update needed',
+                body: 'intel_check.py detected changes. See .intel-update-task.md.\n\nFollow `skills/seo-suite/references/overview/self-update-protocol.md` to update the skill.',
+                labels: ['intel-update-pending']
+              });
+            }
+
+      - name: Close issue on no changes
+        if: steps.intel.outputs.changed != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'intel-update-pending',
+              state: 'open'
+            });
+            for (const i of issues) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: i.number,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+            }
+
+      - name: Notify (optional)
+        if: steps.intel.outputs.changed == 'true' && env.SEO_INTEL_SLACK_WEBHOOK
+        env:
+          SEO_INTEL_SLACK_WEBHOOK: ${{ secrets.SEO_INTEL_SLACK_WEBHOOK }}
+        run: |
+          curl -s -X POST "$SEO_INTEL_SLACK_WEBHOOK" \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"📚 SEO skill intel-update: sources changed. See .intel-update-task.md in repo."}' || true

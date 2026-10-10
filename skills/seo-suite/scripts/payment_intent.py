@@ -15,7 +15,13 @@ def fold(s):
     w = "".join(c for c in unicodedata.normalize("NFD", w) if not unicodedata.combining(c))
     return unicodedata.normalize("NFC", w)
 
+USAGE = """usage: cat kw.txt | payment_intent.py
+stdin 每行一个关键词 → payment 意图标签(词表读 markets.json payment_words,含 OXXO/cuotas/Pix/COD…)。"""
+
 def main():
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print(USAGE)
+        return
     with open(os.path.join(BASE, "markets.json"), encoding="utf-8") as f:
         table = json.load(f)["payment_words"]
     pats, seen = [], set()

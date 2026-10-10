@@ -13,8 +13,15 @@ def norm(d):
     d = d.split("//", 1)[-1].split("/")[0].split(":")[0].split("?")[0]
     return d[4:] if d.startswith("www.") else d.lower()
 
+USAGE = """usage: serp_occupancy.py --market XX "dom1,dom2,..."   (域名列表也可走 stdin)
+对照 markets.json serp_occupancy 内置占位表(tr/th/in/kr/jp/vn/ru),输出
+UGC/比价/投诉/Q&A/目录平台占位数 + 品牌词审计提示。"""
+
 def main():
     args = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(USAGE)
+        return
     market = args[args.index("--market") + 1] if "--market" in args else None
     pos = [a for a in args if not a.startswith("--") and a != market]
     raw = " ".join(pos) if pos else sys.stdin.read()
@@ -23,7 +30,8 @@ def main():
         data = json.load(f)
     table = data["serp_occupancy"]
     if not market or market not in table:
-        sys.exit("--market 必填且须在占位表内;可用: %s" % ", ".join(table))
+        sys.stderr.write(USAGE + "\n--market 必填且须在占位表内;可用: %s\n" % ", ".join(table))
+        sys.exit(2)
     if not domains:
         sys.exit("未输入域名;位置参数传逗号分隔的前10域名,或走 stdin")
     occ = table[market]

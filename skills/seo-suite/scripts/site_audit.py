@@ -8,7 +8,7 @@ S2 实测修复(2026-10-09):title 收集只在 <title>…</title> 内(script/JSO
 --market 接线 markets.json 阈值(18 市场)。
 用法: python3 site_audit.py URL [URL...] [--market ja|en|zh|th|hi|vi|pl|tr|...]
 判定: CRITICAL 存在则退出码 1。"""
-import sys, os, re, json, math, unicodedata, urllib.request, urllib.robotparser
+import sys, os, re, json, math, unicodedata, urllib.error, urllib.request, urllib.robotparser
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
@@ -16,6 +16,23 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.1)"
 RETRIEVAL_BOTS = ["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "PerplexityBot"]
 STAGING = ("test.", "staging.", "dev.", "preview.", "beta.", "uat.")
+# fetch 质量守卫:被挑战页/WAF 拦截时拒绝审计(输出 [SKIP],不算 CRITICAL)
+MIN_BODY_BYTES = 200
+CHALLENGE_MARKERS = ("just a moment", "attention required", "cf-chl", "cf-browser-verification",
+                     "challenge-platform", "checking your browser", "verify you are human",
+                     "unusual traffic", "access denied", "captcha", "ddos-guard", "perimeterx", "px-captcha")
+
+USAGE = """usage: site_audit.py URL [URL...] [--market XX] [--json]
+单页全项审计:title/desc 限值(市场单位)/H1/词数/链接/alt/canonical/robots/og/JSON-LD/
+llms.txt/sitemap/AI 爬虫放行/staging 子域。
+  --market XX  markets.json 18 市场阈值(chars/fullwidth/grapheme)
+  --json       结构化输出(findings+meta+verdict,供 agent 消费)
+判定:CRITICAL 存在则退出码 1;fetch 守卫触发输出 [SKIP] fetch guard: response too small /
+likely challenge page 并拒绝审计结论(该 URL 不计失败,退出码不受影响)。"""
+
+def looks_like_challenge(html):
+    head = html[:4000].lower()
+    return any(m in head for m in CHALLENGE_MARKERS)
 
 def load_market(market):
     """markets.json 市场规则(与 market_lint.py 同源);未知市场直接退出。"""
@@ -138,8 +155,20 @@ def audit(url, market="en"):
     if host.startswith(STAGING): F.append(("CRITICAL", "staging", "staging 子域公开可访问"))
     try:
         st, hdrs, html = fetch(url)
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403, 429, 503):
+            return [("SKIP", "fetch guard",
+                     f"response too small / likely challenge page (HTTP {e.code}); refusing to audit")], {}
+        return [("CRITICAL", "fetch", f"{e}")], {}
     except Exception as e:
         return [("CRITICAL", "fetch", f"{e}")], {}
+    # fetch 质量守卫:<200 bytes 或挑战页特征 → 拒绝审计结论([SKIP],不报 CRITICAL)
+    if len(html.strip()) < MIN_BODY_BYTES:
+        return [("SKIP", "fetch guard",
+                 f"response too small / likely challenge page ({len(html)} bytes, HTTP {st}); refusing to audit")], {}
+    if looks_like_challenge(html):
+        return [("SKIP", "fetch guard",
+                 f"response too small / likely challenge page (challenge markers, HTTP {st}); refusing to audit")], {}
     p = Page(); p.feed(html)
     t = re.sub(r"\s+", " ", (p.title[0] if p.title else "")).strip()
     tn = unit_len(t, tl["unit"])
@@ -197,17 +226,35 @@ def fetch(url, timeout=15):
 
 def main():
     args = sys.argv[1:]
-    market = "en"
+    if any(a in ("-h", "--help") for a in args):
+        print(USAGE)
+        return
+    market, as_json = "en", False
     if "--market" in args: i = args.index("--market"); market = args[i+1]; del args[i:i+2]
+    if "--json" in args: as_json = True; args = [a for a in args if a != "--json"]
     load_market(market)  # 提前校验,未知市场列出可用值
+    urls = [a for a in args if not a.startswith("-")]
+    if not urls:
+        sys.stderr.write(USAGE + "\n")
+        sys.exit(2)
     crit = 0
-    for url in args:
+    results = {}
+    for url in urls:
         F, meta = audit(url, market)
         print(f"\n== {url} ==")
         for sev, area, msg in F:
             print(f"[{sev}] {area}: {msg}")
             crit += sev == "CRITICAL"
         if meta: print("meta:", json.dumps(meta, ensure_ascii=False))
+        if as_json:
+            results[url] = {
+                "verdict": "refused" if any(s == "SKIP" for s, _, _ in F)
+                           else ("fail" if any(s == "CRITICAL" for s, _, _ in F) else "pass"),
+                "findings": [{"severity": s, "area": a, "message": m} for s, a, m in F],
+                "meta": meta}
+    if as_json:
+        print(json.dumps({"audited": len(urls), "critical": crit, "results": results},
+                         ensure_ascii=False, indent=1))
     sys.exit(1 if crit else 0)
 
 if __name__ == "__main__": main()

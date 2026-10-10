@@ -8,8 +8,18 @@ def jaccard(a, b):
     A, B = set(a), set(b)
     return len(A & B) / len(A | B) if A | B else 0
 
+USAGE = """usage: serp_overlap.py input.csv
+输入 CSV: keyword,top10 URL(分号分隔);按四档判据输出:7-10 同文 / 4-6 同簇 / 2-3 互链 / 0-1 分开。"""
+
 def main():
-    rows = list(csv.reader(open(sys.argv[1], encoding='utf-8-sig')))
+    a = sys.argv[1:]
+    if any(x in ("-h", "--help") for x in a):
+        print(USAGE)
+        return
+    if not a or a[0].startswith("-"):
+        sys.stderr.write(USAGE + "\n")
+        sys.exit(2)
+    rows = list(csv.reader(open(a[0], encoding='utf-8-sig')))
     data = {r[0].strip(): [u.strip() for u in r[1].split(";") if u.strip()] for r in rows if len(r) >= 2}
     ks = list(data)
     print(f"{'关键词对':<50}{'共享':<4}{'判据'}")

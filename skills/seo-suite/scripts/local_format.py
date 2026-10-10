@@ -13,8 +13,12 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 
 def main():
     args = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(__doc__.strip())
+        return
     if "--market" not in args:
-        sys.exit(__doc__)
+        sys.stderr.write(__doc__.strip() + "\n")
+        sys.exit(2)
     market = args[args.index("--market") + 1]
     pos = [a for a in args if not a.startswith("--") and a != market]
     text = " ".join(pos) if pos else sys.stdin.read()

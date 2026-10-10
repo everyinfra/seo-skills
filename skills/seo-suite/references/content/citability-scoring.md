@@ -3,6 +3,8 @@
 > 建立于 2026-10-09。框架参考 [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `geo-citability` 技能与 [jianruntech/geo-score](https://github.com/jianruntech/geo-score) rubric v1.1，按本套件证据约束改写。
 > 打分衡量的是内容**形状**是否便于引用，不是引用结果本身——好分数不保证被引。
 
+**用哪套(入口决策)**:快速评估用 **AIV**(第二节五支柱 100 分,读档即可打);深入研究用 **CORE-EEAT 80 项基准**(配 `scripts/core_eeat.py` 机械化,GEO/SEO 双分+veto 封顶 59);域名级评级用 **CITE 40 项**(配 `scripts/cite_domain.py --input json`,veto BLOCK)。三套可叠:域名 CITE → 站点 AIV → 内容 CORE-EEAT。
+
 ## 一、五维块级打分（0–100）
 
 | 维度 | 权重 | 看什么 |
