@@ -22,3 +22,5 @@ node_modules/
 # 只提交基线库与快照;config.json/alerts.json/notify-state.json/gsc.csv 永不提交)。
 .seo-monitor/
 .seo-monitor-*/
+.intel-state.json
+skills/seo-suite/.intel-state.json

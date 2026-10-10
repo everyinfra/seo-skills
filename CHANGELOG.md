@@ -3,6 +3,15 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.30.0 - 2026-10-10
+
+- **自更新循环落地(信源→直接更新 skill,不只是知识)**:
+  - **intel_check.py(18 源注册表)**:init/check 两命令——RSS 源取 top 条目+seen 列表,hash 源取去时间戳指纹;变更检测后输出**受影响的套件文件列表**(基于源→模块映射);退出码 1=有变更(可触发 cron 后续动作);16/18 源 init 成功(GSC/Yandex 页面被 403,已记 fetch_error 跳过);
+  - **self-update-protocol.md**:自更新 SOP——四步流程(确认变更性质→按映射改文件→self_check 验证→commit);**P0 规则级/P1 事实级/P2 事件级/P3 噪声四档分级**;安全边界(陈述性自动改/行为性须人审/脚本逻辑不改);cron 触发指令模板;频率建议(全量周检/Sensor 日检/freshness 月扫/竞品双周);
+  - 状态文件 .intel-state.json(已 gitignore);首次 check 报"10 个受影响文件"是因为 3 个 init 失败源的首检差异——第二次 check 趋稳;
+  - **闭环**:用户开定时任务(周一次)→发指令→agent 跑 intel_check→按 protocol 更新规则/阈值/脚本→self_check→push。
+  Self-update loop: intel_check.py (18-source registry with change detection + module mapping) + self-update-protocol.md (4-step SOP with P0-P3 grading, safety boundary between auto-safe and human-review).
+
 ## 0.29.0 - 2026-10-10
 
 - **新增 [信源监控体系](skills/seo-suite/references/overview/intel-sources.md)**(回答"要持续领先该重点监控搜索哪些信源",三路 agent 深度调研):
