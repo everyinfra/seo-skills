@@ -37,6 +37,15 @@ config 可选扩展(D1 P1):
          # 已知可接受告警白名单:命中→降 low+标 accepted:true(不计入 counts/退出码),
          # 接受≠消失——周报单独列"已接受告警数",仍计数
 
+config 可选扩展(D1 P2,key_pages 条目对象):
+  {"path":"/p", "expect_substring": "A" 或 ["A","B"],   # 在场断言:数组向后兼容单条;
+   "assertions": {"must_contain": "gtag(",              # 关键标记消失 → ga_tracking_removed warn
+                  "max_latency_ms": 800,                 # 时延绝对上限 → latency_spike info
+                  "selector_stable": true}}              # 快照存首个 h2,变了 → layout_shift info
+         # 快照新指纹(D1 P2):h1(首个)/hreflang_hash(顺序无关)/word_count——
+         # 变更判 h1_changed(info)/hreflang_changed(warn)/main_content_change(info,
+         # 阈值 thresholds.content_change_pct 默认 30%);title/meta 新值为空=meta_removed warn。
+
 退出码:diff → 1=有 critical,2=有 warn(无 critical),0=无,4=用法/数据错误;
 diff --ci → 0=全部 check 通过,10=任一 check 失败(siteone 契约);
 run → 0 正常,3=run 未完成(partial/failed)。SSRF 防护:仅 http(s)+私网拒连
@@ -104,6 +113,9 @@ DEFAULT_THRESHOLDS = {
     "gsc_clicks_drop_pct": 20,     "gsc_min_clicks": 5,
     "latency_increase_pct": 100,   "latency_min_ms": 500,
     "mixed_content_min": 3,
+    # D1 P2:主内容体量变化阈值(word_count 增/降百分比,取绝对值;
+    # 改版监测 Conductor "Tracked Changes" 型信号,info 级不改级别)
+    "content_change_pct": 30,
     # D1 P1:segment 健康页流失档位,抄 Conductor segment 型敏感度 7 档
     # (0/1/5/10/25/50/75%)中的 10% 档;受影响度=Σimportance(非纯页数)
     "pages_left_segment_pct": 10,
@@ -135,6 +147,14 @@ PLAYBOOK = {
     "noindex_removed":      ("自愈信号,记录即可;顺手排查此前为何被误加 noindex", "human"),
     "canonical_target_broken": ("核对 canonical 目标是否被移动/删除:修正指向或恢复目标页(draft PR)", "draft_pr"),
     "pages_left_segment":   ("定位 segment 内批量掉出健康集的页面(部署/模板/权限回退);逐页看 key_page_down/noindex_added 详情", "human"),
+    # D1 P2 批
+    "meta_removed":         ("自动安全项:恢复被移除的 title/meta 等字段(若非有意,回滚发布/模板改动)", "auto"),
+    "h1_changed":           ("确认 h1 变更是否有意(h1 是最强 on-page 信号之一);无意恢复(draft PR)", "draft_pr"),
+    "hreflang_changed":     ("hreflang 注解整组核对(互链回链+x-default);改错会让整组语言版本退出对应市场索引(draft PR)", "draft_pr"),
+    "ga_tracking_removed":  ("确认统计/跟踪脚本是否被误删(CMP/广告拦截不改服务端输出);有意移除则同步删 must_contain 断言(draft PR)", "draft_pr"),
+    "redirect_chain_broken":("恢复非规范域→canonical host 的 301(服务器/CDN 重定向规则),防重复内容(draft PR)", "draft_pr"),
+    "main_content_change":  ("核对内容体量骤变(误发布/被篡改/软 404 变薄/模板丢正文区);无意则回滚(draft PR)", "draft_pr"),
+    "layout_shift":         ("核对模板/布局改动是否有意(selector_stable 监控的首个 h2 漂移);无意恢复(draft PR)", "draft_pr"),
 }
 
 # 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
@@ -154,7 +174,15 @@ INHIBITS = {
 # canonical_fail_streak)刻意不进本清单:各有专用规则(noindex_added/removed、
 # canonical_target_broken),进字段漂移会双报;且旧 monitor.db 快照缺这些字段,
 # 会被当 "(None→有值)" 漂移,升级后首个 diff 全网误报。
+# D1 P2 同理:h1/h2/hreflang_hash/word_count/must_contain_missing 各有专用规则
+# (h1_changed/layout_shift/hreflang_changed/main_content_change/ga_tracking_removed),
+# 且旧快照缺键必须按 None 不触发,不进通用漂移清单。
 PAGE_DIFF_FIELDS = ("title", "meta_desc", "canonical", "og_title", "og_desc", "watch")
+
+# D1 P2:title/meta 类字段的"移除"语义边界——新值为空串/缺失且旧值非空才算移除
+# (warn);新值非空的普通变化走 title_meta_drift(info)。仅对真实取到并渲染的页面
+# 判定(404/抓取失败的页面没有"字段被移除"的证据)。
+PAGE_REMOVED_FIELDS = ("title", "meta_desc", "canonical", "og_title", "og_desc", "watch")
 
 
 class FetchError(Exception):
@@ -456,6 +484,13 @@ def cmd_init(args):
             "pages_left_segment(受影响度=Σimportance);名单可用 sample-keypages 子命令抽样建议",
             "accepted_codes(可选): [\"code\" 或 \"code:key\"]——已知可接受告警白名单,"
             "命中降 low+标 accepted(接受≠消失,周报仍单独计数)",
+            "key_pages 断言(D1 P2): expect_substring 支持数组(向后兼容单条);条目可加 "
+            "assertions:{\"must_contain\": \"gtag(\", \"max_latency_ms\": 800, "
+            "\"selector_stable\": true}——关键标记消失→ga_tracking_removed(warn)/"
+            "时延绝对上限/首个 h2 漂移→layout_shift(info);"
+            "快照自动记 h1/hreflang_hash(顺序无关)/word_count,变更判 "
+            "h1_changed(info)/hreflang_changed(warn)/main_content_change(info,"
+            "阈值 thresholds.content_change_pct 默认 30%);title/meta 变空=meta_removed(warn)",
             "heartbeat: 配 healthchecks.io 类 ping URL 后,run 成功 ping /ok、失败 ping /fail;"
             "grace 建议 ≈ cron 间隔×2+典型运行时长",
         ],
@@ -578,10 +613,35 @@ def extract_selector(html, sel):
 
 
 def parse_key_page(entry):
-    """key_pages 元素(str 或 dict)→ (path, expect_substring, selector)。"""
+    """key_pages 元素(str 或 dict)→ 页面选项 dict(D1 P2 多断言模型):
+      {path, expect(needle 列表), selector, must_contain(needle 列表),
+       max_latency_ms, selector_stable}
+    兼容口径:
+    - expect_substring 单条 str(P1 前形态)或数组;expect 缺省时数组断言也可写
+      assertions.must_contain(消失→ga_tracking_removed,区别于 expect 的 content_regression);
+    - max_latency_ms/selector_stable 接受 assertions 嵌套或顶层同名键。"""
+    o = {"path": "/", "expect": [], "selector": None,
+         "must_contain": [], "max_latency_ms": None, "selector_stable": False}
     if isinstance(entry, dict):
-        return (entry.get("path") or "/", entry.get("expect_substring"), entry.get("selector"))
-    return (str(entry) if str(entry).startswith("/") else "/" + str(entry), None, None)
+        p = str(entry.get("path") or "/")
+        o["path"] = p if p.startswith("/") else "/" + p
+        o["selector"] = entry.get("selector")
+        asr = entry.get("assertions") if isinstance(entry.get("assertions"), dict) else {}
+        o["expect"] = _as_needles(entry.get("expect_substring"))
+        o["must_contain"] = _as_needles(asr.get("must_contain") if asr.get("must_contain") is not None
+                                        else entry.get("must_contain"))
+        mx = asr.get("max_latency_ms") if asr.get("max_latency_ms") is not None \
+            else entry.get("max_latency_ms")
+        try:
+            o["max_latency_ms"] = float(mx) if mx is not None else None
+        except (TypeError, ValueError):
+            o["max_latency_ms"] = None
+        o["selector_stable"] = bool(asr.get("selector_stable",
+                                            entry.get("selector_stable", False)))
+    else:
+        p = str(entry)
+        o["path"] = p if p.startswith("/") else "/" + p
+    return o
 
 
 # ---------- D1 P1:segments 模型(Conductor segment 型敏感度) ----------
@@ -631,6 +691,61 @@ def page_importance(seg, path, page_clicks):
     return 1.0
 
 
+def page_rendered(m):
+    """快照页值 → 本次 run 是否真实取到并渲染了页面(D1 P2 移除类判定的前提):
+    state ok/缺省(旧/合成快照常无 state 键)+ status<400。404/抓取失败/预算跳过的
+    页面没有"字段被移除/h1 变了"的证据——判 False,不产生 removal 类告警(防假信号)。"""
+    if not isinstance(m, dict) or m.get("state") not in (None, "ok"):
+        return False
+    st = m.get("status")
+    return not (isinstance(st, int) and st >= 400)
+
+
+def _as_needles(v):
+    """断言配置值 → needle 列表:None→[];str→[str](空串丢弃);list/tuple→逐项转 str
+    (D1 P2:expect_substring/must_contain 支持单条或数组,数组向后兼容单条)。"""
+    if v is None:
+        return []
+    if isinstance(v, str):
+        return [v] if v else []
+    return [str(x) for x in v if str(x)]
+
+
+def extract_hreflangs(html):
+    """<link rel=alternate hreflang=...> → ["lang=href", ...](属性顺序无关;
+    无 hreflang 的 alternate link 如 RSS 不计)。"""
+    out = []
+    for m in re.finditer(r"<link\b[^>]*>", html or "", re.I):
+        tag = m.group(0)
+        if not re.search(r"rel\s*=\s*[\"']?\balternate\b", tag, re.I):
+            continue
+        lang = re.search(r"hreflang\s*=\s*[\"']?([^\"'\s>]+)", tag, re.I)
+        if not lang:
+            continue
+        href = re.search(r"href\s*=\s*[\"']([^\"']*)[\"']", tag, re.I) or \
+            re.search(r"href\s*=\s*([^\s>]+)", tag, re.I)
+        out.append(lang.group(1).lower() + "=" + (href.group(1) if href else ""))
+    return out
+
+
+def hreflang_hash(html):
+    """hreflang 集指纹:列表排序后哈希(顺序无关——重排同一组语言注解不算变更,
+    增删语言/改 href 才算;与 changelog.py 的 hreflang 顺序无关口径一致)。"""
+    return sha256_text("\n".join(sorted(extract_hreflangs(html))))
+
+
+def word_count_html(html):
+    """正文近似词数(D1 P2 main_content_change):剥 script/style/noscript/svg/注释
+    与标签后按空白切分;CJK/假名/谚文无空格分隔,按字符追加计数(体量方向信号,
+    非精确字数——阈值只看百分比变化)。"""
+    txt = re.sub(r"(?is)<(script|style|noscript|svg|template)\b[^>]*>.*?</\1>", " ", html or "")
+    txt = re.sub(r"(?s)<!--.*?-->", " ", txt)
+    txt = re.sub(r"<[^>]+>", " ", txt)
+    txt = unescape(txt)
+    cjk = len(re.findall(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]", txt))
+    return len(txt.split()) + cjk
+
+
 def mixed_content_count(url, html):
     if urllib.parse.urlparse(url).scheme != "https":
         return None  # 仅 https 站才检查
@@ -638,10 +753,12 @@ def mixed_content_count(url, html):
     return len(hits)
 
 
-def check_page(url, expect=None, selector=None):
+def check_page(url, expect=None, selector=None, must_contain=None, selector_stable=False):
     """首页/关键页通用:状态码/时延/title/混合内容/(可选)expect_substring 断言+selector 圈定
     +页面级 noindex 检测(D1 P0-1:meta robots / X-Robots-Tag → indexable)
-    +canonical 目标健康度(D1 P0-2:非自指目标 HEAD 一次,存 canonical_target_status)。"""
+    +canonical 目标健康度(D1 P0-2:非自指目标 HEAD 一次,存 canonical_target_status)
+    +P2 指纹:h1(首个)/hreflang_hash(顺序无关)/word_count 恒入快照;
+      expect/must_contain 均支持单条或数组;selector_stable 额外存首个 h2 文本。"""
     out = {"check": "page", "state": "ok", "metrics": {}, "notes": []}
     try:
         r = http_get(url)
@@ -656,17 +773,32 @@ def check_page(url, expect=None, selector=None):
     m = {"status": r["status"], "latency_ms": r["elapsed_ms"], "title": title,
          "meta_desc": meta, "canonical": canonical, "og_title": og_title, "og_desc": og_desc,
          "final_url": r["final_url"],
-         "indexable": not (nm or nh)}                                   # D1 P0-1
+         "h1": extract_selector(r["body"], "h1"),                     # D1 P2:h1 进指纹
+         "hreflang_hash": hreflang_hash(r["body"]),                   # D1 P2:顺序无关集指纹
+         "word_count": word_count_html(r["body"]),                    # D1 P2:主内容体量
+         "indexable": not (nm or nh)}                                 # D1 P0-1
     if nm or nh:
         m["noindex_source"] = "meta+header" if (nm and nh) else ("meta" if nm else "header")
         out["notes"].append("noindex 指令在场(来源 %s):页面退出索引" % m["noindex_source"])
     m["canonical_target_status"] = probe_canonical_target(url, r.get("final_url"), canonical)
-    if expect is not None:
-        m["expect_ok"] = (expect in r["body"])
-        if not m["expect_ok"]:
-            out["notes"].append("expect_substring 断言失败: 页面 200 但不含 %r(空白渲染/软 404/误改版)" % expect)
+    expect_needles = _as_needles(expect)
+    if expect_needles:
+        missing = [n for n in expect_needles if n not in r["body"]]
+        m["expect_ok"] = not missing
+        m["expect_missing"] = missing
+        if missing:
+            out["notes"].append("expect_substring 断言失败: 页面 200 但缺 %r(空白渲染/软 404/误改版)"
+                                % missing)
+    mc_needles = _as_needles(must_contain)
+    if mc_needles:
+        mc_missing = [n for n in mc_needles if n not in r["body"]]
+        m["must_contain_missing"] = mc_missing
+        if mc_missing:
+            out["notes"].append("must_contain 断言失败: %r 消失(GA 跟踪等关键标记被移除)" % mc_missing)
     if selector:
         m["watch"] = extract_selector(r["body"], selector)
+    if selector_stable:
+        m["h2"] = extract_selector(r["body"], "h2")                  # D1 P2:布局稳定锚
     mc = mixed_content_count(url, r["body"])
     if mc is not None:
         m["mixed_content"] = mc
@@ -776,6 +908,61 @@ def check_visibility(site):
                 sample.append(u)
     out["metrics"] = {"status": r["status"], "visible_pages": visible, "sample": sample}
     out["notes"].append("方法限制:Bing HTML 端点无 SLA,非官方索引数;仅作抽查方向")
+    return out
+
+
+def redirect_variant_urls(site):
+    """非规范域名变体清单(D1 P2):https canonical 站 → http:// 同 host(降级形态)
+    + 裸域(去 www,https 形态),按序去重;站点本身即裸域时只剩 http 形态一条
+    (canonical 与变体相同的不测);http canonical 站无降级变体可测则可能为空。"""
+    p = urllib.parse.urlparse(site)
+    host = (p.hostname or "").lower()
+    if not host:
+        return []
+    bare = host[4:] if host.startswith("www.") else host
+    cands = []
+    if p.scheme == "https":
+        cands.append("http://" + host)
+    if bare != host:
+        cands.append("https://" + bare)
+    seen, out = set(), []
+    for u in cands:
+        if u not in seen:
+            seen.add(u)
+            out.append(u)
+    return out
+
+
+def check_redirect_variants(site):
+    """D1 P2:非规范域名重定向健康度——http:// 形态与裸域各 probe 一次,期望 301 →
+    canonical host(http_get 跟随重定向后以最终落点 host 判定;变体在自己 host 上
+    直接 200 = 不再重定向 → "broken",重复内容风险)。
+    防假 0 纪律(serpbear):probe 网络失败记 "error" 绝不判 "broken";半数以上
+    请求失败 → 整个 check 记 state=error(diff 侧不产任何 redirect_chain_broken)。"""
+    out = {"check": "redirects", "state": "ok", "metrics": {}, "notes": []}
+    p_site = urllib.parse.urlparse(site)
+    canonical_origin = (p_site.scheme.lower(), (p_site.hostname or "").lower())
+    variants = redirect_variant_urls(site)
+    states = {}
+    n_err = 0
+    for v in variants:
+        try:
+            r = http_get(v)
+        except FetchError as e:
+            states[v] = "error"
+            n_err += 1
+            out["notes"].append("变体 %s probe 失败: %s(不判停止重定向,防假 0)"
+                                % (_redact_url(v), e))
+            continue
+        final = urllib.parse.urlparse(r.get("final_url") or v)
+        # 比对 scheme+host:http:// 变体只在自家 host 上直接 200(未升级 https)也算 broken
+        states[v] = "ok" if (final.scheme.lower(), (final.hostname or "").lower()) == canonical_origin \
+            else "broken"
+    if variants and n_err * 2 > len(variants):
+        out["state"] = "error"
+        out["notes"].append("变体 probe %d/%d 失败 → check 记 error,不当重定向失效判定"
+                            % (n_err, len(variants)))
+    out["metrics"] = {"variants": states}
     return out
 
 
@@ -953,21 +1140,25 @@ def run_checks(mdir, cfg, kind, budget):
     market = cfg.get("market")
     results = {}
     plan = [("robots", lambda: check_robots(site, market)),
-            ("home", lambda: check_page(site + "/"))]
+            ("home", lambda: check_page(site + "/")),
+            ("redirects", lambda: check_redirect_variants(site))]   # D1 P2:非规范域重定向
     for name, fn in plan:
         if budget.exhausted():
             results[name] = {"state": "budget_skipped"}
             continue
         results[name] = fn()
-    # 关键页:支持 str 或 {"path","expect_substring","selector"} 对象(audit 04/17)
+    # 关键页:支持 str 或 {"path","expect_substring"(str|数组),"selector",
+    # "assertions":{must_contain,max_latency_ms,selector_stable}} 对象(audit 04/17,D1 P2)
     results["key_pages"] = {}
     for entry in cfg.get("key_pages", ["/"]) or ["/"]:
-        path, expect, selector = parse_key_page(entry)
+        o = parse_key_page(entry)
         if budget.exhausted():
-            results["key_pages"][path] = {"state": "budget_skipped"}
+            results["key_pages"][o["path"]] = {"state": "budget_skipped"}
             continue
-        results["key_pages"][path] = check_page(
-            site + path if path.startswith("/") else path, expect=expect, selector=selector)
+        results["key_pages"][o["path"]] = check_page(
+            site + o["path"] if o["path"].startswith("/") else o["path"],
+            expect=o["expect"] or None, selector=o["selector"],
+            must_contain=o["must_contain"] or None, selector_stable=o["selector_stable"])
     if budget.exhausted():
         results["visibility"] = {"state": "budget_skipped"}
     else:
@@ -1068,7 +1259,7 @@ def cmd_run(args):
         apply_canonical_streaks(load_snapshot(conn, _prev_ok[0]) if _prev_ok else None, snap)
 
         states = {}
-        for grp in ("robots", "home", "visibility", "gsc", "sitemap", "llms_txt", "ssl"):
+        for grp in ("robots", "home", "redirects", "visibility", "gsc", "sitemap", "llms_txt", "ssl"):
             st = (results.get(grp) or {}).get("state")
             if st:
                 states[grp] = st
@@ -1168,6 +1359,12 @@ def snapshot_from_results(results):
             put("pages", p, m)
         elif pr.get("state"):
             put("pages", p, {"state": pr["state"], **pr.get("metrics", {})})
+    # D1 P2:非规范域变体重定向状态(ok/broken/error;diff 只认 broken,error=防假 0)
+    rd = results.get("redirects", {})
+    if rd.get("state") == "ok":
+        put("redirects", "variants", dict((rd.get("metrics") or {}).get("variants") or {}))
+    elif rd.get("state"):
+        put("redirects", "variants", {"state": rd["state"]})
     v = results.get("visibility", {})
     if v.get("state") == "ok":
         put("visibility", "site", dict(v["metrics"]))
@@ -1421,6 +1618,13 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
         return ((snap.get("pages") or {}).get(key) or {})
 
     # --- 4 存活:首页/关键页 ---
+    # D1 P2:key_pages 绝对断言(max_latency_ms)在告警期解析 config(改 config 即刻
+    # 生效,不依赖快照重建;与 segments 归属口径一致)
+    kp_max_latency = {}
+    for entry in cfg.get("key_pages") or []:
+        o = parse_key_page(entry)
+        if o["max_latency_ms"] is not None:
+            kp_max_latency[o["path"]] = o["max_latency_ms"]
     keys = set((curr.get("pages") or {}).keys()) | set((prev.get("pages") or {}).keys())
     for k in sorted(keys):
         c, p = page_state(curr, k), page_state(prev, k)
@@ -1446,7 +1650,15 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
         if c.get("expect_ok") is False and not (isinstance(cs, int) and cs >= 400):
             add("warn", "content_regression", k,
                 "%s 页面 200 但 expect_substring 断言失败(空白渲染/软 404/误改版)" % label,
-                {"url": site + k})
+                {"url": site + k, "missing": c.get("expect_missing")})
+        # D1 P2:must_contain 断言(GA 跟踪等关键标记)——消失即 warn,与 expect 的
+        # content_regression 分层:跟踪标记消失通常是发布/模板事故,不是内容改版;
+        # 仅对真实渲染的页面判定(404/抓取失败没有"消失"的证据)
+        if c.get("must_contain_missing") and page_rendered(c):
+            add("warn", "ga_tracking_removed", k,
+                "%s 关键标记消失: must_contain 断言缺 %r(GA 跟踪/统计脚本;若有意移除请同步删断言)"
+                % (label, c["must_contain_missing"]),
+                {"missing": c["must_contain_missing"], "url": site + k})
         # 混合内容(https 站)
         cmc, pmc = c.get("mixed_content"), p.get("mixed_content")
         if isinstance(cmc, int) and cmc >= int(th.get("mixed_content_min", 3)) and (pmc or 0) < cmc:
@@ -1459,6 +1671,12 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                 and max(pl or 0, cl or 0) >= int(th.get("latency_min_ms", 500)):
             add("info", "latency_spike", k, "%s 时延 %.0fms→%.0fms(+%.0f%%)"
                 % (label, pl, cl, -d * 100), {"prev_ms": pl, "curr_ms": cl})
+        # D1 P2:绝对时延上限断言(max_latency_ms 对接已有 latency 检查;相对 pct 阈值
+        # 对慢站钝感,SLA 型上限补绝对口径)
+        mx = kp_max_latency.get(k)
+        if mx is not None and isinstance(cl, (int, float)) and cl > mx:
+            add("info", "latency_spike", k, "%s 时延 %.0fms 超断言上限 max_latency_ms=%.0fms"
+                % (label, cl, mx), {"curr_ms": cl, "max_latency_ms": mx, "assert": "absolute"})
         # D1 P0-1:页面级 noindex(Conductor 头号触发器)。旧快照缺 indexable(=None)
         # 不参与判定——升级 monitor 后首个 diff 不误报、不崩。
         ci, pi = c.get("indexable"), p.get("indexable")
@@ -1535,6 +1753,17 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
             add("info", "ai_posture_flip", "robots:" + bot,
                 "AI 爬虫 %s 放行状态翻转: %s → %s" % (bot, pp[bot], cp[bot]))
 
+    # --- D1 P2:非规范域名重定向(重复内容防线)---
+    # 只认 "broken"(变体在自己 host 上直接应答,不再 301 到 canonical host);
+    # "error"=probe 网络失败,防假 0 纪律下绝不判失效;旧快照无 redirects 检查=不触发。
+    crv = ((curr.get("redirects") or {}).get("variants") or {})
+    if isinstance(crv, dict):
+        for variant, vst in sorted(crv.items()):
+            if vst == "broken":
+                add("warn", "redirect_chain_broken", variant,
+                    "非规范变体 %s 停止重定向——重复内容风险(期望 301 → %s)" % (variant, site),
+                    {"variant": variant, "canonical": site, "probe": vst})
+
     # --- 周检:SSL 证书到期(30/14/7/0 梯度;绝对阈值,不依赖 prev)---
     cssl = (curr.get("ssl") or {}).get("cert", {})
     days_left = cssl.get("days_left")
@@ -1554,6 +1783,9 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                 {"not_after": cssl.get("not_after")})
 
     # --- 1 可见性 ---
+    # 防假 0 纪律(serpbear,D1 P2 复核确认):半数以上请求失败/被拦/解析不出 →
+    # state 落 skipped/blocked/unparseable,下面的 == "ok" 门直接挡住——绝不把
+    # "请求失败"判成"排名/收录消失";真 0 只在端点成功返回且样本过地板时成立。
     cv, pv = (curr.get("visibility") or {}).get("site", {}), (prev.get("visibility") or {}).get("site", {})
     bv = ((baseline or {}).get("visibility") or {}).get("site", {})
     if cv.get("state", "ok") == "ok" and "visible_pages" in cv:
@@ -1608,16 +1840,54 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                       "message": "sitemap URL 数 %d → %d(+%d)" % (puc, cuc, cuc - puc),
                       "details": {}, "action": "记录,无需动作", "boundary": "auto"})
 
-    # --- 周检:关键页字段级漂移(P1-11:title/meta/canonical/og/watch 分字段,替全页 hash)---
+    # --- 关键页字段级漂移(P1-11:title/meta/canonical/og/watch 分字段,替全页 hash)
+    # + D1 P2:removed 语义(新值空且旧值非空 → meta_removed warn,区别于 changed info)、
+    # h1/hreflang/word_count/h2 指纹(旧快照缺键按 None 不触发)---
     for k in sorted(set((curr.get("pages") or {})) & set((prev.get("pages") or {}))):
         c, p = curr["pages"][k], prev["pages"][k]
+        flabel = "首页" if k == "/" else "页面 %s" % k
         changed = [f for f in PAGE_DIFF_FIELDS if (c.get(f) or "") != (p.get(f) or "")]
+        removed = []
+        if page_rendered(c):
+            removed = [f for f in PAGE_DIFF_FIELDS
+                       if (p.get(f) or "") and not (c.get(f) or "")]
+            changed = [f for f in changed if f not in set(removed)]
+        if removed:
+            add("warn", "meta_removed", k,
+                "%s %s 被移除——若非有意立即回滚" % (flabel, "+".join(removed)),
+                dict({"fields": removed},
+                     **{("prev_" + f): p.get(f) for f in removed},
+                     **{("curr_" + f): c.get(f) for f in removed}))
         if changed:
             add("info", "title_meta_drift", k,
-                "%s 字段漂移: %s" % ("首页" if k == "/" else "页面 %s" % k, "+".join(changed)),
+                "%s 字段漂移: %s" % (flabel, "+".join(changed)),
                 dict({"fields": changed},
                      **{("prev_" + f): p.get(f) for f in changed},
                      **{("curr_" + f): c.get(f) for f in changed}))
+        if not page_rendered(c):
+            continue    # 404/抓取失败页面:没有 h1/hreflang/字数变化 的证据,不判
+        ch1, ph1 = c.get("h1"), p.get("h1")
+        if ch1 is not None and ph1 is not None and ch1 != ph1:
+            add("info", "h1_changed", k, "%s h1 变更: %r → %r" % (flabel, ph1, ch1),
+                {"prev_h1": ph1, "curr_h1": ch1})
+        chh, phh = c.get("hreflang_hash"), p.get("hreflang_hash")
+        if chh is not None and phh is not None and chh != phh:
+            add("warn", "hreflang_changed", k,
+                "%s hreflang 注解集变更(hash %s→%s)——国际化注解变更可能整组失效"
+                % (flabel, phh, chh), {"prev_hash": phh, "curr_hash": chh})
+        ch2, ph2 = c.get("h2"), p.get("h2")
+        if ch2 is not None and ph2 is not None and ch2 != ph2:
+            add("info", "layout_shift", k,
+                "%s 首个 h2 文本变化(%r → %r):模板/布局疑似改动(selector_stable 锚)"
+                % (flabel, ph2, ch2), {"prev_h2": ph2, "curr_h2": ch2})
+        cwc, pwc = c.get("word_count"), p.get("word_count")
+        if isinstance(cwc, int) and isinstance(pwc, int) and pwc > 0:
+            cpct = abs(cwc - pwc) / pwc * 100.0
+            if cpct >= float(th.get("content_change_pct", 30)):
+                add("info", "main_content_change", k,
+                    "%s 主内容字数 %d→%d(%.0f%%)" % (flabel, pwc, cwc, cpct),
+                    {"prev": pwc, "curr": cwc, "pct": round(cpct, 1),
+                     "threshold_pct": float(th.get("content_change_pct", 30))})
     clm, plm = (curr.get("llms_txt") or {}).get("file", {}), (prev.get("llms_txt") or {}).get("file", {})
     if plm.get("present") and clm and not clm.get("present", True) and "present" in clm:
         add("info", "llms_txt_removed", "file", "llms.txt 从存在变为缺失")
@@ -1828,6 +2098,27 @@ def _alert_details(alert_row):
         return {}
 
 
+def digest_improved_declined(conn, since):
+    """D1 P2 digest 头部:对比最近两个有告警记录的 run 的告警指纹集合(code:key)。
+    improved=上期有本期无(问题消失/告警解除);declined=本期新增(上期无本期有;
+    首期告警无上期可比 → 全部计 declined)。排除 cooldown 抑制行与 *_resolved 自愈
+    通知行(自愈已由 improved 语义覆盖,避免双计);窗口内无告警 → ([], [])(不猜)。"""
+    rows = conn.execute(
+        "SELECT DISTINCT run_id FROM alerts WHERE ts>=? ORDER BY run_id DESC LIMIT 2",
+        (since,)).fetchall()
+    if not rows:
+        return [], []
+
+    def fps(rid):
+        return {"%s:%s" % (r["code"], r["key"]) for r in conn.execute(
+            "SELECT code, key FROM alerts WHERE run_id=? AND suppressed=0", (rid,))
+            if not r["code"].endswith("_resolved")}
+
+    curr = fps(rows[0]["run_id"])
+    prev = fps(rows[1]["run_id"]) if len(rows) > 1 else set()
+    return sorted(prev - curr), sorted(curr - prev)
+
+
 def cmd_report(args):
     mdir = args.dir
     cfg = load_config(mdir)
@@ -1845,6 +2136,10 @@ def cmd_report(args):
         len(runs), ",".join(sorted({r["kind"] for r in runs})),
         ",".join("%s=%d" % (s, sum(1 for r in runs if r["status"] == s))
                  for s in sorted({r["status"] for r in runs}))))
+    # D1 P2 digest 头部:对比最近两期告警集合(N improved, M declined)
+    improved, declined = digest_improved_declined(conn, since)
+    lines.append("对比上一期: %d improved, %d declined(improved=上期有本期无;declined=本期新增)"
+                 % (len(improved), len(declined)))
     if args.json:
         trend = {}
         for metric, check, key in [("visible_pages", "visibility", "site"),
@@ -1863,6 +2158,7 @@ def cmd_report(args):
                            "suppressed": bool(a["suppressed"]), "resolved": bool(a["resolved"])}
                           for a in alerts],
                "accepted_alerts": sum(1 for a in alerts if _alert_details(a).get("accepted")),
+               "improved": improved, "declined": declined,
                "trend": trend}
         conn.close()
         print(json.dumps(out, ensure_ascii=False, indent=2))
@@ -2043,7 +2339,7 @@ def cmd_sample_keypages(args):
     if not urls:
         print("错误: URL 清单为空", file=sys.stderr)
         return 4
-    existing = [parse_key_page(e)[0] for e in (cfg.get("key_pages") or [])]
+    existing = [parse_key_page(e)["path"] for e in (cfg.get("key_pages") or [])]
     res = sample_keypages(urls, max(1, args.per_group), existing, random.Random(args.seed))
     if len(res["new"]) > MAX_ROUTES:
         print("[!] WARNING: 建议新增路由 %d 条超过 maxRoutes=%d 上限,已截断前 %d 条"
@@ -2062,7 +2358,7 @@ def cmd_sample_keypages(args):
         print("  %s%s" % (p, mark))
     if args.write:
         merged = list(cfg.get("key_pages") or [])
-        have = {parse_key_page(e)[0] for e in merged}
+        have = {parse_key_page(e)["path"] for e in merged}
         for p in res["picked"]:
             if p not in have:
                 merged.append(p)
@@ -2413,10 +2709,76 @@ def _self_test():
     sk = sample_keypages(["https://x.com/blog/a", "https://x.com/blog/b", "https://x.com/about"],
                          8, ["/pricing"], random.Random(0))
     assert len(sk["picked"]) == 4 and "/pricing" in sk["picked"] and sk["picked"].count("/pricing") == 1
+
+    # --- D1 P2:removed 语义/h1·hreflang 指纹/must_contain/裸域 probe/word_count/多断言 ---
+    p2_prev = {"pages": {"/p": {"status": 200, "title": "T", "meta_desc": "M", "h1": "A",
+                                "hreflang_hash": "hh1", "word_count": 1000, "h2": "X",
+                                "latency_ms": 100.0}},
+               "redirects": {"variants": {"http://x.com": "ok"}}}
+    p2_curr = {"pages": {"/p": {"status": 200, "title": "", "meta_desc": "M", "h1": "B",
+                                "hreflang_hash": "hh2", "word_count": 600, "h2": "Y",
+                                "latency_ms": 100.0, "must_contain_missing": ["gtag("]}},
+               "redirects": {"variants": {"http://x.com": "broken", "https://x.com": "error"}}}
+    p2_alerts = compute_alerts(p2_prev, p2_curr, cfg)
+    p2_lv = {a["code"]: a["level"] for a in p2_alerts}
+    p2_msg = {a["code"]: a["message"] for a in p2_alerts}
+    assert p2_lv.get("meta_removed") == "warn" and "立即回滚" in p2_msg["meta_removed"]
+    assert p2_lv.get("h1_changed") == "info" and p2_lv.get("hreflang_changed") == "warn"
+    assert "整组失效" in p2_msg["hreflang_changed"]
+    assert p2_lv.get("ga_tracking_removed") == "warn"
+    assert p2_lv.get("main_content_change") == "info" and "1000→600" in p2_msg["main_content_change"]
+    assert p2_lv.get("layout_shift") == "info"
+    rb = [a for a in p2_alerts if a["code"] == "redirect_chain_broken"]
+    assert len(rb) == 1 and rb[0]["key"] == "http://x.com" and rb[0]["level"] == "warn"
+    # 渲染守卫:404/抓取失败页面不判移除类/指纹类(没有证据)
+    p2_down = {"pages": {"/p": {"state": "http_error", "status": 404, "title": "", "h1": "",
+                                "hreflang_hash": "zz", "word_count": 0, "h2": "",
+                                "must_contain_missing": ["gtag("]}}}
+    for a in compute_alerts(p2_prev, p2_down, cfg):
+        assert a["code"] not in ("meta_removed", "h1_changed", "hreflang_changed",
+                                 "ga_tracking_removed", "main_content_change", "layout_shift")
+    # 旧库缺新快照键 → 按 None 不触发
+    for a in compute_alerts({"pages": {"/p": {"status": 200, "title": "T"}}},
+                            {"pages": {"/p": {"status": 200, "title": "T", "h1": "A",
+                                              "hreflang_hash": "q", "word_count": 9}}}, cfg):
+        assert a["code"] not in ("h1_changed", "hreflang_changed", "main_content_change")
+    # hreflang 顺序无关;变体清单
+    assert hreflang_hash('<link rel="alternate" hreflang="en" href="https://x/">'
+                         '<link rel="alternate" hreflang="fr" href="https://x/fr">') == \
+           hreflang_hash('<link rel="alternate" hreflang="fr" href="https://x/fr">'
+                         '<link rel="alternate" hreflang="en" href="https://x/">')
+    assert redirect_variant_urls("https://www.example.com") == \
+        ["http://www.example.com", "https://example.com"]
+    o = parse_key_page({"path": "/p", "expect_substring": ["A", ""],
+                        "assertions": {"must_contain": "gtag(", "max_latency_ms": 800,
+                                       "selector_stable": True}})
+    assert o["expect"] == ["A"] and o["must_contain"] == ["gtag("]
+    assert o["max_latency_ms"] == 800.0 and o["selector_stable"] is True
+    assert parse_key_page("/x")["path"] == "/x" and parse_key_page("y")["path"] == "/y"
+    # check_page 新指标(stub http)
+    _g2 = globals()
+    _oh2, _og2 = _g2["http_head"], _g2["http_get"]
+    _g2["http_head"] = lambda u, timeout=FETCH_TIMEOUT: {"status": 200}
+    _g2["http_get"] = lambda url, timeout=FETCH_TIMEOUT: {
+        "status": 200, "final_url": url, "elapsed_ms": 5.0, "headers": {},
+        "body": "<title>t</title><h1>One</h1><h2>Anchor</h2><p>hello world</p>"
+                "<link rel='alternate' hreflang='en' href='https://x/'>"}
+    try:
+        cp2 = check_page("https://x/p", must_contain=["gtag("], selector_stable=True,
+                         expect=["hello", "missing-needle"])
+    finally:
+        _g2["http_head"], _g2["http_get"] = _oh2, _og2
+    assert cp2["metrics"]["h1"] == "One" and cp2["metrics"]["h2"] == "Anchor"
+    assert cp2["metrics"]["word_count"] >= 3
+    assert cp2["metrics"]["must_contain_missing"] == ["gtag("]
+    assert cp2["metrics"]["expect_ok"] is False and cp2["metrics"]["expect_missing"] == ["missing-needle"]
+    assert cp2["metrics"]["hreflang_hash"] == \
+        hreflang_hash("<link rel='alternate' hreflang='en' href='https://x/'>")
     print("[self-test] PASS monitor(11 类告警判定/地板/自愈/抑制树/双窗口/SSL 梯度/"
           "字段级 diff+selector/secret 守卫/重定向 SSRF/状态机+prune+quarantine/维护窗口/"
           "noindex 检测+canonical 目标健康度(D1 P0-1/P0-2)/"
-          "segments+accepted_codes+--ci checks+sample-keypages(D1 P1))")
+          "segments+accepted_codes+--ci checks+sample-keypages(D1 P1)/"
+          "removed 语义+h1·hreflang·word_count 指纹+must_contain+裸域 probe+多断言(D1 P2))")
 
 
 def main(argv=None):
