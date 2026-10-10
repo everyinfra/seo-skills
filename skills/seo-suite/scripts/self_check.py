@@ -38,6 +38,21 @@ if os.path.exists(golden):
         fail.append('golden tests failed:\n' + (t.stdout + t.stderr)[-4000:])
 else:
     fail.append(f'missing {golden}')
+
+
+def check_capability_matrix(fail):
+    """CAPABILITY_MATRIX 双向存在性守护(niubigeo N10 治理;只跑 ①②):
+    ① 矩阵↔scripts/、templates/ 文件双向覆盖 ② 每个 tests_file 存在。
+    失败即 self_check FAIL——新增脚本/模板漏更矩阵在这里被拦下。"""
+    t = subprocess.run([sys.executable, os.path.join(BASE, 'tests', 'test_capability_matrix.py'),
+                        'MatrixFileCoverageTests', 'MatrixTestsFileTests'],
+                       capture_output=True, text=True)
+    if t.returncode != 0:
+        fail.append('capability matrix check failed:\n' + (t.stdout + t.stderr)[-2000:])
+    return fail
+
+
+fail = check_capability_matrix(fail)
 if fail:
     print('SELF-CHECK FAILED:')
     for f in fail:

@@ -6,6 +6,7 @@
   python3 quality_rater.py draft.txt
   python3 quality_rater.py draft.txt --market zh --keyword "项目管理软件"
   cat draft.md | python3 quality_rater.py - --market en
+  python3 quality_rater.py draft.txt --evidence-source src.txt   (追加证据纪律节)
 
 约定 (纯文本近似):
   * 首个非空行 = title, 同时也当作 H1
@@ -25,11 +26,29 @@ publishing_ready = 总分 >= 80 且 0 个 critical.
 critical: 主词未在正文出现 / 密度>5% 硬 stuffing / title 长度 <25 或 >90 /
           H2 为 0 / 词数 <800 (薄内容).
 
+证据纪律节 (niubigeo 深读 §3 N8/N9, references/research/niubigeo-deep-read.md;
+标注层——不改六维分数/critical/publishing_ready/退出码, 恒输出在评分之后):
+  * N8 D/K 分报【仓库,docs/measurement-methodology.md】: D(点名域名)≠K(中性词不点名),
+    指标永不混算,"复述已点名的域名不能叫自然发现率";分母=0 → null 永不报 0%;
+    pointState=complete/partial/no_data。内容侧映射[推断]:
+    D=点名声明级证据(引语/链接——显式归属出处), K=中性观察级(裸数字——无出处断言);
+    两类各留分母分报, 引语内数字归 D 不重复计 K。
+  * N9 UTF-16 证据核验【仓库,docs/evidence-model.md】: 证据偏移 = UTF-16 code unit
+    (非 UTF-8 字节;Python str 按 code point, CJK BMP 内等同, 增补平面按 2 单元);
+    核验条件 raw.slice(start,end)===quote; 定位失败 → evidence=null 不虚构偏移;
+    同文多次出现取首次精确匹配; recordHash=sha256(JSON.stringify(value))
+    无缩进无末尾换行。--evidence-source 给源文时逐元素定位核验(引语/数字/链接)。
+  * 编码级假证据扫描[推断,N9 同形字/代理字符防护]: 证据元素内检出
+    孤立代理字符(U+D800-DFFF, UTF-16 偏移不可信)/西里尔·希腊同形拉丁字母/
+    全角数字·字母(与 ASCII 同形, 精确匹配必败)→ 风险标注。
+
 退出码: publishing_ready -> 0; 否则 1; 文件读不到 -> 2.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import sys
 
@@ -140,6 +159,232 @@ def heading_like(line, market):
     return bool(re.match(r"^[A-Z]", s)) and len(s.split()) <= 8
 
 
+# ---------------------------------------------------------------- 证据纪律节
+# (niubigeo 深读 §3 N8 D/K 分报 + N9 UTF-16 偏移核验;标注层——不改六维分数/
+#  critical/publishing_ready/退出码。出处逐条标注 references/research/
+#  niubigeo-deep-read.md,只借规格不搬代码。)
+EVID_NUMBER_RE = re.compile(r"[0-9]+(?:[,.][0-9]+)*[%％]?|[０-９]+")
+EVID_QUOTE_RE = re.compile(r"「[^」]{2,}」|『[^』]{2,}』|“[^”]{2,}”|\"[^\"]{4,}\"")
+
+# 编码级假证据字符[推断,N9 同形字/代理字符防护]: 西里尔/希腊同形拉丁字母
+# (键=原字符 \u 转义, 值=同形 ASCII);全角数字 U+FF10-19、全角字母 U+FF21-3A/FF41-5A。
+CYRILLIC_HOMOGLYPHS = {
+    "\u0430": "a", "\u0435": "e", "\u043e": "o", "\u0440": "p", "\u0441": "c",
+    "\u0443": "y", "\u0445": "x", "\u0456": "i", "\u0455": "s", "\u0458": "j",
+    "\u04bb": "h", "\u051b": "q", "\u051d": "w",
+    "\u0410": "A", "\u0412": "B", "\u0415": "E", "\u041a": "K", "\u041c": "M",
+    "\u041d": "H", "\u041e": "O", "\u0420": "P", "\u0421": "C", "\u0422": "T",
+    "\u0423": "Y", "\u0425": "X",
+}
+GREEK_HOMOGLYPHS = {
+    "\u03bf": "o", "\u03b1": "a", "\u03b5": "e", "\u03b9": "i", "\u03bd": "v",
+    "\u03c1": "p", "\u03c5": "u", "\u03ba": "k",
+    "\u0391": "A", "\u0392": "B", "\u0395": "E", "\u0396": "Z", "\u0397": "H",
+    "\u039a": "K", "\u039c": "M", "\u039d": "N", "\u039f": "O", "\u03a1": "P",
+    "\u03a4": "T", "\u03a5": "Y", "\u03a7": "X",
+}
+FULLWIDTH_DIGITS = {chr(0xFF10 + i): str(i) for i in range(10)}
+FULLWIDTH_LETTERS = {}
+for _i in range(26):
+    FULLWIDTH_LETTERS[chr(0xFF21 + _i)] = chr(65 + _i)     # Ａ-Ｚ
+    FULLWIDTH_LETTERS[chr(0xFF41 + _i)] = chr(97 + _i)     # ａ-ｚ
+CONFUSABLE_SCRIPT = dict(CYRILLIC_HOMOGLYPHS)
+CONFUSABLE_SCRIPT.update(GREEK_HOMOGLYPHS)
+RISK_LABEL = {"lone_surrogate": "孤立代理字符(UTF-16 偏移不可信)",
+              "confusable_script": "西里尔/希腊同形拉丁",
+              "fullwidth_digit": "全角数字(同形 ASCII 数字)",
+              "fullwidth_letter": "全角字母(同形 ASCII 字母)"}
+
+
+def utf16_unit_len(s):
+    """UTF-16 code unit 数【仓库,N9】: BMP 字符 1 单元, 增补平面(emoji 等)2 单元;
+    孤立代理字符 1 单元(surrogatepass——JS 同口径)。"""
+    return len(s.encode("utf-16-le", "surrogatepass")) // 2
+
+
+def utf16_slice(text, start, end):
+    """按 UTF-16 code unit 切片(N9: rawAnswer.slice(start,end) 同口径, 非字节偏移)。
+    越界/负值 → None(不虚构偏移);切在代理对中间会得到孤立代理字符,
+    与任何正常引语的 === 比较必败——由 verify_evidence_location 判 null。"""
+    try:
+        b = text.encode("utf-16-le", "surrogatepass")
+    except UnicodeEncodeError:
+        return None
+    if start < 0 or end < start or 2 * end > len(b):
+        return None
+    try:
+        return b[2 * start:2 * end].decode("utf-16-le", "surrogatepass")
+    except UnicodeDecodeError:
+        return None
+
+
+def verify_evidence_location(raw_text, start, end, quote):
+    """N9 核验条件: utf16_slice(raw_text, start, end) == quote → 返回 quote;
+    失败 → None(evidence=null, 不虚构偏移)。"""
+    got = utf16_slice(raw_text, start, end)
+    if got is not None and got == quote:
+        return quote
+    return None
+
+
+def locate_first_evidence(raw_text, quote):
+    """同文多次出现取首次精确匹配(N9);返回 (start, end) UTF-16 偏移或 None。
+    code point 首中与 code unit 首中同位(编码序一致), 再换算单元偏移。"""
+    if not quote:
+        return None
+    idx = raw_text.find(quote)
+    if idx < 0:
+        return None
+    start = utf16_unit_len(raw_text[:idx])
+    return (start, start + utf16_unit_len(quote))
+
+
+def record_hash(value):
+    """N9 recordHash=sha256(JSON.stringify(value)): 无缩进、无分隔空格、无末尾换行。
+    Python 口径[推断]: json.dumps(ensure_ascii=False, separators=(",",":"))
+    ——JSON.stringify 不转义非 ASCII, 键序=插入序(Python 3.7+ dict 保序)。"""
+    payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8", "surrogatepass")).hexdigest()
+
+
+def scan_evidence_risks(elem_text):
+    """编码级假证据扫描[推断,N9 防护]: 证据元素内逐字符检出——孤立代理字符
+    (U+D800-DFFF, 不可编码 UTF-8, UTF-16 偏移不可信)/西里尔·希腊同形拉丁字母/
+    全角数字·字母(与 ASCII 同形, 对干净源文的精确匹配必败)。
+    返回 [{code, char, resembles}] 去重保序。"""
+    seen, out = set(), []
+    for ch in elem_text:
+        cp = ord(ch)
+        if 0xD800 <= cp <= 0xDFFF:
+            code, resembles = "lone_surrogate", "U+%04X" % cp
+        elif ch in CONFUSABLE_SCRIPT:
+            code, resembles = "confusable_script", CONFUSABLE_SCRIPT[ch]
+        elif ch in FULLWIDTH_DIGITS:
+            code, resembles = "fullwidth_digit", FULLWIDTH_DIGITS[ch]
+        elif ch in FULLWIDTH_LETTERS:
+            code, resembles = "fullwidth_letter", FULLWIDTH_LETTERS[ch]
+        else:
+            continue
+        key = (code, ch)
+        if key not in seen:
+            seen.add(key)
+            out.append({"code": code, "char": ch, "resembles": resembles})
+    return out
+
+
+def extract_evidence_elements(text):
+    """抽取证据元素并按 N8 D/K 分级[推断:内容侧映射——引语/链接=点名声明级 D
+    (显式归属出处), 不在引语/链接内的裸数字=中性观察级 K(无出处断言);
+    "复述已点名的域名不能叫自然发现率"→引语内数字归 D, 不重复计 K]。
+    偏移按 UTF-16 code unit 记(N9 口径)。"""
+    links = [(m.start(), m.end(), m.group(0), "link") for m in LINK_LIKE_RE.finditer(text)]
+    quotes = [(m.start(), m.end(), m.group(0), "quote") for m in EVID_QUOTE_RE.finditer(text)
+              if not any(s <= m.start() < e for s, e, _t, _k in links)]
+    nums = [(m.start(), m.end(), m.group(0), "number") for m in EVID_NUMBER_RE.finditer(text)
+            if not any(s <= m.start() < e for s, e, _t, _k in links + quotes)]
+    elems = []
+    for s, e, t, kind in links + quotes + nums:
+        elems.append({"kind": kind, "dk": "D" if kind in ("link", "quote") else "K",
+                      "text": t,
+                      "utf16_start": utf16_unit_len(text[:s]),
+                      "utf16_end": utf16_unit_len(text[:s]) + utf16_unit_len(t)})
+    return elems
+
+
+def build_evidence_discipline(text, source_text=None):
+    """组装证据纪律节(N8 D/K 分报 + N9 UTF-16 核验 + 编码级假证据扫描)。
+    返回 dict(纯标注数据): dk 两类各留分母(分母=0 → 计数 null 语义, 永不报 0%)、
+    point_state 三态(N8)、char_risks 逐元素风险、verification(source_text 给定时
+    逐元素首次精确匹配定位 + utf16 偏移核验 + record_hash, 定位失败 evidence=null
+    不虚构偏移;核验失败≠证据不存在)。"""
+    elems = extract_evidence_elements(text)
+    dk = {}
+    for cls in ("D", "K"):
+        subset = [el for el in elems if el["dk"] == cls]
+        dk[cls] = {"n": len(subset),
+                   "flagged": sum(1 for el in subset if scan_evidence_risks(el["text"]))}
+    if not elems:
+        point_state = "no_data"
+    elif dk["D"]["n"] and dk["K"]["n"]:
+        point_state = "complete"
+    else:
+        point_state = "partial"
+    char_risks = []
+    for el in elems:
+        for r in scan_evidence_risks(el["text"]):
+            char_risks.append({"kind": el["kind"], "dk": el["dk"],
+                               "text": el["text"][:40], **r})
+    verification = None
+    if source_text is not None:
+        verified, unverified = [], []
+        for el in elems:
+            loc = locate_first_evidence(source_text, el["text"])
+            if loc is None or verify_evidence_location(
+                    source_text, loc[0], loc[1], el["text"]) is None:
+                unverified.append({"kind": el["kind"], "dk": el["dk"],
+                                   "text": el["text"][:40], "reason": "not_located"})
+                continue
+            verified.append({"kind": el["kind"], "dk": el["dk"], "text": el["text"][:40],
+                             "start": loc[0], "end": loc[1],
+                             "record_hash": record_hash(
+                                 {"text": el["text"], "start": loc[0], "end": loc[1]})})
+        verification = {"n": len(elems), "verified": len(verified),
+                        "records": verified, "unverified": unverified}
+    return {"dk": dk, "point_state": point_state, "char_risks": char_risks,
+            "verification": verification,
+            "note": "标注层: 不改六维分数/critical/publishing_ready/退出码;"
+                    "核验失败≠证据不存在(evidence=null 只是无法定位)"}
+
+
+def _safe_text(s):
+    """孤立代理字符转 \\uXXXX 转义后返回(repr 不转义 Cs 类, 直接 print 会炸
+    stdout 的 UTF-8 编码)——展示层专用, 不改数据本身。"""
+    return "".join(ch if not (0xD800 <= ord(ch) <= 0xDFFF) else "\\u%04x" % ord(ch)
+                   for ch in s)
+
+
+def print_evidence_section(ev, source_name=None):
+    """渲染证据纪律节(追加在评分之后;N8 分报措辞 + N9 null 纪律)。"""
+    print()
+    print("=" * 80)
+    print("证据纪律节 (niubigeo N8 D/K 分报 + N9 UTF-16 核验; 标注层——"
+          "不改上面任何分数/critical/退出码)")
+    for cls, desc in (("D", "D(点名声明: 引语/链接)"), ("K", "K(中性观察: 裸数字)")):
+        d = ev["dk"][cls]
+        if d["n"] == 0:
+            print("{0}: n=0 → null(不能计算, 永不报 0%)".format(desc))
+        else:
+            print("{0}: n={1}, 同形字/代理字符风险 {2}".format(desc, d["n"], d["flagged"]))
+    print("pointState: {0} (complete=D、K 皆有元素 / partial=仅一类 / no_data=无证据元素)"
+          .format(ev["point_state"]))
+    if ev["char_risks"]:
+        print("编码级假证据风险 (同形字/代理字符——对干净源文的 UTF-16 精确匹配必败):")
+        for r in ev["char_risks"][:8]:
+            print("  !! [{0}/{1}] {2!r} 中 {3!r} → {4} (同形 {5})".format(
+                r["kind"], r["dk"], _safe_text(r["text"][:40]), _safe_text(r["char"]),
+                RISK_LABEL[r["code"]], r["resembles"]))
+        if len(ev["char_risks"]) > 8:
+            print("  ... 共 {0} 处".format(len(ev["char_risks"])))
+    v = ev["verification"]
+    if v is None:
+        print("UTF-16 定位核验: 未提供 --evidence-source → 跳过定位核验"
+              "(no_data; 同形字/代理字符扫描照常执行)")
+    else:
+        src = source_name or "-"
+        print("UTF-16 定位核验 (源文: {0}): 定位精确 {1}/{2}"
+              "(偏移=UTF-16 code unit;同文多次出现取首次精确匹配)".format(src, v["verified"], v["n"]))
+        for rec in v["records"][:5]:
+            print("  [ok] [{0}/{1}] {2!r} @utf16[{3},{4}) record_hash={5}..".format(
+                rec["kind"], rec["dk"], _safe_text(rec["text"][:30]), rec["start"],
+                rec["end"], rec["record_hash"][:12]))
+        if v["unverified"]:
+            print("  ! 未定位 {0} 条 → evidence=null(不虚构偏移;核验失败≠证据不存在):".format(
+                len(v["unverified"])))
+            for u in v["unverified"][:8]:
+                print("    - [{0}/{1}] {2!r}".format(u["kind"], u["dk"],
+                                                     _safe_text(u["text"][:40])))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="quality_rater.py",
@@ -149,6 +394,10 @@ def main(argv=None):
                     help="市场: zh 汉字感知分词与标题启发 (默认 zh)")
     ap.add_argument("--keyword", default=None,
                     help="主词; 不给则按词频自动推断")
+    ap.add_argument("--evidence-source", default=None, dest="evidence_source",
+                    help="证据源文路径(N9 UTF-16 定位核验用;给定时证据纪律节对引语/"
+                         "数字/链接逐元素在源文做首次精确匹配定位+偏移核验+record_hash, "
+                         "定位失败 evidence=null 不虚构偏移;不可读则警告并跳过)")
     args = ap.parse_args(argv)
 
     try:
@@ -286,6 +535,22 @@ def main(argv=None):
     else:
         print("critical: 无")
     print("publishing_ready: {0} (条件: 总分>=80 且 0 critical)".format("YES" if ready else "NO"))
+
+    # ---- 证据纪律节 (niubigeo N8/N9; 标注层——不改上面任何分数/critical/退出码) ----
+    src_text, src_name = None, None
+    if args.evidence_source:
+        if args.evidence_source == "-":
+            print("[WARN] --evidence-source 不支持 '-'(stdin 已被正文占用) → 跳过定位核验",
+                  file=sys.stderr)
+        else:
+            try:
+                src_text = read_text(args.evidence_source)
+                src_name = args.evidence_source
+            except OSError as e:
+                print("[WARN] --evidence-source 不可读: {0} → 跳过定位核验".format(e),
+                      file=sys.stderr)
+    ev = build_evidence_discipline(text, src_text)
+    print_evidence_section(ev, src_name)
     return 0 if ready else 1
 
 

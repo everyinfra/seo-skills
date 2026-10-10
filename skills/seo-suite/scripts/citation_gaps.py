@@ -22,12 +22,34 @@ opp[url] = {count, prompts:set, providers:set, has_competitor_run:bool, competit
   竞品在场 → "竞品 {A,B} 在 {domain} 被引用——考虑贡献内容或争取列表位直接竞争"
   不在场   → "AI 模型在 {N} 个追踪 prompt 引用 {domain},获得收录可提升 AI 可见性"
 
+来源五分类(Peec Source 五分类,规格 references/research/niubigeo-deep-read.md N3/B4):
+  每个被引域名输出 Editorial/Corporate/UGC/Reference/Own website 五类之一 + 对应行动提示
+  (Editorial→PR outreach / Corporate→合作目录 / UGC→社区运营 / Reference→更正词条 /
+   Own→站内改造)。判定顺序:--domain-class overrides.json 人工覆盖 > 自有域 > 启发式
+  (维基/词典→Reference;reddit/论坛/社区→UGC;媒体特征→Editorial;其余默认 Corporate)。
+  启发式与默认均为 [推断] 规则,报告与 JSON 均附判定依据(basis);CSV 列保持七列不变。
+
+gapLabel 七叉决策树(niubigeo keyword-metrics-engine 直译,deep-read N4;逐 prompt):
+  0 条有效回答                                → "No completed AI answers"
+  提及=0 且竞品独现>0                          → "Competitors own this AI answer space"(最高优先)
+  提及=0                                      → "Target absent from AI answers"
+  ownedRelevance≥0.6 且提及率<0.5              → "Owned content is not reflected"
+  提及>0 且自有域被引=0                        → "Mentioned without official citation"
+  竞品独现>0(偶发)                            → "Competitors still appear without target"
+  其余                                        → "Covered in this audit"
+  竞品口径[推断]:与 has_competitor_run 同代理(同 cell 非自有被引域),panel 无竞品名单。
+  ownedRelevance 降级[注明]:该值为 niubigeo N7 词筛产出(站点证据对词相关度 0-1),
+  panel.json 无此字段——用 --owned-relevance owned.json({prompt: 0-1}) 传入
+  (或面板顶层 "owned_relevance" 对象);未提供时分支 4 不可判,如实落入后续分支。
+
 与 cite_domain.py 串联:先用本脚本找目标域,再用 cite_domain.py 评级(先 gaps 后评级,
 顺序不可倒——先评级后找域是浪费)。
 
 用法:
   python3 citation_gaps.py --panel panel.json --brand-domains acme.ai,acme.com
   python3 citation_gaps.py --panel panel.json --csv gaps.csv --json gaps.json
+  python3 citation_gaps.py --panel panel.json --domain-class overrides.json
+  python3 citation_gaps.py --panel panel.json --owned-relevance owned.json
   python3 citation_gaps.py --self-test
 """
 import argparse
@@ -43,6 +65,187 @@ SL_TLD = {"co.uk", "org.uk", "ac.uk", "gov.uk", "com.au", "net.au", "co.jp", "ne
           "co.kr", "co.in", "co.za", "com.sg", "com.hk"}
 CSV_HEADER = ["Domain", "URL", "Citations", "Prompts", "Providers",
               "Competitors Mentioned", "Priority"]
+
+# ---------- 来源五分类(Peec Source 五分类;启发式与默认均 [推断],可 --domain-class 覆盖) ----------
+SOURCE_CLASSES = ("Editorial", "Corporate", "UGC", "Reference", "Own")
+SOURCE_CLASS_ACTIONS = {
+    "Editorial": "PR outreach:媒体投稿/新闻源/专家引言,争取编辑报道",
+    "Corporate": "合作目录:争取合作方目录、集成市场、对比页收录",
+    "UGC": "社区运营:官方账号真实参与讨论与答疑,不做硬广",
+    "Reference": "更正词条:核对词条事实,补充自有可靠来源",
+    "Own": "站内改造:提升自有页可引用性(转 grounding_page.py / fix_plan.py)",
+}
+_CLASS_ALIASES = {"editorial": "Editorial", "corporate": "Corporate", "ugc": "UGC",
+                  "reference": "Reference", "own": "Own", "own website": "Own"}
+_REFERENCE_DOMAINS = {"wikipedia.org", "wikimedia.org", "wikidata.org", "wiktionary.org",
+                      "britannica.com", "merriam-webster.com", "dictionary.com",
+                      "oed.com", "zdic.net"}
+_UGC_DOMAINS = {"reddit.com", "quora.com", "stackoverflow.com", "stackexchange.com",
+                "superuser.com", "serverfault.com", "zhihu.com", "v2ex.com",
+                "douban.com", "youtube.com"}
+_EDITORIAL_DOMAINS = {"nytimes.com", "washingtonpost.com", "theguardian.com", "bbc.co.uk",
+                      "bbc.com", "cnn.com", "reuters.com", "bloomberg.com", "forbes.com",
+                      "wired.com", "theverge.com", "techcrunch.com", "arstechnica.com",
+                      "zdnet.com", "mashable.com", "venturebeat.com", "engadget.com",
+                      "economist.com", "techradar.com", "36kr.com"}
+_REFERENCE_TOKENS = ("wiki", "dictionar", "encyclop")
+_UGC_TOKENS = ("forum", "community", "bbs")
+_EDITORIAL_TOKENS = ("news", "times", "daily", "weekly", "magazine", "herald",
+                     "press", "journal", "gazette", "tribune", "chronicle")
+
+
+def classify_domain(domain, brand_domains, overrides=None):
+    """被引域名 → (五分类, 判定依据 basis)。判定顺序:人工覆盖 > 自有域 > 启发式[推断]。
+
+    basis 形如 "override" / "own-domain" / "known:wikipedia.org" / "token:wiki" /
+    "default:corporate[推断]",供报告与 JSON 暴露判定路径,不黑箱。
+    """
+    d = (domain or "").strip().lower()
+    overrides = overrides or {}
+    if d in overrides:
+        return overrides[d], "override"
+    if d in {b.lower() for b in brand_domains}:
+        return "Own", "own-domain"
+    if d in _REFERENCE_DOMAINS:
+        return "Reference", "known:" + d
+    if d in _UGC_DOMAINS:
+        return "UGC", "known:" + d
+    if d in _EDITORIAL_DOMAINS:
+        return "Editorial", "known:" + d
+    for tok in _REFERENCE_TOKENS:
+        if tok in d:
+            return "Reference", "token:" + tok
+    for tok in _UGC_TOKENS:
+        if tok in d:
+            return "UGC", "token:" + tok
+    for tok in _EDITORIAL_TOKENS:
+        if tok in d:
+            return "Editorial", "token:" + tok
+    return "Corporate", "default:corporate[推断]"
+
+
+def load_domain_overrides(path):
+    """--domain-class overrides.json → {域名小写: 五分类};非法值抛 ValueError。"""
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    if not isinstance(raw, dict):
+        raise ValueError("应为 {\"域名\": \"分类\"} 对象,得到 %s" % type(raw).__name__)
+    out = {}
+    for dom, cls in raw.items():
+        key = str(cls).strip().lower()
+        if key not in _CLASS_ALIASES:
+            raise ValueError("域名 %s 的分类 %r 无效(可用: %s)"
+                             % (dom, cls, "/".join(SOURCE_CLASSES)))
+        out[str(dom).strip().lower()] = _CLASS_ALIASES[key]
+    return out
+
+
+def ensure_classes(groups, brand_domains, overrides=None):
+    """幂等:给域名分组补 source_class/class_action/class_basis 三键。"""
+    for g in groups:
+        if "source_class" not in g:
+            cls, basis = classify_domain(g["domain"], brand_domains, overrides)
+            g["source_class"], g["class_basis"] = cls, basis
+            g["class_action"] = SOURCE_CLASS_ACTIONS[cls]
+    return groups
+
+
+# ---------- gapLabel 七叉决策树(niubigeo keyword-metrics-engine 直译,deep-read N4) ----------
+GAP_LABELS = [
+    ("no_valid", "No completed AI answers",
+     "数据不足:0 条有效回答——先修采集(重跑/换引擎),再谈缺口"),
+    ("competitor_owned", "Competitors own this AI answer space",
+     "最高优先:对标竞品产出内容/对比页,争取进入该词的答案"),
+    ("absent", "Target absent from AI answers",
+     "品类词缺席:补该主题的 grounding 页面与可引用事实"),
+    ("owned_not_reflected", "Owned content is not reflected",
+     "自有内容没进答案:检查页面可引用性(结构化事实/数据密度)"),
+    ("mention_no_citation", "Mentioned without official citation",
+     "仅提及无引用:强化可引用资产(数据页/研究/文档)"),
+    ("competitor_sporadic", "Competitors still appear without target",
+     "偶发竞品独现:巩固既有覆盖,补竞品占位的子话题"),
+    ("covered", "Covered in this audit", "已覆盖:保持监测,暂不动"),
+]
+
+
+def load_owned_relevance(path):
+    """--owned-relevance owned.json → {prompt: 0-1};非法值抛 ValueError。"""
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    if not isinstance(raw, dict):
+        raise ValueError("应为 {\"prompt\": 0-1} 对象,得到 %s" % type(raw).__name__)
+    out = {}
+    for p, v in raw.items():
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            raise ValueError("prompt %r 的 ownedRelevance %r 不是数字" % (p, v))
+        if not 0.0 <= x <= 1.0:
+            raise ValueError("prompt %r 的 ownedRelevance %s 超出 0-1" % (p, v))
+        out[str(p)] = x
+    return out
+
+
+def _agg_gap_cells(panel, brand_domains):
+    """逐 prompt 聚合:valid(有效回答)/mentioned(提及)/cited(自有域被引)/
+    competitor_only(目标未提及且任一非自有域被引的 cell 数,竞品口径[推断])。"""
+    per = {}
+    for run in panel.get("runs", []):
+        for prompt, res in (run.get("results") or {}).items():
+            res = res or {}
+            state = (res.get("state") or "").strip().lower()
+            if state in ("failed", "no_answer"):
+                continue                       # 无效回答不入分母
+            a = per.setdefault(prompt, {"valid": 0, "mentioned": 0, "cited": 0,
+                                        "competitor_only": 0})
+            a["valid"] += 1
+            mentioned = res.get("mentioned") in (1, True) or state == "cited_brand"
+            if mentioned:
+                a["mentioned"] += 1
+            if res.get("cited") in (1, True) or state == "cited_brand":
+                a["cited"] += 1
+            doms = {registrable_domain(u) for u in (res.get("cited_urls") or [])}
+            doms.discard("")
+            if not mentioned and (doms - {b.lower() for b in brand_domains}):
+                a["competitor_only"] += 1
+    return per
+
+
+def gap_label_of(agg, owned_rel):
+    """七叉判定(顺序固定,自上而下首个命中):返回 GAP_LABELS 下标。"""
+    if agg["valid"] == 0:
+        return 0
+    if agg["mentioned"] == 0:
+        return 1 if agg["competitor_only"] > 0 else 2
+    if owned_rel is not None and owned_rel >= 0.6 and agg["mentioned"] / agg["valid"] < 0.5:
+        return 3
+    if agg["cited"] == 0:
+        return 4
+    if agg["competitor_only"] > 0:
+        return 5
+    return 6
+
+
+def compute_gap_labels(panel, brand_domains, owned_relevance=None):
+    """逐 prompt 七叉标签;owned_relevance={prompt: 0-1} 或 None(分支 3 不可判,降级注明)。
+    返回按标签严重度(下标)升序的行列表,同标签按 prompt 名排序。"""
+    owned_relevance = owned_relevance or {}
+    per = _agg_gap_cells(panel, brand_domains)
+    prompts = list(panel.get("prompts") or [])
+    prompts += sorted(p for p in per if p not in prompts)
+    rows = []
+    for p in prompts:
+        a = per.get(p, {"valid": 0, "mentioned": 0, "cited": 0, "competitor_only": 0})
+        idx = gap_label_of(a, owned_relevance.get(p))
+        code, label, action = GAP_LABELS[idx]
+        rows.append((idx, {"prompt": p, "code": code, "label": label, "action": action,
+                           "valid_answers": a["valid"], "mentioned": a["mentioned"],
+                           "own_cited": a["cited"],
+                           "competitor_only_runs": a["competitor_only"],
+                           "mention_rate": (a["mentioned"] / a["valid"]) if a["valid"] else None,
+                           "owned_relevance": owned_relevance.get(p)}))
+    rows.sort(key=lambda t: (t[0], t[1]["prompt"]))
+    return [r for _, r in rows]
 
 
 def registrable_domain(url):
@@ -149,7 +352,9 @@ def outreach_tip(g):
         len(g["prompts"]), g["domain"])
 
 
-def render_report(panel, urls_sorted, doms_sorted, stats, brand_domains):
+def render_report(panel, urls_sorted, doms_sorted, stats, brand_domains,
+                  owned_relevance=None, overrides=None):
+    ensure_classes(doms_sorted, brand_domains, overrides)   # 幂等;直接调用亦安全
     L = []
     L.append("== 引用缺口报告(citation gaps): %s ==" % panel.get("brand", "?"))
     L.append("runs=%d cells=%d qualifying=%d(有 cited_urls 且品牌未被引;cited_brand/failed/no_answer 不入)"
@@ -188,6 +393,30 @@ def render_report(panel, urls_sorted, doms_sorted, stats, brand_domains):
         L.append("[%s] %s:%s" % (priority_of(g["has_competitor_run"]),
                                  g["domain"], outreach_tip(g)))
     L.append("")
+    L.append("-- 来源五分类(逐域名;Peec Source 五分类,启发式与默认均 [推断];"
+             "--domain-class overrides.json 人工覆盖) --")
+    L.append("| 域名 | 分类 | 判定依据 | 行动提示 |")
+    L.append("|---|---|---|---|")
+    for g in doms_sorted:
+        L.append("| %s | %s | %s | %s |" % (
+            g["domain"], g["source_class"], g["class_basis"], g["class_action"]))
+    L.append("")
+    gap_rows = compute_gap_labels(panel, brand_domains, owned_relevance)
+    L.append("-- gapLabel 七叉(逐 prompt;niubigeo 口径;"
+             "竞品代理=同 cell 非自有被引域[推断]) --")
+    L.append("| Prompt | 标签 | 有效/提及/被引/竞品独现 | 动作 |")
+    L.append("|---|---|---|---|")
+    for r in gap_rows:
+        L.append("| %s | %s | %d/%d/%d/%d | %s |" % (
+            r["prompt"], r["label"], r["valid_answers"], r["mentioned"],
+            r["own_cited"], r["competitor_only_runs"], r["action"]))
+    if owned_relevance:
+        L.append("[i] ownedRelevance 由 --owned-relevance 提供;分支 4 按输入判定。")
+    else:
+        L.append("[i] ownedRelevance 未提供(--owned-relevance owned.json):分支 "
+                 "\"Owned content is not reflected\" 不可判[降级:该值为 niubigeo N7 词筛"
+                 "产出,panel.json 无此字段],落入后续分支。")
+    L.append("")
     L.append("-- 串联(先 gaps 找目标域 → 再 cite_domain.py 评级) --")
     L.append("  高优先域先评级再投入外联:python3 cite_domain.py --input answers.json(数据项人工采集);")
     L.append("  评级进入简报:templates/monitor/citation-outreach-brief.md。")
@@ -209,7 +438,10 @@ def _dom_row(g):
             "prompts": sorted(g["prompts"]), "providers": sorted(g["providers"]),
             "has_competitor_run": g["has_competitor_run"],
             "competitors": sorted(g["competitors"]),
-            "priority": priority_of(g["has_competitor_run"])}
+            "priority": priority_of(g["has_competitor_run"]),
+            "source_class": g.get("source_class"),
+            "class_basis": g.get("class_basis"),
+            "class_action": g.get("class_action")}
 
 
 def write_csv(path, urls_sorted):
@@ -224,13 +456,22 @@ def write_csv(path, urls_sorted):
                         priority_of(o["has_competitor_run"])])
 
 
-def write_json(path, panel_path, panel, urls_sorted, doms_sorted, stats, brand_domains):
+def write_json(path, panel_path, panel, urls_sorted, doms_sorted, stats, brand_domains,
+               owned_relevance=None, overrides=None):
+    ensure_classes(doms_sorted, brand_domains, overrides)
+    counts = {}
+    for g in doms_sorted:                       # 五分类域名计数(只增键,向后兼容)
+        counts[g["source_class"]] = counts.get(g["source_class"], 0) + 1
     payload = {"tool": "citation_gaps.py", "panel": os.path.abspath(panel_path),
                "brand": panel.get("brand"), "brand_domains": sorted(brand_domains),
                "stats": stats,
                "domains": [_dom_row(g) for g in doms_sorted],
                "urls": [_url_row(o) for o in urls_sorted],
-               "outreach_tips": {g["domain"]: outreach_tip(g) for g in doms_sorted}}
+               "outreach_tips": {g["domain"]: outreach_tip(g) for g in doms_sorted},
+               "source_class_counts": counts,
+               "source_class_overrides": sorted((overrides or {}).keys()),
+               "gap_labels": compute_gap_labels(panel, brand_domains, owned_relevance),
+               "owned_relevance_available": bool(owned_relevance)}
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
@@ -273,7 +514,35 @@ def _self_test():
     assert registrable_domain("https://shop.example.com.cn/x#f") == "example.com.cn"
     assert registrable_domain("http://u:p@www.site.co.jp:8080/x") == "site.co.jp"
     assert registrable_domain("https://docs.other.org/x") == "other.org"
-    print("[self-test] PASS citation_gaps(qualifying 过滤/自有域排除/竞品同场高优先排序/双段后缀)")
+    # 来源五分类:覆盖优先 > 自有域 > 启发式[推断]
+    assert classify_domain("g2.com", set(), {"g2.com": "UGC"}) == ("UGC", "override")
+    assert classify_domain("acme.ai", {"acme.ai"}) == ("Own", "own-domain")
+    assert classify_domain("en.wikipedia.org", set())[0] == "Reference"
+    assert classify_domain("reddit.com", set())[0] == "UGC"
+    assert classify_domain("techcrunch.com", set())[0] == "Editorial"
+    assert classify_domain("hubspot.com", set()) == ("Corporate", "default:corporate[推断]")
+    assert "合作目录" in SOURCE_CLASS_ACTIONS["Corporate"]
+    # gapLabel 七叉:各分支单点触发
+    G = {"valid": 2, "mentioned": 2, "cited": 2, "competitor_only": 0}
+    assert gap_label_of({"valid": 0, "mentioned": 0, "cited": 0, "competitor_only": 0}, None) == 0
+    assert gap_label_of({"valid": 2, "mentioned": 0, "cited": 0, "competitor_only": 1}, None) == 1
+    assert gap_label_of({"valid": 2, "mentioned": 0, "cited": 0, "competitor_only": 0}, None) == 2
+    assert gap_label_of(dict(G, cited=0), None) == 4
+    assert gap_label_of(dict(G, competitor_only=1), None) == 5
+    assert gap_label_of(G, None) == 6
+    assert gap_label_of({"valid": 2, "mentioned": 0, "cited": 2, "competitor_only": 0},
+                        0.8) == 2                    # 分支 2 先于分支 3(顺序固定)
+    assert gap_label_of({"valid": 4, "mentioned": 1, "cited": 1, "competitor_only": 0},
+                        0.7) == 3                    # 提及率 0.25<0.5 且 owned≥0.6
+    assert gap_label_of({"valid": 4, "mentioned": 1, "cited": 1, "competitor_only": 0},
+                        None) == 6                   # 无 owned 输入 → 分支 3 降级,已引=Covered
+    rep2 = render_report(panel, urls, doms, stats, {"acme.ai", "acme-cdn.com"},
+                         owned_relevance={"best crm": 0.9})
+    assert "来源五分类" in rep2 and "gapLabel 七叉" in rep2
+    assert "Competitors own this AI answer space" in rep2     # best crm:未提及+竞品独现
+    assert "[i] ownedRelevance 由 --owned-relevance 提供" in rep2
+    print("[self-test] PASS citation_gaps(qualifying 过滤/自有域排除/竞品同场高优先排序/双段后缀"
+          "/来源五分类/gapLabel 七叉)")
 
 
 def build_parser():
@@ -283,6 +552,12 @@ def build_parser():
                     help="自有域,逗号分隔(排除;自动并入面板 --domain)")
     ap.add_argument("--csv", default="", help="输出 CSV 路径(列 %s)" % ",".join(CSV_HEADER))
     ap.add_argument("--json", default="", help="输出结构化 JSON 路径")
+    ap.add_argument("--domain-class", default="",
+                    help="来源五分类人工覆盖 JSON:{\"域名\": \"Editorial|Corporate|UGC"
+                         "|Reference|Own\"}(优先于一切启发式)")
+    ap.add_argument("--owned-relevance", default="",
+                    help="gapLabel 分支 4 输入:{\"prompt\": 0-1} 站点证据对词相关度"
+                         "(niubigeo N7 口径;缺省时该分支不可判,降级注明)")
     ap.add_argument("--self-test", action="store_true", help="冒烟自测(不联网)")
     return ap
 
@@ -305,14 +580,31 @@ def main(argv=None):
         print("错误: 无法读取面板 %s: %s" % (args.panel, e), file=sys.stderr)
         return 1
     panel.setdefault("runs", [])
+    try:
+        overrides = load_domain_overrides(args.domain_class) if args.domain_class else {}
+    except (OSError, ValueError) as e:
+        print("错误: --domain-class %s: %s" % (args.domain_class, e), file=sys.stderr)
+        return 1
+    owned = None
+    if args.owned_relevance:
+        try:
+            owned = load_owned_relevance(args.owned_relevance)
+        except (OSError, ValueError) as e:
+            print("错误: --owned-relevance %s: %s" % (args.owned_relevance, e), file=sys.stderr)
+            return 1
+    if owned is None and isinstance(panel.get("owned_relevance"), dict):
+        owned = {str(k): float(v) for k, v in panel["owned_relevance"].items()}
     brand_domains = parse_brand_domains(args.brand_domains, panel)
     urls_sorted, doms_sorted, stats = compute_opps(panel, brand_domains)
-    print(render_report(panel, urls_sorted, doms_sorted, stats, brand_domains))
+    ensure_classes(doms_sorted, brand_domains, overrides)
+    print(render_report(panel, urls_sorted, doms_sorted, stats, brand_domains,
+                        owned_relevance=owned, overrides=overrides))
     if args.csv:
         write_csv(args.csv, urls_sorted)
         print("[i] CSV → %s(%d 行)" % (args.csv, len(urls_sorted)), file=sys.stderr)
     if args.json:
-        write_json(args.json, args.panel, panel, urls_sorted, doms_sorted, stats, brand_domains)
+        write_json(args.json, args.panel, panel, urls_sorted, doms_sorted, stats,
+                   brand_domains, owned_relevance=owned, overrides=overrides)
         print("[i] JSON → %s" % args.json, file=sys.stderr)
     return 0
 

@@ -36,11 +36,19 @@ VETO(信任组,人工红线):C-block>20%=PBN;链接·流量相干性人工标记
 
 用法:
   python3 cite_domain.py --input answers.json
+  python3 cite_domain.py --input answers.json --json rating.json
   python3 cite_domain.py --template            # 打印输入 JSON 模板
   python3 cite_domain.py --self-test
+
+引用证据核验清单(niubigeo 三类来源分离 + 5 家 Provider 字段路径,deep-read N3 转译):
+  engines_cited(C5/E1 的输入)只应按 provider_citation 口径计数——Provider 响应确证
+  该域被引;provider_search_result(仅出现在搜索工具返回)与 answer_text_url(仅正文
+  链接)不证明被引,不得充数。5 家原始 JSON 定位路径见 CITATION_EVIDENCE,文本报告尾部
+  与 --json 的 citation_evidence 字段均输出,作为评级时的证据字段建议清单。
 """
 import argparse
 import json
+import os
 import re
 import sys
 import traceback
@@ -60,6 +68,29 @@ TEMPLATE = {
     "editorial_ratio": 0.65,
     "link_traffic_coherent": True,
     "manual_penalty": False,
+}
+
+# 5 家 Provider 引用字段路径(niubigeo citation-extractors 规格,deep-read N3 直译)——
+# 转译为本工具评级时的证据字段建议清单:engines_cited 按这些路径定位到的 provider_citation
+# 计数,三类来源分离防止把搜索结果/正文链接当成被引证据。
+CITATION_EVIDENCE = {
+    "source_classes": {
+        "provider_citation": "Provider 本次响应确证被引(计入 engines_cited → C5/E1)",
+        "provider_search_result": "仅出现在搜索工具返回,不证明被答案引用(不计入)",
+        "answer_text_url": "仅正文出现 URL,不证明检索或引用(不计入)",
+    },
+    "providers": [
+        {"engine": "openai-chat", "family": "OpenAI Chat Completions",
+         "payload_path": "choices[0].message.annotations[].url | .url_citation.url"},
+        {"engine": "openai-responses", "family": "OpenAI Responses API",
+         "payload_path": "output[i].content[j].annotations[]"},
+        {"engine": "anthropic", "family": "Anthropic Messages",
+         "payload_path": "content[i].citations[].url"},
+        {"engine": "perplexity", "family": "Perplexity",
+         "payload_path": "citations[] + search_results[].url"},
+        {"engine": "gemini", "family": "Google Gemini",
+         "payload_path": "candidates[0].groundingMetadata.groundingChunks[].web.uri"},
+    ],
 }
 
 
@@ -287,7 +318,24 @@ def render(items, vetoes, sc):
         L.append("总分 = %s%s" % ("N/A(无任何已观测项)" if sc["total"] is None
                                   else "%.1f → band %s" % (sc["total"], sc["band"]),
                                   "(1 个 veto,封顶 59)" if sc["capped"] else ""))
+    L.append("")
+    L.append("-- 引用证据核验(engines_cited=C5/E1 证据口径;5 家 Provider 字段路径) --")
+    L.append("  三类来源分离:仅 provider_citation 计入 engines_cited;"
+             "provider_search_result / answer_text_url 不充数")
+    for row in CITATION_EVIDENCE["providers"]:
+        L.append("  %-16s %s" % (row["engine"], row["payload_path"]))
     return "\n".join(L)
+
+
+def build_payload(input_path, d, items, vetoes, sc):
+    """--json 结构化输出(新增能力;字段与文本报告一一对应 + 证据清单)。"""
+    return {"tool": "cite_domain.py",
+            "input": os.path.abspath(input_path) if input_path else None,
+            "brand": d.get("brand"),
+            "items": items, "vetoes": vetoes,
+            "groups": sc["groups"], "total": sc["total"], "band": sc["band"],
+            "capped": sc["capped"], "blocked": sc["blocked"],
+            "citation_evidence": CITATION_EVIDENCE}
 
 
 def _self_test():
@@ -343,13 +391,29 @@ def _self_test():
     # 比例字段弹性
     assert as_ratio(25) == 0.25 and as_ratio("25%") == 0.25 and as_ratio(0.25) == 0.25
     assert as_ratio(None) is None
+    # 引用证据清单(5 家字段路径,deep-read N3)+ --json payload
+    engines = [p["engine"] for p in CITATION_EVIDENCE["providers"]]
+    assert engines == ["openai-chat", "openai-responses", "anthropic",
+                       "perplexity", "gemini"]
+    assert "groundingMetadata.groundingChunks[].web.uri" in \
+        next(p["payload_path"] for p in CITATION_EVIDENCE["providers"]
+             if p["engine"] == "gemini")
+    assert set(CITATION_EVIDENCE["source_classes"]) == {
+        "provider_citation", "provider_search_result", "answer_text_url"}
+    rep = render(items, vetoes, sc)
+    assert "引用证据核验" in rep and "provider_citation" in rep
+    payload = build_payload("answers.json", d, items, vetoes, sc)
+    assert payload["total"] == sc["total"] and payload["citation_evidence"] is CITATION_EVIDENCE
+    blocked_payload = build_payload("x.json", d3, evaluate(d3)[0], v3, score(evaluate(d3)[0], v3))
+    assert blocked_payload["blocked"] and blocked_payload["total"] is not None
     print("[self-test] PASS cite_domain(总分 90;1 veto 封顶 59;2 veto BLOCK;"
-          "unknown 重分配;比例字段弹性)")
+          "unknown 重分配;比例字段弹性;证据清单+JSON payload)")
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--input", help="结构化输入 JSON 路径")
+    ap.add_argument("--json", default="", help="输出结构化 JSON 路径(评级+证据清单)")
     ap.add_argument("--template", action="store_true", help="打印输入 JSON 模板")
     ap.add_argument("--self-test", action="store_true", help="冒烟自测(不联网)")
     args = ap.parse_args(argv)
@@ -375,6 +439,11 @@ def main(argv=None):
     items, vetoes = evaluate(d)
     sc = score(items, vetoes)
     print(render(items, vetoes, sc))
+    if args.json:
+        with open(args.json, "w", encoding="utf-8") as f:
+            json.dump(build_payload(args.input, d, items, vetoes, sc),
+                      f, ensure_ascii=False, indent=2)
+        print("[i] JSON → %s" % args.json, file=sys.stderr)
     return 2 if sc["blocked"] else 0
 
 

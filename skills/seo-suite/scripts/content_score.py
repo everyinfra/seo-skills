@@ -31,6 +31,23 @@
   * 意图系数【官方,100 万 SERP 研究】: consequence 0.296 / definition 0.271 /
     comparison 0.225 / instructional 0.19 —— 该意图下内容分预测力,作优先级参考不改分值。
   * 关键词密度不计分【官方,Surfer 与 MarketMuse 均明确否定】—— 本脚本没有任何密度维度。
+  * 纪律层【仓库,niubigeo 深读 §3 N7/N8,references/research/niubigeo-deep-read.md;
+    标注层——不改上面任何分数与默认输出(冻结 fixture tests/fixtures/scoring_v1.json 契约,
+    故 schema_version 不 bump、protocol 自带版本号)**:
+      observed-consensus/v1 词筛(N7): 竞品术语需在 ≥2 个独立竞品正文精确定位
+        (observed_sources>=2)才算"观察到的共识词"进推荐层,防单一竞品私货词污染;
+        单竞品独有词单列"低置信"只展示不进推荐。四类落选码全留档(不黑箱):
+        contains_observed_identity(命中主词身份子串)/ no_exact_answer_evidence
+        (竞品正文零定位,多见于 --terms 外来词)/ insufficient_independent_association
+        (观察源<2)/ not_neutral_eligible(与主词全等——身份词本体非中性话题)。
+        共识率=kept/候选,无候选 → null 不能计算(不报 0%)。
+      D/K 事实分报(N8): --facts 行首 D:(点名声明级)/K:(中性观察级)前缀分级,
+        未标注按 K[推断];D 与 K 各留分母、分率永不混算、不平均成综合分
+        ("复述已点名的域名不能叫自然发现率");分母=0 → rate=null 永不报 0%;
+        pointState=complete(D、K 皆有)/partial(仅一类)/no_data(无事实);
+        两类混入同一 facts_coverage 分数时发混算警告(分数本身向后兼容不拆分)。
+      输出: markdown 报告恒含"纪律层"节;--json 默认输出与既往逐键一致(冻结契约),
+        加 --discipline 才追加顶层 discipline 键(只增不改)。
 
 standalone 约定: 不 import 本目录其他脚本;CJK 词数/词边界计数复用 quality_rater.py
 与 site_audit.py 的函数思路,独立实现。竞品均值 = 各竞品正文过同一评分器后取均值[推断]。
@@ -74,6 +91,15 @@ IMPORTANCE_MUST = 8             # Clearscope: importance 8+ 术语强制计入
 FACTS_PROXY_N = 20              # 无 --facts 时取术语表前 20 作事实代理[推断]
 TARGET_BEAT = 15.0              # 超越竞品均值 15 分(官方区间 10-20 的中值)[推断]
 TARGET_FLOOR, TARGET_CAP = 70.0, 85.0   # 甜区 70-85【官方】
+
+# ---- 纪律层常量(niubigeo 深读 §3 N7/N8;标注层不改分) ----
+CONSENSUS_MIN_SOURCES = 2       # N7: ≥2 个不同模型同词关联 → 此处独立源=竞品[推断]
+FACT_DK_RE = re.compile(r"^([DK])[:：]\s*(\S.*)$")   # 行首 D:/K: 分级前缀(全角冒号兼容)
+# N7 四类落选码(候选与落选原因都保存,不黑箱)
+CODE_IDENTITY_SUB = "contains_observed_identity"      # 命中主词身份子串
+CODE_NO_EVIDENCE = "no_exact_answer_evidence"         # 竞品正文零精确定位
+CODE_LOW_ASSOC = "insufficient_independent_association"   # 观察源 < 2(单竞品独有→低置信)
+CODE_NOT_NEUTRAL = "not_neutral_eligible"             # 与主词全等:身份词本体非中性话题
 
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
 CJK_RUN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
@@ -444,14 +470,30 @@ def score_schema_focused(text):
 
 
 # ---------------------------------------------------------------- AI 轨
+def parse_fact_line(line):
+    """--facts 单行解析 → (D|K, 事实文本) 或 None(空行/注释)。
+    N8 D/K 分级: 行首 D:(点名声明级——出处显式点名)/K:(中性观察级——无点名)前缀声明,
+    未标注 → K(中性)[推断:清单默认是无出处的中性事实];全角冒号兼容,小写不认
+    (防 "d:盘" 类误判)[推断]。前缀剥除后才 tokenize,保证分级不渗入覆盖判定。"""
+    s = re.sub(r"^[\s\-*•]+\s*", "", line.strip())
+    if not s or s.startswith("#"):
+        return None
+    m = FACT_DK_RE.match(s)
+    if m:
+        return (m.group(1), m.group(2).strip())
+    return ("K", s)
+
+
 def load_facts(path):
+    """--facts 事实清单 → [(D|K, 事实文本), ...] 或 None(未提供)。
+    未标注行按 K(中性观察)处理[推断];与旧版(纯文本列表)对未标注清单逐行等价。"""
     if not path:
         return None
     facts = []
     for line in read_text(path).splitlines():
-        s = re.sub(r"^[\s\-*•]+\s*", "", line.strip())
-        if s and not s.startswith("#"):
-            facts.append(s)
+        parsed = parse_fact_line(line)
+        if parsed:
+            facts.append(parsed)
     return facts
 
 
@@ -589,8 +631,173 @@ def target_score(comp_avg):
     return min(max(comp_avg + TARGET_BEAT, TARGET_FLOOR), TARGET_CAP)
 
 
+# ---------------------------------------------------------------- 纪律层(N7/N8,标注不改分)
+def observed_consensus(terms, comp_texts, keyword):
+    """observed-consensus/v1 词筛【仓库,niubigeo N7 examples/lib/study.mjs 机械选词,
+    无语义改写】: 每条候选术语在各竞品正文精确定位(term_count>0),观察源数
+    (命中竞品数)>=CONSENSUS_MIN_SOURCES 才算"观察到的共识词"进推荐层——
+    防单一竞品的私货词污染。落选码优先级(确定性,全留档不黑箱):
+      1. 与主词全等           → not_neutral_eligible(身份词本体,非中性话题)
+      2. 命中主词身份子串     → contains_observed_identity(主词变体/扩写)
+      3. 竞品正文零精确定位   → no_exact_answer_evidence(多见于 --terms 外来词)
+      4. 观察源 < 2           → insufficient_independent_association(单竞品独有→低置信)
+    kept 按观察源数降序(N7: 按独立模型数降序);共识率=kept/候选,
+    无候选 → None 不能计算(不报 0%——N8 null 纪律)。
+    [推断] 观察源=竞品(N7 原文为 ≥2 个不同模型;本脚本无模型层,独立观察源按竞品计);
+    身份词=主词(竞品品牌名未知,无法排除,如实降级注明)。"""
+    kept, excluded, low_conf = [], [], []
+    for t in terms:
+        term = t["term"]
+        n_obs = sum(1 for ct in comp_texts if term_count(term, ct) > 0)
+        rec = {"term": term, "importance": t["importance"], "observed_sources": n_obs}
+        if keyword and term == keyword:
+            code, detail = CODE_NOT_NEUTRAL, "与主词全等:身份词本体非中性话题,不进推荐"
+        elif keyword and (keyword in term or term in keyword):
+            code, detail = CODE_IDENTITY_SUB, "命中主词「%s」身份子串:主词变体/扩写" % keyword
+        elif n_obs == 0:
+            code, detail = CODE_NO_EVIDENCE, "竞品正文零精确定位(--terms 外来词或语料未覆盖)"
+        elif n_obs < CONSENSUS_MIN_SOURCES:
+            code, detail = CODE_LOW_ASSOC, "观察源 %d<%d:单竞品独有→低置信,不进推荐" % (
+                n_obs, CONSENSUS_MIN_SOURCES)
+        else:
+            kept.append(rec)
+            continue
+        entry = {"term": term, "importance": t["importance"], "code": code,
+                 "observed_sources": n_obs, "detail": detail}
+        excluded.append(entry)
+        if code == CODE_LOW_ASSOC:
+            low_conf.append({"term": term, "importance": t["importance"],
+                             "observed_sources": n_obs})
+    kept.sort(key=lambda r: -r["observed_sources"])      # N7: 按独立源数降序
+    n_cand = len(terms)
+    return {
+        "protocol": "observed-consensus/v1",
+        "min_independent_sources": CONSENSUS_MIN_SOURCES,
+        "n_candidates": n_cand,
+        "consensus_rate": (len(kept) / n_cand) if n_cand else None,   # null=不能计算
+        "kept": kept,
+        "low_confidence": low_conf,          # 单竞品独有:单列展示,不进推荐
+        "excluded": excluded,                # 全部落选留档(四类码,含低置信)
+    }
+
+
+def dk_facts_stats(parsed_facts, draft_text):
+    """D/K 事实分报【仓库,niubigeo N8 docs/measurement-methodology.md 的内容侧映射】:
+    D(点名声明)与 K(中性观察)事实各留分母、分率分报——永不混算、不平均成综合分
+    ("复述已点名的域名不能叫自然发现率");有效分母下的 0% 是真未命中;
+    分母=0 → rate=null 永不报 0%;pointState=complete(D、K 皆有)/partial(仅一类)/
+    no_data(无事实)。D 与 K 混入同一 facts_coverage 分数时发混算警告
+    (分数本身向后兼容不拆分——冻结 fixture 契约,警告即纪律)。"""
+    tset = set(tokenize(draft_text))
+    stats = {}
+    for cls in ("D", "K"):
+        subset = [f for c, f in parsed_facts if c == cls]
+        covered = sum(1 for f in subset if fact_covered(f, tset))
+        stats[cls] = {"n": len(subset), "covered": covered,
+                      "rate": (covered / len(subset)) if subset else None}
+    if not parsed_facts:
+        state = "no_data"
+    elif stats["D"]["n"] and stats["K"]["n"]:
+        state = "complete"
+    else:
+        state = "partial"
+    warnings = []
+    if stats["D"]["n"] and stats["K"]["n"]:
+        warnings.append(
+            "D/K 混算: 单一 facts_coverage 分数同时覆盖 D(点名声明)与 K(中性观察)"
+            "——niubigeo N8 纪律要求两类分率分报永不混算;本分数为向后兼容保留未拆分,"
+            "分报见 stats,建议在 --facts 清单行首用 D:/K: 前缀声明类别")
+    if state != "no_data" and not stats["D"]["n"]:
+        warnings.append("清单无 D(点名声明)前缀:全部事实按 K(中性观察)处理[推断]")
+    return {"protocol": "dk-facts/v1", "stats": stats, "point_state": state,
+            "warnings": warnings}
+
+
+def build_discipline(model, keyword, draft, facts_parsed):
+    """组装纪律层文档(N7 词筛 + N8 事实分报;标注层,不改任何分数)。
+    facts_parsed 为 None 时按 score_facts_coverage 同款代理(术语表前
+    FACTS_PROXY_N)全 K 处理并注明。推荐层 = 共识词 ∩ 草稿缺失(缺什么补什么)。"""
+    terms, comp_texts = model["terms"], model["comp_texts"]
+    consensus = observed_consensus(terms, comp_texts, keyword)
+    heads = headings_of(draft)
+    recommendation = []
+    for rec in consensus["kept"]:
+        if term_count(rec["term"], draft) > 0:
+            continue                        # 已覆盖的共识词无需推荐
+        row = {"term": rec["term"], "importance": rec["importance"],
+               "recommended_range": "-", "observed_sources": rec["observed_sources"]}
+        for t in terms:
+            if t["term"] == rec["term"]:
+                row["recommended_range"] = recommended_range(t["freqs"])
+                break
+        row["suggestion"] = suggest_insertion(row, heads)
+        recommendation.append(row)
+    if facts_parsed is None:
+        proxy = [("K", t["term"]) for t in terms[:FACTS_PROXY_N]]
+        facts_dk = dk_facts_stats(proxy, draft)
+        facts_dk["facts_source"] = "proxy"
+        facts_dk["warnings"].append(
+            "未提供 --facts:以术语表前 %d 作事实代理[推断],代理事实未标注 → 全 K" % len(proxy))
+    else:
+        facts_dk = dk_facts_stats(facts_parsed, draft)
+        facts_dk["facts_source"] = "explicit"
+    return {"term_consensus": consensus, "recommendation": recommendation,
+            "facts_dk": facts_dk}
+
+
 # ---------------------------------------------------------------- 报告
-def build_report(res, args, model, keyword, facts, comp_results, out_json=False):
+def _fmt_rate(rate):
+    """N8 null 纪律: 分母=0 → null(不能计算)永不报 0%。"""
+    return "null(不能计算)" if rate is None else "%.1f%%" % (rate * 100.0)
+
+
+def render_discipline_md(disc):
+    """纪律层 markdown(N7 词筛 + N8 事实分报;标注层不改分)。"""
+    c = disc["term_consensus"]
+    L = []
+    L.append("## 纪律层: 术语共识筛 + D/K 事实分报(niubigeo N7/N8;标注层,不改上面任何分数)")
+    L.append("- observed-consensus/v1: 竞品正文精确定位 + 观察源 ≥%d(独立竞品)才进推荐层,"
+             "防单一竞品私货词污染[推断:观察源=竞品;N7 原文为 ≥2 个不同模型]"
+             % c["min_independent_sources"])
+    L.append("- 共识率: %s(候选 %d 个;无候选 → null 不能计算,不报 0%%)"
+             % (_fmt_rate(c["consensus_rate"]), c["n_candidates"]))
+    if disc["recommendation"]:
+        L.append("- 推荐层(仅共识词 × 草稿缺失,缺什么补什么):")
+        for r in disc["recommendation"][:10]:
+            L.append("  - **%s**(观察源 %d,importance %d,竞品区间 %s)→ %s"
+                     % (r["term"], r["observed_sources"], r["importance"],
+                        r["recommended_range"], r["suggestion"]))
+    else:
+        L.append("- 推荐层: 无(共识词已全覆盖或无共识词)")
+    if c["low_confidence"]:
+        shown = ", ".join("%s(源 %d)" % (e["term"], e["observed_sources"])
+                          for e in c["low_confidence"][:12])
+        L.append("- 低置信(单竞品独有——单列展示,不进推荐): %s" % shown)
+    else:
+        L.append("- 低置信(单竞品独有): 无")
+    by_code = {}
+    for e in c["excluded"]:
+        by_code.setdefault(e["code"], []).append(e["term"])
+    if by_code:
+        ledger = "; ".join("%s %d 个(%s)" % (code, len(ws), ", ".join(ws[:6]))
+                           for code, ws in sorted(by_code.items()))
+        L.append("- 落选留档(候选与落选原因都保存,不黑箱): %s" % ledger)
+    f = disc["facts_dk"]
+    sD, sK = f["stats"]["D"], f["stats"]["K"]
+    L.append("- D/K 事实分报(dk-facts/v1,来源 %s): D(点名声明) n=%d 覆盖 %d(rate %s);"
+             "K(中性观察) n=%d 覆盖 %d(rate %s)——两类各留分母分率永不混算、"
+             "不平均成综合分(niubigeo N8)"
+             % (f["facts_source"], sD["n"], sD["covered"], _fmt_rate(sD["rate"]),
+                sK["n"], sK["covered"], _fmt_rate(sK["rate"])))
+    L.append("- pointState: %s(complete=D、K 皆有/partial=仅一类/no_data=无事实)"
+             % f["point_state"])
+    for w in f["warnings"]:
+        L.append("- [警告] %s" % w)
+    return L
+
+
+def build_report(res, args, model, keyword, facts, comp_results, out_json=False,
+                 discipline=None):
     terms = model["terms"]
     b, brange = band(res["total"])
     comp_scores = [round(c["total"], 1) for c in comp_results]
@@ -639,6 +846,9 @@ def build_report(res, args, model, keyword, facts, comp_results, out_json=False)
         "missing_terms": missing,
         "notes": res["notes"] + ["关键词密度不计分(Surfer 与 MarketMuse 官方明确否定)"],
     }
+    if out_json and getattr(args, "discipline", False):
+        # 纪律层只增不改:默认 --json 输出与冻结 fixture 逐键一致,--discipline 才追加
+        payload["discipline"] = discipline
     if out_json:
         return json.dumps(payload, ensure_ascii=False, indent=1)
 
@@ -688,6 +898,9 @@ def build_report(res, args, model, keyword, facts, comp_results, out_json=False)
                      (m["term"], m["importance"], rng, m["suggestion"]))
     else:
         L.append("## 缺失术语清单: 无(话题全覆盖)")
+    if discipline is not None:
+        L.append("")
+        L.extend(render_discipline_md(discipline))
     for n in res["notes"]:
         L.append("")
         L.append("> 注: " + n)
@@ -741,7 +954,12 @@ def main(argv=None):
     ap.add_argument("--keyword", default=None, help="主词;缺省取术语表首位并注明")
     ap.add_argument("--intent", choices=sorted(INTENT_COEF), default="definition",
                     help="搜索意图(默认 definition,只影响输出的意图系数行,不改分值)")
-    ap.add_argument("--facts", default=None, help="AI 事实清单文件(每行一条)")
+    ap.add_argument("--facts", default=None, help="AI 事实清单文件(每行一条;"
+                    "行首可加 D:/K: 前缀分级——D=点名声明,K=中性观察,未标注按 K)")
+    ap.add_argument("--discipline", action="store_true",
+                    help="纪律层(niubigeo N7 共识词筛+N8 D/K 事实分报):--json 时追加"
+                         "顶层 discipline 键(默认输出逐键不变,不改任何分数);"
+                         "markdown 报告恒含纪律层节,无需此开关")
     ap.add_argument("--json", action="store_true", help="JSON 输出(含 schema_version)")
     args = ap.parse_args(argv)
 
@@ -785,7 +1003,8 @@ def main(argv=None):
         top = max(terms, key=lambda t: (t["importance"], sum(t["freqs"])))
         keyword = top["term"]
 
-    facts = load_facts(args.facts)
+    facts_parsed = load_facts(args.facts)          # None | [(D|K, 事实文本), ...]
+    facts = None if facts_parsed is None else [t for _c, t in facts_parsed]
     res = score_text(draft, model, keyword, facts)
     res["_text"] = draft
     if not args.keyword:
@@ -796,7 +1015,10 @@ def main(argv=None):
         c["_text"] = body
         comp_results.append(c)
 
-    out = build_report(res, args, model, keyword, facts, comp_results, out_json=args.json)
+    discipline = build_discipline(model, keyword, draft, facts_parsed)
+
+    out = build_report(res, args, model, keyword, facts, comp_results,
+                       out_json=args.json, discipline=discipline)
     print(out)
     return 0
 
