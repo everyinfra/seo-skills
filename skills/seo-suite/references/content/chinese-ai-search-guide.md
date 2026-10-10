@@ -104,7 +104,7 @@
 
 来源:[aigclink/geolook](https://github.com/aigclink/geolook) 全仓——SKILL.md + references/ 8 文件(method/cn-source-ranking/cn-platforms/global-platforms/content-patterns/attribution/sources)。与本文既有数据同源(CN-GEO v2.0.1 上游是 yaojingang/geo-citation-lab),以下只列此前未吸收的增量。
 
-### 9.1 漏斗分层与"被引次数 ≠ 被采纳深度"(海外三平台,arXiv:2604.25707)
+### 9.1 漏斗分层与"被引次数 ≠ 被采纳深度"(海外三平台,arXiv:2604.25707,测量于 2026-04)
 
 三段漏斗:①是否触发联网检索(问题类型决定:时效/事实/决策类更易触发)→②哪些信源进引用列表(域名权威/站点类型/可抓取)→③哪些内容真被吸收进答案(对题性/长度/结构/证据密度)。
 

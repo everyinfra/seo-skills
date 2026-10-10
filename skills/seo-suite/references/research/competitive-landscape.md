@@ -50,11 +50,11 @@
 | Otterly/Goodie/Athena/Rankscale/Bluefish($68M)/50+ 长尾 | — | 赛道进入洗牌期;价值从"监测面板"向"监测→归因→执行闭环"迁移 |
 
 **关键行业数据(引用时附来源)**:
-- AIO 对点击的影响:Pew 8% vs 15%(2025-07);Ahrefs 更新为 **-58%**(2026-02);ipullrank:AIO 查询零点击 80-83%
-- Semrush:AI 搜索访客转化率是自然搜索的 **4.4 倍**(量小质高)
-- 75% 被 AIO 引用的域同时位列自然结果 top12(Botify)——GEO 是 SEO 的延伸不是替代
+- AIO 对点击的影响:Pew 8% vs 15%(2025-07);Ahrefs 更新为 **-58%**(2026-02);ipullrank:AIO 查询零点击 80-83%[待核:测量月]
+- Semrush:AI 搜索访客转化率是自然搜索的 **4.4 倍**(量小质高;测量于 2025-06)
+- 75% 被 AIO 引用的域同时位列自然结果 top12(Botify)——GEO 是 SEO 的延伸不是替代[待核:测量月]
 - **llms.txt 裁决**(三份实证):Otterly 90 天实验 0.1% 请求率;Ahrefs 13.7 万域研究 97% 文件整月零请求(AI 消费者最大头是 GPTBot 和 **Claude-Code**);Google 官方"非必需"——**定位为编程 agent 基础设施而非可见性杠杆**
-- 什么真提升引用:统计数据/引语/来源 +40%(KDD 2024);Q&A 格式 +25.5%;促销语气 **-26.2%**;前 30% 内容贡献 55% 的 AIO 引用;Wikipedia+YouTube+Reddit+Amazon 占 AIO 引用 38%
+- 什么真提升引用:统计数据/引语/来源 +40%(KDD 2024);Q&A 格式 +25.5%[待核:测量月];促销语气 **-26.2%**[待核:测量月];前 30% 内容贡献 55% 的 AIO 引用[待核:测量月];Wikipedia+YouTube+Reddit+Amazon 占 AIO 引用 38%[待核:测量月]
 
 **指标通行做法**:mention(含未链接)与 citation 必须分开;ChatGPT=品牌提及渠道(少链接),Perplexity/AIO=引用流量渠道;visibility 只能比竞品(无行业绝对基准);prompt 库 15-50 条起步、跑 3 次取多数并标方差;**AI 流量归因**:GA4 原生只覆盖部分引擎,Claude/Perplexity 需自建 channel 正则,AIO 点击 referrer 是 google.com 无法区分,一切 AI referrer 数字当下限看。
 
@@ -73,11 +73,11 @@
 | unlighthouse | 4,892★,npm 月下载 20 万 | **smart sampling**(按路由模板去重采样);官网自带 /llms.txt;免费小工具矩阵获客 |
 | seranking/seo-skills | 161★ | 大厂官方 skill 仓库样板:插件内 `.mcp.json` 声明式捆绑官方 MCP,装完即用;26 skill 全部明示 API 调用 |
 
-**赛道位置判断**:2025-2026 开源 SEO 重心从"PHP 面板"两极分化——**Claude skill/插件形态**(claude-seo 18.6k★)与 BYOK 自托管 GEO 追踪。seo-suite 的差异化资本:18 语言市场门户(无人做)、自更新信源循环、38 脚本纯 stdlib 零依赖、75 金标测试。最大短板:无 Plugin/Marketplace 包装(claude-seo 一条命令安装)、内容侧无 brief 模板与评分器。
+**赛道位置判断**:2025-2026 开源 SEO 重心从"PHP 面板"两极分化——**Claude skill/插件形态**(claude-seo 18.6k★)与 BYOK 自托管 GEO 追踪。seo-suite 的差异化资本:18 语言市场门户(无人做)、自更新信源循环、52 脚本纯 stdlib 零依赖(原 38,现为 52)、523 金标测试(原 75,现为 523)。最大短板:无 Plugin/Marketplace 包装(claude-seo 一条命令安装)、内容侧无 brief 模板与评分器。
 
 ## 六、借鉴清单(合并去重,按 价值×可行性 排序)
 
-"现状"列对照工作副本真实状态(38 脚本/107 文档/14 模板/75 测试/18 门户),不是安装副本。
+"现状"列对照工作副本真实状态(52 脚本/114 文档/22 模板/523 测试/18 门户;2026-10-11 对勘,原记录 38 脚本/107 文档/14 模板/75 测试),不是安装副本。
 
 | # | 借鉴点 | 来源 | 现状 | 落地 |
 |---|---|---|---|---|

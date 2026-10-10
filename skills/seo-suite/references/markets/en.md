@@ -24,7 +24,7 @@
 - 爬虫构成反转:Q3 2026 **GPTBot 降至 AI-bot 流量 8.05%,OpenAI 搜索索引爬虫翻倍**:
   - 训练爬虫退潮、检索爬虫主导;robots"三类分策"基线不变,但**日志分析勿以 GPTBot 体积外推引用机会**;
   - 反向警示同样成立:封训练爬虫连带封引用爬虫的误杀仍是最常见错误。
-- AIO 与 AI Mode 的社媒链接差:**67.66% AIO 响应带社媒链接 vs 32.39% AI Mode**(Social Media Today 汇总口径)——社媒占位(Reddit/YouTube)对 AIO 的边际收益高于 AI Mode,分产品报告。
+- AIO 与 AI Mode 的社媒链接差:**67.66% AIO 响应带社媒链接 vs 32.39% AI Mode**(Social Media Today 汇总口径[待核:测量月])——社媒占位(Reddit/YouTube)对 AIO 的边际收益高于 AI Mode,分产品报告。
 
 ### 3. Google 2026-09 spam 更新与更新节奏
 

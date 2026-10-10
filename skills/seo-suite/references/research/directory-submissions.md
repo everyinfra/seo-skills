@@ -120,7 +120,7 @@ AI 搜索引擎（ChatGPT/Perplexity/Gemini/Copilot/Claude）**不排名、只�
 | 权威语气 | +25% | | ~~关键词堆砌~~ | **−10%，禁用** |
 | 易于理解 | +20% | | | |
 
-最佳组合：**流畅度 + 统计数据**。FAQPage schema 自述 +40% AI 可见度。
+最佳组合：**流畅度 + 统计数据**。FAQPage schema 自述 +40% AI 可见度[待核:测量月;系 AI 可见面主张,与 SERP 富结果退役无关]。
 
 ### Phase 0 闸门扩展：AI 爬虫放行清单
 
@@ -128,7 +128,7 @@ robots.txt 须放行：Googlebot、Bingbot、PerplexityBot、ChatGPT-User、Clau
 
 ### 平台分因子（其 platform-algorithms.md 汇编）
 
-- **ChatGPT**（SE Ranking 129K 域研究，逆向推断）：引荐域名数是最强预测因子（>350K 域≈8.4 平均引用）；域信任分 91–96≈6 引用、97–100≈8.4；**30 天内更新的内容获 3.2x 引用**；品牌官方域比第三方被引多 11.1 个百分点；头部引用源 Wikipedia 7.8% / Reddit 1.8% / Forbes 1.1%。
+- **ChatGPT**（SE Ranking 129K 域研究，逆向推断;研究发布约 2025-12,头部引用源占比与 Profound 2025-06 口径同值,两源勿混[待核]）：引荐域名数是最强预测因子（>350K 域≈8.4 平均引用）；域信任分 91–96≈6 引用、97–100≈8.4；**30 天内更新的内容获 3.2x 引用**；品牌官方域比第三方被引多 11.1 个百分点；头部引用源 Wikipedia 7.8% / Reddit 1.8% / Forbes 1.1%。
 - **Perplexity**：放行 PerplexityBot + FAQ schema（更高引用率）+ **站内托管 PDF（被优先引用）** + 语义相关优先于关键词。
 - **Google AI Overview**：E-E-A-T + 结构化数据 + 专题权威（内容簇+内链）+ 权威引用（+132% 可见度）。
 - **Copilot/Bing**：**Bing 索引是引用前提**；LinkedIn/GitHub 提及有助力；页速 <2s；清晰实体定义。

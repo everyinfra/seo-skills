@@ -116,7 +116,9 @@ Google 对 title 和 meta description 都没有规定字数上限，结果页按
 | BreadcrumbList | itemListElement(position/name/item) | — |
 | LocalBusiness / Event | name+address / name+startDate+location | — |
 
-JSON-LD 优先,放 head 或 body 末;多类型用 `@graph` 合并为一块。格式硬规则:日期 ISO 8601、URL 全限定、枚举值精确;**schema 必须与页面可见内容一致,标记不存在的内容即违规**。验证:Rich Results Test + validator.schema.org + Search Console 增强报告。AI 面:结构化数据带来 30–40% AI 可见度提升,关键词堆砌反而 −10%(评分细节见 [citability-scoring.md](citability-scoring.md))。
+注:FAQPage/HowTo 的**SERP 富结果已停展**(FAQ 2026-05-07 全站退役;HowTo 2023-09)——标记本身合法、仅作语义描述用,口径见 [deprecated-signals.md](../technical/deprecated-signals.md)。
+
+JSON-LD 优先,放 head 或 body 末;多类型用 `@graph` 合并为一块。格式硬规则:日期 ISO 8601、URL 全限定、枚举值精确;**schema 必须与页面可见内容一致,标记不存在的内容即违规**。验证:Rich Results Test + validator.schema.org + Search Console 增强报告。AI 面:结构化数据带来 30–40% AI 可见度提升[待核:测量月],关键词堆砌反而 −10%(评分细节见 [citability-scoring.md](citability-scoring.md))。
 
 **页面级 URL/模板补充**:pSEO 用子目录不用子域(权重集中);模板页 title/meta 逐页唯一要进发布前 checklist(与上文"模板生成的页面抽样检查"呼应)。对比页 URL 惯例四式:单数替代 `/alternatives/[竞品]`、复数 `/alternatives/[竞品]-alternatives`、对打 `/vs/[竞品]` 或 `/compare/`、竞品互殴 `/compare/[A]-vs-[B]`;title 直接用对应目标关键词(如"[竞品] alternative(s)"、"[你] vs [竞品]")。
 

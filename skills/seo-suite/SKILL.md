@@ -27,7 +27,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(52 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(55 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读):
 
 **审计与页面质量**
@@ -47,7 +47,10 @@ metadata:
 - `forecast.py --kws kws.csv`:SEO 商业提案六步(seoClarity 官方):est_traffic→校准系数持久化→三 scenario(rank3/pct10/pos2,>30 位不预测)→orders/value/acquisition_value;省钱+赚钱双结构;配 templates/monitor/forecast-report.md
 - `prioritize.py --audit audit.json`:条件优先级引擎(Botify 口径):18 条声明式规则+放大器+条件依赖型(noindex 意图/canonical PageRank)+segment 切换重算;"立即处理/值得探索"两栏
 - `changelog.py --db monitor.db`:页面变更审计追踪(Conductor 口径):5 枚举事件+字段白名单+14 天日/更早周粒度;根因诊断"流量下跌那天页面改了什么"
-- `doctor.py`:环境自检+凭证分层探测(T0 纯静态→T3 GA4,只探键名不读值)+全输出 redact;退出码 0=ready/3=需处理;报告按 tier 自动声明数据覆盖范围 
+- `doctor.py`:环境自检+凭证分层探测(T0 纯静态→T3 GA4,只探键名不读值)+全输出 redact;退出码 0=ready/3=需处理;报告按 tier 自动声明数据覆盖范围
+- `ai_views.py --url|--html`:AI 视图层生成(Scrunch AXP 等价):语义净化版 HTML+Markdown+tokereductions 统计;默认 dry-run,--apply 写 ./ai-views/,人审后自行部署;不承诺引用提升(同 llms.txt 实证口径)
+- `envelope.py --audit audit.json [--health] [--priority]`:三源统一封套 audit-data.json(summary/categories/action_plan 三段 phases)+**部分落盘契约**(每 category 即落盘 findings/*.md,--resume 断点续跑)
+- `benchmark_report.py --audits dir|--monitor-db|--scores`:匿名基准聚合(State of GEO 式):P25/50/75 分布+Top 失败规则频次;偏差自白首尾强制;只聚合数字绝不含域名 
 
 **技术 SEO**
 - `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
@@ -265,6 +268,7 @@ metadata:
 - [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位);P0/P1 79 条已扩 Sitebulb 式解释层(what/why/trigger/caveat/fix/export 九字段)
 - [Brand Records 品牌事实档案](references/content/brand-records.md):六记录(含批准术语/never-do)+YAML 格式+缺口协议+Grounding Page 11 条——内容起草前必读,oracle_check.py 的输入
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
+- [niubigeo 深读](references/research/niubigeo-deep-read.md):6,848★ 五周爆发竞品(2026-09 创建)的架构深读与 Top 10 借鉴(提及检测 URL 掩码/gapLabel 七叉决策树/意图冻结分母/配对差分指纹/observed-consensus 词筛/D·K 纪律)——做 GEO 可见性功能前先查
 - [数据源合同表](references/overview/data-source-contract.md):全 52 脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
 - [CI 质量门手册](references/monitoring/ci-gates.md):三件套命令地图(site_audit→audit_compare→ci_format→action.yml)/siteone 阈值全表/LHCI 断言 schema/采样协议/防假 0 三律/三部署配方——进 CI 或定时审计前读
 - [过时信号看门表](references/technical/deprecated-signals.md):官方已停用/勿再推荐清单(带时间戳与一手来源)——**涉及 schema/富结果/CWV/GSC 口径的建议前必查**;tests/test_canonical_facts.py 用 16 条正则钉死已知错误陈述(套件内文档命中即测试失败)

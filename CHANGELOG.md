@@ -3,6 +3,16 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.34.1 - 2026-10-11
+
+- **第 7 波(9 agent,小批量重跑)——52→55 脚本,523→545 测试**:
+  - ai_views.py(AI 视图层:语义净化 HTML+MD+token 缩减统计,默认 dry-run 人审边界)/monitor **P2 七项**(meta removed 语义/h1·hreflang 指纹/GA 跟踪消失/非规范域 probe/字数漂移/improved-declined 汇总/expect 数组+selector_stable+防假 0)/规则目录**第三批 47 条(累计 170)**;
+  - citation_panel **score 子命令**(五维打分写回+校验器硬 cap 机检+top_pick 佐证降级+反通胀聚合)/envelope.py(三源统一封套+**部分落盘契约**+--resume)/评分契约测试(权重守恒断言+冻结 fixture+schema_version 补齐);
+  - benchmark_report.py(匿名基准聚合+偏差自白+域名绝不入输出)/全仓 freshness 扫描(修 21 处:数字一致性/日期口径/过时信号)/**niubigeo 深读入库**(Albert-Weasker/niubigeo 6,848★ 五周爆发,Top 10 借鉴规格);
+  - 事故处理:首跑 9 agent 并发触发账户速率限制全取消→小批量(3/批)重跑成功;回退取消波的半成品注释。
+
+
+
 ## 0.34.0 - 2026-10-10
 
 - **33 agent 六波实施(施工图 borrow-specs.md 全面落地)**——38→**52 脚本**、14→**22 模板**、75→**426 测试**,全部纯 stdlib:

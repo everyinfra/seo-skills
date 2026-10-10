@@ -12,7 +12,7 @@
       "name": "seo-suite",
       "source": "./",
       "description": "Agent-native SEO/GEO workbench: 18 language markets, 38 stdlib scripts, self-updating intel loop, monitoring daemon, 75 golden tests.",
-      "version": "0.34.0",
+      "version": "0.34.1",
       "author": {
         "name": "EveryInfra"
       },
