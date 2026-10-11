@@ -106,7 +106,13 @@ Google 官方三连:**不需要 llms.txt**("You don't need to create new machine
 
 - **6 表面**:Google AI Mode、AI Overviews、ChatGPT、Perplexity、Gemini、Copilot(I/O 2026 起 AI Mode 为默认搜索体验、~1B MAU、Gemini 3.5 Flash 底座)。**AI Mode≠AI Overviews,同查询引用源发散率约 40-60%(内部观察,需按自有探针集复核),必须分开探、分开记,禁止合并成"Google AI"再取均值**;
 - **探针计分**:cited-with-link 10 / mentioned 7 / concept-only 3 / absent 0 / misrepresented **-5**;逐表面出分,**禁止跨平台平均**(Perplexity 9/10 + ChatGPT 2/10 的均值毫无意义);单次 10-25 条查询(超 25 条成本/限速主导);引用准确性逐条事实核查是最常被跳过的一步——AI 会自信地幻觉品牌事实;
-- **I/O 2026 后续**:AI Overview→AI Mode 追问流全球上线(首引即多轮引文的入口,按"基础性引用"而非"短片段"优化);Information Agents(AI Pro/Ultra,2026 夏)为潜在第 7 探针目标,现阶段以 AI Mode 为代理。
+- **I/O 2026 后续**:AI Overview→AI Mode 追问流全球上线(首引即多轮引文的入口,按"基础性引用"而非"短片段"优化)。
+- **AI Mode info monitoring 全量(2026-09-28 向全员开放;入库 2026-10-12)**:I/O 2026-05 以"information agents"亮相→2026-06-12 先开 AI Ultra/Pro 订阅户→**2026-09-28 起 Robby Stein(Google Search 产品 VP)确认全球全量、免费**(渐进推送);AI Mode 月活已过 10 亿。**监控面(官方口径)**:站点(博客/新闻)、论坛与社媒帖、实时数据源(财经行情等)、**Shopping Graph(60B+ 商品,其中 20 亿 listing 每小时更新)**;用户一句"keep me updated on / alert me when"即建常驻监控,提醒经 Google app 推送,Search 还会**主动建议**监控任务。探针表由此更新四条:
+  - **新触发型验收面**:价格下降/补货/本地新开类"变化"本身成为提醒触发器——**本地与购物场景的新鲜度从加分项变硬门槛**:GBP 时段/帖/照片、带日期的活动与菜单页、社媒公告、评价时效须保持"变化即可被抓到"的状态(本地 AI 推荐使用率一年 6%→45%,BrightLocal,行业口径);
+  - **结构化 feed 一致性入探针**:GMC feed 价=页面 DOM 价=Product/Offer schema 价(不一致不只丢引用,还触发 GMC disapprovals);补 Event/LocalBusiness schema 承载可触发事件;
+  - **测量口径**:info monitoring 提醒**暂无 referrer 数据**——用 GSC 生成式 AI 报告(只有 impressions)+对照价格/公告变更日期做前后对比,与套件既有 AI 流量三源下界口径一致;
+  - **探针集新增一类"常驻查询"(standing queries)**:把用户监控任务的措辞("alert me when 降价/补货")纳入固定问题集——监控任务是持续运行的品牌接触面,一次入选即长期在跑。
+  - 来源:Robby Stein 口径经 SEJ/savvydealer 转述(2026-09-29);监控面与 60B+/20 亿每小时经 crossglobemarketing(2026-09-30)与 Google 官方演示核对;"实时数据源"为 Google 原文 real-time data sources,财经为其举例场景之一。
 
 ### 4. 实体一致性层("单一最高杠杆 AEO 投资",高于任何 schema 微调)
 

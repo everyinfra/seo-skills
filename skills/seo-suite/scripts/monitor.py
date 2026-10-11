@@ -11,7 +11,14 @@
             Conductor 头号触发器 "Pages became non-indexable")
            +canonical 目标健康度(HEAD 探测,连续 3 次失败才告警,D1 P0-2)
   4 存活    首页+关键页状态码/时延/https 混合内容
-周检叠加:标题/meta 漂移哈希、llms.txt 变更、sitemap lastmod 对比、AI 爬虫放行矩阵。
+周检叠加:标题/meta 漂移哈希、llms.txt 变更、sitemap lastmod 对比、AI 爬虫放行矩阵、
+  CWV 现场数据 p75(cwv_field,R0-3:field_data/PSI,任一 poor→cwv_poor warn/跨档→
+  cwv_regression info,无 PSI key=skipped 不猜)、citation decay(citation,R0-4:
+  项目目录 panel.json 复用 citation_panel decay 计算,decayed>0→citation_decay warn)。
+R0-2 接线:diff 在产 gsc_clicks_drop/visibility 类跌幅告警前,若 gsc.csv 含
+  Date+Query+Position 列则调 sensor_volatility(--context 同口径,零依赖 import;
+  失败静默跳过),verdict=high_volatility 时该告警降 info 并附注
+  "当日 SERP 高波动,疑似算法更新而非站点问题"。
 
 告警四级(critical/warn/info/low)+ 百分比阈值×最小样本地板 = 防疲劳;
 low=自愈(上次告警本次恢复)。cooldown:critical 12h / warn 24h / info 168h。
@@ -110,6 +117,11 @@ SITEMAP_INDEX_CAP = 5       # sitemap index 递归层数上限
 MAX_ROUTES = 200            # sample-keypages 建议路由上限(Next.js maxRoutes 惯例;超即截断+警告)
 GSC_PAGE_CAP = 1000         # gsc.csv 页级点击字典上限(防快照膨胀)
 
+# R0 接线常量(pipeline-completeness.md R0 节)
+SENSOR_HIGH_NOTE = "当日 SERP 高波动,疑似算法更新而非站点问题"  # R0-2:high_volatility 附注
+CWV_FIELD_PAGES = 5         # R0-3:周检 CWV 现场数据采 key_pages 前 N 页(PSI 配额预算)
+CITATION_PANEL_FILE = "panel.json"   # R0-4:项目目录的 citation_panel 面板(monitor 目录或其父)
+
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot",
                "PerplexityBot", "CCBot", "Google-Extended", "Bytespider", "Meta-ExternalAgent"]
 MARKET_BOTS = {"ru": ["YandexBot", "YandexAdditional"], "kr": ["Yeti"], "cn": ["Baiduspider"]}
@@ -165,6 +177,10 @@ PLAYBOOK = {
     "redirect_chain_broken":("恢复非规范域→canonical host 的 301(服务器/CDN 重定向规则),防重复内容(draft PR)", "draft_pr"),
     "main_content_change":  ("核对内容体量骤变(误发布/被篡改/软 404 变薄/模板丢正文区);无意则回滚(draft PR)", "draft_pr"),
     "layout_shift":         ("核对模板/布局改动是否有意(selector_stable 监控的首个 h2 漂移);无意恢复(draft PR)", "draft_pr"),
+    # R0 接线新增告警码
+    "cwv_poor":             ("按 references/technical/cwv-playbook.md 排查对应指标(LCP/INP/CLS);对照最近部署与第三方脚本变化", "human"),
+    "cwv_regression":       ("核对 CWV 档位退步(good→needs_improvement 等);查最近部署/新增第三方脚本/资源变化", "human"),
+    "citation_decay":       ("citation_panel decay 重写队列进 refresh 排期:更新过峰被引页(数据/时效/反共识钩)", "human"),
 }
 
 # 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
@@ -345,6 +361,16 @@ def pct_drop(prev_v, curr_v):
     if prev_v is None or curr_v is None or prev_v <= 0:
         return None
     return (prev_v - curr_v) / prev_v
+
+
+def _import_sibling(modname):
+    """零依赖兄弟模块加载(scripts/ 同目录的 field_data / sensor_volatility /
+    citation_panel,均 stdlib-only):sys.path 注入后 import。失败原样上抛,
+    由调用方决定降级(R0 接线的三处调用均"失败不猜/静默跳过")。"""
+    d = os.path.dirname(os.path.abspath(__file__))
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    return __import__(modname)
 
 
 # ---------- 存储层 ----------
@@ -1256,6 +1282,141 @@ def check_ssl(site):
     return out
 
 
+# ---------- R0 接线:sensor_volatility 上下文(R0-2)/ CWV 现场周检(R0-3)/ citation decay(R0-4) ----------
+
+# sensor_volatility.py 的列识别口径(前缀匹配,strip+lower;与此处 has_col 保持同形)
+_SENSOR_DATE_COLS = ("date", "日期")
+_SENSOR_QUERY_COLS = ("query", "top queries", "keyword", "查询", "关键字")
+_SENSOR_POS_COLS = ("position", "avg. position", "avg position", "排名", "平均排名")
+
+
+def _gsc_csv_has_sensor_columns(path):
+    """gsc.csv 是否含 Date+Query+Position 列(矩阵导出形态;页级/全期导出 → False)。"""
+    import csv as _csv
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        first = next(_csv.DictReader(f), None)
+    if not first:
+        return False
+    cols = {(k or "").strip().lower() for k in first}
+
+    def has(names):
+        return any(c.startswith(n) for c in cols for n in names)
+
+    return (has(_SENSOR_DATE_COLS) and has(_SENSOR_QUERY_COLS) and has(_SENSOR_POS_COLS))
+
+
+def sensor_volatility_context(gsc_csv):
+    """R0-2:gsc.csv → 最新可评分日的 SERP 波动上下文,与 sensor_volatility.py
+    --context 完全同口径(零依赖 import 其模块函数:read_position_rows→aggregate→
+    compute_days,verdict=high_volatility ⟺ score≥8 或 |z30|≥2)。
+    列不齐 / 单日数据 / 模块导入或任何计算失败 → None(静默跳过——波动上下文只是
+    跌幅告警的附注,绝不阻塞告警主路径)。"""
+    try:
+        if not gsc_csv or not os.path.exists(gsc_csv) or not _gsc_csv_has_sensor_columns(gsc_csv):
+            return None
+        sv = _import_sibling("sensor_volatility")
+        pos_by_date = sv.aggregate(sv.read_position_rows(gsc_csv))
+        if len(pos_by_date) < 2:          # 单日数据无法算日波动(首日无前日可比)
+            return None
+        days = sv.compute_days(pos_by_date)
+        if not days:
+            return None
+        day = days[-1]                    # --date 缺省 = 最新可评分日
+        high = day["score"] >= 8 or (day["z30"] is not None
+                                     and abs(day["z30"]) >= sv.Z_THRESHOLD)
+        return {"date": day["date"], "score": day["score"], "band": day["band"],
+                "z30": day["z30"], "verdict": "high_volatility" if high else "normal"}
+    except Exception:
+        return None
+
+
+def check_cwv_field(site, cfg):
+    """R0-3:CWV 现场数据周检——key_pages 前 N 页的 PSI loadingExperience(CrUX 页级
+    真实用户)mobile p75,官方阈值判档(零依赖 import field_data.collect 同口径)。
+    无 PSI key → skipped 不猜;field_data 导入失败/全页无现场数据 → error 不猜
+    (防假 0:请求失败绝不判 poor)。判定在 diff 侧:任一核心指标 poor → cwv_poor
+    (warn);较上期跨档退步 → cwv_regression(info)。"""
+    out = {"check": "cwv_field", "state": "skipped", "metrics": {}, "notes": []}
+    psi_key = (os.environ.get("PSI_API_KEY") or "").strip()
+    if not psi_key:
+        out["notes"].append("未设 PSI_API_KEY → cwv_field 跳过(不猜;export PSI_API_KEY 后启用)")
+        return out
+    try:
+        fd = _import_sibling("field_data")
+    except Exception as e:
+        out["state"] = "error"
+        out["metrics"] = {"error": "field_data 导入失败: %s" % e}
+        out["notes"].append("CWV 周检依赖同目录 field_data.py(stdlib-only),导入失败不猜")
+        return out
+    try:
+        n_pages = max(1, int(cfg.get("cwv_field_pages") or CWV_FIELD_PAGES))
+    except (TypeError, ValueError):
+        n_pages = CWV_FIELD_PAGES
+    paths = [parse_key_page(e)["path"] for e in (cfg.get("key_pages") or ["/"])[:n_pages]]
+    pages, n_field = {}, 0
+    for path in paths:
+        url = site + path if path.startswith("/") else path
+        try:
+            r = fd.collect(url, "mobile", psi_key=psi_key, crux_key=None)
+        except Exception as e:
+            out["notes"].append("CWV 采集异常 %s: %s(该页跳过,不猜)" % (path, e))
+            continue
+        for err in r.get("errors") or []:
+            out["notes"].append("CWV 采集错误 %s [%s]: %s"
+                                % (path, err.get("source"), err.get("message")))
+        field = r.get("field") or {}
+        entry = {k: field[k] for k in ("LCP", "INP", "CLS", "TTFB", "FCP") if k in field}
+        if entry:
+            pages[path] = entry
+            n_field += 1
+        else:
+            out["notes"].append("%s 无现场数据(不在 CrUX 数据集/样本不足或 PSI 无数据)→ 不猜" % path)
+    out["metrics"] = {"pages": pages, "strategy": "mobile", "source": "psi"}
+    if pages:
+        out["state"] = "ok"
+        poor = [p for p, m in pages.items()
+                if any((m.get(k) or {}).get("verdict") == "poor" for k in ("LCP", "INP", "CLS"))]
+        out["notes"].append("CWV 周检: %d/%d 页取到现场 p75(mobile),核心三项 poor 页 %d(官方阈值判档)"
+                            % (n_field, len(paths), len(poor)))
+    else:
+        out["state"] = "error"
+        out["notes"].append("CWV 现场数据全部无数据/失败 → check 记 error,diff 不产 cwv_*(防假 0)")
+    return out
+
+
+def citation_panel_candidates(mdir):
+    """R0-4:项目目录 panel.json 候选路径——monitor 目录内优先,其次其父目录
+    (项目根;citation_panel 默认把 panel.json 落在运行时 cwd=项目根)。"""
+    parent = os.path.dirname(os.path.abspath(mdir)) or "."
+    return [os.path.join(mdir, CITATION_PANEL_FILE),
+            os.path.join(parent, CITATION_PANEL_FILE)]
+
+
+def check_citation_decay(mdir):
+    """R0-4:citation decay 进告警链——项目目录 panel.json 在场时复用 citation_panel
+    的 decay 计算(decay-summary 子命令同源:decay_summary(load_panel(path))),把轻摘要
+    {rewriting, decayed_count, per_engine} 落进快照;diff 侧 decayed_count>0 →
+    citation_decay(warn)。无面板 → skipped 不猜;计算失败 → error 不猜。"""
+    out = {"check": "citation", "state": "skipped", "metrics": {}, "notes": []}
+    path = next((p for p in citation_panel_candidates(mdir) if os.path.isfile(p)), None)
+    if not path:
+        out["notes"].append("项目目录无 panel.json(citation_panel)→ citation decay 检查跳过,不猜")
+        return out
+    try:
+        cp = _import_sibling("citation_panel")
+        summary = cp.decay_summary(cp.load_panel(path))
+    except Exception as e:
+        out["state"] = "error"
+        out["notes"].append("citation decay 计算失败(panel.json 读取/解析/计算异常)→ 不猜: %s" % e)
+        return out
+    out["state"] = "ok"
+    out["metrics"] = dict(summary, panel=path)
+    if summary.get("decayed_count"):
+        out["notes"].append("citation decay: %d 个 (prompt,engine) cell 已过半衰(decayed)"
+                            "→ 建议 refresh/重写排期" % summary["decayed_count"])
+    return out
+
+
 class Budget:
     """单次运行时长上限(学 geo-score 的 budget 思路):超即中止后续检查。"""
 
@@ -1309,6 +1470,13 @@ def run_checks(mdir, cfg, kind, budget):
                 results[name] = {"state": "budget_skipped"}
             else:
                 results[name] = fn()
+        # R0-3:CWV 现场数据(PSI 采集,受 budget 门;无 key 时自查 skipped)
+        if budget.exhausted():
+            results["cwv_field"] = {"state": "budget_skipped"}
+        else:
+            results["cwv_field"] = check_cwv_field(site, cfg)
+        # R0-4:citation decay(本地 panel.json 计算,无网络,不吃 budget)
+        results["citation"] = check_citation_decay(mdir)
     return results
 
 
@@ -1394,7 +1562,8 @@ def cmd_run(args):
         apply_canonical_streaks(load_snapshot(conn, _prev_ok[0]) if _prev_ok else None, snap)
 
         states = {}
-        for grp in ("robots", "home", "redirects", "visibility", "gsc", "sitemap", "llms_txt", "ssl"):
+        for grp in ("robots", "home", "redirects", "visibility", "gsc", "sitemap", "llms_txt",
+                    "ssl", "cwv_field", "citation"):
             st = (results.get(grp) or {}).get("state")
             if st:
                 states[grp] = st
@@ -1523,6 +1692,18 @@ def snapshot_from_results(results):
         put("ssl", "cert", dict(sl["metrics"]))
     elif sl.get("state"):
         put("ssl", "cert", {"state": sl["state"]})
+    # R0-3:CWV 现场数据周检(非 ok 只落 state,diff 侧不产 cwv_*)
+    cwv = results.get("cwv_field", {})
+    if cwv.get("state") == "ok":
+        put("cwv_field", "field", dict(cwv.get("metrics") or {}))
+    elif cwv.get("state"):
+        put("cwv_field", "field", {"state": cwv["state"]})
+    # R0-4:citation decay 轻摘要(非 ok 只落 state,diff 侧不产 citation_decay)
+    ct = results.get("citation", {})
+    if ct.get("state") == "ok":
+        put("citation", "decay", dict(ct.get("metrics") or {}))
+    elif ct.get("state"):
+        put("citation", "decay", {"state": ct["state"]})
     return snap
 
 
@@ -1764,12 +1945,28 @@ def ci_junit_xml(ci):
             '</testsuites>\n' % (n, nf, props, n, nf, "\n".join(cases)))
 
 
-def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
-    """prev/curr 为扁平快照;baseline(可选)= ~7 天前 ok run 的快照,双窗口判定用。
+def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None, volatility=None):
+    """prev/curr 为扁平快照;baseline(可选)= ~7 天前 ok run 的快照,双窗口判定用;
+    volatility(可选,R0-2)= sensor_volatility --context 上下文 dict——verdict=
+    high_volatility 时 gsc/visibility 类跌幅告警降 info 并附注(详见 cmd_diff)。
     返回 list[dict(level/code/key/message/details/action,boundary))]。"""
     th = cfg.get("thresholds", DEFAULT_THRESHOLDS)
     site = cfg.get("site", "")
     A = []
+
+    # R0-2:当日 SERP 波动上下文(命令行 diff 前置计算;直调/旧调用缺省 None=不影响)
+    vol = volatility if isinstance(volatility, dict) else {}
+    vol_high = vol.get("verdict") == "high_volatility"
+    vol_note = ""
+    if vol_high:
+        z30 = vol.get("z30")
+        vol_note = ";%s(sensor_volatility %s score=%s,z30=%s)" % (
+            SENSOR_HIGH_NOTE, vol.get("date"), vol.get("score"),
+            ("%+.1f" % z30) if isinstance(z30, (int, float)) else "—")
+
+    def vol_det(details):
+        """高波动降级时把上下文一并落进 details(复核可查 score/z30/日期)。"""
+        return dict(details or {}, sensor_volatility=vol) if vol_high else (details or {})
 
     def add(level, code, key, message, details=None):
         action, boundary = PLAYBOOK.get(code, ("按 continuous-operations.md 对应级别 playbook", "human"))
@@ -1960,17 +2157,19 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                 if baseline is not None and isinstance(bv.get("visible_pages"), int) \
                         and bv["visible_pages"] == 0:
                     lvl, extra = "info", "(7 天基线亦为 0→端点口径抖动可能,降 info)"
+                if vol_high:   # R0-2:当日 SERP 高波动 → 疑似算法更新,降 info+附注
+                    lvl, extra = "info", vol_note
                 add(lvl, "visibility_zero", "site",
                     "site: 抽查可见页 %d → 0(端点成功返回,疑似去索引/处罚)%s" % (pvis, extra),
-                    {"prev": pvis, "curr": cvis, "sample": cv.get("sample"),
-                     "method_note": "%s 端点方向抽样,非官方索引数"
-                                    % (cv.get("serp_source") or "Bing HTML")})
+                    vol_det({"prev": pvis, "curr": cvis, "sample": cv.get("sample"),
+                             "method_note": "%s 端点方向抽样,非官方索引数"
+                                            % (cv.get("serp_source") or "Bing HTML")}))
             else:
                 d = pct_drop(pvis, cvis)
                 if d is not None and d * 100 >= int(th.get("visibility_drop_pct", 30)):
-                    add("warn", "visibility_drop", "site",
-                        "site: 抽查可见页 %d → %d(−%.0f%%)" % (pvis, cvis, d * 100),
-                        {"prev": pvis, "curr": cvis})
+                    add("info" if vol_high else "warn", "visibility_drop", "site",
+                        "site: 抽查可见页 %d → %d(−%.0f%%)%s" % (pvis, cvis, d * 100, vol_note),
+                        vol_det({"prev": pvis, "curr": cvis}))
         elif pvis is None:
             A.append({"level": "info", "code": "visibility_baseline", "key": "site",
                       "message": "可见性基线建立: %d 页(下次 run 才参与告警)" % cvis,
@@ -1984,8 +2183,9 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
         floor = int(th.get("gsc_min_clicks", 5))
         d = pct_drop(pc, cc)
         if d is not None and min(pc, cc) >= floor and d * 100 >= int(th.get("gsc_clicks_drop_pct", 20)):
-            add("warn", "gsc_clicks_drop", "file", "GSC 点击 %d → %d(−%.0f%%,地板 %d)"
-                % (pc, cc, d * 100, floor), {"prev": pc, "curr": cc})
+            add("info" if vol_high else "warn", "gsc_clicks_drop", "file",
+                "GSC 点击 %d → %d(−%.0f%%,地板 %d)%s" % (pc, cc, d * 100, floor, vol_note),
+                vol_det({"prev": pc, "curr": cc}))
         elif d is not None and d < -0.5 and pc >= floor:
             add("info", "gsc_clicks_spike", "file", "GSC 点击 %d → %d(+%.0f%%)"
                 % (pc, cc, -d * 100), {"prev": pc, "curr": cc})
@@ -2003,6 +2203,57 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
             A.append({"level": "info", "code": "sitemap_urls_grew", "key": "index",
                       "message": "sitemap URL 数 %d → %d(+%d)" % (puc, cuc, cuc - puc),
                       "details": {}, "action": "记录,无需动作", "boundary": "auto"})
+
+    # --- 周检:CWV 现场数据 p75(R0-3;notify 已预留 cwv_* 路由)---
+    # 口径:check_cwv_field 采的 field_data/PSI mobile p75,官方阈值判档。
+    # 任一核心指标(LCP/INP/CLS)poor → cwv_poor(warn,绝对阈值不依赖 prev);
+    # 未到 poor 但较上期跨档退步(good→needs_improvement / →poor 已被 poor 分支覆盖)
+    # → cwv_regression(info)。check error/skipped 或指标缺失 → 不猜。
+    cwv_grade = {"good": 0, "needs_improvement": 1, "poor": 2}
+    ccw = (curr.get("cwv_field") or {}).get("field", {})
+    pcw = (prev.get("cwv_field") or {}).get("field", {})
+    if isinstance(ccw.get("pages"), dict):
+        for path in sorted(ccw["pages"]):
+            m = ccw["pages"].get(path) or {}
+            verdicts = {}
+            for name in ("LCP", "INP", "CLS"):
+                v = ((m.get(name) or {}).get("verdict"))
+                if v in cwv_grade:
+                    verdicts[name] = v
+            if not verdicts:
+                continue
+            shown = ", ".join("%s=%s%s" % (k, m[k].get("value"), m[k].get("unit") or "")
+                              for k in ("LCP", "INP", "CLS") if k in m)
+            poor = sorted(k for k, v in verdicts.items() if v == "poor")
+            if poor:
+                add("warn", "cwv_poor", path,
+                    "CWV 现场数据(mobile p75)%s: %s——核心三项 poor(%s)"
+                    % (path, shown, "+".join(poor)),
+                    {"page": path, "verdicts": verdicts,
+                     "values": {k: m[k].get("p75") for k in verdicts},
+                     "strategy": ccw.get("strategy")})
+                continue
+            pm = (pcw.get("pages") or {}).get(path) or {}
+            for name in sorted(verdicts):
+                pv = ((pm.get(name) or {}).get("verdict"))
+                if pv in cwv_grade and cwv_grade[verdicts[name]] > cwv_grade[pv]:
+                    add("info", "cwv_regression", path,
+                        "CWV 现场数据(mobile p75)%s: %s 跨档退步 %s → %s(未到 poor)"
+                        % (path, name, pv, verdicts[name]),
+                        {"page": path, "metric": name, "prev_verdict": pv,
+                         "curr_verdict": verdicts[name],
+                         "prev_p75": (pm.get(name) or {}).get("p75"),
+                         "curr_p75": m[name].get("p75")})
+                    break
+
+    # --- 周检:citation decay 进告警链(R0-4)---
+    ccd = (curr.get("citation") or {}).get("decay", {})
+    if isinstance(ccd.get("decayed_count"), int) and ccd["decayed_count"] > 0:
+        add("warn", "citation_decay", "panel",
+            "AI 引用 decay: %d 个 (prompt,engine) cell 已过半衰(decayed)——"
+            "进 refresh/重写排期(citation_panel decay)" % ccd["decayed_count"],
+            {"decayed_count": ccd["decayed_count"], "rewriting": ccd.get("rewriting"),
+             "per_engine": ccd.get("per_engine"), "panel": ccd.get("panel")})
 
     # --- 关键页字段级漂移(P1-11:title/meta/canonical/og/watch 分字段,替全页 hash)
     # + D1 P2:removed 语义(新值空且旧值非空 → meta_removed warn,区别于 changed info)、
@@ -2149,8 +2400,13 @@ def cmd_diff(args):
                 baseline_missing = True
                 print("[!] WARNING: 无 7 天基线(库龄 %.1fd),双窗口降级未生效" % age_days,
                       file=sys.stderr)
+        # R0-2 接线:产 gsc/visibility 类跌幅告警前,先取当日 SERP 波动上下文
+        # (gsc.csv 含 Date+Query+Position 才有;列不齐/单日/导入失败 → None 静默跳过,
+        # 绝不阻塞告警主路径);high_volatility 时 compute_alerts 把跌幅告警降 info+附注
+        volatility = sensor_volatility_context(os.path.join(mdir, "gsc.csv"))
         inhibited = []
-        alerts = compute_alerts(prev, curr, cfg, baseline=baseline, inhibited_out=inhibited)
+        alerts = compute_alerts(prev, curr, cfg, baseline=baseline, inhibited_out=inhibited,
+                                volatility=volatility)
         # D1 P1→R5⑤:accepted_codes 白名单已在 compute_alerts 内先于抑制树应用
         # (接受≠消失:降 low+标 accepted,周报仍计数;此处只汇总命中数,不重复套用)
         n_accepted = sum(1 for a in alerts if a.get("accepted"))

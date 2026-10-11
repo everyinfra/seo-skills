@@ -113,3 +113,43 @@ expectedCtr 参考曲线(粗略行业均值,**只用于 gap 排序,不用于判�
 ### 页内内容分参考公式(crawlseo parseHtml)
 
 base 40 + title 在 15–65 字符 +15(有但不在区间 +5)+ description 在 50–160 +15(否则 +5)+ 恰好 1 个 H1 +15(多个 +5)+ 词数 ≥300 +15(≥100 得 +8)+ 有 schema +5 + 有 canonical +5,clamp 0–100。定位是**页内质量粗筛信号**,不是排名预测;配合 health score(100−8×CRITICAL−3×WARNING−1×INFO)分别看「这页写得如何」与「这站技术上如何」。
+
+## AI 可见度指标的行业词汇层:IAB 4P 对齐(入库 2026-10-12)
+
+IAB《Measuring Visibility in the AI Era》(2026-08-03 发布,36 页,Project Eidos 产出;工作组含 Walmart/Acxiom/Microsoft/WPP Media/eMarketer/Tinuiti)给了行业第一套统一测量词汇。立项背景:IAB 盘点 20+ 家 AI 可见度测量厂商,方法互斥、同周同品牌可返回显著分歧的结果;仅 16% 品牌系统性追踪 AI 可见度(McKinsey CMO 调查)。写报告、选工具、与客户对齐口径时,套件指标应对到该词汇;**IAB 只定词汇与披露要求,不给厂商评级**。
+
+### 4P 层级(自上而下)
+
+| 层 | IAB 定义 | 该层指标 |
+|---|---|---|
+| **Presence**(在场) | 品牌/产品是否出现在 AI 回答里 | mention rate(提及率)、citation rate(引用率)、share of voice、visibility momentum(可见性动量) |
+| **Prominence**(突出) | 出现的位置与次序 | 回答内 placement、排序位置 |
+| **Portrayal**(表述) | 被怎样描述 | sentiment(情感)、framing(框架)、**hallucination rate(幻觉率)**、factual inaccuracy(事实失准) |
+| **Persuasion**(说服) | 是否推动行动 | recommendation strength(推荐强度)、post-citation CTR(引用后点击率) |
+
+### 数据两级分类(选数据源/写报告前先定级别)
+
+- **Directional(方向级)**:够用于早期信号发现、内部简报、竞争感知;IAB 明确**不够格影响投放或战略决策**;
+- **Decision-grade(决策级)**:可用于预算分配与绩效评审。厂商须披露 **6 项**才够决策级:①样本量 ②查询量 ③prompt 类型覆盖 ④测试节奏(cadence) ⑤可复现性 ⑥数据验证。
+
+评估第三方工具时拿这 6 项当问卷,答不出的按方向级计;方向级数据进报告必须带"directional"标注,不进预算页。
+
+### 套件指标 → IAB 词汇映射
+
+| 套件口径(本文上节与 [agent-readiness](../technical/agent-readiness.md) 探针计分) | IAB 层·指标 | 备注 |
+|---|---|---|
+| ai_views visibility(提及品牌 run 数÷总 run 数) | Presence · mention rate | |
+| citation_panel coverage(Σ C(b,i)÷成功 cell 数) | Presence · citation rate | 跨品牌求和可 >100%,非 share |
+| share of voice(brand÷(brand+Σ竞品)) | Presence · SoV | 提及单位一致是前提 |
+| stability((1−Bray–Curtis)×100) | Presence · momentum(对偶面:波动) | 动量与稳定性同层报告 |
+| 探针计分 cited-with-link/mentioned/absent | Presence(未记位次时只落此层) | 位次入记录后升 Prominence |
+| 表述准确率(本文第五节) | Portrayal · factual inaccuracy | 分母=已核查事实条数 |
+| misrepresented −5 罚分(逐条事实核查) | Portrayal · hallucination rate | IAB 已把幻觉率标准化——纠错汇报可直接用行业词汇 |
+| ai_referral_log 三源下界 | Persuasion · post-citation CTR 的近似 | AI 引荐流量是"引用后行为"的下界观测(App 无 referrer) |
+| **缺口**:回答内位置/次序原生指标 | Prominence | GSC AI 报告只有 impressions;位次靠探针自采 |
+| **缺口**:post-citation CTR 直接口径 | Persuasion | referrer 清单+渠道组+日志三源近似,标"下界" |
+
+### 来源(核对于 2026-10-12)
+
+- 一手:[IAB Measuring Visibility in the AI Era 指南页](https://www.iab.com/guidelines/measuring-visibility-in-the-ai-era/)(2026-08-03)与 [发布说明](https://www.iab.com/news/iab-releases-measuring-visibility-in-the-ai-era/)(两级分类/披露要求的存在性);
+- 逐层解读核验:authoritytech.io(2026-08-05,4P 逐层指标+决策级 6 项原文:sample size/query volume/prompt type coverage/testing cadence/reproducibility/data validation)、meikai.ai(2026-08-10)、purposefulrelations.com(2026-08-04,与 AMEC GEO 原则/PRCA 指南对照)。

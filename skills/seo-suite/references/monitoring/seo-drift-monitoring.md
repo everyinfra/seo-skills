@@ -56,6 +56,12 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 
 **数据源**:Google 官方 Search Status Dashboard 的 Ranking 历史是最强"官方传感器"(只报确认事件);Semrush Sensor(活跃;**2026-09-18 全市场重算波动基线,历史分不可直接比**)/MozCast(活跃,偏美)/Algoroo(存活)为旁证;**RankRanger 实质死亡**(2022 被收购后不独立销售,2025 清理历史数据)——勿依赖单一传感器,固定面板会漏(2026-06-08~12 社区观测波动未被捕捉)。
 
+**第 0 步:算法更新 rollout 期间变更冻结(Freeze→Pause→Review;SEJ 2026-10 口径,20 视角调研 R6 定为最大单点缺口)**——归因流程启动前先过这一关。确认更新在 rollout 中(Status Dashboard 标 `rolling_out`,或传感器 z30 异常且窗口对齐)时:
+- **Freeze**:冻结一切对站点的变更——代码发布、title/meta 改写、批量内容上下线全部暂停。rollout 期间改站=污染归因:事后无法区分波动来自算法还是自家改动,也毁掉 DiD 对照组的事后纯净性;
+- **Pause 期间只做带日期快照**:GSC 逐日导出存档(标日期,供窗口对齐),monitor.py 照常 run/diff——监控是存证不是变更。critical 级事故响应(站点 down、robots 误封)**不受冻结约束**:那是救火不是变更,走 [continuous-operations](continuous-operations.md) 告警 playbook(第三节);
+- **Review 定损时点**:rollout 完成后再等 **10–14 天**才下结论(与下文第 6 条"1–2 周"同口径互证);被冻结的变更解冻后按 [program-management](program-management.md) 的 PRD/ticket 排期执行,不抢跑;
+- **对领导层的话术**:"天气预报不是复盘"——day5≠day14。rollout 中与刚结束的读数只能当天气预报汇报("正在波动,窗口关闭后 10–14 天给定损");把中间读数当复盘交结论=宣布一个还没发生的因果。
+
 **归因流程(官方《Debugging drops》+行业实践)**:
 1. 先排除数据假象(GSC data anomalies 页;clicks-only 还是 clicks+impressions 同降);
 2. 下降形态:断崖全站→算法/spam/安全;逐年重复波形→季节性(拉 16 个月+Trends 验证);单页/单模板→技术;缓慢下滑→内容相关性;
@@ -79,6 +85,7 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 ## 六、来源
 
 - 13 元素/SQLite DDL/17 规则/归一化规则：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-drift/SKILL.md`、`references/comparison-rules.md`、`scripts/drift_baseline.py`
+- 变更冻结协议(Freeze→Pause→Review、rollout 完成后 10–14 天定损、"天气预报不是复盘"话术):SEJ 2026-10(算法更新期 SEO 变更冻结方法论);20 视角调研 R6"运营体系"登记项,调研摘要见 [pipeline-completeness](../overview/pipeline-completeness.md) 第五节,改动治理配套(解冻后排期走 PRD/ticket)见 [program-management](program-management.md)
 
 ## 增量:对照组归因与发布回归(百仓扫描批 2/4)
 

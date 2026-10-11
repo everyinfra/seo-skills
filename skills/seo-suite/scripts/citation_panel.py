@@ -38,6 +38,10 @@
           # citation decay 判定(Profound 官方方法论,2026-09 88.3 万页研究;阈值抄自官方):
           # 7 点滚动均值(官方 14 天,采样密度低取 7)/ 资格闸门 4 道 /
           # 半衰=peak 后平滑≤50%peak 且连续 14 天无反弹 / 状态机 5 态 / 重写队列
+  decay-summary [--metric cited|mentioned] [--json] [--panel PATH]
+          # R0-4 轻摘要(monitor.py 周检同源): 复用 decay 计算,--json 出单行
+          #   {rewriting, decayed_count, per_engine}——rewriting=重写队列长度
+          #   (decaying+decayed),decayed_count=已过半衰 cell 数,per_engine=分引擎计数
   score   (--run RUNID | --last) --scores scores.json [--panel PATH]
           # geo 打分写回(geo-scoring-rubric 五维打分卡,references/content/):
           #   agent 按卡语义打分 → 机检硬规则(硬 cap/枚举/top_pick 佐证/字段白名单/
@@ -1390,6 +1394,52 @@ def cmd_decay(args):
     return 0
 
 
+# ---------- decay 轻摘要(R0-4: decay-summary 子命令 + monitor.py 周检共用) ----------
+
+def decay_summary(panel, metric="cited"):
+    """R0-4 轻摘要: 复用 analyze_decay 的 decay 计算,产出
+    {rewriting, decayed_count, per_engine}——rewriting=重写队列长度(decaying+decayed,
+    官方口径"过峰且 share 正跌向峰值一半"才是该更新的页),decayed_count=状态机已判
+    decayed(过峰且平滑≤50%peak 持续 14 天无反弹)的 cell 数,per_engine=分引擎计数
+    (跨引擎相关仅 0.03-0.09,分引擎独立判定是硬规则)。monitor.py 周检经
+    check_citation_decay 调本函数(decayed_count>0 → citation_decay warn)。"""
+    result = analyze_decay(panel, metric=metric)
+    per_engine = {}
+    for c in result["cells"]:
+        if c["status"] == "decayed":
+            per_engine.setdefault(c["engine"], {"decayed_count": 0, "rewriting": 0}) \
+                      ["decayed_count"] += 1
+    for c in result["rewrite_queue"]:
+        per_engine.setdefault(c["engine"], {"decayed_count": 0, "rewriting": 0})["rewriting"] += 1
+    return {"rewriting": len(result["rewrite_queue"]),
+            "decayed_count": sum(v["decayed_count"] for v in per_engine.values()),
+            "per_engine": per_engine, "metric": metric}
+
+
+def cmd_decay_summary(args):
+    panel = load_panel(args.panel)
+    if not panel.get("runs"):
+        print("错误: 面板尚无 runs,先用 record 录入采样: %s" % args.panel, file=sys.stderr)
+        return 1
+    s = decay_summary(panel, metric=args.metric)
+    if args.json:
+        print(json.dumps(s, ensure_ascii=False))
+    else:
+        L = ["== citation decay 摘要: %s(Profound 官方方法论;阈值抄自官方)=="
+             % panel.get("brand", "?"),
+             "metric=%s | decayed(已过半衰)=%d | 重写队列(decaying+decayed)=%d"
+             % (s["metric"], s["decayed_count"], s["rewriting"])]
+        if s["per_engine"]:
+            for eng in sorted(s["per_engine"]):
+                pe = s["per_engine"][eng]
+                L.append("  %-12s decayed=%d rewriting=%d"
+                         % (eng, pe["decayed_count"], pe["rewriting"]))
+        else:
+            L.append("  (无已达 decay 判定门槛的 cell)")
+        print("\n".join(L))
+    return 0
+
+
 # ---------- geo 打分写回(geo-scoring-rubric 五维打分卡) ----------
 # 出处: references/content/geo-scoring-rubric.md(2026-10-10;oneglanse 441 行骨架 +
 # 本套件证据约束)。geo 是**分析层扩展键**,写进 results.<prompt>.geo;采集层口径
@@ -2049,6 +2099,15 @@ def build_parser():
     p.add_argument("--json", action="store_true", help="输出 JSON(默认 markdown)")
     p.add_argument("--panel", default="panel.json")
     p.set_defaults(func=cmd_decay)
+    p = sub.add_parser(
+        "decay-summary",
+        help="decay 轻摘要 {rewriting,decayed_count,per_engine}(R0-4;monitor 周检同源)")
+    p.add_argument("--metric", default="cited", choices=("cited", "mentioned"),
+                   help="序列取值(默认 cited=被引)")
+    p.add_argument("--json", action="store_true",
+                   help="单行 JSON {rewriting,decayed_count,per_engine}(默认人类可读摘要)")
+    p.add_argument("--panel", default="panel.json")
+    p.set_defaults(func=cmd_decay_summary)
     p = sub.add_parser(
         "score", help="geo 打分写回(geo-scoring-rubric;校验后写 results.<prompt>.geo)")
     p.add_argument("--run", default="", help="目标 run_id(与 --last 二选一)")

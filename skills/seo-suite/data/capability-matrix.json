@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 61,
+  "script": 62,
   "template": 24,
   "reference": 13,
   "stable": 70,
-  "beta": 27,
+  "beta": 28,
   "draft": 1
  },
  "entries": [
@@ -1333,6 +1333,19 @@
    "data_source": "缺源跳过告警不猜;三源全缺退出 1",
    "fallback_mode": "②",
    "tests_file": "tests/test_content_queue.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "gsc_api.py",
+   "group": "scripts/数据接入",
+   "inputs": [
+    "服务账号 JSON(--sa/env GSC_SA_FILE/~/.config/seo-suite/gsc.json)"
+   ],
+   "outputs_schema": "csv",
+   "data_source": "GSC Search Analytics API(真实 OAuth RS256,纯 stdlib RSA)",
+   "fallback_mode": "②无凭证→auth 报错指路;配额 1200qpm 注记",
+   "tests_file": "tests/test_gsc_api.py",
    "status": "beta"
   }
  ]

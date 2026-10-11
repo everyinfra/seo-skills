@@ -133,6 +133,18 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 
 **产品状态注记**(S 级,写报告前重查):ChatGPT Atlas 浏览器 2026-08-09 报道停止;Project Mariner 2026-05-04 报道关闭;Chrome WebMCP origin trial M149–M156、**无 ship 里程碑**;Lighthouse 13.5.0(PSI 同版);Web Bot Auth `draft-ietf-webbotauth-httpsig-protocol-00`(2026-09-01),`Signature-Agent` 已改字典形式 `sig1="https://signer.example"`。
 
+**个人 agent 客户端第二波(2026-08~09 上线,入库 2026-10-12)**——"user agent 替用户读页、替用户做品牌判断"从假说变成一类真实受众;与上表"浏览器内 agent"不同,这批是**独立常驻产品**:
+
+| 客户端 | 上线 | 关键行为 | 获取/价格(测于 2026-10-12) |
+|---|---|---|---|
+| **Meta Muse** | 2026-09-08(仅美国) | 个人 agent,主动帮用户盯目标/出主意;跑在专属 Muse Secure VM,**Sentinel agent 审批一切外联动作** | "大多数用途免费"+订阅;Muse App(iOS/Android)/WhatsApp/muse.ai;Confidential VM 承诺 2026 内 |
+| **OpenAI dots** | 2026-09-29(DevDay) | always-on agent(GPT-6 Astra 底座),**每个 dot 配自带 Chrome+Linux 的云电脑**、连 4,000+ 应用插件;主动作业限只读研究(写私有笔记) | 首个 dot 含于 Pro/Business Premium;**EEA/瑞士/英国上线时排除**;建首个 dot 须桌面端 |
+| **xAI(SpaceX 旗下)Grok Bot** | 2026-08-11(beta) | 多个"AI 队友"**共享一台云电脑**,能登录无 API/MCP 的站点与工具,可录制你的操作流程并回放 | SuperGrok 各档与 Cursor Pro/Pro+/Ultra/Teams 附带(独立用量桶);桌面+iOS;企业候补 |
+| **Instinct** | 2026-08 邀请制 | **无 App 助手**:短信/电话直达,替用户订行程、付账单、跑腿——品牌接触点全在被代理的网页/电话流程里 | 2026-09-28 融 $1B C 轮、估值 $10B(Reuters/TechCrunch;Sequoia 领投,Benchmark/Coatue 跟投) |
+| **Perplexity Computer** | 2026-02-25 | 编排 **19 个模型**的 agentic 计算平台(general-purpose digital worker);**2026-08-25 起可本地运行**,用用户的电脑完成任务 | Pro/Enterprise 分层推进中 |
+
+同波补充项(未入表):Google **Gemini Spark**(I/O 2026 宣布,24/7 后台 agent,设备关机也跑,Google AI Pro/Ultra 附带)、Anthropic **Claude Tag**(2026-06-23 beta,Slack 内常驻队友)。**GEO 含义**:这层受众不检索排名而是**直接读页面替人决策**——品牌事实跨页一致、关键信息在初始 HTML 且无登录墙、跨渠道 NAP 一致,从"优化建议"升级为验收项;验收挂到 [agent-readiness](../technical/agent-readiness.md) 层。
+
 **robots.txt 组选择的三个暗坑**(RFC 9309;access-policy.md):
 1. 爬虫只遵守**点名它的最具体组**——存在 `User-agent: GPTBot` 组时,`*` 组对该爬虫整组失效。Cloudflare 托管 robots 把 `Content-Signal:` 放 `*` 组,而规范没有说它能逃逸组选择——**站点有命名组时必须在每组内重复该行**。
 2. 5xx robots → 合规爬虫按全站禁用处理;4xx → 视为无限制(与 ai-crawler-policy 一致,此处为 claude-seo 独立复核)。
@@ -161,3 +173,48 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 6. **Amazon 分类待审**:官方新列 `Amzn-SearchBot`(搜索含 Alexa)与 `Amzn-User`(代用户抓取),并称 Amazonbot 的抓取可能用于训练 Amazon 模型——Amazonbot 仍在检索表但标注待复审。
 7. **活体探测的解释限定**:探测从审计者自己的 IP 发厂商 UA 串(非厂商 IP 段);Claude-SearchBot/Claude-User 官方只发布 token,UA 串由 token 构造。**做 IP 段/rDNS 验证的防火墙会拒绝这些探测但服务真爬虫——拒绝只能读作"该服务器拒绝未验证爬虫 UA",不是厂商爬虫被封的证据**。
 8. **评分立场**(可借鉴):只对检索爬虫评分——封全部训练爬虫+退出 token**不扣一分**;"允许检索+拒绝训练"是合法姿势。但"不扣分"≠"无代价":封 Google-Extended 同时退出 Gemini Apps/Vertex grounding(见第 4 条),其余(cohere-ai/Bytespider/anthropic-ai/CCBot 下游)代价未知——报告如实分开写。
+
+## 付费 AI 面:ChatGPT Ads 规模化 vs Perplexity 退出广告(入库 2026-10-12)
+
+两个头部 AI 助手在"卖不卖广告"上走出**相反方向**,付费与自然策略必须分平台制定:
+
+| | ChatGPT Ads(OpenAI,扩张方) | Perplexity(退出方) |
+|---|---|---|
+| 方向 | 规模化:60+ 国,2026-08-31 报道年化 run rate $1B | **全面退出**:FT 2026-02-17 报道因"广告侵蚀用户信任"放弃广告,年内关停既有项目(此前已停接新广告主,SEL 2026-02-18 确认"不打算回归") |
+| 关键节点 | 2026-01-16 宣布测试→**02-09 美国试点**(答案尾部 sponsored 卡,CPM,托管起投传闻 ~$200–250K 后降至 ~$50K)→**05-05 美国自助开闸**(CPC,无最低花费)→06-06 英国(首个欧洲市场)→**08-18 宣布/08-24 起欧洲 31 市场投放、08-31 欧洲自助**(印度/中东北非同期)→08-17 巴西/墨西哥→09-23 东南亚+台湾 | 变现转 **Comet Plus 订阅($5/月)+出版商分成**:首期 **$42.5M** 收入池、**订阅收入的 80% 分给被引用出版商**(2025-08-25/26 WSJ/Axios/Digiday 一致口径)——被引价值可直接货币化 |
+| 格式(2026-10 现状) | 文+图 sponsored 卡;商品 feed 广告(价格/评分卡,07 下旬);商品轮播(08 初,09-03 卡级报表);Sponsored Agents(09-16 美国 alpha,点开进品牌 agent 对话);**10-05 新视觉格式**:在图像生成流内测试(10 月下旬起、美国首批广告主),与生成图分离并标注,敏感话题不展示 | 无广告面;Comet 浏览器连带拦截 YouTube 广告 |
+| 定向 | **仅上下文**:每广告组 ≤2,000 条 context hints;客户名单(≥2.5 万匹配用户,排除名单无下限);**无关键词/人口定向**;EEA/瑞士只用聊天主题+粗位置+设备(无个性化、无自定义受众) | n/a |
+| 归因与测量 | CPC→oCPC(06-07)→**oCPM GA(09-16)**;view-through 转化(08-19,7/14/30 天点击+0/1 天浏览窗);Event Quality Score(09-16);Insights API 非目标转化(09-30);**10-05 测量伙伴扩到 18 家**=10 归因(AppsFlyer/Adjust/Branch/Triple Whale/Kochava 等)+3 转化数据(Hightouch/Tealium/LiveRamp)+3 全漏斗(Fospha/Measured/INCRMNTAL)+3 **geo 实验**(Haus/Measured/WorkMagic);品牌安全试点 DoubleVerify+IAS;Negative Phrases 开放 | n/a |
+
+**品牌词防御视角**:
+- ChatGPT Ads **无关键词定向、也无广告主话题/对话排除**(截至 2026-10)——竞品广告可能出现在你的品牌语境里,且**无法像搜索那样"竞价品牌词"精确防御**,只能靠 context hints 近似占位;opt-in 文本自动改写(09-16)会重写/翻译已批标题,强监管行业慎开;无第三方验证存量(DV/IAS 刚进试点);
+- 早期效果全部**厂商/伙伴自述、小样本**(非平台基准):WeightWatchers 归因 CPA 低于其混合搜索基准 15.3%(DV Rockerbox 测)、Dose 67% 增量购买来自新客(WorkMagic)、Portland Leather 93% 访客为新客(Triple Whale)——引用必须带此限定;
+- Perplexity 退出广告=该面只剩自然一条路,且引用挂订阅分成——**品牌侧重回内容/引用优化,出版商侧被引即有收入**;
+- 触达口径:ChatGPT 周触达 **12 亿人**(OpenAI 10-05 自述);Perplexity 流量口径另见第一节。
+
+来源(核对于 2026-10-12):openai.com 一手——testing-ads-in-chatgpt(2026-02-09)、expanding-access-to-ai-with-chatgpt-ads(2026-08-31)、new-chatgpt-ads-format-and-measurement(2026-10-05,新格式/18 伙伴/品牌安全);Digiday(2026-08-19 欧洲 31 市场);Qwestyon 时间线(2026-09-30 核)、flisko(2026-09-16 核)交叉;TechWyse(2026-10-05,伙伴明细与效果数字);FT(2026-02-17)+SEL 469452(2026-02-18)Perplexity 退广告;WSJ(2025-08-25)/Axios(2025-08-26)/Digiday(2025-08-26)Comet Plus 分成结构。
+
+## Negative GEO 纠错 playbook(入库 2026-10-12)
+
+**现状:OpenAI/Google/Anthropic 均无官方品牌纠错通道**——没有门户、表单或工单接受"我的品牌被说错了"的更正请求(ziptie 2026-03-22,更新 2026-09-15;peakmetrics 2026-10-01)。模型不存储可编辑的品牌事实,回答由训练数据+检索管线动态生成;产品内反馈只是单向上报,无回复、无更改承诺。**不要向客户承诺"提交后会被更正"。**
+
+**现行闭环(audit→trace 引用来源面→改源→反馈→复测)**:
+
+1. **Audit**:固定基准问题集(客户口吻问定价/功能/政策),跨 ChatGPT/Claude/Gemini/Perplexity,新会话+跨日重复;截图+时间戳入证据库;
+2. **错误分类**(决定修哪层):过时事实/实体混淆/复读的第三方错误说法/信息缺失/纯幻觉;
+3. **Trace 引用来源面**:Perplexity/AIO 直接给来源链;ChatGPT 无来源时用断言反查最匹配的网页;
+4. **更新 owned+第三方页**:自有页改准并用结构化数据承载品牌事实(Organization/Article 类;勿为富结果新增已退役标记,口径见 deprecated-signals.md);第三方走发布者更正通道、目录/评测站修正;Wikipedia 用 talk page 提议,**不做直接编辑**;
+5. **平台反馈入口**(逐家,见下表;反馈≠工单);
+6. **复测与汇报**:修复后与每月复跑基准题;按**修复前后快照**汇报,不画"趋势线"。
+
+| 平台 | 反馈入口(测于 2026-10-12) | 注 |
+|---|---|---|
+| ChatGPT | 回答下方赞/踩按钮(踩=上报低质回答) | OpenAI 隐私门户可更正**个人**错误信息——个人数据流程,公司事实不适用(具名高管或可套用) |
+| Claude | 回答下方赞/踩按钮 | 无品牌级更正通道 |
+| Gemini | 回答下方赞/踩按钮 | 无品牌级更正通道 |
+| Google AIO | 「Good/Bad overview」+**Report a problem** | 最接近正式纠错的入口;GSC 的 AIO/AI Mode **退出开关是退出不是更正**,勿混 |
+| Perplexity | 赞/踩+**报告不准确回答** | RAG 型:来源页改好+重抓后数周内可变 |
+
+**时效预期**:检索型(Perplexity/AIO)改源后重抓**数周级**见效;模型记忆型要等厂商更新模型;全渠道一致约 **3–6 个月**。诽谤性断言走法务,不走 GEO。**测量挂钩**:IAB 4P 已把 hallucination rate 标准化进 Portrayal 层(见 [kpi-definitions](../monitoring/kpi-definitions.md) IAB 节)——纠错效果用"表述准确率/幻觉率"的修复前后快照汇报,口径对齐行业词汇。
+
+来源(核对于 2026-10-12):ziptie.ai/blog/how-to-fix-incorrect-ai-brand-information(2026-03-22,更新 2026-09-15)、peakmetrics.com/guides/correct-ai-answers(2026-10-01,逐平台反馈入口与六步流程)、maxaeo.ai(2026-06-11,cited-page 修法);IAB《Measuring Visibility in the AI Era》(2026-08-03)。

@@ -3,6 +3,7 @@
 > 建立于 2026-10-09,同日按 20 路外部审计(见文末"审计致谢")加固。配套实装:
 > `scripts/monitor.py`(init/run/diff/report/quarantine/maintenance)与 `scripts/notify.py`(分级路由)。
 > 阈值方法论与基线纪律沿用 [alert-threshold-guide](alert-threshold-guide.md);页面级 13 元素对比走 [seo-drift-monitoring](seo-drift-monitoring.md)。
+> 改动的立项/审批/复盘(大改 PRD、小改 ticket、证据库、治理 RACI)见 [program-management](program-management.md)。
 
 ## 一、分层监控表:日检四问 → 周检趋势 → 月度校准
 
@@ -33,7 +34,32 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
   用 `monitor.py quarantine <run_id>` 隔离,`--undo` 解除——不用再手工改 SQLite;
 - 历史按 PruneDB 纪律自动裁剪(保留最近 400 次 run,连带快照/告警/runs 文件)。
 
-## 二、告警四级 × playbook
+## 二、人的运营节奏:四层 cadence × RICE × 上行沟通(2026-10-12 并入)
+
+第一节是**机器节奏**(monitor.py 的日/周/月/常态);本节是**人的节奏**——团队自己的会议与决策仪式,与机器节奏并列而非替代:机器发现事件,人决定做什么。单人站可缩为"周 pulse+月 review"两档;≥3 贡献者全开并叠加 [program-management](program-management.md) 治理 RACI。
+
+### 四层节奏
+
+| 层 | 形式 | 时长 | 固定议程(不许膨胀) |
+|---|---|---|---|
+| 日 | async standup | 异步文字,不开会 | 三行:昨日交付 / 今日计划 / 是否被卡(被卡项 >24h 自动进周会 blocker) |
+| 周 | pulse check | 15 分钟 | 恰好一个交付物演示 + 当前 blocker(限 24h 内可解的)+ 下周承诺(下周此时可验收的一件事) |
+| 月 | review | 60 分钟 | 3 个 KPI 对目标 + 预测缺口根因(forecast 缺口拆到原因)+ 行动项(每条带 owner 与截止日) |
+| 季 | OKR sprint | 定稿半天,季内按 sprint 推进 | 季度 OKR 定稿/复盘;[program-management](program-management.md) 证据库的上季测试结论直接喂本季 OKR |
+
+与机器节奏的衔接:日 standup 消费前日 diff 摘要(有 critical/warn 才贴全文,全绿一句话带过);月 review 消费 `report --days 30` 与 forecast 缺口;周 pulse 不看原始告警——那是值守的事(响应 SLA 见第三节)。
+
+### RICE 量化优先级(排 backlog 用)
+
+`score = (Reach × Impact × Confidence) ÷ Effort`。四因子口径:Reach=该改动预估触达的**月搜索会话数**(GSC 口径;无数据记 0 并标注,不猜数);Impact=单会话价值刻度(3=大/2=中/1=小);Confidence=证据置信(1.0=自家测试、0.8=行业证据、0.5=直觉);Effort=人周。同分取 Confidence 高者——做有证据的小赢,不做拍脑袋的大赢;Confidence 抬升的唯一途径是把结果写回 [program-management](program-management.md) 证据库。
+
+### 领导层沟通纪律(三行)
+
+1. **"No one cares about crawling"**——上行汇报永不出现抓取/索引/渲染/规范标签等实现词,只讲三件事:qualified clicks(合格自然点击)、注册、收入。
+2. 每次上行只带**一个数字+一个请求**:数字=离目标的缺口,请求=要资源或要决策;其余细节进附录,不进口头汇报。
+3. 技术指标当场翻译成钱再上报(INP 退步→转化损失;收录跌 30%→可售库存少 30%);翻译不出来的指标说明还没想清楚业务意义,不报。
+
+## 三、告警四级 × playbook
 
 | 级别 | 触发(monitor.py code) | 查哪 | 何时升级 | 自动还是人审 |
 |---|---|---|---|---|
@@ -61,13 +87,13 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
 | info | 本周 | 周批摘要(--flush info,随周报) | 周会过一遍 |
 | low | 不响应 | 永不推送,只进 report | — |
 
-## 三、防疲劳三律
+## 四、防疲劳三律
 
 1. **百分比阈值必须乘最小样本地板**:可见页 <3、sitemap <20 URL、GSC 点击 <5 的站,百分比没有意义([alert-threshold-guide](alert-threshold-guide.md) 第二节同款纪律)。地板未过 → 只记 info 基线,不告警。
 2. **钱词实时、长尾周报**:关键页/钱词走日检通道(critical/warn 即时或日批);长尾与 info 级一律进周报批量消化,永不单独推送。
 3. **调优期删噪**:每月复盘 noise 率(告警里多少不需要行动);`config.json` thresholds 放宽一档或加连续触发条件;改版/迁移期间登记维护窗口(不再是"显式接受误报")。冷却期默认 critical 12h / warn 24h / info 168h,同指纹冷却期内重复告警标记 **suppressed:只进报告,不进通知路径**(diff 的 counts/退出码同步排除,notify 路由前再剔除一次——双层保险);**陈旧 alerts.json 拒发**(notify `--max-age`,默认 30 分钟,防 run 失败时旧 critical 重播)。
 
-## 四、安全边界表:自动安全项 vs 必须 draft PR
+## 五、安全边界表:自动安全项 vs 必须 draft PR
 
 | 动作 | 边界 | 理由 |
 |---|---|---|
@@ -81,7 +107,7 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
 
 铁律:monitor.py 只读写本地 `.seo-monitor/`;对外动作(发 PR、改线上)永远是"起草+人确认",与套件"对外动作"约束一致。AI 爬虫放行翻转(`ai_posture_flip`)只告警不建议直接改——放行与否是 visibility/protect-ip 的取向决策([ai-crawler-policy](../technical/ai-crawler-policy.md))。
 
-## 五、三种部署形态对照
+## 六、三种部署形态对照
 
 | 形态 | 适合 | 状态持久化 | 告警链路 |
 |---|---|---|---|
@@ -165,17 +191,19 @@ rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.jso
   `text(s)://` scheme 决定载荷形态,裸 https 默认 JSON `{"text": ...}`——新渠道一行配置,
   渠道间故障隔离,失败 detail 自动脱敏(token 不进日志)。
 
-## 六、与套件现有监控件的分工
+## 七、与套件现有监控件的分工
 
 - 本手册+monitor.py = **站点级守护进程**:调度、快照存储(SQLite runs/snapshots/alerts 三表)、阈值判定、通知分级、周报。回答"今天有没有事"。
 - [seo-drift-monitoring](seo-drift-monitoring.md) = **页面级漂移取证**:13 元素基线/17 规则对比、算法更新归因。monitor.py 报 `title_meta_drift` 或流量断崖后,转它做细粒度归因(diff 命中的项按其交叉路由走)。
 - [alert-threshold-guide](alert-threshold-guide.md) = **阈值方法论**:分级定义、波动带/相对变化/事件型/连续触发四法、月度调校。monitor.py 的 thresholds/cooldown 参数就是它的工程化落地。
 - [kpi-definitions](kpi-definitions.md) / [report-templates](report-templates.md) = 周报口径与对外模板;monitor.py report 的"趋势+告警汇总+建议 PR"是它们的机器底座,人写 stakeholder 报告时直接引用。
 - 处罚/负面 SEO 处置在 [penalty-recovery](penalty-recovery.md)(monitor.py 只负责发现,不负责处置)。
+- [program-management](program-management.md) = **改动治理层**:大改 PRD/小改 ticket/证据库/RACI。monitor 发现问题、drift 归因、算法冻结(见 seo-drift-monitoring 第五节第 0 步)之后,"改不改、谁批、怎么复盘"在这一层。
 
 ## 来源
 
-- 分层(日四问/周趋势)、四级告警、百分比阈值防疲劳、安全自动项 vs 人审边界:行业共识实践(crawlseo/iannuttall/claude-seo 等仓库深扫,详见 [seo-drift-monitoring](seo-drift-monitoring.md) 来源节),按本套件"不猜数/不炸渠道/人审不可逆动作"约束改写。
+- 分层(日四问/周趋势)、四级告警、百分比阈值防疲劳、安全自动项 vs 人审边界：行业共识实践(crawlseo/iannuttall/claude-seo 等仓库深扫,详见 [seo-drift-monitoring](seo-drift-monitoring.md) 来源节),按本套件"不猜数/不炸渠道/人审不可逆动作"约束改写。
+- 四层运营节奏(日 async standup/周 pulse check 15 分钟/月 review 60 分钟/季 OKR sprint)、RICE 公式、领导层沟通纪律("no one cares about crawling"):decaseo 运营体系,srnaseo 2026-04 佐证;20 视角调研 R6"运营体系"登记项,调研摘要见 [pipeline-completeness](../overview/pipeline-completeness.md) 第五节。
 - budget/dry_run 参数形态参考本套件 geo-score 系脚本的预算纪律。
 
 ## 审计致谢(2026-10-09,20 路外部审计全量融入)
