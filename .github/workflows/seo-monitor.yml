@@ -78,7 +78,8 @@ permissions:
 jobs:
   monitor:
     # 拷贝后删除仓库守卫;&& PR 守卫保证 pull_request 触发只跑 audit-pr-gate,monitor 行为不变
-    if: github.repository != 'everyinfra/seo-skills' && github.event_name != 'pull_request'
+    # 模板仓库未配置 SEO_SITES 时跳过;配置了(如本仓库真实部署)即运行
+    if: vars.SEO_SITES != '' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
