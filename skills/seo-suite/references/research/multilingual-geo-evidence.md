@@ -1,6 +1,6 @@
 # 多语言 GEO 更新条目清单(对照 multilingual-workflow.md;2026-10-11 设计稿)
 
-> 建立于 2026-10-11。**性质:增改条目清单,不改正文**——每条给出接入节(对照 [multilingual-workflow.md](multilingual-workflow.md) 现有结构)、类型(新增/扩充/修正)、可直接粘贴的条目草案、证据标签与关联文件。主文件结构与既有编号不动;条目按"能进哪节"最小编粒度设计,避免重排。
+> 建立于 2026-10-11。**性质:增改条目清单,不改正文**——每条给出接入节(对照 [multilingual-workflow.md](../overview/multilingual-workflow.md) 现有结构)、类型(新增/扩充/修正)、可直接粘贴的条目草案、证据标签与关联文件。主文件结构与既有编号不动;条目按"能进哪节"最小编粒度设计,避免重排。
 > 证据标签:【调研 2026-10】=2026-10 定向调研已验证结论;【官方】/深读锚点=套件既有口径。半衰期等冲突数字按跨区原则 23"口径冲突并记"处理。
 > 深度入口规则遵十一A:**分市场杠杆类条目以门户页(markets/*.md)为主入口,本文件只留一行索引**。
 
@@ -130,7 +130,7 @@
 | [markets/ja.md](../markets/ja.md) | 引用枠空置位的测量法(U3 第 2 格):目标查询集采样记"无引用源答案"份额;空置位问句型长尾选题 | 门户页修正单 |
 | [markets/zh.md](../markets/zh.md) | 豆包头条通道(U3 第 3 格)已有两条锚点(96.9–97.7%/头条双发),只需在"独到方法"节归拢为一个杠杆位条目 | 门户页修正单 |
 | [markets/ru.md](../markets/ru.md) | Habr 长文杠杆(U3 第 4 格):技术类受众的外域权威半边,与 Telegram 镜像/Dzen 并列为俄区三外域面 | 门户页修正单 |
-| [freshness-log](freshness-log-20261011.md) | 本清单落地后按 self-update-protocol 记录一轮(多语言文件头部日期+变更行) | 流程登记 |
+| [freshness-log](../overview/freshness-log-20261011.md) | 本清单落地后按 self-update-protocol 记录一轮(多语言文件头部日期+变更行) | 流程登记 |
 
 ## What could change this conclusion
 
