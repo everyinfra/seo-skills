@@ -267,6 +267,8 @@ metadata:
 - [Agent 协议速查卡](references/technical/agent-protocols.md):14 协议一页对照(Content Signals/WebMCP/ARD…每卡:规则数字/验证命令/状态)
 - [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位);P0/P1 79 条已扩 Sitebulb 式解释层(what/why/trigger/caveat/fix/export 九字段)
 - [Brand Records 品牌事实档案](references/content/brand-records.md):六记录(含批准术语/never-do)+YAML 格式+缺口协议+Grounding Page 11 条——内容起草前必读,oracle_check.py 的输入
+- [深度研究写作协议](references/content/deep-research-protocol.md):五轮检索设计(共识测绘→缺口→核实→反例→自检)+信息增益自检(n-gram 近似 IGS>0.5+独家观点 5-7)+引用纪律(具名+日期/不复述被引源)+反例与不确定性标注——"引擎奖励深度留下的表层特征,不奖励过程"
+- [多语言 GEO 证据与更新清单](references/research/multilingual-geo-evidence.md):fan-out 语言切换与引用池本地化/翻译有效但机翻政策级降权/独立语言 URL 自持权威/分市场杠杆表(Tistory·头条·Habr·知恵袋空置)/小语种唯一源红利——含 multilingual-workflow.md 的 9 项接入清单
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
 - [niubigeo 深读](references/research/niubigeo-deep-read.md):6,848★ 五周爆发竞品(2026-09 创建)的架构深读与 Top 10 借鉴(提及检测 URL 掩码/gapLabel 七叉决策树/意图冻结分母/配对差分指纹/observed-consensus 词筛/D·K 纪律)——做 GEO 可见性功能前先查
 - [数据源合同表](references/overview/data-source-contract.md):全部脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
@@ -329,6 +331,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/research/prompt-bank.md`(GEO 采样 prompt 库:20 条漏斗×视角矩阵+persona 前缀+fanout 六类型+5+3+2 配方)
 - `templates/content/content-brief.md`(三段式简报:证据头/执行摘要/大纲六件套+9 内容类型变体)
 - `templates/content/pre-publish-checklist.md`(发布前 27 条闸:meta/结构/内容/AI 可引性四组,机检条目挂真实脚本)
+- `templates/content/trend-jack-playbook.md`(热点选题决策件:四问闸门[相关/净新观点≥5/时效窗口/独家三选一]+GO·PIVOT·WATCH·DROP 判定矩阵+wire 硬新闻否决+48h 发布管线+scaled-content-abuse 红线;配 trend_watch.py 规格待实装)
 - `templates/audit/report-modes.md`(报告三模式:exec/dev/prospect 一表三裁+Today's priorities+建议四字段)
 - `templates/monitor/forecast-report.md`(管理层提案:五级漏斗+三档 scenario+省钱/赚钱双结构+ROI 五法)
 
