@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CAPABILITY_MATRIX 机器可读矩阵守护测试(niubigeo N10 治理格式的落地;standalone 零网络)。
 
-被守护对象:data/capability-matrix.json(93 条 = 58 脚本 + 23 模板 + 12 references 主干)
+被守护对象:data/capability-matrix.json(95 条 = 59 脚本 + 23 模板 + 13 references 主干(data-onboarding))
 与人读版 CAPABILITY_MATRIX.md。五检:
   ① MatrixFileCoverageTests   双向文件覆盖:矩阵每个 script 真实存在;scripts/ 每个
      .py(除 __pycache__)都在矩阵;模板/references 路径亦须真实存在;

@@ -29,10 +29,12 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(58 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(59 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
 
 **审计与页面质量**
+- `field_data.py --url U [--strategy mobile] [--as-cwv-csv out.csv]`:CWV 现场数据真实 API 客户端——PSI(无 key 低配额)现场 p75 vs 实验数据分开呈现+CrUX(需 key)双源;官方阈值判定;--as-cwv-csv 直喂 traffic_funnel 的 good_ux 阶段
+- `doctor.py --wizard [--want cwv,rank,...]`:数据接入向导——逐项列需要的数据源/当前已配否/获取方式/降级路径(配 references/overview/data-onboarding.md)
 - `site_crawl.py --domain example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
 - `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节)
 - `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
@@ -276,6 +278,7 @@ metadata:
 - [多语言 GEO 证据与更新清单](references/research/multilingual-geo-evidence.md):fan-out 语言切换与引用池本地化/翻译有效但机翻政策级降权/独立语言 URL 自持权威/分市场杠杆表(Tistory·头条·Habr·知恵袋空置)/小语种唯一源红利——含 multilingual-workflow.md 的 9 项接入清单
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
 - [niubigeo 深读](references/research/niubigeo-deep-read.md):6,848★ 五周爆发竞品(2026-09 创建)的架构深读与 Top 10 借鉴(提及检测 URL 掩码/gapLabel 七叉决策树/意图冻结分母/配对差分指纹/observed-consensus 词筛/D·K 纪律)——做 GEO 可见性功能前先查
+- [数据接入指南](references/overview/data-onboarding.md):用户视角的「我想做 X 分析→需要什么数据/怎么获取/没有时降级成什么」——12 行目标矩阵+T0-T4 凭证阶梯+安全纪律+intake 三问模板;接 doctor --wizard
 - [数据源合同表](references/overview/data-source-contract.md):全部脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
 - [CI 质量门手册](references/monitoring/ci-gates.md):三件套命令地图(site_audit→audit_compare→ci_format→action.yml)/siteone 阈值全表/LHCI 断言 schema/采样协议/防假 0 三律/三部署配方——进 CI 或定时审计前读
 - [过时信号看门表](references/technical/deprecated-signals.md):官方已停用/勿再推荐清单(带时间戳与一手来源)——**涉及 schema/富结果/CWV/GSC 口径的建议前必查**;tests/test_canonical_facts.py 用 16 条正则钉死已知错误陈述(套件内文档命中即测试失败)

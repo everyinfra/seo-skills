@@ -64,3 +64,9 @@
 - 新增 `site_crawl.py`(第 58 号,28 测试):四级发现链(urls→robots→sitemap≥50 关爬虫→BFS)/子域发现(DNS+可选 crt.sh)/内外链图(edges/孤儿/外链域聚合)/礼貌爬取(robots+crawl-delay+SSRF);--urls-out 直喂 site_audit/traffic_funnel;SKILL 使用原则 0 更新为"site_crawl 全站发现是体检第 0 步"
 - **真实爬取又揪一缺陷**:常见子域探测对"泛解析但 HTTP 挂起"的域各吃满超时×重试(example.com 即此病),9 候选拖垮整轮挂死——修复:探测改短超时(≤4s)+零重试+**30s 总预算**(超时剩余跳过);复爬 58.6s 完成且预算机制正确触发
 - 至此"给一个域名→子域+全部页面+内外链图"齐了,体检从抽样升级为全站口径;724 测试全绿
+
+## ⑩ 数据接入层(2026-10-11 五次补录)
+
+- **新增三件**:references/overview/data-onboarding.md(用户视角"想做 X→需要什么数据→怎么获取→没有时降级成什么",12 行目标矩阵+T0-T4 阶梯+intake 三问)/doctor.py `--wizard --want`(逐项列数据源/已配否/获取锚点/降级,11 测试)/field_data.py(第 59 号,PSI+CrUX 真实 API 客户端,22 测试,--as-cwv-csv 直喂 traffic_funnel 的 good_ux 阶段——端到端有测试钉死)
+- **真调验证**:客户端正确触达 Google 端点;**无 key PSI 实测 429(共享池耗尽)**——印证"真实数据需要 T1 key"的产品判断;客户端行为正确(429 提示加 key/降频,不伪造数据);配 key(免费,25k/天)即点亮 CWV 现场数据全链
+- 757 测试全绿;T0 零凭证路径依然全功能(⑦⑧⑨ 的真实爬取/体检/工单均无 key 完成)

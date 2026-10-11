@@ -27,6 +27,11 @@ home 路径→<home> / email→<redacted-email> / token·password·secret·api_k
   python3 doctor.py --json     # {ready, tier, checks:[{id,pass,detail}], reasons[]}
   python3 doctor.py --fix-tips # 对每个 fail 附一条修复建议(人读模式)
   python3 doctor.py --net      # 附网络可达性探测(可选,默认零网络)
+  python3 doctor.py --wizard [--want a,b,c]
+                               # 数据接入清单向导(非交互):对每个分析目标列
+                               # 数据源/是否已配/获取(data-onboarding.md 锚)/降级;
+                               # 结尾报当前 tier 与立即可跑能力数;复用 tier 探测
+                               # (零网络/只看存在性);不改 ready 判定与退出码契约
 
 退出码:0=ready / 3=需处理(doctor 契约;channels/tier/net 为信息项不影响 ready)。
 """
@@ -241,6 +246,136 @@ def run_checks(base=None, env=None, home=None,
     return checks, detect_tier(env=env, home=home)
 
 
+# ---------- 数据接入向导(--wizard;非交互清单,复用 tier 探测只看存在性) ----------
+# 用户视角对应文档:references/overview/data-onboarding.md(每个条目带锚点,内链由测试守护)
+
+ONBOARDING_DOC = "references/overview/data-onboarding.md"
+WANT_CHOICES = ("seo-audit", "rank", "backlinks", "cwv", "keywords", "geo", "logs", "local")
+
+
+def _p_t0(t):
+    return (True, "已配(T0 即可用,零数据门槛)")
+
+
+def _p_gsc(t):
+    return ((True, "已配(GSC API 凭证在场)") if "gsc" in t["capabilities"]
+            else (False, "未配——GSC 效果报告 CSV 导出零门槛,可先手动导出"))
+
+
+def _p_gsc_partial(t):
+    return ((True, "部分已配(GSC 链接报告可出部分画像)") if "gsc" in t["capabilities"]
+            else (False, "未配——GSC 链接报告免费可出部分画像;全量需付费工具导出"))
+
+
+def _p_cwv(t):
+    ok = "psi" in t["capabilities"] or "crux" in t["capabilities"]
+    return ((True, "已配(PSI/CrUX key 在场)") if ok
+            else (False, "未配——PSI 网页版手动查询免费,导出 CSV 即可先跑"))
+
+
+def _p_self(t):
+    return (False, "自备导出文件,无凭证可探测(非 key 问题,拿到文件即可跑)")
+
+
+WANT_ITEMS = {
+    "seo-audit": {
+        "label": "全站体检", "probe": _p_t0,
+        "sources": "site_crawl+site_audit+health_score(URL 实时抓取;零数据门槛)",
+        "anchor": "want-seo-audit",
+        "how": "无需凭证:site_crawl --domain → site_audit → health_score 链路现即可跑",
+        "fallback": "不需要降级;WAF/挑战页按 [SKIP] 拒审,不算 CRITICAL、不进分母"},
+    "rank": {
+        "label": "排名与点击", "probe": _p_gsc,
+        "sources": "GSC(免费:CSV 导出零门槛;API 需 OAuth)",
+        "anchor": "want-rank",
+        "how": "Search Console → 效果(Performance)→ 导出 CSV;API 配 gsc.json(含 credentials 键)",
+        "fallback": "无 GSC 时蚕食/同源判断改用 serp_overlap 抓取样,结论标 [est];monitor 不猜流量数"},
+    "backlinks": {
+        "label": "外链画像", "probe": _p_gsc_partial,
+        "sources": "Ahrefs/Semrush 等导出(付费)或 GSC 链接报告(免费,覆盖不全)",
+        "anchor": "want-backlinks",
+        "how": "付费工具导 referring_domains/DR 分布/锚文本;GSC → 链接(Links)报告导出",
+        "fallback": "cite_domain 未观测字段=unknown 不当 0;竞品被引用 citation_gaps 同 cell 代理标 [推断]"},
+    "cwv": {
+        "label": "CWV 现场数据", "probe": _p_cwv,
+        "sources": "PSI / CrUX API(免费 key)",
+        "anchor": "want-cwv",
+        "how": "Google Cloud 控制台(凭据→API 密钥)启用 PageSpeed Insights API,export PSI_API_KEY(约 5 分钟)",
+        "fallback": "无 key 用 PSI 网页版手动查再导出;traffic_funnel 缺 CWV 时 good_ux=N/A 不计入"},
+    "keywords": {
+        "label": "关键词搜索量", "probe": _p_self,
+        "sources": "Keyword Planner(免费,需 Ads 账号)或 Ahrefs/Semrush/DataForSEO(付费)",
+        "anchor": "want-keywords",
+        "how": "Google Ads → 工具 → 关键字规划师导出量级;付费工具导 kws.csv(词+search_volume+position)",
+        "fallback": "Never invent search volumes:forecast 对无量词不预测(缺列 N/A),不设搜索量"},
+    "geo": {
+        "label": "AI 可见性(GEO)", "probe": _p_t0,
+        "sources": "citation_panel 人工采样(免费·零门槛)或厂商面板(付费)",
+        "anchor": "want-geo",
+        "how": "citation_panel init 建 prompt 面板 → 各引擎真实提问 → record 粘贴真实回答(严禁模拟)",
+        "fallback": "采样 <3 次不下结论;面板 <10 prompts 只当方向;GSC AI Performance 报告可作佐证"},
+    "logs": {
+        "label": "日志分析(AI 到访)", "probe": _p_self,
+        "sources": "server access log(自带导出)",
+        "anchor": "want-logs",
+        "how": "从主机/CDN(Nginx/Cloudflare/AWS)拉 access log(combined 或 JSON 行)喂 ai_referral_log",
+        "fallback": "无日志则 AI 到访只能靠探针+GSC AI 报告侧写;日志口径本就是下界"},
+    "local": {
+        "label": "本地商家", "probe": _p_self,
+        "sources": "Google Business Profile(免费,自带导出)",
+        "anchor": "want-local",
+        "how": "GBP 商家后台读绩效/导 CSV;网格排名用 Text Search API 采集 rank_data.csv",
+        "fallback": "grid_rank 无 CSV 不可跑(不补测不外推);GBP 无导出则后台人工读数并注明口径"},
+}
+
+
+def parse_want(raw):
+    """"a,b,c" → 去空白去重的合法枚举序列;空 → 全列;非法值 ValueError(调用方转 argparse error)。"""
+    if not raw or not raw.strip():
+        return list(WANT_CHOICES)
+    seen, out = set(), []
+    for tok in raw.split(","):
+        w = tok.strip().lower()
+        if w not in WANT_ITEMS:
+            raise ValueError(w)
+        if w not in seen:
+            seen.add(w)
+            out.append(w)
+    return out
+
+
+def wizard_report(want, env=None, home=None):
+    """逐项清单:数据源/是否已配(只消费 detect_tier 能力徽章,零额外探测零读值)/
+    获取(data-onboarding.md 锚)/降级一句话;附 tier 与可跑能力计数。"""
+    tier = detect_tier(env=env, home=home)
+    items = []
+    for wid in want:
+        spec = WANT_ITEMS[wid]
+        configured, status = spec["probe"](tier)
+        items.append({"id": wid, "label": spec["label"], "sources": spec["sources"],
+                      "configured": configured, "status": status,
+                      "how": spec["how"], "anchor": spec["anchor"], "doc": ONBOARDING_DOC,
+                      "fallback": spec["fallback"]})
+    return tier, {"want": list(want), "items": items,
+                  "runnable_capabilities": len(tier["capabilities"]),
+                  "items_ready": sum(1 for i in items if i["configured"]),
+                  "items_total": len(items)}
+
+
+def _print_wizard(wiz, tier):
+    print(redact("wizard: 数据接入清单(%d 项;探测零网络,只看存在性不读值)" % wiz["items_total"]))
+    for i, it in enumerate(wiz["items"], 1):
+        mark = "✓" if it["configured"] else "✗"
+        print(redact("[%d/%d] %s — %s" % (i, wiz["items_total"], it["id"], it["label"])))
+        print(redact("  数据: %s" % it["sources"]))
+        print(redact("  状态: %s %s" % (mark, it["status"])))
+        print(redact("  获取: %s(%s#%s)" % (it["how"], it["doc"], it["anchor"])))
+        print(redact("  降级: %s" % it["fallback"]))
+    print(redact("tier: T%d — 立即可跑能力 %d 项(%s);清单就绪 %d/%d(其余按各降级路径执行)"
+                 % (tier["tier"], wiz["runnable_capabilities"],
+                    "+".join(tier["capabilities"]), wiz["items_ready"], wiz["items_total"])))
+
+
 # ---------- 输出 / CLI ----------
 
 LABELS = {"python": "Python", "markets": "markets", "templates": "templates",
@@ -274,15 +409,39 @@ def build_parser():
                     help="人读模式下对每个 fail 附一条修复建议(--json 模式由 reasons 承担)")
     ap.add_argument("--net", action="store_true",
                     help="附网络可达性探测(HEAD developers.google.com,5s 超时;失败仅警告)")
+    ap.add_argument("--wizard", action="store_true",
+                    help="数据接入清单向导(非交互):逐项列 数据源/是否已配/获取(onboarding 锚)/"
+                         "降级;结尾报当前 tier 与立即可跑能力数;复用 tier 探测,不改 ready 判定")
+    ap.add_argument("--want", default="", metavar="a,b,c",
+                    help="向导枚举过滤(须与 --wizard 同用):%s;默认全列" % "/".join(WANT_CHOICES))
     return ap
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    want = None
+    if args.wizard or args.want:
+        try:
+            want = parse_want(args.want)
+        except ValueError as bad:
+            build_parser().error("--want 未知项: %s(合法: %s)" % (bad, "/".join(WANT_CHOICES)))
+        if not args.wizard:
+            build_parser().error("--want 需与 --wizard 同用")
     checks, tier = run_checks(net=args.net)
     hard = [c for c in checks if c["id"] in HARD_IDS and not c["pass"]]
     ready = not hard
     reasons = ["%s: %s" % (c["id"], c["detail"]) for c in hard]
+
+    if args.wizard:                                   # 向导不改 ready 判定/退出码契约
+        wtier, wiz = wizard_report(want)
+        if args.json:
+            print(redact(json.dumps({"ready": ready, "tier": wtier, "wizard": wiz,
+                                     "reasons": reasons}, ensure_ascii=False, indent=2)))
+        else:
+            _print_wizard(wiz, wtier)
+            print(redact("ready: %s" % ("yes" if ready else "no")))
+            print("(输出 intentionally omits absolute paths and environment values)")
+        return 0 if ready else 3
 
     if args.json:
         print(redact(json.dumps({"ready": ready, "tier": tier, "checks": checks,

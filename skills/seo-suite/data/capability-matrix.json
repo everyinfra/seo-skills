@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 58,
+  "script": 59,
   "template": 23,
-  "reference": 12,
-  "stable": 68,
-  "beta": 24,
+  "reference": 13,
+  "stable": 69,
+  "beta": 25,
   "draft": 1
  },
  "entries": [
@@ -1269,6 +1269,31 @@
    "fallback_mode": "①",
    "tests_file": "tests/test_site_crawl.py",
    "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "field_data.py",
+   "group": "scripts/审计与页面质量",
+   "inputs": [
+    "--url|--urls(实时调 PSI/CrUX API)",
+    "env PSI_API_KEY/CRUX_API_KEY(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "Google PSI(无 key 低配额)+CrUX(需 key)真实 API",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_field_data.py",
+   "status": "beta"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/data-onboarding.md",
+   "group": "references/overview",
+   "inputs": [],
+   "outputs_schema": "markdown",
+   "data_source": "静态文档(目标→数据源矩阵+T0-T4 阶梯)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
   }
  ]
 }

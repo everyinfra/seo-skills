@@ -251,5 +251,139 @@ class CliContractTests(unittest.TestCase):
             D.BASE = orig
 
 
+class WizardUnitTests(unittest.TestCase):
+    """--wizard 数据接入向导(单元层):--want 解析/锚点内链守护/复用 detect_tier 的
+    逐 tier 状态/探测只看徽章绝不读值。"""
+
+    def test_parse_want_default_dedupe_and_invalid(self):
+        self.assertEqual(D.parse_want(""), list(D.WANT_CHOICES))   # 空 → 全列 8 项
+        self.assertEqual(D.parse_want("  "), list(D.WANT_CHOICES))
+        self.assertEqual(D.parse_want("rank, rank,CWV"), ["rank", "cwv"])  # 去重+去空白+大小写
+        with self.assertRaises(ValueError):
+            D.parse_want("rank,nope")
+
+    def test_anchors_resolve_in_onboarding_doc(self):
+        """向导输出的每个锚点必须真实存在于 data-onboarding.md(内链纪律)。"""
+        doc = os.path.join(os.path.dirname(SCRIPTS), "references", "overview",
+                           "data-onboarding.md")
+        with open(doc, encoding="utf-8") as f:
+            body = f.read()
+        self.assertEqual(sorted(D.WANT_ITEMS), sorted(D.WANT_CHOICES))  # 目录=枚举,一一对应
+        for spec in D.WANT_ITEMS.values():
+            self.assertIn('id="%s"' % spec["anchor"], body)             # 锚点在场
+            self.assertIn("data-onboarding.md", D.ONBOARDING_DOC)
+
+    def test_wizard_report_t0_states(self):
+        home = _home_with_gsc()
+        tier, wiz = D.wizard_report(["seo-audit", "rank", "backlinks", "cwv", "keywords"],
+                                    env={}, home=home)
+        st = {i["id"]: i["configured"] for i in wiz["items"]}
+        self.assertEqual(tier["tier"], 0)
+        self.assertEqual((st["seo-audit"], st["rank"], st["backlinks"], st["cwv"],
+                          st["keywords"]), (True, False, False, False, False))
+        self.assertEqual(wiz["items_ready"], 1)
+        self.assertEqual(wiz["items_total"], 5)
+        self.assertEqual(wiz["runnable_capabilities"], 1)               # static-audit
+        kw = next(i for i in wiz["items"] if i["id"] == "keywords")
+        self.assertIn("自备导出文件", kw["status"])                     # 自带导出类如实说明
+
+    def test_wizard_report_t1_cwv_and_t2_gsc(self):
+        home = _home_with_gsc()
+        t1, w1 = D.wizard_report(["cwv"], env={"PSI_API_KEY": "k"}, home=home)
+        self.assertEqual(t1["tier"], 1)
+        self.assertTrue(w1["items"][0]["configured"])
+        home2 = _home_with_gsc({"credentials": {"client_id": "x"}})
+        t2, w2 = D.wizard_report(["rank", "backlinks"], env={}, home=home2)
+        self.assertEqual(t2["tier"], 2)
+        self.assertTrue(all(i["configured"] for i in w2["items"]))      # T2 解锁两项
+
+    def test_wizard_report_never_leaks_secret_values(self):
+        """gsc.json 里放了显眼 secret:向导条目任何字段不得出现该值(只看徽章不读值)。"""
+        secret = "GSC-WIZARD-REFRESH-TOKEN-X"
+        home = _home_with_gsc({"credentials": {"refresh_token": secret}})
+        _, wiz = D.wizard_report(list(D.WANT_CHOICES), env={}, home=home)
+        self.assertNotIn(secret, json.dumps(wiz, ensure_ascii=False))
+
+
+class WizardCliTests(unittest.TestCase):
+    """--wizard CLI 契约:人读四行结构+结尾 tier 行/--want 子集与非法值 exit 2/
+    --json 形状/已配 ✓ 且值不外泄/退出码契约不因向导改变。"""
+
+    def test_human_wizard_full_list_and_summary(self):
+        r = _run_cli(["--wizard"], _home_with_gsc())
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("wizard: 数据接入清单(8 项", r.stdout)
+        self.assertIn("[1/8] seo-audit — 全站体检", r.stdout)
+        for line in ("  数据: ", "  状态: ", "  获取: ", "  降级: "):
+            self.assertIn(line, r.stdout)
+        self.assertIn("data-onboarding.md#want-seo-audit", r.stdout)   # 锚点引用可见
+        self.assertRegex(r.stdout, r"tier: T\d — 立即可跑能力 \d+ 项")
+        self.assertIn("清单就绪 2/8", r.stdout)                        # T0:seo-audit+geo
+        self.assertIn("ready: yes", r.stdout)
+        self.assertIn("intentionally omits absolute paths", r.stdout)
+
+    def test_wizard_want_subset_only_lists_asked(self):
+        r = _run_cli(["--wizard", "--want", "rank,cwv"], _home_with_gsc())
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("wizard: 数据接入清单(2 项", r.stdout)
+        self.assertIn("[1/2] rank", r.stdout)
+        self.assertIn("[2/2] cwv", r.stdout)
+        self.assertNotIn("[3/", r.stdout)                              # 未点名的项不出现
+
+    def test_wizard_invalid_want_and_orphan_want_exit_2(self):
+        bad = _run_cli(["--wizard", "--want", "nope"], _home_with_gsc())
+        self.assertEqual(bad.returncode, 2)
+        self.assertIn("--want", bad.stderr)
+        orphan = _run_cli(["--want", "rank"], _home_with_gsc())        # --want 不得脱离向导
+        self.assertEqual(orphan.returncode, 2)
+
+    def test_wizard_json_shape(self):
+        r = _run_cli(["--wizard", "--json"], _home_with_gsc())
+        self.assertEqual(r.returncode, 0)
+        data = json.loads(r.stdout)
+        self.assertEqual(set(data), {"ready", "tier", "wizard", "reasons"})  # 同构扩展
+        self.assertEqual(set(data["tier"]), {"tier", "capabilities", "missing"})
+        w = data["wizard"]
+        self.assertEqual(set(w), {"want", "items", "runnable_capabilities",
+                                  "items_ready", "items_total"})
+        self.assertEqual([i["id"] for i in w["items"]], list(D.WANT_CHOICES))
+        for it in w["items"]:
+            self.assertEqual(set(it), {"id", "label", "sources", "configured", "status",
+                                       "how", "anchor", "doc", "fallback"})
+            self.assertIsInstance(it["configured"], bool)
+        self.assertEqual(w["items_total"], 8)
+
+    def test_wizard_configured_checkmark_and_no_key_leak(self):
+        """注入临时 PSI key → cwv 行 ✓ 已配;key 值本身绝不进输出(只探存在性+redact)。"""
+        env = _scrub_env(_home_with_gsc())
+        env["PSI_API_KEY"] = "WIZ-SECRET-PSI-KEY-42"
+        r = subprocess.run([sys.executable, DOCTOR, "--wizard", "--want", "cwv"],
+                           capture_output=True, text=True, encoding="utf-8", env=env)
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("✓ 已配(PSI/CrUX key 在场)", r.stdout)
+        self.assertNotIn("WIZ-SECRET-PSI-KEY-42", r.stdout)
+        self.assertIn("清单就绪 1/1", r.stdout)
+
+    def test_wizard_exit_code_follows_ready_contract(self):
+        """向导不改 ready 判定:坏基座(markets 坏 JSON+语法错)→ --wizard rc=3。"""
+        base = tempfile.mkdtemp(prefix="doc_wiz_")
+        os.makedirs(os.path.join(base, "scripts"))
+        with open(os.path.join(base, "scripts", "markets.json"), "w") as f:
+            f.write("{bad")
+        with open(os.path.join(base, "scripts", "broken.py"), "w") as f:
+            f.write("def (:\n")
+        orig = D.BASE
+        D.BASE = base
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = D.main(["--wizard"])
+            self.assertEqual(rc, 3)
+            self.assertIn("ready: no", buf.getvalue())     # 契约信息仍在结尾
+            self.assertIn("wizard: 数据接入清单", buf.getvalue())
+        finally:
+            D.BASE = orig
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
