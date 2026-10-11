@@ -82,12 +82,14 @@ jobs:
           EOF
           cd skills/seo-suite && python3 scripts/intel_check.py check >> ../../.intel-update-task.md 2>&1 || true
 
-      - name: Commit state + task
+      - name: Commit task file (state via actions/cache)
         if: steps.intel.outputs.changed == 'true'
         run: |
           git config user.name "seo-intel-bot"
           git config user.email "intel@local"
-          git add skills/seo-suite/.intel-state.json .intel-update-task.md
+          # .intel-state.json 被 .gitignore 排除且由 actions/cache 持久化——
+          # git add 一个被忽略的路径会以退出码 1 失败(bash -e),只提交任务文件
+          git add .intel-update-task.md
           git commit -m "intel-update: sources changed, task file generated — follow self-update-protocol.md" || exit 0
           git push
 
