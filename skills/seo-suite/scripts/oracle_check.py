@@ -466,6 +466,7 @@ def scan_responses(facts, responses):
         })
     findings, n = [], 0
     for ri, resp in enumerate(responses):
+        resp = dict(resp, _idx=ri)          # R5:采样序号随指纹
         seen = set()
         for p in prepared:
             for sent in split_sentences(resp["text"]):
@@ -516,7 +517,8 @@ def _make_finding(n, resp, ri, fact, sent, kind, conf, term=None, fp=None, sp=No
     return {
         "id": "F%03d" % n,
         "fingerprint": hashlib.sha1(
-            ("%s|%s|%s" % (resp["engine"], resp["prompt"], fact["fact"]))
+            ("%s|%s|%s|%s" % (resp["engine"], resp["prompt"], fact["fact"],
+                              resp.get("_idx", "")))   # R5:采样序号入指纹——同 prompt 多采样互不覆盖
             .encode("utf-8")).hexdigest()[:12],
         "status": "pending",
         "severity": "critical" if CRITICAL_RE.search(fact["fact"]) else "major",
