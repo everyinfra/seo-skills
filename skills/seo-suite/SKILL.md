@@ -279,6 +279,7 @@ metadata:
 - [多语言 GEO 证据与更新清单](references/research/multilingual-geo-evidence.md):fan-out 语言切换与引用池本地化/翻译有效但机翻政策级降权/独立语言 URL 自持权威/分市场杠杆表(Tistory·头条·Habr·知恵袋空置)/小语种唯一源红利——含 multilingual-workflow.md 的 9 项接入清单
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
 - [niubigeo 深读](references/research/niubigeo-deep-read.md):6,848★ 五周爆发竞品(2026-09 创建)的架构深读与 Top 10 借鉴(提及检测 URL 掩码/gapLabel 七叉决策树/意图冻结分母/配对差分指纹/observed-consensus 词筛/D·K 纪律)——做 GEO 可见性功能前先查
+- [管线完备性地图](references/overview/pipeline-completeness.md):10 视角审计的缺口登记簿(R0 修复接线/R1 project 编排器+strategy-fit/R2 数据接入/R3 pSEO·内链·多市场生产线/R4 执行末端)——**规划任何新能力前先查此表**,避免加重散珠
 - [数据接入指南](references/overview/data-onboarding.md):用户视角的「我想做 X 分析→需要什么数据/怎么获取/没有时降级成什么」——12 行目标矩阵+T0-T4 凭证阶梯+安全纪律+intake 三问模板;接 doctor --wizard
 - [数据源合同表](references/overview/data-source-contract.md):全部脚本的数据来源/降级路径/反编造守则——**调用任何脚本前先查此表**,缺数据走降级列而不是编造([real]/[est] 标注规则)
 - [CI 质量门手册](references/monitoring/ci-gates.md):三件套命令地图(site_audit→audit_compare→ci_format→action.yml)/siteone 阈值全表/LHCI 断言 schema/采样协议/防假 0 三律/三部署配方——进 CI 或定时审计前读

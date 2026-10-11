@@ -123,8 +123,14 @@ jobs:
 
       - name: run checks
         run: |
+          # schedule 事件 inputs 恒空(原写法会恒落 daily——周一 cron 的周检从未真正跑过,
+          # 2026-10-11 十视角管线审计发现);按触发 cron 显式判定:
+          CHECKS="${{ inputs.checks || 'daily' }}"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "23 4 * * 1" ]; then
+            CHECKS="weekly"
+          fi
           python3 skills/seo-suite/scripts/monitor.py run \
-            --checks "${{ inputs.checks || 'daily' }}" \
+            --checks "$CHECKS" \
             --budget-minutes 5 --dir "$MDIR"
 
       - name: diff (阈值告警;退出码 1=critical 2=warn;维护窗口=0)
