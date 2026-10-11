@@ -62,7 +62,8 @@ run → 0 正常,3=run 未完成(partial/failed)。SSRF 防护:仅 http(s)+私�
 
 并发与基线卫生(多 cron 安全):SQLite WAL + busy_timeout=30s + 目录级 flock;
 run 先落 status='running' 再跑检查,终态 ok/partial/failed;卡死 run 由
-sweep_stale_runs(>30min)回收;diff 的 prev 只取 status='ok';坏 run 用
+sweep_stale_runs(>30min)回收;diff 的 prev 只取 status='ok' 且优先同 kind
+(weekly 不拿 daily 当基线;无同 kind 回退最近 ok 并标 baseline_kind_mismatch);坏 run 用
 quarantine 隔离;历史按 PruneDB 纪律保留最近 400 次 run。
 cooldown 命中的告警标 suppressed:只进报告,不进通知路径(counts/退出码同排除)。
 双窗口降级的响亮失败模式:库龄>7 天却取不到 7 天基线时,diff 向 stderr 打大写
@@ -96,7 +97,7 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from html import unescape
 from xml.sax.saxutils import escape as _xml_escape
 
@@ -1236,12 +1237,14 @@ def check_ssl(site):
         return out
     not_after = (cert or {}).get("notAfter") or ""
     try:
-        expires = datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
+        expires = datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z").replace(tzinfo=timezone.utc)
     except ValueError:
         out["state"] = "error"
         out["metrics"] = {"error": "notAfter 不可解析: %r" % not_after}
         return out
-    days = (expires - datetime.utcnow()).days
+    # R5⑥:notAfter(GMT)按 UTC 定位成 aware,与 datetime.now(timezone.utc) 统一比较
+    # (datetime.utcnow 已弃用;naive/aware 混算会 TypeError,两侧统一才稳)
+    days = (expires - datetime.now(timezone.utc)).days
     issuer_cn = "-"
     for rdn in (cert or {}).get("issuer", ()):   # 每项形如 (('commonName','X'),) 或 ('commonName','X')
         pair = rdn[0] if rdn and isinstance(rdn[0], tuple) else rdn
@@ -1560,6 +1563,26 @@ def latest_run_ids(conn, n=2, statuses=("ok",)):
         (*statuses, n))]
 
 
+def pick_prev_run_id(conn, curr_id):
+    """R5②:diff 的 prev 基线选择——优先同 kind 的最近 ok run(weekly 检查集是
+    daily 的超集、口径不同:weekly 拿 daily 当 prev 会把"上次没查"当"没变",
+    反向则把周检字段缺失误判;sitemap/llms/ssl 类告警尤其敏感)。
+    无同 kind ok run 时回退最近 ok 并标 kind_mismatch(由调用方响亮警告)。
+    返回 (prev_id, kind_mismatch);无任何可对比 ok run → (None, False)。"""
+    row = conn.execute("SELECT kind FROM runs WHERE id=?", (curr_id,)).fetchone()
+    kind = row["kind"] if row else None
+    r = conn.execute(
+        "SELECT MAX(id) AS m FROM runs WHERE id<? AND status='ok' AND kind IS ?",
+        (curr_id, kind)).fetchone()
+    if r and r["m"] is not None:
+        return r["m"], False
+    r = conn.execute(
+        "SELECT MAX(id) AS m FROM runs WHERE id<? AND status='ok'", (curr_id,)).fetchone()
+    if r and r["m"] is not None:
+        return r["m"], True
+    return None, False
+
+
 def pick_baseline_run(conn, exclude_ids, days=7):
     """双窗口判定(P1-9)用:找 ~days 天前最接近的 ok run 当长窗基线。"""
     target = datetime.now() - timedelta(days=days)
@@ -1579,9 +1602,14 @@ def pick_baseline_run(conn, exclude_ids, days=7):
 def apply_inhibition(alerts, inhibited_out=None):
     """告警抑制树(audit 19,Prometheus inhibition 纪律;替 Top-K 截断):
     根因一条,派生折叠——site_down 抑制 page_down,抓取层故障抑制内容派生判定。
-    INHIBITS 以根因码为键;此处按派生码反查其根因是否在本次告警集中。"""
+    INHIBITS 以根因码为键;此处按派生码反查其根因是否在本次告警集中。
+    R5⑤:已接受(accepted)的告警不参与折叠——接受≠消失,必须保留入库供周报计数
+    (白名单是"知情保留"语义,不是删除;由 apply_accepted 先于本函数调用保证)。"""
     kept = []
     for a in alerts:
+        if a.get("accepted"):
+            kept.append(a)
+            continue
         inhibiting = None
         for root_code, (codes, scope) in INHIBITS.items():
             if a["code"] not in codes:
@@ -1616,7 +1644,9 @@ def oldest_ok_run_age_days(conn, now=None):
 def apply_accepted(alerts, cfg):
     """D1 P1:accepted_codes 白名单——"接受≠消失":命中(裸 code 或 code:key 指纹)→
     降 low + 标 accepted:true(不计入 counts/退出码、不走 cooldown 抑制,每次 diff 照常
-    入库);周报单独列"已接受告警数",仍计数。返回命中条数。"""
+    入库);周报单独列"已接受告警数",仍计数。返回命中条数。
+    R5⑤:本函数在 compute_alerts 内、apply_inhibition 之前调用——已接受告警不参与
+    抑制树折叠(根因在场时也不蒸发,保留周报计数)。"""
     acc = set(cfg.get("accepted_codes") or [])
     if not acc:
         return 0
@@ -1980,9 +2010,11 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
     for k in sorted(set((curr.get("pages") or {})) & set((prev.get("pages") or {}))):
         c, p = curr["pages"][k], prev["pages"][k]
         flabel = "首页" if k == "/" else "页面 %s" % k
-        changed = [f for f in PAGE_DIFF_FIELDS if (c.get(f) or "") != (p.get(f) or "")]
-        removed = []
+        # R5③:changed 与 removed 同受 page_rendered 门——state=error/http_error 的
+        # 残缺快照缺 title/meta 等键,会被当 "(旧值→空)" 假漂移;removed/h1 已有门,对齐
+        changed, removed = [], []
         if page_rendered(c):
+            changed = [f for f in PAGE_DIFF_FIELDS if (c.get(f) or "") != (p.get(f) or "")]
             removed = [f for f in PAGE_DIFF_FIELDS
                        if (p.get(f) or "") and not (c.get(f) or "")]
             changed = [f for f in changed if f not in set(removed)]
@@ -2029,6 +2061,9 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
         add("info", "llms_txt_changed", "file", "llms.txt 内容变更(hash %s→%s)"
             % (plm.get("hash"), clm.get("hash")))
 
+    # R5⑤:accepted_codes 白名单先于抑制树应用(接受≠消失)——已接受告警不被根因
+    # 折叠蒸发,保留入库与周报"已接受告警数"计数;抑制树只折叠未接受的派生告警
+    apply_accepted(A, cfg)
     # 抑制树(P1-10):根因一条,派生折叠(替 Top-K)
     A = apply_inhibition(A, inhibited_out)
     order = {l: i for i, l in enumerate(LEVELS)}
@@ -2085,18 +2120,23 @@ def cmd_diff(args):
                       file=sys.stderr)
                 conn.close()
                 return 4
-            curr_id, prev_id = ids[0], ids[1]
-        if not args.prev_run_id:
-            row = conn.execute(
-                "SELECT MAX(id) AS m FROM runs WHERE id<? AND status='ok'", (curr_id,)).fetchone()
-            prev_id = row["m"]
+            curr_id = ids[0]
+        if args.prev_run_id:
+            prev_id = args.prev_run_id
+            kind_mismatch = False    # 显式指定基线:用户自选,不按 kind 告警
+        else:
+            # R5②:prev 优先同 kind 的最近 ok run(weekly 不拿 daily 当基线);
+            # 无同 kind 时回退最近 ok,并响亮标记(stderr WARNING 一行 + payload 键)
+            prev_id, kind_mismatch = pick_prev_run_id(conn, curr_id)
             if prev_id is None:
                 print("错误: run %d 之前没有 status='ok' 的可对比 run(坏 run 可先 quarantine 隔离)"
                       % curr_id, file=sys.stderr)
                 conn.close()
                 return 4
-        else:
-            prev_id = args.prev_run_id
+            if kind_mismatch:
+                print("[!] WARNING: prev 基线 run #%d 与 run #%d 的 kind 不一致(无同 kind 的 "
+                      "status='ok' run,已回退最近 ok;daily/weekly 口径不同,diff 结果可能失真)"
+                      % (prev_id, curr_id), file=sys.stderr)
         prev, curr = load_snapshot(conn, prev_id), load_snapshot(conn, curr_id)
         # 双窗口(P1-9):再取 ~7 天前的 ok run 当长窗基线(库龄不足则为 None=保持原级别)
         baseline_id = pick_baseline_run(conn, {curr_id, prev_id}, days=7)
@@ -2111,29 +2151,38 @@ def cmd_diff(args):
                       file=sys.stderr)
         inhibited = []
         alerts = compute_alerts(prev, curr, cfg, baseline=baseline, inhibited_out=inhibited)
-        # D1 P1:accepted_codes 白名单(接受≠消失:降 low+标 accepted,周报仍计数)
-        n_accepted = apply_accepted(alerts, cfg)
+        # D1 P1→R5⑤:accepted_codes 白名单已在 compute_alerts 内先于抑制树应用
+        # (接受≠消失:降 low+标 accepted,周报仍计数;此处只汇总命中数,不重复套用)
+        n_accepted = sum(1 for a in alerts if a.get("accepted"))
 
         cooldowns = cfg.get("cooldown_hours", COOLDOWN_HOURS)
         cur_fps = {("%s:%s" % (a["code"], a["key"])) for a in alerts}
+        # R5④:被抑制树折叠的 (code,key) 并入"仍在场"集合——不算自愈/resolved,
+        # 不丢冷却态(根因消失后派生告警恢复时,冷却从原未结行续算,不全新重报)
+        cur_fps |= {("%s:%s" % (i["code"], i["key"])) for i in inhibited}
         unresolved = conn.execute(
             "SELECT id, code, key, level, ts FROM alerts WHERE resolved=0 AND level!='low'").fetchall()
+        # R5①:冷却判龄按 (code,key) 取最新一行的 ts(旧行为=命中最旧行即 break——
+        # 告警持续超一个冷却窗后,最旧行龄期已超窗,冷却从此整体失效,每个 diff 都重报)
+        latest_age = {}      # fp → (最小龄期小时数=最新一行, 该行 ts)
+        for row in unresolved:
+            _fp = row["code"] + ":" + row["key"]
+            try:
+                _age = (now - datetime.fromisoformat(row["ts"])).total_seconds() / 3600
+            except ValueError:
+                continue
+            if _fp not in latest_age or _age < latest_age[_fp][0]:
+                latest_age[_fp] = (_age, row["ts"])
         healed, suppressed = [], []
         for a in alerts:
             if a.get("accepted"):
                 continue      # 已接受:不入 cooldown 抑制路径,每次 diff 照常入库供周报计数
             fp = "%s:%s" % (a["code"], a["key"])
-            for row in unresolved:
-                if row["code"] + ":" + row["key"] == fp:
-                    try:
-                        age = (now - datetime.fromisoformat(row["ts"])).total_seconds() / 3600
-                    except ValueError:
-                        age = 1e9
-                    if age < cooldowns.get(a["level"], 24):
-                        a["suppressed"] = True
-                        a["suppressed_since"] = row["ts"]
-                        suppressed.append(fp)
-                    break
+            hit = latest_age.get(fp)
+            if hit is not None and hit[0] < cooldowns.get(a["level"], 24):
+                a["suppressed"] = True
+                a["suppressed_since"] = hit[1]
+                suppressed.append(fp)
         for row in unresolved:
             fp = row["code"] + ":" + row["key"]
             if fp not in cur_fps:
@@ -2145,6 +2194,7 @@ def cmd_diff(args):
         payload = {"generated": now.isoformat(timespec="seconds"), "site": cfg["site"],
                    "market": cfg.get("market"), "curr_run": curr_id, "prev_run": prev_id,
                    "baseline_run": baseline_id, "baseline_missing": baseline_missing,
+                   "baseline_kind_mismatch": kind_mismatch,
                    "alerts": alerts, "healed": healed, "suppressed": suppressed,
                    "inhibited": inhibited, "accepted": n_accepted,
                    "counts": {l: sum(1 for a in active if a["level"] == l) for l in LEVELS}}

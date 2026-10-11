@@ -14,7 +14,10 @@
                      每答案每品牌至多计 1 次 → 各品牌 share 恒和 100%;空分母 N/A
   跨期比较         = 配对分母:只比两期均成功(非 failed)的 cell
   稳定性           = 单次引用检查 = 掷硬币;同一 prompt ≥3 次采样才报
-                     Wilson 95% CI(z=1.96,w=√(p(1-p)/n),CI=p±z·w;区间跨 0.5 → unstable)
+                     Wilson 95% score interval(z=1.96,
+                     (p̂+z²/2n ± z√(p̂(1-p̂)/n + z²/4n²))/(1+z²/n);
+                     区间跨 0.5 → unstable;k=0/n 时区间宽度非零——旧 Wald 近似
+                     CI=p±z·√(p(1-p)/n) 在 0/全命中时宽 0,会把掷硬币样本误判 stable)
   prompts < 10     = 样本太小,结论只能当方向
 
 子命令:
@@ -182,9 +185,28 @@ def load_panel(path):
     return panel
 
 
+def atomic_write_json(path, obj):
+    """原子写 JSON(R5 GEO 修复): 同目录 tempfile 落盘 + fsync + os.replace——
+    半写不留盘,进程中断/磁盘满时不会留下截断的 panel.json 或 runs/<id>.json。
+    tempfile 早已 import 而未用,此处启用;失败时清理临时文件后原样抛出。"""
+    d = os.path.dirname(os.path.abspath(path)) or "."
+    fd, tmp = tempfile.mkstemp(prefix=os.path.basename(path) + ".", suffix=".tmp", dir=d)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def save_panel(path, panel):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(panel, f, ensure_ascii=False, indent=2)
+    atomic_write_json(path, panel)
 
 
 def runs_dir_for(panel_path):
@@ -617,8 +639,7 @@ def cmd_record(args):
     rdir = runs_dir_for(args.panel)
     os.makedirs(rdir, exist_ok=True)
     rpath = os.path.join(rdir, run_id + ".json")
-    with open(rpath, "w", encoding="utf-8") as f:
-        json.dump(run, f, ensure_ascii=False, indent=2)
+    atomic_write_json(rpath, run)               # 原子写(与 panel.json 同纪律)
     sc = Counter(r["state"] for r in results.values())
     print("已记录 run: %s(engine=%s, cells=%d)→ %s" % (run_id, args.engine, len(results), rpath))
     print("  五状态: " + ", ".join("%s=%d" % (s, sc.get(s, 0)) for s in STATES))
@@ -632,13 +653,21 @@ def cmd_record(args):
 # ---------- 统计 ----------
 
 def wilson_ci(k, n):
-    """按面板口径(正态近似):w=√(p(1-p)/n),CI=p±z·w,z=1.96。"""
+    """Wilson score interval 真公式(z=1.96):
+    (p̂+z²/2n ± z√(p̂(1-p̂)/n + z²/4n²)) / (1+z²/n);区间跨 0.5 → unstable。
+    R5 GEO 修复: 旧实现是 Wald 正态近似 CI=p±z·√(p(1-p)/n),k=0/n 时宽 0,
+    零命中/全命中样本被误判 stable;真 Wilson 在 k=0 时上界>0(k=0,n=3 →
+    上界≈0.5615)、k=n 时下界<1(k=3,n=3 → 下界≈0.4385),区间恒非零宽。
+    判定逻辑不变(lo<0.5<hi 即区间与 0.5 线重叠 → unstable),只是换真 CI。"""
     if not n:
         return None
     p = k / n
-    w = math.sqrt(p * (1 - p) / n)
-    lo = max(0.0, p - Z * w)
-    hi = min(1.0, p + Z * w)
+    z2 = Z * Z
+    denom = 1.0 + z2 / n
+    center = (p + z2 / (2 * n)) / denom
+    half = Z * math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / denom
+    lo = max(0.0, center - half)
+    hi = min(1.0, center + half)
     return p, lo, hi, (lo < 0.5 < hi)
 
 
@@ -1248,14 +1277,18 @@ def eval_decay_cell(samples, panel_start):
                      % OFFICIAL_MEDIAN_HALF_LIFE)
 
 
-def collect_cell_series(panel, metric="cited", engine=None):
-    """runs → {(prompt, engine): [(datetime, y)]}(failed 不入序列;y=metric 值 0/1)。"""
+def collect_cell_series(panel, metric="cited", engine=None, skipped=None):
+    """runs → {(prompt, engine): [(datetime, y)]}(failed 不入序列;y=metric 值 0/1)。
+    R5 GEO 修复: 日期解析失败的 run 不再静默 continue——调用方传 skipped 列表时,
+    {"run_id":…, "date":…} 会被追加进去(analyze_decay 汇总打警告并列出 run_id)。"""
     series = {}
     for run in panel.get("runs", []):
         if engine and run["engine"] != engine:
             continue
         d = parse_date(run.get("date"))
         if d is None:
+            if skipped is not None:
+                skipped.append({"run_id": run.get("run_id"), "date": run.get("date")})
             continue
         for prompt, res in run["results"].items():
             if res["state"] == "failed":
@@ -1268,11 +1301,16 @@ def collect_cell_series(panel, metric="cited", engine=None):
 
 def analyze_decay(panel, metric="cited", engine=None):
     """全面板 decay 判定 + 重写队列(状态∈decaying/decayed × 距半衰剩余天数升序)。"""
+    skipped = []
+    series = collect_cell_series(panel, metric, engine, skipped=skipped)
+    if skipped:      # 日期解析失败的 run: 警告 + 列出 run_id,不再静默丢
+        print("[!] decay: %d 个 run 的 date 解析失败,已跳过(不产序列点,不入面板窗): %s"
+              % (len(skipped), ", ".join(str(s.get("run_id")) for s in skipped)),
+              file=sys.stderr)
     all_dates = [d for d in (parse_date(r.get("date")) for r in panel.get("runs", [])) if d]
     panel_start = min(all_dates) if all_dates else None
     panel_end = max(all_dates) if all_dates else None
     cells = []
-    series = collect_cell_series(panel, metric, engine)
     for (prompt, eng) in sorted(series):
         cell = {"prompt": prompt, "engine": eng}
         cell.update(eval_decay_cell(series[(prompt, eng)], panel_start))
@@ -1282,7 +1320,7 @@ def analyze_decay(panel, metric="cited", engine=None):
     return {"metric": metric, "engine": engine or "(all)",
             "panel_window": {"start": panel_start.isoformat() if panel_start else None,
                              "end": panel_end.isoformat() if panel_end else None},
-            "cells": cells, "rewrite_queue": queue}
+            "cells": cells, "rewrite_queue": queue, "skipped_runs": skipped}
 
 
 def _decay_fmt(x, est=False):
@@ -1307,6 +1345,10 @@ def render_decay(panel, result):
     L.append("面板窗: %s → %s | cells: %d 判定 / %d 剔除"
              % (result["panel_window"]["start"], result["panel_window"]["end"],
                 len(judged), len(cells) - len(judged)))
+    if result.get("skipped_runs"):    # R5: 日期解析失败的 run 单列,不静默丢
+        L.append("[!] %d 个 run 的 date 解析失败,已跳过(不产序列点,不入面板窗): %s"
+                 % (len(result["skipped_runs"]),
+                    ", ".join(str(s.get("run_id")) for s in result["skipped_runs"])))
     L.append("| prompt | engine | 状态 | n | 窗(天) | peak | 半衰(天) | 距半衰剩余(天) | 备注/剔除原因 |")
     L.append("|---|---|---|---|---|---|---|---|---|")
     for c in cells:
@@ -1660,8 +1702,7 @@ def cmd_score(args):
         run["results"][prompt]["geo"] = c
     save_panel(args.panel, panel)
     rpath = os.path.join(runs_dir_for(args.panel), run_id + ".json")
-    with open(rpath, "w", encoding="utf-8") as f:      # 与 record 同步双写 run 文件
-        json.dump(run, f, ensure_ascii=False, indent=2)
+    atomic_write_json(rpath, run)      # 与 record 同步双写 run 文件(原子写,防半写)
     null_n = sum(1 for c in cleaned.values() if c["geo_score"] is None)
     print("geo 打分已写回 run %s: %d/%d 条(缺席 null=%d,重打 %d)→ %s"
           % (run_id, len(cleaned), len(run["results"]), null_n, rescored, rpath))
@@ -2079,15 +2120,21 @@ def _self_test():
     # citation share: 品牌被引 3 / 去重域名总数 5 = 60%
     assert stats["brand_hits"] == 3 and stats["domain_total"] == 5
     assert abs(stats["share"] - 0.6) < 1e-9
-    # Wilson: P1 n=3 k=2 → p=2/3, w=√(p(1-p)/3)≈0.272,CI 跨 0.5 → unstable
+    # Wilson: P1 n=3 k=2 → p=2/3,真 Wilson CI≈[0.208,0.939] 跨 0.5 → unstable
     k, n, p, lo, hi, unstable = stats["stability"][P1]
     assert (k, n) == (2, 3) and unstable and lo < 0.5 < hi
     # P2 n=3 k=2 同样 unstable;P3 n=2 不足 3 次,不报
     assert stats["stability"][P2][0] == 2 and P3 not in stats["stability"]
-    # wilson 公式自检
+    # wilson 真公式自检(R5: 旧 Wald 近似 k=0/n 时宽 0 → 误判 stable)
     p, lo, hi, uns = wilson_ci(2, 3)
-    w = math.sqrt((2 / 3) * (1 / 3) / 3)
-    assert abs(hi - min(1.0, 2 / 3 + Z * w)) < 1e-12
+    ctr = (2 / 3 + Z * Z / 6) / (1 + Z * Z / 3)
+    half = Z * math.sqrt((2 / 3) * (1 / 3) / 3 + Z * Z / 36) / (1 + Z * Z / 3)
+    assert abs(lo - (ctr - half)) < 1e-12 and abs(hi - (ctr + half)) < 1e-12
+    assert abs(hi - 0.9385) < 1e-3 and abs(lo - 0.2077) < 1e-3
+    _, lo0, hi0, uns0 = wilson_ci(0, 3)     # k=0,n=3 → 上界≈0.56,区间非零宽
+    assert hi0 > 0.5 and uns0 and hi0 - lo0 > 0.5
+    _, lon, hin, unsn = wilson_ci(3, 3)     # k=n=3 → 下界≈0.44,跨 0.5 → unstable
+    assert lon < 0.5 < hin and unsn and hin - lon > 0.5
 
     report = render_report(panel, stats)
     assert "五状态分类" in report and "50.0%" in report and "60.0%" in report

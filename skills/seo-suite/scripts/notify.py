@@ -33,6 +33,9 @@
   --max-age N   拒发陈旧 alerts.json(默认 30 分钟;防"run 失败→notify 读昨天文件重发")
   渠道故障隔离  每渠道独立 try,一家失败不阻断其余;失败 detail 脱敏(token 不进日志)
   flush 保批    日批/周批只在全部渠道发送成功后才清空,失败保留 pending(不丢告警)
+  critical 降级  即时告警渠道全败(或全无已配置渠道)→ 降级暂存进 pending_critical 批
+               (R5,指纹去重),下次 --flush 优先于 warn/info 重发;任一渠道送达即出批
+               并照常记 incident,仍全败则整批保留——绝不永久丢失
   dead_man      无成功 run 超 2×周期 → 主动发 dead_man 告警(监控器自身停摆可感知)
 
 用法:
@@ -360,10 +363,35 @@ def group_by_recipients(alerts, targets, routes):
 # ---------- 状态(日批/周批暂存) ----------
 
 def load_state(path):
+    st = {}
     if os.path.exists(path):
         with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    return {"pending_warn": [], "pending_info": [], "updated": None}
+            st = json.load(f)
+    if not isinstance(st, dict):
+        st = {}
+    # R5:pending_critical 批(critical 渠道全败降级暂存);旧 state 文件无此键 → 补空
+    st.setdefault("pending_critical", [])
+    st.setdefault("pending_warn", [])
+    st.setdefault("pending_info", [])
+    st.setdefault("updated", None)
+    return st
+
+
+def stash_critical(state, alerts):
+    """R5:critical 即时告警渠道全败 → 降级暂存进 pending_critical(指纹去重,同
+    warn/info 批口径),下次 flush 优先重发——不再永久丢失。incident_key 已随告警
+    暂存,重发送达后照常 record_incidents。返回本次实际暂存条数。"""
+    stashed = 0
+    seen_fp = {p.get("fp") for p in state["pending_critical"]}
+    for a in alerts:
+        fp = "%s:%s" % (a.get("code"), a.get("key"))
+        if fp in seen_fp:
+            continue
+        state["pending_critical"].append({**a, "fp": fp, "since":
+                                          datetime.now().isoformat(timespec="seconds")})
+        seen_fp.add(fp)
+        stashed += 1
+    return stashed
 
 
 def save_state(path, st):
@@ -595,11 +623,13 @@ def cmd_notify(args):
     rc = 0
 
     print("路由: critical=%d(即时) warn+%d(暂存日批,共 %d) info+%d(暂存周批,共 %d) "
-          "low=%d(静默) suppressed=%d(冷却期内,不通知)%s%s"
+          "low=%d(静默) suppressed=%d(冷却期内,不通知)%s%s%s"
           % (len(immediate) - (1 if dm else 0), nw, len(state["pending_warn"]), ni,
              len(state["pending_info"]), sum(1 for a in alerts if a.get("level") == "low"),
              ns, " dead_man=1(监控停摆)" if dm else "",
-             " 按类型路由=%d 渠道" % len(routes) if routes else ""))
+             " 按类型路由=%d 渠道" % len(routes) if routes else "",
+             " critical降级待重发=%d(下次 flush 优先)" % len(state["pending_critical"])
+             if state["pending_critical"] else ""))
     if not targets:
         print("[i] 无已配置渠道(config.json channels 全空)——只暂存不发送;"
               "webhook 可用环境变量注入(见 config notes)")
@@ -610,6 +640,10 @@ def cmd_notify(args):
         header = "CRITICAL 即时告警" if not dm else "即时告警(含 dead_man)"
         for a in immediate:                      # Conductor 生命周期口径:发出的告警附 key
             a.setdefault("incident_key", incident_key(a))
+        if not targets and not args.dry_run:
+            # R5:全无已配置渠道 = 无处送达,即时告警同样降级暂存(与批口径一致,不丢告警)
+            print("  [!] %d 条即时告警无处发送(无已配置渠道),降级暂存进 pending_critical"
+                  % stash_critical(state, immediate))
         for sub, group in group_by_recipients(immediate, targets, routes):
             if not sub:
                 if targets:
@@ -622,8 +656,43 @@ def cmd_notify(args):
                 rc = rc or (0 if ok else 1)
             if any(ok for _, ok, _ in results):
                 record_incidents(mdir, group, args.dry_run)
+            elif not args.dry_run:
+                # R5:渠道全败 → 降级暂存 pending_critical(incident_key 随批保留,
+                # 下次 flush 优先重发)——critical 不再因渠道抖动永久丢失
+                print("  [!] %d 条即时告警渠道全败,降级暂存进 pending_critical(下次 flush 优先重发)"
+                      % stash_critical(state, group))
 
     flush = (args.flush or "")
+    # R5:pending_critical 降级批(上次渠道全败的即时告警)优先于 warn/info 摘要重发;
+    # 任一渠道送达的组出批并照常记 incident,仍全败的组整组保留(下次再试,不丢告警)。
+    if flush and state["pending_critical"]:
+        batch = state["pending_critical"]
+        for a in batch:
+            a.setdefault("incident_key", incident_key(a))
+        print("重发: pending_critical 批 %d 条(上次渠道全败的即时告警,优先于 %s 批)"
+              % (len(batch), flush))
+        delivered = []
+        for sub, group in group_by_recipients(batch, targets, routes):
+            if not sub:
+                if targets:
+                    print("  [!] %d 条重发告警未命中任何渠道的 route,只进日志(保留待重试)"
+                          % len(group))
+                continue
+            msg = format_alerts(site, group, "CRITICAL 即时告警(重发: 上次渠道全败)")
+            results = send_all(sub, msg, args.dry_run)
+            for name, ok, detail in results:
+                print("  [%s] %s: %s" % ("OK" if ok else "FAIL", name, detail))
+                rc = rc or (0 if ok else 1)
+            if any(ok for _, ok, _ in results):
+                record_incidents(mdir, group, args.dry_run)
+                delivered.extend(group)
+        if not args.dry_run:
+            sent_ids = {id(a) for a in delivered}
+            state["pending_critical"] = [a for a in batch if id(a) not in sent_ids]
+            if state["pending_critical"]:
+                print("  [!] %d 条重发仍未全部送达,pending_critical 保留(下次 flush 再试)"
+                      % len(state["pending_critical"]))
+
     digests = []
     if flush in ("warn", "all") and state["pending_warn"]:
         digests.append(("warn 日批摘要", state["pending_warn"], "pending_warn"))
@@ -738,7 +807,8 @@ def build_parser():
     p.add_argument("--alerts", default="", help="monitor.py diff --out 产出的 JSON")
     p.add_argument("--stdin", action="store_true", help="改从 stdin 读告警 JSON")
     p.add_argument("--flush", choices=["warn", "info", "all"], default="",
-                   help="顺带发送并清空对应批次(warn=日批 info=周批)")
+                   help="顺带发送并清空对应批次(warn=日批 info=周批);"
+                        "任何 flush 都先优先重发 pending_critical 降级批(R5)")
     p.add_argument("--max-age", type=int, default=30, dest="max_age",
                    help="alerts.json 最大年龄(分钟),过期拒发防旧告警重播;0=不检查")
     p.add_argument("--dry-run", action="store_true", help="只打印路由与消息,不联网不写盘")
@@ -917,9 +987,50 @@ def _self_test():
     conn.close()
     dm = dead_man_alert(mdir, cfg)
     assert dm and dm["code"] == "dead_man"
+
+    # R5:critical 即时告警渠道全败 → 降级暂存 pending_critical,下次 flush 优先重发
+    mdir2 = os.path.join(tmp, "r5-crit")
+    os.makedirs(mdir2)
+    with open(os.path.join(mdir2, "config.json"), "w", encoding="utf-8") as f:
+        json.dump({"site": "https://example.com", "run_cadence_hours": 24,
+                   "channels": {"slack": {}}}, f)
+    crit = [{"level": "critical", "code": "key_page_down", "key": "/pricing",
+             "message": "404", "action": "回滚", "boundary": "auto"}]
+    af2 = os.path.join(mdir2, "alerts.json")
+    with open(af2, "w", encoding="utf-8") as f:
+        json.dump({"site": "https://example.com",
+                   "generated": datetime.now().isoformat(timespec="seconds"),
+                   "alerts": crit}, f)
+    r5_sent = []
+    orig_ct2 = notify_mod.channel_targets
+    notify_mod.channel_targets = lambda c: [
+        ("slack", lambda msg: (_ for _ in ()).throw(IOError("net down")))]
+    try:
+        assert cmd_notify(build_parser().parse_args(["run", "--dir", mdir2, "--alerts", af2])) == 1
+        st5 = load_state(os.path.join(mdir2, STATE_FILE))
+        assert len(st5["pending_critical"]) == 1                        # 全败 → 降级暂存
+        p = st5["pending_critical"][0]
+        assert p["code"] == "key_page_down" and p.get("incident_key") == incident_key(crit[0])
+        assert not os.path.exists(os.path.join(mdir2, INCIDENTS_FILE))  # 未送达不记 incident
+        # flush 重发仍全败 → 批保留且不重复暂存(指纹去重)
+        assert cmd_notify(build_parser().parse_args(
+            ["run", "--dir", mdir2, "--alerts", af2, "--flush", "warn"])) == 1
+        st6 = load_state(os.path.join(mdir2, STATE_FILE))
+        assert len(st6["pending_critical"]) == 1
+        # 渠道恢复 → flush 优先重发,送达即出批 + incident 照常记录
+        notify_mod.channel_targets = lambda c: [
+            ("slack", lambda msg: r5_sent.append(msg) or (200, "ok"))]
+        assert cmd_notify(build_parser().parse_args(
+            ["run", "--dir", mdir2, "--alerts", af2, "--flush", "warn"])) == 0
+        assert r5_sent and any("key_page_down" in m and "[CRITICAL]" in m for m in r5_sent)
+        assert load_state(os.path.join(mdir2, STATE_FILE))["pending_critical"] == []
+        assert incident_key(crit[0]) in load_incidents(
+            os.path.join(mdir2, INCIDENTS_FILE))["incidents"]
+    finally:
+        notify_mod.channel_targets = orig_ct2
     print("[self-test] PASS notify(分级路由/suppressed 剔除/指纹去重/env 注入/通用 webhook/"
           "URL 脱敏/分块转义/flush 保批/陈旧拒发/dead_man/P0-3 按类型路由+per-definition/"
-          "redact 强化/incident 生命周期+resolve)")
+          "redact 强化/incident 生命周期+resolve/R5 critical 全败降级暂存+flush 优先重发)")
 
 
 def main(argv=None):

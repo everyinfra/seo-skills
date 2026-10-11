@@ -12,19 +12,25 @@
                {fact, record, source, date, confidence, keywords?};record 为六记录之一)
   --responses  responses.json  采样回答 [{prompt, engine, text, mentions?}]
                (由 citation_panel 导出或人工粘贴;mentions 容忍存在,不参与判定)
-  --out        findings.json   状态文件(默认 findings.json):重跑时按 fingerprint
-               保持人工状态 status: pending → acknowledged/ignored(可 reopen)
+  --out        findings.json   状态文件(默认 findings.json,原子写):重跑时按 fingerprint
+               (engine|prompt|response 序号|fact|ai_claim)保持人工状态
+               status: pending → acknowledged/ignored(reopen 是瞬态动作,重跑归一为 pending)
   --json                       输出 JSON 而非 markdown 报告
 
 门槛(Athena 官方):已验证 facts <25 条 → 警告"样本不足,结论置信低"。
 
 核查逻辑(可判定部分):
-  1. 每条 fact 抽关键词组(显式 keywords 优先,否则自动:拉丁词 + CJK 去停词整段/二元组);
+  1. 每条 fact 抽关键词组(显式 keywords 优先,否则自动分语系 run:拉丁词去停词、汉字去停字
+     整段+二元组、谚文/假名/西里尔/天城文/泰文 run 各自成 token;术语与句子先过归一链
+     ——NFKC 全半角/土 İ/俄 ё/阿文正字/越声调,思路参考 keyword_variants.py 的 canon,自实现);
   2. 在每条 response 的每个句子中找相关表述(命中 ≥1 关键词才算相关);
+     句切含全角！？(U+FF01/U+FF1F)与阿文 ؟(U+061F);
   3. 冲突检测(正则近似):
-     - 数字冲突:同 kind(货币/百分比/带单位数值)且数值不同;
+     - 数字冲突:同 kind(货币/百分比/带单位数值)且数值不同;货币按币种(ISO)分桶,
+       数值与币种都相同才判一致($99 与 99元 不再判一致,判币种冲突);
      - 日期冲突:ISO 日期/年份不同;
-     - 布尔冲突:同一关键词在事实与 AI 句中肯定/否定极性相反(分句内取反向窗口);
+     - 布尔冲突:同一关键词在事实与 AI 句中肯定/否定极性相反(分句内取反向窗口;
+       无限/未来/不断 等含否定字的普通词不算否定);
   4. finding 字段(Athena):ai_claim(命中句)/known_fact/why_flagged/severity
      (涉及价格/安全/合规=critical,否则 major)/source_response(引擎+prompt+序号)。
 
@@ -44,13 +50,14 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter
 from datetime import datetime
 
 SIX_RECORDS = ("company", "market", "offerings", "audience", "strategy", "execution")
 ATHENA_FACT_FLOOR = 25          # Athena 官方门槛:≥25 条已验证 facts 才能扫
 STATUSES = ("pending", "acknowledged", "ignored", "reopen")
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2              # v2:fingerprint 纳入 response 序号+ai_claim(同 prompt 多采样互不覆盖)
 
 BOUNDARY = ("正则近似只能抓显式数字/日期/布尔冲突;语义级矛盾(定位、受众、语气)由 agent "
             "结合本输出人工判定。Possible sources 为调查线索,非因果归因。")
@@ -69,14 +76,121 @@ STOP_EN = {"the", "a", "an", "of", "for", "in", "is", "are", "was", "were", "and
            "also", "into", "over", "under", "but", "and", "all", "any"}
 STOP_CJK_CHARS = set("的了是在和与及或等为有不于由从被把将其该各每所之以而就都还则等即可并但因故此那这外内去来")
 
+
+# ---------- 归一链(R5 多语言;思路参考 keyword_variants.py 的 canon,自实现) ----------
+# 术语与句子匹配前统一归一:NFKC 全/半角与数字形(泰文/天城文/阿拉伯数字→ASCII)→
+# 土耳其 İ 先替换再折叠(去残留 U+0307)→ casefold → 俄语 ё→е →
+# 阿拉伯正字(أإٱ→ا、ى→ي、ة→ه、去 tatweel)→ 越南声调剥离。
+_AR_ORTHO = {"أ": "ا", "إ": "ا", "ٱ": "ا", "ى": "ي", "ة": "ه"}
+_TATWEEL = "\u0640"
+_VI_BASE = set("ăâđêôơư")
+
+
+def _canon(text):
+    """归一化比较形:关键词抽取、句子相关性匹配、极性判定与数值抽取共用。"""
+    w = unicodedata.normalize("NFKC", (text or "").strip())
+    w = w.replace("İ", "i").casefold()
+    if "\u0307" in w:                                   # İ 折叠残留的组合点
+        w = w.replace("\u0307", "")
+    if "ё" in w:
+        w = w.replace("ё", "е")
+    if any(c in _AR_ORTHO for c in w) or _TATWEEL in w:
+        w = w.replace(_TATWEEL, "")
+        w = "".join(_AR_ORTHO.get(c, c) for c in w)
+    if any(c in _VI_BASE for c in w):                   # 越南声调剥离(仅越文字母在场时)
+        w = unicodedata.normalize("NFC", "".join(
+            c for c in unicodedata.normalize("NFD", w) if not unicodedata.combining(c)))
+    return w
+
+
+# ---------- Unicode 分语系 run(R5:ko/ru/ar/th/hi 事实不再静默 0 findings) ----------
+# 谚文/假名/西里尔/天城文/泰文 run 各自成 token;汉字 run 去停字后整段+二元组;拉丁词去停词。
+_SCRIPT_RANGES = (
+    ("latin", ((0x41, 0x5A), (0x61, 0x7A), (0xC0, 0xD6), (0xD8, 0xF6), (0xF8, 0x24F),
+               (0x1E00, 0x1EFF))),                      # 基本 Latin+Latin-1(除 ×÷)+扩展+越南
+    ("hangul", ((0xAC00, 0xD7A3), (0x1100, 0x11FF), (0x3130, 0x318F))),
+    ("kana", ((0x3041, 0x30FF), (0x31F0, 0x31FF))),
+    ("cjk", ((0x4E00, 0x9FFF), (0x3400, 0x4DBF), (0xF900, 0xFAFF))),
+    ("cyrillic", ((0x400, 0x52F),)),
+    ("arabic", ((0x600, 0x6FF), (0x750, 0x77F))),
+    ("devanagari", ((0x900, 0x97F),)),
+    ("thai", ((0xE01, 0xE5B),)),
+)
+_MARK_CATS = ("Mn", "Mc", "Me")
+_FAMILY_CACHE = {}
+
+
+def _char_family(ch):
+    fam = _FAMILY_CACHE.get(ch)
+    if fam is None:
+        fam = ""
+        for name, ranges in _SCRIPT_RANGES:
+            if any(lo <= ord(ch) <= hi for lo, hi in ranges):
+                fam = name
+                break
+        _FAMILY_CACHE[ch] = fam
+    return fam or None
+
+
+def _script_runs(text):
+    """连续同语系字符成 run:组合标记(变音/声调/元音符)并入当前 run;
+    拉丁 run 允许数字/-/_ 连写(兼容旧 [A-Za-z][A-Za-z0-9_-]* 口径)。yield (语系, token)。"""
+    fam, buf = None, []
+    for ch in text:
+        f = _char_family(ch)
+        if f is None:
+            if buf and unicodedata.category(ch) in _MARK_CATS:
+                buf.append(ch)
+            elif fam == "latin" and (ch in "-_" or "0" <= ch <= "9"):
+                buf.append(ch)
+            else:
+                if buf:
+                    yield fam, "".join(buf)
+                fam, buf = None, []
+        elif f == fam:
+            buf.append(ch)
+        else:
+            if buf:
+                yield fam, "".join(buf)
+            fam, buf = f, [ch]
+    if buf:
+        yield fam, "".join(buf)
+
+
+# ---------- 货币分币种(R5:$99 与 99元 不再判一致;unit=ISO 代码) ----------
+_CUR_SYMBOLS = ("US$", "CA$", "HK$", "A$", "S$", "R$",       # 多字符符号在前
+                "$", "€", "£", "¥", "₹", "₽", "₺", "฿", "₩", "₫", "₱", "₪", "₴", "₦")
+CUR_SYMBOL_MAP = {"US$": "USD", "CA$": "CAD", "HK$": "HKD", "A$": "AUD", "S$": "SGD",
+                  "R$": "BRL", "$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY",
+                  "₹": "INR", "₽": "RUB", "₺": "TRY", "฿": "THB", "₩": "KRW",
+                  "₫": "VND", "₱": "PHP", "₪": "ILS", "₴": "UAH", "₦": "NGN"}
+_CUR_WORDS = [  # 币种词(重前轻后,防前缀吞字):中文/俄文/天城文/泰文/谚文 + 拉丁词与 ISO 码
+    ("人民币", "CNY"), ("美元", "USD"), ("美金", "USD"), ("欧元", "EUR"), ("英镑", "GBP"),
+    ("日元", "JPY"), ("港元", "HKD"), ("港币", "HKD"), ("澳元", "AUD"), ("韩元", "KRW"),
+    ("泰铢", "THB"), ("卢比", "INR"), ("卢布", "RUB"), ("里拉", "TRY"), ("雷亚尔", "BRL"),
+    ("рублей", "RUB"), ("рубля", "RUB"), ("рубль", "RUB"), ("руб", "RUB"),
+    ("रुपया", "INR"), ("रुपये", "INR"), ("บาท", "THB"), ("원", "KRW"),
+    ("円", "JPY"), ("圆", "CNY"), ("元", "CNY"),
+    ("dollars", "USD"), ("dollar", "USD"), ("euros", "EUR"), ("euro", "EUR"),
+    ("pounds", "GBP"), ("pound", "GBP"), ("yens", "JPY"), ("yen", "JPY"),
+    ("rupees", "INR"), ("rupee", "INR"), ("yuan", "CNY"), ("won", "KRW"),
+    ("rub", "RUB"), ("usd", "USD"), ("eur", "EUR"), ("gbp", "GBP"), ("jpy", "JPY"),
+    ("cny", "CNY"), ("rmb", "CNY"), ("inr", "INR"), ("thb", "THB"), ("krw", "KRW"),
+    ("brl", "BRL"), ("hkd", "HKD"), ("aud", "AUD"), ("rs", "INR"), ("tl", "TRY"),
+]
+CUR_WORD_MAP = dict(_CUR_WORDS)
+_CUR_SYM_RE = "|".join(re.escape(s) for s in _CUR_SYMBOLS)
+_CUR_WORD_RE = "|".join(w for w, _ in _CUR_WORDS)
+
 _NUM = r"(?<![\d.])\d+(?:[.,]\d+)?(?!\d)"
 VALUE_RE = re.compile(
     r"(?P<iso>(?<![\d.])(?:19|20)\d{2}[-/.]\d{1,2}(?:[-/.]\d{1,2})?(?!\d))"
-    r"|(?P<csym>[$€£¥])\s*(?P<cnum1>" + _NUM + r")"
-    r"|(?P<cnum2>" + _NUM + r")\s*(?:美元|美金|欧元|英镑|人民币|日元|港元|澳元|元)"
+    r"|(?P<csym>" + _CUR_SYM_RE + r")\s*(?P<cnum1>" + _NUM + r")"
+    r"|(?P<cnum2>" + _NUM + r")\s*(?P<ccy>" + _CUR_WORD_RE + r")(?![a-z])"
     r"|(?P<pct>" + _NUM + r")\s*%"
     r"|百分之\s*(?P<pct2>\d+(?:\.\d+)?)"
     r"|(?P<yr>(?<![\d.])(?:19|20)\d{2}(?!\d))(?:\s*(?:年|year|years))?"
+    r"|(?P<cnum3>" + _NUM + r")\s*(?P<csym2>" + _CUR_SYM_RE + r")"
     r"|(?P<gnum>" + _NUM + r")\s*(?:/\s*|per\s+|每\s*)?"
     r"(?P<gunit>(?:小时|分钟|秒钟|万个|[A-Za-z]{2,}|[个种条项名人次页台天月年周秒]))")
 
@@ -89,7 +203,8 @@ UNIT_SYN = {"day": "d", "days": "d", "天": "d", "hour": "h", "hours": "h", "小
 
 NEG_BACK_EN = re.compile(r"\b(?:not|no|never|cannot|can'?t|don'?t|doesn'?t|didn'?t|"
                          r"isn'?t|aren'?t|wasn'?t|weren'?t|won'?t|without)\b", re.I)
-NEG_BACK_ZH = re.compile(r"不|未|无|没有|无法|尚未")
+# R5:无限/未来/不断 等含否定字的普通词不算否定(回看窗口子串误判的根源)
+NEG_BACK_ZH = re.compile(r"无法|尚未|没有|未(?!来)|无(?!限)|不(?!断)")
 FWD_NEG_EN = re.compile(r"\b(?:not|never)\s+(?:support|offer|offered|included?|provided?"
                         r"|available|compatible|free|open)\w*", re.I)
 FWD_NEG_ZH = re.compile(r"(?:不|未|无法|没有)\s*(?:支持|提供|包含|兼容|可用|开放|免费)")
@@ -97,7 +212,8 @@ ASSERT_RE = re.compile(r"支持|提供|包含|包括|拥有|开源|免费|可用
                        r"|\b(?:support|offer|include|provide|available|open[-\s]?source"
                        r"|free|allow|integrate)\w*\b", re.I)
 CLAUSE_SPLIT = re.compile(r"[,;;]|但是|但|\b(?:however|yet|while)\b")
-SENT_SPLIT = re.compile(r"[。!?\n;；]+|(?<![\d.])\.(?!\d)")
+# R5:补全角！(U+FF01)/？(U+FF1F)与阿文 ؟(U+061F)——CJK/韩文/阿文问叹句不再粘连成一句
+SENT_SPLIT = re.compile(r"[。!?\uFF01\uFF1F\u061F\n;；]+|(?<![\d.])\.(?!\d)")
 
 CONF_MAP = {"high": "high", "med": "med", "medium": "med", "low": "low",
             "高": "high", "中": "med", "低": "low"}
@@ -182,21 +298,25 @@ def load_responses(path):
 # ---------- 关键词与数值抽取 ----------
 
 def extract_topic_terms(text, explicit=None):
-    """fact 的关键词组:显式 keywords 优先;否则自动抽(拉丁词 + CJK 去停词后整段与二元组)。"""
+    """fact 的关键词组:显式 keywords 优先(经归一链);否则自动分语系抽取——
+    拉丁词(去停词)、汉字 run 去停字后整段+二元组、
+    谚文/假名/西里尔/天城文/泰文 run 各自成 token(≥2 码点,单字符是虚词噪音)。"""
     if explicit:
-        return [k.strip().lower() for k in explicit if k and k.strip()]
+        return sorted({t for t in (_canon(k) for k in explicit if k and str(k).strip()) if t})
     terms = set()
-    for m in re.finditer(r"[A-Za-z][A-Za-z0-9_-]*", text):
-        w = m.group(0).lower()
-        if len(w) >= 2 and w not in STOP_EN:
-            terms.add(w)
-    for run in re.findall(r"[\u4e00-\u9fff]+", text):
-        s = "".join(ch for ch in run if ch not in STOP_CJK_CHARS)
-        if not s:
-            continue
-        terms.add(s)
-        for i in range(len(s) - 1):
-            terms.add(s[i:i + 2])
+    for fam, tok in _script_runs(_canon(text)):
+        if fam == "latin":
+            if len(tok) >= 2 and tok not in STOP_EN:
+                terms.add(tok)
+        elif fam == "cjk":
+            s = "".join(ch for ch in tok if ch not in STOP_CJK_CHARS)
+            if not s:
+                continue
+            terms.add(s)
+            for i in range(len(s) - 1):
+                terms.add(s[i:i + 2])
+        elif len(tok) >= 2:                       # 谚文/假名/西里尔/天城文/泰文
+            terms.add(tok)
     return sorted(terms)
 
 
@@ -216,19 +336,22 @@ def _norm_unit(u):
 
 
 def extract_values(text):
-    """抽取显式数值/日期:iso/currency/percent/year/generic(数字+单位)。裸数字不抽(噪音)。"""
+    """抽取显式数值/日期:iso/currency(带币种)/percent/year/generic(数字+单位)。
+    输入先过归一链(全角/泰文/天城文/阿拉伯数字→ASCII);裸数字不抽(噪音)。"""
     out = []
-    for m in VALUE_RE.finditer(text or ""):
+    for m in VALUE_RE.finditer(_canon(text)):
         if m.group("iso"):
             parts = re.split(r"[-/.]", m.group("iso"))
             out.append({"kind": "iso", "value": tuple(int(p) for p in parts),
                         "unit": "date", "raw": m.group("iso")})
         elif m.group("csym"):
             out.append({"kind": "currency", "value": _tofloat(m.group("cnum1")),
-                        "unit": "cur", "raw": m.group(0)})
+                        "unit": CUR_SYMBOL_MAP.get(m.group("csym"), "cur"),
+                        "raw": m.group(0)})
         elif m.group("cnum2"):
             out.append({"kind": "currency", "value": _tofloat(m.group("cnum2")),
-                        "unit": "cur", "raw": m.group(0)})
+                        "unit": CUR_WORD_MAP.get(m.group("ccy"), "cur"),
+                        "raw": m.group(0)})
         elif m.group("pct"):
             out.append({"kind": "percent", "value": _tofloat(m.group("pct")),
                         "unit": "pct", "raw": m.group(0)})
@@ -238,6 +361,10 @@ def extract_values(text):
         elif m.group("yr"):
             out.append({"kind": "year", "value": int(m.group("yr")),
                         "unit": "yr", "raw": m.group("yr")})
+        elif m.group("cnum3"):
+            out.append({"kind": "currency", "value": _tofloat(m.group("cnum3")),
+                        "unit": CUR_SYMBOL_MAP.get(m.group("csym2"), "cur"),
+                        "raw": m.group(0)})
         elif m.group("gnum"):
             out.append({"kind": "generic", "value": _tofloat(m.group("gnum")),
                         "unit": _norm_unit(m.group("gunit")), "raw": m.group(0)})
@@ -256,18 +383,27 @@ def split_sentences(text):
 # ---------- 冲突检测(正则近似层) ----------
 
 def value_conflict(fact_vals, sent_vals):
-    """同 (kind, unit) 桶内,句值与任一事实值相等→视为一致;否则首个不匹配者报冲突。"""
+    """同 (kind, unit) 桶内,句值与任一事实值相等→视为一致;否则首个不匹配者报冲突。
+    货币跨币种可比:数值与币种(ISO)都相同才判一致——$99 与 99元 不再判一致,判冲突。"""
     for sv in sent_vals:
-        key = (sv["kind"], sv["unit"])
-        bucket = [fv for fv in fact_vals if (fv["kind"], fv["unit"]) == key]
+        if sv["kind"] == "currency":
+            bucket = [fv for fv in fact_vals if fv["kind"] == "currency"]
+        else:
+            key = (sv["kind"], sv["unit"])
+            bucket = [fv for fv in fact_vals if (fv["kind"], fv["unit"]) == key]
         if not bucket:
             continue
         if sv["kind"] == "iso":
             if any(_iso_shared_equal(fv, sv) for fv in bucket):
                 continue
-        elif any(fv["value"] == sv["value"] for fv in bucket):
+        elif any(fv["value"] == sv["value"]
+                 and (sv["kind"] != "currency" or fv["unit"] == sv["unit"])
+                 for fv in bucket):
             continue
-        fv = bucket[0]
+        if sv["kind"] == "currency":              # 优先报同数值异币种(更具体)
+            fv = next((f for f in bucket if f["value"] == sv["value"]), bucket[0])
+        else:
+            fv = bucket[0]
         kind = "date" if sv["kind"] in ("iso", "year") else "number"
         return fv, sv, kind
     return None
@@ -289,7 +425,7 @@ def _occurrence_negated(clause, pos, end):
 def polarity(text, term):
     """term 在 text 中的极性:任一非否定出现→pos,全否定→neg,未出现→None。分句评估。"""
     pols = []
-    for cl in CLAUSE_SPLIT.split(text or ""):
+    for cl in CLAUSE_SPLIT.split(_canon(text)):
         for m in re.finditer(re.escape(term), cl, re.I):
             pols.append("neg" if _occurrence_negated(cl, m.start(), m.end()) else "pos")
     if not pols:
@@ -299,7 +435,7 @@ def polarity(text, term):
 
 def _anchored_negation(text, term):
     """term 的某次出现其**前向**窗口内紧邻否定词(报告布尔冲突时优先这类术语,更具体)。"""
-    for cl in CLAUSE_SPLIT.split(text or ""):
+    for cl in CLAUSE_SPLIT.split(_canon(text)):
         for m in re.finditer(re.escape(term), cl, re.I):
             back = cl[max(0, m.start() - 26):m.start()]
             if NEG_BACK_ZH.search(back) or NEG_BACK_EN.search(back):

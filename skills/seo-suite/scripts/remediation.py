@@ -27,11 +27,20 @@ auto{verified_by:"audit diff", old_audit, new_audit};部分 URL 仍命中 →
 rule 级无对应工单)→ 列"建议 init 增补"清单。
 
 用法: python3 remediation.py <init|list|update|verify|report> [选项]
-退出码: 0 正常 / 1 有超期(list/report)或 verify 发现增补建议 / 2 输入或参数错误。"""
+退出码: 0 正常 / 1 有超期(list/report)或 verify 发现增补建议 / 2 输入或参数错误。
+
+并发口径(R5):save_data 原子写(tempfile + os.replace,读者只见旧版或新版,不落
+半截文件)+ 数据文件级 flock(data_lock,照 monitor.py monitor_lock 惯例:lockfile
+落在数据文件所在目录,LOCK_EX|LOCK_NB 轮询,超时 → 警告并跳过本次写)。
+init/update/verify 的 load→改→save 全程持锁——两进程交替写也不覆盖丢单。"""
+import contextlib
+import fcntl
 import json
 import os
 import re
 import sys
+import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 
 SCHEMA_VERSION = 1
@@ -97,6 +106,10 @@ update 状态机 → verify audit diff 自动核销 → report 汇总与 SLA。
   report [--file F] [--json]
       生命周期汇总(Markdown):open/in_progress/overdue/verified/wontfix 计数 +
       SLA 达成率(verified 且 closed≤deadline ÷ 总 verified;无 verified 时 N/A)。
+
+并发(R5):save_data 原子写(tempfile+os.replace)+ 数据文件级 flock(data_lock,
+照 monitor.py 惯例);init/update/verify 的 load→改→save 全程持锁,两进程交替写
+不覆盖丢单;等锁超时(默认 120s)→ 警告并跳过本次写。
 
 退出码: 0 正常 / 1 有超期(list/report)或 verify 发现增补建议 / 2 输入或参数错误。"""
 
@@ -180,8 +193,52 @@ def load_data(path, create=False):
 
 
 def save_data(path, data):
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(json.dumps(data, ensure_ascii=False, indent=1) + "\n")
+    """原子写(R5):tempfile + os.replace(与 notify.save_state 同法)——中断/并发
+    不落半截文件,读者只见旧版或新版;写失败(含 replace 前异常)自动清理临时文件。
+    与 data_lock 配合:锁保证 read-modify-write 不交错,原子写保证读端永远可解析。"""
+    d = os.path.dirname(os.path.abspath(path))
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix="." + os.path.basename(path) + ".tmp-", dir=d)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(data, ensure_ascii=False, indent=1) + "\n")
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+@contextlib.contextmanager
+def data_lock(path, timeout=120.0):
+    """数据文件级 flock(R5,照 monitor.py monitor_lock 惯例):lockfile 落在数据文件
+    所在目录(.<文件名>.lock),flock LOCK_EX|LOCK_NB 每 0.5s 轮询;超时 → 警告并
+    跳过本次写(SystemExit)——防本地 cron/CI 两进程交替写时 read-modify-write
+    覆盖丢单。init/update/verify 的 load→改→save 全程持锁。"""
+    d = os.path.dirname(os.path.abspath(path))
+    os.makedirs(d, exist_ok=True)
+    lock_path = os.path.join(d, "." + os.path.basename(path) + ".lock")
+    fh = open(lock_path, "w")
+    try:
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() > deadline:
+                    raise SystemExit(
+                        "警告: 另一 remediation 进程持有 %s 超过 %.0fs,跳过本次写(防并发覆盖丢失)"
+                        % (lock_path, timeout))
+                time.sleep(0.5)
+        yield
+    finally:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+        finally:
+            fh.close()
 
 
 def next_id(items):
@@ -272,24 +329,26 @@ def cmd_init(rest):
             sev = f.get("severity")
             if sev in SEV_ORDER and SEV_ORDER[sev] < SEV_ORDER[m["severity"]]:
                 m["severity"] = sev                      # 并单取最重严重度
-    data = load_data(val["--file"], create=True)
-    existing = {(it.get("rule_id"), it.get("phase")) for it in data["items"]}
-    created = skipped = 0
-    for rid, phase in order:
-        if (rid, phase) in existing:                     # 幂等:同 rule+phase 不重复建单
-            skipped += 1
-            continue
-        m = merged[(rid, phase)]
-        ts = now_utc()
-        data["items"].append({
-            "id": next_id(data["items"]), "rule_id": rid, "area": m["area"],
-            "action": m["action"], "phase": phase, "severity": m["severity"],
-            "affected_urls": m["urls"], "status": "proposed",
-            "created": ts.isoformat(),
-            "deadline": (ts + timedelta(days=DEADLINE_DAYS[phase])).isoformat(),
-            "closed": None, "verify_hint": VERIFY_HINT, "note": ""})
-        created += 1
-    save_data(val["--file"], data)
+    data = None
+    with data_lock(val["--file"]):                       # R5:load→改→save 全程持锁
+        data = load_data(val["--file"], create=True)
+        existing = {(it.get("rule_id"), it.get("phase")) for it in data["items"]}
+        created = skipped = 0
+        for rid, phase in order:
+            if (rid, phase) in existing:                 # 幂等:同 rule+phase 不重复建单
+                skipped += 1
+                continue
+            m = merged[(rid, phase)]
+            ts = now_utc()
+            data["items"].append({
+                "id": next_id(data["items"]), "rule_id": rid, "area": m["area"],
+                "action": m["action"], "phase": phase, "severity": m["severity"],
+                "affected_urls": m["urls"], "status": "proposed",
+                "created": ts.isoformat(),
+                "deadline": (ts + timedelta(days=DEADLINE_DAYS[phase])).isoformat(),
+                "closed": None, "verify_hint": VERIFY_HINT, "note": ""})
+            created += 1
+        save_data(val["--file"], data)
     print("init: 新建 %d 张工单(跳过 %d 张已存在),共 %d 张 → %s"
           % (created, skipped, len(data["items"]), os.path.abspath(val["--file"])))
     return 0
@@ -377,25 +436,27 @@ def cmd_update(rest):
         die("verified 只能由 verify 子命令自动设置(audit diff 核销),不可手工指定")
     if new not in UPDATE_TARGETS:
         die("--status 非法 %r;update 只接受 %s" % (new, "|".join(UPDATE_TARGETS)))
-    data = load_data(val["--file"])
-    item = next((it for it in data["items"] if it.get("id") == tid), None)
-    if item is None:
-        die("找不到工单 %r(%s 中共 %d 张)" % (tid, val["--file"], len(data["items"])))
-    cur = item["status"]
-    if new == "wontfix":
-        if cur == "wontfix":
-            die("wontfix 是终态,不可再次转换")
-        if not (val["--note"] or "").strip():
-            die("wontfix 必须带 --note 说明不修理由(接受≠消失,report 仍单独计数)")
-    elif (cur, new) not in TRANSITIONS:
-        die("非法状态转换 %s → %s;合法链 proposed→accepted→in_progress→implemented"
-            "(逐级前进);wontfix 可从任意态进入(需 note);verified 仅由 verify 设置" % (cur, new))
-    item["status"] = new
-    if val["--note"] is not None:
-        item["note"] = val["--note"]
-    if new == "wontfix":
-        item["closed"] = now_utc().isoformat()           # wontfix 即关闭
-    save_data(val["--file"], data)
+    data = None
+    with data_lock(val["--file"]):                       # R5:load→改→save 全程持锁
+        data = load_data(val["--file"])
+        item = next((it for it in data["items"] if it.get("id") == tid), None)
+        if item is None:
+            die("找不到工单 %r(%s 中共 %d 张)" % (tid, val["--file"], len(data["items"])))
+        cur = item["status"]
+        if new == "wontfix":
+            if cur == "wontfix":
+                die("wontfix 是终态,不可再次转换")
+            if not (val["--note"] or "").strip():
+                die("wontfix 必须带 --note 说明不修理由(接受≠消失,report 仍单独计数)")
+        elif (cur, new) not in TRANSITIONS:
+            die("非法状态转换 %s → %s;合法链 proposed→accepted→in_progress→implemented"
+                "(逐级前进);wontfix 可从任意态进入(需 note);verified 仅由 verify 设置" % (cur, new))
+        item["status"] = new
+        if val["--note"] is not None:
+            item["note"] = val["--note"]
+        if new == "wontfix":
+            item["closed"] = now_utc().isoformat()       # wontfix 即关闭
+        save_data(val["--file"], data)
     print("update: %s %s → %s%s" % (tid, cur, new, "(closed=%s)" % item["closed"]
                                     if new == "wontfix" else ""))
     return 0
@@ -456,30 +517,33 @@ def cmd_verify(rest):
             die("未知参数 %r(verify 子命令)" % a, with_usage=True)
     if not val["--old"] or not val["--new"]:
         die("缺少 --old 或 --new\n" + USAGE)
-    data = load_data(val["--file"])
+    data = None
+    # R5:audit 文件只读可先解析;工单 load→核销→save 全程持锁(与 update 并发不覆盖)
     old_idx, new_idx = issue_index(load_audit(val["--old"])), issue_index(load_audit(val["--new"]))
     now = now_utc()
     verified_ids, partial_ids, untouched = [], [], 0
-    for it in data["items"]:
-        if it["status"] in ("wontfix", "verified"):     # 终态不参与核销
-            untouched += 1
-            continue
-        old_hits, new_hits = item_hits(it, old_idx), item_hits(it, new_idx)
-        if not old_hits:
-            untouched += 1                               # old 审计无此发现,无从判定
-            continue
-        if not new_hits:                                 # old 有 new 无 → 自动核销
-            it["status"] = "verified"
-            it["closed"] = now.isoformat()
-            it["auto"] = {"verified_by": "audit diff",
-                          "old_audit": val["--old"], "new_audit": val["--new"]}
-            verified_ids.append(it["id"])
-        else:                                            # 部分 URL 仍命中 → 保持现状+partial 明细
-            it["auto"] = {"partial": [{"url": u, "rule": a} for u, a in
-                                      sorted(new_hits, key=lambda p: (p[1], p[0]))],
-                          "old_audit": val["--old"], "new_audit": val["--new"]}
-            partial_ids.append(it["id"])
-    save_data(val["--file"], data)
+    with data_lock(val["--file"]):
+        data = load_data(val["--file"])
+        for it in data["items"]:
+            if it["status"] in ("wontfix", "verified"):     # 终态不参与核销
+                untouched += 1
+                continue
+            old_hits, new_hits = item_hits(it, old_idx), item_hits(it, new_idx)
+            if not old_hits:
+                untouched += 1                               # old 审计无此发现,无从判定
+                continue
+            if not new_hits:                                 # old 有 new 无 → 自动核销
+                it["status"] = "verified"
+                it["closed"] = now.isoformat()
+                it["auto"] = {"verified_by": "audit diff",
+                              "old_audit": val["--old"], "new_audit": val["--new"]}
+                verified_ids.append(it["id"])
+            else:                                            # 部分 URL 仍命中 → 保持现状+partial 明细
+                it["auto"] = {"partial": [{"url": u, "rule": a} for u, a in
+                                          sorted(new_hits, key=lambda p: (p[1], p[0]))],
+                              "old_audit": val["--old"], "new_audit": val["--new"]}
+                partial_ids.append(it["id"])
+        save_data(val["--file"], data)
     # 增补建议:新 finding((url,rule) 在 new 不在 old,audit_compare 新增口径)
     # 且 rule 级不属于任何现有工单(含 wontfix/verified——工单按 rule 归并覆盖)。
     covered = {it.get("rule_id") for it in data["items"]}
