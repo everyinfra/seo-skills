@@ -14,6 +14,8 @@ metadata:
 
 ## 使用原则
 
+0. **先体检,后内容**:任何内容生产/热点选题/GEO 优化启动前,先对目标站跑完整体检(site_audit 多页采样 → health_score → prioritize → envelope 出审计封套);存在未处置的 CRITICAL 技术问题时,先修复基座再谈内容——地基没过的站,内容做再多也进不了引用池(检索是漏斗瓶颈)。
+
 ### 1. 单入口
 - SEO / GEO / AI 搜索可见度 / SERP / Schema / 技术 SEO / 排名追踪 / 外链 / Programmatic SEO / 竞品页 / 内容策略 / 内容刷新等需求，都从这里进入，再按下面的规则路由。
 
@@ -50,7 +52,7 @@ metadata:
 - `doctor.py`:环境自检+凭证分层探测(T0 纯静态→T3 GA4,只探键名不读值)+全输出 redact;退出码 0=ready/3=需处理;报告按 tier 自动声明数据覆盖范围
 - `ai_views.py --url|--html`:AI 视图层生成(Scrunch AXP 等价):语义净化版 HTML+Markdown+tokereductions 统计;默认 dry-run,--apply 写 ./ai-views/,人审后自行部署;不承诺引用提升(同 llms.txt 实证口径)
 - `envelope.py --audit audit.json [--health] [--priority]`:三源统一封套 audit-data.json(summary/categories/action_plan 三段 phases)+**部分落盘契约**(每 category 即落盘 findings/*.md,--resume 断点续跑)
-- `trend_watch.py watch|gate|backlog`:热点监控与选题闸门——六信号源(News/Reddit rising/HN/微博/百度,403 源跳过)→四问闸门(相关≥25 分/净新观点≥5/窗口 24-72h 分型/独家三选一)→GO·PIVOT·WATCH·DROP+wire 否决;briefs/ 落盘决策件配 trend-jack-playbook.md
+- `trend_watch.py watch|gate|backlog [--config 垂直配置]`:热点监控与选题闸门——**监控的是产品所在行业的趋势**(vertical_tokens 三层词表:品类+品牌+竞品;reddit_subs 按垂直选版),不是 SEO 元领域;六信号源(403 源跳过)→四问闸门(相关≥25 分/净新观点≥5/窗口 24-72h 分型/独家三选一)→GO·PIVOT·WATCH·DROP+wire 否决;briefs/ 落盘决策件配 trend-jack-playbook.md
 - `benchmark_report.py --audits dir|--monitor-db|--scores`:匿名基准聚合(State of GEO 式):P25/50/75 分布+Top 失败规则频次;偏差自白首尾强制;只聚合数字绝不含域名 
 
 **技术 SEO**

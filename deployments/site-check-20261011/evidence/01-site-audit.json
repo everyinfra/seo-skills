@@ -1,0 +1,367 @@
+
+== https://github.com/everyinfra/seo-skills ==
+[WARN] title: 264 chars 超上限 60()
+[WARN] description: 247 chars 超上限 155
+[WARN] canonical: 缺失
+[WARN] links: 207 链接 >100
+[WARN] schema: 无 JSON-LD
+[INFO] rendering: 无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页
+[INFO] sitemap: //sitemap.xml 不可达
+[INFO] semantic-html: 语义 HTML 比值 2.5% <10%(阈值自定,官方未公开)
+meta: {"title": "GitHub - everyinfra/seo-skills: Free global SEO/GEO skill for Claude Code, Codex & 10 agent hosts — 18 market portals, 56 stdlib scripts, 672 golden tests, self-update intel loop, monitoring daemon, CI gates. Multilingual GEO, pSEO, CWV, penalty recovery. · GitHub", "title_len": "264 chars/60", "desc_len": "247 chars/155", "words": 3884, "h1": 1, "jsonld": 0, "links": 207}
+ai_search_health: 85/100 [bots:✓, llms_txt:✓, freshness:✓, semantic_html:✗, content_length:✓, bluf:✓]
+
+== https://github.com/everyinfra/seo-skills/blob/main/README.md ==
+[WARN] title: 61 chars 超上限 60()
+[WARN] description: 278 chars 超上限 155
+[WARN] h1: 3 个 H1
+[WARN] canonical: 缺失
+[WARN] links: 112 链接 >100
+[WARN] schema: 无 JSON-LD
+[INFO] rendering: 无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页
+[INFO] sitemap: //sitemap.xml 不可达
+[INFO] semantic-html: 语义 HTML 比值 2.8% <10%(阈值自定,官方未公开)
+meta: {"title": "seo-skills/README.md at main · everyinfra/seo-skills · GitHub", "title_len": "61 chars/60", "desc_len": "278 chars/155", "words": 3576, "h1": 3, "jsonld": 0, "links": 112}
+ai_search_health: 85/100 [bots:✓, llms_txt:✓, freshness:✓, semantic_html:✗, content_length:✓, bluf:✓]
+
+== https://github.com/everyinfra/jev-radar ==
+[WARN] title: 260 chars 超上限 60()
+[WARN] description: 243 chars 超上限 155
+[WARN] headings: 跳级 h1→h3
+[WARN] canonical: 缺失
+[WARN] links: 198 链接 >100
+[WARN] schema: 无 JSON-LD
+[INFO] rendering: 无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页
+[INFO] sitemap: //sitemap.xml 不可达
+[INFO] semantic-html: 语义 HTML 比值 3.4% <10%(阈值自定,官方未公开)
+meta: {"title": "GitHub - everyinfra/jev-radar: 📡 The most rigorously verified tracker of the Jev (TypeSafe AI System One) ecosystem — 1,067 confidence-graded entries (A463·B604) · 140 scans in 25 days, every 3 hours · bilingual EN/中文 · API access guide + key giveaway · GitHub", "title_len": "260 chars/60", "desc_len": "243 chars/155", "words": 3161, "h1": 1, "jsonld": 0, "links": 198}
+ai_search_health: 85/100 [bots:✓, llms_txt:✓, freshness:✓, semantic_html:✗, content_length:✓, bluf:✓]
+{
+ "schema_version": 1,
+ "audited": 3,
+ "critical": 0,
+ "results": {
+  "https://github.com/everyinfra/seo-skills": {
+   "verdict": "pass",
+   "findings": [
+    {
+     "severity": "WARN",
+     "area": "title",
+     "message": "264 chars 超上限 60()"
+    },
+    {
+     "severity": "WARN",
+     "area": "description",
+     "message": "247 chars 超上限 155"
+    },
+    {
+     "severity": "WARN",
+     "area": "canonical",
+     "message": "缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "links",
+     "message": "207 链接 >100"
+    },
+    {
+     "severity": "WARN",
+     "area": "schema",
+     "message": "无 JSON-LD"
+    },
+    {
+     "severity": "INFO",
+     "area": "rendering",
+     "message": "无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页"
+    },
+    {
+     "severity": "INFO",
+     "area": "sitemap",
+     "message": "//sitemap.xml 不可达"
+    },
+    {
+     "severity": "INFO",
+     "area": "semantic-html",
+     "message": "语义 HTML 比值 2.5% <10%(阈值自定,官方未公开)"
+    }
+   ],
+   "meta": {
+    "title": "GitHub - everyinfra/seo-skills: Free global SEO/GEO skill for Claude Code, Codex & 10 agent hosts — 18 market portals, 56 stdlib scripts, 672 golden tests, self-update intel loop, monitoring daemon, CI gates. Multilingual GEO, pSEO, CWV, penalty recovery. · GitHub",
+    "title_len": "264 chars/60",
+    "desc_len": "247 chars/155",
+    "words": 3884,
+    "h1": 1,
+    "jsonld": 0,
+    "links": 207
+   },
+   "ai_search_health": {
+    "score": 85,
+    "bots": {
+     "allowed": [
+      "ChatGPT-User",
+      "OAI-SearchBot",
+      "Googlebot",
+      "Google-Extended",
+      "Perplexity-User",
+      "PerplexityBot",
+      "Claude-User",
+      "Claude-SearchBot"
+     ],
+     "blocked": []
+    },
+    "last_modified_days": null,
+    "semantic_ratio": 0.0253,
+    "checks": [
+     {
+      "id": "bots",
+      "pass": true,
+      "detail": "8 bot 全放行(Semrush 名单)"
+     },
+     {
+      "id": "llms_txt",
+      "pass": true,
+      "detail": "llms.txt 存在"
+     },
+     {
+      "id": "freshness",
+      "pass": true,
+      "detail": "无 Last-Modified(头/meta),跳过"
+     },
+     {
+      "id": "semantic_html",
+      "pass": false,
+      "detail": "语义标签比值 2.5%(<10% 触发;阈值自定[推断],官方未公开)"
+     },
+     {
+      "id": "content_length",
+      "pass": true,
+      "detail": "词数 3884(>15000 触发内容过长;阈值自定[推断])"
+     },
+     {
+      "id": "bluf",
+      "pass": true,
+      "detail": "score 1.00(pass≥0.5);首块 2421 字(>100),直答短语未见,li 107 个(>3)"
+     }
+    ]
+   }
+  },
+  "https://github.com/everyinfra/seo-skills/blob/main/README.md": {
+   "verdict": "pass",
+   "findings": [
+    {
+     "severity": "WARN",
+     "area": "title",
+     "message": "61 chars 超上限 60()"
+    },
+    {
+     "severity": "WARN",
+     "area": "description",
+     "message": "278 chars 超上限 155"
+    },
+    {
+     "severity": "WARN",
+     "area": "h1",
+     "message": "3 个 H1"
+    },
+    {
+     "severity": "WARN",
+     "area": "canonical",
+     "message": "缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "links",
+     "message": "112 链接 >100"
+    },
+    {
+     "severity": "WARN",
+     "area": "schema",
+     "message": "无 JSON-LD"
+    },
+    {
+     "severity": "INFO",
+     "area": "rendering",
+     "message": "无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页"
+    },
+    {
+     "severity": "INFO",
+     "area": "sitemap",
+     "message": "//sitemap.xml 不可达"
+    },
+    {
+     "severity": "INFO",
+     "area": "semantic-html",
+     "message": "语义 HTML 比值 2.8% <10%(阈值自定,官方未公开)"
+    }
+   ],
+   "meta": {
+    "title": "seo-skills/README.md at main · everyinfra/seo-skills · GitHub",
+    "title_len": "61 chars/60",
+    "desc_len": "278 chars/155",
+    "words": 3576,
+    "h1": 3,
+    "jsonld": 0,
+    "links": 112
+   },
+   "ai_search_health": {
+    "score": 85,
+    "bots": {
+     "allowed": [
+      "ChatGPT-User",
+      "OAI-SearchBot",
+      "Googlebot",
+      "Google-Extended",
+      "Perplexity-User",
+      "PerplexityBot",
+      "Claude-User",
+      "Claude-SearchBot"
+     ],
+     "blocked": []
+    },
+    "last_modified_days": null,
+    "semantic_ratio": 0.0276,
+    "checks": [
+     {
+      "id": "bots",
+      "pass": true,
+      "detail": "8 bot 全放行(Semrush 名单)"
+     },
+     {
+      "id": "llms_txt",
+      "pass": true,
+      "detail": "llms.txt 存在"
+     },
+     {
+      "id": "freshness",
+      "pass": true,
+      "detail": "无 Last-Modified(头/meta),跳过"
+     },
+     {
+      "id": "semantic_html",
+      "pass": false,
+      "detail": "语义标签比值 2.8%(<10% 触发;阈值自定[推断],官方未公开)"
+     },
+     {
+      "id": "content_length",
+      "pass": true,
+      "detail": "词数 3576(>15000 触发内容过长;阈值自定[推断])"
+     },
+     {
+      "id": "bluf",
+      "pass": true,
+      "detail": "score 1.00(pass≥0.5);首块 2013 字(>100),直答短语未见,li 106 个(>3)"
+     }
+    ]
+   }
+  },
+  "https://github.com/everyinfra/jev-radar": {
+   "verdict": "pass",
+   "findings": [
+    {
+     "severity": "WARN",
+     "area": "title",
+     "message": "260 chars 超上限 60()"
+    },
+    {
+     "severity": "WARN",
+     "area": "description",
+     "message": "243 chars 超上限 155"
+    },
+    {
+     "severity": "WARN",
+     "area": "headings",
+     "message": "跳级 h1→h3"
+    },
+    {
+     "severity": "WARN",
+     "area": "canonical",
+     "message": "缺失"
+    },
+    {
+     "severity": "WARN",
+     "area": "links",
+     "message": "198 链接 >100"
+    },
+    {
+     "severity": "WARN",
+     "area": "schema",
+     "message": "无 JSON-LD"
+    },
+    {
+     "severity": "INFO",
+     "area": "rendering",
+     "message": "无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页"
+    },
+    {
+     "severity": "INFO",
+     "area": "sitemap",
+     "message": "//sitemap.xml 不可达"
+    },
+    {
+     "severity": "INFO",
+     "area": "semantic-html",
+     "message": "语义 HTML 比值 3.4% <10%(阈值自定,官方未公开)"
+    }
+   ],
+   "meta": {
+    "title": "GitHub - everyinfra/jev-radar: 📡 The most rigorously verified tracker of the Jev (TypeSafe AI System One) ecosystem — 1,067 confidence-graded entries (A463·B604) · 140 scans in 25 days, every 3 hours · bilingual EN/中文 · API access guide + key giveaway · GitHub",
+    "title_len": "260 chars/60",
+    "desc_len": "243 chars/155",
+    "words": 3161,
+    "h1": 1,
+    "jsonld": 0,
+    "links": 198
+   },
+   "ai_search_health": {
+    "score": 85,
+    "bots": {
+     "allowed": [
+      "ChatGPT-User",
+      "OAI-SearchBot",
+      "Googlebot",
+      "Google-Extended",
+      "Perplexity-User",
+      "PerplexityBot",
+      "Claude-User",
+      "Claude-SearchBot"
+     ],
+     "blocked": []
+    },
+    "last_modified_days": null,
+    "semantic_ratio": 0.034,
+    "checks": [
+     {
+      "id": "bots",
+      "pass": true,
+      "detail": "8 bot 全放行(Semrush 名单)"
+     },
+     {
+      "id": "llms_txt",
+      "pass": true,
+      "detail": "llms.txt 存在"
+     },
+     {
+      "id": "freshness",
+      "pass": true,
+      "detail": "无 Last-Modified(头/meta),跳过"
+     },
+     {
+      "id": "semantic_html",
+      "pass": false,
+      "detail": "语义标签比值 3.4%(<10% 触发;阈值自定[推断],官方未公开)"
+     },
+     {
+      "id": "content_length",
+      "pass": true,
+      "detail": "词数 3161(>15000 触发内容过长;阈值自定[推断])"
+     },
+     {
+      "id": "bluf",
+      "pass": true,
+      "detail": "score 1.00(pass≥0.5);首块 2667 字(>100),直答短语未见,li 130 个(>3)"
+     }
+    ]
+   }
+  }
+ }
+}

@@ -6,7 +6,7 @@
 
 | 示例 | 用的脚本链 | 主要交付物 |
 |---|---|---|
-| trend-gate-geo-survey-20261011 | trend_watch watch→gate | 真实热点信号的四问闸门 GO 判定决策件+7 观点角度文件(真实网络首跑) |
+| trend-gate-geo-survey-20261011 | trend_watch watch→gate | 真实热点的四问闸门 GO 决策件(⚠️ 首跑误用了 SEO 元领域话题,已更正为产品垂直——见目录内 CORRECTION.md 与 product-vertical-config.json) |
 | [site-audit-chain-example.com-20261010/](site-audit-chain-example.com-20261010/REPORT.md) | `site_audit.py --json` → `health_score.py --input` → `fix_plan.py --audit --estimate`(真实抓取 https://example.com) | dev 模式审计报告(REPORT.md)+ 3 份编号证据(审计 JSON/健康分/修复计划 dry-run) |
 | [citation-panel-demo-20261010/](citation-panel-demo-20261010/REPORT.md) | `citation_panel.py init → record ×6 → report`(合成数据,显式声明) | AI 可见性面板报告(REPORT.md)+ 工具原样 report 输出(evidence/01)+ panel.json/runs/inputs 原始层 |
 | [envelope-chain-example.com-20261011/](envelope-chain-example.com-20261011/REPORT.md) | `site_audit.py --json` → `health_score.py --json` → `prioritize.py --json` → `envelope.py`(三源聚合;真实抓取 https://example.com) | dev 模式 envelope 报告(REPORT.md)+ 4 步编号证据,含 envelope 落盘树(evidence/04:audit-data.json + REPORT.md + findings/*.md 3/3 类别,部分落盘契约形态) |

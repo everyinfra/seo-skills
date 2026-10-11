@@ -1,0 +1,79 @@
+{
+ "schema_version": "1.0",
+ "input_format": "site_audit",
+ "segment": null,
+ "coverage_note": "基于样本,优先级不可外推到未爬取页面(Ryte/Botify 口径)",
+ "urls_refused": 0,
+ "urls_matched_segment": 3,
+ "urls_total": 3,
+ "fix_now": [],
+ "explore": [],
+ "no_hit_rules": [
+  "canonical_invalid",
+  "desc_missing",
+  "desc_short",
+  "fetch_error",
+  "h1_missing",
+  "noindex_intent",
+  "staging_exposed",
+  "thin_content",
+  "title_missing",
+  "title_short",
+  "url_long"
+ ],
+ "degraded_rules": [
+  {
+   "rule": "depth_deep",
+   "reason": "缺 depth 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "inlinks_low",
+   "reason": "缺 inlinks 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "duplicate_body",
+   "reason": "缺 similarity 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "canonical_mismatch",
+   "reason": "缺 canonical_similarity 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "canonical_pagerank",
+   "reason": "缺 canonical_other 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "redirect_canonical_conflict",
+   "reason": "缺 redirect_and_canonical_other 数据(输入 audit 无该页面级字段),规则未生效"
+  },
+  {
+   "rule": "not_indexed_with_traffic",
+   "reason": "缺 not_indexed 数据(输入 audit 无该页面级字段),规则未生效"
+  }
+ ],
+ "degradation_notes": [],
+ "context": {
+  "gsc": false,
+  "pagerank_compare": false,
+  "field_coverage": {
+   "canonical_other": 0,
+   "canonical_pagerank": 0,
+   "canonical_similarity": 0,
+   "canonical_target": 0,
+   "depth": 0,
+   "desc_len": 3,
+   "gsc_clicks": 0,
+   "indexed": 0,
+   "inlinks": 0,
+   "noindex": 3,
+   "not_indexed": 0,
+   "pagerank": 0,
+   "redirect": 0,
+   "redirect_and_canonical_other": 0,
+   "similarity": 0,
+   "title_len": 3,
+   "url_len": 3,
+   "words": 3
+  }
+ }
+}

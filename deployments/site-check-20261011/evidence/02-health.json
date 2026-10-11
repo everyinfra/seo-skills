@@ -1,0 +1,268 @@
+{
+ "schema_version": "1.0",
+ "main_score": 100.0,
+ "band": "Excellent",
+ "composite_score": 98.0,
+ "warn_score": 0.0,
+ "info_score": 0.0,
+ "category_scores": {
+  "availability": {
+   "score": 100.0,
+   "reason": null,
+   "weight": 3.0
+  },
+  "indexability": {
+   "score": 99.0,
+   "reason": null,
+   "weight": 10.0
+  },
+  "uniqueness": {
+   "score": 100.0,
+   "reason": null,
+   "weight": 1.0
+  },
+  "discoverability": {
+   "score": 98.8,
+   "reason": null,
+   "weight": 2.5
+  },
+  "rankability": {
+   "score": 95.8,
+   "reason": null,
+   "weight": 9.0
+  },
+  "experience": {
+   "score": null,
+   "reason": "data_source_missing",
+   "weight": 0.0
+  }
+ },
+ "impacts": [
+  {
+   "rule": "canonical",
+   "category": "indexability",
+   "subgroup": "canonicalization",
+   "severity": "WARN",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 4.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "description",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "WARN",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 4.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "links",
+   "category": "discoverability",
+   "subgroup": "internal_linking",
+   "severity": "WARN",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 4.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "schema",
+   "category": "rankability",
+   "subgroup": "structured_data",
+   "severity": "WARN",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 4.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "title",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "WARN",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 4.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "h1",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "WARN",
+   "hit_urls": 1,
+   "total_urls": 3,
+   "impact": 1.3333,
+   "action": "立即处理"
+  },
+  {
+   "rule": "headings",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "WARN",
+   "hit_urls": 1,
+   "total_urls": 3,
+   "impact": 1.3333,
+   "action": "立即处理"
+  },
+  {
+   "rule": "rendering",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "INFO",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 1.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "semantic-html",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "INFO",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 1.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "sitemap",
+   "category": "discoverability",
+   "subgroup": "sitemaps",
+   "severity": "INFO",
+   "hit_urls": 3,
+   "total_urls": 3,
+   "impact": 1.0,
+   "action": "立即处理"
+  },
+  {
+   "rule": "a11y",
+   "category": "discoverability",
+   "subgroup": "internationalization",
+   "severity": "WARN",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "ai-bots",
+   "category": "indexability",
+   "subgroup": "non_indexable",
+   "severity": "CRITICAL",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "bluf",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "INFO",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "content",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "WARN",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "duplicate_title",
+   "category": "uniqueness",
+   "subgroup": "duplicate_title",
+   "severity": "WARN",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "fetch",
+   "category": "availability",
+   "subgroup": "server_errors",
+   "severity": "CRITICAL",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "freshness",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "INFO",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "images",
+   "category": "rankability",
+   "subgroup": "page_content",
+   "severity": "WARN",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "llms.txt",
+   "category": "discoverability",
+   "subgroup": "sitemaps",
+   "severity": "INFO",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "og",
+   "category": "rankability",
+   "subgroup": "social_tags",
+   "severity": "WARN",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "robots",
+   "category": "indexability",
+   "subgroup": "non_indexable",
+   "severity": "CRITICAL",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  },
+  {
+   "rule": "staging",
+   "category": "indexability",
+   "subgroup": "non_indexable",
+   "severity": "CRITICAL",
+   "hit_urls": 0,
+   "total_urls": 3,
+   "impact": 0.0,
+   "action": "opportunity 值得探索"
+  }
+ ],
+ "ignored": [],
+ "unmapped": [],
+ "coverage_note": "基于样本,分数不可与全站直接比较",
+ "urls_total": 3,
+ "urls_clean": 3,
+ "urls_refused": 0
+}

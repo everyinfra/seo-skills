@@ -107,7 +107,7 @@
 
 | ai_views.py | URL 实时抓取或 --html 离线 | ③fetch 被拒([SKIP])→停止并说明;无 --apply 只预览 | 不承诺引用提升;token 统计是 len//4 估算[est] |
 | envelope.py | audit.json(必需)+health/priority(可选) | ②可选源缺失→标 source_missing 继续;格式不符→退出 2 不静默 | 只聚合不改写上游数字;phases 分派是规则映射非承诺 |
-| trend_watch.py | 六信号源实时拉取 | ②403 源整源跳过告警;③全源失败退出 2 | 判定只报闸门分数不预测流量;时效窗口是 24-72h 经验带 | 多个 audit json/monitor.db/scores.csv | ③样本<5→拒绝出报告(退出 2) | 只输出聚合数字,绝不含域名(URL 解析即弃) |
+| trend_watch.py | 六信号源实时拉取(--config vertical_tokens 配**产品垂直**三层词表:品类+品牌+竞品) | ②403 源整源跳过告警;③全源失败退出 2 | 判定只报闸门分数不预测流量;时效窗口是 24-72h 经验带 | 多个 audit json/monitor.db/scores.csv | ③样本<5→拒绝出报告(退出 2) | 只输出聚合数字,绝不含域名(URL 解析即弃) |
 
 ## 全局守则(四条,一切脚本与报告通用)
 

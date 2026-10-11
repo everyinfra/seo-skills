@@ -45,3 +45,10 @@
 - **修正 1(配置)**:`--config` 三层词表(品类+品牌+竞品)+`reddit_subs` 按垂直选版(devops/LocalLLaMA/selfhosted);真实复跑:与 EveryInfra 产品垂直相关的信号("Claude Agent SDK vs LangGraph vs CrewAI")进入候选,边缘项(Spec-Driven Tools)10 分 watch,无关项照旧 drop
 - **修正 2(真实缺陷)**:词组全匹配把上述高相关信号漏成 Q1=0——已加词干级三档匹配(词组 25/全词 10/显著单词各 10 且≥2 垂类词升 HIGH),该信号 25 HIGH;29 测试全绿
 - 示例目录已更正(examples/trend-gate-geo-survey-20261011/CORRECTION.md+product-vertical-config.json),playbook 加"垂直配置纪律"节
+
+## ⑦ 完整修复收口 + "先体检后内容"原则落地(2026-10-11 二次补正)
+
+- **垂直修正收口**:trend_watch 默认 reddit subs 去掉 "seo"(仅留通用兜底,真实部署必须 --config 配垂直);examples 索引行标注更正;SKILL.md/data-source-contract 同步垂直口径
+- **新增硬原则(SKILL.md 使用原则第 0 条)**:任何内容/热点/GEO 工作启动前,先对目标站跑完整体检(site_audit 多页→health_score→prioritize→envelope);存在未处置 CRITICAL 时先修基座
+- **首次完整体检执行**(deployments/site-check-20261011/):4 真实页全链跑通——主分 100.0 Excellent(零 CRITICAL)/AI 子分 85/全部 WARN 为 GitHub 平台固有设 accepted;**内容闸判定:开**;envelope 封套留作回归基线
+- 更正一处自误报:site_audit 多 URL 模式本就末段输出合并 JSON,此前"互操作缺口"实为我的一行式解析错误,套件无此缺陷
