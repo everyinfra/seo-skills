@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 56,
+  "script": 57,
   "template": 23,
   "reference": 12,
   "stable": 68,
-  "beta": 22,
+  "beta": 23,
   "draft": 1
  },
  "entries": [
@@ -1241,6 +1241,20 @@
    "tests_file": "tests/test_trend_watch.py",
    "status": "beta",
    "script": "trend_watch.py"
+  },
+  {
+   "type": "script",
+   "script": "remediation.py",
+   "group": "scripts/工作流",
+   "inputs": [
+    "envelope 的 audit-data.json(init)",
+    "两份 site_audit --json(verify)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "上游脚本产出(工单不自带数据)",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_remediation.py",
+   "status": "beta"
   }
  ]
 }

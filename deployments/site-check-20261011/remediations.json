@@ -1,0 +1,190 @@
+{
+ "items": [
+  {
+   "id": "REM-001",
+   "rule_id": "canonical",
+   "area": "indexability",
+   "action": "canonical 改绝对 URL 并自指(指他页需先对比权重)",
+   "phase": "month",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "wontfix",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2026-11-10T10:58:04+00:00",
+   "closed": "2026-10-11T10:58:12+00:00",
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": "GitHub 模板页平台固有,我们不可控(canonical/标题/链接数由 GitHub 拼接);自建站上线当天重开"
+  },
+  {
+   "id": "REM-002",
+   "rule_id": "links",
+   "area": "discoverability",
+   "action": "页内链接>100 时精简导航或分页",
+   "phase": "month",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "wontfix",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2026-11-10T10:58:04+00:00",
+   "closed": "2026-10-11T10:58:12+00:00",
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": "GitHub 模板页平台固有,我们不可控(canonical/标题/链接数由 GitHub 拼接);自建站上线当天重开"
+  },
+  {
+   "id": "REM-003",
+   "rule_id": "sitemap",
+   "area": "discoverability",
+   "action": "补 /sitemap.xml 并在 robots.txt 声明",
+   "phase": "ongoing",
+   "severity": "INFO",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "accepted",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2027-01-09T10:58:04+00:00",
+   "closed": null,
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": "GitHub sitemap.xml 不可配"
+  },
+  {
+   "id": "REM-004",
+   "rule_id": "description",
+   "area": "rankability",
+   "action": "补/改 description:~155 字符,含利益点与 CTA",
+   "phase": "month",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "wontfix",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2026-11-10T10:58:04+00:00",
+   "closed": "2026-10-11T10:58:12+00:00",
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": "GitHub 模板页平台固有,我们不可控(canonical/标题/链接数由 GitHub 拼接);自建站上线当天重开"
+  },
+  {
+   "id": "REM-005",
+   "rule_id": "schema",
+   "area": "rankability",
+   "action": "补 JSON-LD(按页型选 Organization/Article/Breadcrumb 等)",
+   "phase": "month",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "accepted",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2026-11-10T10:58:04+00:00",
+   "closed": null,
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": "schema 由 GitHub 控制;自建站时用 fix_plan.py 生成"
+  },
+  {
+   "id": "REM-006",
+   "rule_id": "title",
+   "area": "rankability",
+   "action": "补/改 title:每页唯一,50-60 字符",
+   "phase": "month",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "wontfix",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2026-11-10T10:58:04+00:00",
+   "closed": "2026-10-11T10:58:12+00:00",
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": "GitHub 模板页平台固有,我们不可控(canonical/标题/链接数由 GitHub 拼接);自建站上线当天重开"
+  },
+  {
+   "id": "REM-007",
+   "rule_id": "h1",
+   "area": "rankability",
+   "action": "每页唯一 H1(与 title 呼应但不重复)",
+   "phase": "ongoing",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md"
+   ],
+   "status": "proposed",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2027-01-09T10:58:04+00:00",
+   "closed": null,
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": ""
+  },
+  {
+   "id": "REM-008",
+   "rule_id": "headings",
+   "area": "rankability",
+   "action": "消除标题跳级(h1→h2→h3 逐级)",
+   "phase": "ongoing",
+   "severity": "WARN",
+   "affected_urls": [
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "proposed",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2027-01-09T10:58:04+00:00",
+   "closed": null,
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": ""
+  },
+  {
+   "id": "REM-009",
+   "rule_id": "rendering",
+   "area": "rankability",
+   "action": "关键内容服务端渲染;压缩 JS;补 noscript 回退",
+   "phase": "ongoing",
+   "severity": "INFO",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "proposed",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2027-01-09T10:58:04+00:00",
+   "closed": null,
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": ""
+  },
+  {
+   "id": "REM-010",
+   "rule_id": "semantic-html",
+   "area": "rankability",
+   "action": "模板改用语义标签(header/main/article/section)",
+   "phase": "ongoing",
+   "severity": "INFO",
+   "affected_urls": [
+    "https://github.com/everyinfra/seo-skills",
+    "https://github.com/everyinfra/seo-skills/blob/main/README.md",
+    "https://github.com/everyinfra/jev-radar"
+   ],
+   "status": "proposed",
+   "created": "2026-10-11T10:58:04+00:00",
+   "deadline": "2027-01-09T10:58:04+00:00",
+   "closed": null,
+   "verify_hint": "该 finding 在新体检中消失即自动核销",
+   "note": ""
+  }
+ ]
+}

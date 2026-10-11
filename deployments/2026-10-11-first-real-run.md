@@ -52,3 +52,9 @@
 - **新增硬原则(SKILL.md 使用原则第 0 条)**:任何内容/热点/GEO 工作启动前,先对目标站跑完整体检(site_audit 多页→health_score→prioritize→envelope);存在未处置 CRITICAL 时先修基座
 - **首次完整体检执行**(deployments/site-check-20261011/):4 真实页全链跑通——主分 100.0 Excellent(零 CRITICAL)/AI 子分 85/全部 WARN 为 GitHub 平台固有设 accepted;**内容闸判定:开**;envelope 封套留作回归基线
 - 更正一处自误报:site_audit 多 URL 模式本就末段输出合并 JSON,此前"互操作缺口"实为我的一行式解析错误,套件无此缺陷
+
+## ⑧ 修复项生命周期闭环(2026-10-11 三次补录)
+
+- 新增 `remediation.py`(第 57 号脚本,24 测试):envelope 封套→工单(proposed→accepted→in_progress→implemented→**verified 仅 verify 自动设**;wontfix 强制 note);`verify --old --new` 对比新旧体检自动核销已修复项(partial 语义+新 finding 增补提示);report 出状态分布/超期/SLA
+- **真实试用**:从 ⑦ 的 envelope 生成 10 张工单;4 张 GitHub 平台固有项 wontfix(带 note:自建站当天重开)、2 张 accepted;6 张 open 待自建站后处理——remediations.json 存于 site-check-20261011/
+- 至此"体检→针对性建议→修复物→长期监控→**验证核销**"全闭环;696 测试全绿
