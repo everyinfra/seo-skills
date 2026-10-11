@@ -35,4 +35,6 @@
 ## 结论与下一步
 
 - 端到端全链(热点→审计→监控→云端自更新)首次在真实环境闭环,**2 个真实缺陷被当场揪出并修复**(git add 忽略路径/workflow 失败;角度格式约定)
-- 下一步:①按 GO 判定的 brief 真实写发那篇 GEO survey 分析文(走 deep-research-protocol+pre-publish 32 条闸)②每 3 小时挂 trend_watch cron ③监控跑满 4 周后用 citation_panel decay 验证半衰期双口径 ④配 SITE_URL 让 seo-monitor+envelope-report 云端开跑
+- **补录(同日)**:④已完成——设 SEO_SITES 仓库变量指向真实目标;monitor job 的模板守卫(排除本仓库)改为 vars.SEO_SITES 门控(模板用户未配置仍跳过),workflow_dispatch 复跑 **success(12s,云端基线建立)**;至此 intel-update/seo-monitor/capability-drift/envelope-report 四工作流全部云端在跑
+- 下一步:①按 GO 判定的 brief 真实写发那篇 GEO survey 分析文(走 deep-research-protocol+pre-publish 32 条闸)②每 3 小时挂 trend_watch cron ③监控跑满 4 周后用 citation_panel decay 验证半衰期双口径
+- 遗留小项:intel-update 任务文件头 "Generated: \${TIMESTAMP}" 未展开(heredoc 引号问题,纯装饰不影响功能)
