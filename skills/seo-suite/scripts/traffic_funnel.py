@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 """SEO 六阶段流量漏斗(stdlib only;判定口径=Lumar 官方,见 references/research/borrow-specs.md A1)。
 嵌套过滤:availability(HTTP 200 可达)⊃ indexability(无 noindex meta/X-Robots-Tag、未被
-robots 屏蔽、canonical 自指)⊃ uniqueness(primary=唯一或重复集内 DeepRank 最高)⊃
+robots 屏蔽、canonical 自指;canonical 字段有则用,上游未导出则跳过自指校验并在该阶段
+注明)⊃ uniqueness(primary=唯一或重复集内 DeepRank 最高)⊃
 in_serps(GSC impressions>0)⊃ with_clicks(GSC clicks>0)⊃ good_ux(LCP≤2.5 且 CLS≤0.1 且
-DCL≤1.5;缺 CWV 数据则 N/A 不计入)。
+DCL≤1.5;缺 CWV 数据则 N/A 不计入)。跨源 join 键=norm_url(去 scheme:host+path+query)——
+GSC/CWV 导出与 audit 键的 http/https 混用不影响 join。
 输入:--audit(site_audit.py --json 输出,提供前两层判定;meta.links 为列表时作内链图)/
 --gsc(GSC 页面导出 Page/Impressions/Clicks;缺省则漏斗截断到 uniqueness 并输出截断声明)/
 --cwv(URL,LCP,CLS,DCL,可选)/ --urls(sitemap 清单:配 --audit 作全站基数输出 coverage
 声明[Ryte 官方:样本分不可与全站分直接比较];单独使用时只做可达性抽测)。
-uniqueness 实现:每页 title+description 自实现 64 位 Simhash,汉明距离≤3 判重复组
+uniqueness 实现:每页 title+description 自实现 64 位 Simhash(有则用;上游 site_audit.py
+的 meta 只出 title/desc_len 不出 description 文本——缺则降级仅 title 并在 uniqueness
+阶段注明"仅 title 相似度(上游未导出 description)";canonical 同理,缺则跳过自指校验
+并注明),汉明距离≤3 判重复组
 (阈值 3 为自定[推断]——Lumar 未公开相似度算法与阈值);组内 DeepRank=简化 PageRank
 (每页初始 1.0,沿内链图迭代 20 轮,值=入链之和;无 links 列表字段时按 URL 深度 1/depth),
 最高者为 primary,其余 dropped。SSRF 防御照抄 monitor.py(site_audit.py 未内建):仅
 http(s)+拒内网/环回/链路本地,重定向逐跳复查。
 用法: python3 traffic_funnel.py --audit audit.json [--gsc gsc.csv] [--cwv cwv.csv] [--urls urls.txt] [--json]
        python3 traffic_funnel.py --urls urls.txt [--json](只做可达性抽测)
-判定: 正常输出退出码 0;无 --audit 且无 --urls 退出码 2。"""
+判定: 正常输出退出码 0;参数/输入错误(未知参数/缺路径/文件不可读或不可解析)统一
+stderr+退出码 2(套件契约:exit 2=用法错,见 references/monitoring/ci-gates.md)。"""
 import csv
 import hashlib
 import ipaddress
@@ -48,18 +54,21 @@ Lumar 六阶段 SEO 流量漏斗(官方判定):
   --urls  PATH  sitemap URL 清单:配 --audit 作全站基数出 coverage 声明(Ryte:样本分
                 不可与全站分直接比较);单独使用时只做可达性抽测(UA+10s 超时+SSRF 防御)
   --json       结构化输出(stages/coverage/截断声明,供 agent 消费)
+降级声明(R5):上游未导出 description→uniqueness 仅 title 相似度;未导出 canonical→
+  自指校验跳过(仅 findings 判定)——均在对应阶段 note 注明。
 每阶段输出 pages_in/pages_through/dropped/drop_rate/cumulative_rate+流失 URL 前 20。"""
 
 
 # ---------- 工具:URL 归一化 / Simhash / 聚类 / DeepRank ----------
 
 def norm_url(u):
-    """跨源 join 归一化:小写 scheme/host、去 fragment、非根路径去尾斜杠;保留 params/query。"""
+    """跨源 join 归一化(R5:http/https 混用曾致 GSC join 全失败):去 scheme——
+    join 键=host+path(+params+query);另小写 host、去 fragment、非根路径去尾斜杠。"""
     p = urllib.parse.urlparse(str(u).strip())
     path = p.path or "/"
     if path != "/" and path.endswith("/"):
         path = path.rstrip("/")
-    return urllib.parse.urlunparse((p.scheme.lower(), p.netloc.lower(), path, p.params, p.query, ""))
+    return urllib.parse.urlunparse(("", p.netloc.lower(), path, p.params, p.query, ""))
 
 
 def simhash(text, bits=SIMHASH_BITS):
@@ -114,11 +123,15 @@ def url_depth(u):
 def deeprank(pages, rounds=DEEPRANK_ROUNDS):
     """简化 PageRank(spec 口径,无阻尼系数):每页初始 1.0,每轮新值=入链之和;
     audit JSON 任一页提供 links 列表字段(本页出链)即启用图迭代,否则静态 1/depth。
-    注意:无阻尼下 DAG 尾部 20 轮后衰减到 0(导航环——真实站常见——保持稳定);
-    指向集合外/自指的边忽略;平票由调用方按 URL 序决,保证确定性。"""
+    边匹配按 norm_url(去 scheme)键——出链写 http:// 而页键是 https://(或尾斜杠/大小写
+    差异)也能对上(R5:join 键不统一曾致 KeyError/丢边);指向集合外/自指的边忽略;
+    平票由调用方按 URL 序决,保证确定性。"""
     urls = list(pages)
-    incoming = {u: [] for u in urls}                 # target -> [source]
-    known = {norm_url(u) for u in urls}
+    norm = {u: norm_url(u) for u in urls}
+    by_norm = {}                                       # norm 键 -> [raw 页键](scheme 重复折叠)
+    for u in urls:
+        by_norm.setdefault(norm[u], []).append(u)
+    incoming = {u: [] for u in urls}                   # raw 页键 -> [raw 入链源]
     has_graph = False
     for u, e in pages.items():
         links = e.get("links")
@@ -128,8 +141,9 @@ def deeprank(pages, rounds=DEEPRANK_ROUNDS):
             has_graph = True
             for tgt in links:
                 t = norm_url(urllib.parse.urljoin(u, str(tgt)))
-                if t in known and t != norm_url(u):
-                    incoming[t].append(u)
+                if t in by_norm and t != norm[u]:
+                    for dst in by_norm[t]:
+                        incoming[dst].append(u)
     if not has_graph:
         return {u: 1.0 / url_depth(u) for u in urls}
     rank = {u: 1.0 for u in urls}
@@ -140,11 +154,21 @@ def deeprank(pages, rounds=DEEPRANK_ROUNDS):
 
 # ---------- 输入加载 ----------
 
+def die(msg, code=2):
+    """参数/输入错误统一出口:stderr+exit 2(R5:sys.exit(str) 退出码 1 不符套件契约;
+    契约见 references/monitoring/ci-gates.md——exit 2=用法/输入错,CI 直接红)。"""
+    sys.stderr.write("%s\n" % msg)
+    sys.exit(code)
+
+
 def load_audit(path):
     """site_audit.py --json 输出(注意其 stdout 在 JSON 块前还有逐 URL 文本行,
     故先整体 parse,失败再从行首 '{' 处截取)。返回 {url: entry} 保序 dict。"""
-    with open(path, encoding="utf-8") as f:
-        raw = f.read()
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = f.read()
+    except OSError as e:
+        return die("audit 文件无法读取 %s: %s" % (path, e))
     data = None
     for start in (0, raw.find("\n{"), raw.rfind("\n{")):
         if start < 0:
@@ -155,31 +179,39 @@ def load_audit(path):
         except ValueError:
             continue
     if not isinstance(data, dict):
-        sys.exit("audit JSON 无法解析:期望 site_audit.py --json 的 {results:{url:entry}} 结构")
+        return die("audit JSON 无法解析:期望 site_audit.py --json 的 {results:{url:entry}} 结构(%s)" % path)
     results = data["results"] if "results" in data else data
     if not isinstance(results, dict):
-        sys.exit("audit JSON 无法解析:results 非页面对象")
+        return die("audit JSON 无法解析:results 非页面对象(%s)" % path)
     return results
 
 
 def load_gsc(path):
     """GSC 页面级导出:列 Page/Impressions/Clicks(大小写不敏感,列序无关);
-    同 URL 多行(按词导出)累加。"""
+    同 URL 多行(按词导出)累加。键=norm_url(去 scheme,http/https 混用可 join);
+    另保留每行原始 URL 作别名键(同对象,累加互通)——兼容带 scheme 查键的调用方。"""
+    try:
+        f = open(path, encoding="utf-8-sig", newline="")
+    except OSError as e:
+        return die("GSC 文件无法读取 %s: %s" % (path, e))
     out = {}
-    with open(path, encoding="utf-8-sig", newline="") as f:
+    with f:
         rd = csv.DictReader(f)
         cols = {c.strip().lower(): c for c in rd.fieldnames or [] if c}
         pc = cols.get("page") or cols.get("url")
         ic, cc = cols.get("impressions"), cols.get("clicks")
         if not (pc and ic and cc):
-            sys.exit("GSC CSV 缺 Page/Impressions/Clicks 列(实际列:%s)" % (rd.fieldnames,))
+            return die("GSC CSV 缺 Page/Impressions/Clicks 列(实际列:%s)" % (rd.fieldnames,))
         for row in rd:
-            u = norm_url(row.get(pc) or "")
+            raw = (row.get(pc) or "").strip()
+            u = norm_url(raw)
             if not u:
                 continue
             d = out.setdefault(u, {"impressions": 0.0, "clicks": 0.0})
             d["impressions"] += _num(row.get(ic))
             d["clicks"] += _num(row.get(cc))
+            if raw and raw != u:
+                out.setdefault(raw, d)
     return out
 
 
@@ -191,33 +223,71 @@ def _num(v):
 
 
 def load_cwv(path):
-    """CWV CSV:URL,LCP,CLS,DCL(带表头;空单元格→None=该指标缺失)。"""
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        rows = [r for r in csv.reader(f) if r and any(c.strip() for c in r)]
+    """CWV CSV:URL,LCP,CLS,DCL(带表头;空单元格→None=该指标缺失)。
+    键=norm_url(去 scheme,http/https 混用可 join);另保留每行原始 URL 作别名键
+    (同对象)——兼容带 scheme 查键的调用方(field_data --as-cwv-csv 契约)。"""
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as f:
+            rows = [r for r in csv.reader(f) if r and any(c.strip() for c in r)]
+    except OSError as e:
+        return die("CWV 文件无法读取 %s: %s" % (path, e))
     if rows and any(c.strip().lower() in ("url", "page", "lcp", "cls", "dcl") for c in rows[0]):
         rows = rows[1:]
     out = {}
     for r in rows:
         vals = []
-        for c in r[1:4]:
-            c = (c or "").strip()
-            vals.append(float(c.replace(",", "")) if c else None)
-        out[norm_url(r[0])] = dict(zip(("lcp", "cls", "dcl"), vals + [None] * (3 - len(vals))))
+        try:
+            for c in r[1:4]:
+                c = (c or "").strip()
+                vals.append(float(c.replace(",", "")) if c else None)
+        except ValueError:
+            return die("CWV CSV 数值无法解析(行:%s)" % (r,))
+        m = dict(zip(("lcp", "cls", "dcl"), vals + [None] * (3 - len(vals))))
+        key = norm_url(r[0])
+        out[key] = m
+        raw = (r[0] or "").strip()
+        if raw and raw != key:
+            out.setdefault(raw, m)
     return out
 
 
 def load_urls(path):
     """sitemap URL 清单:每行一个 URL,空行/# 注释跳过。"""
-    with open(path, encoding="utf-8") as f:
-        return [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
+    try:
+        with open(path, encoding="utf-8") as f:
+            return [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
+    except OSError as e:
+        return die("URL 清单无法读取 %s: %s" % (path, e))
 
 
 # ---------- 六阶段判定 ----------
 
-def page_text(entry):
+def _desc(entry):
+    """description 文本(有则用):entry.description / meta.description / meta.desc。"""
     m = entry.get("meta") or {}
-    return "%s %s" % (entry.get("title") or m.get("title") or "",
-                      entry.get("description") or m.get("desc") or m.get("description") or "")
+    return entry.get("description") or m.get("description") or m.get("desc") or ""
+
+
+def page_text(entry):
+    """uniqueness 文本=title+description(有则用);上游 site_audit.py --json 的 meta 只出
+    title/desc_len(不出 description 文本)——缺 description 时降级仅 title,
+    由 compute_funnel 在 uniqueness 阶段 note 注明(R5)。"""
+    m = entry.get("meta") or {}
+    title = entry.get("title") or m.get("title") or ""
+    d = _desc(entry)
+    return "%s %s" % (title, d) if d else title
+
+
+def has_description(entry):
+    """description 文本是否可得(未导出/空串均视为不可得→降级仅 title)。"""
+    return bool(_desc(entry))
+
+
+def canonical_of(entry):
+    """canonical 字段(有则用):entry.canonical / meta.canonical。上游 site_audit.py
+    不导出该字段(canonical 问题只进 findings)——缺时 indexability 的自指校验跳过,
+    由 compute_funnel 在 indexability 阶段 note 注明(R5)。"""
+    return entry.get("canonical") or (entry.get("meta") or {}).get("canonical")
 
 
 def availability(entry):
@@ -249,7 +319,7 @@ def indexability(entry, url):
                 return False, "robots 屏蔽: %s" % f.get("message", "")
         if area == "canonical" and "指向外域" in msg:
             return False, "canonical 指向外域(非自指)"
-    canon = entry.get("canonical") or (entry.get("meta") or {}).get("canonical")
+    canon = canonical_of(entry)
     if canon and norm_url(urllib.parse.urljoin(url, str(canon))) != norm_url(url):
         return False, "canonical 非自指 → %s" % canon
     return True, None
@@ -295,9 +365,17 @@ def compute_funnel(pages, gsc=None, cwv=None):
     for u in cur:
         ok, why = indexability(pages[u], u)
         (keep.append(u) if ok else reasons.__setitem__(u, why))
-    cur = add("indexability", cur, keep, reasons)
+    # canonical 降级声明(R5):上游未导出 canonical 字段 → 自指校验跳过(仅 findings 判定)
+    no_canon = [u for u in cur if not canonical_of(pages[u])]
+    extra = None
+    if no_canon:
+        scope = "" if len(no_canon) == len(cur) else ":%d/%d 页" % (len(no_canon), len(cur))
+        extra = {"note": "canonical 自指校验跳过(上游未导出 canonical)%s" % scope}
+    cur = add("indexability", cur, keep, reasons, extra)
 
-    # uniqueness:title+description Simhash 聚类;空文本页不参与聚类(缺 title/desc≠重复)
+    # uniqueness:title+description Simhash 聚类;空文本页不参与聚类(缺 title/desc≠重复);
+    # 未导出 description 的页降级仅 title 相似度并注明(R5)
+    no_desc = [u for u in cur if not has_description(pages[u])]
     sigs = {u: (simhash(page_text(pages[u])) if page_text(pages[u]).strip() else None) for u in cur}
     reasons = {}
     for group in cluster_by_simhash({u: s for u, s in sigs.items() if s is not None}):
@@ -308,7 +386,11 @@ def compute_funnel(pages, gsc=None, cwv=None):
             if u != primary:
                 reasons[u] = "重复组(×%d)非 primary:DeepRank %g,primary %s=%g" % (
                     len(group), ranks[u], primary, ranks[primary])
-    cur = add("uniqueness", cur, [u for u in cur if u not in reasons], reasons)
+    extra = None
+    if no_desc:
+        scope = "" if len(no_desc) == len(cur) else ":%d/%d 页" % (len(no_desc), len(cur))
+        extra = {"note": "仅 title 相似度(上游未导出 description)%s" % scope}
+    cur = add("uniqueness", cur, [u for u in cur if u not in reasons], reasons, extra)
 
     if gsc is None:                                    # 无 GSC → 截断声明,后续阶段 null
         truncated = "uniqueness"
@@ -485,8 +567,8 @@ def render_markdown(rep):
         L.append("%s%-*s %d/%d 通过 · 流失 %d(%s)· 累计 %s" % (
             name, BAR_WIDTH, bar, s["pages_through"], s["pages_in"], s["dropped"],
             pct(s["drop_rate"]), pct(s["cumulative_rate"])))
-        if s.get("pages_na"):
-            L.append("              ↳ %d 页缺 CWV 数据:N/A 不计入本阶段" % s["pages_na"])
+        if s.get("note"):                              # 降级声明/截断口径(CWV N/A 等)
+            L.append("              ↳ %s" % s["note"])
     if rep.get("funnel_truncated_at"):
         L.append("")
         L.append("> ⚠ 漏斗截断于 %s:未提供 --gsc(GSC 数据缺席),in_serps/with_clicks/good_ux 判定为 null"
@@ -533,7 +615,7 @@ def main():
             as_json = True
         elif a in want:
             if i + 1 >= len(args):
-                sys.exit("usage 错误:%s 需要一个路径参数(见 --help)" % a)
+                return die("usage 错误:%s 需要一个路径参数(见 --help)" % a)
             want[a] = args[i + 1]
             i += 1
         else:

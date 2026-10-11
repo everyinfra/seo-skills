@@ -3,14 +3,74 @@
 用法:
   python3 llmstxt.py validate FILE        # 校验结构
   python3 llmstxt.py check https://site   # 探测 /llms.txt /llms-full.txt .md 孪生
-  python3 llmstxt.py generate --sitemap URL [--title T] [--desc D]   # 从 sitemap 生成骨架"""
-import sys, re, urllib.request
+  python3 llmstxt.py generate --sitemap URL [--title T] [--desc D]   # 从 sitemap 生成骨架
+安全:网络仅限 http(s);私网/环回/链路本地/保留段拒连;重定向逐跳复查(SSRF 防护)。"""
+import ipaddress, os, re, socket, sys, urllib.parse, urllib.request
 
 UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.0)"
 
+
+# ---------------------------------------------------------------- SSRF 防护
+class FetchError(Exception):
+    pass
+
+
+_ssrf_cache = {}
+
+
+def ssrf_guard(host):
+    """仅 http(s) + 拒私网/环回/链路本地/保留段;结果按 host 缓存(trend_watch.py 同款,
+    内嵌不 import)。198.18.0.0/15(RFC2544 基准段)豁免:本机 fake-IP 代理会把一切域名
+    解析到该段,实际连接经代理出网,TLS 验证仍生效;SEO_MONITOR_STRICT_SSRF=1 恢复全拒。"""
+    if not host:
+        raise FetchError("empty host")
+    if host in _ssrf_cache:
+        return
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError as e:
+        raise FetchError("DNS 解析失败 %s: %s" % (host, e))
+    strict = bool(os.environ.get("SEO_MONITOR_STRICT_SSRF"))
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip in ipaddress.ip_network("198.18.0.0/15"):
+            if not strict:
+                continue
+            raise FetchError("SSRF guard: 非公网地址 %s(strict 模式拒 fake-IP 段)" % ip)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise FetchError("SSRF guard: 非公网地址 %s" % ip)
+    _ssrf_cache[host] = True
+
+
+class _RedirectGuard(urllib.request.HTTPRedirectHandler):
+    """重定向逐跳 SSRF 复查(urlopen 自动跟 302,每一跳的新 host 必须复查)。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        p = urllib.parse.urlparse(newurl)
+        if p.scheme not in ("http", "https"):
+            raise FetchError("重定向到非 http(s) 被拒: %s" % newurl)
+        ssrf_guard(p.hostname)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_RedirectGuard)
+
+
+def require_http_url(url):
+    """入口 URL 校验:仅 http(s)(拒 file:///ftp:// 等)。"""
+    if urllib.parse.urlparse(url).scheme not in ("http", "https"):
+        raise FetchError("仅允许 http(s) URL: %s" % url)
+
+
 def fetch(url):
+    """唯一网络出口(测试打桩点):scheme 检查 + SSRF 防护 + 受控 opener。"""
+    require_http_url(url)
+    ssrf_guard(urllib.parse.urlparse(url).hostname)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=15) as r:
+    with _opener.open(req, timeout=15) as r:
         return r.status, r.read(3_000_000).decode("utf-8", "replace")
 
 def validate(path):
@@ -30,6 +90,11 @@ def validate(path):
     sys.exit(1 if issues else 0)
 
 def check(root):
+    try:
+        require_http_url(root)
+    except FetchError as e:
+        print(f"[error] {e}", file=sys.stderr)
+        sys.exit(2)
     root = root.rstrip("/")
     for p in ("/llms.txt", "/llms-full.txt", "/index.md", "/index.html.md"):
         try:
@@ -43,7 +108,12 @@ def check(root):
             print(f"{p:<18} ✗ {type(e).__name__}")
 
 def generate(sitemap, title, desc):
-    s, xml = fetch(sitemap)
+    try:
+        require_http_url(sitemap)
+        s, xml = fetch(sitemap)
+    except FetchError as e:
+        print(f"[error] {e}", file=sys.stderr)
+        sys.exit(1)
     locs = re.findall(r"<loc>([^<]+)</loc>", xml)[:50]
     print(f"# {title}\n\n> {desc}\n")
     print("## Pages\n")

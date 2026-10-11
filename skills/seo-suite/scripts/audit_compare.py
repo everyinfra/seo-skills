@@ -3,7 +3,9 @@
 三张清单:
   新增 issue     新审计有、旧审计无的 finding,按 URL+rule 认定;同 key 严重度升级
                  (如 WARN→CRITICAL)也计入新增并标 escalated=True。
-  已修复 issue   旧审计有、新审计无的 finding(同 URL+rule 口径)。
+  已修复 issue   旧审计有、新审计无的 finding(同 URL+rule 口径);R5 修正——只认
+                 新审计在场且 verdict≠refused 的 URL,拒审/消失 URL 上的旧 issue 无法
+                 判定,另列 disappeared_or_refused 清单,不算修复(拒审≠修复)。
   分数与覆盖面   主分(Ahrefs:(无 CRITICAL URL÷可评分 URL)×100,refused 不进分母)/
                  AI Search Health 均值/受影响 URL 面(≥1 条 finding)/逐 URL verdict
                  与 ai_search_health 变化/URL 覆盖增删与 coverage_ratio(Ryte 口径:
@@ -26,7 +28,9 @@ USAGE = """usage: audit_compare.py --old old.json --new new.json [--baseline-gat
 两次 site_audit.py --json 输出的对比(Ahrefs Crawl Comparison 口径):
   新增 issue     新审计有、旧审计无的 finding(按 URL+rule);同 key 严重度升级
                  (WARN→CRITICAL)计入新增并标 escalated。
-  已修复 issue   旧审计有、新审计无的 finding(同 URL+rule 口径)。
+  已修复 issue   旧审计有、新审计无的 finding(按 URL+rule);R5 修正——只认新审计
+                 在场且 verdict≠refused 的 URL,拒审/消失 URL 上的另列
+                 disappeared_or_refused,不算修复。
   分数与覆盖面   主分(Ahrefs:(无 CRITICAL URL÷可评分 URL)×100,refused 不进分母)/
                  AI Search Health 均值/受影响 URL 面/逐 URL verdict 与 ai_search_health
                  变化/URL 覆盖增删 + coverage_ratio(Ryte:样本分数不可比须显式声明)。
@@ -126,10 +130,22 @@ def compare(old, new, baseline_gate=None):
         elif SEV_ORDER[sev] < SEV_ORDER[io[(url, rule)][0]]:   # 同 key 严重度升级 → 计入新增
             new_issues.append({"url": url, "rule": rule, "severity": sev, "message": msg,
                                "escalated": True, "severity_before": io[(url, rule)][0]})
+    # R5 修正:拒审≠修复。fixed 只认"新审计在场且 verdict≠refused"的 URL;
+    # 新审计中拒审(在场但 refused)或消失(不在场)的 URL 上的旧 issue 无法判定,
+    # 按 URL 另列 disappeared_or_refused(refused / disappeared 各注明原因),不算修复。
+    new_auditable = {u for u, r in rn.items() if r.get("verdict") != "refused"}
+    fixed_issues, gone = [], {}
     for (url, rule) in sorted(io, key=lambda k: (SEV_ORDER[io[k][0]], k[0], k[1])):
-        if (url, rule) not in inew:
-            sev, msg = io[(url, rule)]
+        if (url, rule) in inew:
+            continue
+        sev, msg = io[(url, rule)]
+        if url in new_auditable:
             fixed_issues.append({"url": url, "rule": rule, "severity": sev, "message": msg})
+        else:
+            g = gone.setdefault(url, {"url": url, "reason": None, "held_issues": 0})
+            g["reason"] = "refused" if url in rn else "disappeared"
+            g["held_issues"] += 1
+    disappeared_or_refused = [gone[u] for u in sorted(gone)]
 
     ms_o, ms_n = main_score(old), main_score(new)
     ai_o, ai_n = ai_health_mean(old), ai_health_mean(new)
@@ -187,6 +203,7 @@ def compare(old, new, baseline_gate=None):
                   "coverage_ratio": coverage_ratio},
         "new_issues": new_issues,
         "fixed_issues": fixed_issues,
+        "disappeared_or_refused": disappeared_or_refused,
         "verdict_changes": verdict_changes,
         "ai_health_changes": ai_changes,
         "pages_changed": pages_changed,
@@ -212,6 +229,12 @@ def render(rep):
     L += _issue_lines(rep["new_issues"])
     L += ["", "## 已修复 issue(%d)" % len(rep["fixed_issues"])]
     L += _issue_lines(rep["fixed_issues"])
+    if rep["disappeared_or_refused"]:
+        L += ["", "## 无法判定(拒审/消失 URL,%d)——不算修复"
+              % len(rep["disappeared_or_refused"])]
+        L += ["- %s(%s,%d 条旧 issue 未复检:拒审≠修复)"
+              % (d["url"], d["reason"], d["held_issues"])
+              for d in rep["disappeared_or_refused"]]
     L += ["", "## 分数与覆盖面 delta",
           "- 主分(Ahrefs,无 CRITICAL URL 占比×100): %s → %s(Δ %s)"
           % (_fmt(o["main_score"]), _fmt(n["main_score"]), _fmt(d["main_score"])),

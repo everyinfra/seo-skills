@@ -27,7 +27,7 @@ def run_cli(txt, *flags):
     try:
         env = dict(os.environ, PYTHONIOENCODING="utf-8")
         return subprocess.run([sys.executable, os.path.join(SCRIPTS, "robots_posture.py"),
-                               "file://" + d, *flags],
+                               "https://example.test", "--robots-file", os.path.join(d, "robots.txt"), *flags],
                               capture_output=True, text=True, encoding="utf-8",
                               env=env, timeout=60)
     finally:

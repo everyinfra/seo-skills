@@ -116,11 +116,25 @@ coverage: 分数基于样本,不可与全站直接比较(Ryte 官方口径)。
 
 
 def band_of(score):
-    """分档映射【Ahrefs 官方】;按四舍五入后的分数取档(30.4→30→Weak)。"""
+    """分档映射【Ahrefs 官方】;按四舍五入后的分数取档(30.4→30→Weak,70.6→71→Good)。"""
+    score = round(score)   # 先取整再分档:未取整时 70.6<71 会误落 Fair(R5)
     for name, floor in BANDS:
         if score >= floor:
             return name
     return "Weak"
+
+
+def split_scored_refused(results):
+    """拆分可评分/拒审 URL:fetch guard 拒审(verdict=refused 或含 SKIP)不进分母
+    【site_audit 官方语义:拒审≠失败】。main 在 compute 前用它拦截空样本(除零)。"""
+    scored, refused = [], []
+    for url, r in results.items():
+        if r.get("verdict") == "refused" or any(
+                f.get("severity") == "SKIP" for f in r.get("findings", [])):
+            refused.append(url)
+        else:
+            scored.append(url)
+    return scored, refused
 
 
 def norm_sev(s):
@@ -170,13 +184,7 @@ def compute(audit, ignored, sev_overrides):
     results = audit["results"]
     # 拆分:fetch guard 拒审(verdict=refused 或含 SKIP)不进分母【site_audit 官方语义:
     # 拒审≠失败】;其余为可评分 URL(假定样本均为内链 URL——site_audit 不做内外链分类)。
-    scored, refused = [], []
-    for url, r in results.items():
-        if r.get("verdict") == "refused" or any(
-                f.get("severity") == "SKIP" for f in r.get("findings", [])):
-            refused.append(url)
-        else:
-            scored.append(url)
+    scored, refused = split_scored_refused(results)
     total = len(scored)
     # findings 三元组 (url, rule, 有效严重度):丢 SKIP、丢 ignored、套降级
     findings = []
@@ -384,9 +392,13 @@ def main():
                 if sev not in SEVS:
                     die("配置含未知严重度 %r;可用: critical|warn|info" % cfg["severity"])
                 sev_over.setdefault(rid, sev)
-    rep = compute(load_audit(inp), ignored, sev_over)
-    if rep["urls_total"] == 0:
+    # R5:空样本(全部拒审/空 results)在 compute 之前拦截——否则类别树扣分按
+    # 命中数÷total 直接除零崩溃;这是输入问题,退出码 2 而非崩溃伪装成 1。
+    audit = load_audit(inp)
+    scored, _refused = split_scored_refused(audit["results"])
+    if not scored:
         die("无可评分 URL(全部拒审或空 results)")
+    rep = compute(audit, ignored, sev_over)
     if as_json:
         print(json.dumps(rep, ensure_ascii=False, indent=1))
     else:

@@ -291,13 +291,13 @@ class ExportDirIntegrationTests(unittest.TestCase):
         out, rc = run_main(["https://example.com/tiny", "https://example.com/b",
                             "--json", "--export-dir", export_dir], pages)
         self.assertEqual(rc, 0)                                     # SKIP 不算失败,退出码不受影响
-        self.assertIn("| canonical-missing | WARN | 1/2 页(50%) |", out)   # 分母含拒审页(已审计 2 页)
+        self.assertIn("| canonical-missing | WARN | 1/1 页(100%) |", out)   # R5 修复:拒审页不进分母(已审计 1 页)
         with open(os.path.join(export_dir, "summary.json"), encoding="utf-8") as f:
             summary = json.load(f)
         slugs = {r["slug"] for r in summary["rules"]}
         self.assertIn("canonical-missing", slugs)
         self.assertFalse(any("fetch" in s for s in slugs), slugs)   # 拒审不产生规则清单
-        self.assertEqual(summary["audited"], 2)
+        self.assertEqual(summary["audited"], 1)
         payload = json_blob_of(out)
         self.assertEqual(payload["results"]["https://example.com/tiny"]["verdict"], "refused")
 

@@ -14,9 +14,15 @@ S4 扩展(2026-10-11,borrow-specs A2,20 项借鉴清单第 10 条):具名 bulk e
 summary.json:每 rule slug/受影响数/占比/severity)+ findings 汇总受影响面列(N/M 页 XX%,
 SF Coverage 口径——分母=已审计页数而非全站页数,表头注明;单 URL 时命中规则即 1/1)。
 用法: python3 site_audit.py URL [URL...] [--market ja|en|zh|th|hi|vi|pl|tr|...] [--export-dir DIR]
-判定: CRITICAL 存在则退出码 1。"""
-import sys, os, re, json, math, unicodedata, urllib.error, urllib.request
-from datetime import datetime
+判定: CRITICAL 存在则退出码 1。
+S5 修复(2026-10-12,R5 错漏清单 8 项,references/overview/pipeline-completeness.md):
+robots 专属空组不再回落 * 组(RFC 9309,消灭假 CRITICAL)/X-Robots-Tag 取头大小写无关/
+fetch 解码 Content-Type charset→BOM→meta charset 嗅探→utf-8 replace(GBK 不再全量乱码)/
+Last-Modified 与 now 统一 timezone.utc(消灭时区混 8h)/canonical 外域比较前 netloc 小写+
+去默认端口/robots.txt 404 视为全放行不产 finding(不可达消息去双斜杠)/coverage 分母与
+summary.audited 剔除拒审([SKIP])页/--market·--export-dir 缺值与未知市场统一 stderr+exit 2。"""
+import sys, os, re, json, math, codecs, unicodedata, urllib.error, urllib.request
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
@@ -66,8 +72,9 @@ llms.txt/sitemap/AI 爬虫放行/staging 子域。
                    目录不存在则创建,已存在直接写(输出由调用方隔离,套件惯例)。
                    单 URL 模式同样可用(产出 1 页的清单)。
 多 URL 审计后输出 findings 汇总(markdown 表):规则×级别×受影响面——N/M 页(XX%),
-SF Coverage 口径的简化:分母=本次已审计页数而非全站页数(表头注明);单 URL 时每条
-命中规则即 1/1。--json 模式新增顶层 exports 节列出导出文件名(仅 --export-dir 时)。
+SF Coverage 口径的简化:分母=本次已审计页数(拒审 [SKIP] 页剔除)而非全站页数(表头
+注明);单 URL 时每条命中规则即 1/1。--json 模式新增顶层 exports 节列出导出文件名
+(仅 --export-dir 时)。
 AI Search Health 子分(Semrush 8 bot 名单口径,与主审计并列输出):
   8 bot 放行(ChatGPT-User/OAI-SearchBot/Googlebot/Google-Extended/Perplexity-User/
   PerplexityBot/Claude-User/Claude-SearchBot;GPTBot/ClaudeBot 训练型只提示;
@@ -79,18 +86,21 @@ rendering 5 检查(geo-aeo-tracker 源码口径,WARN/INFO 级不产生 CRITICAL)
   __NEXT_DATA__/data-reactroot 赦免)/noscript 回退>20 字/JS 重量(外部>15 或内联>100KB)/
   服务端内容(纯文本>500 字且含 article/main/section)/H1==1 且 H2>=2。
 判定:CRITICAL 存在则退出码 1;fetch 守卫触发输出 [SKIP] fetch guard: response too small /
-likely challenge page 并拒绝审计结论(该 URL 不计失败,退出码不受影响)。"""
+likely challenge page 并拒绝审计结论(该 URL 不计失败,退出码不受影响;拒审页不计入
+coverage 分母与 summary.audited)。robots.txt 404=全放行(RFC 9309),不产 finding。
+退出码 2(stderr 提示):--market/--export-dir 缺值,或 --market 未知市场。"""
 
 def looks_like_challenge(html):
     head = html[:4000].lower()
     return any(m in head for m in CHALLENGE_MARKERS)
 
 def load_market(market):
-    """markets.json 市场规则(与 market_lint.py 同源);未知市场直接退出。"""
+    """markets.json 市场规则(与 market_lint.py 同源);未知市场 stderr+exit 2(S5 修复⑧)。"""
     with open(os.path.join(BASE, "markets.json"), encoding="utf-8") as f:
         ms = json.load(f)["markets"]
     if market not in ms:
-        sys.exit("未知市场 %s;可用: %s" % (market, ", ".join(ms)))
+        sys.stderr.write("未知市场 %s;可用: %s\n" % (market, ", ".join(ms)))
+        sys.exit(2)
     return ms[market]
 
 def unit_len(s, unit):
@@ -230,6 +240,18 @@ def get_header(hdrs, name):
             return v
     return None
 
+def norm_host(u):
+    """URL host 归一(S5 修复⑥):netloc 小写 + 去协议默认端口(https→443/http→80)。
+    canonical 外域比较口径——https://Example.COM:443/ 与 https://example.com/ 同源,
+    不再因大小写/显式默认端口误报"指向外域"。"""
+    pu = urlparse(u)
+    netloc = (pu.netloc or "").lower()
+    host, _, port = netloc.rpartition(":")
+    if host and port.isdigit():
+        if (pu.scheme == "https" and port == "443") or (pu.scheme == "http" and port == "80"):
+            return host
+    return netloc
+
 def parse_robots_groups(txt):
     """自写 robots.txt 解析(RFC 9309 简化):BOM 剥离/注释剥离/连续 User-agent 行合并同组/
     规则后出现的 User-agent 开新组/Sitemap·Crawl-delay 等忽略。
@@ -255,10 +277,14 @@ def parse_robots_groups(txt):
 
 def robots_allows(groups, ua, url):
     """最长匹配判定:bot 专属组优先于 *;组内取匹配路径的最长前缀规则(同长 Allow 胜);
-    无匹配规则/无组 → 默认放行(urllib.robotparser 首条命中即返回,这里改为 RFC 9309 最长匹配)。"""
+    无匹配规则/无组 → 默认放行(urllib.robotparser 首条命中即返回,这里改为 RFC 9309 最长匹配)。
+    S5 修复①:专属组存在但为空(仅 User-agent 行、无规则)时该组即生效=不受限——
+    用 `key in groups` 判存在性,不再 `or` 回落 * 组(此前空组 falsy 被吞 → 误用通配组
+    规则 → 假 CRITICAL,违背 RFC 9309)。"""
     if not groups:
         return True
-    rules = groups.get(ua.lower()) or groups.get("*", [])
+    key = ua.lower()
+    rules = groups[key] if key in groups else groups.get("*", [])
     pu = urlparse(url)
     path = (pu.path or "/") + (("?" + pu.query) if pu.query else "")
     best_len, allowed = -1, True
@@ -280,9 +306,9 @@ def last_modified_days(hdrs, meta_lm):
             dt = datetime.fromisoformat(v.strip())
         except (TypeError, ValueError):
             return None
-    if dt.tzinfo is not None:
-        dt = dt.replace(tzinfo=None)
-    return max(0, (datetime.now() - dt).days)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)          # S5 修复④:naive 值按 UTC 口径补 tz
+    return max(0, (datetime.now(timezone.utc) - dt).days)   # 与 now 统一 timezone.utc,不再与本地 naive 混 8h
 
 def semantic_ratio(sem_count, all_count):
     """语义 HTML 比值 = 语义标签数 ÷ 非语义标签数(Semrush 口径;<10% 触发,阈值自定[推断]官方未公开)。
@@ -424,7 +450,7 @@ def coverage_str(n, m):
 def render_findings_markdown(rules, total):
     """人读报告 findings 汇总(markdown 表):规则×级别×受影响面三列;
     受影响面=SF Coverage 口径的简化——分母用本次已审计页数而非全站页数,表头注明。"""
-    lines = [f"## findings 汇总(受影响面;分母=本次已审计 {total} 页,非全站)",
+    lines = [f"## findings 汇总(受影响面;分母=本次已审计 {total} 页,拒审已剔除,非全站)",
              "| 规则 | 级别 | 受影响面 |", "| --- | --- | --- |"]
     for slug, r in sorted_rules(rules):
         lines.append(f"| {slug} | {r['severity']} | {coverage_str(len(r['urls']), total)} |")
@@ -444,7 +470,7 @@ def write_exports(export_dir, rules, total):
             f.write("\n".join(r["urls"]) + "\n")
         files.append(name)
     summary = {
-        "denominator_note": "coverage 分母=本次已审计页数(SF Coverage 口径简化:非全站页数)",
+        "denominator_note": "coverage 分母=本次已审计页数(SF Coverage 口径简化:非全站页数;拒审([SKIP])页剔除)",
         "audited": total,
         "rules": [{"slug": slug, "area": r["area"], "severity": r["severity"],
                    "affected": len(r["urls"]),
@@ -499,9 +525,10 @@ def audit(url, market="en"):
     if p.canonical:
         if not p.canonical.startswith(("http", "/")): F.append(("CRITICAL", "canonical", "相对 URL"))
         c = urljoin(url, p.canonical)
-        if urlparse(c).netloc and urlparse(c).netloc != host: F.append(("INFO", "canonical", "指向外域(联合发布?让渡权重)"))
+        if urlparse(c).netloc and norm_host(c) != norm_host(url):   # S5 修复⑥:小写+去默认端口后再比
+            F.append(("INFO", "canonical", "指向外域(联合发布?让渡权重)"))
     else: F.append(("WARN", "canonical", "缺失"))
-    mr = (p.meta_robots or "").lower() + "," + (hdrs.get("X-Robots-Tag", "") or "").lower()
+    mr = (p.meta_robots or "").lower() + "," + (get_header(hdrs, "x-robots-tag") or "").lower()   # S5 修复②:大小写无关取头
     if "noindex" in mr: F.append(("CRITICAL", "robots", "noindex"))
     if "nosnippet" in mr: F.append(("WARN", "robots", "nosnippet(会限制 AI 特性)"))
     for k in ("og:title", "og:description", "og:image"):
@@ -549,8 +576,12 @@ def audit(url, market="en"):
                 robots_groups = parse_robots_groups(body2)
             if s2 == 200 and name == "llms.txt":
                 llms_ok = True
+        except urllib.error.HTTPError as e:
+            if name == "robots" and e.code == 404:
+                continue   # S5 修复⑦:RFC 9309——robots.txt 404=不存在=全放行,不产 finding
+            F.append(("INFO", name, f"{path} 不可达(HTTP {e.code})"))   # path 自带单斜杠,不再拼出 //
         except Exception:
-            F.append(("INFO", name, f"/{path} 不可达"))
+            F.append(("INFO", name, f"{path} 不可达"))
     allowed, blocked = [], []
     for b in SEARCH_BOTS:
         (allowed if robots_allows(robots_groups, b, url) else blocked).append(b)
@@ -596,10 +627,42 @@ def audit(url, market="en"):
                "desc_len": f"{dn} {dl['unit']}/{dl['value']}",
                "words": W, "h1": p.h1, "jsonld": p.jsonld, "links": p.links}, ai_health
 
+CHARSET_SNIFF_BYTES = 2048   # meta charset 嗅探窗口(head_check.py 同款量级)
+
+def detect_encoding(raw, ctype):
+    """响应编码探测(S5 修复③,借鉴 head_check.py 思路自实现、不 import):
+    Content-Type charset → BOM(utf-8/16/32)→ 前 2KB 内 meta charset 嗅探(编码名未知则弃用)
+    → 兜底 utf-8。只返回编码名,不抛异常;decode 由调用方 errors="replace" 收尾。"""
+    if ctype:
+        m = re.search(r"charset\s*=\s*([\w.:+-]+)", ctype, re.I)
+        if m:
+            return m.group(1).strip("\"'")
+    if raw.startswith(b"\xef\xbb\xbf"):
+        return "utf-8"
+    if raw.startswith((b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
+        return "utf-32"
+    if raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return "utf-16"
+    m = re.search(rb"""charset\s*=\s*["']?\s*([\w.:+-]+)""", raw[:CHARSET_SNIFF_BYTES], re.I)
+    if m:
+        cand = m.group(1).decode("ascii", "ignore")
+        try:
+            codecs.lookup(cand)
+            return cand
+        except (LookupError, ValueError):
+            pass
+    return "utf-8"
+
 def fetch(url, timeout=15):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.status, dict(r.headers), r.read(2_000_000).decode("utf-8", "replace")
+        hdrs = dict(r.headers)
+        raw = r.read(2_000_000)
+        enc = detect_encoding(raw, get_header(hdrs, "content-type"))
+        try:
+            return r.status, hdrs, raw.decode(enc, "replace")
+        except (LookupError, ValueError):   # ctype 声明的编码名不存在 → utf-8 replace 兜底
+            return r.status, hdrs, raw.decode("utf-8", "replace")
 
 def main():
     args = sys.argv[1:]
@@ -607,10 +670,14 @@ def main():
         print(USAGE)
         return
     market, as_json, export_dir = "en", False, None
-    if "--market" in args: i = args.index("--market"); market = args[i+1]; del args[i:i+2]
+    if "--market" in args:
+        i = args.index("--market")
+        if i + 1 >= len(args) or args[i+1].startswith("-"):   # S5 修复⑧:缺值/误吞下一个 flag → exit 2
+            sys.stderr.write("--market 需要一个市场代码参数(如 en/ja/zh)\n"); sys.exit(2)
+        market = args[i+1]; del args[i:i+2]
     if "--export-dir" in args:
         i = args.index("--export-dir")
-        if i + 1 >= len(args):
+        if i + 1 >= len(args) or args[i+1].startswith("-"):
             sys.stderr.write("--export-dir 需要一个目录参数\n"); sys.exit(2)
         export_dir = args[i+1]; del args[i:i+2]
     if "--json" in args: as_json = True; args = [a for a in args if a != "--json"]
@@ -642,11 +709,12 @@ def main():
                 "ai_search_health": ai_h}
     # ---- S4:规则聚合 + findings 汇总受影响面列(SF/Sitebulb 口径;SKIP 拒审不算规则) ----
     rules = aggregate_rules(by_url)
-    total = len(urls)
+    # S5 修复⑤:coverage 分母与 summary.audited 用已审计页数——拒审([SKIP])页未被审计,剔除
+    total = sum(1 for F in by_url.values() if not any(s == "SKIP" for s, _, _ in F))
     if rules:
         print("\n" + render_findings_markdown(rules, total))
     else:
-        print(f"\n## findings 汇总:0 规则命中(受影响面分母=已审计 {total} 页)")
+        print(f"\n## findings 汇总:0 规则命中(受影响面分母=已审计 {total} 页,拒审剔除)")
     export_files = []
     if export_dir is not None:
         export_files = write_exports(export_dir, rules, total)

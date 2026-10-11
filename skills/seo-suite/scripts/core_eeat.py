@@ -27,15 +27,84 @@ CORE(C/O/R/E)管内容体 = GEO 分;EEAT(Exp/Ept/A/T)管作者组织站 = SEO �
   python3 core_eeat.py FILE            # 纯文本/markdown/HTML 文件
   python3 core_eeat.py FILE --url URL  # 额外拉取线上页面(结构检查用原始 HTML)
   python3 core_eeat.py --self-test
+安全:--url 仅 http(s)(拒 file:///ftp://);私网/环回/链路本地/保留段拒连;
+重定向逐跳复查;read() 上限 2MB(SSRF/输入防护,趋势同 trend_watch.py 内嵌实现)。
 """
 import argparse
+import ipaddress
 import os
 import re
+import socket
 import sys
 import tempfile
 import traceback
+import urllib.parse
+import urllib.request
 from html.parser import HTMLParser
-from urllib.request import Request, urlopen
+
+MAX_READ_BYTES = 2_000_000   # read() 上限(R5 安全:core_eeat read 无上限)
+
+UA = "Mozilla/5.0 (seo-suite core_eeat)"
+
+
+# ---------------------------------------------------------------- SSRF 防护
+class FetchError(Exception):
+    pass
+
+
+_ssrf_cache = {}
+
+
+def ssrf_guard(host):
+    """仅 http(s) + 拒私网/环回/链路本地/保留段;结果按 host 缓存(trend_watch.py 同款,
+    内嵌不 import)。198.18.0.0/15(RFC2544 基准段)豁免:本机 fake-IP 代理会把一切域名
+    解析到该段,实际连接经代理出网,TLS 验证仍生效;SEO_MONITOR_STRICT_SSRF=1 恢复全拒。"""
+    if not host:
+        raise FetchError("empty host")
+    if host in _ssrf_cache:
+        return
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError as e:
+        raise FetchError("DNS 解析失败 %s: %s" % (host, e))
+    strict = bool(os.environ.get("SEO_MONITOR_STRICT_SSRF"))
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip in ipaddress.ip_network("198.18.0.0/15"):
+            if not strict:
+                continue
+            raise FetchError("SSRF guard: 非公网地址 %s(strict 模式拒 fake-IP 段)" % ip)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise FetchError("SSRF guard: 非公网地址 %s" % ip)
+    _ssrf_cache[host] = True
+
+
+class _RedirectGuard(urllib.request.HTTPRedirectHandler):
+    """重定向逐跳 SSRF 复查(urlopen 自动跟 302,每一跳的新 host 必须复查)。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        p = urllib.parse.urlparse(newurl)
+        if p.scheme not in ("http", "https"):
+            raise FetchError("重定向到非 http(s) 被拒: %s" % newurl)
+        ssrf_guard(p.hostname)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_RedirectGuard)
+
+
+def fetch(url, timeout=20):
+    """唯一网络出口(测试打桩点):scheme 检查(仅 http(s))+ SSRF 防护 + 2MB 读上限。"""
+    p = urllib.parse.urlparse(url)
+    if p.scheme not in ("http", "https"):
+        raise FetchError("仅允许 http(s): %s" % url)
+    ssrf_guard(p.hostname)
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    with _opener.open(req, timeout=timeout) as r:
+        return r.read(MAX_READ_BYTES).decode("utf-8", errors="replace")
 
 UNIT_NUM_RE = re.compile(r"\d+(?:\.\d+)?\s?(?:%|万|亿|元|\$|€|£|ms|s|倍)")
 CONCLUSION_RE = re.compile(
@@ -180,9 +249,7 @@ def html_structure(raw):
 def load_document(path=None, url=None, raw=None):
     if raw is None:
         if url:
-            req = Request(url, headers={"User-Agent": "Mozilla/5.0 (seo-suite core_eeat)"})
-            with urlopen(req, timeout=20) as r:
-                raw = r.read().decode("utf-8", errors="replace")
+            raw = fetch(url)                      # 受控出口:仅 http(s)+SSRF 防护+2MB 上限
         elif path:
             if path == "-":
                 raw = sys.stdin.read()

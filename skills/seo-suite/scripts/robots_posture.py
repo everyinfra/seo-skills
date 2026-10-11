@@ -5,7 +5,7 @@
 (citation_bots_ok / citation_bots_explicit)、分层统计、Content-Signal 建议与警告,
 可选 --fix-robots 打印修复建议块(只打印不写盘)。geo-optimizer 源码口径(borrow-specs C3)。
 用法: python3 robots_posture.py https://example.com/robots.txt [--signal visibility|protect-ip] [--json] [--fix-robots]"""
-import json, sys, urllib.request
+import ipaddress, json, os, socket, sys, urllib.parse, urllib.request
 
 UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.0)"
 MAX_BYTES = 500_000  # RFC 9309: 超过 500KiB 的 robots.txt 至少按前 500KiB 处理
@@ -59,9 +59,67 @@ TIER_ORDER = ("search", "user", "training")  # 展示顺序:先可见性攸关�
 SIGNALS = {"visibility": "search=yes, ai-input=yes, ai-train=yes",
            "protect-ip": "search=yes, ai-input=yes, ai-train=no"}
 
+
+# ---------------------------------------------------------------------------
+# SSRF 防护(trend_watch.py 同款,内嵌不 import):仅 http(s)+私网/环回/链路本地/
+# 保留段拒连+重定向逐跳复查
+# ---------------------------------------------------------------------------
+class FetchError(Exception):
+    pass
+
+
+_ssrf_cache = {}
+
+
+def ssrf_guard(host):
+    """仅 http(s) + 拒私网/环回/链路本地/保留段;结果按 host 缓存。
+    198.18.0.0/15(RFC2544 基准段)豁免:本机 fake-IP 代理会把一切域名解析到该段,
+    实际连接经代理出网,TLS 验证仍生效;SEO_MONITOR_STRICT_SSRF=1 恢复全拒。"""
+    if not host:
+        raise FetchError("empty host")
+    if host in _ssrf_cache:
+        return
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError as e:
+        raise FetchError("DNS 解析失败 %s: %s" % (host, e))
+    strict = bool(os.environ.get("SEO_MONITOR_STRICT_SSRF"))
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip in ipaddress.ip_network("198.18.0.0/15"):
+            if not strict:
+                continue
+            raise FetchError("SSRF guard: 非公网地址 %s(strict 模式拒 fake-IP 段)" % ip)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise FetchError("SSRF guard: 非公网地址 %s" % ip)
+    _ssrf_cache[host] = True
+
+
+class _RedirectGuard(urllib.request.HTTPRedirectHandler):
+    """重定向逐跳 SSRF 复查(urlopen 自动跟 302,每一跳的新 host 必须复查)。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        p = urllib.parse.urlparse(newurl)
+        if p.scheme not in ("http", "https"):
+            raise FetchError("重定向到非 http(s) 被拒: %s" % newurl)
+        ssrf_guard(p.hostname)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_RedirectGuard)
+
+
 def fetch(url):
+    """唯一网络出口(测试打桩点):scheme 检查(仅 http(s),拒 file:// 等)+ SSRF 防护。"""
+    p = urllib.parse.urlparse(url)
+    if p.scheme not in ("http", "https"):
+        raise FetchError("仅允许 http(s): %s" % url)
+    ssrf_guard(p.hostname)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=15) as r:
+    with _opener.open(req, timeout=15) as r:
         return r.read(MAX_BYTES).decode("utf-8", "replace")
 
 # ---------------------------------------------------------------------------
@@ -284,7 +342,9 @@ def render(report):
     return "\n".join(out)
 
 USAGE = """usage: robots_posture.py URL [--signal visibility|protect-ip] [--json] [--fix-robots]
-URL 通常是 https://site/robots.txt(给站点根也行,自动拼 /robots.txt;file:// 本地文件亦可)。
+	URL 通常是 https://site/robots.txt(给站点根也行,自动拼 /robots.txt)。
+	仅 http(s):file:///ftp:// 等非 http(s) scheme 拒;私网/环回/链路本地拒连;
+	重定向逐跳复查(SSRF 防护;本地 fixture 请经 import analyze() 消费)。
 读取 robots.txt,输出 27 bot 三层矩阵(training/search/user)+四态判定(allowed/blocked/
 partial/missing)+两级引用评分(citation_bots_ok/citation_bots_explicit)+分层统计
 +bots_allowed/bots_blocked/bots_missing/bots_partial 四列表+Cloudflare 注入检测
@@ -299,13 +359,16 @@ def main():
     a = sys.argv[1:]
     if any(x in ("-h", "--help") for x in a):
         print(USAGE); return
-    url, mode = None, None
+    url, mode, robots_file = None, None, None
     as_json, fix = "--json" in a, "--fix-robots" in a
     i = 0
     while i < len(a):
         x = a[i]
         if x == "--signal":
             mode = a[i + 1] if i + 1 < len(a) and not a[i + 1].startswith("-") else "visibility"
+            i += 2
+        elif x == "--robots-file":
+            robots_file = a[i + 1] if i + 1 < len(a) and not a[i + 1].startswith("-") else None
             i += 2
         elif x in ("--json", "--fix-robots"):
             i += 1
@@ -315,11 +378,19 @@ def main():
             url = x; i += 1
     if not url:
         sys.stderr.write(USAGE + "\n"); sys.exit(2)
-    url = url.rstrip("/") + "/robots.txt" if not url.rstrip("/").endswith("robots.txt") else url
-    try:
-        txt = fetch(url)
-    except Exception as e:
-        sys.stderr.write(f"抓取失败 {url}: {e}\n"); sys.exit(1)
+    if robots_file:
+        # 离线模式:robots.txt 本地读(测试/本地分析;线上仍走 fetch+SSRF 守卫)
+        try:
+            with open(robots_file, encoding="utf-8", errors="replace") as f:
+                txt = f.read()
+        except OSError as e:
+            sys.stderr.write(f"读取失败 {robots_file}: {e}\n"); sys.exit(2)
+    else:
+        url = url.rstrip("/") + "/robots.txt" if not url.rstrip("/").endswith("robots.txt") else url
+        try:
+            txt = fetch(url)
+        except Exception as e:
+            sys.stderr.write(f"抓取失败 {url}: {e}\n"); sys.exit(1)
     report = analyze(txt, mode or "visibility")
     if as_json:
         payload = dict(report)

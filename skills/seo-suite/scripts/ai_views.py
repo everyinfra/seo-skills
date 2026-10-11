@@ -21,9 +21,11 @@ Ahrefs 13.7 万域研究 97% 文件整月零请求 / Google 官方"非必需")�
 守卫口径复制自 site_audit.py,不 import 以保持本脚本独立)。"""
 import hashlib
 import html as _html
+import ipaddress
 import json
 import os
 import re
+import socket
 import sys
 import urllib.error
 import urllib.request
@@ -69,7 +71,8 @@ AI 视图层生成器(Scrunch AXP 本地等价物):对重点页产出去 chrome 
 净化规则:去 script/style/noscript/iframe/svg/注释/内联事件属性/追踪属性(data-* 全删,
 aria-* 只留 aria-label);header/nav/main/article/section/h1-h6/dl/dt/dd/table 语义骨架保留,
 装饰 class 全剥;meta 只留 title/description/canonical/og 三件套;图片转 [image: alt] 占位;
-表单按钮去交互留文本(input/select/textarea 整块移除)。
+表单按钮去交互留文本(input/select/textarea 整块移除);链接 href 仅留 http(s)/mailto/相对路径
+(javascript:/data: 等危险 scheme 弃置并计数)。
 token 口径:len(text)//4;输出 original: {{N}} tokens → ai-view: {{M}} tokens ({{pct}}%% 缩减),
 对标 Scrunch 官方实测 98.9%%(123,916→1,355)——达不到时如实报,不虚标。
 定位:给 AI bot 的低噪版本,人审后自行部署到如 /ai/ 路径;llms.txt 非可见性杠杆(三份实证:
@@ -78,11 +81,66 @@ Otterly 90 天 0.1%% 请求率/Ahrefs 13.7 万域 97%% 整月零请求/Google �
 退出码:0 正常;1 fetch 错误;2 用法错误或 fetch 守卫拒绝。""" % (VIEW_DIR, VIEW_DIR, VIEW_DIR)
 
 
-# ---- fetch 守卫(小函数复制自 site_audit.py,只读复用其口径,不 import) ----
+# ---- fetch 守卫(小函数复制自 site_audit.py,只读复用其口径,不 import)----
+# ---- SSRF 防护(trend_watch.py 同款,内嵌不 import):仅 http(s)+私网/环回/
+# ---- 链路本地/保留段拒连+重定向逐跳复查 ----
+
+class FetchError(Exception):
+    pass
+
+
+_ssrf_cache = {}
+
+
+def ssrf_guard(host):
+    """仅 http(s) + 拒私网/环回/链路本地/保留段;结果按 host 缓存。
+    198.18.0.0/15(RFC2544 基准段)豁免:本机 fake-IP 代理会把一切域名解析到该段,
+    实际连接经代理出网,TLS 验证仍生效;SEO_MONITOR_STRICT_SSRF=1 恢复全拒。"""
+    if not host:
+        raise FetchError("empty host")
+    if host in _ssrf_cache:
+        return
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError as e:
+        raise FetchError("DNS 解析失败 %s: %s" % (host, e))
+    strict = bool(os.environ.get("SEO_MONITOR_STRICT_SSRF"))
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip in ipaddress.ip_network("198.18.0.0/15"):
+            if not strict:
+                continue
+            raise FetchError("SSRF guard: 非公网地址 %s(strict 模式拒 fake-IP 段)" % ip)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise FetchError("SSRF guard: 非公网地址 %s" % ip)
+    _ssrf_cache[host] = True
+
+
+class _RedirectGuard(urllib.request.HTTPRedirectHandler):
+    """重定向逐跳 SSRF 复查(urlopen 自动跟 302,每一跳的新 host 必须复查)。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        p = urlparse(newurl)
+        if p.scheme not in ("http", "https"):
+            raise FetchError("重定向到非 http(s) 被拒: %s" % newurl)
+        ssrf_guard(p.hostname)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_RedirectGuard)
+
 
 def fetch(url, timeout=15):
+    """唯一网络出口(测试打桩点):scheme 检查(仅 http(s),拒 file:// 等)+ SSRF 防护。"""
+    p = urlparse(url)
+    if p.scheme not in ("http", "https"):
+        raise FetchError("仅允许 http(s): %s" % url)
+    ssrf_guard(p.hostname)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
+    with _opener.open(req, timeout=timeout) as r:
         return r.status, r.read(2_000_000).decode("utf-8", "replace")
 
 
@@ -132,7 +190,7 @@ class Purifier(HTMLParser):
         self.meta = {"title": None, "description": None, "canonical": None, "og": {}}
         self.lang = None
         self.stats = {"converted": 0, "removed": 0, "kept": 0,
-                      "attrs_stripped": 0, "meta_dropped": 0}
+                      "attrs_stripped": 0, "meta_dropped": 0, "href_dropped": 0}
 
     def _parent(self):
         for _, node in reversed(self.stack):
@@ -202,8 +260,16 @@ class Purifier(HTMLParser):
         if tag in BLOCK_TAGS or tag in INLINE_TAGS:
             keep = {}
             if tag == "a" and d.get("href"):
-                keep["href"] = (urljoin(self.base_url, d["href"])
-                                if self.base_url else d["href"])
+                # href 白名单:仅 http(s)/mailto/相对路径存活;javascript:/data: 等
+                # 任意 scheme 载体弃置并计数(R5 安全:ai_views javascript: 链接=XSS 载体)
+                scheme = urlparse(d["href"]).scheme.lower()
+                if scheme in ("", "http", "https"):
+                    keep["href"] = (urljoin(self.base_url, d["href"])
+                                    if self.base_url else d["href"])
+                elif scheme == "mailto":
+                    keep["href"] = d["href"]
+                else:
+                    self.stats["href_dropped"] += 1
             if d.get("aria-label"):
                 keep["aria-label"] = d["aria-label"]
             self.stats["attrs_stripped"] += len(d) - len(keep)
@@ -571,6 +637,9 @@ def main(argv=None):
         source = url
         try:
             _, html_text = fetch(url)
+        except FetchError as e:
+            sys.stderr.write("[SKIP] ssrf guard: %s(拒连,不产出)\n" % e)
+            return 2
         except urllib.error.HTTPError as e:
             if e.code in (401, 403, 429, 503):
                 print("[SKIP] fetch guard: response too small / likely challenge page "
@@ -656,9 +725,10 @@ def main(argv=None):
     print("original: %d tokens → ai-view: %d tokens (%s%% 缩减)(%s)"
           % (orig_t, html_t, pct, _bench_note(pct)))
     print("markdown 视图: %d tokens" % md_t)
-    print("blocks: 转换 %d / 移除 %d / 保留 %d(属性剥离 %d 项,head 元素移除 %d 项)"
+    print("blocks: 转换 %d / 移除 %d / 保留 %d(属性剥离 %d 项,head 元素移除 %d 项,"
+          "危险 scheme 链接弃置 %d 项)"
           % (p.stats["converted"], p.stats["removed"], p.stats["kept"],
-             p.stats["attrs_stripped"], p.stats["meta_dropped"]))
+             p.stats["attrs_stripped"], p.stats["meta_dropped"], p.stats["href_dropped"]))
     if do_diff:
         if diff is None:
             print("[diff] 无上一版本(./%s 不存在),跳过" % old_path)
