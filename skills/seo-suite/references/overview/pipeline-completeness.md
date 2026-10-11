@@ -96,6 +96,34 @@
 | R4-9 | disavow_check.py | 锚文本分布/集中度→disavow 草稿(默认 0 条) |
 | R4-10 | 合同表重生成 | 修 trend_watch/benchmark 行粘连错位 |
 
+## 五、20 视角深扫补录(2026-10-11 第二轮:内部错漏 + 知识边界)
+
+### R5 错漏修复(P0 级,先于一切新功能)
+
+**代码 bug(37 个,均经复现验证)**
+- 审计链 13:health_score 全拒审除零崩溃;site_audit robots RFC 9309 违背(专属组空时误回落通配组→假 CRITICAL);audit_compare 已修复清单污染(拒审≠修复);GBK 全量乱码;Last-Modified 时区混 8h;X-Robots-Tag 大小写漏检
+- GEO 家族 14:wilson_ci 实为 Wald 区间(k=0/n 时宽 0→误判 stable);oracle 指纹碰撞丢 findings+币种不分币($99=99元)+中文否定误判;grounding sameAs 子串误配;JSON 全族非原子写;trend 标题从首个" - "截断;跨源 velocity 不可比
+- 监控链 10:cooldown 只比最旧行(超一个冷却窗后冷却失效);weekly diff 的 prev 取到 daily 快照;单次抓取失败→全字段假漂移;抑制树把 inhibited 记自愈;remediation 无锁;critical 发送失败永久丢
+- 多语言 6:oracle 对 ko/ru/ar/th/hi 静默 0 findings;Simhash CJK 单 token;泰文句切假阳;market_lint 缺全角!?
+- 安全 4:12 脚本零 SSRF(llmstxt/robots_posture/schema_lint/ai_views/core_eeat 等连 file:// 可读);hreflang_cluster 抓敌意 sitemap 任意 loc;core_eeat read 无上限;ai_views javascript: 链接(XSS 载体);workflow 模板注入面
+
+**文档错漏**:一致性 12 处(manifest 停 0.31.0;插件 license 误标 MIT 实为 Apache-2.0;plugin.json description 旧数字;README 内部自相矛盾;CAPABILITY_MATRIX.md 人读版滞后;半衰期单口径×4 处;tr 份额单口径×3 处);事实抽查 60 条=52✅/7⚠️/1❌(SE Ranking 归属张冠李戴);SKILL 路由 3.5/8(高频任务缺行;deep-research-protocol 挂错区;路由表被脚本目录淹没);测试 8/10(币种/GBK/Wilson 三高危 bug 零捕获)
+
+### R6 知识边界接入(50+ 项,外部 8 视角)
+
+- 新方法论:Search Everywhere Optimization(Semrush/SEL/Adobe)/Kalicube Brand SERP 八面+Algorithmic Trinity v1.0/Community SEO/Zero-click 体系化
+- GEO 新面:IAB 4P 测量标准(Presence/Prominence/Portrayal/Persuasion)/Google agentic commerce 四项/ChatGPT Ads 正式面+Perplexity 转订阅/AI Mode monitoring 全量/个人 agent 客户端×5(Muse·dots·Grok Bot·Instinct·Perplexity Computer)/negative GEO 纠错 playbook
+- 学术修正(必须入库):arXiv 2609.35077(200 万引用:Schema/FAQ/CWV 正效应在域名固定效应下反转)/2607.14035(GEO 批判综述:无稳定跨平台因果)/2609.06811(提示集=答案市场)+6 篇全新(robots 合规实验/agent-ready 49→89/对话捕获/GEO 痕迹 8.9%/CHASE/冲突幻觉)
+- 运营体系:算法更新变更冻结协议(Freeze→Pause→Review)/四层运营节奏/治理 RACI(≥3 贡献者)/PRD+证据库/RICE/领导层沟通
+- 归因实验:split_test+功效计算(最足)/synthetic_control/geo_experiment(Meridian GeoX)/triangulate 三源
+- 内容体系:ContentOps 状态机+遥测/ai-use-policy(AP 四象限)/人评刻度+IRR/content_inventory 四轴治理(keep·update·consolidate·remove+redirect map——此前未登记)/组件化 COPE
+- 技术新面:Edge SEO 体系/AI Crawl Control 三态商业框架/schema CI 分层采样/View Transitions/WRS 无状态/CF 日志源
+- 垂直:local_audit 工具化/Job·房产扩展卡/news_sitemap_check/YouTube 站内章/GSC multimodal 采集/ASO 薄桥+ABM 小节(其余明示不建)
+- 监控对标:SLO+错误预算/flapping+ack 超时/postmortem 模板/Googlebot 会话追踪/incident 角色分工(owner_team)
+- 竞品:Ryze 一方数据 MCP 线(AI-referral 流量即可见性证据)/jev-seo 交付物层(PDF·XLSX·MD)/fire-your-seo-agency LLMO 车道+publish gate/geo-score rubric 版本化;已知三家:claude-seo cockpit/niubigeo 快照 diff/geo-optimizer rubric v2
+
+**建设顺序修订:R5(正确性)最优先 → R0 接线 → R1 编排器 → R6 高优入库(学术三修正+冻结协议+IAB 对齐+库存治理)→ R2/R3/R4。**
+
 ## 四、建设顺序建议
 
 R0(半天)→ R1(管线骨架,1-2 轮 agent 波)→ R2(数据接入)→ R3(生产线)→ R4(末端)。R1 是关键:没有 project 编排器,后面每个新工具都在加重"散珠"问题;有了它,59 个零件变成 10 条命名管线。
