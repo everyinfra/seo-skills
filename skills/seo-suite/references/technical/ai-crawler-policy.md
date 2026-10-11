@@ -10,6 +10,7 @@
 | Bot | 归属 | 用途 | 频率 |
 |---|---|---|---|
 | `OAI-SearchBot` | OpenAI | ChatGPT 搜索索引 | 日频 |
+| `OAI-AdsBot` | OpenAI | **ChatGPT 广告落地页安全验证**(提交广告时访问落地页核政策合规+判定相关性;非索引/非训练,2026-10-11 官方 bots 页确认新增) | 按需 |
 | `ChatGPT-User` | OpenAI | 按用户请求抓取 | 按需 |
 | `Claude-SearchBot` | Anthropic | Claude 搜索索引 | 按需 |
 | `Claude-User` | Anthropic | 按用户请求抓取 | 按需 |

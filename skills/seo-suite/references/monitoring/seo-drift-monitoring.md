@@ -92,7 +92,7 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 **L3 判读**:位置跌+SERP 不变=质量/新鲜度;**位置稳+CTR 跌=SERP 特性变化(AIO/广告)——页面可以不掉排名而掉流量**;去索引=技术;同日 deploy+drop=强相关非证明,要找机制。
 **九条失败模式**(照抄要点):跳到算法归因是懒惰答案;无正常基线则一切波动皆警报;**品牌 vs 非品牌由不同团队负责**;四源并用(GSC+Ahrefs+analytics+日志)单源诊断禁止;不许提前安抚"算法会恢复"。
 **假设单句模板**:"[Property] lost [magnitude] starting [date] because [cause], evidenced by [data], recovery requires [actions], timeline [duration]"。
-**DiD 对照参数**(seo-monster):pre=56 天(≥2× post)/post=28/gap=7 天 washout;闸门=控制页≥3、treated pre 点击≥5、控制页 pre 点击≥5;lift CI(±1.96 SE)三态判定;GSC 断代检测(impression bug 2025-05-13~2026-04-27;num=100 弃用 2025-09-11)窗口重叠时 clicks 为唯一可信指标;**"server-side page-level split test 是唯一真因果检验"**。
+**DiD 对照参数**(seo-monster):pre=56 天(≥2× post)/post=28/gap=7 天 washout;闸门=控制页≥3、treated pre 点击≥5、控制页 pre 点击≥5;lift CI(±1.96 SE)三态判定;GSC 断代检测(impression bug 2025-05-13~2026-04-27;num=100 弃用 2025-09-11)窗口重叠时 clicks 为唯一可信指标;**报告延迟事件:2026-10-11 GSC Performance 报告延迟超 64 小时([SER 报道](https://www.seroundtable.com/google-search-console-performance-report-delayed-42271.html),2026-10-11)——监控告警归因前先查报告新鲜度,延迟期内不要把数据缺口当流量下跌**;**"server-side page-level split test 是唯一真因果检验"**。
 **告警矩阵默认值**(crawlseo):TRAFFIC_DROP 7 天点击 ≤−20%(当期≥5);POSITION_CHANGE 28 天均位恶化 ≥2 位;CRAWL_ISSUES 健康分 <70;VITALS 最近 5 份报告 ≥2 份 LCP>2.5s 或 CLS>0.1;健康分=100−8×CRITICAL−3×WARNING−1×INFO。
 
 ## 诊断清单细化 + 回归四件套 + DiD 实现细节(rampstack/iannuttall/seo-monster 源码深读,2026-10-09)
