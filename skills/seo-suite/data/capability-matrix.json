@@ -1,117 +1,1231 @@
 {
-  "schema_version": "1.0",
-  "updated": "2026-10-11",
-  "governance": {
-    "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
-    "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
-    "source_of_truth": {
-      "scripts": "SKILL.md 第 3 节(55 个实装脚本,唯一事实来源)",
-      "data_contract": "references/overview/data-source-contract.md(数据/降级/反编造三列)",
-      "capability_map": "references/overview/capability-map.md(能力地图,人读姊妹篇)"
-    },
-    "maintenance": "新增脚本/模板必须同步更新本 JSON 与 CAPABILITY_MATRIX.md;由 tests/test_capability_matrix.py 守护(五检),scripts/self_check.py 消费其中 ①②(文件存在性双向)"
+ "schema_version": "1.0",
+ "updated": "2026-10-11",
+ "governance": {
+  "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
+  "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
+  "source_of_truth": {
+   "scripts": "SKILL.md 第 3 节(55 个实装脚本,唯一事实来源)",
+   "data_contract": "references/overview/data-source-contract.md(数据/降级/反编造三列)",
+   "capability_map": "references/overview/capability-map.md(能力地图,人读姊妹篇)"
   },
-  "status_legend": {
-    "stable": "有测试守护(专属测试文件或 tests/run_tests.py 内联用例),或本身即守护工具(self_check/link_check)被检查链每次消费",
-    "beta": "已实装且已入 data-source-contract,但暂无测试守护",
-    "draft": "新增未对勘(当前 0 条;新脚本入矩阵默认 draft,合同对勘+测试守护后升级)"
+  "maintenance": "新增脚本/模板必须同步更新本 JSON 与 CAPABILITY_MATRIX.md;由 tests/test_capability_matrix.py 守护(五检),scripts/self_check.py 消费其中 ①②(文件存在性双向)"
+ },
+ "status_legend": {
+  "stable": "有测试守护(专属测试文件或 tests/run_tests.py 内联用例),或本身即守护工具(self_check/link_check)被检查链每次消费",
+  "beta": "已实装且已入 data-source-contract,但暂无测试守护",
+  "draft": "新增未对勘(当前 0 条;新脚本入矩阵默认 draft,合同对勘+测试守护后升级)"
+ },
+ "fallback_modes": {
+  "①": "等价替代(换等价数据源/脚本重建,输出标 [est])",
+  "②": "部分执行(截断/降级到有数据支撑的部分并显式声明)",
+  "③": "停止并指名缺什么(不产出误导性结果)",
+  "④": "静默跳过可选增强(核心功能照常)"
+ },
+ "summary": {
+  "script": 55,
+  "template": 23,
+  "reference": 12,
+  "stable": 68,
+  "beta": 21,
+  "draft": 1
+ },
+ "entries": [
+  {
+   "type": "script",
+   "script": "site_audit.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "URL",
+    "--market 市场码(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "URL 实时抓取(HTML+HTTP 头);--market 阈值读本地 markets.json",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_ai_search_health.py",
+   "status": "stable"
   },
-  "fallback_modes": {
-    "①": "等价替代(换等价数据源/脚本重建,输出标 [est])",
-    "②": "部分执行(截断/降级到有数据支撑的部分并显式声明)",
-    "③": "停止并指名缺什么(不产出误导性结果)",
-    "④": "静默跳过可选增强(核心功能照常)"
+  {
+   "type": "script",
+   "script": "health_score.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--input audit.json(site_audit --json)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "本地 JSON(site_audit --json 输出);--config 可选",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_health_score.py",
+   "status": "stable"
   },
-  "summary": { "script": 55, "template": 22, "reference": 12, "stable": 68, "beta": 21, "draft": 0 },
-  "entries": [
-    { "type": "script", "script": "site_audit.py", "group": "审计与页面质量", "inputs": ["URL", "--market 市场码(可选)"], "outputs_schema": "json", "data_source": "URL 实时抓取(HTML+HTTP 头);--market 阈值读本地 markets.json", "fallback_mode": "②", "tests_file": "tests/test_ai_search_health.py", "status": "stable" },
-    { "type": "script", "script": "health_score.py", "group": "审计与页面质量", "inputs": ["--input audit.json(site_audit --json)"], "outputs_schema": "json", "data_source": "本地 JSON(site_audit --json 输出);--config 可选", "fallback_mode": "②", "tests_file": "tests/test_health_score.py", "status": "stable" },
-    { "type": "script", "script": "traffic_funnel.py", "group": "审计与页面质量", "inputs": ["--audit audit.json", "--gsc gsc.csv(可选)", "--cwv cwv.csv(可选)", "--urls 清单(可选)"], "outputs_schema": "json", "data_source": "--audit(site_audit JSON)+--gsc(GSC 页面导出 CSV)+--cwv(可选 CSV)+--urls(sitemap 清单)", "fallback_mode": "②", "tests_file": "tests/test_traffic_funnel.py", "status": "stable" },
-    { "type": "script", "script": "quality_rater.py", "group": "审计与页面质量", "inputs": ["FILE(纯文本,首行=title 约定)", "--keyword/--market(可选)"], "outputs_schema": "markdown", "data_source": "纯文本文件(本地;首行=title 约定)", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "above_fold.py", "group": "审计与页面质量", "inputs": ["URL"], "outputs_schema": "markdown", "data_source": "URL 实时抓取(前 700 字符可见文本)", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "trust_signals.py", "group": "审计与页面质量", "inputs": ["URL"], "outputs_schema": "markdown", "data_source": "URL 实时抓取", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "core_eeat.py", "group": "审计与页面质量", "inputs": ["FILE(纯文本/Markdown)"], "outputs_schema": "markdown", "data_source": "纯文本/Markdown 文件(本地)", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "content_score.py", "group": "审计与页面质量", "inputs": ["--draft 文件", "--competitors c1,c2,c3", "--keyword 主词"], "outputs_schema": "json", "data_source": "--draft 本地文件 + --competitors ≥3 个竞品文件 + --keyword;术语表从竞品正文提取", "fallback_mode": "③", "tests_file": "tests/test_content_score.py", "status": "stable" },
-    { "type": "script", "script": "fix_plan.py", "group": "审计与页面质量", "inputs": ["--url 或 --audit audit.json", "--apply/--estimate(可选)"], "outputs_schema": "json", "data_source": "--url(内部跑 site_audit 实时抓取)或 --audit JSON", "fallback_mode": "③", "tests_file": "tests/test_fix_plan.py", "status": "stable" },
-    { "type": "script", "script": "grounding_page.py", "group": "审计与页面质量", "inputs": ["--facts brand.yaml", "--check(可选,校验已有页)"], "outputs_schema": "markdown", "data_source": "brand.yaml(Brand Records 事实库,用户提供)", "fallback_mode": "③+②", "tests_file": "tests/test_grounding_page.py", "status": "stable" },
-    { "type": "script", "script": "audit_compare.py", "group": "审计与页面质量", "inputs": ["--old a.json", "--new b.json", "--baseline-gate N(可选)"], "outputs_schema": "json", "data_source": "两次 site_audit --json(本地文件)", "fallback_mode": "③+②", "tests_file": "tests/test_audit_compare.py", "status": "stable" },
-    { "type": "script", "script": "ci_format.py", "group": "审计与页面质量", "inputs": ["audit.json 或 diff JSON", "--format sarif|junit|github"], "outputs_schema": "json", "data_source": "本地 JSON(site_audit --json 或 audit_compare --json diff)", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "sensor_volatility.py", "group": "审计与页面质量", "inputs": ["--gsc gsc.csv 或 --positions 三列 CSV"], "outputs_schema": "json", "data_source": "--gsc(GSC 多日导出)或 --positions 三列 CSV", "fallback_mode": "③+②", "tests_file": "tests/test_sensor_volatility.py", "status": "stable" },
-    { "type": "script", "script": "forecast.py", "group": "审计与页面质量", "inputs": ["--kws kws.csv", "--ctr/--actual(可选)"], "outputs_schema": "markdown", "data_source": "--kws 关键词 CSV;--ctr 自有 GSC 曲线、--actual 校准流量均可选", "fallback_mode": "②", "tests_file": "tests/test_forecast.py", "status": "stable" },
-    { "type": "script", "script": "prioritize.py", "group": "审计与页面质量", "inputs": ["--audit audit.json 或 health_score JSON"], "outputs_schema": "json", "data_source": "--audit(site_audit JSON)或 health_score JSON;gsc_clicks/inlinks 等扩展键可选", "fallback_mode": "②", "tests_file": "tests/test_prioritize.py", "status": "stable" },
-    { "type": "script", "script": "changelog.py", "group": "审计与页面质量", "inputs": ["--db monitor.db 或 --snaps JSON(二选一)"], "outputs_schema": "json", "data_source": "--db(monitor.py SQLite,读 snapshots 表)或 --snaps JSON,二选一", "fallback_mode": "③+②", "tests_file": "tests/test_changelog.py", "status": "stable" },
-    { "type": "script", "script": "doctor.py", "group": "审计与页面质量", "inputs": ["(无必填;--net 可选探测)"], "outputs_schema": "json", "data_source": "无外部数据——本地环境探测(Python 版本/文件/环境变量键名)", "fallback_mode": "②", "tests_file": "tests/test_doctor.py", "status": "stable" },
-    { "type": "script", "script": "ai_views.py", "group": "审计与页面质量", "inputs": ["--url 或 --html", "--apply(可选)"], "outputs_schema": "markdown", "data_source": "URL 实时抓取或 --html 离线", "fallback_mode": "③", "tests_file": "tests/test_ai_views.py", "status": "stable" },
-    { "type": "script", "script": "envelope.py", "group": "审计与页面质量", "inputs": ["--audit audit.json(必需)", "--health/--priority(可选)", "--resume(可选)"], "outputs_schema": "json", "data_source": "audit.json(必需)+health/priority(可选)", "fallback_mode": "②", "tests_file": "tests/test_envelope.py", "status": "stable" },
-    { "type": "script", "script": "benchmark_report.py", "group": "审计与页面质量", "inputs": ["--audits dir|--monitor-db|--scores(可组合)"], "outputs_schema": "json", "data_source": "多个 audit json/monitor.db/scores.csv", "fallback_mode": "③", "tests_file": "tests/test_benchmark_report.py", "status": "stable" },
-    { "type": "script", "script": "sitemap_audit.py", "group": "技术 SEO", "inputs": ["URL", "--check-limit(可选)"], "outputs_schema": "markdown", "data_source": "sitemap URL 实时抓取(sitemapindex 递归 1 层;逐 loc 抽查状态码/标签)", "fallback_mode": "③+②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "hreflang_cluster.py", "group": "技术 SEO", "inputs": ["URL...(多个)", "--max-extra(可选)"], "outputs_schema": "markdown", "data_source": "多个 URL 实时抓取(HTML link 标签+HTTP Link 头+sitemap XML 三载体)", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "redirect_chain.py", "group": "技术 SEO", "inputs": ["URL"], "outputs_schema": "markdown", "data_source": "URL 实时逐跳 GET(手动跟随不自动重定向)", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "robots_posture.py", "group": "技术 SEO", "inputs": ["URL", "--fix-robots(可选)"], "outputs_schema": "json", "data_source": "robots.txt 实时抓取;27 bot 三层名单+RFC 9309 解析器内置本地", "fallback_mode": "③", "tests_file": "tests/test_robots_posture.py", "status": "stable" },
-    { "type": "script", "script": "llmstxt.py", "group": "技术 SEO", "inputs": ["validate FILE|check URL|generate --sitemap"], "outputs_schema": "markdown", "data_source": "validate=本地文件;check=线上 /llms.txt 等 4 路径探测;generate=--sitemap 实时抓取", "fallback_mode": "③", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "schema_lint.py", "group": "技术 SEO", "inputs": ["URL"], "outputs_schema": "markdown", "data_source": "URL 实时抓取(提取全部 ld+json 块)", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "head_check.py", "group": "技术 SEO", "inputs": ["URL|FILE", "--market(可选,zh 门控)"], "outputs_schema": "markdown", "data_source": "URL 实时抓取或本地 HTML 文件;--market zh 门控中文项", "fallback_mode": "③+④", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "gsc_mining.py", "group": "关键词与 SERP", "inputs": ["导出.csv", "--mode matrix(可选)", "--decay cur prev(可选)"], "outputs_schema": "markdown", "data_source": "GSC 导出 CSV(Query,Clicks,Impressions,CTR,Position;matrix 模式加 Page)", "fallback_mode": "③+①", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "serp_overlap.py", "group": "关键词与 SERP", "inputs": ["输入.csv(keyword,top10 URL 分号分隔)"], "outputs_schema": "markdown", "data_source": "输入 CSV(keyword,top10 URL 分号分隔)——SERP 数据须用户提供", "fallback_mode": "③", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "keyword_variants.py", "group": "关键词与 SERP", "inputs": ["stdin 每行一词"], "outputs_schema": "markdown", "data_source": "stdin 每行一词(无输入纯本地归一)", "fallback_mode": "④", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "payment_intent.py", "group": "关键词与 SERP", "inputs": ["stdin 每行一个关键词"], "outputs_schema": "markdown", "data_source": "stdin 关键词 + markets.json payment_words 词表(本地)", "fallback_mode": "④", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "geo_difficulty.py", "group": "关键词与 SERP", "inputs": ["--kd", "--ur-median", "--targeting", "--position/--client-ur(可选)"], "outputs_schema": "markdown", "data_source": "--kd/--ur-median/--targeting 手工输入——KD 来自第三方 SEO 工具导出,UR 来自竞品页审计", "fallback_mode": "③+②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "serp_occupancy.py", "group": "关键词与 SERP", "inputs": ["--market XX", "域名列表(argv/stdin)"], "outputs_schema": "markdown", "data_source": "--market + 域名列表(argv/stdin);对照 markets.json 内置占位表(tr/th/in/kr/jp/vn/ru)", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "grid_rank.py", "group": "关键词与 SERP", "inputs": ["rank_data.csv(keyword,grid_point,rank)"], "outputs_schema": "json", "data_source": "rank_data.csv(keyword,grid_point,rank)——本地网格排名采集结果", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "market_lint.py", "group": "多语言实装", "inputs": ["--market XX", "FILE"], "outputs_schema": "markdown", "data_source": "--market + 本地文本文件;64 条规则读 markets.json(本地)", "fallback_mode": "③", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "local_format.py", "group": "多语言实装", "inputs": ["--market de|fr|ar|zh", "采样文本(argv/stdin)"], "outputs_schema": "markdown", "data_source": "--market + 采样文本(argv/stdin);惯例表读 markets.json", "fallback_mode": "③", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "text_metrics.py", "group": "多语言实装", "inputs": ["stdin 文本", "--market/--scrub(可选)"], "outputs_schema": "markdown", "data_source": "stdin 文本(本地)", "fallback_mode": "④", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "script", "script": "text_units.py", "group": "多语言实装", "inputs": ["<market>(en|zh|ja|th|ko|ru|id)", "stdin 文本"], "outputs_schema": "markdown", "data_source": "<market> + stdin 文本(本地;en/zh/ja/th/ko/ru/id)", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "citation_panel.py", "group": "AI/GEO 测量", "inputs": ["init|record|report|diff|decay|score", "panel.json", "--prompts-file/--stage-mix/--persona-fanout(可选)"], "outputs_schema": "json", "data_source": "init 建 prompt 面板(本地);record 录入人工采样的真实引擎回答;report/diff/decay 基于累积 panel.json", "fallback_mode": "②", "tests_file": "tests/test_citation_decay.py", "status": "stable" },
-    { "type": "script", "script": "fanout_analysis.py", "group": "AI/GEO 测量", "inputs": ["输入.csv(prompt,web_query)"], "outputs_schema": "markdown", "data_source": "输入 CSV(prompt,web_query)——来自 AI 平台 referral 查询或 fan-out 采集导出", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "ai_referral_log.py", "group": "AI/GEO 测量", "inputs": ["access.log(stdin/文件)", "--bot-ua/--attribution(可选)"], "outputs_schema": "markdown", "data_source": "server access log(apache/nginx combined 或 JSON 行,stdin/文件)", "fallback_mode": "③+②+④", "tests_file": "tests/test_ai_referral_tiers.py", "status": "stable" },
-    { "type": "script", "script": "citation_gaps.py", "group": "AI/GEO 测量", "inputs": ["--panel panel.json", "--brand-domains a.com"], "outputs_schema": "json", "data_source": "--panel(citation_panel 的 panel.json)+--brand-domains", "fallback_mode": "②", "tests_file": "tests/test_citation_gaps.py", "status": "stable" },
-    { "type": "script", "script": "oracle_check.py", "group": "AI/GEO 测量", "inputs": ["--facts brand.yaml", "--responses responses.json"], "outputs_schema": "json", "data_source": "--facts brand.yaml(已验证品牌事实)+--responses responses.json(真实采样回答)", "fallback_mode": "③", "tests_file": "tests/test_oracle_check.py", "status": "stable" },
-    { "type": "script", "script": "cite_domain.py", "group": "AI/GEO 测量", "inputs": ["--input answers.json"], "outputs_schema": "markdown", "data_source": "--input answers.json(referring_domains/DR 分布/锚文本等结构化观测,来自外链工具导出+人工观测)", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "did_attribution.py", "group": "归因与管道", "inputs": ["--pre pre.csv", "--post post.csv", "treated/control 页分组"], "outputs_schema": "json", "data_source": "GSC 页面级两期 CSV(--pre/--post:Page,Clicks[,Date])+ treated/control 页分组", "fallback_mode": "②+③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "seo_vs_ads.py", "group": "归因与管道", "inputs": ["--gsc gsc.csv", "--ads ads.csv(可选)", "--competitors(可选)"], "outputs_schema": "markdown", "data_source": "--gsc(GSC queries 导出)+--ads(Google Ads search terms 导出,可选)+--competitors 列表(可选)", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "yt_outlier.py", "group": "归因与管道", "inputs": ["videos.csv(title,duration_s,views)"], "outputs_schema": "markdown", "data_source": "videos.csv(title,duration_s,views[,is_short][,channel])——YouTube 导出/采集", "fallback_mode": "③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "trend_scout.py", "group": "归因与管道", "inputs": ["--vertical(可选)"], "outputs_schema": "markdown", "data_source": "HN topstories API + Reddit 6 sub hot(免 key 实时抓取);X/Twitter 需 key", "fallback_mode": "④+②+③", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "freshness.py", "group": "归因与管道", "inputs": ["DIR(默认 references/)", "--fail-stale(可选)"], "outputs_schema": "markdown", "data_source": "本地 *.md 头部日期标记(默认 references/)", "fallback_mode": "④", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "report_build.py", "group": "归因与管道", "inputs": ["--findings json", "--out html"], "outputs_schema": "markdown", "data_source": "findings.json(上游脚本产出或 agent 组装)", "fallback_mode": "②", "tests_file": null, "status": "beta" },
-    { "type": "script", "script": "monitor.py", "group": "持续监控守护", "inputs": ["init|run|diff|report", "--site URL", "--dir/--dry-run/--budget-minutes(可选)"], "outputs_schema": "json", "data_source": "--site URL 实时探测(robots/sitemap/状态码/site: 抽查)+ .seo-monitor/gsc.csv(GSC 导出,有才查)+ SQLite 本地快照", "fallback_mode": "④", "tests_file": "tests/test_monitor_noindex.py", "status": "stable" },
-    { "type": "script", "script": "notify.py", "group": "持续监控守护", "inputs": ["run", "--dir", "--alerts alerts.json", "config.json 渠道定义"], "outputs_schema": "markdown", "data_source": "monitor diff 的告警 JSON + config.json 渠道定义(secret 只经环境变量注入)", "fallback_mode": "④", "tests_file": "tests/test_notify_routing.py", "status": "stable" },
-    { "type": "script", "script": "self_check.py", "group": "套件自维护", "inputs": ["(无;扫本地 skill 文件)"], "outputs_schema": "markdown", "data_source": "本地 skill 文件(frontmatter/模板七段式/死链/golden 测试)", "fallback_mode": "③", "tests_file": null, "status": "stable" },
-    { "type": "script", "script": "link_check.py", "group": "套件自维护", "inputs": ["(无;扫本地 markdown 文件树)"], "outputs_schema": "markdown", "data_source": "本地 markdown 文件树", "fallback_mode": "③", "tests_file": null, "status": "stable" },
-    { "type": "script", "script": "intel_check.py", "group": "套件自维护", "inputs": ["init|check", "--source 名(可选)"], "outputs_schema": "markdown", "data_source": "intel-sources.md 注册的 18 源实时拉取(RSS/hash)+ .intel-state.json 基线", "fallback_mode": "③+②", "tests_file": "tests/run_tests.py", "status": "stable" },
-    { "type": "template", "path": "templates/audit/full-seo-audit.md", "group": "templates/audit", "inputs": ["site_audit --json", "health_score --json", "prioritize --json"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/audit/on-page-audit.md", "group": "templates/audit", "inputs": ["site_audit --json"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/audit/technical-audit.md", "group": "templates/audit", "inputs": ["site_audit/sitemap_audit/schema_lint/robots_posture 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/audit/entity-audit.md", "group": "templates/audit", "inputs": ["schema_lint 产出", "brand facts"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/audit/report-modes.md", "group": "templates/audit", "inputs": ["审计 JSON 结论"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/keyword-research-output.md", "group": "templates/research", "inputs": ["gsc_mining/keyword_variants/serp_overlap/payment_intent/geo_difficulty 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/serp-analysis-output.md", "group": "templates/research", "inputs": ["serp_overlap/serp_occupancy 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/content-gap-output.md", "group": "templates/research", "inputs": ["serp_overlap/gsc_mining 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/competitor-analysis-output.md", "group": "templates/research", "inputs": ["serp_overlap/serp_occupancy 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/competitor-pages-plan.md", "group": "templates/research", "inputs": ["竞品页型观测(references/research/competitor-*)"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/content-strategy-plan.md", "group": "templates/research", "inputs": ["关键词研究/内容缺口产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/research/prompt-bank.md", "group": "templates/research", "inputs": ["citation_panel init --prompts-file"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/content/content-brief.md", "group": "templates/content", "inputs": ["content_score 术语表与得分"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/content/pre-publish-checklist.md", "group": "templates/content", "inputs": ["above_fold/quality_rater/core_eeat/market_lint 机检结果"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/rank-report.md", "group": "templates/monitor", "inputs": ["排名追踪导出/sensor_volatility 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/backlink-report.md", "group": "templates/monitor", "inputs": ["外链工具导出(cite_domain 评级可选)"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/performance-report.md", "group": "templates/monitor", "inputs": ["monitor report/GSC 导出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/alert-playbook.md", "group": "templates/monitor", "inputs": ["monitor diff 告警"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/ai-visibility-weekly.md", "group": "templates/monitor", "inputs": ["citation_panel report/diff 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/ai-visibility-monthly.md", "group": "templates/monitor", "inputs": ["citation_panel report/diff/decay 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/citation-outreach-brief.md", "group": "templates/monitor", "inputs": ["citation_gaps 产出"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "template", "path": "templates/monitor/forecast-report.md", "group": "templates/monitor", "inputs": ["forecast 产出(六步+三 scenario)"], "outputs_schema": "markdown", "data_source": "上游脚本产出+agent 结论(模板不自带数据)", "fallback_mode": null, "tests_file": "scripts/self_check.py", "status": "stable" },
-    { "type": "reference", "path": "references/overview/capability-map.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "能力地图(本矩阵人读姊妹篇):市场×能力双维度+六个子系统+10 条任务链", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/overview/routing-rules.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "分诊细则(常见请求→能力集合映射)", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/overview/intake-checklists.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "统一 intake 清单(市场先行+逐市场闸门)", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/overview/multilingual-workflow.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "18 市场主干(市场总表/工具栈映射/语言规范/检查顺序)", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/overview/data-source-contract.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "数据源合同表:全脚本 数据/降级/反编造 三列——本矩阵 data_source/fallback_mode 的对勘源", "fallback_mode": null, "tests_file": "tests/test_capability_matrix.py", "status": "stable" },
-    { "type": "reference", "path": "references/overview/intel-sources.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "信源监控体系:四层信源+源→模块映射表(与 intel_check.py 同步维护)", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/overview/site-type-playbooks.md", "group": "references/overview", "inputs": null, "outputs_schema": "markdown", "data_source": "八张站型卡(SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL)", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/content/geo-evidence.md", "group": "references/content", "inputs": null, "outputs_schema": "markdown", "data_source": "GEO 证据分级:其他参考文件与它冲突时以它为准", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/technical/deprecated-signals.md", "group": "references/technical", "inputs": null, "outputs_schema": "markdown", "data_source": "过时信号看门表(带时间戳与一手来源)", "fallback_mode": null, "tests_file": "tests/test_canonical_facts.py", "status": "stable" },
-    { "type": "reference", "path": "references/research/niubigeo-deep-read.md", "group": "references/research", "inputs": null, "outputs_schema": "markdown", "data_source": "niubigeo 深读:N10 CAPABILITY_MATRIX 治理格式即本矩阵的出处", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/monitoring/continuous-operations.md", "group": "references/monitoring", "inputs": null, "outputs_schema": "markdown", "data_source": "持续运营手册:日四问/周趋势/月校准、四级 playbook、防疲劳三律", "fallback_mode": null, "tests_file": null, "status": "stable" },
-    { "type": "reference", "path": "references/monitoring/ci-gates.md", "group": "references/monitoring", "inputs": null, "outputs_schema": "markdown", "data_source": "CI 质量门手册:site_audit→audit_compare→ci_format→action.yml 三件套命令地图", "fallback_mode": null, "tests_file": null, "status": "stable" }
-  ]
+  {
+   "type": "script",
+   "script": "traffic_funnel.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--audit audit.json",
+    "--gsc gsc.csv(可选)",
+    "--cwv cwv.csv(可选)",
+    "--urls 清单(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--audit(site_audit JSON)+--gsc(GSC 页面导出 CSV)+--cwv(可选 CSV)+--urls(sitemap 清单)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_traffic_funnel.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "quality_rater.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "FILE(纯文本,首行=title 约定)",
+    "--keyword/--market(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "纯文本文件(本地;首行=title 约定)",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "above_fold.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "URL"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "URL 实时抓取(前 700 字符可见文本)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "trust_signals.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "URL"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "URL 实时抓取",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "core_eeat.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "FILE(纯文本/Markdown)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "纯文本/Markdown 文件(本地)",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "content_score.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--draft 文件",
+    "--competitors c1,c2,c3",
+    "--keyword 主词"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--draft 本地文件 + --competitors ≥3 个竞品文件 + --keyword;术语表从竞品正文提取",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_content_score.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "fix_plan.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--url 或 --audit audit.json",
+    "--apply/--estimate(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--url(内部跑 site_audit 实时抓取)或 --audit JSON",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_fix_plan.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "grounding_page.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--facts brand.yaml",
+    "--check(可选,校验已有页)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "brand.yaml(Brand Records 事实库,用户提供)",
+   "fallback_mode": "③+②",
+   "tests_file": "tests/test_grounding_page.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "audit_compare.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--old a.json",
+    "--new b.json",
+    "--baseline-gate N(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "两次 site_audit --json(本地文件)",
+   "fallback_mode": "③+②",
+   "tests_file": "tests/test_audit_compare.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "ci_format.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "audit.json 或 diff JSON",
+    "--format sarif|junit|github"
+   ],
+   "outputs_schema": "json",
+   "data_source": "本地 JSON(site_audit --json 或 audit_compare --json diff)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "sensor_volatility.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--gsc gsc.csv 或 --positions 三列 CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--gsc(GSC 多日导出)或 --positions 三列 CSV",
+   "fallback_mode": "③+②",
+   "tests_file": "tests/test_sensor_volatility.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "forecast.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--kws kws.csv",
+    "--ctr/--actual(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--kws 关键词 CSV;--ctr 自有 GSC 曲线、--actual 校准流量均可选",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_forecast.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "prioritize.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--audit audit.json 或 health_score JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--audit(site_audit JSON)或 health_score JSON;gsc_clicks/inlinks 等扩展键可选",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_prioritize.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "changelog.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--db monitor.db 或 --snaps JSON(二选一)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--db(monitor.py SQLite,读 snapshots 表)或 --snaps JSON,二选一",
+   "fallback_mode": "③+②",
+   "tests_file": "tests/test_changelog.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "doctor.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "(无必填;--net 可选探测)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "无外部数据——本地环境探测(Python 版本/文件/环境变量键名)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_doctor.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "ai_views.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--url 或 --html",
+    "--apply(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "URL 实时抓取或 --html 离线",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_ai_views.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "envelope.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--audit audit.json(必需)",
+    "--health/--priority(可选)",
+    "--resume(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "audit.json(必需)+health/priority(可选)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_envelope.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "benchmark_report.py",
+   "group": "审计与页面质量",
+   "inputs": [
+    "--audits dir|--monitor-db|--scores(可组合)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "多个 audit json/monitor.db/scores.csv",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_benchmark_report.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "sitemap_audit.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "URL",
+    "--check-limit(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "sitemap URL 实时抓取(sitemapindex 递归 1 层;逐 loc 抽查状态码/标签)",
+   "fallback_mode": "③+②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "hreflang_cluster.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "URL...(多个)",
+    "--max-extra(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "多个 URL 实时抓取(HTML link 标签+HTTP Link 头+sitemap XML 三载体)",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "redirect_chain.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "URL"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "URL 实时逐跳 GET(手动跟随不自动重定向)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "robots_posture.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "URL",
+    "--fix-robots(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "robots.txt 实时抓取;27 bot 三层名单+RFC 9309 解析器内置本地",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_robots_posture.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "llmstxt.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "validate FILE|check URL|generate --sitemap"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "validate=本地文件;check=线上 /llms.txt 等 4 路径探测;generate=--sitemap 实时抓取",
+   "fallback_mode": "③",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "schema_lint.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "URL"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "URL 实时抓取(提取全部 ld+json 块)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "head_check.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "URL|FILE",
+    "--market(可选,zh 门控)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "URL 实时抓取或本地 HTML 文件;--market zh 门控中文项",
+   "fallback_mode": "③+④",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "gsc_mining.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "导出.csv",
+    "--mode matrix(可选)",
+    "--decay cur prev(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "GSC 导出 CSV(Query,Clicks,Impressions,CTR,Position;matrix 模式加 Page)",
+   "fallback_mode": "③+①",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "serp_overlap.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "输入.csv(keyword,top10 URL 分号分隔)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "输入 CSV(keyword,top10 URL 分号分隔)——SERP 数据须用户提供",
+   "fallback_mode": "③",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "keyword_variants.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "stdin 每行一词"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "stdin 每行一词(无输入纯本地归一)",
+   "fallback_mode": "④",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "payment_intent.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "stdin 每行一个关键词"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "stdin 关键词 + markets.json payment_words 词表(本地)",
+   "fallback_mode": "④",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "geo_difficulty.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "--kd",
+    "--ur-median",
+    "--targeting",
+    "--position/--client-ur(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--kd/--ur-median/--targeting 手工输入——KD 来自第三方 SEO 工具导出,UR 来自竞品页审计",
+   "fallback_mode": "③+②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "serp_occupancy.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "--market XX",
+    "域名列表(argv/stdin)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--market + 域名列表(argv/stdin);对照 markets.json 内置占位表(tr/th/in/kr/jp/vn/ru)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "grid_rank.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "rank_data.csv(keyword,grid_point,rank)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "rank_data.csv(keyword,grid_point,rank)——本地网格排名采集结果",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "market_lint.py",
+   "group": "多语言实装",
+   "inputs": [
+    "--market XX",
+    "FILE"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--market + 本地文本文件;64 条规则读 markets.json(本地)",
+   "fallback_mode": "③",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "local_format.py",
+   "group": "多语言实装",
+   "inputs": [
+    "--market de|fr|ar|zh",
+    "采样文本(argv/stdin)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--market + 采样文本(argv/stdin);惯例表读 markets.json",
+   "fallback_mode": "③",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "text_metrics.py",
+   "group": "多语言实装",
+   "inputs": [
+    "stdin 文本",
+    "--market/--scrub(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "stdin 文本(本地)",
+   "fallback_mode": "④",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "text_units.py",
+   "group": "多语言实装",
+   "inputs": [
+    "<market>(en|zh|ja|th|ko|ru|id)",
+    "stdin 文本"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "<market> + stdin 文本(本地;en/zh/ja/th/ko/ru/id)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "citation_panel.py",
+   "group": "AI/GEO 测量",
+   "inputs": [
+    "init|record|report|diff|decay|score",
+    "panel.json",
+    "--prompts-file/--stage-mix/--persona-fanout(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "init 建 prompt 面板(本地);record 录入人工采样的真实引擎回答;report/diff/decay 基于累积 panel.json",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_citation_decay.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "fanout_analysis.py",
+   "group": "AI/GEO 测量",
+   "inputs": [
+    "输入.csv(prompt,web_query)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "输入 CSV(prompt,web_query)——来自 AI 平台 referral 查询或 fan-out 采集导出",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "ai_referral_log.py",
+   "group": "AI/GEO 测量",
+   "inputs": [
+    "access.log(stdin/文件)",
+    "--bot-ua/--attribution(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "server access log(apache/nginx combined 或 JSON 行,stdin/文件)",
+   "fallback_mode": "③+②+④",
+   "tests_file": "tests/test_ai_referral_tiers.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "citation_gaps.py",
+   "group": "AI/GEO 测量",
+   "inputs": [
+    "--panel panel.json",
+    "--brand-domains a.com"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--panel(citation_panel 的 panel.json)+--brand-domains",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_citation_gaps.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "oracle_check.py",
+   "group": "AI/GEO 测量",
+   "inputs": [
+    "--facts brand.yaml",
+    "--responses responses.json"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--facts brand.yaml(已验证品牌事实)+--responses responses.json(真实采样回答)",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_oracle_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "cite_domain.py",
+   "group": "AI/GEO 测量",
+   "inputs": [
+    "--input answers.json"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--input answers.json(referring_domains/DR 分布/锚文本等结构化观测,来自外链工具导出+人工观测)",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "did_attribution.py",
+   "group": "归因与管道",
+   "inputs": [
+    "--pre pre.csv",
+    "--post post.csv",
+    "treated/control 页分组"
+   ],
+   "outputs_schema": "json",
+   "data_source": "GSC 页面级两期 CSV(--pre/--post:Page,Clicks[,Date])+ treated/control 页分组",
+   "fallback_mode": "②+③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "seo_vs_ads.py",
+   "group": "归因与管道",
+   "inputs": [
+    "--gsc gsc.csv",
+    "--ads ads.csv(可选)",
+    "--competitors(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "--gsc(GSC queries 导出)+--ads(Google Ads search terms 导出,可选)+--competitors 列表(可选)",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "yt_outlier.py",
+   "group": "归因与管道",
+   "inputs": [
+    "videos.csv(title,duration_s,views)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "videos.csv(title,duration_s,views[,is_short][,channel])——YouTube 导出/采集",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "trend_scout.py",
+   "group": "归因与管道",
+   "inputs": [
+    "--vertical(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "HN topstories API + Reddit 6 sub hot(免 key 实时抓取);X/Twitter 需 key",
+   "fallback_mode": "④+②+③",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "freshness.py",
+   "group": "归因与管道",
+   "inputs": [
+    "DIR(默认 references/)",
+    "--fail-stale(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "本地 *.md 头部日期标记(默认 references/)",
+   "fallback_mode": "④",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "report_build.py",
+   "group": "归因与管道",
+   "inputs": [
+    "--findings json",
+    "--out html"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "findings.json(上游脚本产出或 agent 组装)",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "monitor.py",
+   "group": "持续监控守护",
+   "inputs": [
+    "init|run|diff|report",
+    "--site URL",
+    "--dir/--dry-run/--budget-minutes(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "--site URL 实时探测(robots/sitemap/状态码/site: 抽查)+ .seo-monitor/gsc.csv(GSC 导出,有才查)+ SQLite 本地快照",
+   "fallback_mode": "④",
+   "tests_file": "tests/test_monitor_noindex.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "notify.py",
+   "group": "持续监控守护",
+   "inputs": [
+    "run",
+    "--dir",
+    "--alerts alerts.json",
+    "config.json 渠道定义"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "monitor diff 的告警 JSON + config.json 渠道定义(secret 只经环境变量注入)",
+   "fallback_mode": "④",
+   "tests_file": "tests/test_notify_routing.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "self_check.py",
+   "group": "套件自维护",
+   "inputs": [
+    "(无;扫本地 skill 文件)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "本地 skill 文件(frontmatter/模板七段式/死链/golden 测试)",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "link_check.py",
+   "group": "套件自维护",
+   "inputs": [
+    "(无;扫本地 markdown 文件树)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "本地 markdown 文件树",
+   "fallback_mode": "③",
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "intel_check.py",
+   "group": "套件自维护",
+   "inputs": [
+    "init|check",
+    "--source 名(可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "intel-sources.md 注册的 18 源实时拉取(RSS/hash)+ .intel-state.json 基线",
+   "fallback_mode": "③+②",
+   "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/audit/full-seo-audit.md",
+   "group": "templates/audit",
+   "inputs": [
+    "site_audit --json",
+    "health_score --json",
+    "prioritize --json"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/audit/on-page-audit.md",
+   "group": "templates/audit",
+   "inputs": [
+    "site_audit --json"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/audit/technical-audit.md",
+   "group": "templates/audit",
+   "inputs": [
+    "site_audit/sitemap_audit/schema_lint/robots_posture 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/audit/entity-audit.md",
+   "group": "templates/audit",
+   "inputs": [
+    "schema_lint 产出",
+    "brand facts"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/audit/report-modes.md",
+   "group": "templates/audit",
+   "inputs": [
+    "审计 JSON 结论"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/keyword-research-output.md",
+   "group": "templates/research",
+   "inputs": [
+    "gsc_mining/keyword_variants/serp_overlap/payment_intent/geo_difficulty 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/serp-analysis-output.md",
+   "group": "templates/research",
+   "inputs": [
+    "serp_overlap/serp_occupancy 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/content-gap-output.md",
+   "group": "templates/research",
+   "inputs": [
+    "serp_overlap/gsc_mining 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/competitor-analysis-output.md",
+   "group": "templates/research",
+   "inputs": [
+    "serp_overlap/serp_occupancy 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/competitor-pages-plan.md",
+   "group": "templates/research",
+   "inputs": [
+    "竞品页型观测(references/research/competitor-*)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/content-strategy-plan.md",
+   "group": "templates/research",
+   "inputs": [
+    "关键词研究/内容缺口产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/research/prompt-bank.md",
+   "group": "templates/research",
+   "inputs": [
+    "citation_panel init --prompts-file"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/content/content-brief.md",
+   "group": "templates/content",
+   "inputs": [
+    "content_score 术语表与得分"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/content/pre-publish-checklist.md",
+   "group": "templates/content",
+   "inputs": [
+    "above_fold/quality_rater/core_eeat/market_lint 机检结果"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/rank-report.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "排名追踪导出/sensor_volatility 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/backlink-report.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "外链工具导出(cite_domain 评级可选)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/performance-report.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "monitor report/GSC 导出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/alert-playbook.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "monitor diff 告警"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/ai-visibility-weekly.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "citation_panel report/diff 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/ai-visibility-monthly.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "citation_panel report/diff/decay 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/citation-outreach-brief.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "citation_gaps 产出"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/forecast-report.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "forecast 产出(六步+三 scenario)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/capability-map.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "能力地图(本矩阵人读姊妹篇):市场×能力双维度+六个子系统+10 条任务链",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/routing-rules.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "分诊细则(常见请求→能力集合映射)",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/intake-checklists.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "统一 intake 清单(市场先行+逐市场闸门)",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/multilingual-workflow.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "18 市场主干(市场总表/工具栈映射/语言规范/检查顺序)",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/data-source-contract.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "数据源合同表:全脚本 数据/降级/反编造 三列——本矩阵 data_source/fallback_mode 的对勘源",
+   "fallback_mode": null,
+   "tests_file": "tests/test_capability_matrix.py",
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/intel-sources.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "信源监控体系:四层信源+源→模块映射表(与 intel_check.py 同步维护)",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/overview/site-type-playbooks.md",
+   "group": "references/overview",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "八张站型卡(SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL)",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/content/geo-evidence.md",
+   "group": "references/content",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "GEO 证据分级:其他参考文件与它冲突时以它为准",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/technical/deprecated-signals.md",
+   "group": "references/technical",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "过时信号看门表(带时间戳与一手来源)",
+   "fallback_mode": null,
+   "tests_file": "tests/test_canonical_facts.py",
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/research/niubigeo-deep-read.md",
+   "group": "references/research",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "niubigeo 深读:N10 CAPABILITY_MATRIX 治理格式即本矩阵的出处",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/monitoring/continuous-operations.md",
+   "group": "references/monitoring",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "持续运营手册:日四问/周趋势/月校准、四级 playbook、防疲劳三律",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "reference",
+   "path": "references/monitoring/ci-gates.md",
+   "group": "references/monitoring",
+   "inputs": null,
+   "outputs_schema": "markdown",
+   "data_source": "CI 质量门手册:site_audit→audit_compare→ci_format→action.yml 三件套命令地图",
+   "fallback_mode": null,
+   "tests_file": null,
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/content/trend-jack-playbook.md",
+   "group": "templates/content",
+   "inputs": [
+    "trend_watch.py watch/gate 输出(规格已定待实装)+人工角度与观点清单"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "draft"
+  }
+ ]
 }
