@@ -58,3 +58,9 @@
 - 新增 `remediation.py`(第 57 号脚本,24 测试):envelope 封套→工单(proposed→accepted→in_progress→implemented→**verified 仅 verify 自动设**;wontfix 强制 note);`verify --old --new` 对比新旧体检自动核销已修复项(partial 语义+新 finding 增补提示);report 出状态分布/超期/SLA
 - **真实试用**:从 ⑦ 的 envelope 生成 10 张工单;4 张 GitHub 平台固有项 wontfix(带 note:自建站当天重开)、2 张 accepted;6 张 open 待自建站后处理——remediations.json 存于 site-check-20261011/
 - 至此"体检→针对性建议→修复物→长期监控→**验证核销**"全闭环;696 测试全绿
+
+## ⑨ 全站发现与爬取器(2026-10-11 四次补录)
+
+- 新增 `site_crawl.py`(第 58 号,28 测试):四级发现链(urls→robots→sitemap≥50 关爬虫→BFS)/子域发现(DNS+可选 crt.sh)/内外链图(edges/孤儿/外链域聚合)/礼貌爬取(robots+crawl-delay+SSRF);--urls-out 直喂 site_audit/traffic_funnel;SKILL 使用原则 0 更新为"site_crawl 全站发现是体检第 0 步"
+- **真实爬取又揪一缺陷**:常见子域探测对"泛解析但 HTTP 挂起"的域各吃满超时×重试(example.com 即此病),9 候选拖垮整轮挂死——修复:探测改短超时(≤4s)+零重试+**30s 总预算**(超时剩余跳过);复爬 58.6s 完成且预算机制正确触发
+- 至此"给一个域名→子域+全部页面+内外链图"齐了,体检从抽样升级为全站口径;724 测试全绿

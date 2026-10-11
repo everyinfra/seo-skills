@@ -14,7 +14,7 @@ metadata:
 
 ## 使用原则
 
-0. **先体检,后内容**:任何内容生产/热点选题/GEO 优化启动前,先对目标站跑完整体检(site_audit 多页采样 → health_score → prioritize → envelope 出审计封套);存在未处置的 CRITICAL 技术问题时,先修复基座再谈内容——地基没过的站,内容做再多也进不了引用池(检索是漏斗瓶颈)。
+0. **先体检,后内容**:任何内容生产/热点选题/GEO 优化启动前,先对目标站跑完整体检(site_crawl 全站发现[子域+全部页面+内外链图] → site_audit 多页 → health_score → prioritize → envelope 出审计封套);存在未处置的 CRITICAL 技术问题时,先修复基座再谈内容——地基没过的站,内容做再多也进不了引用池(检索是漏斗瓶颈)。
 
 ### 1. 单入口
 - SEO / GEO / AI 搜索可见度 / SERP / Schema / 技术 SEO / 排名追踪 / 外链 / Programmatic SEO / 竞品页 / 内容策略 / 内容刷新等需求，都从这里进入，再按下面的规则路由。
@@ -29,10 +29,11 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(57 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(58 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
 
 **审计与页面质量**
+- `site_crawl.py --domain example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
 - `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节)
 - `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
 - `traffic_funnel.py --audit audit.json --gsc gsc.csv`:六阶段页面流失漏斗(available⊃indexable⊃uniqueness[Simhash+DeepRank]⊃in_serps⊃with_clicks⊃good_ux);无 GSC 自动截断+coverage 声明

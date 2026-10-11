@@ -1,0 +1,1015 @@
+#!/usr/bin/env python3
+"""site_crawl.py — 全站发现与爬取器(stdlib only)。
+
+发现链(unlighthouse 官方优先级,references/monitoring/ci-gates.md §四,取到即止):
+  ① --urls 手工清单文件(给出即关闭 ②③④)
+  ② robots.txt:解析 Disallow 做排除 + Sitemap: 指令入队
+  ③ sitemap:递归解析 sitemap index 嵌套;**≥50 条 loc 则关闭爬虫兜底**(代表性够,只走 sitemap)
+  ④ 爬虫兜底:BFS 从首页沿内链走,采集 <a href> 同域链接
+(链⑤ 前端路由定义抽取不在本脚本范围——monitor.py sample-keypages 另议。)
+
+子域发现(默认开启,--same-host 收紧到单主机):
+  (a) robots Sitemap 指令/sitemap loc/内链里出现的其他同 registrable domain 子域(直接采信);
+  (b) 常见子域 DNS 解析探测(www/m/blog/docs/shop/support/api/dev/staging,
+      socket.getaddrinfo 解析成功且 HTTP 200 才收);
+  (c) --subs ct 走 crt.sh JSON(https://crt.sh/?q=%.{domain}&output=json),失败优雅跳过。
+  收下的子域仍须 DNS+200 验证(与 (b) 同一验收口),主机级 robots.txt 各自遵守。
+
+礼貌与预算:robots.txt 默认遵守(RFC 9309:连续 UA 合并/最长匹配/Allow 平局胜;
+crawl-delay 取 * 组,与 --delay 取大者;--ignore-robots 显式关);每 URL 传输层失败重试
+2 次(带退避,4xx/5xx 是确定性响应不重试);重定向跟随记链(≤10 跳);--max 默认 500、
+上限 5000(超出警告并截断,建议采样)。
+
+SSRF 防御(照 monitor.py/traffic_funnel.py 惯例):仅 http(s)+拒私网/环回/链路本地/
+保留/组播;重定向逐跳复查(站方可控的 Sitemap 指令可 302 到 169.254.169.254 穿墙);
+198.18.0.0/15(RFC2544)豁免本机 fake-IP 代理,SEO_CRAWL_STRICT_SSRF=1 恢复全拒。
+
+URL 归一:去 fragment/非根路径去尾斜杠/参数默认保留(--strip-params 可开)/
+大小写路径不合并/scheme+host 小写/去默认端口;已见集合去重。
+
+输出:crawl.json(--out,默认 crawl.json)+ --urls-out 纯 URL 清单(直接喂
+site_audit.py / traffic_funnel.py --urls)+ --json 打 stdout + markdown 人读摘要。
+不抓外链目标(只记);--check-external 可选对外链域抽样 HEAD(默认关;用途:外链域
+存活抽检,验证指向是否已腐烂,不做外爬)。
+
+退出码:0=正常;1=存在错误页(4xx/5xx 或重试后仍失败);2=输入/用法错;3=全部起点失败。
+
+用法: python3 site_crawl.py https://example.com [--urls FILE] [--max N] [--json]
+"""
+from __future__ import annotations
+
+import argparse
+import gzip
+import ipaddress
+import json
+import os
+import re
+import socket
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+from collections import Counter, deque
+from html.parser import HTMLParser
+
+UA = "Mozilla/5.0 (compatible; seo-suite-crawl/1.0)"   # 套件 UA 惯例:seo-suite-<tool>/1.0
+UA_TOKEN = "seo-suite-crawl"                            # robots.txt 自我标识 token
+SCHEMA_VERSION = 1
+MAX_BYTES = 2_000_000            # 单响应字节上限(site_audit 同款)
+ROBOTS_MAX_BYTES = 500_000       # RFC 9309:robots.txt 至少按前 500KiB 处理
+RETRIES = 2                      # 每 URL 传输层失败重试 2 次(共 3 次尝试)
+REDIRECT_HOPS_MAX = 10
+SITEMAP_DEPTH_MAX = 3            # sitemap index 递归层数上限
+SITEMAP_CHILD_CAP = 100          # 单个 index 的子 sitemap 上限
+SITEMAP_LOC_CAP = 50_000         # loc 总量护栏
+SITEMAP_CLOSES_CRAWL = 50        # ≥50 条 loc 关闭爬虫兜底(ci-gates §四 unlighthouse 口径)
+DEFAULT_MAX_PAGES = 500
+HARD_MAX_PAGES = 5_000           # --max 上限(超出警告+截断,建议采样)
+DEFAULT_DELAY = 1.0
+COMMON_SUBS = ("www", "m", "blog", "docs", "shop", "support", "api", "dev", "staging")
+CT_PROBE_CAP = 30                # crt.sh 候选逐个 DNS+200 验收的数目上限
+SUB_PROBE_BUDGET_S = 30           # 常见子域探测总预算(秒);超时剩余跳过
+EXTERNAL_SAMPLE = 10             # --check-external 抽样域数
+EXTERNAL_TOP = 50                # external_domains 聚合表保留 Top N
+SKIP_HREF_SCHEMES = ("javascript:", "mailto:", "tel:", "data:", "ftp:")
+
+
+class GuardError(Exception):
+    """SSRF 守卫拒绝(非 http(s)/私网/环回/链路本地/保留/组播)。"""
+
+
+class FetchError(Exception):
+    """传输层失败(重试耗尽)。"""
+
+
+_sleep = time.sleep               # 模块级可打桩(测试零网络/零真实延时)
+
+
+# ---------------------------------------------------------------------------
+# SSRF 守卫(照抄 monitor.py/traffic_funnel.py:仅 http(s)+拒内网,结果按 host 缓存)
+# ---------------------------------------------------------------------------
+
+_ssrf_cache = {}
+
+
+def dns_resolve(host):
+    """DNS 解析(socket.getaddrinfo)→ IP 字符串列表;失败抛 OSError。独立成函数便于打桩。"""
+    infos = socket.getaddrinfo(host, None)
+    return [i[4][0] for i in infos]
+
+
+def ssrf_guard(host):
+    """仅 http(s) 目标主机 + 拒私网/环回/链路本地/保留/组播;结果按 host 缓存。
+    198.18.0.0/15(RFC2544 基准段)豁免:本机 fake-IP 代理(Surge/Clash 等)会把一切域名
+    解析到该段,实际连接经代理出网,TLS 验证仍生效;SEO_CRAWL_STRICT_SSRF=1 恢复全拒。"""
+    if not host:
+        raise GuardError("empty host")
+    if host in _ssrf_cache:
+        return
+    try:
+        ips = dns_resolve(host)
+    except OSError as e:
+        raise GuardError("DNS 解析失败 %s: %s" % (host, e))
+    strict = bool(os.environ.get("SEO_CRAWL_STRICT_SSRF"))
+    for raw in ips:
+        try:
+            ip = ipaddress.ip_address(str(raw).split("%", 1)[0])
+        except ValueError:
+            continue
+        if ip in ipaddress.ip_network("198.18.0.0/15"):
+            if not strict:
+                continue
+            raise GuardError("SSRF guard: 非公网地址 %s(strict 模式拒 fake-IP 段)" % ip)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise GuardError("SSRF guard: 非公网地址 %s" % ip)
+    _ssrf_cache[host] = True
+
+
+def _redact(u):
+    """日志脱敏:保留 scheme+host,路径/查询(常含 token)打码。"""
+    return re.sub(r"^(https?://[^/\s]+).*$", r"\1/[REDACTED]", str(u))
+
+
+# ---------------------------------------------------------------------------
+# URL 归一
+# ---------------------------------------------------------------------------
+
+def registrable(host):
+    """registrable domain 简化近似(取末两段,monitor.py 同源;co.uk 类公共后缀未特判)。"""
+    h = (host or "").lower().rstrip(".")
+    if not h:
+        return ""
+    if h.count(".") <= 1:
+        return h
+    return ".".join(h.split(".")[-2:])
+
+
+def normalize_url(u, base=None, strip_params=False):
+    """归一:补 base/去 fragment/非根路径去尾斜杠(根 "/" 保留)/参数默认保留
+    (--strip_params 可开)/路径大小写不合并/scheme+host 小写/去默认端口。
+    非 http(s) 或缺 host → None(调用方丢弃)。"""
+    try:
+        u = (u or "").strip()
+        if base and not urllib.parse.urlsplit(u).scheme:
+            u = urllib.parse.urljoin(base, u)
+        p = urllib.parse.urlsplit(u)
+        if p.scheme.lower() not in ("http", "https") or not p.netloc:
+            return None
+        scheme = p.scheme.lower()
+        host = (p.hostname or "").lower()
+        if not host:
+            return None
+        try:
+            port = p.port
+        except ValueError:
+            return None
+        netloc = host if (port is None or (scheme == "https" and port == 443)
+                          or (scheme == "http" and port == 80)) else "%s:%d" % (host, port)
+        path = p.path or "/"
+        if path != "/" and path.endswith("/"):
+            path = path.rstrip("/") or "/"
+        query = "" if strip_params else p.query
+        return urllib.parse.urlunsplit((scheme, netloc, path, query, ""))
+    except ValueError:
+        return None
+
+
+def _top_domains(counter, n):
+    """外链域聚合 Top N:计数降序、同数按域名字典序——输出确定性
+    (most_common 平局走 heapq,顺序随 set 迭代序漂移,受进程间 hash 随机影响)。"""
+    return sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))[:n]
+
+
+def host_of(url):
+    try:
+        return (urllib.parse.urlsplit(url).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
+# ---------------------------------------------------------------------------
+# HTTP(手动跟随重定向以记链 + 逐跳 SSRF 复查;传输层失败由 robust_fetch 重试)
+# ---------------------------------------------------------------------------
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """禁用自动跟随重定向:链由 http_fetch 手动走,每一跳都过 SSRF 复查。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def _header(headers, name):
+    if not headers:
+        return None
+    try:
+        return headers.get(name)
+    except Exception:
+        return None
+
+
+def check_redirect(cur, nxt):
+    """重定向逐跳 SSRF 复查(monitor.py P0 同款:urlopen 自动跟 302 时最终 host
+    从不复查,站方可控的 robots.txt sitemap 指令可 302 到 169.254.169.254 穿墙)。"""
+    p = urllib.parse.urlsplit(nxt)
+    if p.scheme.lower() not in ("http", "https"):
+        raise GuardError("重定向到非 http(s) 被拒: %s" % _redact(nxt))
+    ssrf_guard(p.hostname)
+
+
+def _single(url, method, timeout):
+    """单次请求(不跟随重定向);4xx/5xx 以 (status, headers, body) 返回,不抛。"""
+    p = urllib.parse.urlsplit(url)
+    if p.scheme.lower() not in ("http", "https"):
+        raise GuardError("仅允许 http(s): %s" % _redact(url))
+    ssrf_guard(p.hostname)
+    req = urllib.request.Request(url, method=method, headers={
+        "User-Agent": UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    })
+    try:
+        with _OPENER.open(req, timeout=timeout) as r:
+            return int(r.status), r.headers, r.read(MAX_BYTES)
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read(MAX_BYTES)
+        except Exception:
+            body = b""
+        return int(e.code), getattr(e, "headers", None), body
+    # URLError/OSError/Timeout 向上抛给 robust_fetch 重试
+
+
+def http_fetch(url, timeout=10.0, method="GET"):
+    """GET/HEAD 并手动跟随重定向(≤10 跳,逐跳 SSRF 复查)。
+    返回 {status, final_url, chain:[{status,location}], headers, body, body_bytes}。"""
+    chain, cur = [], url
+    status, headers, blob = 200, None, b""
+    for _ in range(REDIRECT_HOPS_MAX + 1):
+        status, headers, blob = _single(cur, method, timeout)
+        if not (300 <= status < 400):
+            break
+        loc = _header(headers, "location")
+        if not loc:
+            break
+        nxt = urllib.parse.urljoin(cur, loc)
+        check_redirect(cur, nxt)          # 每一跳都复查,包括最后一跳
+        chain.append({"status": status, "location": nxt})
+        cur = nxt
+    return {"status": status, "final_url": cur, "chain": chain, "headers": headers,
+            "body": blob.decode("utf-8", "replace"), "body_bytes": blob}
+
+
+def robust_fetch(url, timeout=10.0, method="GET", retries=RETRIES):
+    """传输层失败(URLError/OSError/超时)重试 2 次带退避;SSRF 拒绝不重试直接抛;
+    4xx/5xx 是确定性响应,由 http_fetch 正常返回、不进重试。耗尽抛 FetchError。"""
+    last = None
+    for attempt in range(retries + 1):
+        try:
+            return http_fetch(url, timeout=timeout, method=method)
+        except GuardError:
+            raise
+        except (urllib.error.URLError, OSError, TimeoutError) as e:
+            last = e
+            if attempt < retries:
+                _sleep(0.5 * (attempt + 1))
+    raise FetchError("抓取失败 %s: %s" % (_redact(url), last))
+
+
+# ---------------------------------------------------------------------------
+# robots.txt(RFC 9309 简化解析,思路借鉴 robots_posture.py,不 import)
+# ---------------------------------------------------------------------------
+
+def parse_robots(txt):
+    """返回 {groups, sitemaps, crawl_delay} 或 None(txt 为空)。
+    BOM 剥离/500KB 截断/注释剥离/连续 User-agent 行合并同组;groups 键为小写 token,
+    值 {"allow":[], "disallow":[], "crawl_delay":float|None};crawl_delay 取 * 组。"""
+    if txt.startswith("\ufeff"):
+        txt = txt[1:]
+    truncated = len(txt) > ROBOTS_MAX_BYTES
+    if truncated:
+        txt = txt[:ROBOTS_MAX_BYTES]
+    groups, sitemaps = {}, []
+    cur, last_was_ua = [], False
+    for line in txt.splitlines():
+        s = line.split("#", 1)[0].strip()
+        if not s or ":" not in s:
+            continue
+        k, _, v = s.partition(":")
+        k, v = k.strip().lower(), v.strip()
+        if k == "user-agent":
+            if not last_was_ua:
+                cur = []
+            tok = v or "*"
+            cur.append(tok)
+            groups.setdefault(tok.lower(), {"allow": [], "disallow": [], "crawl_delay": None})
+            last_was_ua = True
+        elif k in ("allow", "disallow") and cur:
+            for t in cur:
+                groups.setdefault(t.lower(), {"allow": [], "disallow": [], "crawl_delay": None})[k].append(v)
+            last_was_ua = False
+        elif k == "crawl-delay" and cur:
+            for t in cur:
+                g = groups.setdefault(t.lower(), {"allow": [], "disallow": [], "crawl_delay": None})
+                if g["crawl_delay"] is None:
+                    try:
+                        g["crawl_delay"] = float(v)
+                    except ValueError:
+                        pass
+            last_was_ua = False
+        elif k == "sitemap" and v:
+            sitemaps.append(v)
+            last_was_ua = False
+        elif k:
+            last_was_ua = False
+    if not groups and not sitemaps:
+        return None
+    return {"groups": groups, "sitemaps": sitemaps,
+            "crawl_delay": groups.get("*", {}).get("crawl_delay"), "truncated": truncated}
+
+
+def robots_allows(doc, url):
+    """最长前缀匹配判定(自 token 组优先,回退 * 组;同长 Allow 平局胜出;
+    空 Disallow 值=允许一切(RFC 9309);无匹配规则/无组默认放行)。"""
+    if not doc or not doc["groups"]:
+        return True
+    g = doc["groups"].get(UA_TOKEN) or doc["groups"].get("*")
+    if not g:
+        return True
+    pu = urllib.parse.urlsplit(url)
+    path = (pu.path or "/") + (("?" + pu.query) if pu.query else "")
+    best_len, allowed = -1, True
+    for kind in ("allow", "disallow"):
+        for rule in g.get(kind, []):
+            if not rule:                      # 空规则是无操作(RFC 9309),不参与匹配
+                continue
+            if path.lower().startswith(rule.lower()):
+                n = len(rule)
+                if n > best_len or (n == best_len and kind == "allow"):
+                    best_len, allowed = n, kind == "allow"
+    return allowed
+
+
+# ---------------------------------------------------------------------------
+# sitemap 解析(惯例借鉴 sitemap_audit.py:命名空间容错 + gzip 魔数)
+# ---------------------------------------------------------------------------
+
+def _ln(tag):
+    return tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
+
+
+def parse_sitemap_bytes(blob):
+    """sitemap 字节流 → (kind, [{loc,lastmod}], [child_sitemap_url]);解析失败抛 ValueError。"""
+    try:
+        root = ET.fromstring(blob)
+    except ET.ParseError as e:
+        raise ValueError("XML 解析失败: %s" % e)
+    kind = _ln(root.tag)
+    if kind not in ("urlset", "sitemapindex"):
+        return "unknown", [], []
+    urls, children = [], []
+    for node in root.iter():
+        t = _ln(node.tag)
+        if t == "url":
+            loc = ""
+            for c in node:
+                if _ln(c.tag) == "loc" and c.text and c.text.strip():
+                    loc = c.text.strip()
+            if loc:
+                urls.append(loc)
+        elif t == "sitemap":
+            for c in node:
+                if _ln(c.tag) == "loc" and c.text and c.text.strip():
+                    children.append(c.text.strip())
+    return kind, urls, children
+
+
+# ---------------------------------------------------------------------------
+# 页面解析(title / canonical / <a href>)
+# ---------------------------------------------------------------------------
+
+class PageParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.canonical = None
+        self.hrefs = []
+        self._in_title = False
+        self._title_buf = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "title":
+            self._in_title = True
+        elif tag == "link" and "canonical" in (a.get("rel") or "").lower().split():
+            if a.get("href") and not self.canonical:
+                self.canonical = a["href"]
+        elif tag == "a":
+            h = a.get("href")
+            if h:
+                self.hrefs.append(h)
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self._in_title = False
+
+    def handle_data(self, d):
+        if self._in_title:
+            self._title_buf.append(d)
+
+    @property
+    def title(self):
+        return " ".join("".join(self._title_buf).split()) or None
+
+
+def extract_links(body, base):
+    """返回 (title, canonical_abs, [(href_abs_norm...)])——link 归一/过滤在调用方。"""
+    p = PageParser()
+    try:
+        p.feed(body[:500_000])
+    except Exception:
+        pass
+    canonical = None
+    if p.canonical:
+        canonical = normalize_url(p.canonical, base=base)
+    return p.title, canonical, p.hrefs
+
+
+# ---------------------------------------------------------------------------
+# 爬取器主体
+# ---------------------------------------------------------------------------
+
+class Crawler:
+    def __init__(self, ns):
+        self.ns = ns
+        site = ns.site.strip()
+        if "://" not in site:
+            site = "https://" + site
+        seed = normalize_url(site)
+        if not seed:
+            raise ValueError("无法解析站点 URL: %s" % ns.site)
+        self.seed = seed
+        self.seed_host = host_of(seed)
+        self.reg = registrable(self.seed_host)
+        self.scheme = urllib.parse.urlsplit(seed).scheme
+        # --max 上限护栏:超出打警告建议采样并截断到 5000
+        self.max_pages = ns.max_pages
+        self.warnings = []
+        if self.max_pages > HARD_MAX_PAGES:
+            self.warnings.append("--max %d 超过上限 %d,已截断;大站建议采样"
+                                 "(ci-gates §四 路由模板归一,每组≤8 样本∪手工钱页)"
+                                 % (self.max_pages, HARD_MAX_PAGES))
+            self.max_pages = HARD_MAX_PAGES
+        # 运行态
+        self.pages = {}                 # norm_url -> page record(插入序 = 发现序)
+        self.order = []
+        self.edges = set()              # (src, dst) 内链边(同源同目标去重)
+        self.external = Counter()       # 外链 registrable domain -> 次数(页内去重后累计)
+        self.accepted_subs = set()      # 已收子域(同 registrable、≠种子主机)
+        self.counts = {"robots": 0, "sitemap": 0, "crawl": 0}
+        self.mode = None
+        self.queue = deque()
+        self.seen = set()
+        self.skipped_robots = []
+        self.errors = 0                 # 错误页:status None(传输失败)或 ≥400
+        self.redirects = 0
+        self.req_count = 0
+        self.truncated = False
+        self._robots_cache = {}
+
+    # ---- 基础设施 ----
+
+    @staticmethod
+    def _origin(url):
+        p = urllib.parse.urlsplit(url)
+        return "%s://%s" % (p.scheme, p.netloc)
+
+    def _sleep_polite(self, origin):
+        if self.req_count:
+            _sleep(self.delay_for(origin))
+        # 首个请求不延时
+
+    def _request(self, url, method="GET"):
+        self._sleep_polite(self._origin(url))
+        self.req_count += 1
+        return robust_fetch(url, timeout=self.ns.timeout, method=method)
+
+    def delay_for(self, origin):
+        """生效延时 = max(robots * 组 crawl-delay, --delay);--ignore-robots 或
+        无 robots 时用 --delay(默认 1.0s)。"""
+        d = self.ns.delay
+        if not self.ns.ignore_robots:
+            doc = self._robots_cache.get(origin)
+            if doc and doc.get("crawl_delay") is not None:
+                d = max(doc["crawl_delay"], d)
+        return d
+
+    def _robots(self, origin):
+        """按 origin 缓存 robots.txt 文档;--ignore-robots/抓取失败/非 200 → None(全放行)。"""
+        if self.ns.ignore_robots:
+            return None
+        if origin in self._robots_cache:
+            return self._robots_cache[origin]
+        doc = None
+        try:
+            r = self._request(origin + "/robots.txt")
+            if r["status"] == 200:
+                doc = parse_robots(r["body"])
+        except FetchError:
+            doc = None
+        self._robots_cache[origin] = doc
+        return doc
+
+    def allowed(self, url):
+        if self.ns.ignore_robots:
+            return True
+        doc = self._robots(self._origin(url))
+        return robots_allows(doc, url)
+
+    def is_internal(self, host):
+        h = (host or "").lower()
+        if not h:
+            return False
+        if h == self.seed_host:
+            return True
+        if self.ns.same_host:
+            return False
+        return registrable(h) == self.reg
+
+    def consider_host(self, host):
+        """子域发现 (a):站点自身 robots/sitemap/内链里出现的同 registrable 子域直接采信。"""
+        h = (host or "").lower()
+        if self.ns.same_host:
+            return
+        if h != self.seed_host and registrable(h) == self.reg:
+            self.accepted_subs.add(h)
+
+    # ---- 发现链 ----
+
+    def _parse_sitemap(self, url, depth=0):
+        """递归解析 sitemap index 嵌套(≤SITEMAP_DEPTH_MAX 层,子表 ≤SITEMAP_CHILD_CAP);
+        返回原始 loc 列表(归一/过滤在调用方)。"""
+        if depth > SITEMAP_DEPTH_MAX:
+            self.warnings.append("sitemap index 嵌套超过 %d 层,停止下钻: %s" % (SITEMAP_DEPTH_MAX, url))
+            return []
+        try:
+            r = self._request(url)
+        except FetchError as e:
+            self.warnings.append("sitemap 抓取失败: %s" % e)
+            return []
+        if r["status"] != 200:
+            self.warnings.append("sitemap HTTP %s: %s" % (r["status"], url))
+            return []
+        blob = r["body_bytes"]
+        if blob[:2] == b"\x1f\x8b":
+            try:
+                blob = gzip.decompress(blob)
+            except OSError:
+                pass
+        try:
+            kind, urls, children = parse_sitemap_bytes(blob)
+        except ValueError as e:
+            self.warnings.append("sitemap %s" % e)
+            return []
+        if kind == "urlset":
+            return urls
+        if kind == "sitemapindex":
+            out = []
+            if len(children) > SITEMAP_CHILD_CAP:
+                self.warnings.append("sitemapindex 含 %d 个子表,仅展开前 %d 个: %s"
+                                     % (len(children), SITEMAP_CHILD_CAP, url))
+            for child in children[:SITEMAP_CHILD_CAP]:
+                out.extend(self._parse_sitemap(urllib.parse.urljoin(url, child), depth + 1))
+            return out
+        self.warnings.append("根元素非 urlset/sitemapindex: %s" % url)
+        return []
+
+    def discover(self):
+        """链①→④:确定 mode、填初始队列;返回 (mode, crawl_fallback)。"""
+        if self.ns.urls:
+            self.mode = "urls"
+            urls = []
+            with open(self.ns.urls, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    u = normalize_url(line, strip_params=self.ns.strip_params)
+                    if u:
+                        urls.append(u)
+            for u in urls:
+                if u not in self.seen:
+                    self.seen.add(u)
+                    self.queue.append((u, "urls"))
+            # 链①给出即关闭 ②③④:robots 仅作礼貌规则(Disallow/crawl-delay),不做发现
+            self._robots(self._origin(self.seed))
+            return self.mode, False
+
+        seed_doc = self._robots(self._origin(self.seed))
+        sm_urls = []
+        if seed_doc:
+            for s in seed_doc["sitemaps"]:
+                sm_urls.append(urllib.parse.urljoin(self.seed, s))
+                self.consider_host(host_of(sm_urls[-1]))
+        self.counts["robots"] = len(sm_urls)
+        locs_raw = []
+        for su in sm_urls:                      # 链②:robots 的 Sitemap 行
+            locs_raw.extend(self._parse_sitemap(su))
+        if not sm_urls:                          # 链③:robots 无指令 → 直接 /sitemap.xml
+            locs_raw.extend(self._parse_sitemap(self._origin(self.seed) + "/sitemap.xml"))
+        locs, seen_loc = [], set()
+        for raw in locs_raw[:SITEMAP_LOC_CAP]:
+            u = normalize_url(raw, strip_params=self.ns.strip_params)
+            if not u or u in seen_loc:
+                continue
+            h = host_of(u)
+            if not self.is_internal(h):
+                continue                          # 跨域 loc(交叉提交)不入内页集
+            self.consider_host(h)
+            seen_loc.add(u)
+            locs.append(u)
+        self.counts["sitemap"] = len(locs)
+        if locs:
+            self.mode = "robots+sitemap" if sm_urls else "sitemap"
+        else:
+            self.mode = "crawl"
+        for u in locs:
+            self.seen.add(u)
+            self.queue.append((u, "sitemap"))
+        if self.mode == "crawl":                 # 链④:BFS 从首页走
+            self.seen.add(self.seed)
+            self.queue.append((self.seed, "crawl"))
+        # ≥50 条 loc 关闭爬虫兜底,只走 sitemap;<50 则 sitemap ∪ 爬虫补量
+        crawl_fallback = self.mode == "crawl" or (
+            self.mode in ("robots+sitemap", "sitemap")
+            and self.counts["sitemap"] < SITEMAP_CLOSES_CRAWL)
+        return self.mode, crawl_fallback
+
+    # ---- 子域发现 ----
+
+    def _accept_probed_host(self, host):
+        """(b)/(c) 候选验收:DNS 解析成功且根路径 HTTP 200 才收。
+        探测请求必须廉价:短超时(≤4s)+零重试——2026-10-11 真实爬取发现解析成功
+        但 HTTP 挂起的子域(泛解析)会各吃满 超时×重试+礼貌延时,9 个候选拖垮整轮。"""
+        try:
+            dns_resolve(host)
+        except OSError:
+            return False
+        url = normalize_url("%s://%s/" % (self.scheme, host))
+        try:
+            r = robust_fetch(url, timeout=min(self.ns.timeout, 4.0), retries=0)
+        except FetchError:
+            return False
+        return r["status"] == 200
+
+    def discover_subdomains(self):
+        """(b) 常见子域 DNS 探测 + (c) --subs ct 走 crt.sh;收下的子域根页入队(source=crawl)。"""
+        if self.ns.same_host or self.mode == "urls":
+            return
+        probed = []
+        deadline = time.monotonic() + SUB_PROBE_BUDGET_S   # 探测总预算,防整轮被拖垮
+        for s in COMMON_SUBS:                     # (b)
+            host = "%s.%s" % (s, self.reg)
+            if host == self.seed_host or host in self.accepted_subs:
+                continue
+            if time.monotonic() > deadline:
+                self.warnings.append("子域探测超预算(%ss),剩余候选跳过" % SUB_PROBE_BUDGET_S)
+                break
+            if self._accept_probed_host(host):
+                self.accepted_subs.add(host)
+                probed.append(host)
+        if "ct" in (self.ns.subs or ""):          # (c)
+            probed.extend(self._crtsh_subdomains())
+        for host in probed:
+            url = normalize_url("%s://%s/" % (self.scheme, host))
+            if url and url not in self.seen:
+                self.seen.add(url)
+                self.queue.append((url, "crawl"))
+                self.counts["crawl"] += 1
+
+    def _crtsh_subdomains(self):
+        """crt.sh CT 日志子域发现(https://crt.sh/?q=%.{domain}&output=json);失败优雅跳过。"""
+        url = "https://crt.sh/?q=%%25.%s&output=json" % self.reg
+        try:
+            r = self._request(url)
+        except FetchError as e:
+            self.warnings.append("crt.sh 不可达,CT 子域发现跳过: %s" % e)
+            return []
+        if r["status"] != 200:
+            self.warnings.append("crt.sh HTTP %s,CT 子域发现跳过" % r["status"])
+            return []
+        try:
+            items = json.loads(r["body"])
+        except ValueError:
+            self.warnings.append("crt.sh 返回非 JSON,CT 子域发现跳过")
+            return []
+        names = set()
+        for item in items if isinstance(items, list) else []:
+            for n in re.split(r"[\n\s]+", str(item.get("name_value", ""))):
+                n = n.strip().lstrip("*.").lower().rstrip(".")
+                if n and n.endswith("." + self.reg) and n != self.reg:
+                    names.add(n)
+        accepted = []
+        for host in sorted(names)[:CT_PROBE_CAP]:
+            if host == self.seed_host or host in self.accepted_subs:
+                continue
+            if self._accept_probed_host(host):
+                self.accepted_subs.add(host)
+                accepted.append(host)
+        return accepted
+
+    # ---- 页面抓取 ----
+
+    def fetch_page(self, url, source):
+        """抓单页:状态/重定向链/title/canonical/链接分类与计数;返回 (record, internal_targets)。"""
+        rec = {"url": url, "status": None, "title": None, "canonical": None, "depth": None,
+               "inlinks": 0, "out_internal": 0, "out_external": 0, "source": source}
+        internal_targets, externals = set(), set()
+        try:
+            r = self._request(url)
+        except FetchError as e:
+            rec["error"] = str(e)
+        except GuardError as e:
+            rec["error"] = str(e)
+        else:
+            rec["status"] = r["status"]
+            if r["status"] >= 400:
+                rec["error"] = "HTTP %s" % r["status"]
+            if r["chain"]:
+                self.redirects += 1
+                if r["final_url"] != url:
+                    rec["final_url"] = r["final_url"]
+            title, canonical, hrefs = extract_links(r["body"], r["final_url"])
+            rec["title"], rec["canonical"] = title, canonical
+            for h in hrefs:
+                hl = h.strip()
+                if not hl or hl.startswith("#"):
+                    continue
+                if hl.lower().startswith(SKIP_HREF_SCHEMES):
+                    continue
+                absu = normalize_url(urllib.parse.urljoin(r["final_url"], hl),
+                                     strip_params=self.ns.strip_params)
+                if not absu:
+                    continue
+                h2 = host_of(absu)
+                if self.is_internal(h2):
+                    self.consider_host(h2)
+                    internal_targets.add(absu)
+                else:
+                    ed = registrable(h2)
+                    if ed == self.reg:
+                        # --same-host 下跨子域链接记外链:聚合键用完整主机
+                        # (否则自家 registrable domain 会冒充"外链域")
+                        ed = h2
+                    if ed:
+                        externals.add(ed)
+            rec["out_internal"] = len(internal_targets)
+            rec["out_external"] = len(externals)
+        if rec["status"] is None or rec["status"] >= 400:
+            self.errors += 1
+        for t in internal_targets:
+            self.edges.add((url, t))
+        for ed in externals:
+            self.external[ed] += 1
+        self.pages[url] = rec
+        self.order.append(url)
+        return rec, internal_targets
+
+    def crawl(self, crawl_fallback):
+        """统一抓取循环:初始队列(②③产物/①清单/子域根页)→ 逐页抓取 →
+        crawl_fallback 时沿内链续队(链④)。--max 截断记 truncated。"""
+        while self.queue and len(self.pages) < self.max_pages:
+            url, source = self.queue.popleft()
+            if not self.allowed(url):
+                self.skipped_robots.append(url)
+                continue
+            rec, internal_targets = self.fetch_page(url, source)
+            if rec["status"] is None:
+                continue                          # 传输失败无链接可走
+            if crawl_fallback:
+                for tgt in sorted(internal_targets):
+                    if tgt not in self.seen:
+                        self.seen.add(tgt)
+                        self.queue.append((tgt, "crawl"))
+                        self.counts["crawl"] += 1
+        self.truncated = bool(self.queue)
+        if self.truncated:
+            self.warnings.append("发现 %d+ URL 超过 --max %d,已截断——大站建议采样"
+                                 "(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)"
+                                 % (len(self.pages) + len(self.queue), self.max_pages))
+
+    def check_external_domains(self):
+        """--check-external:对 Top 外链域抽样 HEAD 根路径(只记状态,不外爬)。"""
+        out = []
+        for domain, _n in _top_domains(self.external, EXTERNAL_SAMPLE):
+            url = normalize_url("%s://%s/" % (self.scheme, domain))
+            if not url:
+                continue
+            try:
+                r = self._request(url, method="HEAD")
+                out.append({"domain": domain, "status": r["status"]})
+            except FetchError as e:
+                out.append({"domain": domain, "status": None, "error": str(e)})
+        return out
+
+    # ---- 汇总 ----
+
+    def build_report(self, duration_s):
+        inlinks = Counter(dst for _src, dst in self.edges if dst in self.pages)
+        adjacency = {}
+        for src, dst in self.edges:
+            adjacency.setdefault(src, []).append(dst)
+        depths = {}
+        if self.seed in self.pages:
+            dq = deque([self.seed])
+            depths[self.seed] = 0
+            while dq:
+                u = dq.popleft()
+                for v in adjacency.get(u, ()):
+                    if v not in depths:
+                        depths[v] = depths[u] + 1
+                        dq.append(v)
+        pages = []
+        for url in self.order:
+            rec = dict(self.pages[url])
+            rec["inlinks"] = inlinks.get(url, 0)
+            rec["depth"] = depths.get(url)
+            pages.append(rec)
+        orphans = [u for u in self.order if inlinks.get(u, 0) == 0 and u != self.seed]
+        total_out = sum(p["out_internal"] + p["out_external"] for p in pages)
+        report = {
+            "schema_version": SCHEMA_VERSION,
+            "domain": self.reg,
+            "subdomains": sorted(self.accepted_subs),
+            "discovery": {"mode": self.mode, "counts": dict(self.counts)},
+            "pages": pages,
+            "edges": [{"src": s, "dst": d} for s, d in sorted(self.edges)],
+            "orphans": orphans,
+            "external_domains": dict(_top_domains(self.external, EXTERNAL_TOP)),
+            "stats": {
+                "pages": len(pages),
+                "total_inlinks": sum(inlinks.get(u, 0) for u in self.order),
+                "total_outlinks": total_out,
+                "errors": self.errors,
+                "redirects": self.redirects,
+                "duration_s": round(duration_s, 2),
+            },
+            "warnings": list(self.warnings),
+        }
+        if self.skipped_robots:
+            report["warnings"].append(
+                "robots Disallow 跳过 %d URL(如 %s);--ignore-robots 可显式关闭遵守"
+                % (len(self.skipped_robots), self.skipped_robots[0]))
+            report["robots_skipped"] = self.skipped_robots
+        return report
+
+    def run(self):
+        """主流程:发现 → 子域 → 抓取 → (可选外链域抽检)→ 报告;返回 (report, exit_code)。"""
+        t0 = time.monotonic()
+        mode, crawl_fallback = self.discover()
+        self.discover_subdomains()
+        self.crawl(crawl_fallback)
+        report = self.build_report(time.monotonic() - t0)
+        if self.ns.check_external:
+            report["external_check"] = self.check_external_domains()
+        reached = [p for p in report["pages"] if p["status"] is not None]
+        if not reached:                      # 全起点失败(所有抓取尝试均传输失败)
+            rc = 3
+        elif self.errors:
+            rc = 1                           # 有错误页(4xx/5xx 或重试后仍失败)
+        else:
+            rc = 0
+        return report, rc
+
+
+# ---------------------------------------------------------------------------
+# 渲染与 CLI
+# ---------------------------------------------------------------------------
+
+def render_markdown(report):
+    st = report["stats"]
+    disc = report["discovery"]
+    c = disc["counts"]
+    L = ["## site_crawl: %s" % report["domain"], ""]
+    src_desc = {
+        "robots+sitemap": "链② robots Sitemap 指令 %d 条 → 链③ sitemap loc %d" % (c["robots"], c["sitemap"]),
+        "sitemap": "链③ sitemap loc %d(robots 无 Sitemap 指令)" % c["sitemap"],
+        "crawl": "链④ 爬虫兜底(robots/sitemap 均无产出)",
+        "urls": "链① --urls 手工清单 %d 条" % st["pages"],
+    }.get(disc["mode"], disc["mode"])
+    if disc["mode"] in ("robots+sitemap", "sitemap") and c["crawl"]:
+        src_desc += " ∪ 链④ 爬虫补量 %d(loc<50 兜底开着)" % c["crawl"]
+    elif disc["mode"] == "crawl":
+        src_desc = "链④ 爬虫兜底(robots/sitemap 均无产出)发现 %d 页" % c["crawl"]
+    L.append("- 发现模式: %s(%s)" % (disc["mode"], src_desc))
+    subs = report["subdomains"]
+    L.append("- 子域 %d 个: %s" % (len(subs), ", ".join(subs) if subs else "-"))
+    err_rate = (st["errors"] / st["pages"]) if st["pages"] else 0.0
+    L.append("- 页面 %d:错误 %d(错误率 %.1f%%),重定向 %d,内链 %d,外链 %d,耗时 %.1fs"
+             % (st["pages"], st["errors"], err_rate * 100, st["redirects"],
+                st["total_inlinks"], st["total_outlinks"], st["duration_s"]))
+    top = list(report["external_domains"].items())[:10]
+    if top:
+        L.append("- Top 外链域: " + ", ".join("%s×%d" % (d, n) for d, n in top))
+    orphans = report["orphans"]
+    L.append("- 孤儿页 %d(0 入链且非首页):%s" % (len(orphans),
+             ", ".join(orphans[:10]) if orphans else "无"))
+    for w in report.get("warnings", []):
+        L.append("- ⚠ %s" % w)
+    if report.get("external_check"):
+        L.append("- 外链域抽检(--check-external,HEAD 根路径): "
+                 + ", ".join("%s=%s" % (e["domain"], e["status"]) for e in report["external_check"]))
+    return "\n".join(L)
+
+
+USAGE_EPILOG = """\
+发现链(unlighthouse 优先级,取到即止):① --urls 手工清单(关闭②③④)→ ② robots.txt
+Sitemap 指令 → ③ sitemap(递归 index;≥50 loc 关闭爬虫)→ ④ BFS 爬虫兜底。
+子域:同 registrable domain 采信(robots/sitemap/内链出现)+ 常见子域 DNS+200 探测
++ --subs ct 走 crt.sh;--same-host 收紧到单主机。
+礼貌:robots.txt 默认遵守(Disallow 排除/crawl-delay 取 * 组与 --delay 取大);
+每 URL 传输层失败重试 2 次;--max 默认 500(上限 5000,超出警告并截断)。
+SSRF:仅 http(s),拒私网/环回/链路本地,重定向逐跳复查(同 site_audit/monitor 惯例)。
+输出:crawl.json(--out)+ --urls-out 纯 URL 清单(喂 site_audit/traffic_funnel --urls)
++ markdown 摘要;--json 打 stdout。不抓外链目标;--check-external 只对外链域抽样 HEAD。
+退出码:0 正常 / 1 有错误页(4xx/5xx 或重试后仍失败) / 2 输入错 / 3 全部起点失败。\
+"""
+
+
+def build_parser():
+    ap = argparse.ArgumentParser(
+        prog="site_crawl.py",
+        description="全站发现与爬取器:robots/sitemap/爬虫三链发现 + 子域探测 + 内外链图 "
+                    "+ 孤儿页检测(stdlib only;发现链口径 references/monitoring/ci-gates.md §四)",
+        epilog=USAGE_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("site", help="站点 URL 或裸域名(自动补 https://),如 example.com")
+    ap.add_argument("--urls", metavar="FILE",
+                    help="手工 URL 清单(每行一条,# 注释);给出即关闭 robots/sitemap/爬虫发现(链①);"
+                         "robots 礼貌规则仍生效,除非 --ignore-robots")
+    ap.add_argument("--max", dest="max_pages", type=int, default=DEFAULT_MAX_PAGES, metavar="N",
+                    help="抓取页数预算(默认 %d,上限 %d,超出警告+截断)" % (DEFAULT_MAX_PAGES, HARD_MAX_PAGES))
+    ap.add_argument("--delay", type=float, default=DEFAULT_DELAY, metavar="SEC",
+                    help="请求间隔下限(默认 %.1fs;robots Crawl-delay 更大时以其为准)" % DEFAULT_DELAY)
+    ap.add_argument("--ignore-robots", action="store_true",
+                    help="显式关闭 robots.txt 遵守(Disallow 不排除/crawl-delay 不采用)")
+    ap.add_argument("--strip-params", action="store_true",
+                    help="URL 归一时丢弃查询参数(默认保留参数;两种口径的页数不可直接比较)")
+    g = ap.add_mutually_exclusive_group()
+    g.add_argument("--include-subdomains", dest="include_subdomains", action="store_true",
+                   default=True, help="子域发现默认开启(默认行为,显式确认用)")
+    g.add_argument("--same-host", dest="same_host", action="store_true",
+                   help="收紧到单主机:不做子域发现,跨子域链接按外链记")
+    ap.add_argument("--subs", default="dns", metavar="dns[,ct]",
+                    help="子域补充来源:dns=常见子域探测(默认)/ct=crt.sh CT 日志(失败优雅跳过)")
+    ap.add_argument("--check-external", action="store_true",
+                    help="对 Top 外链域抽样 HEAD 验活(默认关;用途:验证外链指向是否腐烂,不外爬)")
+    ap.add_argument("--out", default="crawl.json", metavar="FILE", help="crawl.json 输出路径(默认 %(default)s)")
+    ap.add_argument("--urls-out", metavar="FILE", help="纯 URL 清单输出(2xx/3xx 页,喂下游脚本)")
+    ap.add_argument("--json", action="store_true", help="报告 JSON 打 stdout(替代 markdown 摘要)")
+    ap.add_argument("--timeout", type=float, default=10.0, metavar="SEC", help="单请求超时(默认 10s)")
+    return ap
+
+
+def main(argv=None):
+    ap = build_parser()
+    args = ap.parse_args(argv)          # 用法错 argparse 自带退出码 2
+    if args.max_pages <= 0:
+        ap.error("--max 必须为正整数")
+    if args.delay < 0:
+        ap.error("--delay 不能为负")
+    bad_subs = [t for t in (args.subs or "").split(",") if t.strip() not in ("dns", "ct")]
+    if bad_subs:
+        ap.error("--subs 仅接受 dns/ct 逗号组合,未知项: %s" % ",".join(bad_subs))
+    if args.urls and not os.path.isfile(args.urls):
+        ap.error("--urls 文件不存在: %s" % args.urls)
+    try:
+        crawler = Crawler(args)
+    except ValueError as e:
+        ap.error(str(e))
+    report, rc = crawler.run()
+    with open(args.out, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=1)
+    if args.urls_out:
+        # 喂下游的清单用站点声明的原始 URL(重定向审计另有 redirect_chain.py);
+        # 只收 2xx/3xx 页——4xx/传输失败页喂给 site_audit 只会再失败一次。
+        live = [p["url"] for p in report["pages"]
+                if p["status"] is not None and p["status"] < 400]
+        with open(args.urls_out, "w", encoding="utf-8") as f:
+            f.write("\n".join(live) + ("\n" if live else ""))
+    if args.json:
+        print(json.dumps(report, ensure_ascii=False, indent=1))
+    else:
+        print(render_markdown(report))
+    for w in report.get("warnings", []):
+        sys.stderr.write("[site_crawl] ⚠ %s\n" % w)
+    return rc
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\n[interrupted]", file=sys.stderr)
+        sys.exit(130)

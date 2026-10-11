@@ -1,0 +1,41 @@
+{
+ "schema_version": 1,
+ "domain": "example.com",
+ "subdomains": [],
+ "discovery": {
+  "mode": "crawl",
+  "counts": {
+   "robots": 0,
+   "sitemap": 0,
+   "crawl": 0
+  }
+ },
+ "pages": [
+  {
+   "url": "https://example.com/",
+   "status": 200,
+   "title": "Example Domain",
+   "canonical": null,
+   "depth": 0,
+   "inlinks": 0,
+   "out_internal": 0,
+   "out_external": 0,
+   "source": "crawl"
+  }
+ ],
+ "edges": [],
+ "orphans": [],
+ "external_domains": {},
+ "stats": {
+  "pages": 1,
+  "total_inlinks": 0,
+  "total_outlinks": 0,
+  "errors": 0,
+  "redirects": 0,
+  "duration_s": 58.63
+ },
+ "warnings": [
+  "sitemap HTTP 404: https://example.com/sitemap.xml",
+  "子域探测超预算(30s),剩余候选跳过"
+ ]
+}
