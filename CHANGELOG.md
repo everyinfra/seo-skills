@@ -3,6 +3,18 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.34.3 - 2026-10-11
+
+- **GEO 内容战略调研全量接入 skill**(5 轮 10 agent 调研 + 4 agent 接线):
+  - **新文档**:templates/content/trend-jack-playbook.md(热点选题四问闸门+判定矩阵+48h 管线)/references/content/deep-research-protocol.md(五轮检索+IGS 自检+引用纪律)/references/research/multilingual-geo-evidence.md(fan-out 语言切换/机翻降权/分市场杠杆/小语种红利);
+  - **multilingual-workflow.md 接入 9/9 工单**:U1 引用池语言切换/U2 hreflang chatbot 弱信号(每语言 URL 自持权威)/U3 分市场杠杆四格表(Tistory·引用枠·头条·Habr)/U4 机翻降权分界/U5 小语种唯一源原则 28/U6 时效预期管理/U7 半衰期双口径并记/U8 新工作流接线/U9 四门户页+hreflang-validation 联动修正;
+  - **geo-evidence-bank.md +14 条**(A 级 4/B 级 5/C 级 2/中文区 3,全部带核查后降级标注;8/14 曾降级:Weglot 厂商口径/peec 78%→43%/中文引擎占比定性化);
+  - **pre-publish-checklist 27→32 条**(内联具名引用/统计数字密度/净新观点≥5/反例与不确定性标注/时间戳+答案前置);content-brief 加引用与增益纪律节;
+  - **trend_watch.py 实装**(56 号脚本):六信号源 watch/四问 gate/五态 backlog,29 测试零网络;实测可达 Google News/HN/百度,Reddit/微博 403 跳过;
+  - 672 测试全绿;本机副本同步。
+
+
+
 ## 0.34.2 - 2026-10-11
 
 - **第 8 波(10 agent,3+3+4 批)——niubigeo 借鉴落地+治理闭环,613→643 测试**:

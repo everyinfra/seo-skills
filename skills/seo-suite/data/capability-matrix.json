@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 55,
+  "script": 56,
   "template": 23,
   "reference": 12,
   "stable": 68,
-  "beta": 21,
+  "beta": 22,
   "draft": 1
  },
  "entries": [
@@ -1226,6 +1226,21 @@
    "fallback_mode": null,
    "tests_file": "scripts/self_check.py",
    "status": "draft"
+  },
+  {
+   "type": "script",
+   "group": "scripts/工作流",
+   "inputs": [
+    "Google News/Reddit rising/HN/微博/百度热搜(实时拉取)",
+    "--topics 站点主题词表",
+    "gate: --angle 观点清单 --exclusive data|quote|access(403 源整源跳过;全源失败退出 2)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "六信号源实时拉取(403 源整源跳过告警)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_trend_watch.py",
+   "status": "beta",
+   "script": "trend_watch.py"
   }
  ]
 }

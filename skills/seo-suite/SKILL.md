@@ -27,7 +27,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(55 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(56 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
 
 **审计与页面质量**
@@ -50,6 +50,7 @@ metadata:
 - `doctor.py`:环境自检+凭证分层探测(T0 纯静态→T3 GA4,只探键名不读值)+全输出 redact;退出码 0=ready/3=需处理;报告按 tier 自动声明数据覆盖范围
 - `ai_views.py --url|--html`:AI 视图层生成(Scrunch AXP 等价):语义净化版 HTML+Markdown+tokereductions 统计;默认 dry-run,--apply 写 ./ai-views/,人审后自行部署;不承诺引用提升(同 llms.txt 实证口径)
 - `envelope.py --audit audit.json [--health] [--priority]`:三源统一封套 audit-data.json(summary/categories/action_plan 三段 phases)+**部分落盘契约**(每 category 即落盘 findings/*.md,--resume 断点续跑)
+- `trend_watch.py watch|gate|backlog`:热点监控与选题闸门——六信号源(News/Reddit rising/HN/微博/百度,403 源跳过)→四问闸门(相关≥25 分/净新观点≥5/窗口 24-72h 分型/独家三选一)→GO·PIVOT·WATCH·DROP+wire 否决;briefs/ 落盘决策件配 trend-jack-playbook.md
 - `benchmark_report.py --audits dir|--monitor-db|--scores`:匿名基准聚合(State of GEO 式):P25/50/75 分布+Top 失败规则频次;偏差自白首尾强制;只聚合数字绝不含域名 
 
 **技术 SEO**

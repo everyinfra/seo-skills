@@ -133,6 +133,12 @@ curl -s https://example.com/sitemap.xml | grep -c 'xhtml:link'   # 应 = 语言�
 示例行：`/de/preise ↔ /en/pricing | #2 双向返回 | DE 版缺 en 回链,Critical | 在 /de/preise head 补 <link rel="alternate" hreflang="en" href="https://example.com/en/pricing">`。
 输出按目录聚合修复批次(一个模板 bug=一批),不按单页零散报。
 
+## 九bis、chatbot 弱信号边界(2026-10-11 联动补)
+
+- **hreflang 八检合格 ≠ chatbot 语言路由生效**【调研 2026-10】:hreflang 服务经典爬虫(Google/Bing)的版本互认;ChatGPT/Perplexity 类生成引擎的引用决策主要看该语言 URL 自身的独立证据(该语言专属外链、被引历史、内容量、语言-查询匹配度)——"hreflang 打通 = chatbot 会对 {语言} 用户引 {语言} 版"的假设不成立(结论与检查顺序见 [multilingual-workflow.md](../overview/multilingual-workflow.md) 五 2bis/九坑 5)。
+- **每语言 URL 自持权威的检查项**(多语言站审计必列):①该语言专属反链是否存在(以目标语言书写/发布于本地站的外链);②该语言 citation_panel 基线是否独立建档(不与英文版合并);③llms.txt 语言版与本地平台占位(各市场杠杆位见 multilingual-workflow.md 十节)。
+- hreflang 照常做——对经典搜索有效且不伤;但**不作为 chatbot 语言路由的依据**,审计报告里"经典互认"与"chatbot 引用"两类结论分开写;引擎若开始消费 hreflang 进引用决策,本节降级(半衰期 6–12 个月复审)。
+
 ## 十、来源
 
 - 八检规则与正反例、严重度表：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-hreflang/SKILL.md`

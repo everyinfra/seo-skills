@@ -1,6 +1,6 @@
 # GEO 证据银行：可引用的案例数字、行业研究与论文
 
-> 来源仓库：[amplifying-ai/awesome-generative-engine-optimization](https://github.com/amplifying-ai/awesome-generative-engine-optimization)（CC0），2026-10-09 读取。
+> 来源仓库：[amplifying-ai/awesome-generative-engine-optimization](https://github.com/amplifying-ai/awesome-generative-engine-optimization)（CC0），2026-10-09 读取。2026-10-11 增补：第六节调研批次（GEO 内容战略调研，交叉核查后口径）。
 > 证据约束遵循 [geo-evidence.md](geo-evidence.md)：本银行每条带链接与日期，但**证据分级决定用法**——
 > 论文结论不能外推为站点收益承诺；厂商/代理商案例是营销转述，不进实施验收与预算预测；行业研究是观察/相关性，不是因果加权。
 > 引用时保留口径（样本量、平台、时间、方法），数字冲突时并列呈现，不择优选边。
@@ -110,4 +110,41 @@
 2. **AIO 覆盖率（52% / 25% / 13.14% / <16%）**：不同追踪器、不同月份、不同查询集；只允许带口径引用，禁止取最大值制造紧迫感。
 3. **厂商案例 vs 同行评议**：Ramp 7× 与 C-SEO Bench「多数方法无效」并存——方案里两者都要出现，分别标注证据级别。
 4. **llms.txt**：0.3% 采用率 + Google 官方不使用 = 不作为实施必选项（与 geo-evidence.md 一致）。
-5. 本银行条目读取于 2026-10-09；行业研究类数字的保鲜期按 [geo-evidence.md](geo-evidence.md)「证据保鲜机制」（快变事实 60 天内重查）执行。
+5. 本银行条目读取于 2026-10-09（第六节批次为 2026-10-11 调研+交叉核查）；行业研究类数字的保鲜期按 [geo-evidence.md](geo-evidence.md)「证据保鲜机制」（快变事实 60 天内重查）执行。
+6. **引用半衰期双口径**：SSRN 中位 4.5 周（第六节第 7 条）与 Profound 中位 11 天并记两说，样本与「引用」定义不同，禁止择一写成「AI 引用寿命」通值。
+
+---
+
+## 六、2026-10-11 调研批次（GEO 内容战略调研，交叉核查后口径）
+
+> 本批 14 条来自 2026-10-11 内容战略定向调研，经交叉核查后定级；**8 条相对初始口径降级使用**（逐条带降级标注，原因见本节末核查说明）。分级规则仍按第一节；落地条目对照 [multilingual-geo-evidence.md](../research/multilingual-geo-evidence.md)（其【调研 2026-10】标签即指本批）。
+
+### A 级：同行评审（4 条）
+
+1. **检索漏斗瓶颈——引用位是稀缺资源**：实测 Sonar 检索后仅读取约 10 页、最终引用 3–4 个；Gemini 92% 响应零外部链接。来源：[The Attribution Crisis in LLM Search Results（arXiv 2508.00838）](https://arxiv.org/abs/2508.00838)，期刊版 Data & Policy 2026；2025-08 提交，2026-10-11 核查。**使用注意**：结论限于论文测定的引擎快照（2025 上半年），证明的是「读了不一定引、多数回答根本不引」的机制，不可外推为各引擎现值——用于解释「被收录 ≠ 被引用」。
+2. **引用行为优化增益 +30–40%（GEO 原始论文，附方法学限定）**：引用来源/统计数据/引语类改写在其实验中带来约 30–40% 引用指标提升（同第四节奠基条目）。来源：KDD 2024，[arXiv 2311.09735](https://arxiv.org/abs/2311.09735)；2026-10-11 复核加限定。**核查后降级标注**：测量基于 GPT-3.5 构建的**模拟生成引擎** + **固定文档上下文**，且**仅测引用阶段**指标——不是真实引擎端到端流量；外推到现役引擎须与第五节第 1 条（C-SEO Bench 张力）并读。
+3. **被引源约 16% 带 AI 生成证据**：四家生成式搜索引擎审计（712 条真实人类查询 × 4 引擎）发现约 16% 被引来源检出 AI 生成痕迹。来源：[Synthetic Sources? Auditing Generative Search Engine Citations（arXiv 2605.23684）](https://arxiv.org/abs/2605.23684)；2026-05，2026-10-11 核查。**使用注意**：口径是「检出 AI 生成证据」非「内容全部为 AI 生成」；引用时保留 712×4 样本框。
+4. **低资源语言 RAG 退化**：49 语言领土争议基准显示检索与生成质量随语言资源量下降显著退化——小语种引用池更浅、可用源更少。来源：[BordIRLines（ACL 2025 Findings）](https://aclanthology.org/2025.findings-acl.219/) / [arXiv 2410.01171](https://arxiv.org/abs/2410.01171)；2026-10-11 核查。**使用注意**：任务域是文化敏感事实问答，非商业查询；只支撑「低资源语言内容稀缺 = 唯一可用源机会」的方向判断（multilingual-geo-evidence.md U5）。
+
+### B 级：大样本实测（5 条）
+
+5. **AI 引用源比自然结果新鲜 25.7%**：AI 引用 URL 平均年龄 1,064 天 vs 自然结果 1,432 天（1,700 万 AI 引用，7 个 AI 助手汇总）。来源：[Ahrefs](https://ahrefs.com/blog/do-ai-assistants-prefer-to-cite-fresh-content/)，2025-07-28。**使用注意**：7 平台均值会掩盖引擎差异（Perplexity 新鲜度偏好更高，见 [geo-platform-differences.md](geo-platform-differences.md) 第二节）；与该文件第五节同一数字互链，勿拆成两处结论。
+6. **新闻源仅占 AI 引用约 9%，头部通吃**：新闻域名仅占全部引用约 9%；OpenAI 模型新闻引用中 reuters.com 占 22.8%、apnews.com 12.2%（36.6 万条引用审计）。来源：[News Source Citing Patterns in AI Search Systems（arXiv 2507.05301）](https://arxiv.org/abs/2507.05301)；2025-07，2026-10-11 核查。**使用注意**：Reuters 22.8% 是「新闻引用内部份额」不是「全部引用份额」，两数勿混；时效选题预期管理见 multilingual-geo-evidence.md U6。
+7. **AI 引用半衰期中位 4.5 周**（⚠️ 核查后降级：SSRN 单源预印本）：AI 引用活性中位 4.5 周减半，ChatGPT 最快（3.4 周）。来源：[SSRN 7344201](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7344201)，2026。**使用注意**：与 Profound 官方中位 11 天（[2026-09，88.3 万页研究](https://www.tryprofound.com/blog/the-half-life-of-an-ai-citation-is-11-days)）**并记两说不选边**——样本与「引用」定义不同（见第五节第 6 条与 multilingual-geo-evidence.md U7）。
+8. **ChatGPT 非英语会话 43% 子检索用英语**（⚠️ 核查后降级：工具商遥测）：1,000 万+ ChatGPT 提示的 fan-out 分析——非英语提示的子检索 43% 以英语执行；78% 非英语会话至少含一次英语子检索。来源：[Peec AI](https://peec.ai/blog/chatgpt-searches-in-english-even-when-you-don-t)，2026-02-12；[SEJ 转述](https://www.searchenginejournal.com/chatgpt-search-often-switches-to-english-in-fan-out-queries-report/567811/)。**使用注意**：样本为工具商客户面板非全量流量；引用必须标「工具商遥测」。
+9. **日文提问 26% 引用落 .jp 域，英文提问仅约 1%**（⚠️ 核查后降级：翻译厂商研究）：同一问题用日文提问时 26% 被引源在 .jp 域，英文提问时约 1%。来源：[Weglot](https://www.weglot.com/blog/ai-search-citations-language-country)，2026-09-08。**使用注意**：Weglot 为翻译服务商、研究服务其业务叙事；方向结论（提问语言切换引用池）与第 4/8 条一致故收 B 级，但具体百分比引用须带厂商名。
+
+### C 级：机构/厂商（2 条）
+
+10. **翻译有效但机翻降权（两分法）**：翻译有效 = Weglot 130 万引用分析：有目标语言版本的站在无该语言版本的查询中 AIO 可见性 +327%、被引 3.83×（⚠️ 核查后降级：Weglot 委托研究，非因果——自营样本只有相关性，不能写进效果承诺）；机翻降权 = Google 政策级：automated transformations 列入 scaled content abuse 打击范围（官方政策口径），但 **LLM 引擎侧对机翻的直接降权暂无一手证据**。来源：[Weglot](https://www.weglot.com/blog/multilingual-seo-ai-visibility)，2026-08-10。**使用注意**：+327%/3.83× 只能表述为「翻译商报告的相关性」；落地两分法见 multilingual-geo-evidence.md U4。
+11. **量产蹭热点反例（AInvest）**（⚠️ 核查后降级：孤立个案、无对照、事后归因）：AI 量产财经新闻站约两个月从 27.5 万涨至 960 万月点击，遭 Google 垃圾更新（scaled content abuse）处置跌至约 90 万——量产蹭热点是「先吃流量后挨刀」的反例。来源：SEO 圈复盘（[Rise and Fall of AInvest](https://www.youtube.com/watch?v=RpgOKUO_SyI)，2025-09；[August spam update 复盘](https://www.youtube.com/watch?v=_n5_GiljJP0)）。**使用注意**：证明的是「不可持续」，不是「必然被罚」；不作为任何量产策略的可行性证据。
+
+### 中文区（3 条）
+
+12. **3·15 曝光「发布 2 小时被引用」= 黑产警示，非 GEO 功效**（核查后性质重释：功效叙事 → 风险警示）：2026-03-15 央视 3·15 晚会曝光：虚构「Apollo-9 智能手环」软文发布约 2 小时即进入主流大模型推荐榜——该数字证明的是**投毒漏洞与违规操作的存在**，不是「正规 GEO 两小时见效」。来源：[36 氪](https://m.36kr.com/p/3724411683895943)、[新华网追踪（2026-04-08）](https://www.news.cn/digital/20260408/c1ef4fac451c456f934fd97e333723fd/c.html)。**使用注意**：对外方案严禁引用为功效证据；与第四节 GASLITE 等对抗条目同属风险警示层。
+13. **国内 GEO 团体标准 2026-04 立项，明确防范语料投毒**：《生成式引擎优化（GEO）可信信息传播与信息生态治理规范》2026-04-10 通过立项评审，为国内首部 GEO 团体标准，重点防范「语料投毒」等风险。来源：[立项报道（2026-04-28）](https://www.sohu.com/a/1015501700_122526825)、[新浪财经（2026-04-17）](https://finance.sina.com.cn/jjxw/2026-04-17/doc-inhuveqw2190232.shtml)。**使用注意**：立项 ≠ 发布，条款未定稿；引用写「已立项的团体标准」，勿写「已生效标准」。
+14. **中文引擎平台归属只作定性：元宝 ≈ 腾讯系（公众号+腾讯新闻+企鹅号/ima），豆包 ≈ 字节系（抖音+头条号）**。来源：[chinese-ai-search-guide.md](chinese-ai-search-guide.md)、[markets/zh.md](../markets/zh.md)（2026-10-09 二轮核验）。**核查后降级标注**：引用池份额的量化拆分（如「头条 35.2%/知乎 21.8%」）为单源疑同源、已降级备考——**对外一律定性表述，不携带存疑百分比**。
+
+### 本批核查说明
+
+本批 14 条中 **8 条（第 2、7、8、9、10、11、12、14 条）在交叉核查后相对初始口径降级使用**——一句话原因：其一手来源为工具商遥测、翻译商委托研究、单一预印本、孤立个案或被误读性质（「功效证据」实为「黑产警示」），数字与允许用途按第一节分级规则收紧。未降级 6 条（1、3、4、5、6、13）为同行评审、方法透明的大样本数据或官方事实。本批读取于 2026-10-11，保鲜按 [geo-evidence.md](geo-evidence.md)「证据保鲜机制」执行。

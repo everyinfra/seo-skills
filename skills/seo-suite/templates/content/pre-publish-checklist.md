@@ -7,7 +7,7 @@ _For: {作者 / 审核人} · Date: {YYYY-MM-DD} · Market: {市场/语言} · �
 
 | 覆盖条目 | 脚本 | 命令行 |
 |---|---|---|
-| 1/3/4/5/7/8/17/20/22/23/27 | site_audit.py | `python3 scripts/site_audit.py URL --market XX --json` |
+| 1/3/4/5/7/8/17/20/22/23/27/32 | site_audit.py | `python3 scripts/site_audit.py URL --market XX --json` |
 | 2/3(市场单位)/12/14/24/26 | market_lint.py | `python3 scripts/market_lint.py --market XX --url URL --report` |
 | 21/23(JSON-LD 规则层) | schema_lint.py | `python3 scripts/schema_lint.py URL` |
 | 5(og:image 绝对 URL) | head_check.py | `python3 scripts/head_check.py -`(stdin 喂渲染后 HTML) |
@@ -19,7 +19,7 @@ _For: {作者 / 审核人} · Date: {YYYY-MM-DD} · Market: {市场/语言} · �
 
 ## The answer
 
-{一句话结论:27 条中机检 {N} 条 / 人工 {M} 条;本次不通过 {X} 条(条目号 {..},集中在 {组名});按尾部门槛处置——0 条发布 / 1-2 条修复后发布 / 3 条以上回炉。}
+{一句话结论:32 条中机检 {N} 条 / 人工 {M} 条;本次不通过 {X} 条(条目号 {..},集中在 {组名});按尾部门槛处置——0 条发布 / 1-2 条修复后发布 / 3 条以上回炉。}
 
 ## A. meta 组(1-6)
 
@@ -51,7 +51,7 @@ _For: {作者 / 审核人} · Date: {YYYY-MM-DD} · Market: {市场/语言} · �
 20. **图片 alt 覆盖** [机检:site_audit img_noalt] — 通过:alt 缺失数为 0;不通过:逐张补描述性 alt(≤100 字符)。
 21. **无占位符残留** [机检:schema_lint JSON-LD 占位符黑名单 + 人工全文] — 通过:全文与 JSON-LD 无 TODO/[占位]/示例域名/lorem 类残留;不通过:替换为真值,无真值先不发。
 
-## D. AI 可引性组(22-27)
+## D. AI 可引性组(22-32)
 
 22. **BLUF 密度≥0.5** [机检:site_audit ai_search_health bluf] — 通过:首块(前 max(20% 篇幅, 400) 字符)score≥0.5——直答短语/列表>3/首块>100 字三取二;不通过:首屏加"要点 / key takeaways"直答块或列表。
 23. **schema 1 种与内容匹配** [机检:site_audit JSON-LD 计数 + schema_lint 规则;与内容匹配人工] — 通过:恰 1 种主类型 JSON-LD 且只标记页面上真实存在的内容,schema_lint 无 FAIL;不通过:删到 1 种匹配类型,修悬空引用与空答案。
@@ -59,6 +59,11 @@ _For: {作者 / 审核人} · Date: {YYYY-MM-DD} · Market: {市场/语言} · �
 25. **事实清单覆盖** [机检:content_score.py --facts] — 通过:top20 SERP+AI 回答的事实清单按 AI 频次加权覆盖到位(缺口仅剩低频事实);不通过:补高频缺口事实各 1 句并标注来源。
 26. **robots meta 无 AI 退出指令** [机检:market_lint v3 AI 退出 meta] — 通过:无 noai/noimageai/nosnippet/max-snippet:0(ko 的 nosourceinfo 走市场特检);不通过:删退出指令——确要退出 AI 引用的页面须显式记录决策,并移出本清单流程单独管理。
 27. **llms.txt(仅文档站检查)** [机检:site_audit llms.txt 存在性 / llmstxt check] — 通过:文档站 /llms.txt 存在、结构通过 llmstxt validate 且含本页;非文档站跳过本条;不通过:`llmstxt.py generate --sitemap` 生成或更新后人工复核再部署。
+28. **内联具名引用** [人工] — 通过:每个非显然主张(共识层之外的判断/数据/结论)配 1 条"机构+日期"式具名内联引用,引语格式=[姓名]([职务],[机构])在 [日期] 的 [出处] 指出,可点开原始出处、非匿名转述(具名引用+带口径统计数字是被引强形态,引用行为 +30-40%,KDD 2024 口径;与 C-SEO Bench 未重现通用增益的结论并记两说——按形态优先级执行,不当收益承诺;出站链接本身无证据提升被引,别为链接而链接,第 18 条管外链选源、本条管引用形态);不通过:补具名引用或把该主张降级为带源事实句,禁编造引语。
+29. **统计数字密度** [人工;content_score 术语覆盖部分机检+market_lint 有源数字密度辅助] — 通过:每个主张簇(支撑同一结论的断言组)配 ≥1 个"数值+来源+年份"格式数字,出处同句或紧邻,测量值与估算值分标(数字四件套口径:来源/时间/样本/方法,缺项降级为估算值并标注);不通过:补带源数字或删该数字,禁编造(第 14 条管关键数字逐条可点开,本条管每簇密度与格式)。
+30. **信息增益净新观点≥5** [人工;content_score 缺失术语清单/补集视角辅助——竞品全有而草稿独缺=共识缺口,草稿有而竞品全无=净新候选] — 通过:对照 top 竞品文本数出 ≥5 条(甜区 5-7,不为凑数注水)净新断言型观点(有主体+可验证锚点:数字/日期/引语/可复算方法),不复述共识——只复述共识的内容会被 AI 吸收不给署名;不通过:回炉补独家层——没有缺口就没有信息增益,补不出净新观点的选题放弃发布。
+31. **反例与不确定性标注** [人工] — 通过:每 3-5 个断言配 ≥1 条反例/边界块(标准形态"例外:{什么条件下上述不成立},证据:{出处}"),核心结论逐条标 高/中/低置信度+一句依据,找不到反例的写"未找到反例(检索了 {查询×N},截至 {日期})"——校准过的限定信号匹配引擎 corroboration 门,省略不写=虚假确定性;不通过:补反例块与置信度标尺,删绝对化表述。
+32. **显性时间戳+答案前置** [机检:site_audit ai_search_health bluf+Last-Modified] — 通过:发布/更新日期页面上可见且 site_audit Last-Modified(头/meta)有值、每节前 60 词直接回答本节问题、答案+核心数据+最强独家观点落在前 30%(论证细节放后 70%);不通过:补可见时间戳并与实际改动对齐,节首加直答句,把关键内容前移进前 30%(第 16 条管更新日期人工可见性、第 22 条管首块 BLUF,本条把两者扩到节级与全文分布)。
 
 ## 门槛与处置
 
@@ -80,4 +85,4 @@ _For: {作者 / 审核人} · Date: {YYYY-MM-DD} · Market: {市场/语言} · �
 - 执行顺序:先跑头部表格的机检命令(全部退出码 0)→ 再逐条人工 → 数不通过条数按门槛处置;YMYL/Local 页在四组之外另跑对应市场 special_checks(market_lint --report 三态清单)。
 - 证据纪律:每个"不通过"附一行可复查证据(脚本输出行/渲染后 DOM 摘录/来源 URL);数字缺失写 [要追加: 数据源],禁编造。
 - 判定来源标注:[机检:X] = 脚本 X 已判(命令见头部表格);[人工] = 机器判不了(真实性/权威性/语气),判断指引见头部引用块。
-- 维度与阈值出处:references/research/borrow-specs.md C1(content_score 维度表/首段三查/甜区 70-85)、A4(BLUF 公式)、E5(FAQPage 退役);清单与 market_lint.py 的分工见头部引用块。
+- 维度与阈值出处:references/research/borrow-specs.md C1(content_score 维度表/首段三查/甜区 70-85)、A4(BLUF 公式)、E5(FAQPage 退役);28-32 条(GEO 引用纪律)=references/content/deep-research-protocol.md(具名引用/带口径数字/信息增益 5-7 与 IGS>0.5/反例与不确定性标注/答案前置前 30% 口径);清单与 market_lint.py 的分工见头部引用块。

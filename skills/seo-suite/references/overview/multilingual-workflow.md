@@ -1,6 +1,6 @@
 # 多语言工作流(全球 SEO/GEO 一把做)
 
-> 建立于 2026-10-09;2026-10-08 并入全球区域知识(按结构反馈,原 regions/ 专区已融入套件各文件):区域 AI 平台事实见 [AI 平台差异事实库](../content/geo-platform-differences.md) 第六节,区域爬虫与收录见 [AI 爬虫政策](../technical/ai-crawler-policy.md),hreflang 区域码细则见 [hreflang 校验](../technical/hreflang-validation.md),各市场关键词工具链见 [关键词意图分类](../research/keyword-intent-taxonomy.md) 区域段,中文引擎细则见 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md)。
+> 建立于 2026-10-09;2026-10-08 并入全球区域知识(按结构反馈,原 regions/ 专区已融入套件各文件):区域 AI 平台事实见 [AI 平台差异事实库](../content/geo-platform-differences.md) 第六节,区域爬虫与收录见 [AI 爬虫政策](../technical/ai-crawler-policy.md),hreflang 区域码细则见 [hreflang 校验](../technical/hreflang-validation.md),各市场关键词工具链见 [关键词意图分类](../research/keyword-intent-taxonomy.md) 区域段,中文引擎细则见 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md)。2026-10-11 更新:多语言 GEO 调研 9 项接入(引用池语言切换/hreflang 对 chatbot 弱信号/四市场杠杆位/翻译两分法/半衰期两口径等)。
 > 本文件是全球主干:站点面向哪些市场 → 每个市场的引擎格局、必备工具、语言规范 → **逐市场分开评分,一个总分掩盖"英文版 90 分、俄语版 40 分"**。
 
 ## 一、语言约定(本 skill 的运行规则)
@@ -72,14 +72,19 @@
 
 1. **可达性(每区一套)**:robots 对引用型 bot 的政策([AI 爬虫政策](../technical/ai-crawler-policy.md));中文站确认 Baiduspider/Bytespider 未禁;**俄语区对 `YandexAdditional` 做显式决策**(允许=进 Neuro/Alice 引用池);**日语区单独验证 Bing 可爬**(28–33% 份额喂 Copilot);韩语区确认 Naver robot 收录请求已发。
 2. **hreflang 八检**:自引用/双向返回/ISO 码([hreflang 校验](../technical/hreflang-validation.md))——中文简繁体用 ISO 15924 文字码;西语区用 `es-419`;阿拉伯 `ar`+国码。
+   2bis. **hreflang 对 chatbot 系是弱信号——每个语言 URL 须自持权威**【调研 2026-10】:hreflang 服务经典爬虫的版本互认;ChatGPT/Perplexity 类的引用决策主要看该语言 URL 自身的独立证据——该语言专属外链、被引历史、内容量、语言-查询匹配度。修正假设:"hreflang 打通 = chatbot 会对 {语言} 用户引 {语言} 版"不成立。执行:每个目标语言版当独立站养——语言专属反链、独立 citation_panel 基线、llms.txt 语言版、本地平台占位(第十/十一节各市场杠杆位);hreflang 照常做(对经典搜索有效,不伤),但不作为 chatbot 语言路由的依据。
 3. **内容平价**:德语比英语长 25–35%、日语短 10–25%、中文比英文短 20–40%——大幅偏离提示截断或未本地化。
 4. **本地实质**(不是字面翻译):示例、案例、货币、合规表述、联系方式本地化;未复核机翻标记为 scaled-content-abuse 风险。俄语区原生西里尔+7 号电话是 Vega 专家性信号。
 5. **本地格式**:按目标区域(见第四节排版行)。
-6. **逐引擎可见性**:中文引擎中文提示词(中文指南 7 组问句);全球引擎英文;俄/韩/日按第三节工具栈的引擎清单用当地语言提示——**同站各语言分开测,不合并**。
+6. **逐引擎可见性**:中文引擎中文提示词(中文指南 7 组问句);全球引擎英文;俄/韩/日按第三节工具栈的引擎清单用当地语言提示——**同站各语言分开测,不合并**。**引用池按查询语言切换,多语言站各语言版在争夺同一引用位**:英文查询的 fan-out 改写(修饰词扩展)在英文引用池内检索,ChatGPT 系对非英文查询才切到对应语言池——英文版凭引用池深度会"吸血"本语言版的引用机会【调研 2026-10】。测法:fanout_analysis.py 按语言分桶+citation_panel 按引擎×语言分报,不合并统计(同第 1 节逐语言评分纪律)。
 
 ## 六、内容策略:一套事实,多种变体
 
 实测结论(中文指南):跨渠道发同文无效;正确做法是**一套核实事实 → 每渠道一个变体**:
+
+**时效内容的预期管理**:新闻源仅占 AI 引用约 9% 且头部通吃【调研 2026-10】——新闻型内容不是 AI 引用的主通道;多语言站做时效选题时,新闻位让给 wire/央媒,自己做分析层与数据层(数据核对表/时间线/本地市场对照),被引的是深度层。Google Discover(非 AI 引用漏斗,口径见 [discover-news-seo.md](../content/discover-news-seo.md))不受此数约束,两个漏斗分开管。决策管线见 [trend-jack-playbook.md](../../templates/content/trend-jack-playbook.md) 的 PIVOT 规则。
+
+各语言权威页共享**核实事实层**,但信息增益层(净新观点)逐语言独立产出——这是"变体"与"翻译"的分界线【调研 2026-10】。
 
 | 变体 | 语言/风格 | 去处(按市场) |
 |---|---|---|
@@ -88,6 +93,8 @@
 | 社区版 | 当地主流问答社区体 | 知乎(中)/Reddit(英·日)/지식iN(韩)/知恵袋向(日) |
 
 **JSON-LD 的 `description` 与每语言的事实卡逐字一致**——不一致是品牌描述在各引擎间漂移的第一成因。
+
+两份新工作流的分工:**时效热点变体**走 [trend-jack-playbook.md](../../templates/content/trend-jack-playbook.md)(四问闸门→GO/PIVOT/WATCH/DROP→48h 发布管线,逐市场出决策件);**深度层写作**走 [deep-research-protocol.md](../content/deep-research-protocol.md)(五轮检索+IGS 自检+引用纪律+反例标注)——权威页变体的"信息增益层"按该协议逐语言独立产出(见上分界线:变体≠翻译件)。
 
 ## 七、多语言关键词研究
 
@@ -112,11 +119,11 @@
 
 ## 九、常见坑
 
-1. **机翻直接上线**无人工审校——scaled-content-abuse 风险+转化率双输。
+1. **机翻直接上线**无人工审校——scaled-content-abuse 风险+转化率双输。两分法【调研 2026-10】:**翻译有效,机翻降权**——事实框架翻译+人审+本地实质(第四节第 4 步)是合法形态;但即使过人审,机翻腔(可读性/语域漂移)在引用竞争中仍是降权信号,且**独家观点不能靠翻译获得**:每语言版要产出自己的净新层(本地数据/本地引语/本地反例),否则只是又一个 consensus 副本。与六"一套事实,多种变体"衔接:变体≠翻译件。
 2. **英文阈值套其他语言页**(或反向)——第四节列出不可互套项。
 3. **只测主语言可见性**——中文盲区元宝/豆包,英文盲区 AIO/Perplexity,俄语盲区 Alice/Neuro,韩语盲区 AI Briefing(只引 Naver 生态),日语盲区 Gemini(30% 使用)——每个命中市场都要测。
 4. **同文跨渠道群发**——实测无效且稀释实体一致性。
-5. **hreflang 与 canonical 打架**——八检第 1/6 条是最常见失败点。
+5. **hreflang 与 canonical 打架**——八检第 1/6 条是最常见失败点。即使八检全过,**hreflang 也不替语言版挣 chatbot 引用**(见五 2bis)——把 hreflang 当 chatbot 语言路由手段是第 7 个坑【调研 2026-10】。
 6. **把一个语区当一个市场**——"西语"至少分 es-ES/es-419;DACH 的 Sie/du 按国别;pt-PT 冒充 pt-BR;阿拉伯 MSA/方言不分层;印尼 baku/gaul 不双轨。
 
 ## 十、十八市场独到方法索引(2026-10 第一波充实:独立学科五市场)
@@ -126,7 +133,7 @@
 | 市场 | 独到方法(能力锚点) |
 |---|---|
 | 中文 | 超级 App 站内搜索三件套(搜一搜 Peoplerank/小红书 CES 互动分/抖音四因子,中文指南§六);排行站**免费申报**(maigoo/CNPP);元宝=公众号护城河(内容);采样风控≤20 问/时段(监控) |
-| 英文 | **协议层 agent-readiness**(ARD/ai-catalog.json/WebMCP/Web Bot Auth,英文站全开、其他语区只保留 llms.txt 类等价物——分叉逻辑);fan-out 修饰词逆向(DevTools 提取);引用四级阶梯(retrieved→cited→mentioned→recommended)+recommended-against 暗级;Cloudflare 托管 robots 检测;Lighthouse `AGENTIC_BROWSING` 审计 |
+| 英文 | **协议层 agent-readiness**(ARD/ai-catalog.json/WebMCP/Web Bot Auth,英文站全开、其他语区只保留 llms.txt 类等价物——分叉逻辑);fan-out 修饰词逆向(DevTools 提取;逆向出的修饰词**同时也是引用池语言切换的触发面**——英文 fan-out 词表可用于诊断"哪些本语言查询被英文池吸走"【调研 2026-10】);引用四级阶梯(retrieved→cited→mentioned→recommended)+recommended-against 暗级;Cloudflare 托管 robots 检测;Lighthouse `AGENTIC_BROWSING` 审计 |
 | 俄语区 | **Telegram 公开镜像 SEO**(t.me/s/ 镜像被 Yandex 抓取,~90% 曝光来自 Yandex;标题=关键词+品牌,前 150 字符即摘要);**Webmaster SoV 报告**(官方 GEO 计量);商业透明层(оферта/реквизиты 6 类法定页);9 项官方违规+накрутка ПФ 红线(6–12 月罚);目录=Yandex Бизнес/2ГИС/Zoon/Flamp/Отзовик+TGStat;VK 群讨论帖可如内页排名 |
 | 韩语区 | **`nosourceinfo`**(全球唯一官方 AI 引用退出 meta);연관채널 sameAs 实体图谱(官方域名清单含 치지직/당근);Yeti robots 语义(5xx=全封/host 隔离);**AI 인용수 公开可侦察**(메이트当选者公开);웹문서/서비스内双通道;블로그 투트랙(生态内+自有域);description ≤80 全角字 |
 | 日语区 | **全角阈值体系**(title 32/desc 120/正文 300 全角字,kseo);**「AI 臭」密度 lint**(28 转用动词×14 构文,人类上限 3–8 倍频率判 AI 文);MEO 三因素×投稿週 1 回;業界ポータル=引用+垄断双现实(食べログ/じゃらん;NAP 完全一致);卫星站终结论(SpamBrain 三层检测);垂类>综合榜;PR TIMES 特例 |
@@ -144,10 +151,21 @@
 | 波兰 | **Bing 桌面 ~13.3%**(全球 3 倍)必做 Bing WMT+IndexNow;**品牌引用按引擎分列**(ChatGPT PKO vs Gemini mBank);URL 转写六机构共识;Wykop/Dobreprogramy/Spider's Web 品牌渠道;sierotki 孤字排版规则 |
 | 荷兰/弗拉芒 | **je/u tone 双轨**(nl-NL=je 连 B2B;nl-BE=u 句中小写);>60% 网民用 AI(欧洲最高档);**[INVULLEN] 占位制+拒绝虚构 norm**(锚文本不给比例);GBP 描述用满 750 字符+KvK 商会号;5 个垂直行业本地页模板模式 |
 
+**杠杆位(leverage slot)= 该市场"存在但未被本地竞争者填满"的引用通道**,2026-10 轮新增四格(主入口在门户页,遵守十一A 规则;框架=【调研 2026-10】本轮提炼):
+
+| 市场 | 杠杆位 | 一句话打法 | 主入口 |
+|---|---|---|---|
+| 韩语区 | **Tistory 外域半边** | Tistory 在 Naver 연관채널 官方识别域名清单内(同 sameAs 图谱);博客双轨(生态内 Naver Blog/外域自有域)的外域半边可落 Tistory——AI 인용 ~70% 来自博客/카페 UGC(ko.md 圈内口径)的池子里,外域位竞争低于 Naver Blog | [markets/ko.md](../markets/ko.md) |
+| 日语区 | **引用枠空置位** | AI 回答引用枠(引用源栏)存在"空置"份额——无引用源答案=可争夺位;life-from2020 口径"AI 推荐 No.1 有 45% 在 SEO 圈外、4 引擎域名重复率 ~10%"(ja.md 民间数据集)即空置证据;打法=问句型长尾(H2 疑问式)+知恵袋/Qiita 底物补位 | [markets/ja.md](../markets/ja.md) |
+| 中文 | **豆包头条通道** | 豆包商品/攻略场景抖音引用率 96.9–97.7%+字节系双发(头条号+抖音图文同素材分开发,标题措辞区分)——头条号是豆包生态里"图文半边"的通道,与抖音短视频半边配对(zh.md 已锚定) | [markets/zh.md](../markets/zh.md) |
+| 俄语区 | **Habr 长文杠杆** | Habr 是俄语技术圈内容底物(searchengines.guru/habr/vc.ru 圈内源);技术类受众市场:Habr 深度长文=外域权威半边,进 Yandex/AI 引用底物 | [markets/ru.md](../markets/ru.md) |
+
+杠杆位判据(可迁移到其余市场):①平台在该市场 AI 引用池内 ②本地竞争密度低(空置/外域位) ③官方图谱或生态承认该域名(如 연관채널 清单)。每季复核——杠杆位随本地竞争者填满而失效(断言半衰期纪律,原则 3)。
+
 **跨区融合原则**(第一波提炼,全区通用):
 1. **每个市场先识别封闭生态搜索入口**(搜一搜/抖音 ↔ Naver Blog/Cafe ↔ Dzen ↔ Telegram 镜像 ↔ VK 群)——同构模式,逐市场点名。
 2. **SoV 取代位置**:AI 可见度的计量观是"份额"而非"排名"(Yandex 官方已如此设计,utsushi 的 Share of AI Voice 同构)。
-3. **断言半衰期纪律**:信源偏好结论 6–12 个月失效,所有引用偏好表带测试日期;监控**值的日期**而非值("낡은 데이터는 모든 하한선을 통과한다")。
+3. **断言半衰期纪律**:信源偏好结论 6–12 个月失效,所有引用偏好表带测试日期;监控**值的日期**而非值("낡은 데이터는 모든 하한선을 통과한다")。区分两种半衰期:本条管**信源偏好结论**的 6–12 个月失效;AI 引用本身的半衰期(4.5 周/11 天两口径并记【调研 2026-10】)管**内容运营节奏**(12.1/12.2)——前者要求带测试日期,后者要求排复测日历。
 4. **免费申报先于付费**:榜单渠道先穷尽免费通道(maigoo 自主申报 ↔ G2/Capterra 免费 listing)。
 5. **行为代理离线审计**:首屏清晰/低空锚率/模板文本占比(Horosheff 7 分制)——无数据时近似行为因素。
 6. **免责声明即 GEO 内容**:安全边界文案可被当"安全答案片段"引用(医疗/金融/法律全区适用,俄区实证)。
@@ -199,6 +217,7 @@
 25. **投诉/UGC 平台的声誉层占位是新兴通用模式**:土耳其 Şikayetvar、泰国 Pantip、巴西 Reclame Aqui、俄 Отзовik、日食べログ——品牌词 SERP 审计必查"本国投诉站占位"。
 26. **marketplace 站内 SEO 是独立学科**(ML/Trendyol/Allegro/bol/Shopee 各有算法+工具+官方学院)——"电商 SEO"在多数市场=marketplace 内优化×官网双轨。
 27. **AIO 上线时间就是市场红利窗口**:法(2026-07)比德(2025)晚一年——后上线市场多吃一年经典 SEO 收益,发布日历按各国上线日重排。
+28. **小语种红利:成为"唯一可用源"的边际引用收益 > 堆反链**【调研 2026-10】:小语种引用池小而浅,一个该语言的原创数据页/深度页可成为整池唯一可用源——此时引用份额的获取不靠外链竞争,靠"存在且唯一"。与荷兰区"一条权威 .nl 链>数百条进口链"(十一节)、法国 Vibe 22.9% unique 推荐同构。执行:选题优先"该语言没有好答案"的查询(GSC regex 快照缺口诊断法,跨区迁移矩阵已列);原创数据首发+该语言独家层(同九坑 1 净新层要求);测量用该语言独立 citation_panel 基线(不与英文版合并,同第 1 节纪律)。
 
 ### 跨区迁移矩阵(某市场验证过的方法 → 可迁移到哪些市场;迁移后必须本地实测)
 
@@ -308,7 +327,7 @@
 
 ### 英文区专项
 
-**独家渠道**:协议层 agent-readiness(ARD/ai-catalog.json/WebMCP/Web Bot Auth——英文站全开,其他语区只保留 llms.txt 类等价物);三类 AI 爬虫按目的分策(training:GPTBot/ClaudeBot/Google-Extended;search indexing:OAI-SearchBot/PerplexityBot;live fetch:ChatGPT-User 类)——封训练连带封掉引用流量是最常见误杀。**语言机制实操**:句 15–20 词;hype 词(unlock/seamless 类)≤3/页;段落级可引性=[主体+数字+as-of 日期+方法学]——Naver AI Briefing 与 Perplexity 都精确以此粒度截取;一手数字源策略=给数字命名+稳定 URL 作引用地址。**本圈信息源**:Google Search Central、Search Engine Land、r/SEO、Ahrefs/Sistrix 研究;qiaomu 证据阶梯六级(eligible→retrieved→cited→mentioned→recommended→converted)是计量范本。**红旗**:inauthentic mentions(买提及)是 Google 官方点名的 spam 风险;逐长尾变体建页=Scaled Content Abuse;llms.txt 对 Google 无效(不帮不伤)——别当排名手段卖。
+**独家渠道**:协议层 agent-readiness(ARD/ai-catalog.json/WebMCP/Web Bot Auth——英文站全开,其他语区只保留 llms.txt 类等价物);三类 AI 爬虫按目的分策(training:GPTBot/ClaudeBot/Google-Extended;search indexing:OAI-SearchBot/PerplexityBot;live fetch:ChatGPT-User 类)——封训练连带封掉引用流量是最常见误杀。**语言机制实操**:句 15–20 词;hype 词(unlock/seamless 类)≤3/页;段落级可引性=[主体+数字+as-of 日期+方法学]——Naver AI Briefing 与 Perplexity 都精确以此粒度截取;一手数字源策略=给数字命名+稳定 URL 作引用地址。**本圈信息源**:Google Search Central、Search Engine Land、r/SEO、Ahrefs/Sistrix 研究;qiaomu 证据阶梯六级(eligible→retrieved→cited→mentioned→recommended→converted)是计量范本。**红旗**:inauthentic mentions(买提及)是 Google 官方点名的 spam 风险;逐长尾变体建页=Scaled Content Abuse;llms.txt 对 Google 无效(不帮不伤)——别当排名手段卖;**多语言站的英文版偏见**:英文版引用份额上升≠全站胜利——先查它是不是在吞本语言版的引用位(引擎在同一查询只引一个语言版本)【调研 2026-10】。
 
 ## 十二、韩区度量协议与内容流水线(fire-your-seo-agency 深读,2026-10-09)
 
@@ -319,6 +338,8 @@
 **基线在动手前记录**(没有 before 就永远证明不了效果),五项:①GSC 近 28 天曝光/点击/均位**按页面组**分;②(Naver 目标时)Search Advisor 内容曝光/点击+头部查询表;③AI 引用 O/X——对 5-10 个目标问题在 Perplexity/ChatGPT/Naver AI Briefing 实问,逐条记"被引/未被引";④索引量:`site:domain` 计数(Google+Bing 都查)+GSC 已索引页;⑤**AI 爬虫访问趋势**(GPTBot/PerplexityBot/ClaudeBot 等在服务器日志的走势)——爬在引之前,是先行指标(具体 grep 见 technical/log-analysis.md)。
 
 **复测日期是工作的一部分**:改动后默认 **14 天复测**,比较时**剔除最近 2-3 天**(上报延迟);复测靠日历/agent 提醒不靠记性——**报告里写明复测日期才算交付完成**。搜索反映有滞后,当天看数是噪音。
+
+**AI 引用半衰期数值锚点:约 4.5 周【调研 2026-10】,与 citation_panel.py decay 的 Profound 官方中位 11 天(2025-09 88.3 万页研究)并记两说**——样本与"引用"定义不同,不选边(原则 23);复测日历按短口径(11 天→W+2 复测)排,刷新投入按长口径(4.5 周→8–12 周分层)排。多语言站**按语言分池各排各的**:小语种引用池小、轮换更快,半衰期可能更短,本地实测后校准。
 
 **读数顺序**:①**先看曝光后看点击**——结构性改善的第一信号是曝光上升;CTR 要等 title/description 改了才动。曝光升而 CTR 平=下一件事是 meta。②周末 dip 是常态(工作日性质话题如 B2B/金融),该模式本身是真实需求的证据不是异常。③**查询列表就是路线图**:Search Advisor/GSC 头部查询=用户实际输入的问题清单,头部查询没有专属落地页=下一个要建的页。
 
@@ -334,7 +355,7 @@
 
 **发布闸门要点**(每项不过不发):frontmatter 的 question/answer/data_asof/sources 齐;`curl -sL` 无 JS 可见正文/直答/表格;可见 FAQ 文本与 FAQPage LD **逐字符一致**;内链 1 上(hub)+2 横(相关)起步;部署后 curl 验 sitemap lastmod;IndexNow ping(Bing 与 Naver 都消费);数据页/hub 级页加进 llms.txt;Naver 是目标时发布即在 Search Advisor 请求收录。**发布后记基线(曝光 0)→14 天复测入清单**。
 
-**刷新触发**(任一即标 refresh-needed):底层数据变了(财报日/价格/政策)/28 天曝光比 60 天前降 30%+/查询措辞在搜索数据里迁移("2025"→"2026")/发现事实错误。刷新纪律:`dateModified` **只在内容真变时 bump**——纯日期 bump 可被检测且反噬;页底加一行变更记录("Updated 2026-10-30: 加入 Q3 数据")=信任信号;刷新页重新过发布闸门(含新 IndexNow)。**合并与删除**:同问题两篇→301+canonical 并入强者(复制品互拆排名);删除是最后手段,真删返 410 并撤 sitemap;URL 必须变时 301 永久保留(模型记住的是地址)。
+**刷新触发**(任一即标 refresh-needed):底层数据变了(财报日/价格/政策)/28 天曝光比 60 天前降 30%+/查询措辞在搜索数据里迁移("2025"→"2026")/发现事实错误。刷新分层节奏的依据=AI 引用半衰期两口径并记(4.5 周/11 天,见 12.1)【调研 2026-10】。刷新纪律:`dateModified` **只在内容真变时 bump**——纯日期 bump 可被检测且反噬;页底加一行变更记录("Updated 2026-10-30: 加入 Q3 数据")=信任信号;刷新页重新过发布闸门(含新 IndexNow)。**合并与删除**:同问题两篇→301+canonical 并入强者(复制品互拆排名);删除是最后手段,真删返 410 并撤 sitemap;URL 必须变时 301 永久保留(模型记住的是地址)。
 
 **分发顺序红线**:自有域先索引确认(1-3 天)**再**外发副本——不先认领原创,副本会被当原文。Naver 博客编辑器**不渲染 Markdown**(粘贴 `#`/`**`/`|` 会以字面字符出现)——用编辑器原生工具重建标题/加粗/表格,发后手机端查泄漏符号;各外部面只放摘要+1-2 链,不贴全文不链接轰炸。
 
