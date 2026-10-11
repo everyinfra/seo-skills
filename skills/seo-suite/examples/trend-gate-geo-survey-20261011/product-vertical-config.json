@@ -1,0 +1,12 @@
+{
+  "vertical_tokens": [
+    "AI agents", "MCP", "Model Context Protocol", "Claude Code", "developer tools",
+    "infrastructure", "CI/CD", "automation", "API", "CLI", "open source", "LLM",
+    "agent orchestration", "coding agent", "devtools", "platform engineering",
+    "TypeSafe", "decision model"
+  ],
+  "reddit_subs": ["devops", "LocalLLaMA", "selfhosted"],
+  "wire_domains": {
+    "default": ["techcrunch.com", "theregister.com", "arstechnica.com", "theverge.com", "zdnet.com"]
+  }
+}

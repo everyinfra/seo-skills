@@ -166,10 +166,29 @@ def tokenize(text):
     return out
 
 
+_WORD_STOP = {"the", "and", "for", "vs", "with", "new", "how", "why", "not", "your"}
+
+
+def _stem(w):
+    """极简词干:去复数(agent↔agents;ies→y)。防过度:≤3 字符不动。"""
+    if len(w) > 3 and w.endswith("ies"):
+        return w[:-3] + "y"
+    if len(w) > 3 and w.endswith("es"):
+        return w[:-2]
+    if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        return w[:-1]
+    return w
+
+
 def relevance(title, tokens):
-    """trend_scout 同口径:HIGH 整词命中 +25 / MED 部分命中 +10;CJK 无空格分词,
-    子串命中即按整词(CJK 词汇无词边界,这是必要近似)。返回 (score, tag)。"""
+    """整词/词组命中 +25;**词干级全词命中 +10**——词组 token 拆词后按词干比对
+    (顺序无关):"AI agents" 命中 "Agent SDK"、单复数互通。2026-10-11 真实部署
+    发现纯词组匹配会把产品垂直最常见的变体表述(如 "Claude Agent SDK vs
+    LangGraph")漏成 Q1=0;词干近似是必要折衷。CJK 子串命中即按整词。
+    返回 (score, tag)。"""
     t = " " + str(title or "").lower() + " "
+    words = set(_stem(w) for w in re.findall(r"[a-z0-9]+", t) if w)
+    singles = set()
     score = 0
     for tok in tokens or []:
         tok = str(tok).lower().strip()
@@ -179,9 +198,18 @@ def relevance(title, tokens):
             if tok in t:
                 score += SCORE_HIGH
         elif re.search(r"\b" + re.escape(tok) + r"\b", t):
-            score += SCORE_HIGH
-        elif tok in t:
-            score += SCORE_MED
+            score += SCORE_HIGH                      # 词组/整词全命中
+        else:
+            tok_words = set(_stem(w) for w in re.findall(r"[a-z0-9]+", tok) if w)
+            if tok_words and tok_words <= words:
+                score += SCORE_MED                   # token 全部词的词干级命中
+            else:
+                for w in tok_words:                 # 单词级:显著词干命中各计一次
+                    if len(w) >= 3 and w not in _WORD_STOP and w in words:
+                        singles.add(w)
+    score += len(singles) * 10
+    if len(singles) >= 2:                            # ≥2 个不同垂类词 → 升 HIGH
+        score = max(score, SCORE_HIGH)               # ("Claude Agent SDK"=agent+claude)
     tag = "HIGH" if score >= SCORE_HIGH else ("MED" if score > 0 else "")
     return score, tag
 

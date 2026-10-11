@@ -2,7 +2,9 @@
 
 > **模板性质**:热点选题的**决策件+施工输入件**,不是结果报告——由 `scripts/trend_watch.py` 的 watch/gate 子命令预填判定字段,人补角度与观点清单;产出落在发布的页面本身与 monitor 的基线/复测,不在本文件。
 > **填充方式**:信号与判定列由 trend_watch.py 落盘(`briefs/trend-{signal_id}-{YYYYMMDD}.md`),四问中 Q2/Q4 的人工半边由选题人填;**所有数字必须来自脚本输出或真实分析,不许编**;数字缺失写 [要追加: 数据源]。
-> **字段出处**:四问闸门与判定矩阵、信号源登记表、48h 发布管线、放弃/转角度规则=本套件设计(依据 2026-10 定向调研,证据分级见 Method Notes);news sitemap 48h 三件套与验收命令=[discover-news-seo.md](../../references/content/discover-news-seo.md) 官方口径;IndexNow 消费方与边界=SKILL.md 技术节;刷新触发=fire-your-seo-agency 深读(已入 [content-refresh-playbook.md](../../references/content/content-refresh-playbook.md) 与 multilingual-workflow.md 第十二节)。
+> **字段出处**:四问闸门与判定矩阵、> **垂直配置纪律(2026-10-11 用户指正后固化)**:热点监控的是**目标网站/产品所在行业**的趋势,不是 SEO/GEO 本身——`--config` 的 `vertical_tokens` 用三层词表(品类词+自家品牌词+竞品词,配竞品词后竞品动态自动成为高相关信号);`reddit_subs` 按垂直选版块(如 devops/LocalLLaMA,勿用默认);Q1 匹配为词干级三档(词组全命中 25/token 全词 10/显著单词各 10 且≥2 个垂类词升 HIGH),单复数互通。示例:examples/trend-gate-geo-survey-20261011/product-vertical-config.json。
+
+信号源登记表、48h 发布管线、放弃/转角度规则=本套件设计(依据 2026-10 定向调研,证据分级见 Method Notes);news sitemap 48h 三件套与验收命令=[discover-news-seo.md](../../references/content/discover-news-seo.md) 官方口径;IndexNow 消费方与边界=SKILL.md 技术节;刷新触发=fire-your-seo-agency 深读(已入 [content-refresh-playbook.md](../../references/content/content-refresh-playbook.md) 与 multilingual-workflow.md 第十二节)。
 > **状态**:设计稿(2026-10-11),入仓动作见 Method Notes 登记清单。
 
 _For: {选题人 · SME 复核人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Signal: {signal_id + 一句话事件} · 判定: {GO|PIVOT|WATCH|DROP} · Data pulled: {trend_watch.py watch 运行时刻 · 二次采样时刻}_

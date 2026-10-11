@@ -38,3 +38,10 @@
 - **补录(同日)**:④已完成——设 SEO_SITES 仓库变量指向真实目标;monitor job 的模板守卫(排除本仓库)改为 vars.SEO_SITES 门控(模板用户未配置仍跳过),workflow_dispatch 复跑 **success(12s,云端基线建立)**;至此 intel-update/seo-monitor/capability-drift/envelope-report 四工作流全部云端在跑
 - 下一步:①按 GO 判定的 brief 真实写发那篇 GEO survey 分析文(走 deep-research-protocol+pre-publish 32 条闸)②每 3 小时挂 trend_watch cron ③监控跑满 4 周后用 citation_panel decay 验证半衰期双口径
 - 遗留小项:intel-update 任务文件头 "Generated: \${TIMESTAMP}" 未展开(heredoc 引号问题,纯装饰不影响功能)
+
+## ⑥ 补正(2026-10-11 用户指正):热点=产品垂直,非 SEO/GEO 元领域
+
+- **指正**:①的演示把 topics 填成了 SEO/GEO 关键词——那是套件自己的元领域,示范错了场景;正确场景是监控**目标产品所在行业**的热点
+- **修正 1(配置)**:`--config` 三层词表(品类+品牌+竞品)+`reddit_subs` 按垂直选版(devops/LocalLLaMA/selfhosted);真实复跑:与 EveryInfra 产品垂直相关的信号("Claude Agent SDK vs LangGraph vs CrewAI")进入候选,边缘项(Spec-Driven Tools)10 分 watch,无关项照旧 drop
+- **修正 2(真实缺陷)**:词组全匹配把上述高相关信号漏成 Q1=0——已加词干级三档匹配(词组 25/全词 10/显著单词各 10 且≥2 垂类词升 HIGH),该信号 25 HIGH;29 测试全绿
+- 示例目录已更正(examples/trend-gate-geo-survey-20261011/CORRECTION.md+product-vertical-config.json),playbook 加"垂直配置纪律"节
