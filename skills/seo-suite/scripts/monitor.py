@@ -19,6 +19,15 @@ R0-2 接线:diff 在产 gsc_clicks_drop/visibility 类跌幅告警前,若 gsc.cs
   Date+Query+Position 列则调 sensor_volatility(--context 同口径,零依赖 import;
   失败静默跳过),verdict=high_volatility 时该告警降 info 并附注
   "当日 SERP 高波动,疑似算法更新而非站点问题"。
+月检叠加(R2-4,第 6 检查组 monthly):引荐域月检——monitor 目录放最新外链导出
+  backlinks.csv(同 gsc.csv 模式;Ahrefs/Semrush/GSC 原始导出或 backlink_import.py
+  统一格式,零依赖 import 其 parse_export 归一),快照存引荐域总数/当月新增域数
+  (first_seen 近 31 天)/域清单(截断 5000);diff 对比上月快照:
+  新增引荐域数暴跌>50% → backlink_drop(warn,"引荐域新增 N→M,外链获取停滞或丢失");
+  总引荐域降>10% → backlink_loss(critical);无导出 → skipped 不猜;
+  文件损坏(嗅探/解析失败)→ check 记 error,run 落 partial 且退出码 2(防假 0:
+  绝不把"读不了"当"外链归零"参与告警判定)。阈值经 thresholds.
+  backlink_newref_drop_pct / backlink_total_drop_pct 可调。
 
 告警四级(critical/warn/info/low)+ 百分比阈值×最小样本地板 = 防疲劳;
 low=自愈(上次告警本次恢复)。cooldown:critical 12h / warn 24h / info 168h。
@@ -26,7 +35,8 @@ low=自愈(上次告警本次恢复)。cooldown:critical 12h / warn 24h / info 1
 子命令:
   init   --site URL [--market XX] [--key-pages /a,/b] [--heartbeat-url U]
          [--dir .seo-monitor] [--force]
-  run    [--checks daily|weekly] [--dry-run] [--budget-minutes N] [--dir D]
+  run    [--checks daily|weekly|monthly] [--dry-run] [--budget-minutes N] [--dir D]
+         [--backlinks FILE]   # 月检外链导出路径(缺省 <dir>/backlinks.csv,同 gsc.csv 模式)
   diff   [--run-id N] [--prev-run-id M] [--format json|text] [--out FILE] [--dry-run] [--dir D]
          [--ci [--ci-format json|junit]]   # CI 门:checks 结构化阈值结果,任一失败 exit 10
   report [--days 7] [--json] [--dir D]
@@ -64,7 +74,7 @@ config 可选扩展(D1 P2 第 13 条,borrow-specs serpbear 式源适配层):
 
 退出码:diff → 1=有 critical,2=有 warn(无 critical),0=无,4=用法/数据错误;
 diff --ci → 0=全部 check 通过,10=任一 check 失败(siteone 契约);
-run → 0 正常,3=run 未完成(partial/failed)。SSRF 防护:仅 http(s)+私网拒连
+run → 0 正常,2=月检 backlinks.csv 损坏(数据错误,防假 0),3=run 未完成(partial/failed)。SSRF 防护:仅 http(s)+私网拒连
 +TLS 恒验证+重定向逐跳复查(302 穿墙已堵)。
 
 并发与基线卫生(多 cron 安全):SQLite WAL + busy_timeout=30s + 目录级 flock;
@@ -122,6 +132,11 @@ SENSOR_HIGH_NOTE = "当日 SERP 高波动,疑似算法更新而非站点问题" 
 CWV_FIELD_PAGES = 5         # R0-3:周检 CWV 现场数据采 key_pages 前 N 页(PSI 配额预算)
 CITATION_PANEL_FILE = "panel.json"   # R0-4:项目目录的 citation_panel 面板(monitor 目录或其父)
 
+# R2-4 接线常量(引荐域月检)
+BACKLINKS_CSV = "backlinks.csv"      # 月检外链导出(同 gsc.csv 模式;放 monitor 目录)
+BACKLINK_NEW_WINDOW_DAYS = 31        # "当月新增引荐域"的 first_seen 回看窗(月检节奏)
+BACKLINK_DOMAIN_CAP = 5000           # 快照存引荐域清单上限(防大库快照膨胀;超出截断+标记)
+
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot",
                "PerplexityBot", "CCBot", "Google-Extended", "Bytespider", "Meta-ExternalAgent"]
 MARKET_BOTS = {"ru": ["YandexBot", "YandexAdditional"], "kr": ["Yeti"], "cn": ["Baiduspider"]}
@@ -141,6 +156,10 @@ DEFAULT_THRESHOLDS = {
     # D1 P1:segment 健康页流失档位,抄 Conductor segment 型敏感度 7 档
     # (0/1/5/10/25/50/75%)中的 10% 档;受影响度=Σimportance(非纯页数)
     "pages_left_segment_pct": 10,
+    # R2-4:引荐域月检阈值——新增域数暴跌 %(backlink_drop warn)/总域数下降 %
+    # (backlink_loss critical);严格大于才触发(恰等于阈值不告警)
+    "backlink_newref_drop_pct": 50,
+    "backlink_total_drop_pct": 10,
 }
 
 # report 用:告警码 → 修复动作与安全边界(自动=可直接执行;draft PR=人审)
@@ -181,6 +200,9 @@ PLAYBOOK = {
     "cwv_poor":             ("按 references/technical/cwv-playbook.md 排查对应指标(LCP/INP/CLS);对照最近部署与第三方脚本变化", "human"),
     "cwv_regression":       ("核对 CWV 档位退步(good→needs_improvement 等);查最近部署/新增第三方脚本/资源变化", "human"),
     "citation_decay":       ("citation_panel decay 重写队列进 refresh 排期:更新过峰被引页(数据/时效/反共识钩)", "human"),
+    # R2-4 接线新增告警码(引荐域月检)
+    "backlink_drop":        ("核查外链获取是否停滞(outreach/数字 PR 投产比);对照 Ahrefs/Semrush 新增趋势与最近内容发布节奏", "human"),
+    "backlink_loss":        ("总引荐域大幅丢失:查 Search Console 手动操作处罚/外链被撤/导出口径是否变化;外链资产 6.5x 杠杆,优先复核", "human"),
 }
 
 # 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
@@ -512,6 +534,11 @@ def cmd_init(args):
             "secret 只经环境变量注入(channels 只存 env 引用名,写明文会被 save_config 拒绝)",
             "GSC 流量检查:每次 run 前把 GSC 导出放到 " + os.path.join(mdir, "gsc.csv") +
             "(列含 Query,Clicks,Impressions);没有该文件则跳过流量问",
+            "月检引荐域(R2-4):每月 run --checks monthly 前把最新外链导出放到 " +
+            os.path.join(mdir, BACKLINKS_CSV) +
+            "(backlink_import.py 统一格式,或 Ahrefs/Semrush/GSC 原始导出自动归一);"
+            "没有该文件则跳过引荐域问;新增域暴跌>50%→backlink_drop(warn),"
+            "总域降>10%→backlink_loss(critical)",
             "阈值是经验起点,按 alert-threshold-guide.md 用本站基线校准",
             "key_pages 支持对象形式: {\"path\": \"/p\", \"expect_substring\": \"Price\", "
             "\"selector\": \"h1\" 或 \"re:<regex>\"}(关键词在场断言+字段级 diff 圈定)",
@@ -1417,6 +1444,68 @@ def check_citation_decay(mdir):
     return out
 
 
+def check_backlinks(mdir, cfg=None, now=None):
+    """R2-4:引荐域月检(第 6 检查组)——monitor 目录 backlinks.csv(同 gsc.csv 模式;
+    cfg.backlinks_csv 或 run --backlinks 可覆盖路径)→ 快照口径:
+      refdomains_total 引荐域总数;refdomains_new 当月新增域数(各域最早 first_seen
+      落在近 BACKLINK_NEW_WINDOW_DAYS 天;导出无任何可解 first_seen(GSC 简易表)
+      → None 不猜);domains 域清单(截断 BACKLINK_DOMAIN_CAP,diff 报丢失样本用)。
+    导入侧零依赖 import 兄弟 backlink_import.parse_export(统一/Ahrefs/Semrush/GSC
+    四形态通吃);无文件 → skipped 不猜;嗅探/解析失败 → error 不猜(防假 0:
+    run 侧落 partial + 退出码 2,绝不把"读不了"当"外链归零")。"""
+    out = {"check": "backlinks", "state": "skipped", "metrics": {}, "notes": []}
+    cfg = cfg or {}
+    path = cfg.get("backlinks_csv") or os.path.join(mdir, BACKLINKS_CSV)
+    if not os.path.exists(path):
+        out["notes"].append("未找到 %s(外链导出;backlink_import.py 产出的统一格式或"
+                            "Ahrefs/Semrush/GSC 原始导出)→ 引荐域月检跳过,不猜数" % BACKLINKS_CSV)
+        return out
+    try:
+        bi = _import_sibling("backlink_import")
+        parsed = bi.parse_export(path)
+    except Exception as e:
+        out["state"] = "error"
+        out["metrics"] = {"error": "backlinks.csv 读取/嗅探/解析失败: %s" % e}
+        out["notes"].append("外链导出损坏(嗅探不出格式/解析异常)→ 不猜;run 将记 partial 并退出码 2")
+        return out
+    now = now or datetime.now()
+    cutoff = now - timedelta(days=BACKLINK_NEW_WINDOW_DAYS)
+    earliest, any_fs = {}, False           # domain → 最早 first_seen;是否有任何可解日期
+    for r in parsed["rows"]:
+        dom = (r.get("referring_domain") or "").strip().lower()
+        if not dom:
+            continue
+        d = bi.parse_date(r.get("first_seen"))
+        if d is None:
+            continue
+        any_fs = True
+        if dom not in earliest or d < earliest[dom]:
+            earliest[dom] = d
+    domains = sorted({(r.get("referring_domain") or "").strip().lower()
+                      for r in parsed["rows"] if (r.get("referring_domain") or "").strip()})
+    total = len(domains)
+    new_n = sum(1 for d in earliest.values() if d >= cutoff.date()) if any_fs else None
+    truncated = total > BACKLINK_DOMAIN_CAP
+    out["state"] = "ok"
+    out["metrics"] = {
+        "refdomains_total": total,
+        "refdomains_new": new_n,
+        "format": parsed["format"],
+        "unique_urls": len(parsed["rows"]),
+        "domains": domains[:BACKLINK_DOMAIN_CAP],
+        "domains_truncated": truncated,
+        "file_mtime": datetime.fromtimestamp(os.path.getmtime(path)).isoformat(timespec="seconds"),
+    }
+    out["notes"].append("口径:导出全量去重后引荐域 %d;%s;每次月检前刷新文件,"
+                        "比较的是两次月检 run 之间" % (
+                            total,
+                            "近 %d 天新增域 %d" % (BACKLINK_NEW_WINDOW_DAYS, new_n)
+                            if new_n is not None else "导出无 first_seen(GSC 简易表),新增数不猜"))
+    if new_n is not None:
+        out["notes"].append("backlink_drop 判定依赖该新增数;GSC 简易表形态只保 backlink_loss 总数判定")
+    return out
+
+
 class Budget:
     """单次运行时长上限(学 geo-score 的 budget 思路):超即中止后续检查。"""
 
@@ -1477,6 +1566,9 @@ def run_checks(mdir, cfg, kind, budget):
             results["cwv_field"] = check_cwv_field(site, cfg)
         # R0-4:citation decay(本地 panel.json 计算,无网络,不吃 budget)
         results["citation"] = check_citation_decay(mdir)
+    if kind == "monthly":
+        # R2-4:引荐域月检(本地导出解析,无网络,不吃 budget;无文件自报 skipped)
+        results["backlinks"] = check_backlinks(mdir, cfg)
     return results
 
 
@@ -1532,6 +1624,8 @@ def ping_heartbeat(url, ok, timeout=10):
 def cmd_run(args):
     mdir = args.dir
     cfg = load_config(mdir)
+    if getattr(args, "backlinks", ""):   # R2-4:月检外链导出路径覆盖(缺省 <dir>/backlinks.csv)
+        cfg["backlinks_csv"] = args.backlinks
     with monitor_lock(mdir):
         conn = open_db(mdir)
         swept = sweep_stale_runs(conn)
@@ -1563,7 +1657,7 @@ def cmd_run(args):
 
         states = {}
         for grp in ("robots", "home", "redirects", "visibility", "gsc", "sitemap", "llms_txt",
-                    "ssl", "cwv_field", "citation"):
+                    "ssl", "cwv_field", "citation", "backlinks"):
             st = (results.get(grp) or {}).get("state")
             if st:
                 states[grp] = st
@@ -1572,8 +1666,11 @@ def cmd_run(args):
         budget_truncated = any(
             (results.get(g) or {}).get("metrics", {}).get("budget_truncated")
             for g in ("sitemap", "robots", "home", "visibility", "llms_txt", "ssl"))
+        # R2-4 防假 0:月检 backlinks.csv 损坏(文件在但嗅探/解析失败)→ run 落 partial
+        # (半截数据不充当 diff 基线)+ 退出码 2(数据错误,绝不静默当作"外链归零")
+        backlinks_corrupt = (results.get("backlinks") or {}).get("state") == "error"
         run_status = "ok"
-        if "budget_skipped" in statuses or budget_truncated:
+        if "budget_skipped" in statuses or budget_truncated or backlinks_corrupt:
             run_status = "partial"    # 半截数据:入库但不充当 diff 基线(audit 05-§2)
         elif statuses and all(s == "error" for s in statuses):
             run_status = "failed"
@@ -1595,7 +1692,7 @@ def cmd_run(args):
             conn.execute("DELETE FROM runs WHERE id=?", (run_id,))
             conn.commit()
             conn.close()
-            return 0 if run_status == "ok" else 3
+            return 2 if backlinks_corrupt else (0 if run_status == "ok" else 3)
 
         now = datetime.now().isoformat(timespec="seconds")
         conn.execute(
@@ -1627,10 +1724,11 @@ def cmd_run(args):
         if total == 1:
             print("[i] 首次 run=基线;下一步跑 diff(与下次 run 对比才有告警)")
         conn.close()
-    # dead man's switch:成功/失败分别 ping(audit 18;rc=3 的静默空窗由 /fail 堵住)
+    # dead man's switch:成功/失败分别 ping(audit 18;rc=3 的静默空窗由 /fail 堵住;
+    # rc=2 的 backlinks.csv 损坏同走 /fail——数据错误也算一次不成功的 run)
     heartbeat = cfg.get("heartbeat_url") or os.environ.get("SEO_MONITOR_HEARTBEAT_URL")
     ping_heartbeat(heartbeat, ok=(run_status == "ok"))
-    return 0 if run_status == "ok" else 3
+    return 2 if backlinks_corrupt else (0 if run_status == "ok" else 3)
 
 
 def snapshot_from_results(results):
@@ -1704,6 +1802,12 @@ def snapshot_from_results(results):
         put("citation", "decay", dict(ct.get("metrics") or {}))
     elif ct.get("state"):
         put("citation", "decay", {"state": ct["state"]})
+    # R2-4:引荐域月检(非 ok 只落 state,diff 侧不产 backlink_*)
+    bl = results.get("backlinks", {})
+    if bl.get("state") == "ok":
+        put("backlinks", "refdomains", dict(bl.get("metrics") or {}))
+    elif bl.get("state"):
+        put("backlinks", "refdomains", {"state": bl["state"]})
     return snap
 
 
@@ -2254,6 +2358,32 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None, volatilit
             "进 refresh/重写排期(citation_panel decay)" % ccd["decayed_count"],
             {"decayed_count": ccd["decayed_count"], "rewriting": ccd.get("rewriting"),
              "per_engine": ccd.get("per_engine"), "panel": ccd.get("panel")})
+
+    # --- 月检:引荐域变化(R2-4;外链 6.5x 杠杆此前零监测)---
+    # 防假 0:check 侧 error/skipped 只落 state,isinstance int 门直接挡住——绝不把
+    # "读不了导出"判成"外链归零";无上月快照(首月建基线)/上月无数据 → 不猜。
+    # 阈值严格大于才触发(总域 −10%/新增 −50% 恰等于阈值不告警)。
+    cbl = (curr.get("backlinks") or {}).get("refdomains", {})
+    pbl = (prev.get("backlinks") or {}).get("refdomains", {})
+    ctot, ptot = cbl.get("refdomains_total"), pbl.get("refdomains_total")
+    if isinstance(ctot, int) and isinstance(ptot, int):
+        d = pct_drop(ptot, ctot)
+        if d is not None and d * 100 > float(th.get("backlink_total_drop_pct", 10)):
+            prev_doms, curr_doms = set(pbl.get("domains") or []), set(cbl.get("domains") or [])
+            lost = sorted(prev_doms - curr_doms)
+            add("critical", "backlink_loss", "refdomains",
+                "总引荐域 %d → %d(−%.0f%%)——外链大量丢失(处罚/被撤链/导出口径变化)"
+                % (ptot, ctot, d * 100),
+                {"prev": ptot, "curr": ctot, "pct": round(d * 100, 1),
+                 "lost_sample": lost[:10], "lost_total": len(lost),
+                 "domains_snapshot_truncated": bool(
+                     pbl.get("domains_truncated") or cbl.get("domains_truncated"))})
+        cnew, pnew = cbl.get("refdomains_new"), pbl.get("refdomains_new")
+        nd = pct_drop(pnew, cnew)
+        if nd is not None and nd * 100 > float(th.get("backlink_newref_drop_pct", 50)):
+            add("warn", "backlink_drop", "refdomains",
+                "引荐域新增 %d→%d,外链获取停滞或丢失" % (pnew, cnew),
+                {"prev_new": pnew, "curr_new": cnew, "pct": round(nd * 100, 1)})
 
     # --- 关键页字段级漂移(P1-11:title/meta/canonical/og/watch 分字段,替全页 hash)
     # + D1 P2:removed 语义(新值空且旧值非空 → meta_removed warn,区别于 changed info)、
@@ -2828,9 +2958,13 @@ def build_parser():
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_init)
     p = sub.add_parser("run", help="跑一轮检查并写库")
-    p.add_argument("--checks", choices=["daily", "weekly"], default="daily")
+    p.add_argument("--checks", choices=["daily", "weekly", "monthly"], default="daily",
+                   help="检查集:日检四问 / 周检叠加 / 月检叠加引荐域 backlinks.csv(R2-4)")
     p.add_argument("--dry-run", action="store_true", help="执行但不写库")
     p.add_argument("--budget-minutes", type=float, default=None, help="单次运行时长上限(默认取 config)")
+    p.add_argument("--backlinks", default="",
+                   help="月检外链导出路径(缺省 <dir>/backlinks.csv,同 gsc.csv 模式;"
+                        "backlink_import 统一格式或 Ahrefs/Semrush/GSC 原始导出)")
     p.add_argument("--dir", default=DEFAULT_DIR)
     p.set_defaults(func=cmd_run)
     p = sub.add_parser("diff", help="与上次 run 对比,超阈值才告警")

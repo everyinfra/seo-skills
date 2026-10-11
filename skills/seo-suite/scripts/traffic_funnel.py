@@ -41,6 +41,7 @@ DEEPRANK_ROUNDS = 20
 SIMHASH_BITS = 64
 DUP_HAMMING = 3                                      # 自定[推断]:Lumar 未公开
 BAR_WIDTH = 24
+SCHEMA_VERSION = 1          # --json 顶层 schema 版本(输出契约)
 
 USAGE = """usage: traffic_funnel.py --audit audit.json [--gsc gsc.csv] [--cwv cwv.csv] [--urls urls.txt] [--json]
        traffic_funnel.py --urls urls.txt [--json]
@@ -439,7 +440,8 @@ def compute_report(pages, gsc=None, cwv=None):
     entered = len(pages)
     evaluated = [s for s in stages if s["pages_in"]]   # 最后一个真正评估过的阶段
     through = evaluated[-1]["pages_through"] if evaluated else 0
-    return {"tool": "traffic_funnel", "mode": "funnel", "entered": entered, "through": through,
+    return {"schema_version": SCHEMA_VERSION, "tool": "traffic_funnel", "mode": "funnel",
+            "entered": entered, "through": through,
             "cumulative_rate": round(through / entered, 4) if entered else None,
             "funnel_truncated_at": truncated, "coverage": None, "stages": stages}
 
@@ -526,7 +528,8 @@ def availability_sample(urls, timeout=FETCH_TIMEOUT):
            "dropped_total": entered - len(keep),
            "dropped_urls": [{"url": u, "reason": reasons[u] or ""} for u in urls
                             if reasons.get(u)][:20]}
-    return {"tool": "traffic_funnel", "mode": "availability_sample", "entered": entered,
+    return {"schema_version": SCHEMA_VERSION, "tool": "traffic_funnel",
+            "mode": "availability_sample", "entered": entered,
             "through": len(keep),
             "cumulative_rate": round(len(keep) / entered, 4) if entered else None,
             "funnel_truncated_at": None,

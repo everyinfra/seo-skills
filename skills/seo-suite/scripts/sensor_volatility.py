@@ -288,6 +288,7 @@ def render_markdown(src, dates, days, qcount, warnings, movers):
 
 def build_payload(src, dates, days, qcount, warnings, movers):
     return {
+        "schema_version": 1,
         "tool": "sensor_volatility",
         "source": src,
         "date_range": {"first": dates[0], "last": dates[-1],

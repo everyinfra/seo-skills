@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 62,
+  "script": 69,
   "template": 24,
   "reference": 13,
   "stable": 70,
-  "beta": 28,
+  "beta": 35,
   "draft": 1
  },
  "entries": [
@@ -1346,6 +1346,97 @@
    "data_source": "GSC Search Analytics API(真实 OAuth RS256,纯 stdlib RSA)",
    "fallback_mode": "②",
    "tests_file": "tests/test_gsc_api.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "backlink_import.py",
+   "group": "scripts/数据接入",
+   "inputs": [
+    "Ahrefs/Semrush/GSC 外链导出 CSV"
+   ],
+   "outputs_schema": "csv",
+   "data_source": "BYO 三格式嗅探归一(统一 schema 直喂 cite_domain)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_backlink_import.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "indexnow.py",
+   "group": "scripts/数据接入",
+   "inputs": [
+    "--host --key --urls(Bing/Yandex/Naver 端点)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "IndexNow 协议提交(零 key;Google 不支持)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_indexnow.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "bing_wmt.py",
+   "group": "scripts/数据接入",
+   "inputs": [
+    "env BING_WMT_KEY(免费,需站点验证)"
+   ],
+   "outputs_schema": "csv",
+   "data_source": "Bing Webmaster API 薄客户端(状态/提交/QueryStats→gsc 契约 CSV)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_bing_wmt.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "byo_import.py",
+   "group": "scripts/数据接入",
+   "inputs": [
+    "Screaming Frog/SERP/关键词表导出"
+   ],
+   "outputs_schema": "csv",
+   "data_source": "第三方导出归一入口(三 kind 自动嗅探)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_byo_import.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "parity_check.py",
+   "group": "scripts/多语言实装",
+   "inputs": [
+    "--source --target 双语页"
+   ],
+   "outputs_schema": "json",
+   "data_source": "双语对照 QA(长度平价带 markets.json/结构对照/JSON-LD 一致)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_parity_check.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "pseo_pattern_mining.py",
+   "group": "scripts/内容运营",
+   "inputs": [
+    "GSC queries 导出+URL 清单/sitemap"
+   ],
+   "outputs_schema": "json",
+   "data_source": "pSEO 模式挖掘(16 正则+CJK 表/gates §8 打分/GO·WATCH·白空间)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_pseo_pattern.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "pseo_batch_gate.py",
+   "group": "scripts/内容运营",
+   "inputs": [
+    "批次 jsonl+可选渲染产物"
+   ],
+   "outputs_schema": "json",
+   "data_source": "pSEO 批次闸(数据闸/爆炸预警/Simhash 唯一度/样板比/页型地板/STOP·WARN)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_pseo_batch.py",
    "status": "beta"
   }
  ]

@@ -32,8 +32,16 @@ home 路径→<home> / email→<redacted-email> / token·password·secret·api_k
                                # 数据源/是否已配/获取(data-onboarding.md 锚)/降级;
                                # 结尾报当前 tier 与立即可跑能力数;复用 tier 探测
                                # (零网络/只看存在性);不改 ready 判定与退出码契约
+  python3 doctor.py --keys --print-env
+                               # env 模板:全部支持键名+一行注释的 shell 模板(值留空,
+                               # 可整段粘进 shell profile;键集=data-onboarding.md T1-T4
+                               # + SEO_MONITOR_* 通知/监控组,R2-9)
+  python3 doctor.py --keys --check [--json]
+                               # 逐键校验已配置项(只探存在性不读值,复用 redact);
+                               # keys 模式独立 exit 0,不做 ready 判定
 
-退出码:0=ready / 3=需处理(doctor 契约;channels/tier/net 为信息项不影响 ready)。
+退出码:0=ready / 3=需处理(doctor 契约;channels/tier/net 为信息项不影响 ready;
+--keys 模式独立 exit 0)。
 """
 import argparse
 import glob
@@ -376,6 +384,60 @@ def _print_wizard(wiz, tier):
                     "+".join(tier["capabilities"]), wiz["items_ready"], wiz["items_total"])))
 
 
+# ---------- keys manifest(--keys 模式;R2-9:env 模板生成+校验) ----------
+# 键全集梳自 data-onboarding.md T1-T4 凭证阶梯 + SEO_MONITOR_* 通知/监控组
+# (notify.py 渠道与 monitor.py 心跳的实测 env 消费者;gsc_api.py 的 GSC_SA_FILE 寻径)。
+# 探测纪律与 detect_tier 同源:只看键名存在性,绝不读值;输出全过 redact。
+
+# (env 名, tier 组, 一行注释)
+KEY_MANIFEST = (
+    ("PSI_API_KEY", "T1", "PageSpeed Insights API key(免费;GCP 控制台→凭据→API 密钥,约 5 分钟)"),
+    ("CRUX_API_KEY", "T1", "Chrome UX Report API key(免费;与 PSI 同路径申请)"),
+    ("GSC_SA_FILE", "T2", "GSC 服务账号 JSON 文件路径(gsc_api.py 寻径 --sa > --key > $GSC_SA_FILE > gsc.json)"),
+    ("BING_WMT_KEY", "T4", "Bing Webmaster Tools API key(免费;R2-5 规划中,暂无脚本消费)"),
+    ("SEO_MONITOR_SLACK_WEBHOOK", "notify", "Slack 告警 webhook(notify.py 渠道)"),
+    ("SEO_MONITOR_SLACK_CONTENT_WEBHOOK", "notify", "Slack 内容类告警第二 webhook(P0-3 建议路由用)"),
+    ("SEO_MONITOR_DISCORD_WEBHOOK", "notify", "Discord 告警 webhook(notify.py 渠道)"),
+    ("SEO_MONITOR_TG_TOKEN", "notify", "Telegram bot token(与 SEO_MONITOR_TG_CHAT 成对)"),
+    ("SEO_MONITOR_TG_CHAT", "notify", "Telegram chat id(与 SEO_MONITOR_TG_TOKEN 成对)"),
+    ("SEO_MONITOR_WEBHOOK_URL", "notify", "通用 webhook,Apprise 式(jsons:// forms:// texts:// 裸 https)"),
+    ("SEO_MONITOR_SMTP_PASS", "notify", "email 渠道 SMTP 密码(结构字段在 .seo-monitor/config.json)"),
+    ("SEO_MONITOR_HEARTBEAT_URL", "monitor", "dead-man 心跳 URL(monitor.py 周期存活探测)"),
+)
+
+KEY_GROUP_LABELS = {
+    "T1": "T1 CWV 现场数据 key(免费;data-onboarding.md 凭证阶梯)",
+    "T2": "T2 GSC(CSV 导出零门槛;API 自动化走 OAuth)",
+    "T4": "T4 商业/平台 API(按量计费或免费申请)",
+    "notify": "SEO_MONITOR_* 通知组(notify.py 渠道;secret 只经 env 注入)",
+    "monitor": "SEO_MONITOR_* 监控组(monitor.py)",
+}
+
+
+def keys_env_template():
+    """--keys --print-env:全部支持 env 名的 shell 模板(键名+一行注释,值留空)。
+    纯 # 注释与空值 export,可整段粘进 shell profile;键名与顺序由 KEY_MANIFEST 唯一决定。"""
+    L = ["# seo-suite env 模板(doctor.py --keys --print-env 生成;R2-9 keys manifest)",
+         "# 纪律:key 只进环境变量或 ~/.config/seo-suite/(chmod 600),永不进 git/日志/报告",
+         "#(data-onboarding.md §三;doctor 全输出过 redact,只探存在性不读值)",
+         ""]
+    last = None
+    for env_name, tier, note in KEY_MANIFEST:
+        if tier != last:
+            L.append("# --- %s ---" % KEY_GROUP_LABELS[tier])
+            last = tier
+        L.append('export %s=""  # %s' % (env_name, note))
+    return "\n".join(L) + "\n"
+
+
+def keys_check(env=None):
+    """--keys --check:逐键存在性探测(非空即已配;绝不读值)。
+    返回 [{env,tier,note,configured}](顺序同 KEY_MANIFEST)。"""
+    env = os.environ if env is None else env
+    return [{"env": k, "tier": tier, "note": note, "configured": bool(env.get(k))}
+            for k, tier, note in KEY_MANIFEST]
+
+
 # ---------- 输出 / CLI ----------
 
 LABELS = {"python": "Python", "markets": "markets", "templates": "templates",
@@ -396,7 +458,10 @@ EPILOG = """\
   T2 ~/.config/seo-suite/gsc.json 含 credentials 键 → +GSC
   T3 另含 ga4_property_id 键 → +GA4
 
-退出码: 0=ready / 3=需处理(channels/tier/net 不影响 ready)。"""
+--keys 键清单模式(R2-9):--print-env 出模板 / --check 校验;
+  键全集 = T1-T4(PSI/CRUX/GSC_SA_FILE/BING_WMT_KEY)+ SEO_MONITOR_* 组。
+
+退出码: 0=ready / 3=需处理(channels/tier/net 不影响 ready;--keys 模式独立 exit 0)。"""
 
 
 def build_parser():
@@ -414,6 +479,13 @@ def build_parser():
                          "降级;结尾报当前 tier 与立即可跑能力数;复用 tier 探测,不改 ready 判定")
     ap.add_argument("--want", default="", metavar="a,b,c",
                     help="向导枚举过滤(须与 --wizard 同用):%s;默认全列" % "/".join(WANT_CHOICES))
+    ap.add_argument("--keys", action="store_true",
+                    help="env 键清单模式(R2-9):须与 --print-env 或 --check 同用;"
+                         "键全集=data-onboarding.md T1-T4 + SEO_MONITOR_* 组;独立 exit 0")
+    ap.add_argument("--print-env", action="store_true", dest="print_env",
+                    help="须与 --keys 同用:输出全部支持 env 名+一行注释的 shell 模板(值留空)")
+    ap.add_argument("--check", action="store_true",
+                    help="须与 --keys 同用:校验已配置项(只探存在性,不读值;复用 redact)")
     return ap
 
 
@@ -427,6 +499,33 @@ def main(argv=None):
             build_parser().error("--want 未知项: %s(合法: %s)" % (bad, "/".join(WANT_CHOICES)))
         if not args.wizard:
             build_parser().error("--want 需与 --wizard 同用")
+    if (args.print_env or args.check) and not args.keys:
+        build_parser().error("--print-env/--check 需与 --keys 同用")
+
+    if args.keys:                                       # keys 模式:独立 exit 0,不做 ready 判定
+        if args.wizard or args.want:
+            build_parser().error("--keys 与 --wizard 互斥(单模式运行)")
+        if args.print_env and args.check:
+            build_parser().error("--keys 的 --print-env 与 --check 互斥(二选一)")
+        if not args.print_env and not args.check:
+            build_parser().error("--keys 需与 --print-env(env 模板)或 --check(已配校验)同用")
+        if args.print_env:
+            print(redact(keys_env_template()), end="")  # 键名+注释,值留空,无泄密面
+            return 0
+        items = keys_check()
+        done = sum(1 for i in items if i["configured"])
+        if args.json:
+            print(redact(json.dumps({"keys": items, "configured": done,
+                                     "total": len(items)},
+                                    ensure_ascii=False, indent=2)))
+        else:
+            print(redact("keys: 已配置 %d/%d(只探存在性,不读值)" % (done, len(items))))
+            for i in items:
+                print(redact("  [%s] %s — %s %s" % ("✓" if i["configured"] else "✗",
+                                                    i["env"], i["tier"], i["note"])))
+            print("(输出 intentionally omits absolute paths and environment values)")
+        return 0
+
     checks, tier = run_checks(net=args.net)
     hard = [c for c in checks if c["id"] in HARD_IDS and not c["pass"]]
     ready = not hard

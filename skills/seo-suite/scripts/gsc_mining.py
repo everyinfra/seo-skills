@@ -96,7 +96,7 @@ def main():
                             "delta": f"{(c-pc[q])/pc[q]:.0%}"})
         out.sort(key=lambda x: x["prev"]-x["cur"], reverse=True)
         if as_json:
-            print(json.dumps({"mode": "decay", "declined": out[:30]}, ensure_ascii=False, indent=1))
+            print(json.dumps({"schema_version": 1, "mode": "decay", "declined": out[:30]}, ensure_ascii=False, indent=1))
             return
         print("== 流量衰退(28d vs 28d, ≤-25%) ==")
         for o in out[:30]: print(f"{o['query']:<40} {o['prev']:>6}→{o['cur']:<6} {o['delta']}")
@@ -115,7 +115,7 @@ def main():
                 if gap > 0.02: lw.append((get(r, "query"), pos, impr, ctr, gap))
         sd.sort(key=lambda x: -x[2]); lw.sort(key=lambda x: -x[4]*x[2])
         if as_json:
-            print(json.dumps({"mode": "query",
+            print(json.dumps({"schema_version": 1, "mode": "query",
                               "striking_distance": [{"query": q, "pos": p, "impressions": int(i), "clicks": int(c)} for q, p, i, c in sd[:30]],
                               "low_ctr": [{"query": q, "pos": p, "impressions": int(i), "ctr": round(c, 4), "gap": round(g, 4)} for q, p, i, c, g in lw[:30]]},
                              ensure_ascii=False, indent=1))
@@ -138,7 +138,7 @@ def main():
                 cann.append({"query": q, "pages": len(pages), "weighted_pos": round(wpos, 1)})
         cann.sort(key=lambda x: -x["weighted_pos"])
         if as_json:
-            print(json.dumps({"mode": "matrix", "cannibalization": cann[:30]}, ensure_ascii=False, indent=1))
+            print(json.dumps({"schema_version": 1, "mode": "matrix", "cannibalization": cann[:30]}, ensure_ascii=False, indent=1))
             return
         print(f"== 蚕食(同query≥2页, 加权位次): {len(cann)} 组 ==")
         for o in cann[:30]: print(f"{o['query']:<40} {o['pages']}页 加权pos{o['weighted_pos']}")

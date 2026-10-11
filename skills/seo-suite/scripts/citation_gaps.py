@@ -60,6 +60,7 @@ import sys
 import traceback
 
 TOP_PAGES = 10
+SCHEMA_VERSION = 1          # --json 顶层 schema 版本(输出契约)
 SL_TLD = {"co.uk", "org.uk", "ac.uk", "gov.uk", "com.au", "net.au", "co.jp", "ne.jp",
           "or.jp", "com.cn", "net.cn", "org.cn", "com.br", "com.mx", "com.tr",
           "co.kr", "co.in", "co.za", "com.sg", "com.hk"}
@@ -467,7 +468,8 @@ def write_json(path, panel_path, panel, urls_sorted, doms_sorted, stats, brand_d
     counts = {}
     for g in doms_sorted:                       # 五分类域名计数(只增键,向后兼容)
         counts[g["source_class"]] = counts.get(g["source_class"], 0) + 1
-    payload = {"tool": "citation_gaps.py", "panel": os.path.abspath(panel_path),
+    payload = {"schema_version": SCHEMA_VERSION, "tool": "citation_gaps.py",
+               "panel": os.path.abspath(panel_path),
                "brand": panel.get("brand"), "brand_domains": sorted(brand_domains),
                "stats": stats,
                "domains": [_dom_row(g) for g in doms_sorted],
