@@ -143,7 +143,7 @@
 ### 4.3 新兴市场基线(引 markets)
 
 - 印尼:**移动 >82% 搜索流量,slow-4G 为测试基线**,CWV 全部按节流 4G 测([markets/id.md](../markets/id.md))——群岛网络现实使 LCP 每降 0.5s 都是实打实的转化杠杆。
-- 印度:搜索市场 ~75% 移动,移动端 Google 份额 ~99.2%([markets/hi.md](../markets/hi.md))。
+- 印度:搜索市场 ~75% 移动,移动端 Google 份额 ~98.64%(StatCounter 口径;Statista 记 ~99.2%,双口径并记见 [markets/hi.md](../markets/hi.md))。
 - 出海新兴市场时,"移动 p75 过线"是入场券而非优化项;东南亚/南亚目标站点以 slow-4G 达标为验收线。
 
 ### 4.4 移动特有的指标风险

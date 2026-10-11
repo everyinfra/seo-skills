@@ -19,6 +19,10 @@ v3 新增(2026-10-09,检查函数注册表 24→64):
   结构类(H2 疑问式占比/列表密度/标题关键词位次)、格式类(日期格式/电话前缀/货币符号)、
   语言类(ru 西里尔/ko 谚文/th 泰文字符占比)、robots 类(页面级 noai/noimageai/nosnippet)。
 --report 尾部打印该市场 special_checks 的 AUTO 比例(AUTO-OK+AUTO-FAIL / 总数)。
+v3.1 多语言分词断层修复(R5,2026-10-12):③proxy_kw 按语系分支(ja 假名 run/ko 谚文音节/
+th 泰文 run,纯文正文不再 None);④split_sents cjk/latin 两分支补全角！?;⑤th 支柱长度
+words 按字素/4 近似并标注;⑥th newline 句切——HTML 正文折叠前按块级标签/换行切块(纯文本
+换行拼回),不再折叠后恒 1 句。
 用法: python3 market_lint.py --market ja FILE [--url URL] [--report] [--json]
 FILE=HTML(<title>+meta description)或纯文本(title:/desc: 前缀行,其余正文;无前缀则第 1 行 title、第 2 行 desc)。
 --json: 结构化输出(market/exit_code/critical/warn/output 行数组,供 agent 消费)。
@@ -90,7 +94,13 @@ def parse_src(text):
              or re.search(r"<meta[^>]+content=[\"']([^\"']*)[\"'][^>]*name=[\"']description[\"']", text, re.I))
         desc = re.sub(r"\s+", " ", d.group(1)).strip() if d else ""
         body = re.sub(r"<script.*?</script>|<style.*?</style>", " ", text, flags=re.S | re.I)
-        body = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body)).strip()
+        # ⑥:块级标签先换成行边界再剥内联标签;按行折叠空白后用 \n 拼回——原实现把全部空白
+        # (含换行)折叠成单空格,th 的 newline 句切在 HTML 输入下恒得 1 句
+        body = re.sub(r"</?(?:p|div|li|h[1-6]|tr|blockquote|section|article|br)\b[^>]*>",
+                      "\n", body, flags=re.I)
+        body = re.sub(r"<[^>]+>", " ", body)
+        body = "\n".join(l for l in (re.sub(r"\s+", " ", ln).strip()
+                                     for ln in body.splitlines()) if l)
         return title, desc, body, True, text
     title, desc, lines = "", "", []
     for raw in text.splitlines():
@@ -109,16 +119,39 @@ def parse_src(text):
         title = lines.pop(0)
     if not desc and lines:
         desc = lines.pop(0)
-    return title, desc, " ".join(lines), False, None
+    # ⑥:换行拼回(原 " ".join 丢行边界——newline 句切规则对纯文本同样失效)
+    return title, desc, "\n".join(lines), False, None
 
 def split_sents(body, rule):
-    if rule == "newline":   # 泰文句号罕见,按换行
+    if rule == "newline":   # 泰文句号罕见,按换行(⑥:HTML 正文按块级标签/换行切块后保留 \n)
         parts = body.splitlines()
-    elif rule == "cjk":     # zh/ja
-        parts = re.split(r"[。!?!?]+", body)
-    else:
-        parts = re.split(r"[.!?]+", body)
+    elif rule == "cjk":     # zh/ja;④补全角！？(原字符类里 ！？ 实为半角 !? 重复,全角句终不切)
+        parts = re.split(r"[。！？!?]+", body)
+    else:                   # ④拉丁市场同样容忍全角！?(混排页面句终不漏切)
+        parts = re.split(r"[.!?！？]+", body)
     return [p.strip() for p in parts if p.strip()]
+
+
+def proxy_keyword(market, body):
+    """③多语言分词断层修复(R5): 正文高频词代理(标题关键词位次检查用)——按语系分支:
+    zh 汉字 bigram(原口径不变);ja 汉字 bigram + 假名 run(原汉字-only 漏 プロジェクト 类词);
+    ko 谚文音节 bigram(原 ≥5 连字要求漏 2-4 音节词,纯谚文正文恒 None);
+    th 泰文 run 含组合元音/声调(原 \\w 口径被 Mn 记号切碎,纯泰文正文恒 None);
+    其余市场 ≥5 字母词(原口径不变)。"""
+    if market in ("zh", "ja"):
+        grams = re.findall(r"[\u4e00-\u9fff]{2}", body)
+        if market == "ja":
+            # 假名 run 也取(平/片假名各成 run:片假名内容词不与平假名助词粘连)
+            grams += re.findall(r"[\u3041-\u309f]{2,}|[\u30a0-\u30ff]{2,}", body)
+    elif market == "ko":
+        grams = []
+        for run in re.findall(r"[\uac00-\ud7af]+", body):
+            grams += [run[i:i + 2] for i in range(len(run) - 1)]             # 谚文音节 bigram
+    elif market == "th":
+        grams = [r for r in re.findall(r"[\u0e00-\u0e7f]+", body) if len(r) >= 2]   # 泰文 run
+    else:
+        grams = [w.lower() for w in re.findall(r"[^\W\d_]{5,}", body)]
+    return Counter(grams).most_common(1)[0][0] if grams else None
 
 def hreflangs(raw):
     return re.findall(r"""hreflang\s*=\s*["']([^"']+)["']""", raw, re.I) if raw else []
@@ -977,12 +1010,8 @@ def _lint():
     ctx = {"market": market, "cfg": cfg, "title": title, "desc": desc, "body": body,
            "alltext": alltext, "is_html": is_html, "raw": raw, "letters": letters, "ar_ratio": ar_ratio,
            "lines": [] if is_html else [l for l in text.splitlines() if l.strip()]}
-    # v3:正文高频词代理(标题关键词位次检查用;CJK 用 2 字符 n-gram,拉丁用 ≥5 字母词)
-    if market in ("zh", "ja"):
-        grams = [g for g in re.findall(r"[\u4e00-\u9fff]{2}", body)]
-    else:
-        grams = [w.lower() for w in re.findall(r"[^\W\d_]{5,}", body)]
-    ctx["proxy_kw"] = Counter(grams).most_common(1)[0][0] if grams else None
+    # v3:正文高频词代理(③按语系分支:zh/ja 汉字 bigram+ja 假名 run / ko 谚文音节 / th 泰文 run)
+    ctx["proxy_kw"] = proxy_keyword(market, body)
     crit = warn = 0
 
     def crit_out(msg):
@@ -1179,10 +1208,17 @@ def _lint():
     # 支柱页长度(体裁提示)
     pm, pu = cfg.get("pillar_min"), cfg.get("pillar_unit", "words")
     if pm and body:
-        n = len(body) if pu == "chars" else len(body.split())
+        if pu == "chars":
+            n, approx = len(body), ""
+        elif market == "th":
+            # ⑤:泰文无词间空格,body.split() 恒≈行数不是词数——按字素/4 近似词数
+            # [推断:泰文均词长约 4 字素;精确分词须 Intl.Segmenter('th')],输出带标注
+            n, approx = unit_len(body, "grapheme") // 4, "(th 字素/4 近似[推断])"
+        else:
+            n, approx = len(body.split()), ""
         if n < pm:
             note = ";%s" % cfg["pillar_note"] if cfg.get("pillar_note") else ""
-            print("[INFO] 正文 %d %s < 支柱建议 %d %s%s" % (n, pu, pm, pu, note))
+            print("[INFO] 正文 %d %s%s < 支柱建议 %d %s%s" % (n, pu, approx, pm, pu, note))
 
     print("\n市场 %s:CRITICAL %d / WARN %d" % (market, crit, warn))
     print("引擎必查: %s" % ", ".join(cfg["engines"]))

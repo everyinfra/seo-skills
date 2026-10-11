@@ -11,6 +11,13 @@
 - 近期是否改版、迁移、换模板、改 URL、改 CMS
 - 有哪些数据：Search Console、GA4、排名工具、外链工具、日志、爬虫结果
 
+### 资源与约束四问(2026-10-12 并入,R1-5;策略适配层 [strategy-fit](strategy-fit.md) 的输入)
+
+- **资源投入**：内容产能（篇/月，自有写手还是外包）、开发资源（专职系数或每周可投入小时）、工具账号层级（T0 仅 GSC / 一套付费 SEO 工具 / 外链+排名追踪全配）、外包预算（月额度，无则 0）——喂给 strategy-fit 资源可行性系数 R 与 pSEO 分批上限（[programmatic-seo-gates](../technical/programmatic-seo-gates.md) 每批 50-100 页须产能可复核）；工具层级同时决定 [data-source-contract](data-source-contract.md) 的降级路径。
+- **风险容忍（各标高中低，分三类）**：pSEO 规模化（是否接受分批上线+闸门硬停线）、激进外链（购买/交换链接是否在桌面）、站群（卫星站/PBN 是否考虑）——喂给 strategy-fit 风险系数 K；**pSEO 类标"低"=闸门 STOP 即终审，不可被用户批准放行**；激进外链与站群默认不在白帽桌面，用户主动提出才按 [site-networks](../research/site-networks.md) 光谱评级并明示风险。
+- **时间窗**：硬 deadline（融资/旺季/发布会，精确到周）、可接受见效周期（4-8 周 / 一个季度 / 6 个月+）——喂给 strategy-fit 排序（窗口短于策略见效周期→标"窗口外"降位）与 pSEO 批次排期（首批上线周）；见效周期也是 forecast 三档 scenario 的判读口径。
+- **业务量化目标**：目标数字+口径（如"自然收入占比 12%→18%，口径=GA4 非品牌 organic 收入/总收入"、"非品牌 demo 注册/月 +50%"）——喂给 forecast `--actual` 校准（真实流量→calibration_factor）与 scenario 选型；strategy-fit 收益区间按此口径折算，禁用厂商案例数字直接对客承诺。
+
 ## 目标市场 intake(多语言/全球站必答,2026-10-08 并入)
 
 按命中的市场逐个过(细则见[多语言工作流](multilingual-workflow.md)市场总表):

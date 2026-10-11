@@ -1,0 +1,11 @@
+{
+  "_readme": [
+    "trend-watch workflow 样例配置(.github/workflows/trend-watch.yml 每 3h 读本文件)。",
+    "启用:把 vertical_tokens 换成你的真实垂直词(小写 token;HIGH 整词匹配 +25,部分 +10),然后删除 _sample 或改为 false——样例状态下 workflow 优雅跳过不跑。",
+    "可选键(缺省用脚本内置默认):wire_domains = {\"default\": [...], \"<市场码>\": [...]};thresholds = {relevance_min:25, window_news_h:24, window_analysis_h:72, wire_dominate_n:3, ig_views_min:5};reddit_subs = [\"你的产品垂直版块\"](默认兜底 r/technology,真实部署务必改)。",
+    "market 不在本文件——workflow 读仓库 Variable SEO_MARKET(缺省 en)。",
+    "状态与决策件不进 git:走 actions/cache 与 artifact(artifacts/trend-state.json、artifacts/trend-briefs/)。"
+  ],
+  "_sample": true,
+  "vertical_tokens": ["replace-me-vertical-token-1", "replace-me-vertical-token-2"]
+}

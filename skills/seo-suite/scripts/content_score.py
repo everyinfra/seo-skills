@@ -102,7 +102,12 @@ CODE_LOW_ASSOC = "insufficient_independent_association"   # 观察源 < 2(单竞
 CODE_NOT_NEUTRAL = "not_neutral_eligible"             # 与主词全等:身份词本体非中性话题
 
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
-CJK_RUN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
+# ①多语言断层修复(R5): CJK_RUN 对齐 CJK_RE(原仅汉字,与 CJK_RE 不一致——纯谚文/纯假名
+# 竞品正文 token 流恒空,术语表为空直接 FATAL)。分词策略见 cjk_script_runs/cjk_bigrams。
+CJK_RUN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]+")
+KANA_RUN_RE = re.compile(r"[\u3041-\u30fa\u30fc-\u30ff]+")   # 假名 run(含长音符 ー;中点・不计)
+HANGUL_RUN_RE = re.compile(r"[\uac00-\ud7af]+")               # 谚文音节 run
+HAN_RUN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
 LATIN_WORD = re.compile(r"[A-Za-z0-9][A-Za-z0-9'\-]*")
 MD_HEAD_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$", re.M)
 HTML_HEAD_RE = re.compile(r"<h([1-6])[^>]*>(.*?)</h\1>", re.I | re.S)
@@ -171,13 +176,47 @@ def first_100_words(text):
     return "".join(out)
 
 
-def cjk_bigrams(text):
-    """CJK 字 bigram(跳过功能字组合)。"""
-    grams = []
+def cjk_script_runs(text):
+    """CJK_RUN 内按语系再切(oracle_check.py _script_runs 思路自实现,不 import):
+    汉字/平假名/片假名/谚文各取连续段 → [("han"|"hiragana"|"katakana"|"hangul", seg), ...]。
+    平/片假名分家:片假名内容词不与平假名助词粘连(プロジェクトの → プロジェクト + の)。
+    纯汉字文本与旧 CJK_RUN 逐字节同结果(纯汉字 run 不跨语系)。"""
+    out = []
     for run in CJK_RUN.findall(text):
-        for i in range(len(run) - 1):
-            g = run[i:i + 2]
-            if g[0] in ZH_FUNC_CHARS and g[1] in ZH_FUNC_CHARS:
+        fam, buf = None, []
+        for ch in run:
+            if "\u3040" <= ch <= "\u309f":
+                f = "hiragana"
+            elif "\u30a0" <= ch <= "\u30ff":
+                f = "katakana"                      # 含长音符 ー(U+30FC)与中点・
+            elif "\uac00" <= ch <= "\ud7af":
+                f = "hangul"
+            else:
+                f = "han"
+            if f == fam:
+                buf.append(ch)
+            else:
+                if buf:
+                    out.append((fam, "".join(buf)))
+                fam, buf = f, [ch]
+        if buf:
+            out.append((fam, "".join(buf)))
+    return out
+
+
+def cjk_bigrams(text):
+    """①多语言断层修复: 汉字 run 按字 bigram(跳过功能字组合,口径不变);
+    谚文 run 按音节 bigram(谚文字=音节);假名 run(平/片假名各成 run)整段成 token——
+    日语假名连写即词、单假名 run 多为助词跳过;纯谚文/纯假名正文不再产出空 token 流。"""
+    grams = []
+    for fam, seg in cjk_script_runs(text):
+        if fam in ("hiragana", "katakana"):
+            if len(seg) >= 2:
+                grams.append(seg)
+            continue
+        for i in range(len(seg) - 1):
+            g = seg[i:i + 2]
+            if fam == "han" and g[0] in ZH_FUNC_CHARS and g[1] in ZH_FUNC_CHARS:
                 continue
             grams.append(g)
     return grams
@@ -188,7 +227,8 @@ def latin_words(text):
 
 
 def tokenize(text):
-    """统一 token 流: CJK bigram + 拉丁小写词(停用词滤除)——facts 覆盖/标题共现共用。"""
+    """统一 token 流: CJK 分语系 token(汉字 bigram/谚文音节 bigram/假名 run,①)
+    + 拉丁小写词(停用词滤除)——facts 覆盖/标题共现共用。"""
     toks = list(cjk_bigrams(text))
     toks += [w for w in latin_words(text) if w not in EN_STOP and len(w) > 1]
     return toks
@@ -266,7 +306,9 @@ def extract_terms(comp_texts):
 
     grams = set()
     for t in comp_texts:
-        for run in CJK_RUN.findall(t):
+        # ①CJK_RUN 已对齐 CJK_RE 且按语系再切:谚文/假名段同样进 2-6 字候选段
+        # (纯谚文/纯假名竞品不再空表 FATAL;纯汉字结果与旧口径逐字节一致)
+        for _fam, run in cjk_script_runs(t):
             for ln in range(2, 7):                     # 2-6 字候选段
                 for i in range(len(run) - ln + 1):
                     g = run[i:i + ln]

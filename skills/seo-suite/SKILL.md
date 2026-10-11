@@ -48,7 +48,6 @@ metadata:
 - `grounding_page.py --facts brand.yaml`:品牌实体事实页生成(Rankscale 11 条:dl 事实/FAQ 含名/volatile 独立/is-NOT 消歧/JSON-LD 镜像);--check 校验已有页
 - `audit_compare.py --old a.json --new b.json`:两次审计对比(新增/已修复/delta 三清单+页级 changed);--baseline-gate N 回归门(Lumar Protect 语义)
 - `ci_format.py audit.json --format sarif|junit|github`:CI 输出格式化(SARIF 挂 Code Scanning/JUnit 挂测试报告/github 注解);配仓库根 action.yml 一站式 PR 门禁
-- monitor.py 的 visibility 检查支持 serp_source 源适配(bing 默认/duckduckgo 零 key/付费源注册位+对照表,config 可换)
 - `sensor_volatility.py --gsc gsc.csv`:自有词集 SERP 波动分(0-10 四档+z30 异常日);--context 供 monitor 告警附注"疑似算法更新而非站点问题"
 - `forecast.py --kws kws.csv`:SEO 商业提案六步(seoClarity 官方):est_traffic→校准系数持久化→三 scenario(rank3/pct10/pos2,>30 位不预测)→orders/value/acquisition_value;省钱+赚钱双结构;配 templates/monitor/forecast-report.md
 - `prioritize.py --audit audit.json`:条件优先级引擎(Botify 口径):18 条声明式规则+放大器+条件依赖型(noindex 意图/canonical PageRank)+segment 切换重算;"立即处理/值得探索"两栏
@@ -85,7 +84,7 @@ metadata:
 - `text_units.py`:按市场计量单位统计
 
 **AI/GEO 测量**
-- `citation_panel.py init|record|report|diff|decay|score`:采样面板(五状态/配对分母/Wilson CI);record `--answer-file` 自动提及检测(URL 掩码+实体词表自动填 mentioned/position);init 意图冻结分母(denominator_freeze 档案,分母不随答案漂移);report 按 branded·unbranded 分报(targeting 两栏各出全套指标+交叉错配计数);diff 配对差分(只对同 prompt×engine 且同指纹配对算 Δ,跨指纹强制标注"不可比");**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期/重写队列,官方常数 11 天);score=五维打分写回(硬 cap 机检+反通胀聚合);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
+- `citation_panel.py init|record|report|diff|decay|score`:采样面板(五状态/配对分母/Wilson CI);record `--answer-file` 自动提及检测(URL 掩码+实体词表自动填 mentioned/position);init 意图冻结分母(denominator_freeze 档案,分母不随答案漂移);report 按 branded·unbranded 分报(targeting 两栏各出全套指标+交叉错配计数);diff 配对差分(只对同 prompt×engine 且同指纹配对算 Δ,跨指纹强制标注"不可比");**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期双口径并记/重写队列——官方中位 11 天(2025-09 88.3 万页研究)与调研口径 ~4.5 周并记不选边,复测按短口径 W+2、刷新投入按长口径 8-12 周;两口径出处与分池规则见 multilingual-workflow.md);score=五维打分写回(硬 cap 机检+反通胀聚合);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
 - `fanout_analysis.py 输入.csv`:query fan-out 三桶(added/dropped/preserved)
 - `ai_referral_log.py < access.log`:AI referrer 下界分析(+--bot-ua 先行指标);**bot 四桶分类**(on_demand/search_index/training/agent)+failure_rate 两级+llms.txt 双基线;--attribution 出 GA4 正则+归因纪律+自报问卷
 - `citation_gaps.py --panel panel.json --brand-domains a.com`:引用缺口(竞品被引你没被的 URL+外联简报;has_competitor_run 高优先)+来源五分类(Editorial/Corporate/UGC/Reference/Own,逐域定性+行动提示)+gapLabel 七叉决策树(逐 prompt 诊断标签,competitor_owned 最高优先)→ 配 citation-outreach-brief.md 模板,与 cite_domain.py 串联
@@ -101,7 +100,7 @@ metadata:
 - `report_build.py --findings json --out html`:自包含报告(禁 script/80KB/>20 条=失败报告)
 
 **持续监控守护(从一次性审计到长期监控+自动完善)**
-- `monitor.py init|run|diff|report`:守护核心——日检四问(可见性 site: 抽查/流量 GSC/索引 robots+sitemap/存活状态码+混合内容)+周检趋势(title-meta 漂移/llms.txt/sitemap lastmod/AI 爬虫放行),SQLite 快照入库,diff 按百分比阈值×最小样本地板出四级告警(critical/warn/info/low=自愈);全模式 `--dry-run` + `--budget-minutes` 运行上限;部署模板见仓库 `.github/workflows/seo-monitor.yml`(本地 cron/launchd/claude -p 无头路径在注释里)
+- `monitor.py init|run|diff|report|quarantine|maintenance|sample-keypages`:守护核心——日检四问(可见性 site: 抽查/流量 GSC/索引 robots+sitemap/存活状态码+混合内容)+周检趋势(title-meta 漂移/llms.txt/sitemap lastmod/AI 爬虫放行),SQLite 快照入库,diff 按百分比阈值×最小样本地板出四级告警(critical/warn/info/low=自愈);quarantine 隔离坏 run(不再作 diff 基线)、maintenance 维护窗口(只记快照不产告警)、sample-keypages 按 sitemap 模板分组抽样建议 key_pages;visibility 检查支持 serp_source 源适配(bing 默认/duckduckgo 零 key/付费源注册位+对照表,config 可换);全模式 `--dry-run` + `--budget-minutes` 运行上限;部署模板见仓库 `.github/workflows/seo-monitor.yml`(本地 cron/launchd/claude -p 无头路径在注释里)
 - `notify.py`:告警分级路由器——slack/discord/telegram/SMTP 四渠道(secrets 走环境变量);critical 即时/warn 日批/info 周批/low 静默进报告
 - 方法论:[持续运营手册](references/monitoring/continuous-operations.md)(日四问/周趋势/月校准分层、四级 playbook、防疲劳三律、自动安全项 vs draft PR 人审边界)
 
@@ -116,6 +115,33 @@ metadata:
 - 需要看渲染后页面时，使用你的 AI 工具自带的浏览器能力，或由你提供渲染后的 HTML / 截图。
 
 ## 路由规则
+
+### 常见请求如何路由
+
+高频请求速查;分诊细则、多路由规则与不应误路由的负例见 [routing-rules.md](references/overview/routing-rules.md)。
+
+| 请求类型 | 路由 |
+|---|---|
+| 「给我做关键词研究」 | research |
+| 「为什么这个词排不上去」 | monitoring + research + technical |
+| 「流量/排名下滑了，帮我查根因」 | monitoring + research + technical:monitor diff → sensor_volatility --context → changelog(下跌日页面变更)→ gsc_mining --decay;完整链见 [capability-map.md](references/overview/capability-map.md) 任务链#9 |
+| 「掉量是不是算法更新造成的」 | monitoring:Google Search Status Dashboard 官方时间戳对齐 + sensor_volatility z30 异常日佐证;只按 Dashboard 所列确认事件归因 |
+| 「写一篇能排名的文章」 | content |
+| 「优化这篇文章让 AI 更容易准确引用」 | content |
+| 「做 competitor alternative / vs 页面规划」 | research + content + technical |
+| 「做 content pillars / topic clusters」 | research + content |
+| 「这篇旧文章掉量了，帮我 refresh」 | content + monitoring + technical |
+| 「做 technical SEO 审计」 | technical |
+| 「把审计发现变成工单，跟进到修复关闭」 | technical:envelope 封套 → remediation init(phase 定 SLA)→ 修复 → verify 对比新旧体检自动核销 → report 出达成率 |
+| 「加 Product / Breadcrumb / Organization schema」 | technical |
+| 「重构网站结构和内链」 | technical |
+| 「做 programmatic SEO 方案」 | technical |
+| 「看排名变化和告警」 | monitoring |
+| 「持续盯竞品排名变化」 | monitoring + research(明示降级:内置仅 citation_gaps 被引对照 / serp_overlap SERP 重叠近似;连续排名监控需自备外部排名追踪导出) |
+| 「本地起个守护,长期监控我的站并自动完善」 | monitoring(monitor.py+notify.py,continuous-operations.md) |
+| 「分析外链和权威度」 | monitoring |
+| 「评估要不要进多语言/新市场」 | overview:先过 [intake-checklists.md](references/overview/intake-checklists.md) 目标市场闸门,再按 [multilingual-workflow.md](references/overview/multilingual-workflow.md) 逐市场分开评分 |
+| 「不知道先做什么，帮我整体判断」 | overview |
 
 ### overview
 适用于：
@@ -177,7 +203,7 @@ metadata:
   - [references/markets/id.md](references/markets/id.md):印尼语区——baku/gaul 语域分流、EYD V 规范、低价机型/slow-4G 性能基线
   - [references/markets/hi.md](references/markets/hi.md):印地语区(印度)——Hinglish 三种书写现实、罗马化文本 AI 处理损耗、语音查询、lakh 分组
   - [references/markets/it.md](references/markets/it.md):意大利语区——it-CH 独立 locale、P.IVA/估算声明、it 市场工具栈
-  - [references/markets/tr.md](references/markets/tr.md):土耳其语区——第二个 Yandex 市场(~26%)、İ/ı 大小写陷阱、tanıtım yazısı 披露、Trendyol 站内搜索
+  - [references/markets/tr.md](references/markets/tr.md):土耳其语区——第二个 Yandex 市场(份额双口径必并记:StatCounter ~26% vs 本地点击实测 3-5%,交付以 Google 为主战场、Yandex 仅桌面重度受众作次级审计)、İ/ı 大小写陷阱、tanıtım yazısı 披露、Trendyol 站内搜索
   - [references/markets/vi.md](references/markets/vi.md):越南语区——有调/无调变体跟踪、标题词前 30 字符规则、Coc Cốc 本土引擎
   - [references/markets/th.md](references/markets/th.md):泰语区——无空格分词(Intl.Segmenter 定论)、字素计长、佛历日期、ครับ/ค่ะ 语体
   - [references/markets/pl.md](references/markets/pl.md):波兰语区——变音符规范化归组、sierotki 行首禁则、本地论坛生态
@@ -221,6 +247,7 @@ metadata:
 - `references/content/meta-tag-formulas.md`
 - `references/content/content-decay-signals.md`
 - `references/content/content-refresh-playbook.md`
+- [深度研究写作协议](references/content/deep-research-protocol.md):五轮检索设计(共识测绘→缺口→核实→反例→自检)+信息增益自检(n-gram 近似 IGS>0.5+独家观点 5-7)+引用纪律(具名+日期/不复述被引源)+反例与不确定性标注——"引擎奖励深度留下的表层特征,不奖励过程"
 
 输出要求：
 - 根据 `references/content/` 中的结构、写法要点和 playbook 直接生成 brief、meta、GEO 优化或 refresh 方案。
@@ -275,7 +302,6 @@ metadata:
 - [Agent 协议速查卡](references/technical/agent-protocols.md):14 协议一页对照(Content Signals/WebMCP/ARD…每卡:规则数字/验证命令/状态)
 - [审计规则全目录](references/technical/audit-rule-catalog.md):SEOmator 373 规则深读(三态计分/20 类权重/档位);P0/P1 79 条已扩 Sitebulb 式解释层(what/why/trigger/caveat/fix/export 九字段)
 - [Brand Records 品牌事实档案](references/content/brand-records.md):六记录(含批准术语/never-do)+YAML 格式+缺口协议+Grounding Page 11 条——内容起草前必读,oracle_check.py 的输入
-- [深度研究写作协议](references/content/deep-research-protocol.md):五轮检索设计(共识测绘→缺口→核实→反例→自检)+信息增益自检(n-gram 近似 IGS>0.5+独家观点 5-7)+引用纪律(具名+日期/不复述被引源)+反例与不确定性标注——"引擎奖励深度留下的表层特征,不奖励过程"
 - [多语言 GEO 证据与更新清单](references/research/multilingual-geo-evidence.md):fan-out 语言切换与引用池本地化/翻译有效但机翻政策级降权/独立语言 URL 自持权威/分市场杠杆表(Tistory·头条·Habr·知恵袋空置)/小语种唯一源红利——含 multilingual-workflow.md 的 9 项接入清单
 - [AI 回答五维打分卡](references/content/geo-scoring-rubric.md):回答质量闸(refusal/echo-only)+五维加权+硬 cap+绝对排名+情感校准+反通胀——对 citation_panel 采样回答做 agent 语义打分的标准
 - [niubigeo 深读](references/research/niubigeo-deep-read.md):6,848★ 五周爆发竞品(2026-09 创建)的架构深读与 Top 10 借鉴(提及检测 URL 掩码/gapLabel 七叉决策树/意图冻结分母/配对差分指纹/observed-consensus 词筛/D·K 纪律)——做 GEO 可见性功能前先查
@@ -335,6 +361,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/monitor/rank-report.md`
 - `templates/monitor/backlink-report.md`
 - `templates/monitor/performance-report.md`
+- `templates/monitor/alert-playbook.md`(值班告警处置剧本:按 L1-L3 三步排查,先排季节性与算法更新再查发布/页面变更)
 - `templates/monitor/ai-visibility-weekly.md`(Scrunch 六段周报:>5pp 才点名/恰好一条动作/全平则 stable no action needed)
 - `templates/monitor/ai-visibility-monthly.md`(月报五节:Executive Summary/Visibility/Competitive/Content Health 三分/Recommendations 恰好 3 动作)
 - `templates/monitor/citation-outreach-brief.md`(引用缺口外联简报)
@@ -345,29 +372,8 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 - `templates/audit/report-modes.md`(报告三模式:exec/dev/prospect 一表三裁+Today's priorities+建议四字段)
 - `templates/monitor/forecast-report.md`(管理层提案:五级漏斗+三档 scenario+省钱/赚钱双结构+ROI 五法)
 
-### 4. 示例库(examples/)
+### 5. 示例库(examples/)
 带日期目录的真实/合成示例(REPORT.md verdict-first+evidence/ 编号回溯+快照免责声明):site-audit-chain-example.com(真实站审计→健康分→修复计划全链)/citation-panel-demo(合成面板);新增示例的规范见 examples/CONVENTIONS.md
-- `templates/monitor/alert-playbook.md`
-
-## 常见请求如何路由
-
-| 请求类型 | 路由 |
-|---|---|
-| 「给我做关键词研究」 | research |
-| 「为什么这个词排不上去」 | research + technical |
-| 「写一篇能排名的文章」 | content |
-| 「优化这篇文章让 AI 更容易准确引用」 | content |
-| 「做 competitor alternative / vs 页面规划」 | research + content + technical |
-| 「做 content pillars / topic clusters」 | research + content |
-| 「这篇旧文章掉量了，帮我 refresh」 | content + monitoring + technical |
-| 「做 technical SEO 审计」 | technical |
-| 「加 Product / Breadcrumb / Organization schema」 | technical |
-| 「重构网站结构和内链」 | technical |
-| 「做 programmatic SEO 方案」 | technical |
-| 「看排名变化和告警」 | monitoring |
-| 「本地起个守护,长期监控我的站并自动完善」 | monitoring(monitor.py+notify.py,continuous-operations.md) |
-| 「分析外链和权威度」 | monitoring |
-| 「不知道先做什么，帮我整体判断」 | overview |
 
 ## 特别约束
 

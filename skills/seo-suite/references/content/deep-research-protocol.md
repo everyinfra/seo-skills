@@ -132,7 +132,7 @@
 
 ## Method Notes
 
-- 证据分级:【调研 2026-10】=2026-10 定向调研已验证结论(检索为漏斗瓶颈/内联具名引用+统计数字 +30–40% 与出站链接无效/信息增益 5–7 独家观点与 IGS>0.5/引擎奖励深度的表层特征含反例与不确定性标注与答案前置前 30%/引用半衰期 4.5 周);官方与深读锚点:38–40% 前 100 词=content-brief 既有口径;引语格式/References 阈/信息增益四源=quotable-content-examples.md(kostja94 深读);信息增益门槛一句话版=content-strategy-framework.md(marketingskills 深读);五页型/14 天复测/四行报告/刷新触发=fire-your-seo-agency 深读(multilingual-workflow.md 第十二节);双层质量门=越南 t0mmy 模式(multilingual 跨区原则 21);分词先于密度=跨区原则 20;C-SEO Bench 未重现约束=geo-evidence.md。
+- 证据分级:【调研 2026-10】=2026-10 定向调研已验证结论(检索为漏斗瓶颈/内联具名引用+统计数字 +30–40% 与出站链接无效/信息增益 5–7 独家观点与 IGS>0.5/引擎奖励深度的表层特征含反例与不确定性标注与答案前置前 30%/引用半衰期 4.5 周——另一口径 Profound 官方中位 11 天,双口径并记见 multilingual-workflow.md 12.1);官方与深读锚点:38–40% 前 100 词=content-brief 既有口径;引语格式/References 阈/信息增益四源=quotable-content-examples.md(kostja94 深读);信息增益门槛一句话版=content-strategy-framework.md(marketingskills 深读);五页型/14 天复测/四行报告/刷新触发=fire-your-seo-agency 深读(multilingual-workflow.md 第十二节);双层质量门=越南 t0mmy 模式(multilingual 跨区原则 21);分词先于密度=跨区原则 20;C-SEO Bench 未重现约束=geo-evidence.md。
 - 本文件是 references/ 文档:入仓即受 freshness.py 头部日期扫描(建于行已带);不被 self_check 七段式强制(仅 templates/ 受检),但保留 The answer/What could change this conclusion/Method Notes 结构与全库交付纪律一致。
 - 实施依赖:无新脚本——全部机检锚点用现有脚本;若后续为第三节实现独立 `igs_check.py`(草稿×竞品文集的重叠计算),按 capability-matrix 登记流程入仓,协议文本只改第三节机检路径一行。
 - 已知坑:IGS 高≠质量高(注水风险由断言型锚点+SME 人审兜底);共识清单要存档(evidence/ 落盘),否则下次刷新无法判断"共识层是否已变";引语翻译不可逆——非英文引语在英文页用原文+括注翻译,反向同理(翻译降权与语域纪律见 multilingual-workflow.md 第九节坑 1)。

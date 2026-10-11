@@ -4,7 +4,20 @@
 分工:本文管「打法层」;页面类型、URL 层级与各站型深读在 [site-type-templates.md](../technical/site-type-templates.md)(互为表里,不重复);通用打法流程见 [playbooks.md](../technical/playbooks.md);pSEO 上线闸门见 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md)。
 基准数据均标注来源级别与日期(官方/报告/观察/共识);报告级数字用于对标,不用作对客承诺。
 
+## 站型识别判别法(R1-4,识别结果喂给 [strategy-fit.md](strategy-fit.md))
+
+输入=site_crawl 的 crawl.json(URL 清单/edges)+ site_audit 的 schema 发现。三步判:
+①**URL 型谱**——路径段直方图取前 10,对照各卡"识别信号"的型谱;②**schema 类型分布**——JSON-LD 主类型占比;③**页面构成比例**——各面页面量占比。
+**判型纪律**:单一信号不算数,型谱+schema+构成至少两处吻合才判型;**模糊或双信号强(混合站)→列前二站型连同证据让用户确认,不得静默选一**;判型结果写入 project.yaml 的 `site_type` / `site_type_secondary`,混合站主卡按 GSC 流量占比定、副卡只取对应小节。
+
 ## ① SaaS / 软件营销站
+
+**识别信号**
+
+- URL 型谱:`/features/`、`/solutions/`、`/pricing`、`/compare/`·`/vs/`·`/alternatives/`、`/integrations/`、`/templates/`、`/customers/` 合计占比 >30%。
+- schema 分布:SoftwareApplication+Organization 高频,FAQPage 散布;无 Product/Offer。
+- 页面构成:营销页+博客为主,无购物车/结账流;blog 常占 20-50%。
+- 混合判别:docs 子域/路径页 >30% → 记「SaaS+文档」双卡(营销面按①、参考面按⑤)。
 
 **页面清单(必争 URL 集)**
 
@@ -48,6 +61,13 @@
 
 ## ② 电商(DTC)
 
+**识别信号**
+
+- URL 型谱:`/c/`·`/collections/`·`/category/`(PLP)与 `/p/`·`/products/`(PDP)并存,cart/checkout 路径存在;`?filter=` 等参数 URL 量大。
+- schema 分布:Product+Offer 全站高频(健康站 PDP 覆盖 >80%)+BreadcrumbList;无 SoftwareApplication。
+- 页面构成:PDP+PLP 合计常 >60%;被索引的 facet 参数 URL 数是本型特征信号。
+- 混合判别:导购/指南内容页 >25% → 「电商+媒体」,内容面按③卡取小节。
+
 **页面清单(必争 URL 集)**
 
 - 类目面:多级类目/PLP(`/c/<类目>/<子类目>`)、品牌页、品牌×类目页。
@@ -90,6 +110,13 @@
 
 ## ③ 媒体 / 新闻 / 内容站
 
+**识别信号**
+
+- URL 型谱:日期路径(`/2026/10/…`)、`/news/`·`/articles/`·`/blog/`、作者页 `/author/`·`/writers/`;news sitemap 存在是强信号。
+- schema 分布:NewsArticle/Article+NewsMediaOrganization+Person(作者)高频。
+- 页面构成:文章页常 >70%,lastmod 高频新鲜;频道/section 页占比小。
+- 混合判别:垂直医疗/法律/金融媒体=「③的面+⑧的合规红线」;挂工具计算器多→跨⑥。
+
 **页面清单(必争 URL 集)**
 
 - 频道面:首页、channel/section 页、topic hub(专题支柱聚合页)。
@@ -131,6 +158,13 @@
 
 ## ④ 本地服务
 
+**识别信号**
+
+- URL 型谱:`/services/<服务>`、`/locations/<城市>`;整站页面量小(常 <100);页面含 NAP 文本与 `tel:` 链接。
+- schema 分布:LocalBusiness 精确子类(Plumber/Dentist…)+Service;关联 GBP(intake 确认)。
+- 页面构成:服务页+位置页为主,无购物车、无文章矩阵。
+- 混合判别:多商家入驻+招商页 → 跨⑦ Marketplace(多商家=⑦,单商家=④)。
+
 **页面清单(必争 URL 集)**
 
 - `/`、`/services/<每项服务一页>`(本地自然排名 #1 因素,Whitespark 2026)、`/locations/<城市>`。
@@ -170,6 +204,13 @@
 - 门店定位器 SSR/SSG 可爬,不留 CSR 黑洞。
 
 ## ⑤ 文档 / 开发者站
+
+**识别信号**
+
+- URL 型谱:`/docs/`、`/api/`·`/reference/`、`/guides/`、`/changelog`,版本路径 `/v1`·`/v2`;常独立子域 docs.*。
+- schema 分布:TechArticle+HowTo;可见文本代码块密度高(site_crawl 抓取特征)。
+- 页面构成:文档页常 >60%;quickstart/getting-started 页存在。
+- 混合判别:与①同域(marketing 根域+docs 子域)最常见——分别取卡不合并。
 
 **页面清单(必争 URL 集)**
 
@@ -212,6 +253,13 @@
 
 ## ⑥ 工具 / 免费计算器站
 
+**识别信号**
+
+- URL 型谱:`/tools/`·`/calculators/`·`/converters/`·`/generators/`;参数化结果分享 URL(`?input=…`)。
+- schema 分布:WebApplication/SoftwareApplication+配套 FAQPage。
+- 页面构成:工具页与配套说明文成对出现;「工具页 vs 配套文」流量比是本型特征指标(纯工具无文=信息词全丢)。
+- 混合判别:工具嵌在 SaaS 站 → 主卡①、工具只作引流资产;独立多工具矩阵→按⑥。
+
 **页面清单(必争 URL 集)**
 
 - 工具面:`/tools/<工具>`、`/calculators/<主题>`(页面即产品)。
@@ -253,6 +301,13 @@
 
 ## ⑦ Marketplace / 平台型
 
+**识别信号**
+
+- URL 型谱:双侧结构 `/s/<供应者>`+`/c/<类目>`+`/<城市>/<类目>`;站内搜索/facet 页多;best-of 榜单页。
+- schema 分布:Service/Product+提供者实体(Person/Organization/LocalBusiness)+AggregateRating+ItemList 混布——**全站 schema 谱最杂**是本型指纹。
+- 页面构成:供给详情页占大头;空/薄列表页占比是本型暴雷指标。
+- 混合判别:与④易混(多商家=⑦单商家=④);带导购内容矩阵→跨③。
+
 **页面清单(必争 URL 集)**
 
 - 供给侧(SEO 库存):`/s/<商家|服务者>` 详情页、`/c/<类目>` 列表页、入驻招商页。
@@ -293,6 +348,13 @@
 - best-of 榜单页(真实评分与评价摘要,非软文);比价/询价聚合页。
 
 ## ⑧ YMYL(医疗 / 金融 / 法律)
+
+**识别信号**
+
+- 判型主体是**主题而非 URL**:内容命中医疗/法律/金融主题词(条件/症状/practice-areas/费率/赔偿)。
+- URL 型谱:`/conditions/`·`/symptoms/`、`/practice-areas/`、实名作者页 `/author/<实名>`、`/how-we-review` 类方法论页存在。
+- schema 分布:Person+hasCredential+MedicalWebPage/LegalService 分型;reviewedBy(医审/法审)署名。
+- 混合判别:媒体型 YMYL(③的流量打法+⑧的合规红线)最常见——两卡并用,红线优先。
 
 **页面清单(必争 URL 集)**
 

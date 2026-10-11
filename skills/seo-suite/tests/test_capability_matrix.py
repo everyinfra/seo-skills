@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CAPABILITY_MATRIX 机器可读矩阵守护测试(niubigeo N10 治理格式的落地;standalone 零网络)。
 
-被守护对象:data/capability-matrix.json(95 条 = 59 脚本 + 23 模板 + 13 references 主干(data-onboarding))
+被守护对象:data/capability-matrix.json(98 条 = 61 脚本 + 24 模板 + 13 references 主干
 与人读版 CAPABILITY_MATRIX.md。五检:
   ① MatrixFileCoverageTests   双向文件覆盖:矩阵每个 script 真实存在;scripts/ 每个
      .py(除 __pycache__)都在矩阵;模板/references 路径亦须真实存在;
@@ -164,10 +164,10 @@ class MatrixContractAlignmentTests(unittest.TestCase):
 
 
 class MatrixTemplateCountTests(unittest.TestCase):
-    """⑤ 模板 23 个,且与 templates/ 磁盘集合完全一致。"""
+    """⑤ 模板 24 个,且与 templates/ 磁盘集合完全一致。"""
 
-    def test_template_count_is_23_and_matches_disk(self):
-        self.assertEqual(len(TEMPLATE_ENTRIES), 23, "模板数必须为 23(新增模板须同步更新矩阵)")
+    def test_template_count_is_24_and_matches_disk(self):
+        self.assertEqual(len(TEMPLATE_ENTRIES), 24, "模板数必须为 24(新增模板须同步更新矩阵)")
         disk = {os.path.relpath(p, BASE).replace(os.sep, "/")
                 for p in glob.glob(os.path.join(BASE, "templates", "**", "*.md"),
                                    recursive=True)}

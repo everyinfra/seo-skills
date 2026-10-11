@@ -49,7 +49,7 @@ Global-market why-now (0.4–0.5 series, source type noted):
 | Brazil ChatGPT adoption | 25.5% of the population uses the app (highest globally), ~50M monthly users | StatCounter/OpenAI |
 | Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources | Temso (industry study) |
 | Non-English SEO skill supply | top Spanish/Brazilian/French/Indonesian repos have 1-5 stars | GitHub API, Oct 2026 |
-| Yandex share in Turkey | ~26% (Sept 2026, up from ~13% in March) — a second Yandex market | StatCounter (industry) |
+| Yandex share in Turkey | ~26% (Sept 2026, up from ~13% in March; vs 3-5% in local measurement — conflicting calibers, both noted) — a second Yandex market | StatCounter (industry) |
 | India ChatGPT adoption | ~100M weekly active users, ChatGPT's #2 market | OpenAI (Altman, official) |
 
 ## 60-second taste

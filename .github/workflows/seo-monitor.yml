@@ -90,6 +90,9 @@ jobs:
       group: seo-monitor-${{ matrix.site }}
       cancel-in-progress: false
     env:
+      # 模板注入面收敛(照 audit-pr-gate 的 SITE_URL 模式):matrix 值只进 env,
+      # run 块一律 "$SITE" 间接引用,不再 ${{ matrix.site }} 直接内插 shell
+      SITE: ${{ matrix.site }}
       SEO_MONITOR_HEARTBEAT_URL: ${{ secrets.SEO_MONITOR_HEARTBEAT_URL }}
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +103,7 @@ jobs:
 
       - name: Resolve per-site monitor dir
         run: |
-          HOST=$(printf %s "${{ matrix.site }}" | sed -E 's#^https?://##; s#[/:].*##')
+          HOST=$(printf %s "$SITE" | sed -E 's#^https?://##; s#[/:].*##')
           MDIR=".seo-monitor-$(printf %s "$HOST" | tr . -)"
           echo "MDIR=$MDIR" >> "$GITHUB_ENV"
           echo "HOST=$HOST" >> "$GITHUB_ENV"
@@ -117,7 +120,7 @@ jobs:
       - name: init (首次自动建立监控目录)
         run: |
           python3 skills/seo-suite/scripts/monitor.py init \
-            --site "${{ matrix.site }}" \
+            --site "$SITE" \
             --market "${{ vars.SEO_MARKET || '' }}" \
             --dir "$MDIR" || true
 
@@ -172,10 +175,10 @@ jobs:
           ISSUE=$(gh issue list --label "seo-monitor-active" --state open \
                   --json number --jq '.[0].number' || true)
           if [ -n "$ISSUE" ]; then
-            gh issue comment "$ISSUE" --body "seo-monitor ${{ matrix.site }} @ ${{ github.run_id }}:
+            gh issue comment "$ISSUE" --body "seo-monitor $SITE @ ${{ github.run_id }}:
           $SUMMARY"
           else
-            gh issue create --title "[seo-monitor] critical: ${{ matrix.site }}" \
+            gh issue create --title "[seo-monitor] critical: $SITE" \
               --label "seo-monitor-active" \
               --body "$SUMMARY"
           fi
@@ -193,7 +196,7 @@ jobs:
         if: inputs.checks == 'weekly' || github.event.schedule == '23 4 * * 1'
         run: |
           {
-            echo "## SEO 周报(${{ matrix.site }})"
+            echo "## SEO 周报($SITE)"
             echo '```'
             python3 skills/seo-suite/scripts/monitor.py report --days 7 --dir "$MDIR"
             echo '```'
@@ -211,7 +214,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "基线无变化,不提交"
           else
-            git commit -m "chore(seo-monitor): baseline update ${{ matrix.site }} [skip ci]"
+            git commit -m "chore(seo-monitor): baseline update $SITE [skip ci]"
             git pull --rebase --autostash origin ${GITHUB_REF_NAME:-main} || true
             git push || echo "::warning::基线 push 失败(下轮 run 会重试;cache 仍在)"
           fi
@@ -225,7 +228,7 @@ jobs:
           "code": "monitor_run_failed", "key": "workflow", "message": "seo-monitor workflow \
           步骤失败(详见 Actions 日志 %s/%s/actions/runs/%s)", "action": "检查 workflow 日志与 \
           cron/heartbeat 配置", "boundary": "human"}]}' \
-            "${{ matrix.site }}" "$(date -u +%FT%T)" \
+            "$SITE" "$(date -u +%FT%T)" \
             "${{ github.repository }}" "${{ github.ref_name }}" "${{ github.run_id }}" \
             > /tmp/runtime-alerts.json
           python3 skills/seo-suite/scripts/notify.py run \
@@ -375,7 +378,9 @@ jobs:
   # secrets/变量缺省:SITE_URL 未配(Variables: SEO_ENVELOPE_URL 或复用
   # SEO_AUDIT_URL)→ ::warning + 优雅跳过(job 绿,不审计 example.com 占位站)。
   # cache 被驱逐只损失基准样本量(月度报告自动跳过),当日 envelope/门不受影响;
-  # 权威基线仍是 monitor job 的 monitor.db commit-back,本 job 只产报告不写库。
+  # 权威基线仍是 monitor job 的 monitor.db commit-back;本 job 不写监控库——
+# 例外(R0-5):remediation 工单(artifacts/remediations.json)随 baseline
+# commit-back 持久化(verify 自动核销跨 run 生效),其余产物只走 cache/artifact。
   #
   # 本地等价命令(仓库根;scripts/ 指 skills/seo-suite/scripts/):
   #   python3 skills/seo-suite/scripts/site_audit.py "$SITE_URL" --json > audit.json
@@ -392,7 +397,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: read    # 覆盖 workflow 级 contents:write——本 job 只读+产报告,最小权限
+      contents: write   # R0-5:remediation 工单随 baseline commit-back(remediations.json);
+                         # 监控基线库(monitor.db)仍归 monitor job,本 job 不写监控库
     concurrency:         # 快照归档串行写;排队不取消(每个快照都是月度基准样本)
       group: seo-envelope-report
       cancel-in-progress: false
@@ -401,6 +407,7 @@ jobs:
       BASELINE_GATE: "3"  # 主分跌幅门(ci-gates.md §二:起步 3-5 分)
       BASELINE_DIR: artifacts/baseline   # 按日归档:YYYY-MM-DD.json(平铺;benchmark_report --audits 兼容)
       OUT_DIR: artifacts/envelope        # 本期产物(audit/health/priority/envelope/compare)
+      REMEDIATION_FILE: artifacts/remediations.json   # R0-5:持久化工单(随 baseline commit-back)
     steps:
       - uses: actions/checkout@v4
 
@@ -460,9 +467,11 @@ jobs:
           if [ -z "$PREV" ]; then
             echo "::warning::上期基线缺失——compare 跳过 skipped(baseline_missing)(ci-gates.md §七:缺失永不静默;本期快照已归档,下轮起可比)"
             echo "gate_tripped=false" >> "$GITHUB_OUTPUT"
+            echo "prev=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "上期基线: $BASELINE_DIR/$PREV"
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
           set +e
           python3 skills/seo-suite/scripts/audit_compare.py \
             --old "$BASELINE_DIR/$PREV" --new "$OUT_DIR/audit.json" \
@@ -504,6 +513,61 @@ jobs:
             sed -n '1,30p' "$OUT_DIR/envelope/REPORT.md"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── R0-5:remediation verify 无人排期 → 每日 envelope 后顺跑 ──────────────
+      # 每日两份 site_audit --json 已在手边(昨日=$BASELINE_DIR/<prev>.json,今日=
+      # $OUT_DIR/audit.json):verify 自动核销 implemented 单(old 有 new 无)、
+      # partial 附明细,并对"新审计中不属于任何现有工单的新 finding"出增补建议
+      # (exit 1 → ::warning,不红——增补是人/agent 的 init 决策,不是管线故障)。
+      # 工单文件不存在(从未 init)→ 响亮 WARNING + 跳过(ci-gates.md §七,绝不静默)。
+      - name: remediation verify (R0-5:审计 diff 自动核销 + 增补建议)
+        id: verify
+        if: env.SKIP_ENVELOPE != 'true'
+        run: |
+          PREV="${{ steps.compare.outputs.prev }}"
+          if [ -z "$PREV" ]; then
+            echo "::warning::上期基线缺失——remediation verify 跳过(baseline_missing;下轮起可比)"
+            exit 0
+          fi
+          if [ ! -f "$REMEDIATION_FILE" ]; then
+            echo "::warning::工单数据文件 $REMEDIATION_FILE 不存在(先运行 remediation init 生成)——verify 跳过,绝不静默"
+            exit 0
+          fi
+          set +e
+          python3 skills/seo-suite/scripts/remediation.py verify \
+            --old "$BASELINE_DIR/$PREV" --new "$OUT_DIR/audit.json" \
+            --file "$REMEDIATION_FILE"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::remediation verify 输入/参数错误(exit 2)"
+            exit 2
+          fi
+          if [ "$rc" -eq 1 ]; then
+            echo "::warning::remediation verify:增补建议>0(新审计的新 finding 无对应工单)——按上方清单运行 remediation init 增补(见 $REMEDIATION_FILE)"
+          fi
+          exit 0
+
+      # 工单随 baseline commit-back(R0-5):verify 的自动核销/partial 明细要跨 run
+      # 持久;artifacts/ 不在 .gitignore,只显式 add 工单文件——baseline/ 快照与
+      # envelope 产物仍走 cache/artifact,不进 git
+      - name: Commit remediation tickets (工单随 baseline commit-back)
+        if: env.SKIP_ENVELOPE != 'true' && steps.verify.conclusion == 'success'
+        run: |
+          if [ ! -f "$REMEDIATION_FILE" ]; then
+            echo "工单文件不存在(verify 已跳过),无物可提交"
+            exit 0
+          fi
+          git config user.name "seo-envelope-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add "$REMEDIATION_FILE"
+          if git diff --cached --quiet; then
+            echo "工单无变化,不提交"
+          else
+            git commit -m "chore(envelope): remediation tickets update [skip ci]"
+            git pull --rebase --autostash origin ${GITHUB_REF_NAME:-main} || true
+            git push || echo "::warning::工单 push 失败(下轮 run 会重试;verify 核销幂等可重跑)"
+          fi
 
       - name: 月度基准 benchmark_report --audits (每月第一次运行时)
         if: env.SKIP_ENVELOPE != 'true'

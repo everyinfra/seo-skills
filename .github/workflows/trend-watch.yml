@@ -1,0 +1,133 @@
+# trend-watch:热点巡检 cron(R0-6:trend_watch 无 cron/workflow → 照 seo-monitor 接线)
+# ----------------------------------------------------------------------------
+# 每 3h 跑一次 trend_watch watch:拉信号源 → 登记去重 → Q1/Q3/wire 机检 →
+# 决策件草稿。四问闸门规格见 references/content/trend-jack-playbook.md 第 0 节。
+#
+# 退出码语义(watch):0=无 GO / 1=有 GO(exit 1 → ::notice + 决策件 artifact,
+# 不红——GO 是机会不是故障)/ 2=全部信号源失败(红,响亮)/ 3=config·输入错(红)。
+#
+# 垂直配置(R0-6 守卫):.github/trend-config.json 存在且非样例(_sample≠true)
+# 才跑;缺文件或仍是样例 → ::warning + 优雅跳过(job 绿)。样例随仓库提交,
+# 真实词表由用户改 vertical_tokens 后删 _sample 或改 false 激活。
+#
+# 限 5 分钟预算:job 级 timeout-minutes: 5(watch 无 --budget flag,预算由
+# Actions 硬顶;超时=kill,状态库 cache 未存→下轮重采样,偏保守是特性)。
+#
+# 状态与产物:--state/--brief-dir 显式指到 CI 工作区 artifacts/(R0-7 未修前
+# STATE_FILE 默认落在 skill 安装目录,CI 必须显式改道);state+决策件走
+# actions/cache 持久(驱逐只致去重重采,不致错判),GO 时决策件另上传
+# artifact(30 天)。均不进 git。
+#
+# market:读仓库 Variable SEO_MARKET(缺省 en;与 seo-monitor 同源)。
+# X/Twitter、抖音需 key——脚本明说跳过不猜。
+#
+# 本地等价命令(仓库根):
+#   python3 skills/seo-suite/scripts/trend_watch.py watch \
+#     --config .github/trend-config.json --market "$SEO_MARKET" \
+#     --state artifacts/trend-state.json --brief-dir artifacts/trend-briefs --json
+# ----------------------------------------------------------------------------
+
+name: trend-watch
+
+on:
+  schedule:
+    - cron: '23 */3 * * *'   # 每 3h(23 分错峰,减 GitHub 高峰调度抖动)
+  workflow_dispatch: {}       # 手动触发按钮
+
+permissions:
+  contents: read    # 只读扫描+产决策件;状态走 cache,不 commit-back
+
+concurrency:
+  group: trend-watch
+  cancel-in-progress: false   # 排队串行:防并发写同一份 state
+
+jobs:
+  watch:
+    if: github.repository != 'everyinfra/seo-skills'   # 模板仓库守卫(拷贝后删除)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5        # R0-6 预算硬顶:5 分钟
+    env:
+      TREND_CONFIG: .github/trend-config.json
+      TREND_MARKET: ${{ vars.SEO_MARKET || 'en' }}   # env 间接引用(照 audit-pr-gate 模式)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 守卫:配置存在且非样例才跑(缺配置/样例未改 → ::warning + 优雅跳过)
+      - name: Config guard (垂直配置存在才跑;样例未改=跳过)
+        run: |
+          if [ ! -f "$TREND_CONFIG" ]; then
+            echo "::warning::$TREND_CONFIG 不存在——trend-watch 跳过(复制样例并填入你的 vertical_tokens)"
+            echo "SKIP_TREND=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('$TREND_CONFIG')).get('_sample') else 1)"; then
+            echo "::warning::$TREND_CONFIG 仍是样例(_sample=true)——trend-watch 跳过;填入真实 vertical_tokens 后删除 _sample 或改为 false"
+            echo "SKIP_TREND=true" >> "$GITHUB_ENV"
+          fi
+
+      # state+决策件 cache 持久(驱逐只致重复告警,不致错判);post 步骤自动回存
+      - name: Restore trend state (cache 兜底)
+        if: env.SKIP_TREND != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            artifacts/trend-state.json
+            artifacts/trend-briefs
+          key: trend-state-${{ github.run_id }}
+          restore-keys: trend-state-
+
+      - name: trend_watch watch (rc=1=有 GO,不红;2/3 红)
+        id: watch
+        if: env.SKIP_TREND != 'true'
+        run: |
+          mkdir -p artifacts/trend-briefs
+          set +e
+          python3 skills/seo-suite/scripts/trend_watch.py watch \
+            --config "$TREND_CONFIG" \
+            --market "$TREND_MARKET" \
+            --state artifacts/trend-state.json \
+            --brief-dir artifacts/trend-briefs \
+            --json > artifacts/trend-watch.json
+          rc=$?
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          if [ "$rc" -eq 3 ]; then
+            echo "::error::trend_watch 输入/config 错误(exit 3)——查 $TREND_CONFIG 结构(vertical_tokens/wire_domains/thresholds)"
+            exit 3
+          fi
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::全部信号源失败/空(exit 2)——查 runner 网络与源可用性(单源失败脚本自己跳过,全挂才是 2)"
+            exit 2
+          fi
+          exit 0    # rc=1(GO)与 rc=0 都到此为止;GO 交给下一步 notice+artifact
+
+      # 退出码 1 = active_go 非空(已过四问闸门待发布)→ ::notice + 决策件 artifact
+      - name: GO notice (rc=1:有 GO 信号)
+        if: env.SKIP_TREND != 'true' && steps.watch.outputs.rc == '1'
+        run: |
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open("artifacts/trend-watch.json"))
+          gos = d.get("active_go") or []
+          briefs = d.get("briefs") or []
+          lines = ["trend-watch 有 GO 信号(%d):%s" % (len(gos), ", ".join("trend-" + g for g in gos) or "-")]
+          if briefs:
+              lines.append("决策件: " + "; ".join(briefs[:10]))
+          lines.append("72h 窗口内推进:gate 补 Q2/Q4 出终判(trend_watch gate --signal-id ...)")
+          print("::notice::" + " | ".join(lines))
+          with open(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"), "a") as f:
+              f.write("## trend-watch GO\n\n- " + "\n- ".join(lines) + "\n")
+          PY
+
+      - name: Upload trend decision briefs (决策件 artifact;GO 才上传)
+        if: env.SKIP_TREND != 'true' && steps.watch.outputs.rc == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: trend-decisions
+          path: artifacts/trend-briefs/
+          retention-days: 30
+          if-no-files-found: warn   # GO 信号必然产决策件草稿;空=异常但不掩盖 GO notice

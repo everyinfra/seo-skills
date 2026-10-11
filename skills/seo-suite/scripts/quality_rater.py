@@ -52,8 +52,13 @@ import json
 import re
 import sys
 
-CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
-LATIN_WORD_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9'\-]*")
+# ②多语言断层修复(R5): CJK_RE 对齐 content_score.py 口径扩假名+谚文——纯谚文/假名
+# 正文词数不再恒 0(cjk_words 逐字计);LATIN_WORD_RE 同扩假名 run(平/片假名各成 run,
+# 片假名内容词不与平假名助词粘连;cjk_words 里 CJK_RE 先替走假名不会双计;
+# auto_keyword 非 zh 分支与 first_100_words 由它接管假名 run)。
+CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]")
+KANA_RUN_RE = re.compile(r"[\u3041-\u309f]+|[\u30a0-\u30ff]+")   # 平假名/片假名 run(含 ー)
+LATIN_WORD_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9'\-]*|[\u3041-\u309f]+|[\u30a0-\u30ff]+")
 SENT_SPLIT_RE = re.compile(r"(?<=[.!?。！？;；])\s+|\n+")
 MD_H2_RE = re.compile(r"^#{2,6}\s+\S")
 LIST_RE = re.compile(r"^\s*(?:[-*\u2022\u00b7]|\d+[.)、\uFF09])\s+\S")
@@ -77,18 +82,21 @@ def read_text(path):
 
 
 def cjk_words(text):
-    """CJK 感知词数: 汉字逐字计 1, 其余按空白/字母数字分词."""
+    """CJK 感知词数: 汉字/假名/谚文逐字计 1(②与 CJK_RE 同口径), 其余按空白/字母数字分词."""
     cjk = len(CJK_RE.findall(text))
     latin = len(LATIN_WORD_RE.findall(CJK_RE.sub(" ", text)))
     return cjk + latin
 
 
 def first_100_words_text(text):
-    """截取约前 100 词的原文窗口 (保持 CJK 字符连续)."""
+    """截取约前 100 词的原文窗口 (保持 CJK 字符连续).
+    ②假名 run 整段进窗口(1 run=1 token,假名不再被整段丢弃);谚文/汉字仍逐字计。"""
     words = []
     size = 0
-    # 把文本切成 汉字/拉丁词/其他 三类 token, 保留原文顺序
-    for tok in re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]|[A-Za-z0-9][A-Za-z0-9'\-]*|\s+", text):
+    # 把文本切成 汉字/谚文/假名run(平/片各成run)/拉丁词/其他 token, 保留原文顺序
+    for tok in re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]"
+                          r"|[\u3041-\u309f]+|[\u30a0-\u30ff]+"
+                          r"|[A-Za-z0-9][A-Za-z0-9'\-]*|\s+", text):
         if tok.strip() == "" and not CJK_RE.match(tok):
             if words:
                 words.append(tok)

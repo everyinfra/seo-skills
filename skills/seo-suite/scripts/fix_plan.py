@@ -5,13 +5,20 @@
   robots/llms/schema/meta/ai_discovery(可选类,默认关)/content(只出提纲不自动重写)。
 安全契约:默认 dry-run 只打印(每文件预览前 30 行);--apply 才写盘且只写 ./seo-fixes/
 隔离目录(从不触碰站点文件);审计失败(fetch guard SKIP)不生成任何修复并退出码 2。
+发布通道(R1-10):--apply --git-branch [名] 在 git 仓库内建分支,修复物写到 seo-fixes/
+并提交到该分支(主干不受影响;失败回退原分支;不在 git 仓库 → 退出码 2);PR 只打印
+gh pr create 命令行建议,不自动执行——外发动作人审边界。
 用法: python3 fix_plan.py --url https://example.com [--only robots,llms] [--estimate] [--json] [--apply]
-       python3 fix_plan.py --audit audit.json [--only ...] [--estimate] [--json] [--apply]"""
+       python3 fix_plan.py --audit audit.json [--only ...] [--estimate] [--json] [--apply]
+       python3 fix_plan.py --audit audit.json --apply --git-branch [feat/seo-fixes-<date>]"""
 import html
 import json
 import os
 import re
+import shlex
+import subprocess
 import sys
+from datetime import date
 from urllib.parse import urlparse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +31,7 @@ CATEGORIES = ("robots", "llms", "schema", "meta", "ai_discovery", "content")
 DEFAULT_ON = tuple(c for c in CATEGORIES if c != "ai_discovery")  # ai_discovery 可选类默认不生成
 FIX_DIR = "seo-fixes"           # --apply 隔离目录(相对 CWD;从不触碰站点文件)
 PREVIEW_LINES = 30              # dry-run 每文件预览行数
+BRANCH_PREFIX = "feat/seo-fixes-"   # --git-branch 缺省分支名前缀(自动补当天日期 YYYYMMDD)
 
 # 收益预估:类别满分 = ai_search_health 权重 ×100(复用 site_audit.AI_HEALTH_WEIGHTS)。
 # 映射:robots→bots / llms→llms_txt / content→content_length 直接对应;
@@ -44,6 +52,10 @@ class BadInput(Exception):
 
 class AuditRefused(Exception):
     """审计失败(fetch guard SKIP / 页面不可达)→ 不生成任何修复,退出码 2。"""
+
+
+class GitFlowError(Exception):
+    """git 发布通道失败(不在仓库/建分支/暂存/提交任一步)→ 回退原分支后退出码 2。"""
 
 
 class FixItem(dict):
@@ -337,6 +349,97 @@ def apply_fixes(fixes, out_dir=FIX_DIR):
 
 
 # ---------------------------------------------------------------------------
+# 发布通道(R1-10):--apply --git-branch 在 git 仓库内落分支提交
+# 纯 stdlib subprocess 调 git;PR 只打印 gh 命令行建议,不自动执行(外发动作人审边界)
+# ---------------------------------------------------------------------------
+def _git(args):
+    """git 子进程封装(零 shell、参数列表直传):返回 CompletedProcess(utf-8 容错解码)。"""
+    return subprocess.run(["git", *args], capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+
+
+def _require_git_repo():
+    """守卫:当前目录必须在 git 工作树内,否则 GitFlowError(→ 退出码 2,什么都不动)。"""
+    if _git(["rev-parse", "--is-inside-work-tree"]).returncode != 0:
+        raise GitFlowError("--git-branch 需要在 git 仓库内运行(当前目录不在任何 git 工作树)")
+
+
+def _current_branch():
+    """当前分支名;detached HEAD 时退回提交哈希(回退目标仍可用)。"""
+    p = _git(["rev-parse", "--abbrev-ref", "HEAD"])
+    name = p.stdout.strip()
+    if p.returncode == 0 and name != "HEAD":
+        return name
+    h = _git(["rev-parse", "HEAD"])          # 空仓库/detached → 哈希;再失败由调用方报错
+    if h.returncode != 0:
+        raise GitFlowError("无法确定当前分支(空仓库?先做首次提交再跑 --git-branch)")
+    return h.stdout.strip()
+
+
+def _commit_message(view, fixes):
+    cats = "/".join(dict.fromkeys(f["category"] for f in fixes))
+    return ("seo-fixes: %s %d 项修复物(%s)——fix_plan.py --git-branch 产物,"
+            "人审后部署" % (view["url"], len(fixes), cats))
+
+
+def _rollback_branch(original, branch):
+    """失败回退:只 unstage 本工具加入的 seo-fixes 路径 → 切回原分支 → 删除半成品分支。
+    每步尽力而为(回退本身失败不掩盖原始错误)。"""
+    _git(["reset", "-q", "--", FIX_DIR])
+    _git(["checkout", "-q", original])
+    _git(["branch", "-q", "-D", branch])
+
+
+def apply_fixes_on_branch(view, fixes, branch, out_dir=FIX_DIR):
+    """--apply --git-branch 发布通道:建分支 → 写 seo-fixes/ → 提交到该分支。
+    主干不受影响(只在新分支提交,原分支 ref 与其他工作树文件不动);任一步失败
+    → 回退原分支并删除半成品分支后抛 GitFlowError。返回发布通道信息 dict。"""
+    _require_git_repo()
+    original = _current_branch()
+    created = _git(["checkout", "-q", "-b", branch])
+    if created.returncode != 0:              # 分支已存在/名字非法 → 原地报错,无需回退
+        raise GitFlowError("建分支失败 %s: %s" % (branch, (created.stderr or created.stdout).strip()))
+    try:
+        written = apply_fixes(fixes, out_dir)
+        added = _git(["add", "-f", "--", out_dir])   # -f:seo-fixes/ 可能被仓库 .gitignore 挡住
+        if added.returncode != 0:
+            raise GitFlowError("git add %s 失败: %s" % (out_dir, (added.stderr or added.stdout).strip()))
+        committed = _git(["commit", "-q", "-m", _commit_message(view, fixes)])
+        if committed.returncode != 0:
+            detail = (committed.stderr or committed.stdout).strip() or \
+                "无输出(常见:pre-commit 钩子拒绝,或仓库缺 user.name/user.email——先 git config)"
+            raise GitFlowError("git commit 失败: %s" % detail)
+        head = _git(["rev-parse", "--short", "HEAD"])
+        return {"branch": branch, "original": original, "out_dir": out_dir,
+                "commit": head.stdout.strip() if head.returncode == 0 else "?",
+                "files": written}
+    except GitFlowError as e:
+        _rollback_branch(original, branch)
+        raise GitFlowError("%s(已回退到原分支 %s)" % (e, original))
+
+
+def pr_suggestion(view, fixes, est, branch_info):
+    """建议的 PR 标题/描述/gh 命令行——只生成文本供打印,从不执行(外发动作人审边界)。"""
+    cats = "/".join(dict.fromkeys(f["category"] for f in fixes))
+    host = urlparse(view["url"]).netloc or view["url"]
+    title = "seo-fixes(%s): %d 项修复物待人审(%s)" % (host, len(fixes), cats)
+    L = ["## 概要",
+         "- 站点: %s(verdict: %s)" % (view["url"], view["verdict"]),
+         "- 修复物: %d 项(%s),全部在 `seo-fixes/` 隔离目录,人审后部署" % (len(fixes), cats)]
+    if est:
+        L.append("- 收益预估: %d/100 → %d/100(+%d)"
+                 % (est["before"], est["after"], est["gain"]))
+    L += ["", "## 清单"] + ["- [%s] %s" % (f["category"], f["description"]) for f in fixes]
+    L += ["", "## 人审边界",
+          "- fix_plan.py 只生成不部署;主分支未受影响(修复物只提交在 %s 分支)" % branch_info["branch"],
+          "- `gh pr create` 由人工执行——下面命令行是建议,脚本不自动外发"]
+    body = "\n".join(L)
+    command = "gh pr create --draft --title %s --body %s --head %s" % (
+        shlex.quote(title), shlex.quote(body), branch_info["branch"])
+    return {"title": title, "body": body, "command": command}
+
+
+# ---------------------------------------------------------------------------
 # 审计视图:--url 现场跑(site_audit.audit)或 --audit 读 site_audit --json 输出
 # ---------------------------------------------------------------------------
 def _root_of(url):
@@ -457,13 +560,17 @@ def _indent_code(text):
     return ["    " + ln if ln else "" for ln in text.splitlines()] + [""]
 
 
-def render_markdown(view, fixes, est, applied, show_estimate):
+def render_markdown(view, fixes, est, applied, show_estimate, branch_info=None, pr=None):
     ai = view["ai_health"] or {}
     L = [f"# SEO Fix Plan — {view['url']}", ""]
     src = "site_audit 内部运行(--url)" if view["source"] == "live" else "审计文件(--audit)"
     L.append(f"- 审计来源: {src} · verdict: **{view['verdict']}** · findings {len(view['findings'])} 条"
              + (f" · AI Search Health **{ai['score']}/100**" if ai else ""))
-    if applied:
+    if branch_info:
+        L.append(f"- 模式: **--apply --git-branch 发布通道** → 分支 `{branch_info['branch']}`"
+                 f"(提交 `{branch_info['commit']}`,自 `{branch_info['original']}` 分出;"
+                 "主干不受影响,失败自动回退原分支)")
+    elif applied:
         L.append("- 模式: **--apply 已写盘** → 隔离目录 `seo-fixes/`(从不触碰站点文件)")
     else:
         L.append("- 模式: **dry-run**(默认只打印;`--apply` 才写盘,且只写 `./seo-fixes/`)")
@@ -481,10 +588,18 @@ def render_markdown(view, fixes, est, applied, show_estimate):
               f"(+{est['gain']}{br};类别满分取 ai_search_health 权重,封顶 100)"]
     if applied:
         L += ["", "已写入:"] + [f"- `{p}`" for p in applied]
+    if branch_info:
+        L += ["", f"已提交: 分支 `{branch_info['branch']}`(提交 `{branch_info['commit']}`,"
+              f"共 {len(branch_info['files'])} 个文件;切回 `{branch_info['original']}` 即恢复原工作树)"]
+    if pr:
+        L += ["", "## 建议的 PR(外发动作人审边界——gh 命令只打印,不自动执行)", "",
+              "标题: " + pr["title"], "", "描述:", "", *("    " + ln for ln in pr["body"].splitlines()),
+              "", "命令行(人审后手动执行):", "", "    " + pr["command"], ""]
     return "\n".join(L) + "\n"
 
 
 USAGE = f"""usage: fix_plan.py (--url URL | --audit audit.json) [--only CATS] [--apply] [--estimate] [--json]
+                   [--git-branch [BRANCH]]
 审计→修复物生成器:跑(--url,内部调用 site_audit)或读(--audit,site_audit --json 输出)
 审计结果,产出 6 类 FixItem {{category, description, content, file_name, action(create|append|snippet)}}。
 
@@ -515,8 +630,17 @@ USAGE = f"""usage: fix_plan.py (--url URL | --audit audit.json) [--only CATS] [-
                 robots=bots {CATEGORY_MAX['robots']} / llms=llms_txt {CATEGORY_MAX['llms']} /
                 schema=semantic_html {CATEGORY_MAX['schema']}[推断] / content={CATEGORY_MAX['content']};
                 meta 与 ai_discovery 不在权重表内 → 满分 0 不进收益)
-  --json        结构化输出(FixItem 列表 + estimate;--apply 时附 applied_files)
-退出码: 0 正常(含"无需修复"); 2 输入非法/未知类别/审计失败。"""
+  --json        结构化输出(FixItem 列表 + estimate;--apply 时附 applied_files,
+                --git-branch 时附 git_branch 与 pr{{title,body,command}})
+
+发布通道(R1-10;--apply 时可选):
+  --git-branch [BRANCH]  不直接把修复物留在当前分支的工作区,而是在 git 仓库内建分支
+                (缺省名 {BRANCH_PREFIX}<YYYYMMDD>),把修复物写到 seo-fixes/ 并提交到该分支。
+                主干不受影响(只在新分支提交);任何 git 步骤失败 → 回退原分支、删除半成品
+                分支并退出码 2;当前目录不在 git 仓库 → 退出码 2。
+                结束打印建议的 PR 标题/描述与 gh pr create 命令行——只打印不自动执行
+                (外发动作人审边界);CMS 站点不走 git,用默认 --apply 导出目录再人工导入。
+退出码: 0 正常(含"无需修复"); 2 输入非法/未知类别/审计失败/git 发布通道失败。"""
 
 
 def _val(args, i, flag):
@@ -539,7 +663,7 @@ def parse_only(arg):
 
 
 def parse_args(argv):
-    url = audit_path = only_arg = None
+    url = audit_path = only_arg = branch_arg = None
     do_apply = do_estimate = as_json = False
     i = 0
     while i < len(argv):
@@ -552,6 +676,12 @@ def parse_args(argv):
             audit_path = _val(argv, i, "--audit"); i += 2
         elif x == "--only":
             only_arg = _val(argv, i, "--only"); i += 2
+        elif x == "--git-branch":
+            # 可选值:下一 token 是 flag 或已到末尾 → 自动命名 BRANCH_PREFIX+当天日期
+            if i + 1 < len(argv) and not argv[i + 1].startswith("-"):
+                branch_arg = argv[i + 1]; i += 2
+            else:
+                branch_arg = ""; i += 1
         elif x == "--apply":
             do_apply = True; i += 1
         elif x == "--estimate":
@@ -562,8 +692,17 @@ def parse_args(argv):
             raise BadInput(f"未知参数 {x}")
     if bool(url) == bool(audit_path):
         raise BadInput("必须且只能给一个输入:--url URL(现场审计)或 --audit audit.json(读审计输出)")
+    if branch_arg is not None and not do_apply:
+        raise BadInput("--git-branch 只在 --apply 模式下可用(分支发布通道即写盘提交,无 dry-run 形态)")
+    if branch_arg is None:
+        branch_arg = False
+    elif not branch_arg:                     # 未给名 → feat/seo-fixes-<YYYYMMDD>
+        branch_arg = BRANCH_PREFIX + date.today().strftime("%Y%m%d")
+    if branch_arg and (not branch_arg.strip() or any(c.isspace() for c in branch_arg)):
+        raise BadInput("--git-branch 分支名含空白或为空: %r" % branch_arg)
     return {"url": url, "audit": audit_path, "only": parse_only(only_arg),
-            "apply": do_apply, "estimate": do_estimate, "json": as_json, "help": False}
+            "apply": do_apply, "estimate": do_estimate, "json": as_json,
+            "git_branch": branch_arg, "help": False}
 
 
 def main(argv=None):
@@ -586,7 +725,21 @@ def main(argv=None):
         return 2
     fixes = build_fixes(view, opts["only"])
     est = estimate(view, fixes)
-    applied = apply_fixes(fixes) if (opts["apply"] and fixes) else []
+    applied, branch_info, pr = [], None, None
+    if opts["apply"] and fixes:
+        try:
+            if opts["git_branch"]:
+                branch_info = apply_fixes_on_branch(view, fixes, opts["git_branch"])
+                applied = branch_info["files"]
+            else:
+                applied = apply_fixes(fixes)
+        except GitFlowError as e:
+            sys.stderr.write(f"[fix_plan] {e}\n分支发布通道失败,已回退原分支,不产生任何提交。\n")
+            if opts["json"]:
+                print(json.dumps({"error": str(e), "fixes": []}, ensure_ascii=False))
+            return 2
+    if branch_info:
+        pr = pr_suggestion(view, fixes, est, branch_info)
     if opts["json"]:
         payload = {"site": view["url"], "source": view["source"], "verdict": view["verdict"],
                    "ai_search_health_score": (view["ai_health"] or {}).get("score"),
@@ -594,9 +747,13 @@ def main(argv=None):
                    "estimate": est, "fixes": fixes}
         if opts["apply"]:
             payload["applied_files"] = applied
+        if branch_info:
+            payload["git_branch"] = branch_info
+            payload["pr"] = pr
         print(json.dumps(payload, ensure_ascii=False, indent=1))
     else:
-        print(render_markdown(view, fixes, est, applied, opts["estimate"]))
+        print(render_markdown(view, fixes, est, applied, opts["estimate"],
+                              branch_info=branch_info, pr=pr))
     return 0
 
 

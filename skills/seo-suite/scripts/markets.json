@@ -1017,7 +1017,7 @@
         "tr",
         "tr-TR"
       ],
-      "notes": "第二个 Yandex 市场(~26%):Yandex Webmaster+Wordstat TR 双引擎;黏着语屈折形式研究(英文式头部词低估量);AIO 引用 75.3% 绑定自然前 10",
+      "notes": "第二个 Yandex 市场(StatCounter ~26%,vs 本地实测 3-5% 口径冲突并记):Yandex Webmaster+Wordstat TR 双引擎;黏着语屈折形式研究(英文式头部词低估量);AIO 引用 75.3% 绑定自然前 10",
       "special_checks": [
         "Yandex 双引擎投入按客群决策记录(本地实操几乎没人做)",
         "黏着语屈折形式关键词层(词干+格/数/领属后缀,Zemberek)",

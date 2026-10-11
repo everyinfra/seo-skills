@@ -1,6 +1,6 @@
 # Capability Matrix(能力矩阵)
 
-机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(89 条 = 55 脚本 + 22 模板 + 12 references 主干;schema_version 1.0)。本文件是人读版,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性。
+机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(95 条 = 59 脚本 + 23 模板 + 13 references 主干;schema_version 1.0)。本文件是人读版,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性。
 
 治理出处:[references/research/niubigeo-deep-read.md](references/research/niubigeo-deep-read.md) N10(CAPABILITY_MATRIX 治理格式)。借用其核心思想「**能力=完成**三条件」并按本套件改写:
 
@@ -8,21 +8,21 @@
 2. **测试守护存在**——专属测试文件或 `tests/run_tests.py` 内联用例(脚本存在≠能力完成);
 3. **合同对勘入表**——数据来源与降级路径已写入 [references/overview/data-source-contract.md](references/overview/data-source-contract.md) 三列并逐一对勘。
 
-与 niubigeo 原版的差异:它的矩阵映射「借来的五个开源项目→本版要求→owner」,本套件的矩阵映射「自有 55 脚本→数据/降级/测试→status」,同样公开承认口径来源(NOTICE 百仓深扫改写)。
+与 niubigeo 原版的差异:它的矩阵映射「借来的五个开源项目→本版要求→owner」,本套件的矩阵映射「自有 59 脚本→数据/降级/测试→status」,同样公开承认口径来源(NOTICE 百仓深扫改写)。
 
 ## Status 图例
 
 | status | 判据 | 当前数 |
 |---|---|---|
-| **stable** | 有测试守护(专属测试文件或 run_tests.py 内联用例),或本身即守护工具(self_check/link_check)被检查链每次消费 | 68(34 脚本+22 模板+12 主干) |
-| **beta** | 已实装且已入 data-source-contract,但暂无测试守护 | 21(全部为脚本) |
-| **draft** | 新增未对勘(当前 0 条) | 0 |
+| **stable** | 有测试守护(专属测试文件或 run_tests.py 内联用例),或本身即守护工具(self_check/link_check)被检查链每次消费 | 69(34 脚本+22 模板+13 主干) |
+| **beta** | 已实装且已入 data-source-contract,但暂无测试守护 | 25(全部为脚本) |
+| **draft** | 新增未对勘 | 1(templates/content/trend-jack-playbook.md,规格已定待实装) |
 
 升级路径:新脚本入矩阵默认 **draft** → 合同对勘补行后升 **beta** → 补测试守护(golden 用例)后升 **stable**。
 
 降级模式(与 data-source-contract 全局守则同口径):**①** 等价替代(标 `[est]`)/ **②** 部分执行(显式声明截断或 N/A)/ **③** 停止并指名缺什么 / **④** 静默跳过可选增强。多模式写法「③+②」= 主模式在前。
 
-## 一、审计与页面质量(20)
+## 一、审计与页面质量(22)
 
 | 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
 |---|---|---|---|---|---|---|
@@ -46,6 +46,8 @@
 | ai_views.py | --url/--html | markdown | URL 抓取或离线 HTML | ③ | test_ai_views.py | stable |
 | envelope.py | --audit [--health --priority] | json | 审计 JSON 三源合一 | ② | test_envelope.py | stable |
 | benchmark_report.py | --audits/--monitor-db/--scores | json | 多站审计/监控数据 | ③ | test_benchmark_report.py | stable |
+| site_crawl.py | --domain(或 --urls 文件) | json | 目标站实时爬取(遵守 robots+crawl-delay,默认 1 req/s) | ① | test_site_crawl.py | beta |
+| field_data.py | --url/--urls | json | Google PSI(无 key 低配额)+CrUX(需 key)真实 API | ② | test_field_data.py | beta |
 
 ## 二、技术 SEO(7)
 
@@ -117,18 +119,25 @@
 | link_check.py | (无) | markdown | 本地 markdown 树 | ③ | 由 self_check 每次消费 | stable |
 | intel_check.py | init/check | markdown | 18 信源+.intel-state.json | ③+② | run_tests.py(内联) | stable |
 
-## 模板层(22;七段式结构由 self_check 守护)
+## 九、工作流(2)
+
+| 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
+|---|---|---|---|---|---|---|
+| trend_watch.py | watch/gate(--topics 词表;gate 另需 --angle/--exclusive) | json | 六信号源实时拉取(Google News/Reddit rising/HN/微博/百度热搜;403 源整源跳过告警) | ② | test_trend_watch.py | beta |
+| remediation.py | init/verify(envelope audit-data.json;两份 site_audit --json) | json | 上游脚本产出(工单不自带数据) | ③ | test_remediation.py | beta |
+
+## 模板层(23;七段式结构由 self_check 守护)
 
 | 目录 | 模板 |
 |---|---|
 | templates/audit(5) | full-seo-audit / on-page-audit / technical-audit / entity-audit / report-modes |
 | templates/research(7) | keyword-research-output / serp-analysis-output / content-gap-output / competitor-analysis-output / competitor-pages-plan / content-strategy-plan / prompt-bank |
-| templates/content(2) | content-brief / pre-publish-checklist |
+| templates/content(3) | content-brief / pre-publish-checklist / trend-jack-playbook(draft,规格已定待实装) |
 | templates/monitor(8) | rank-report / backlink-report / performance-report / alert-playbook / ai-visibility-weekly / ai-visibility-monthly / citation-outreach-brief / forecast-report |
 
 模板不自带数据(data-source-contract 全局守则同样适用):inputs 列写明各自消费的上游脚本产出,逐条见 JSON 的 template 条目。
 
-## references 主干(12)
+## references 主干(13)
 
 | 路径 | 角色 | 守护 |
 |---|---|---|
@@ -137,6 +146,7 @@
 | references/overview/intake-checklists.md | 统一 intake 清单 | — |
 | references/overview/multilingual-workflow.md | 18 市场主干 | — |
 | references/overview/data-source-contract.md | 数据源合同(本矩阵对勘源) | test_capability_matrix.py |
+| references/overview/data-onboarding.md | 数据接入阶梯(目标→数据源矩阵+T0-T4) | — |
 | references/overview/intel-sources.md | 信源注册表 | intel_check.py 同步维护 |
 | references/overview/site-type-playbooks.md | 八站型卡 | — |
 | references/content/geo-evidence.md | GEO 证据权威(冲突时以此为准) | — |
@@ -151,10 +161,10 @@
 2. **新增模板必须同步更新矩阵**:templates/ 落盘 + 两处矩阵各加一条。漏更即 ⑤ 变红(22 个数量与磁盘集合校验)。
 3. **删除/改名同理**:矩阵与文件系统双向对齐,任何一侧漂移都会红。
 4. **status 只升不跳**:draft→beta 需合同对勘行;beta→stable 需测试守护;降级(发现 beta 级问题)须在 PR 里说明原因。
-5. 守护链:`python3 tests/test_capability_matrix.py` 五检(①双向文件覆盖 ②tests_file 存在 ③枚举与计数 ④与 data-source-contract 抽查 10 条粗对齐 ⑤模板 22 个);`scripts/self_check.py` 的 `check_capability_matrix` 消费 ①②,矩阵漂移即 self_check FAIL。
+5. 守护链:`python3 tests/test_capability_matrix.py` 五检(①双向文件覆盖 ②tests_file 存在 ③枚举与计数 ④与 data-source-contract 抽查 10 条粗对齐 ⑤模板 23 个);`scripts/self_check.py` 的 `check_capability_matrix` 消费 ①②,矩阵漂移即 self_check FAIL。
 
 ## 已知口径备注
 
 - **gsc_mining** 降级为「脚本侧 ③ + agent 层 ①」双写:脚本本身无 GSC 文件即 usage error,等价替代(serp_overlap 采样、标 `[est]`)是 agent 层策略(data-source-contract 差异第 3 条)。
 - **grid_rank** 的 run_tests.py 用例钉的是 references/monitoring/local-grid-ranking.md 的 3×3 算例(ARP/ATRP/SoLV 口径),不 import 脚本本体,故 status 记 beta、tests_file 留空。
-- **data-source-contract.md** 表头计数(52/54)落后于 SKILL.md 第 3 节的 55,系其文末"发现的差异"已自述的已知漂移;本矩阵以 SKILL.md + 文件系统为准(55)。
+- **data-source-contract.md** 表头计数(52/54)落后于 SKILL.md 第 3 节的 59,系其文末"发现的差异"已自述的已知漂移;本矩阵以 SKILL.md + 文件系统为准(59)。

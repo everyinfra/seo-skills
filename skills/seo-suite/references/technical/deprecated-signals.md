@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | FAQPage 富结果 | SERP 富结果 **2026-05-07 起全站退役**(2023-08 先收窄到政府/健康权威站,2026-05 归零) | 存量标记审计标 **Info、不标 Critical**;不建议删除(对其他消费者无害);不为 SERP 再加这类标记;真实用户提交问答的页面用 QAPage | Rich Results Test 输入存量页已不报告该类型;[官方 faqpage 文档](https://developers.google.com/search/docs/appearance/structured-data/faqpage)(一手) | 2026-10-10 |
 | HowTo 富结果 | 2023-08 官方公告,2023-09 起 SERP 停展 | 步骤照常用有序列表/清晰 H2 承载;HowTo schema 本身合法,只是 Google 不再给展示位 | [官方变更公告](https://developers.google.com/search/blog)(URL 占位,2023-08"FAQ 与 HowTo rich results"篇) | 2026-10-10 |
-| Course(CourseInfo)·EstimatedSalary·LearningVideo·ClaimReview·VehicleListing | **2025-06-12** 起不再产生富结果;2025-09-09 起从 GSC 富结果报告与 Rich Results Test 移除(SC API 拖到 2025-12) | 存量标 Info;不再为富结果投入;被问"那用什么"见下方替换决策表 | 官方 retiring 公告(URL 占位)+ GSC 增强报告类型清单 | 2026-10-10 |
+| Course(CourseInfo)·EstimatedSalary·LearningVideo·ClaimReview·VehicleListing | **2025-06-12 公告退役 → 2025-09-09 移除**(公告日口径勿当移除日:2025-06-12 为官方 retiring 公告,富结果停止产生;2025-09-09 起从 GSC 富结果报告与 Rich Results Test 移除,SC API 拖到 2025-12) | 存量标 Info;不再为富结果投入;被问"那用什么"见下方替换决策表 | 官方 retiring 公告(URL 占位)+ GSC 增强报告类型清单 | 2026-10-10 |
 | SpecialAnnouncement | 2025-07 退役(疫情期专用类型) | 不再使用;有时限的公告用 Event,常规公告用 Article | 同上(占位) | 2026-10-10 |
 | PracticeProblem | 2025-11-05 弃用通知;2026-01 起工具支持移除、2026-01-06 文档删除 | 不再使用;教育内容用正文分步 + VideoObject | 同上(占位) | 2026-10-10 |
 | **Dataset——未死,勿误杀** | 未退役(常规 SERP 本无此富结果) | **Dataset Search 仍在消费**:数据门户/研究库继续标记——这与"Google 忽略某字段"是两回事 | [datasetsearch.research.google.com](https://datasetsearch.research.google.com) 检索自家数据集验证收录 | 2026-10-10 |

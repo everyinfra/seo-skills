@@ -4,7 +4,7 @@
 
 ## 用途
 
-韩语区(네이버 搜索份额 63–64%)做收录诊断、robots/sitemap/RSS 提交、IndexNow、结构化数据、제휴(合作)API 评估时读。与 [ai-crawler-policy.md](ai-crawler-policy.md) 第三节(Naver 收录语义速览)配合;该文是摘要,本文件是完整规范层。
+韩语区(네이버 搜索份额 63–64%,本土面板口径;StatCounter 口径则将 Naver 与 Google 记为统计并列——双口径并记,详见 multilingual-workflow 市场总表)做收录诊断、robots/sitemap/RSS 提交、IndexNow、结构化数据、제휴(合作)API 评估时读。与 [ai-crawler-policy.md](ai-crawler-policy.md) 第三节(Naver 收录语义速览)配合;该文是摘要,本文件是完整规范层。
 
 ## 一、收录机制:수집요청 与优先级队列(官方文档蒸馏)
 

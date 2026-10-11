@@ -198,14 +198,33 @@ def _add_months(d, n):
     return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
 
 
+def _host_is_social(host):
+    """权威社媒域判定:可注册域相等,不做子串含入(R5 复现:`h in host` 会让
+    x.com 命中 box.com)。带 TLD 项(wikidata.org…)比对 URL 可注册域(剥
+    www. 取末两段,子域 de.linkedin.com 仍命中);无 TLD 项(mastodon 联邦
+    实例)比对可注册域二级标签(mastodon.social / foo.mastodon.online)。"""
+    host = (host or "").lower().strip(".")
+    if host.startswith("www."):
+        host = host[4:]
+    parts = [p for p in host.split(".") if p]
+    reg = ".".join(parts[-2:]) if len(parts) >= 2 else host
+    for h in SOCIAL_HOSTS:
+        if "." in h:
+            if reg == h:
+                return True
+        elif reg.split(".")[0] == h:
+            return True
+    return False
+
+
 def extract_sameas(facts):
-    """sameAs:facts(source+正文)中的权威档案/官方社媒链接,去重保序。"""
+    """sameAs:facts(source+正文)中的权威档案/官方社媒链接,去重保序。
+    域名匹配按可注册域相等(box.com 不再被 x.com 误收)。"""
     urls, seen = [], set()
     for f in facts:
         for u in re.findall(r"https?://[^\s)】\]]+", f["source"] + " " + f["fact"]):
             u = u.rstrip(".,;。")
-            host = urlparse(u).netloc.lower()
-            if any(h in host for h in SOCIAL_HOSTS) and u not in seen:
+            if _host_is_social(urlparse(u).hostname) and u not in seen:
                 seen.add(u)
                 urls.append(u)
     return urls
@@ -332,8 +351,18 @@ def generate(facts, name, etype, today):
         try:
             vdates.append(datetime.strptime(v["date"], "%Y-%m-%d").date())
         except ValueError:
-            pass
-    last_reviewed = str(max(vdates)) if vdates else str(today)
+            warnings.append("volatile 日期 %r 无法解析(须 YYYY-MM-DD),该条不计入复核日期:%s"
+                            % (v["date"] or "(空)", v["fact"][:40]))
+    if vdates:
+        last_reviewed = str(max(vdates))
+    elif volatile:
+        # 宁缺勿假(R5 复现:旧实现解析失败静默回退今天=伪造复核日期):一条可解析
+        # 日期都没有→置 None,页面渲染为 ?,人工补日期后重生成
+        last_reviewed = None
+        warnings.append("volatile 日期全部不可解析:last_reviewed 置空(宁缺勿假),"
+                        "补 YYYY-MM-DD 日期后重生成")
+    else:
+        last_reviewed = str(today)             # 无 volatile 事实:用页面复核日(第 10 条口径)
 
     # ---- 6 is-NOT ----
     is_not_items = extract_is_not(facts, name)
@@ -352,15 +381,22 @@ def generate(facts, name, etype, today):
 
     # ---- 4 FAQ(每答含实体名) ----
     faq = []
-    used_q = set()
+    used_q = {}                                 # 问题 → faq 条目(同标签事实并入既有条目)
 
     def _add_faq(q, a):
-        if q in used_q:
-            return False                        # 同一问题不重复(多事实同标签→答案并入区块)
         if name not in a:
             a = "%s:%s" % (name, a)           # 兜底:答案独立成句也必含实体名
-        used_q.add(q)
-        faq.append({"question": q, "answer": a.rstrip("。.;") + ("。" if zh else ".")})
+        a = a.rstrip("。.;")
+        if q in used_q:
+            # 撞已用问题:答案并入既有条目(R5 复现:同标签 volatile ≥3 条时
+            # 旧实现第 3 条起被静默丢弃;并入而非丢,FAQ 条数也不膨胀)
+            item = used_q[q]
+            item["answer"] = (item["answer"].rstrip("。.;")
+                              + ("；" if zh else "; ") + a + ("。" if zh else "."))
+            return True
+        item = {"question": q, "answer": a + ("。" if zh else ".")}
+        used_q[q] = item
+        faq.append(item)
         return True
 
     if zh:
@@ -382,8 +418,7 @@ def generate(facts, name, etype, today):
         for v in volatile:
             qtpl = VOLATILE_Q_ZH.get(v["label"])
             q = qtpl % name if qtpl else "%s 的%s情况如何?" % (name, v["label"])
-            if not _add_faq(q, v["fact"]):     # 同标签已问过→换通用问法
-                _add_faq("%s 的%s情况如何?" % (name, v["label"]), v["fact"])
+            _add_faq(q, v["fact"])             # 同标签多条事实→并入同一问题的答案
     else:
         if cat or isa:
             _add_faq("What does %s do?" % name,
@@ -404,8 +439,7 @@ def generate(facts, name, etype, today):
         for v in volatile:
             qtpl = VOLATILE_Q_EN.get(v["label"])
             q = qtpl % name if qtpl else "What about %s's %s?" % (name, v["label"])
-            if not _add_faq(q, v["fact"]):
-                _add_faq("What about %s's %s?" % (name, v["label"]), v["fact"])
+            _add_faq(q, v["fact"])             # same-label facts merge into one answer
     if len(faq) < 5:                          # 不足 5 条→按记录补通用问题
         for f in ordered:
             if len(faq) >= 5:
@@ -477,7 +511,7 @@ def render_page(g):
     L.append('<section id="volatile">')
     L.append("<h2>易变事实(定价/客户数/平台与功能…)</h2>" if zh
              else "<h2>Volatile facts (pricing/customers/platforms…)</h2>")
-    L.append("<p>Last reviewed: %s</p>" % g["last_reviewed"])
+    L.append("<p>Last reviewed: %s</p>" % (g["last_reviewed"] or "?"))
     if g["volatile"]:
         L.append("<dl>")
         for v in g["volatile"]:

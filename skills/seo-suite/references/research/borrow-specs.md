@@ -39,7 +39,7 @@
 - **资格闸门 4 道**【官方】:观察窗≥28 天;峰值窗内采样≥5;峰值>0;首采距窗起点>30 天剔除
 - 判定:peak=平滑最高;**half-life=peak 后平滑值≤50% peak 且连续 14 天无反弹的天数**(未达成=holding 右删失);状态机 rising/peaked/decaying/decayed/holding
 - **重写队列**【官方】:"过峰且 citation share 正跌向峰值一半"的 owned 页按距半衰剩余天数排序——decay 是触发器不是季度末发现
-- 官方常数【可直接当默认阈值】:中位半衰期 11 天;首引→掉半中位 42 天;78% 页两周内掉半;**跨引擎相关仅 0.03-0.09(分引擎独立判定是硬规则)**;5+引擎被引页 8 周存活率 6.8%(单引擎 1.2%);内容家族半衰期 Choose 29/Explain 28/Sell 28/Report 27 天
+- 官方常数【可直接当默认阈值】:中位半衰期 11 天(本节系 Profound 官方口径;另一口径 SSRN 调研 4.5 周,双口径并记见 multilingual-workflow.md 12.1);首引→掉半中位 42 天;78% 页两周内掉半;**跨引擎相关仅 0.03-0.09(分引擎独立判定是硬规则)**;5+引擎被引页 8 周存活率 6.8%(单引擎 1.2%);内容家族半衰期 Choose 29/Explain 28/Sell 28/Report 27 天
 - 落地:citation_panel.py 加 `decay` 子命令
 
 ### B2. citation_gaps.py(geo-aeo-tracker 算法直译)

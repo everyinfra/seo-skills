@@ -1,6 +1,6 @@
 {
  "schema_version": "1.0",
- "updated": "2026-10-11",
+ "updated": "2026-10-12",
  "governance": {
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 59,
-  "template": 23,
+  "script": 61,
+  "template": 24,
   "reference": 13,
-  "stable": 69,
-  "beta": 25,
+  "stable": 70,
+  "beta": 27,
   "draft": 1
  },
  "entries": [
@@ -1228,6 +1228,19 @@
    "status": "draft"
   },
   {
+   "type": "template",
+   "path": "templates/content/ai-use-policy.md",
+   "group": "templates/content",
+   "inputs": [
+    "四象限定级决策(可辅助/须人审/禁用/须披露;人工判定,机检不覆盖)"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
    "type": "script",
    "group": "scripts/工作流",
    "inputs": [
@@ -1294,6 +1307,33 @@
    "fallback_mode": null,
    "tests_file": "scripts/self_check.py",
    "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "project.py",
+   "group": "scripts/工作流",
+   "inputs": [
+    "--site URL(init)",
+    "子进程调既有 59 脚本(run triage/next/status)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "编排器只编排不重实现;任何步失败续跑其余",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_project.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "content_queue.py",
+   "group": "scripts/内容运营",
+   "inputs": [
+    "trend-state/gsc 导出/serp_overlap 输出(三源任组合)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "缺源跳过告警不猜;三源全缺退出 1",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_content_queue.py",
+   "status": "beta"
   }
  ]
 }

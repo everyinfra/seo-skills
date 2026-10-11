@@ -144,6 +144,38 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{"text":"📚 SEO skill intel-update: sources changed. See .intel-update-task.md in repo."}' || true
 
+      # ── R0-9:intel issue 无超时升级 ─────────────────────────────────────────
+      # job 末步:列出 label=intel-update-pending 且 open 超 72h 的 issue →
+      # ::warning(Actions Summary/日志可见)。保守策略:只告警不自动关——
+      # "pending 超 72h"可能意味着任务文件没被处理,关掉会掩盖问题;
+      # if: always() 保证上游步骤(push 失败等)红了也照常巡检。
+      - name: Flag stale intel issues (>72h pending → ::warning;不自动关)
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'intel-update-pending',
+              state: 'open'
+            });
+            const cutoff = Date.now() - 72 * 3600 * 1000;
+            let stale = 0;
+            for (const i of issues) {
+              const created = Date.parse(i.created_at);
+              if (Number.isFinite(created) && created < cutoff) {
+                const hours = Math.round((Date.now() - created) / 3600000);
+                core.warning(`intel-update issue #${i.number} 待处理已 ${hours}h(>72h):${i.title} —— 按 self-update-protocol.md 处理或手动关闭(保守策略:不自动关)`);
+                stale++;
+              }
+            }
+            if (stale === 0) {
+              core.info(issues.length === 0
+                ? '无 intel-update-pending issue'
+                : `intel-update-pending issue ${issues.length} 张,均未超 72h`);
+            }
+
   # ── capability-drift(CAPABILITY_MATRIX ↔ 文件系统漂移门;零 secret 零网络)────
   # 与 check-and-flag 同一 cron 触发(每日 UTC 01:11 之后串行:needs + !cancelled(),
   # 前者成败都不拦本检查——漂移门独立于信源抓取,不因抓取失败而静默)。跑
@@ -159,6 +191,7 @@ jobs:
   # secrets/变量:本 job 零依赖(缺省即全功能,不存在需跳过的场景)。
   # 本地等价命令(仓库根):
   #   python3 skills/seo-suite/tests/test_capability_matrix.py
+  #   python3 skills/seo-suite/scripts/freshness.py --fail-stale skills/seo-suite/references
   capability-drift:
     needs: check-and-flag          # 在现有 cron job 之后(同一 schedule)
     if: ${{ !cancelled() }}        # 前序 job 取消/失败也照跑(漂移检查不静默)
@@ -181,6 +214,23 @@ jobs:
           python3 skills/seo-suite/tests/test_capability_matrix.py 2>&1 | tee matrix-drift.log
           rc=${PIPESTATUS[0]}
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+
+      # ── R0-10:freshness 无 CI 守护 → 顺带跑 --fail-stale ──────────────────────
+      # 已读 freshness.py --help 确认:--fail-stale flag 存在(stale>0 → exit 1),
+      # 无需退出码包装。stale 即红(与漂移门同一响亮纪律);!cancelled() 保证
+      # 漂移测试红了本检查也照跑——两个独立缺口一次 run 全部浮出。
+      # 注:dir 必须显式传(脚本默认扫 cwd 的 references/,CI cwd 是仓库根)。
+      - name: freshness --fail-stale (R0-10:references 证据保鲜 CI 守护)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          python3 skills/seo-suite/scripts/freshness.py --fail-stale skills/seo-suite/references
+          rc=$?
+          set -e
+          if [ "$rc" -eq 1 ]; then
+            echo "::error::references 存在 >90 天 stale 证据(freshness --fail-stale)——复核后回写头部 Updated/复核 日期(详见上方清单)"
+          fi
           exit "$rc"
 
       - name: Explain drift diff (job 已红;给出可操作的双向差集)

@@ -12,7 +12,7 @@ EveryInfra SEO Skills 的版本为 `0.34.4`，采用 Apache-2.0 许可协议。�
 
 **0.9 深挖轮:本地社区层。** 17 个市场逐一用本地语言挖了"圈内才知道的事"——主干新增「本地社区与信息源索引」(每市场信息源/圈内共识/国际圈误解纠偏),如俄罗斯的 76 条商业因子清单与区域 lr 码、韩国的发帖时刻表与保存市场、日本的内链数值惯例与 MEO 十倍价差、德语区的 Abmahnung 法律战、土耳其的 tanıtım yazısı 链接市场、泰国的"หลังบ้าน"灰链红线、法国 AIO 晚德一年=红利窗口;**外链市场价带表**(从越南 1,500 VND/条到西语大媒体 5,000€)、**七大 marketplace 站内 SEO 分叉**、融合原则扩至 27 条。
 
-**0.16–0.23 系列:实装化+全覆盖。** 规则变代码——**56 个 stdlib 零依赖脚本**(当时;单页审计/AI 爬虫姿势/CJK 文本度量/GSC 导出挖掘/sitemap 六坏桶/hreflang 簇矩阵/引用采样面板 Wilson CI/DiD 归因/网格排名 ARP·ATRP·SoLV…)+ `markets.json` 18 市场规则数据层(130 项市场特检)+ `market_lint.py` 24 条动态自动检查+**32 个 golden 测试**(self_check 每次全跑)。**8 个新专项模块**:agent 协议速查(14 卡)/审计规则目录(SEOmator 373 规则)/Naver 官方文档蒸馏/head 元素完整参考/SERP 数据模型/证据银行/域名策略(过期域滥用红线·AI 记品牌不记 URL)/站群光谱(白帽→泛站群·六目标灰帽→白帽等效)/pSEO 九章作战手册(四案例 sitemap 实测)/**站型打法手册(8 卡)**/CWV 完整手册/移动 SEO(2024-07 起只抓 smartphone UA)/惩罚恢复(11 类手动动作)/重定向 canonical 六场景/UGC+站内搜索。**18 个语区门户页**(`references/markets/` 每语区一份,2026-10 母语定向研究)。
+**0.16–0.23 系列:实装化+全覆盖。** 规则变代码——**35 个 stdlib 零依赖脚本**(当时;单页审计/AI 爬虫姿势/CJK 文本度量/GSC 导出挖掘/sitemap 六坏桶/hreflang 簇矩阵/引用采样面板 Wilson CI/DiD 归因/网格排名 ARP·ATRP·SoLV…)+ `markets.json` 18 市场规则数据层(130 项市场特检)+ `market_lint.py` 24 条动态自动检查+**32 个 golden 测试**(self_check 每次全跑)。**8 个新专项模块**:agent 协议速查(14 卡)/审计规则目录(SEOmator 373 规则)/Naver 官方文档蒸馏/head 元素完整参考/SERP 数据模型/证据银行/域名策略(过期域滥用红线·AI 记品牌不记 URL)/站群光谱(白帽→泛站群·六目标灰帽→白帽等效)/pSEO 九章作战手册(四案例 sitemap 实测)/**站型打法手册(8 卡)**/CWV 完整手册/移动 SEO(2024-07 起只抓 smartphone UA)/惩罚恢复(11 类手动动作)/重定向 canonical 六场景/UGC+站内搜索。**18 个语区门户页**(`references/markets/` 每语区一份,2026-10 母语定向研究)。
 
 **0.24–0.30 系列:持续监控与自更新闭环。** 从一次性审计升级为长期守护——`monitor.py` 持续监控守护(日检四问/周趋势/SQLite 快照/四级告警+冷却与防疲劳,SSRF/密钥守卫)+`notify.py` 四渠道分级通知+GitHub Actions 部署模板;`market_lint.py` 升至 64 条检查;**`intel_check.py`+自更新协议**(18 源信源监控,变更→受影响文件映射→P0-P3 分级更新);golden 测试增至 **71 个**;脚本总数增至 **38 个**。
 
@@ -43,7 +43,7 @@ EveryInfra SEO Skills 的版本为 `0.34.4`，采用 Apache-2.0 许可协议。�
 | 巴西 ChatGPT 采用 | 25.5% 人口用 App(全球最高)、~5,000 万月用户 | StatCounter/OpenAI |
 | 西语查询的 AI 引用语言绑定 | 83–84% 引西语源 | Temso(行业研究) |
 | 非英 SEO skill 供给 | 西/巴西/法/印尼语 top 仓库仅 1–5 星 | GitHub API 2026-10 实测 |
-| Yandex 在土耳其份额 | ~26%(2026-09;3 月还 ~13%,大反弹)——俄语区之外第二个 Yandex 市场 | StatCounter(行业) |
+| Yandex 在土耳其份额 | ~26%(2026-09;3 月还 ~13%,大反弹;vs 本地实测 3–5%,口径冲突并记)——俄语区之外第二个 Yandex 市场 | StatCounter(行业) |
 | 印度 ChatGPT 采用 | ~1 亿周活,ChatGPT 第二大市场 | OpenAI 官方(Altman) |
 
 
@@ -72,7 +72,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 | technical | 技术 SEO 与单页审计、robots.txt 与 AI 爬虫政策（含区域爬虫/MistralAI/Bytespider）、hreflang 国际化、结构化数据（含富结果状态速查）、内链与架构、实体、Programmatic SEO、Core Web Vitals、**JS 渲染与 SPA SEO**（五引擎渲染差异）、**Agent-Readiness 协议层**（ARD/WebMCP）、**服务器日志分析**（AI 到访测量/a11y 三分法）、归因埋点 |
 | monitoring | 排名追踪、外链（含 14 市场本地外链价带与风险表）、品牌提及（四级引用阶梯+各市场监控通道）、**算法更新归因**（官方时间线/数据文件）、SEO 漂移监控、指标与报告 |
 | **专项模块** | 域名策略（选域/过期域尽调/迁移 checklist/AI 引用继承）、站群光谱与白帽替代、pSEO 九章手册、站型打法（SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL）、CWV 四指标、移动 SEO、惩罚恢复、重定向与 canonical、UGC 与站内搜索 |
-| **可执行层** | 56 个 stdlib 脚本+markets.json 数据层+71 golden tests——AI 用 skill 时直接跑脚本拿事实再按能力文件解读 |
+| **可执行层** | 59 个 stdlib 脚本+markets.json 数据层+907 golden tests——AI 用 skill 时直接跑脚本拿事实再按能力文件解读 |
 
 **全球能力不是独立模块,而是融在每个能力集合里**：`overview/multilingual-workflow.md` 是全球主干（18 个市场的引擎格局、逐市场工具栈、语言规范、合规速查），各能力文件按需携带对应区域知识。
 
@@ -162,9 +162,9 @@ seo-skills/
 ├── manifest.json          包信息
 └── skills/
     └── seo-suite/
-        ├── SKILL.md       入口：intake、路由规则、输出结构、38 脚本路由
-        ├── scripts/       56 个可执行脚本(审计/多语言/GSC/归因/网格排名/监控/信源检查…)+markets.json
-        ├── tests/         672 个 golden 测试(self_check 全跑)
+        ├── SKILL.md       入口：intake、路由规则、输出结构、59 脚本路由
+        ├── scripts/       59 个可执行脚本(审计/多语言/GSC/归因/网格排名/监控/信源检查…)+markets.json
+        ├── tests/         907 个 golden 测试(self_check 全跑)
         ├── examples/      金标准样例输出
         ├── references/
         │   ├── overview/     能力地图、路由规则、intake 清单(含目标市场闸门)、多语言工作流(全球主干:市场总表/工具栈/规范/合规)

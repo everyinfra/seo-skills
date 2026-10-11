@@ -60,10 +60,10 @@
 
 ### llms.txt 采用率
 
-- **Rankability 采用追踪**：784+ 网站部署 llms.txt/llms-full.txt，仅占前 1,000 网站的 **0.3%**（2025-06 数据，按月更新）。[rankability.com/data/llms-txt-adoption](https://www.rankability.com/data/llms-txt-adoption/)
+- **Rankability 采用追踪**：前 1,000 网站中 **9.3%** 已部署 llms.txt/llms-full.txt（2026-09 数据，按月更新；2025-06 基线为 0.3%/784+ 站）。[rankability.com/data/llms-txt-adoption](https://www.rankability.com/data/llms-txt-adoption/)
 - 采用方：Zapier、Stripe、Cloudflare、Anthropic、Vercel、Supabase 等（[llms-txt.io 汇总](https://llms-txt.io/blog/companies-using-llms-txt-examples)）。
 - 事件：Google 于 2025-12-03 将 llms.txt 加入 Search Central 文档又在同日移除（此前公开否定过该标准）。[omnius.so 报道](https://www.omnius.so/industry-updates/google-adds-llms-txt-to-docs-after-publicly-dismissing-it)
-- 与 [geo-evidence.md](geo-evidence.md) 第五节一致：Google 已声明 Search 不使用 llms.txt；0.3% 采用率说明它不是 GEO 必做项。
+- 与 [geo-evidence.md](geo-evidence.md) 第五节一致：Google 已声明 Search 不使用 llms.txt；9.3% 采用率（2026-09，Rankability）仍属少数，说明它不是 GEO 必做项。
 
 ### 爬虫与基础设施
 
@@ -109,7 +109,7 @@
 1. **GEO 40% vs C-SEO Bench 无效**：同为本银行收录的一手研究，结论相反。引用任一方必须同时提示另一方及其实验条件差异（检索/生成阶段、模型、指标、多采纳者设定）。
 2. **AIO 覆盖率（52% / 25% / 13.14% / <16%）**：不同追踪器、不同月份、不同查询集；只允许带口径引用，禁止取最大值制造紧迫感。
 3. **厂商案例 vs 同行评议**：Ramp 7× 与 C-SEO Bench「多数方法无效」并存——方案里两者都要出现，分别标注证据级别。
-4. **llms.txt**：0.3% 采用率 + Google 官方不使用 = 不作为实施必选项（与 geo-evidence.md 一致）。
+4. **llms.txt**：9.3% 采用率（2026-09，Rankability）+ Google 官方不使用 = 不作为实施必选项（与 geo-evidence.md 一致）。
 5. 本银行条目读取于 2026-10-09（第六节批次为 2026-10-11 调研+交叉核查）；行业研究类数字的保鲜期按 [geo-evidence.md](geo-evidence.md)「证据保鲜机制」（快变事实 60 天内重查）执行。
 6. **引用半衰期双口径**：SSRN 中位 4.5 周（第六节第 7 条）与 Profound 中位 11 天并记两说，样本与「引用」定义不同，禁止择一写成「AI 引用寿命」通值。
 

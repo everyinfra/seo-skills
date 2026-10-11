@@ -170,7 +170,7 @@
 | prioritize.py 条件优先级 | E2:Botify 条件规则【官方阈值示例】(放大器/条件依赖型/segment 切换重算) |
 | changelog.py 页面变更审计 | D1:Conductor 事件 schema【官方】(5 枚举 change_type/字段白名单/14 天日粒度更早周粒度) |
 | doctor.py 环境自检 | E3:claude-seo detect_tier(T0 纯静态→T3 GA4)+redact 纪律(只探键名不读值/渠道名不打值) |
-| citation_panel decay 子命令 | B1:Profound citation decay 协议【官方】(中位半衰期 11 天/资格闸门 4 道/重写队列/跨引擎相关仅 0.03-0.09) |
+| citation_panel decay 子命令 | B1:Profound citation decay 协议【官方】(中位半衰期 11 天——另一口径 SSRN 调研 4.5 周,双口径并记见 multilingual-workflow.md 12.1/资格闸门 4 道/重写队列/跨引擎相关仅 0.03-0.09) |
 | citation_panel diff signals 与 SoV 指标族 | B4:Scrunch Signals(Δ≥5pp 且配对 n≥10 才报/fingerprint/url_movers)+Peec SoV·win_rate·citation_rate 公式【官方】 |
 | citation_gaps.py 引用缺口 | B2:geo-aeo-tracker 算法直译(hasCompetitorRun=唯一高优先判据;外联简报七字段) |
 | oracle_check.py 品牌事实核查 | B4:Athena Oracle 差异检测(KB≥25 条门槛/finding 状态机/Inaccuracy%·model_accuracy) |

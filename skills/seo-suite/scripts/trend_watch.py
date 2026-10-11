@@ -375,8 +375,17 @@ def wire_check(title, market, wire_domains):
 
 # ---------------------------------------------------------------- 信号源(整源失败跳过)
 def _strip_publisher(title):
-    """Google News 标题尾巴 ' - Publisher' 去掉(wire 检查仍读 <source> 标签,不受影响)。"""
-    return _clean_text(re.sub(r"\s+-\s+\S.{0,40}$", "", title)) if " - " in title else title
+    """Google News 标题尾巴 ' - Publisher' 去掉:从**最后一个** ' - ' 截断(R5 复现:
+    首个 ' - ' 截到尾会把标题自身的 ' - ' 中段一起吞掉,如 'A - B - Pub' → 'A')。
+    尾段须像出版方名(非空且 ≤40 字符,沿用原量纲);超长视为标题本体,不截。
+    wire 检查仍读 <source> 标签,不受影响。"""
+    if " - " not in title:
+        return title
+    head = title.rfind(" - ")
+    tail = title[head + 3:].strip()
+    if not tail or len(tail) > 40:
+        return title
+    return _clean_text(title[:head])
 
 
 def _src_google_news(ctx):
@@ -513,6 +522,22 @@ def signal_id_of(src, title):
     return hashlib.sha1(("%s|%s" % (src, norm)).encode("utf-8")).hexdigest()[:10]
 
 
+def _norm_title(title):
+    return re.sub(r"\s+", " ", str(title or "").strip().lower())
+
+
+def _find_by_title(state, title):
+    """跨源并组信号找回:signal_id 键在建组源名下,其他源的已见标题按归一标题
+    精确匹配找回信号(供二次采样补该源样本;velocity 只做同源比较的前提)。"""
+    norm = _norm_title(title)
+    if not norm:
+        return None
+    for s in state["signals"].values():
+        if _norm_title(s.get("title")) == norm:
+            return s
+    return None
+
+
 def _history(sig, event, detail, now):
     sig.setdefault("history", []).append({"ts": iso(now), "event": event, "detail": detail[:120]})
     sig["history"] = sig["history"][-30:]
@@ -520,22 +545,28 @@ def _history(sig, event, detail, now):
 
 # ---------------------------------------------------------------- 四问机检
 def compute_velocity(samples, now, resample_min):
-    """velocity 三态:与 ≥resample_min 分钟前的最近一次采样比位置(位置小=更热)。
-    样本不足/间隔不够 → None(不可判,Q3 退化为只看 first_seen——Method Notes 已知坑)。"""
+    """velocity 三态:与 ≥resample_min 分钟前的最近一次**同源**采样比位置(位置小=更热)。
+    各源排位量纲不可比(hn top 1-15 vs weibo 热搜 1-50,R5 复现:跨源混比会造出
+    假 rising/fading)——只与最新样本同 src 的历史样本比;同源样本不足 → None
+    (不可判,Q3 退化为只看 first_seen——Method Notes 已知坑)。旧状态样本无
+    src 键时按同源(None==None)处理,不破坏既有状态库。"""
     if len(samples) < 2:
         return None
+    cur = samples[-1]
     prev = None
     for s in reversed(samples[:-1]):
+        if s.get("src") != cur.get("src"):
+            continue                            # 跨源排位不可比:只看同源样本
         dt = parse_iso(s.get("ts"))
         if dt and (now - dt).total_seconds() / 60.0 >= resample_min:
             prev = s
             break
     if prev is None:
         return None
-    cur, old = samples[-1].get("pos"), prev.get("pos")
-    if not isinstance(cur, int) or not isinstance(old, int):
+    cur_pos, old_pos = cur.get("pos"), prev.get("pos")
+    if not isinstance(cur_pos, int) or not isinstance(old_pos, int):
         return None
-    return "rising" if cur < old else ("fading" if cur > old else "peaked")
+    return "rising" if cur_pos < old_pos else ("fading" if cur_pos > old_pos else "peaked")
 
 
 def q3_window(sig, now, th):
@@ -575,6 +606,8 @@ def eval_status(sig, now, th):
 
 def register_item(state, src, item, tokens, now, th):
     """登记一条原始信号:seen 去重 → 跨源词重叠合并 → 建新信号/补采样。
+    已见标题若属跨源并组信号(signal_id 键在建组源),按归一标题找回并补该源的
+    二次采样样本——否则同源 velocity 永远缺历史样本,退化为不可判。
     返回 (signal|None, created:bool, merged:bool)。"""
     title = item.get("title") or ""
     if not title:
@@ -601,6 +634,8 @@ def register_item(state, src, item, tokens, now, th):
             sig, merged = exact, True
         elif best is not None and best_ov > ov_th and best.get("status") in ("go", "pivot"):
             sig, merged = best, True
+    if sig is None and not is_new:
+        sig = _find_by_title(state, title)                 # 已见标题:并组信号二次采样
     if sig is None:
         if not is_new:
             return None, False, False            # 已见且信号已淘汰:只当旧闻
