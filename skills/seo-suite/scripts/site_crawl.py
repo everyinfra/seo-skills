@@ -29,8 +29,9 @@ URL 归一:去 fragment/非根路径去尾斜杠/参数默认保留(--strip-para
 
 输出:crawl.json(--out,默认 crawl.json)+ --urls-out 纯 URL 清单(直接喂
 site_audit.py / traffic_funnel.py --urls)+ --json 打 stdout + markdown 人读摘要。
-不抓外链目标(只记);--check-external 可选对外链域抽样 HEAD(默认关;用途:外链域
-存活抽检,验证指向是否已腐烂,不做外爬)。
+edges 形如 {src,dst,anchor}:anchor 键可缺(R3-5 锚文本采集;短于 2 字/无文本的锚
+不落盘),下游读 src/dst 不受影响。不抓外链目标(只记);--check-external 可选对外
+链域抽样 HEAD(默认关;用途:外链域存活抽检,验证指向是否已腐烂,不做外爬)。
 
 退出码:0=正常;1=存在错误页(4xx/5xx 或重试后仍失败);2=输入/用法错;3=全部起点失败。
 
@@ -74,6 +75,8 @@ SUB_PROBE_BUDGET_S = 30           # 常见子域探测总预算(秒);超时剩�
 EXTERNAL_SAMPLE = 10             # --check-external 抽样域数
 EXTERNAL_TOP = 50                # external_domains 聚合表保留 Top N
 SKIP_HREF_SCHEMES = ("javascript:", "mailto:", "tel:", "data:", "ftp:")
+ANCHOR_MAX_LEN = 80               # R3-5:锚文本截断长度(去空白后)
+ANCHOR_MIN_LEN = 2                # R3-5:短于 2 字的锚不落盘(无信号;亦保持 edges 旧快照兼容,anchor 键可缺)
 
 
 class GuardError(Exception):
@@ -396,8 +399,10 @@ class PageParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.canonical = None
         self.hrefs = []
+        self.anchors = []             # R3-5:与 hrefs 平行——每个 <a> 的锚文本(去空白截 80 字)
         self._in_title = False
         self._title_buf = []
+        self._a_buf = None            # 当前 <a> 的文本缓冲(None=不在带 href 的 <a> 内)
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -410,14 +415,21 @@ class PageParser(HTMLParser):
             h = a.get("href")
             if h:
                 self.hrefs.append(h)
+                self.anchors.append("")
+                self._a_buf = []      # R3-5:嵌套标签(<a><b>文</b></a>)的文本也计入
 
     def handle_endtag(self, tag):
         if tag == "title":
             self._in_title = False
+        elif tag == "a" and self._a_buf is not None:
+            self.anchors[-1] = " ".join("".join(self._a_buf).split())[:ANCHOR_MAX_LEN]
+            self._a_buf = None
 
     def handle_data(self, d):
         if self._in_title:
             self._title_buf.append(d)
+        elif self._a_buf is not None:
+            self._a_buf.append(d)
 
     @property
     def title(self):
@@ -425,7 +437,8 @@ class PageParser(HTMLParser):
 
 
 def extract_links(body, base):
-    """返回 (title, canonical_abs, [(href_abs_norm...)])——link 归一/过滤在调用方。"""
+    """返回 (title, canonical_abs, [(href_abs_norm...)], [anchor...])——link 归一/过滤在调用方;
+    anchors 与 hrefs 等长平行(R3-5,无文本/未闭合时为空串)。"""
     p = PageParser()
     try:
         p.feed(body[:500_000])
@@ -434,7 +447,7 @@ def extract_links(body, base):
     canonical = None
     if p.canonical:
         canonical = normalize_url(p.canonical, base=base)
-    return p.title, canonical, p.hrefs
+    return p.title, canonical, p.hrefs, p.anchors
 
 
 # ---------------------------------------------------------------------------
@@ -466,6 +479,7 @@ class Crawler:
         self.pages = {}                 # norm_url -> page record(插入序 = 发现序)
         self.order = []
         self.edges = set()              # (src, dst) 内链边(同源同目标去重)
+        self.edge_anchor = {}           # (src, dst) -> 锚文本(R3-5;同边多锚首见优先)
         self.external = Counter()       # 外链 registrable domain -> 次数(页内去重后累计)
         self.accepted_subs = set()      # 已收子域(同 registrable、≠种子主机)
         self.counts = {"robots": 0, "sitemap": 0, "crawl": 0}
@@ -741,9 +755,9 @@ class Crawler:
                 self.redirects += 1
                 if r["final_url"] != url:
                     rec["final_url"] = r["final_url"]
-            title, canonical, hrefs = extract_links(r["body"], r["final_url"])
+            title, canonical, hrefs, anchors = extract_links(r["body"], r["final_url"])
             rec["title"], rec["canonical"] = title, canonical
-            for h in hrefs:
+            for i, h in enumerate(hrefs):
                 hl = h.strip()
                 if not hl or hl.startswith("#"):
                     continue
@@ -757,6 +771,9 @@ class Crawler:
                 if self.is_internal(h2):
                     self.consider_host(h2)
                     internal_targets.add(absu)
+                    atext = anchors[i] if i < len(anchors) else ""
+                    if len(atext) >= ANCHOR_MIN_LEN:   # R3-5:锚文本配对进边(首见优先)
+                        self.edge_anchor.setdefault((url, absu), atext)
                 else:
                     ed = registrable(h2)
                     if ed == self.reg:
@@ -839,13 +856,20 @@ class Crawler:
             pages.append(rec)
         orphans = [u for u in self.order if inlinks.get(u, 0) == 0 and u != self.seed]
         total_out = sum(p["out_internal"] + p["out_external"] for p in pages)
+        edges_out = []
+        for s, d in sorted(self.edges):
+            e = {"src": s, "dst": d}
+            a = self.edge_anchor.get((s, d))
+            if a:
+                e["anchor"] = a          # R3-5:锚文本可缺(短锚/旧数据),下游须容忍无 anchor 键
+            edges_out.append(e)
         report = {
             "schema_version": SCHEMA_VERSION,
             "domain": self.reg,
             "subdomains": sorted(self.accepted_subs),
             "discovery": {"mode": self.mode, "counts": dict(self.counts)},
             "pages": pages,
-            "edges": [{"src": s, "dst": d} for s, d in sorted(self.edges)],
+            "edges": edges_out,
             "orphans": orphans,
             "external_domains": dict(_top_domains(self.external, EXTERNAL_TOP)),
             "stats": {

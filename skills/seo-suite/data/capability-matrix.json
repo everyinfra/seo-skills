@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 69,
+  "script": 76,
   "template": 24,
   "reference": 13,
   "stable": 70,
-  "beta": 35,
+  "beta": 42,
   "draft": 1
  },
  "entries": [
@@ -1437,6 +1437,97 @@
    "data_source": "pSEO 批次闸(数据闸/爆炸预警/Simhash 唯一度/样板比/页型地板/STOP·WARN)",
    "fallback_mode": "②",
    "tests_file": "tests/test_pseo_batch.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "pseo_cohort.py",
+   "group": "scripts/内容运营",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "pSEO cohort 索引率追踪(预注册判读冻结+90 天 prune 三选一+as-remediation)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_pseo_cohort.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "link_graph.py",
+   "group": "scripts/内链架构",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "crawl edges→PageRank/深度直方图/入链清单/锚文本审计(过度优化警告)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_link_tools.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "orphan_fix.py",
+   "group": "scripts/内链架构",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "孤儿×同目录候选源页→修复清单(hub-spoke 规划输入)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_link_tools.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "market_fit.py",
+   "group": "scripts/多语言实装",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "市场进入决策(GSC 国别×markets.json→优先级矩阵)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_market_fit.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "market_batch.py",
+   "group": "scripts/多语言实装",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "多市场批量编排(声明文件→批量 lint+occupancy→跨市场周报)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_market_batch.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "prune_gate.py",
+   "group": "scripts/内容运营",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "退役/合并决策(三查红线:外链/排名词 NO-GO;prune·merge·watch 三态)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_prune_inventory.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "content_inventory.py",
+   "group": "scripts/内容运营",
+   "inputs": [
+    "上游脚本 JSON/CSV"
+   ],
+   "outputs_schema": "json",
+   "data_source": "站点级四轴库存治理(流量/外链/AI 引用/战略→四桶+redirect map;被引页绝不入 remove)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_prune_inventory.py",
    "status": "beta"
   }
  ]
