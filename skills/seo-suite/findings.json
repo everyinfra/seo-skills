@@ -1,7 +1,47 @@
 {
   "schema_version": 2,
-  "generated": "2026-10-12T02:23:09",
+  "generated": "2026-10-12T02:24:07",
   "findings": [
+    {
+      "id": "F001",
+      "fingerprint": "80cfee8397a6",
+      "status": "pending",
+      "severity": "critical",
+      "kind": "number",
+      "ai_claim": "Acme Pro 定价 $59",
+      "known_fact": "Acme Pro 定价为 $99/月",
+      "record": "offerings",
+      "fact_source": "https://acme.ai/pricing",
+      "fact_date": "2026-09-01",
+      "confidence": "high",
+      "why_flagged": "数字冲突: 已验证事实=$99(kind=currency/USD) ↔ AI 表述=$59(99.0≠59.0)",
+      "source_response": {
+        "index": 0,
+        "engine": "e",
+        "prompt": "p"
+      },
+      "possible_sources": []
+    },
+    {
+      "id": "F002",
+      "fingerprint": "80cfee8397a6",
+      "status": "pending",
+      "severity": "critical",
+      "kind": "number",
+      "ai_claim": "Acme Pro 定价 $199",
+      "known_fact": "Acme Pro 定价为 $99/月",
+      "record": "offerings",
+      "fact_source": "https://acme.ai/pricing",
+      "fact_date": "2026-09-01",
+      "confidence": "high",
+      "why_flagged": "数字冲突: 已验证事实=$99(kind=currency/USD) ↔ AI 表述=$199(99.0≠199.0)",
+      "source_response": {
+        "index": 1,
+        "engine": "e",
+        "prompt": "p"
+      },
+      "possible_sources": []
+    },
     {
       "id": "F001",
       "fingerprint": "14341d837aab",

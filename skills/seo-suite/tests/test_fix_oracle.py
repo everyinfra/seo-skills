@@ -118,8 +118,8 @@ class OracleMultilingualFixTests(unittest.TestCase):
 class OracleStateFixTests(unittest.TestCase):
     def test_fingerprint_includes_sample_index(self):
         # 同 prompt 两条不同回答、不同 claim → 指纹不同,互不覆盖
-        resp = [{"prompt": "p", "engine": "e", "text": "价格 $59", "mentions": []},
-                {"prompt": "p", "engine": "e", "text": "价格 $99", "mentions": []}]
+        resp = [{"prompt": "p", "engine": "e", "text": "Acme Pro 定价 $59", "mentions": []},
+                {"prompt": "p", "engine": "e", "text": "Acme Pro 定价 $199", "mentions": []}]
         r, d = run_cli(FACTS_CUR, resp)
         fps = {f.get("fingerprint") for f in d.get("findings", [])}
         self.assertTrue(fps, "应有 findings")
