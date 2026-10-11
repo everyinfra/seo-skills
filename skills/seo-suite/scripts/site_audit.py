@@ -9,7 +9,11 @@ S2 实测修复(2026-10-09):title 收集只在 <title>…</title> 内(script/JSO
 S3 扩展(2026-10-10,borrow-specs A3/A4):AI Search Health 独立子分(Semrush 8 bot 名单/
 llms.txt/Last-Modified>183 天/语义 HTML 比值/词数>15000/BLUF 密度,--json 新增 ai_search_health 节)+
 rendering 5 检查(geo-aeo-tracker 源码口径:CSR/noscript/JS 重量/服务端内容/H1-H2)。
-用法: python3 site_audit.py URL [URL...] [--market ja|en|zh|th|hi|vi|pl|tr|...]
+S4 扩展(2026-10-11,borrow-specs A2,20 项借鉴清单第 10 条):具名 bulk export(--export-dir DIR——
+每 rule 一份受影响 URL 清单 {area}-{规则简名}.txt,一行一 URL,同 slug 冲突自动合并;另写
+summary.json:每 rule slug/受影响数/占比/severity)+ findings 汇总受影响面列(N/M 页 XX%,
+SF Coverage 口径——分母=已审计页数而非全站页数,表头注明;单 URL 时命中规则即 1/1)。
+用法: python3 site_audit.py URL [URL...] [--market ja|en|zh|th|hi|vi|pl|tr|...] [--export-dir DIR]
 判定: CRITICAL 存在则退出码 1。"""
 import sys, os, re, json, math, unicodedata, urllib.error, urllib.request
 from datetime import datetime
@@ -50,11 +54,20 @@ CHALLENGE_MARKERS = ("just a moment", "attention required", "cf-chl", "cf-browse
                      "challenge-platform", "checking your browser", "verify you are human",
                      "unusual traffic", "access denied", "captcha", "ddos-guard", "perimeterx", "px-captcha")
 
-USAGE = """usage: site_audit.py URL [URL...] [--market XX] [--json]
+USAGE = """usage: site_audit.py URL [URL...] [--market XX] [--json] [--export-dir DIR]
 单页全项审计:title/desc 限值(市场单位)/H1/词数/链接/alt/canonical/robots/og/JSON-LD/
 llms.txt/sitemap/AI 爬虫放行/staging 子域。
-  --market XX  markets.json 18 市场阈值(chars/fullwidth/grapheme)
-  --json       结构化输出(findings+meta+verdict+ai_search_health,供 agent 消费)
+  --market XX      markets.json 18 市场阈值(chars/fullwidth/grapheme)
+  --json           结构化输出(findings+meta+verdict+ai_search_health,供 agent 消费)
+  --export-dir DIR 具名 bulk export(SF/Sitebulb 口径):按 rule 生成受影响 URL 清单
+                   {area}-{规则简名}.txt(如 canonical-missing.txt/title-too-long.txt;
+                   area+message 首词生成稳定 slug,同一 slug 冲突时合并),每文件一行一
+                   URL;另写 summary.json(每 rule:slug/受影响数/占比/severity)。
+                   目录不存在则创建,已存在直接写(输出由调用方隔离,套件惯例)。
+                   单 URL 模式同样可用(产出 1 页的清单)。
+多 URL 审计后输出 findings 汇总(markdown 表):规则×级别×受影响面——N/M 页(XX%),
+SF Coverage 口径的简化:分母=本次已审计页数而非全站页数(表头注明);单 URL 时每条
+命中规则即 1/1。--json 模式新增顶层 exports 节列出导出文件名(仅 --export-dir 时)。
 AI Search Health 子分(Semrush 8 bot 名单口径,与主审计并列输出):
   8 bot 放行(ChatGPT-User/OAI-SearchBot/Googlebot/Google-Extended/Perplexity-User/
   PerplexityBot/Claude-User/Claude-SearchBot;GPTBot/ClaudeBot 训练型只提示;
@@ -309,6 +322,141 @@ def ai_health_score(checks):
     by_id = {c["id"]: c["pass"] for c in checks}
     return round(100 * sum(w for k, w in AI_HEALTH_WEIGHTS.items() if by_id.get(k)))
 
+# ---- S4:具名 bulk export + 受影响面(borrow-specs A2,SF/Sitebulb 口径) ----
+SEV_RANK = {"SKIP": 0, "INFO": 1, "WARN": 2, "CRITICAL": 3}
+# 规则简名表:(area, message 子串) → 完整导出 slug(即 {area}-{规则简名});自上而下
+# 首个 area 相符且 message 含子串者生效;site_audit 新增检查未登记时走 rule_slug 的
+# fallback(area+message 首个 ASCII 词素),同一 slug 冲突自动合并(SF bulk export 口径)。
+RULE_SLUGS = [
+    ("staging", "staging 子域", "staging-subdomain"),
+    ("title", "缺失", "title-missing"),
+    ("title", "超上限", "title-too-long"),
+    ("title", "<20", "title-too-short"),
+    ("description", "缺失", "description-missing"),
+    ("description", "超上限", "description-too-long"),
+    ("description", "<80", "description-too-short"),
+    ("h1", "无 H1", "h1-missing"),
+    ("h1", "个 H1", "h1-multiple"),
+    ("headings", "跳级", "headings-skip-level"),
+    ("headings", "H2 仅", "headings-h2-few"),
+    ("canonical", "相对 URL", "canonical-relative"),
+    ("canonical", "指向外域", "canonical-external"),
+    ("canonical", "缺失", "canonical-missing"),
+    ("robots", "noindex", "robots-noindex"),
+    ("robots", "nosnippet", "robots-nosnippet"),
+    ("og", "og:image 非绝对", "og-image-not-absolute"),
+    ("og", "og:title", "og-title-missing"),
+    ("og", "og:description", "og-description-missing"),
+    ("og", "og:image", "og-image-missing"),
+    ("a11y", "无 lang", "a11y-no-lang"),
+    ("content", ">15000", "content-too-long"),
+    ("content", "<200", "content-thin"),
+    ("links", ">100", "links-too-many"),
+    ("images", "alt 缺失", "images-alt-missing"),
+    ("schema", "无 JSON-LD", "schema-jsonld-missing"),
+    ("rendering", "CSR", "rendering-csr"),
+    ("rendering", "noscript", "rendering-no-noscript"),
+    ("rendering", "JS 重量", "rendering-js-heavy"),
+    ("rendering", "服务端内容弱", "rendering-weak-server-content"),
+    ("bluf", "BLUF", "bluf-low"),
+    ("robots", "不可达", "robots-unreachable"),
+    ("sitemap", "不可达", "sitemap-unreachable"),
+    ("llms.txt", "不可达", "llms-txt-unreachable"),
+    ("ai-bots", "训练型", "ai-bots-training-blocked"),
+    ("ai-bots", "被禁", "ai-bots-blocked"),
+    ("freshness", "天前", "freshness-stale"),
+    ("semantic-html", "比值", "semantic-html-low"),
+]
+
+def _slugify(s):
+    """文件名安全 slug:小写,非 [a-z0-9] 段折叠为 '-',去首尾 '-'。"""
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", s.lower())).strip("-")
+
+def rule_slug(area, msg):
+    """area+message → 稳定导出 slug(具名 bulk export 文件名,SF 口径):
+    RULE_SLUGS 表先匹配(自上而下首中);未登记的新规则 fallback 为
+    '{area}-{message 首个 ASCII 词素}';纯 CJK 消息无 ASCII 词素时退为 area 本身。
+    同一输入恒得同一 slug;不同来源撞同一 slug 时在聚合层合并。"""
+    for a, needle, slug in RULE_SLUGS:
+        if a == area and needle in msg:
+            return slug
+    m = re.match(r"[A-Za-z0-9][A-Za-z0-9_.:/-]*", msg.strip())
+    tail = _slugify(m.group(0)) if m else ""
+    return _slugify(f"{area}-{tail}") if tail else _slugify(area)
+
+def aggregate_rules(by_url):
+    """逐 URL findings → 规则聚合表 {slug: {severity, area, example, urls}}:
+    SKIP(fetch guard 拒审)不是规则不进表;受影响 URL 按审计顺序去重;
+    同 slug 多来源合并,severity 取最高。"""
+    rules = {}
+    for url, findings in by_url.items():
+        for sev, area, msg in findings:
+            if sev == "SKIP":
+                continue
+            slug = rule_slug(area, msg)
+            r = rules.get(slug)
+            if r is None:
+                rules[slug] = {"severity": sev, "area": area, "example": msg, "urls": [url]}
+                continue
+            if SEV_RANK.get(sev, 0) > SEV_RANK.get(r["severity"], 0):
+                r["severity"] = sev
+            if url not in r["urls"]:
+                r["urls"].append(url)
+    return rules
+
+def sorted_rules(rules):
+    """导出与表格统一排序:severity 降序 → 受影响数降序 → slug 字典序(确定性)。"""
+    return sorted(rules.items(),
+                  key=lambda kv: (-SEV_RANK.get(kv[1]["severity"], 0),
+                                  -len(kv[1]["urls"]), kv[0]))
+
+def fmt_pct(n, m):
+    """受影响面百分比:N/M → '60%'/'33.3%'(一位小数,整数不带小数点;m<=0 → '0%')。"""
+    if m <= 0:
+        return "0%"
+    s = f"{100.0 * n / m:.1f}".rstrip("0").rstrip(".")
+    return (s or "0") + "%"
+
+def coverage_str(n, m):
+    """受影响面列文本:'N/M 页(XX%)'(SF Coverage 口径,分母=已审计页数)。"""
+    return f"{n}/{m} 页({fmt_pct(n, m)})"
+
+def render_findings_markdown(rules, total):
+    """人读报告 findings 汇总(markdown 表):规则×级别×受影响面三列;
+    受影响面=SF Coverage 口径的简化——分母用本次已审计页数而非全站页数,表头注明。"""
+    lines = [f"## findings 汇总(受影响面;分母=本次已审计 {total} 页,非全站)",
+             "| 规则 | 级别 | 受影响面 |", "| --- | --- | --- |"]
+    for slug, r in sorted_rules(rules):
+        lines.append(f"| {slug} | {r['severity']} | {coverage_str(len(r['urls']), total)} |")
+    return "\n".join(lines)
+
+def write_exports(export_dir, rules, total):
+    """具名 bulk export(SF/Sitebulb 口径):每 rule 一份受影响 URL 清单 '{slug}.txt'
+    (一行一 URL,审计顺序去重)+ summary.json(每 rule:slug/受影响数/占比/severity,
+    外加 area/coverage_pct/file/example_message 与分母声明)。目录不存在则创建;
+    已存在直接覆盖写(输出目录由调用方隔离,套件惯例)。返回已写文件名列表。"""
+    os.makedirs(export_dir, exist_ok=True)
+    files = []
+    ordered = sorted_rules(rules)
+    for slug, r in ordered:
+        name = slug + ".txt"
+        with open(os.path.join(export_dir, name), "w", encoding="utf-8") as f:
+            f.write("\n".join(r["urls"]) + "\n")
+        files.append(name)
+    summary = {
+        "denominator_note": "coverage 分母=本次已审计页数(SF Coverage 口径简化:非全站页数)",
+        "audited": total,
+        "rules": [{"slug": slug, "area": r["area"], "severity": r["severity"],
+                   "affected": len(r["urls"]),
+                   "coverage": round(len(r["urls"]) / total, 4) if total else 0.0,
+                   "coverage_pct": fmt_pct(len(r["urls"]), total),
+                   "file": slug + ".txt",
+                   "example_message": r["example"]} for slug, r in ordered]}
+    with open(os.path.join(export_dir, "summary.json"), "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=1)
+    files.append("summary.json")
+    return files
+
 def audit(url, market="en"):
     F = []  # (severity, area, msg)
     mk = load_market(market)
@@ -458,8 +606,13 @@ def main():
     if any(a in ("-h", "--help") for a in args):
         print(USAGE)
         return
-    market, as_json = "en", False
+    market, as_json, export_dir = "en", False, None
     if "--market" in args: i = args.index("--market"); market = args[i+1]; del args[i:i+2]
+    if "--export-dir" in args:
+        i = args.index("--export-dir")
+        if i + 1 >= len(args):
+            sys.stderr.write("--export-dir 需要一个目录参数\n"); sys.exit(2)
+        export_dir = args[i+1]; del args[i:i+2]
     if "--json" in args: as_json = True; args = [a for a in args if a != "--json"]
     load_market(market)  # 提前校验,未知市场列出可用值
     urls = [a for a in args if not a.startswith("-")]
@@ -468,8 +621,10 @@ def main():
         sys.exit(2)
     crit = 0
     results = {}
+    by_url = {}   # S4:URL → findings 原始元组(供规则聚合/bulk export)
     for url in urls:
         F, meta, ai_h = audit(url, market)
+        by_url[url] = F
         print(f"\n== {url} ==")
         for sev, area, msg in F:
             print(f"[{sev}] {area}: {msg}")
@@ -485,10 +640,23 @@ def main():
                 "findings": [{"severity": s, "area": a, "message": m} for s, a, m in F],
                 "meta": meta,
                 "ai_search_health": ai_h}
+    # ---- S4:规则聚合 + findings 汇总受影响面列(SF/Sitebulb 口径;SKIP 拒审不算规则) ----
+    rules = aggregate_rules(by_url)
+    total = len(urls)
+    if rules:
+        print("\n" + render_findings_markdown(rules, total))
+    else:
+        print(f"\n## findings 汇总:0 规则命中(受影响面分母=已审计 {total} 页)")
+    export_files = []
+    if export_dir is not None:
+        export_files = write_exports(export_dir, rules, total)
+        print(f"bulk export: {len(rules)} 个规则清单 + summary.json → {export_dir}")
     if as_json:
-        print(json.dumps({"schema_version": SCHEMA_VERSION,
-                          "audited": len(urls), "critical": crit, "results": results},
-                         ensure_ascii=False, indent=1))
+        payload = {"schema_version": SCHEMA_VERSION,
+                   "audited": len(urls), "critical": crit, "results": results}
+        if export_dir is not None:   # 仅 --export-dir 时新增 exports 节(向后兼容)
+            payload["exports"] = {"dir": export_dir, "files": export_files}
+        print(json.dumps(payload, ensure_ascii=False, indent=1))
     sys.exit(1 if crit else 0)
 
 if __name__ == "__main__": main()

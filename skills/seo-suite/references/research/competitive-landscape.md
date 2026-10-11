@@ -77,30 +77,30 @@
 
 ## 六、借鉴清单(合并去重,按 价值×可行性 排序)
 
-"现状"列对照工作副本真实状态(52 脚本/114 文档/22 模板/523 测试/18 门户;2026-10-11 对勘,原记录 38 脚本/107 文档/14 模板/75 测试),不是安装副本。
+"现状"列对照工作副本真实状态(59 脚本/119 文档/23 模板/757 测试/18 门户;2026-10-11 逐条复核,原记录 38 脚本/107 文档/14 模板/75 测试),不是安装副本。图例:✅=已实现(附实现物文件名)/✅经 X 覆盖=未按原案做、由更优形态承接/部分=注明剩余什么/进行中(并行)=并行 agent 实施中。
 
 | # | 借鉴点 | 来源 | 现状 | 落地 |
 |---|---|---|---|---|
-| 1 | **Plugin/Marketplace 打包**(2 个 JSON,一条命令安装) | claude-seo/SE Ranking/Zilliz | ❌ 只有 install.sh | 已做:本仓库 `.claude-plugin/` + PACKAGING.md |
-| 2 | **Sitebulb 两句话定律**:373 规则目录补 what/why/fix 解释层(先 P0/P1 约 80 条) | Sitebulb/Semrush kb | 部分(规则表有阈值无解释) | 扩 audit-rule-catalog.md |
-| 3 | **AI Search Health 独立子分**:AI 爬虫 4→8 个,补 Last-Modified 新鲜度+语义 HTML 占比 | Semrush kb/1601 | 部分(site_audit 查 4 bot) | site_audit.py 扩 check+子分 |
-| 4 | **分层 Health Score**:Lumar 六大类 100 扣分制+可调权重;Ahrefs 口径(无 CRITICAL URL 占比)并列输出 | Lumar/Ahrefs | ❌ 只有单页 findings | 新 health_score.py,读 --json 聚合 |
-| 5 | **SEO Traffic Funnel 六阶段漏斗**(爬虫+GSC 免费数据可算) | Lumar | ❌ | 新 traffic_funnel.py+模板 |
-| 6 | **content brief 模板套件**:三段式+9 内容类型+POV/Expertise/Proof 注入字段 | MarketMuse/Frase | ❌ templates 无 content/ | 新 templates/content/ |
-| 7 | **透明内容评分器**:MarketMuse 公开口径(术语×2 分封顶)+ Surfer 双轨(SEO 分+AI 分两维) | MarketMuse/Surfer | ❌ | 新 content_score.py |
-| 8 | **修复草稿 ready-to-review**:title/meta/h1/alt 附合市场限值的重写草稿;`--draft-fixes` | SpyFu/Frase/geo-optimizer | ❌ | site_audit.py 加参数+模板节 |
-| 9 | **--compare 审计对比**:新增/已修复/分数 delta 三清单;staging vs prod 回归门 | Ahrefs/Lumar Protect | ❌(monitor.py 有页面级 diff) | site_audit.py 存快照+对比 |
-| 10 | **具名 bulk export + 受影响面%**:每 rule-id 一个 URL 清单文件 | SF/Sitebulb | ❌ | site_audit.py --export-dir |
-| 11 | **AI visibility 双指标**:mention/citation 分开+sentiment+facts_correct;prompt 矩阵(平台×persona×意图)跑 3 次取多数 | ZipTie/Profound/geo-aeo-tracker | 部分(citation_panel.py) | 扩 prompt 矩阵+persona fan-out |
-| 12 | **AI 流量归因工具箱**:GA4 custom channel 正则+referrer 矩阵+retrieval/training bot 区分+"数字当下限"警告 | Terminus/Onely | 部分(ai_referral_log.py) | 扩正则输出+警告文案 |
-| 13 | **过时信号看门表**:带时间戳的 deprecated 清单(FAQPage 富结果停用、INP 弃 FID 等),涉及 schema 先查表 | claude-seo | ❌ | 新 deprecated-signals.md |
-| 14 | **凭证分层 doctor**:探测可用数据源→报告自动声明覆盖范围("无 GSC 数据,排名结论仅基于抓样") | claude-seo | 部分(intake 有问题) | 新 doctor 探测逻辑+报告声明节 |
-| 15 | **条件优先级引擎**:"it depends" 规则库(未索引+有历史流量=紧急;未索引+零流量=低) | Botify ActionBoard | ❌ 严重度是静态 | 新 prioritize.py+声明式规则 |
-| 16 | **SEO 商业提案六步法+forecast.py** | seoClarity | ❌ | 新脚本+模板 |
-| 17 | **数据源适配矩阵**:GSC/GA4/PSI/CrUX/serper.dev/SerpApi 的凭证/成本/限额/边界声明表 | serpbear/SearXNG | ❌ | 新 data-source-adapter-matrix.md |
-| 18 | **报告受众三模式**:exec(分数+趋势)/dev(可勾选任务)/prospect(摘要+量级)一表三裁 | Sitebulb | ❌ | 模板加三段渲染说明 |
-| 19 | **Opportunity 升为一等类型**(不伤但可赚的项与惩罚叙事分开) | Screaming Frog | ❌ 只有 CRITICAL/WARN/INFO | findings schema 扩 OPP |
-| 20 | **免费 checker 即获客**:一条命令出"你的品牌在 N prompt×4 引擎的可见性快照" | Ahrefs/SE Ranking 全员 | 天然具备 | README 首屏放一条命令 demo |
+| 1 | **Plugin/Marketplace 打包**(2 个 JSON,一条命令安装) | claude-seo/SE Ranking/Zilliz | ✅ `.claude-plugin/`+`.zcode-plugin/`+PACKAGING.md | 已做:本仓库 `.claude-plugin/` + PACKAGING.md |
+| 2 | **Sitebulb 两句话定律**:373 规则目录补 what/why/fix 解释层(先 P0/P1 约 80 条) | Sitebulb/Semrush kb | ✅ audit-rule-catalog.md 解释层 220/373 条(四批:79→+44→+47→+50),八段式含 caveat 反直觉公式 | 扩 audit-rule-catalog.md |
+| 3 | **AI Search Health 独立子分**:AI 爬虫 4→8 个,补 Last-Modified 新鲜度+语义 HTML 占比 | Semrush kb/1601 | ✅ site_audit.py `--json` ai_search_health 节:8 bot/llms.txt/Last-Modified>183 天/语义 HTML 比值/BLUF/rendering 5 查 | site_audit.py 扩 check+子分 |
+| 4 | **分层 Health Score**:Lumar 六大类 100 扣分制+可调权重;Ahrefs 口径(无 CRITICAL URL 占比)并列输出 | Lumar/Ahrefs | ✅ health_score.py(Ahrefs 主分+Lumar 六类合成分+Ryte impact 两栏+--ignore/--severity,读 site_audit --json 聚合) | 新 health_score.py,读 --json 聚合 |
+| 5 | **SEO Traffic Funnel 六阶段漏斗**(爬虫+GSC 免费数据可算) | Lumar | ✅ traffic_funnel.py(Simhash 唯一性判定+GSC/CWV 接入+无 GSC 截断声明) | 新 traffic_funnel.py+模板 |
+| 6 | **content brief 模板套件**:三段式+9 内容类型+POV/Expertise/Proof 注入字段 | MarketMuse/Frase | ✅ templates/content/(content-brief.md 三段式+9 类型+pre-publish-checklist.md) | 新 templates/content/ |
+| 7 | **透明内容评分器**:MarketMuse 公开口径(术语×2 分封顶)+ Surfer 双轨(SEO 分+AI 分两维) | MarketMuse/Surfer | ✅ content_score.py(SEO 轨+AI 轨双轨+意图系数+术语表 schema) | 新 content_score.py |
+| 8 | **修复草稿 ready-to-review**:title/meta/h1/alt 附合市场限值的重写草稿;`--draft-fixes` | SpyFu/Frase/geo-optimizer | ✅经 fix_plan.py 覆盖(更优):6 类 FixItem+`--estimate` 收益预估+dry-run/`--apply` 隔离写盘 | 改由 fix_plan.py 承接(单页审计器不内嵌重写,修复物独立成器) |
+| 9 | **--compare 审计对比**:新增/已修复/分数 delta 三清单;staging vs prod 回归门 | Ahrefs/Lumar Protect | ✅ audit_compare.py(新增/已修复/页级 changed 三清单+分数与 AI 子分 delta+--baseline-gate) | site_audit.py 存快照+对比 → 独立成 audit_compare.py |
+| 10 | **具名 bulk export + 受影响面%**:每 rule-id 一个 URL 清单文件 | SF/Sitebulb | ✅ site_audit --export-dir(具名清单+summary.json+受影响面% 列):逐 rule-id 导出文件未落(受影响面%已由 health_score 类别树逐项 n/N 给出) | site_audit.py --export-dir |
+| 11 | **AI visibility 双指标**:mention/citation 分开+sentiment+facts_correct;prompt 矩阵(平台×persona×意图)跑 3 次取多数 | ZipTie/Profound/geo-aeo-tracker | ✅ citation_panel.py(mentioned≠cited 分开+prompts 对象化 stage/branded+--persona-fanout+decay 子命令+SoV/win_rate/citation_rate)+templates/research/prompt-bank.md+monitor/ai-visibility 周月报 | 扩 prompt 矩阵+persona fan-out |
+| 12 | **AI 流量归因工具箱**:GA4 custom channel 正则+referrer 矩阵+retrieval/training bot 区分+"数字当下限"警告 | Terminus/Onely | ✅ ai_referral_log.py(--classify 四桶 bot 分类+--attribution GA4 正则锚定官方域名+下限纪律+自报归因问卷) | 扩正则输出+警告文案 |
+| 13 | **过时信号看门表**:带时间戳的 deprecated 清单(FAQPage 富结果停用、INP 弃 FID 等),涉及 schema 先查表 | claude-seo | ✅ references/technical/deprecated-signals.md(时间戳全表)+test_canonical_facts.py 正则回归看门 | 新 deprecated-signals.md |
+| 14 | **凭证分层 doctor**:探测可用数据源→报告自动声明覆盖范围("无 GSC 数据,排名结论仅基于抓样") | claude-seo | ✅ doctor.py(detect_tier T0-T3 零网络只看键名+--wizard 向导;声明链接 data-onboarding.md) | 新 doctor 探测逻辑+报告声明节 |
+| 15 | **条件优先级引擎**:"it depends" 规则库(未索引+有历史流量=紧急;未索引+零流量=低) | Botify ActionBoard | ✅ prioritize.py(声明式条件规则库+内链放大器+条件依赖型降级+"立即处理/值得探索"两栏) | 新 prioritize.py+声明式规则 |
+| 16 | **SEO 商业提案六步法+forecast.py** | seoClarity | ✅ forecast.py(六步+校准系数持久化+无排名数据建模)+templates/monitor/forecast-report.md | 新脚本+模板 |
+| 17 | **数据源适配矩阵**:GSC/GA4/PSI/CrUX/serper.dev/SerpApi 的凭证/成本/限额/边界声明表 | serpbear/SearXNG | ✅ data-onboarding.md(分析目标→数据源矩阵,含 serper.dev 单价与逐源降级)+data-source-contract.md(逐脚本合同) | 未单建 data-source-adapter-matrix.md,拆为上述两表(用户视角+脚本视角) |
+| 18 | **报告受众三模式**:exec(分数+趋势)/dev(可勾选任务)/prospect(摘要+量级)一表三裁 | Sitebulb | ✅ templates/audit/report-modes.md(exec/dev/prospect 三视图渲染规范,母报告单源) | 模板加三段渲染说明 → 独立渲染规范模板 |
+| 19 | **Opportunity 升为一等类型**(不伤但可赚的项与惩罚叙事分开) | Screaming Frog | 部分:Opportunity 已落优先级/规则目录层(prioritize.py"值得探索"栏+health_score impact=0 标注+audit-rule-catalog 类型轴 issue\|warning\|opportunity),site_audit findings 枚举仍三态 | 取舍:findings 三态是下游冻结契约(health_score/audit_compare/envelope 依赖),"不伤但可赚"不进扣分管道,由 prioritize 层表达 |
+| 20 | **免费 checker 即获客**:一条命令出"你的品牌在 N prompt×4 引擎的可见性快照" | Ahrefs/SE Ranking 全员 | ✅(2026-10-11 补)README.md/README.en.md 首屏「60 秒体验」 | 一条命令链 demo:site_audit→health_score→fix_plan 最小闭环 |
 
 候补:Sensor 式自家波动带(alert-threshold-guide 扩)、DR 式"分数的边界"诚实文案(scoring-rubric 扩)、Wikipedia/Reddit/G2 外部证据缺口清单(Brand Radar 思路)、`geo fix` 式"先生成后写盘"安全约定。
 

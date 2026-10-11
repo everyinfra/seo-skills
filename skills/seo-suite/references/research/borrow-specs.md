@@ -138,6 +138,12 @@ CATEGORY_MAX 常量+权重守恒断言(各类目和=100,改权重必炸测试);J
 ### E9. AI 视图层(Scrunch AXP 等价物)
 对重点页产出去 chrome 语义 HTML/Markdown 进 ai-views/(人审后部署=stage);block 级 before/after diff;**Scrunch 官方实测 123,916→1,355 tokens(98.9% 缩减)**;其博客明确"Markdown endpoints/llms.txt 最可能是浪费"——与我们 geo-evidence 保守口径一致,保持"人审后部署"边界
 
+## 复盘记录 2026-10-11(借鉴清单 20 项全量对勘)
+
+- **盘点结论**:competitive-landscape.md 第六节 20 项,最终 18 项 ✅ / 1 项进行中(并行)/ 1 项部分。其中第 8 项(`--draft-fixes`)未按原案做,由 fix_plan.py 的 6 类 FixItem+`--estimate` 收益预估+dry-run/`--apply` 隔离写盘**更优承接**(单页审计器不内嵌重写,修复物独立成器);第 20 项由本轮 README.md/README.en.md 首屏「60 秒体验」补齐;第 10 项(逐 rule-id 具名导出)并行实施中,受影响面%已由 health_score 类别树逐项 n/N 先行覆盖;第 19 项部分——Opportunity 已落 prioritize"值得探索"栏/health_score impact=0 标注/规则目录类型轴,site_audit findings 枚举保持三态(冻结契约,扣分管道不进"不伤但可赚"项)。
+- **教训**:对勘起点上 20 个"现状"格**全部过期**(❌/部分 与实际相反)——各 wave 提交把实现物落了地,却没人回写清单状态列,清单从决策工具静默退化为幻觉源。规格库(本文 A-E 节)与落地物分离是必要分工,但状态必须单点可查、随实现同步。
+- **复盘机制(即日生效)**:① 每月 `intel_check.py`/intel-update 信源巡检时**顺手核对一次本清单状态列**(搭既有节奏,不新增仪式);② 任何新能力落地(新脚本/新模板/新门户)时,提交说明点名"回写 landscape 第 N 项",状态列与实现物同 commit 变更;③ 本次为状态列引入统一图例(✅/✅经 X 覆盖/部分/进行中),后续只填格子不改口径。
+
 ## 来源(深读对象)
 
 claude-seo(18,626★,clone 深读全部 26 skill/60 脚本/tests)· geo-optimizer-skill(1,026★,源码 fixer.py/config.py/mcp)· seranking/seo-skills(161★)· geo-aeo-tracker(285★,sovereign-dashboard 2296 行)· oneglanse(207★,441 行打分 prompt)· open-seo-mcp-skills(4,665★,8 skill 全读)· Lumar/Ryte(help 全文档)· Semrush(kb/1601·542·114·652·1493·1607)· Ahrefs(help 1424673·1420169·1409408·Brand Radar 15501968·16755865)· Moz(On-Page Grader/Spam Score 27 信号)· SF(320 issue 矩阵解析)+Sitebulb(hints 结构)· Surfer(docs+百万 SERP 研究)/Clearscope/MarketMuse(公式全公开)· Profound(citation decay 88.3 万页研究+Context Manager)/Scrunch(developers API+Signals)/Goodie(36×8 audit)· Peec/Athena(Oracle)/Otterly(fanout·Agent Analytics·llms.txt 90 天实验)/Rankscale(facts·page audit)· seoClarity(六步 FAQ)/BrightEdge/Conductor(告警 7 类)/Botify(Action Item Reference)· serpbear/siteone-crawler/unlighthouse/lighthouse-ci-action(源码)。全部 URL 见各 agent 报告原文(会话存档)。

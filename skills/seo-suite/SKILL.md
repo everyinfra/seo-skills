@@ -36,7 +36,7 @@ metadata:
 - `field_data.py --url U [--strategy mobile] [--as-cwv-csv out.csv]`:CWV 现场数据真实 API 客户端——PSI(无 key 低配额)现场 p75 vs 实验数据分开呈现+CrUX(需 key)双源;官方阈值判定;--as-cwv-csv 直喂 traffic_funnel 的 good_ux 阶段
 - `doctor.py --wizard [--want cwv,rank,...]`:数据接入向导——逐项列需要的数据源/当前已配否/获取方式/降级路径(配 references/overview/data-onboarding.md)
 - `site_crawl.py --domain example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
-- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节)
+- `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节;--export-dir 出每规则具名受影响 URL 清单+summary.json+报告受影响面% 列)
 - `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
 - `traffic_funnel.py --audit audit.json --gsc gsc.csv`:六阶段页面流失漏斗(available⊃indexable⊃uniqueness[Simhash+DeepRank]⊃in_serps⊃with_clicks⊃good_ux);无 GSC 自动截断+coverage 声明
 - `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical;证据行 UTF-16 偏移核验+同形字/孤立代理风险标注(标注层,不改六维分数)
@@ -48,6 +48,7 @@ metadata:
 - `grounding_page.py --facts brand.yaml`:品牌实体事实页生成(Rankscale 11 条:dl 事实/FAQ 含名/volatile 独立/is-NOT 消歧/JSON-LD 镜像);--check 校验已有页
 - `audit_compare.py --old a.json --new b.json`:两次审计对比(新增/已修复/delta 三清单+页级 changed);--baseline-gate N 回归门(Lumar Protect 语义)
 - `ci_format.py audit.json --format sarif|junit|github`:CI 输出格式化(SARIF 挂 Code Scanning/JUnit 挂测试报告/github 注解);配仓库根 action.yml 一站式 PR 门禁
+- monitor.py 的 visibility 检查支持 serp_source 源适配(bing 默认/duckduckgo 零 key/付费源注册位+对照表,config 可换)
 - `sensor_volatility.py --gsc gsc.csv`:自有词集 SERP 波动分(0-10 四档+z30 异常日);--context 供 monitor 告警附注"疑似算法更新而非站点问题"
 - `forecast.py --kws kws.csv`:SEO 商业提案六步(seoClarity 官方):est_traffic→校准系数持久化→三 scenario(rank3/pct10/pos2,>30 位不预测)→orders/value/acquisition_value;省钱+赚钱双结构;配 templates/monitor/forecast-report.md
 - `prioritize.py --audit audit.json`:条件优先级引擎(Botify 口径):18 条声明式规则+放大器+条件依赖型(noindex 意图/canonical PageRank)+segment 切换重算;"立即处理/值得探索"两栏

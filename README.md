@@ -4,7 +4,7 @@
 
 **免费下载，用你自己的 AI 工具和模型。**
 
-EveryInfra SEO Skills 的版本为 `0.34.3`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+EveryInfra SEO Skills 的版本为 `0.34.4`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
 
 **独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十几个单市场工具——本套件把 **18 个语言市场**放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、英文、俄语区（Yandex/Alice）、韩语区（Naver/AI Briefing）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）、印地语（Hinglish 三种书写）、意大利语（it-CH 独立 locale）、土耳其语（第二个 Yandex 市场，~26%）、越南语（有调/无调+Coc Cốc）、泰语（无空格分词）、波兰语（变音符规范化）、荷兰语（nl-NL/nl-BE 弗拉芒）。**全球能力不做成独立模块，而是融入五类能力文件的每一类**——主干是 `overview/multilingual-workflow.md`（市场总表、逐市场工具栈、语言规范、合规速查）。
 
@@ -82,6 +82,19 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 - 需要数据的任务，使用你自己的数据源：Google Search Console、GA4、Bing Webmaster Tools 的导出，或你自己账号下的排名追踪、外链、爬虫工具的导出。
 - 可选的外部 API（例如 PageSpeed Insights API、Knowledge Graph Search API）需要你自己的 Key。本仓库不包含、也不提供任何 Key。
 - 外联邮件、发布内容等对外动作，Skill 只负责起草，由你本人确认后执行。
+
+## 60 秒体验
+
+零依赖、零 API Key——全部脚本只用 Python 标准库。克隆或下载 ZIP 后无需安装,一条命令链对 `example.com` 跑通最小闭环:**体检 → 分层健康分 → 修复建议**:
+
+```bash
+cd seo-skills/skills/seo-suite
+python3 scripts/site_audit.py https://example.com --json > /tmp/audit.json
+python3 scripts/health_score.py --input /tmp/audit.json
+python3 scripts/fix_plan.py --audit /tmp/audit.json --estimate
+```
+
+预期输出一行示意(实测):`主分 0.0 → Weak(example.com 缺 meta description/H1,命中属实) · Lumar 六类合成分 94.3 · AI Search Health 70/100 · fix_plan dry-run 预览逐类修复物+收益预估(默认不写盘)`。
 
 ## 安装
 

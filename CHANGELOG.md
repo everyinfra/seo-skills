@@ -3,6 +3,17 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.34.4 - 2026-10-11
+
+- **借鉴清单复盘清零**(用户指出的复盘机制首次执行):
+  - 20 项清单状态列全面过期(多数已实现仍标 ❌)——逐条实测核实刷新:**19 ✅ + 1 部分**(第 19 条 Opportunity 落在 prioritize 两栏/规则目录类型轴,site_audit 三态契约冻结,取舍注明);borrow-specs 尾部新增「复盘记录」节+机制(intel-update 月度搭车核对+新能力同 commit 回写状态列);
+  - **补齐第 10 条**:site_audit `--export-dir`(每规则具名受影响 URL 清单+summary.json+markdown 受影响面% 列,15 测试);
+  - **补齐 D1-P2#13**:monitor SERP 源适配层(SERP_SOURCES 注册表:bing 默认逐字节兼容[42 场景对拍实证]/duckduckgo 零 key/serper·SerpApi 注册位+价格对照表,16 测试);
+  - **README 双语加「60 秒体验」段**(一条命令零 key 跑通体检→分层分→修复建议,example.com 实跑验证);
+  - 788 测试全绿。
+
+
+
 ## 0.34.3 - 2026-10-11
 
 - **GEO 内容战略调研全量接入 skill**(5 轮 10 agent 调研 + 4 agent 接线):

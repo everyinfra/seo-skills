@@ -3,7 +3,8 @@
 把一次性审计变成长期监控:日检四问 → SQLite 快照 → diff 阈值告警 → 周报。
 
 日检四问(行业分层):
-  1 可见性  关键页 site: 抽查(Bing HTML 端点;被拦=skipped 不告警,不猜)
+  1 可见性  关键页 site: 抽查(SERP 源可配 serp_source,默认 Bing HTML 端点;
+           被拦=skipped 不告警,不猜;防假 0 纪律对一切源生效)
   2 流量    .seo-monitor/gsc.csv(GSC 导出,有才查;无数据源=skipped)
   3 索引    robots.txt 哈希/误封检测 + sitemap URL 数/lastmod
            +页面级 noindex(meta robots / X-Robots-Tag 响应头,D1 P0-1:
@@ -45,6 +46,14 @@ config 可选扩展(D1 P2,key_pages 条目对象):
          # 快照新指纹(D1 P2):h1(首个)/hreflang_hash(顺序无关)/word_count——
          # 变更判 h1_changed(info)/hreflang_changed(warn)/main_content_change(info,
          # 阈值 thresholds.content_change_pct 默认 30%);title/meta 新值为空=meta_removed warn。
+
+config 可选扩展(D1 P2 第 13 条,borrow-specs serpbear 式源适配层):
+  serp_source: {"id": "bing"|"duckduckgo", "enabled": true}   # 或裸字符串 id
+         # visibility 检查的 SERP 源。内置 bing(默认,免费无 key 的 HTML 端点,
+         # 不配该节时行为与旧版逐字节一致)与 duckduckgo(html.duckduckgo.com/html,
+         # 免费无 key,解析 result 链接与排名);坏配置/未知 id → 回退 bing 并在
+         # notes 警告(防静默失明);serper.dev($1/1k)/SerpApi($50/5k 起)仅注册位
+         # 未接入(不实现付费源调用;源对照表见 SERP_SOURCE_TABLE)。
 
 退出码:diff → 1=有 critical,2=有 warn(无 critical),0=无,4=用法/数据错误;
 diff --ci → 0=全部 check 通过,10=任一 check 失败(siteone 契约);
@@ -869,11 +878,130 @@ def ai_posture(groups_raw):
     return posture
 
 
-def check_visibility(site):
-    out = {"check": "visibility", "state": "ok", "metrics": {}, "notes": []}
+# ---------- D1 P2(borrow-specs D1-P2 第 13 条):visibility SERP 源适配层(serpbear 式) ----------
+
+# 源对照表(serpbear 式:源|价格|限额|状态)。付费源只登记不接入——接入前按此表核价,
+# 并在 SERP_SOURCES 补全条目;口径对照 serpbear:serper $1/1k、SerpApi $50/5k 起。
+SERP_SOURCE_TABLE = (
+    "visibility SERP 源对照表(serpbear 式;config 可选 serp_source 节按 id 选择):\n"
+    "  源           | 价格                  | 限额                     | 状态\n"
+    "  -------------|-----------------------|--------------------------|------------------\n"
+    "  bing         | 免费无 key(HTML 端点) | 无 SLA;DOM 可能改版/被拦 | 内置,默认\n"
+    "  duckduckgo   | 免费无 key(html 端点) | 严格限频,易出反爬页      | 内置,可选\n"
+    "  serper.dev   | $1 / 1k 次查询        | 按充值计费,需 API key    | 注册位,未接入\n"
+    "  serpapi      | $50 / 5k 次查询起     | 按套餐计费,需 API key    | 注册位,未接入"
+)
+
+
+def _serp_bing_url(site):
+    """Bing HTML 端点查询 URL(默认源;与旧版硬编码逐字节一致)。"""
     host = urllib.parse.urlparse(site).netloc
+    return "https://www.bing.com/search?q=" + urllib.parse.quote("site:" + host)
+
+
+def _serp_bing_parse(html):
+    """Bing HTML → cite 标签清洗结果列表(SERP 顺序,rank=序号+1;空=解析不出)。"""
+    return [unescape(re.sub(r"<[^>]+>", "", c)).replace(" › ", "/")
+            for c in re.findall(r"<cite[^>]*>(.*?)</cite>", html, re.S)]
+
+
+def _serp_ddg_url(site):
+    """DuckDuckGo html 端点查询 URL(零 key:html.duckduckgo.com/html/?q=)。"""
+    host = urllib.parse.urlparse(site).netloc
+    return "https://html.duckduckgo.com/html/?q=" + urllib.parse.quote("site:" + host)
+
+
+def _serp_ddg_parse(html):
+    """DDG html 端点 → result 链接列表(按排名;result__a 锚点属性顺序无关,
+    //duckduckgo.com/l/?uddg=<urlencoded> 跳转包装解包,解不出目标的包装不计;
+    空=解析不出)。"""
+    out, seen = [], set()
+    for tag in re.findall(r"<a\b[^>]*>", html or ""):
+        if not re.search(r'class\s*=\s*["\'][^"\']*\bresult__a\b', tag):
+            continue
+        m = re.search(r'href\s*=\s*["\']([^"\']+)["\']', tag)
+        if not m:
+            continue
+        u = unescape(m.group(1))
+        wm = re.search(r"[?&]uddg=([^&]+)", u)
+        if wm:
+            u = urllib.parse.unquote(wm.group(1))
+        elif u.startswith("//"):
+            u = "https:" + u
+        if u and u not in seen and not re.match(r"^https?://duckduckgo\.com/l/", u):
+            seen.add(u)
+            out.append(u)
+    return out
+
+
+# 内置源注册表(serpbear 式适配器):{id, name, website, price_note,
+# build_url(site), parse(html), enabled, blocked_re(200 但命中反爬/人机验证文案→
+# blocked), zero_metrics_key(unparseable 时计 0 的指标名), ranked(metrics 是否记
+# 命中排名), unparseable_note/method_note(输出文案)}。
+# 注册位(未接入,不实现付费源调用):serper.dev($1/1k)/SerpApi($50/5k 起)为
+# 需 API key 的 JSON API,不走免 key HTML 路径;接入时补全同构条目即可被
+# resolve_serp_source 选中(价格/限额见 SERP_SOURCE_TABLE)。
+SERP_SOURCES = {
+    "bing": {
+        "id": "bing", "name": "Bing HTML 端点", "website": "https://www.bing.com",
+        "price_note": "免费无 key(HTML 端点,无 SLA)", "enabled": True,
+        "build_url": _serp_bing_url, "parse": _serp_bing_parse,
+        "blocked_re": r"captcha|unusual traffic|verify you",
+        "zero_metrics_key": "cite_tags", "ranked": False,
+        "unparseable_note": "Bing 端点 200 但解析不出 cite(DOM 疑似改版)→unparseable 不告警,不当真 0",
+        "method_note": "方法限制:Bing HTML 端点无 SLA,非官方索引数;仅作抽查方向",
+    },
+    "duckduckgo": {
+        "id": "duckduckgo", "name": "DuckDuckGo html 端点", "website": "https://html.duckduckgo.com",
+        "price_note": "免费无 key(html 端点,严格限频)", "enabled": True,
+        "build_url": _serp_ddg_url, "parse": _serp_ddg_parse,
+        "blocked_re": r"bots use duckduckgo|anomaly",
+        "zero_metrics_key": "result_links", "ranked": True,
+        "unparseable_note": "DuckDuckGo 端点 200 但解析不出 result__a(DOM 疑似改版)→unparseable 不告警,不当真 0",
+        "method_note": "方法限制:DuckDuckGo html 端点无 SLA,非官方索引数;仅作抽查方向",
+    },
+}
+
+DEFAULT_SERP_SOURCE_ID = "bing"
+
+
+def resolve_serp_source(serp_cfg):
+    """config 可选 serp_source 节(裸 id 字符串,或 {"id","enabled"} 对象)→
+    (源适配 dict, 警告列表)。兼容:无配置 → 默认 bing(与旧版行为逐字节一致);
+    未知 id/坏形态/enabled=false → 回退 bing 并返回警告(防监控静默失明,
+    警告进 check notes 与 run 日志,绝不静默换成别的源)。"""
+    fallback = SERP_SOURCES[DEFAULT_SERP_SOURCE_ID]
+    if serp_cfg is None or serp_cfg == "" or serp_cfg is False:
+        return fallback, []
+    if isinstance(serp_cfg, str):
+        sid = serp_cfg.strip()
+    elif isinstance(serp_cfg, dict):
+        sid = serp_cfg.get("id")
+        if not isinstance(sid, str) or not sid.strip():
+            return fallback, ['serp_source 配置缺有效 id(期望 "bing"|"duckduckgo")→回退默认 bing 源']
+        sid = sid.strip()
+        if serp_cfg.get("enabled") is False:
+            return fallback, ["serp_source id=%s enabled=false→回退默认 bing 源" % sid]
+    else:
+        return fallback, ["serp_source 配置形态不支持(%s;期望 id 字符串或对象)→回退默认 bing 源"
+                          % type(serp_cfg).__name__]
+    src = SERP_SOURCES.get(sid)
+    if src is None:
+        return fallback, ["serp_source 未知源 id=%s(可用: %s;serper/serpapi 为注册位未接入)→回退默认 bing 源"
+                          % (sid, "/".join(sorted(SERP_SOURCES)))]
+    return src, []
+
+
+def check_visibility(site, serp_cfg=None):
+    """site: 抽查可见页(D1 P2 第 13 条:SERP 源可配,serpbear 式适配层;默认
+    Bing HTML 端点,无 serp_source 配置时与旧版行为逐字节一致)。
+    防假 0 纪律(serpbear)对一切源生效:抓取失败=skipped/非 200 或反爬文案=
+    blocked/解析不出结果=unparseable——三态都不当"真 0"参与告警判定
+    (diff 侧 == "ok" 门挡住);真 0 只在端点成功返回且解析出结果时成立。"""
+    src, warns = resolve_serp_source(serp_cfg)
+    out = {"check": "visibility", "state": "ok", "metrics": {}, "notes": list(warns)}
     reg = registrable_domain(site)
-    q = "https://www.bing.com/search?q=" + urllib.parse.quote("site:" + host)
+    q = src["build_url"](site)
     try:
         r = http_get(q)
     except FetchError as e:
@@ -886,28 +1014,32 @@ def check_visibility(site):
         out["metrics"] = {"status": r["status"]}
         out["notes"].append("site: 端点返回 %d→blocked 不告警" % r["status"])
         return out
-    cites = re.findall(r"<cite[^>]*>(.*?)</cite>", r["body"], re.S)
-    if not cites and re.search(r"captcha|unusual traffic|verify you", r["body"], re.I):
+    results = src["parse"](r["body"])
+    if not results and re.search(src["blocked_re"], r["body"], re.I):
         out["state"] = "blocked"
         out["metrics"] = {"status": r["status"]}
         out["notes"].append("site: 端点疑似人机验证→blocked 不告警")
         return out
-    if not cites:
-        # audit 05 P1:Bing 改版 DOM(无 cite 标签、无 captcha 文案)≠ 真 0 页。
-        # 解析健全性检查:解析不出来就不当"真 0"参与告警判定。
+    if not results:
+        # audit 05 P1:端点改版 DOM(解析不出结果、无反爬文案)≠ 真 0 页。
+        # 解析健全性检查:解析不出来就不当"真 0"参与告警判定(对一切源生效)。
         out["state"] = "unparseable"
-        out["metrics"] = {"status": r["status"], "cite_tags": 0}
-        out["notes"].append("Bing 端点 200 但解析不出 cite(DOM 疑似改版)→unparseable 不告警,不当真 0")
+        out["metrics"] = {"status": r["status"], src["zero_metrics_key"]: 0}
+        out["notes"].append(src["unparseable_note"])
         return out
-    sample, visible = [], 0
-    for c in cites[:10]:
-        u = unescape(re.sub(r"<[^>]+>", "", c)).replace(" › ", "/")
+    sample, visible, ranks = [], 0, []
+    for i, u in enumerate(results[:10], 1):
         if reg and reg in u:
             visible += 1
+            ranks.append(i)
             if len(sample) < 5:
                 sample.append(u)
     out["metrics"] = {"status": r["status"], "visible_pages": visible, "sample": sample}
-    out["notes"].append("方法限制:Bing HTML 端点无 SLA,非官方索引数;仅作抽查方向")
+    if src.get("ranked") and ranks:
+        out["metrics"]["ranks"] = ranks               # 命中结果的 SERP 排名(1 基,前 10)
+    if src["id"] != DEFAULT_SERP_SOURCE_ID:
+        out["metrics"]["serp_source"] = src["id"]     # 非默认源留痕(diff 的 method_note 用)
+    out["notes"].append(src["method_note"])
     return out
 
 
@@ -1162,7 +1294,7 @@ def run_checks(mdir, cfg, kind, budget):
     if budget.exhausted():
         results["visibility"] = {"state": "budget_skipped"}
     else:
-        results["visibility"] = check_visibility(site)
+        results["visibility"] = check_visibility(site, serp_cfg=cfg.get("serp_source"))
     results["gsc"] = check_gsc(mdir)
     if kind == "weekly":
         robots_metrics = results.get("robots", {}).get("metrics", {})
@@ -1786,6 +1918,7 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
     # 防假 0 纪律(serpbear,D1 P2 复核确认):半数以上请求失败/被拦/解析不出 →
     # state 落 skipped/blocked/unparseable,下面的 == "ok" 门直接挡住——绝不把
     # "请求失败"判成"排名/收录消失";真 0 只在端点成功返回且样本过地板时成立。
+    # 该纪律对一切 SERP 源生效(D1 P2 第 13 条源适配层:bing/duckduckgo)。
     cv, pv = (curr.get("visibility") or {}).get("site", {}), (prev.get("visibility") or {}).get("site", {})
     bv = ((baseline or {}).get("visibility") or {}).get("site", {})
     if cv.get("state", "ok") == "ok" and "visible_pages" in cv:
@@ -1800,7 +1933,8 @@ def compute_alerts(prev, curr, cfg, baseline=None, inhibited_out=None):
                 add(lvl, "visibility_zero", "site",
                     "site: 抽查可见页 %d → 0(端点成功返回,疑似去索引/处罚)%s" % (pvis, extra),
                     {"prev": pvis, "curr": cvis, "sample": cv.get("sample"),
-                     "method_note": "Bing HTML 端点方向抽样,非官方索引数"})
+                     "method_note": "%s 端点方向抽样,非官方索引数"
+                                    % (cv.get("serp_source") or "Bing HTML")})
             else:
                 d = pct_drop(pvis, cvis)
                 if d is not None and d * 100 >= int(th.get("visibility_drop_pct", 30)):
@@ -2774,11 +2908,60 @@ def _self_test():
     assert cp2["metrics"]["expect_ok"] is False and cp2["metrics"]["expect_missing"] == ["missing-needle"]
     assert cp2["metrics"]["hreflang_hash"] == \
         hreflang_hash("<link rel='alternate' hreflang='en' href='https://x/'>")
+
+    # --- D1 P2 第 13 条:visibility SERP 源适配层(serpbear 式) ---
+    assert set(SERP_SOURCES) == {"bing", "duckduckgo"}     # 付费源只登记不接入
+    for _src in SERP_SOURCES.values():
+        assert {"id", "name", "website", "price_note", "build_url", "parse", "enabled"} <= set(_src)
+    assert DEFAULT_SERP_SOURCE_ID == "bing"
+    assert resolve_serp_source(None) == (SERP_SOURCES["bing"], [])
+    assert resolve_serp_source({"id": "duckduckgo"})[0]["id"] == "duckduckgo"
+    _fb, _fw = resolve_serp_source({"id": "serper"})       # 注册位 id → 回退 bing+警告
+    assert _fb["id"] == "bing" and _fw
+    for _t in ("bing", "duckduckgo", "serper", "serpapi", "$1 / 1k", "$50 / 5k"):
+        assert _t in SERP_SOURCE_TABLE                     # 对照表:源|价格|限额|状态
+    _g3 = globals()
+    _orig_get3 = _g3["http_get"]
+    _g3["http_get"] = lambda url, timeout=FETCH_TIMEOUT: {
+        "status": 200, "final_url": url, "elapsed_ms": 1.0, "headers": {},
+        "body": '<a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fa&amp;rut=x">A</a>'
+                '<a href="https://example.com/b" class="result__a">B</a>'}
+    try:
+        _v = check_visibility("https://example.com", serp_cfg={"id": "duckduckgo"})
+    finally:
+        _g3["http_get"] = _orig_get3
+    assert _v["state"] == "ok" and _v["metrics"]["visible_pages"] == 2
+    assert _v["metrics"]["sample"] == ["https://example.com/a", "https://example.com/b"]
+    assert _v["metrics"]["ranks"] == [1, 2] and _v["metrics"]["serp_source"] == "duckduckgo"
+    # 默认路径逐字节兼容:无 serp_source 配置 → 与旧版同形(不新增 metrics 键)
+    _g3["http_get"] = lambda url, timeout=FETCH_TIMEOUT: {
+        "status": 200, "final_url": url, "elapsed_ms": 1.0, "headers": {},
+        "body": "<cite>https://example.com › pricing</cite>"}
+    try:
+        _vb = check_visibility("https://example.com")
+    finally:
+        _g3["http_get"] = _orig_get3
+    assert _vb == {"check": "visibility", "state": "ok",
+                   "metrics": {"status": 200, "visible_pages": 1,
+                               "sample": ["https://example.com/pricing"]},
+                   "notes": ["方法限制:Bing HTML 端点无 SLA,非官方索引数;仅作抽查方向"]}
+    # 防假 0 对新源同样生效:200 但解析不出 → unparseable,diff 不产 visibility_zero
+    _g3["http_get"] = lambda url, timeout=FETCH_TIMEOUT: {
+        "status": 200, "final_url": url, "elapsed_ms": 1.0, "headers": {}, "body": "<html>redesign</html>"}
+    try:
+        _vu = check_visibility("https://example.com", serp_cfg={"id": "duckduckgo"})
+    finally:
+        _g3["http_get"] = _orig_get3
+    assert _vu["state"] == "unparseable" and "visible_pages" not in _vu["metrics"]
+    assert not any(a["code"] == "visibility_zero" for a in compute_alerts(
+        {"visibility": {"site": {"state": "ok", "visible_pages": 5}}},
+        {"visibility": {"site": {"state": _vu["state"]}}}, cfg))
     print("[self-test] PASS monitor(11 类告警判定/地板/自愈/抑制树/双窗口/SSL 梯度/"
           "字段级 diff+selector/secret 守卫/重定向 SSRF/状态机+prune+quarantine/维护窗口/"
           "noindex 检测+canonical 目标健康度(D1 P0-1/P0-2)/"
           "segments+accepted_codes+--ci checks+sample-keypages(D1 P1)/"
-          "removed 语义+h1·hreflang·word_count 指纹+must_contain+裸域 probe+多断言(D1 P2))")
+          "removed 语义+h1·hreflang·word_count 指纹+must_contain+裸域 probe+多断言(D1 P2)/"
+          "SERP 源适配层+源对照表+防假 0(bing 默认/duckduckgo,D1 P2 第 13 条))")
 
 
 def main(argv=None):
