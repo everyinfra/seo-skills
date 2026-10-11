@@ -1344,7 +1344,7 @@
    ],
    "outputs_schema": "csv",
    "data_source": "GSC Search Analytics API(真实 OAuth RS256,纯 stdlib RSA)",
-   "fallback_mode": "②无凭证→auth 报错指路;配额 1200qpm 注记",
+   "fallback_mode": "②",
    "tests_file": "tests/test_gsc_api.py",
    "status": "beta"
   }
