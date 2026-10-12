@@ -48,6 +48,11 @@
           #   越界 clamp)→ 写回该 run 每条 result 的 geo 扩展键(panel.json 与
           #   runs/<id>.json 双写);硬违例整批原子拒绝;score --rubric 打印
           #   压缩判定要点(代码内常量,不读 md,standalone)
+  triangulate --referral REF [--survey survey.csv] [--since D] [--until D] [--json]
+          # 三源分歧度报告(R6 归因;同一品牌同期): referrer 日志(ai_referral_log
+          #   输出/CSV/JSON)× 面板采样(窗口内 mention coverage)× 可选 survey
+          #   (品牌提示回想%)→ 两两差(pp)+ 最大分歧源标注 + "referral 是下限"
+          #   口径(kpi-definitions 对账纪律: 永不跨源求和,只读方向与分歧)
 
 v4(借鉴 niubigeo,出处逐条标注 references/research/niubigeo-deep-read.md §3):
   N1 提及检测   record --answer-file ANSWER: URL 掩码+实体词表自动判定 mentioned/
@@ -2043,6 +2048,346 @@ def run_fingerprint(run):
                           ).hexdigest()[:16]
 
 
+# ---------- triangulate(R6 归因: 三源分歧度报告) ----------
+# 同一品牌同期三个来源各自估计"AI 渠道品牌触达",口径互不相同:
+#   referral = AI referrer 请求占可解析请求比(ai_referral_log 输出;下限口径)
+#   panel    = 窗口内 mention coverage(本面板;prompt 抽样口径)
+#   survey   = 品牌提示回想 %(CSV;用户记忆口径)
+# 纪律(references/monitoring/kpi-definitions.md 对账五步的同路数): 永不跨源求和、
+# 永不跨源平均、只读方向一致性与分歧度;referral 是下限(App 内打开常不带
+# referrer),survey 回想含非 AI 渠道记忆(偏高),panel 只覆盖采样 prompt 集。
+TRIANGULATE_VERSION = "triangulate-v1"
+REFERRAL_TEXT_TOTAL_RE = re.compile(r"合计 AI referrer 请求:?\s*(\d+)")
+REFERRAL_TEXT_PARSED_RE = re.compile(r"日志行 (\d+) \| 可解析 (\d+)")
+SURVEY_COL_KEYS = ("recall", "回想", "提示回想", "aided_recall", "aided recall",
+                   "recall_pct", "pct", "%")
+SOURCE_HINTS = {
+    "referral": "下限口径: App 内打开常不带 referrer,真实 AI 引流 ≥ 此数",
+    "panel": "抽样口径: 只覆盖面板 prompt 集,n<10 时结论只能当方向",
+    "survey": "记忆口径: 提示回想含非 AI 渠道记忆,系统性偏高",
+}
+
+
+def _win_date(s):
+    """'YYYY-MM-DD…' → datetime;空/无法解析 → None(非法显式输入由调用方报错)。"""
+    if not s:
+        return None
+    return parse_date(str(s)[:10] + "T00:00:00")
+
+
+def _in_window(d, since, until):
+    if d is None:
+        return True                      # 无日期的源不参与窗口过滤(整文件口径)
+    if since and d < since:
+        return False
+    if until and d > until:
+        return False
+    return True
+
+
+def parse_referral_source(path, since=None, until=None):
+    """--referral → {form, hits, parsed, value_pct, note}。
+    吃三种形态:
+      1) ai_referral_log.py 文本输出: 抓 "合计 AI referrer 请求: N" 与
+         "日志行 X | 可解析 Y" → value_pct = N/Y×100(下限);
+      2) CSV 列 date,hits[,total]: 窗口内 Σhits(与 Σtotal 有 total 列时算占比);
+      3) JSON: {ai_total|ai_referral_hits|hits, parsed|total|requests} 或
+         {"YYYY-MM-DD": hits 或 {hits,total}}(逐日,走窗口过滤)。"""
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            raw = f.read()
+    except OSError as e:
+        raise ValueError("无法读取 --referral %s: %s" % (path, e))
+    if not raw.strip():
+        raise ValueError("--referral %s 为空文件" % path)
+    txt = raw.strip()
+    if txt.startswith("{"):
+        try:
+            data = json.loads(txt)
+        except ValueError as e:
+            raise ValueError("--referral JSON 解析失败: %s" % e)
+        if not isinstance(data, dict):
+            raise ValueError("--referral JSON 需为对象")
+        hits = parsed = total = None
+        for k in ("ai_total", "ai_referral_hits", "hits", "ai_hits"):
+            if isinstance(data.get(k), (int, float)):
+                hits = float(data[k])
+                break
+        for k in ("parsed", "total", "total_requests", "requests"):
+            if isinstance(data.get(k), (int, float)):
+                parsed = float(data[k])
+                break
+        if hits is None:                       # 逐日形态 {"2026-10-01": 3 或 {hits,total}}
+            hits = total = 0.0
+            for k, v in data.items():
+                d = _win_date(k)
+                if not _in_window(d, since, until):
+                    continue
+                if isinstance(v, dict):
+                    h, t = v.get("hits"), v.get("total")
+                else:
+                    h, t = v, None
+                if isinstance(h, (int, float)):
+                    hits += float(h)
+                if isinstance(t, (int, float)):
+                    total = (total or 0.0) + float(t)
+            parsed = total
+        value = (100.0 * hits / parsed) if (hits is not None and parsed) else None
+        note = "" if value is not None else "JSON 无分母(parsed/total),只有计数,占比不可算"
+        return {"form": "json", "hits": hits, "parsed": parsed, "value_pct": value,
+                "note": note}
+    m_total = REFERRAL_TEXT_TOTAL_RE.search(txt)
+    if m_total:                                # ai_referral_log 文本输出
+        hits = float(m_total.group(1))
+        parsed = None
+        m_log = REFERRAL_TEXT_PARSED_RE.search(txt)
+        if m_log:
+            parsed = float(m_log.group(2))     # 可解析行数 = 占比分母
+        value = (100.0 * hits / parsed) if parsed else None
+        return {"form": "ai_referral_log-text", "hits": hits, "parsed": parsed,
+                "value_pct": value,
+                "note": ("" if value is not None
+                         else "文本中未找到 '日志行 X | 可解析 Y' 行,占比不可算")}
+    # CSV: date,hits[,total]
+    rows = list(csv.reader(txt.splitlines()))
+    if not rows:
+        raise ValueError("--referral %s 无可解析内容" % path)
+    header = [(c or "").strip().lower() for c in rows[0]]
+    hit_k = next((i for i, h in enumerate(header) if h in ("hits", "ai_hits", "点击", "访问")), None)
+    if hit_k is None:
+        raise ValueError("--referral 不认识的形态(需 ai_referral_log 输出文本 / "
+                         "date,hits[,total] CSV / JSON 对象),首行: %r" % rows[0][:4])
+    date_k = next((i for i, h in enumerate(header) if h in ("date", "day", "日期")), None)
+    total_k = next((i for i, h in enumerate(header)
+                    if h in ("total", "totals", "sessions", "requests", "总", "总量")), None)
+    body = rows[1:] if any(h in ("date", "hits", "ai_hits", "day", "日期", "点击", "访问",
+                                 "total", "sessions", "requests") for h in header) else rows
+    hits = total = 0.0
+    used = 0
+    for r in body:
+        if not r or not (r[hit_k] or "").strip():
+            continue
+        d = _win_date(r[date_k]) if (date_k is not None and date_k < len(r)) else None
+        if date_k is not None and not _in_window(d, since, until):
+            continue
+        try:
+            hits += float(r[hit_k])
+        except ValueError:
+            continue
+        if total_k is not None and total_k < len(r) and r[total_k].strip():
+            try:
+                total += float(r[total_k])
+            except ValueError:
+                pass
+        used += 1
+    if not used:
+        return {"form": "csv", "hits": 0.0, "parsed": None, "value_pct": None,
+                "note": "窗口内没有 CSV 数据行"}
+    value = (100.0 * hits / total) if total else None
+    return {"form": "csv", "hits": hits, "parsed": total or None, "value_pct": value,
+            "note": ("" if value is not None
+                     else "CSV 无 total 列,只有计数,占比不可算(加 total 列或用 "
+                          "ai_referral_log 输出)")}
+
+
+def panel_window_coverage(panel, since=None, until=None):
+    """窗口内面板 mention coverage(failed 不入分母;no_answer 留分母计 0)。"""
+    cells = denom = mentioned = 0
+    per_engine = {}
+    runs_used = 0
+    for run in panel.get("runs", []):
+        d = parse_date(run.get("date"))
+        if not _in_window(d, since, until):
+            continue
+        runs_used += 1
+        for res in run.get("results", {}).values():
+            cells += 1
+            if res.get("state") == "failed":
+                continue
+            denom += 1
+            mentioned += res.get("mentioned", 0)
+            agg = per_engine.setdefault(run["engine"], {"denominator": 0, "mentioned": 0})
+            agg["denominator"] += 1
+            agg["mentioned"] += res.get("mentioned", 0)
+    for eng, agg in per_engine.items():
+        agg["coverage"] = (agg["mentioned"] / agg["denominator"]) \
+            if agg["denominator"] else None
+    return {"runs": runs_used, "cells": cells, "denominator": denom,
+            "mentioned_sum": mentioned,
+            "value_pct": (100.0 * mentioned / denom) if denom else None,
+            "per_engine": per_engine}
+
+
+def load_survey_csv(path, since=None, until=None):
+    """survey CSV(date,recall%) → {rows, value_pct, note}。
+    recall 列名认 recall/回想/提示回想/aided_recall/recall_pct/pct/%;
+    值 0-100(>1 的整数百分比或 0-1 小数均接受: >1 按 %,<1 按比例×100);
+    多行取窗口内均值。"""
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            rows = list(csv.DictReader(f))
+    except OSError as e:
+        raise ValueError("无法读取 --survey %s: %s" % (path, e))
+    if not rows:
+        raise ValueError("--survey %s 无数据行" % path)
+    keys = {(k or "").strip().lower(): k for k in (rows[0] or {}) if k}
+    r_k = next((keys[k] for k in SURVEY_COL_KEYS if k in keys), None)
+    d_k = next((keys[k] for k in ("date", "day", "日期") if k in keys), None)
+    if r_k is None:
+        raise ValueError("--survey 需要 recall/回想/提示回想 列,实际列=%s"
+                         % list((rows[0] or {}).keys()))
+    vals = []
+    for row in rows:
+        raw = (row.get(r_k) or "").strip().rstrip("%").strip()
+        if not raw:
+            continue
+        if d_k:
+            d = _win_date(row.get(d_k))
+            if not _in_window(d, since, until):
+                continue
+        try:
+            v = float(raw)
+        except ValueError:
+            continue
+        if 0.0 <= v <= 1.0:
+            v *= 100.0                        # 0-1 比例 → %
+        if not (0.0 <= v <= 100.0):
+            raise ValueError("--survey 回想值越界(0-100): %r" % raw)
+        vals.append(v)
+    if not vals:
+        return {"rows": 0, "value_pct": None, "note": "窗口内无有效 recall 行"}
+    return {"rows": len(vals), "value_pct": sum(vals) / len(vals),
+            "note": ""}
+
+
+def triangulate_sources(sources):
+    """可用源(% 值非 None)两两差 + 最大分歧源(对其他源的平均绝对差最大)。"""
+    names = [n for n in ("referral", "panel", "survey")
+             if sources.get(n) and sources[n].get("value_pct") is not None]
+    pairwise = []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            diff = sources[a]["value_pct"] - sources[b]["value_pct"]
+            higher, lower = (a, b) if diff >= 0 else (b, a)
+            pairwise.append({"a": a, "b": b, "diff_pp": round(diff, 2),
+                             "abs_pp": round(abs(diff), 2),
+                             "direction": "%s 高于 %s %.1fpp" % (higher, lower,
+                                                                abs(diff))})
+    max_div = None
+    if len(names) >= 2:
+        score = {}
+        for n in names:
+            rel = [p for p in pairwise if n in (p["a"], p["b"])]
+            score[n] = sum(p["abs_pp"] for p in rel) / len(rel)
+        worst = max(sorted(names), key=lambda n: score[n])
+        max_div = {"source": worst, "mean_abs_pp": round(score[worst], 2),
+                   "hint": SOURCE_HINTS.get(worst, "")}
+    return {"pairwise": pairwise, "n_comparable": len(names),
+            "comparable_sources": names, "max_divergence": max_div}
+
+
+def render_triangulate(panel, ref, pan, svy, tri, since, until):
+    L = ["== 三源分歧度报告(triangulate): %s ==" % panel.get("brand", "?"),
+         "窗口: %s → %s" % (since or "(面板全部 runs)", until or "(至今)"),
+         "[口径] referral=下限(App 内打开常不带 referrer);panel=prompt 抽样;"
+         "survey=提示回想(记忆口径,偏高)。永不跨源求和/平均,只读方向与分歧。"]
+    L.append("-- 三源 --")
+    L.append("  referral(%s): value=%s hits=%s 分母=%s%s"
+             % (ref["form"], _pct((ref["value_pct"] / 100) if ref["value_pct"] is not None else None),
+                _fmt_num(ref["hits"]), _fmt_num(ref["parsed"]),
+                (" | " + ref["note"]) if ref.get("note") else ""))
+    L.append("  panel: value=%s(runs=%d, 成功 cell=%d, Σmentioned=%d)"
+             % (_pct((pan["value_pct"] / 100) if pan["value_pct"] is not None else None),
+                pan["runs"], pan["denominator"], pan["mentioned_sum"]))
+    for eng in sorted(pan["per_engine"]):
+        agg = pan["per_engine"][eng]
+        L.append("    %-12s %s" % (eng, _pct(agg["coverage"])))
+    if svy is None:
+        L.append("  survey: 未提供(--survey survey.csv,品牌提示回想%)")
+    else:
+        L.append("  survey: value=%s(rows=%d)%s"
+                 % (_pct((svy["value_pct"] / 100) if svy["value_pct"] is not None else None),
+                    svy["rows"], (" | " + svy["note"]) if svy.get("note") else ""))
+    L.append("-- 两两差(pp) --")
+    if tri["pairwise"]:
+        for p in tri["pairwise"]:
+            L.append("  %s vs %s: %+.2fpp(|Δ|=%.2f)" % (p["a"], p["b"], p["diff_pp"], p["abs_pp"]))
+    else:
+        L.append("  可比较源不足 2 个(带 % 的源),分歧度无法计算")
+    if tri["max_divergence"]:
+        md = tri["max_divergence"]
+        L.append("-- 最大分歧源: %s(对其他源平均 |Δ|=%.2fpp) --" % (md["source"], md["mean_abs_pp"]))
+        if md["hint"]:
+            L.append("  [i] %s: %s" % (md["source"], md["hint"]))
+    L.append("-- 口径注记 --")
+    L.append("  [!] referral 是下限: 真实 AI 引流 ≥ referrer 测得值(ai_referral_log 口径)")
+    L.append("  [i] 三源方向一致才可下'触达在升/降'的结论;分歧大时先查口径再查数据")
+    if len(panel.get("prompts", [])) < 10:
+        L.append("  [!] prompts=%d <10:panel 源结论只能当方向" % len(panel.get("prompts", [])))
+    return "\n".join(L)
+
+
+def _fmt_num(v):
+    return "-" if v is None else ("%d" % round(v) if float(v).is_integer() else "%.2f" % v)
+
+
+def cmd_triangulate(args):
+    try:
+        panel = load_panel(args.panel)
+    except (OSError, ValueError) as e:
+        print("错误: 读取面板失败: %s" % e, file=sys.stderr)
+        return 1
+    if not panel.get("runs"):
+        print("错误: 面板尚无 runs,先用 record 录入采样: %s" % args.panel, file=sys.stderr)
+        return 1
+    since, until = None, None
+    for label, raw in (("--since", args.since), ("--until", args.until)):
+        if raw:
+            d = _win_date(raw)
+            if d is None:
+                print("错误: %s 需要 YYYY-MM-DD,得到 %r" % (label, raw), file=sys.stderr)
+                return 1
+            if label == "--since":
+                since = d
+            else:
+                until = d
+    try:
+        ref = parse_referral_source(args.referral, since, until)
+    except ValueError as e:
+        print("错误: %s" % e, file=sys.stderr)
+        return 1
+    svy = None
+    if args.survey:
+        try:
+            svy = load_survey_csv(args.survey, since, until)
+        except ValueError as e:
+            print("错误: %s" % e, file=sys.stderr)
+            return 1
+    pan = panel_window_coverage(panel, since, until)
+    if pan["runs"] == 0:
+        print("错误: 窗口 %s→%s 内没有面板 runs(检查 --since/--until)"
+              % (args.since or "(开)", args.until or "(开)"), file=sys.stderr)
+        return 1
+    sources = {"referral": ref, "panel": pan, "survey": svy}
+    tri = triangulate_sources(sources)
+    if args.json:
+        payload = {"tool": "citation_panel.triangulate",
+                   "version": TRIANGULATE_VERSION,
+                   "brand": panel.get("brand"),
+                   "window": {"since": args.since or None, "until": args.until or None},
+                   "sources": {k: dict(v) for k, v in sources.items() if v is not None},
+                   "pairwise": tri["pairwise"],
+                   "n_comparable": tri["n_comparable"],
+                   "max_divergence": tri["max_divergence"],
+                   "caveats": ["referral 是下限: App 内打开常不带 referrer,真实 AI 引流 ≥ 此数",
+                               "永不跨源求和/平均;只读方向一致性与分歧度",
+                               SOURCE_HINTS["survey"], SOURCE_HINTS["panel"]]}
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(render_triangulate(panel, ref, pan, svy, tri, args.since, args.until))
+    return 0
+
+
 # ---------- CLI / 自测 ----------
 
 def build_parser():
@@ -2119,6 +2464,19 @@ def build_parser():
                    help="打印 rubric 压缩判定要点后退出(代码内常量,不读 md,standalone)")
     p.add_argument("--panel", default="panel.json")
     p.set_defaults(func=cmd_score)
+    p = sub.add_parser(
+        "triangulate",
+        help="三源分歧度报告(R6 归因: referral 日志 × 面板采样 × survey 回想)")
+    p.add_argument("--referral", required=True,
+                   help="referrer 日志源: ai_referral_log 输出文本 / CSV(date,hits[,total]) /"
+                        " JSON({ai_total,parsed} 或 逐日 {date: hits})")
+    p.add_argument("--survey", default="",
+                   help="可选 survey CSV(date,recall%% 列;品牌提示回想)")
+    p.add_argument("--since", default="", help="窗口起 YYYY-MM-DD(过滤 panel runs/survey/referral 逐日行)")
+    p.add_argument("--until", default="", help="窗口止 YYYY-MM-DD")
+    p.add_argument("--json", action="store_true", help="输出 JSON(默认 markdown)")
+    p.add_argument("--panel", default="panel.json")
+    p.set_defaults(func=cmd_triangulate)
     return ap
 
 

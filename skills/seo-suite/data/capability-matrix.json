@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 76,
+  "script": 81,
   "template": 24,
   "reference": 13,
   "stable": 70,
-  "beta": 42,
+  "beta": 47,
   "draft": 1
  },
  "entries": [
@@ -1528,6 +1528,71 @@
    "data_source": "站点级四轴库存治理(流量/外链/AI 引用/战略→四桶+redirect map;被引页绝不入 remove)",
    "fallback_mode": "②",
    "tests_file": "tests/test_prune_inventory.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "outreach_tracker.py",
+   "group": "scripts/外链PR",
+   "inputs": [
+    "上游 CSV/JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "外展状态库(add 吃 gaps 导入/due 复查提醒/转化漏斗;与 citation_gaps 闭环)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_outreach_tracker.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "directory_tracker.py",
+   "group": "scripts/外链PR",
+   "inputs": [
+    "上游 CSV/JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "目录提交执行器(14 列 CSV/现场核验 dofollow/季度复检队列)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_directory_tracker.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "split_test.py",
+   "group": "scripts/归因实验",
+   "inputs": [
+    "上游 CSV/JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "页面级增量实验(plan 功效计算+预注册冻结/分层随机+crossover/Welch 分析)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_split_test.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "synthetic_control.py",
+   "group": "scripts/归因实验",
+   "inputs": [
+    "上游 CSV/JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "合成控制 DiD 升级(donor 加权反事实+placebo 检验)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_synthetic_control.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "geo_experiment.py",
+   "group": "scripts/归因实验",
+   "inputs": [
+    "上游 CSV/JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "GeoX 薄封装(分国别分组+平衡检查+2×2 交互 OLS;索引级 holdout 诚实边界)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_geo_experiment.py",
    "status": "beta"
   }
  ]

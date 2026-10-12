@@ -29,6 +29,23 @@ R0-2 接线:diff 在产 gsc_clicks_drop/visibility 类跌幅告警前,若 gsc.cs
   绝不把"读不了"当"外链归零"参与告警判定)。阈值经 thresholds.
   backlink_newref_drop_pct / backlink_total_drop_pct 可调。
 
+R4 监控对标①(pipeline-completeness.md §五"监控对标:SLO+错误预算"):config 可选
+  slo 节 {metric: {target: 0.995, window_days: 30}},内置三指标——
+  keypage_indexable(优先页可索引率 indexable/total)/canonical_ok(canonical 正确率:
+  目标探测非失败即正确,自指/无 canonical 不算失败)/healthy_pages(健康页率:
+  非 error/http_error 快照占比);diff 后从 db 近 window 天 ok run 的 pages 快照
+  聚合实际值,剩余错误预算=1−(1−实际)/(1−目标),<25% → slo_budget_low(warn,
+  "索引健康 SLO 99.5%:错误预算剩 X%,接近耗尽将建议冻结发布");report 顶部加
+  SLO 条形(各指标实际 vs 目标)。按模板分账注记:全站 SLO 会藏住单模板回归
+  (1000 页里一个模板 50 页全坏只摊薄成 5%)——单模板回归要看 site_crawl
+  (crawl.page 口径:crawl.json pages[] 按模板分组聚合),monitor 只看抽样 key_pages。
+R4 监控对标④(flapping+ack 超时):diff 时同 (code,key) 7 天内 fire+resolved≥3 次
+  (至少 1 次 resolved——纯持续告警是持续事故不是抖动,降级会吞真 critical)→
+  该告警降 info+附 flap_count+"建议修阈值(反复触发/自愈=阈值贴边)"(Nagios/
+  Alertmanager flap_detection 口径);ack 超时在 notify.py 侧:critical 即时发送
+  带 ack_deadline(默认 30min),--flush 检查未 ack 且超期的 critical → 升级
+  全渠道再发一次并标记 escalated(只升一次),`notify.py ack KEY` 人工确认停升级。
+
 告警四级(critical/warn/info/low)+ 百分比阈值×最小样本地板 = 防疲劳;
 low=自愈(上次告警本次恢复)。cooldown:critical 12h / warn 24h / info 168h。
 
@@ -137,6 +154,19 @@ BACKLINKS_CSV = "backlinks.csv"      # 月检外链导出(同 gsc.csv 模式;放
 BACKLINK_NEW_WINDOW_DAYS = 31        # "当月新增引荐域"的 first_seen 回看窗(月检节奏)
 BACKLINK_DOMAIN_CAP = 5000           # 快照存引荐域清单上限(防大库快照膨胀;超出截断+标记)
 
+# R4 监控对标①常量(pipeline-completeness.md §五"SLO+错误预算")
+SLO_DEFAULT_TARGET = 0.995           # 索引健康 SLO 缺省目标(99.5%)
+SLO_DEFAULT_WINDOW_DAYS = 30         # SLO 回看窗(天;Google SRE 错误预算惯例 30 天)
+SLO_BUDGET_LOW_PCT = 0.25            # 剩余错误预算 <25%(已耗 3/4)→ slo_budget_low(warn)
+SLO_METRICS = {                      # 内置三指标(config slo 节的键 → 人读标签)
+    "keypage_indexable": "优先页可索引率",
+    "canonical_ok": "canonical 正确率",
+    "healthy_pages": "健康页率",
+}
+# R4 监控对标④常量(flapping 检测)
+FLAP_WINDOW_DAYS = 7                 # flapping 回看窗(天)
+FLAP_THRESHOLD = 3                   # fire+resolved ≥3 次(且 ≥1 次 resolved)→ 降 info
+
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot",
                "PerplexityBot", "CCBot", "Google-Extended", "Bytespider", "Meta-ExternalAgent"]
 MARKET_BOTS = {"ru": ["YandexBot", "YandexAdditional"], "kr": ["Yeti"], "cn": ["Baiduspider"]}
@@ -203,6 +233,8 @@ PLAYBOOK = {
     # R2-4 接线新增告警码(引荐域月检)
     "backlink_drop":        ("核查外链获取是否停滞(outreach/数字 PR 投产比);对照 Ahrefs/Semrush 新增趋势与最近内容发布节奏", "human"),
     "backlink_loss":        ("总引荐域大幅丢失:查 Search Console 手动操作处罚/外链被撤/导出口径是否变化;外链资产 6.5x 杠杆,优先复核", "human"),
+    # R4 监控对标①:SLO 错误预算告急(冻结协议联动)
+    "slo_budget_low":       ("冻结发布(算法更新冻结协议 Freeze→Pause→Review);先修预算消耗来源(noindex/宕机/canonical 断链),预算恢复>50% 再解冻", "human"),
 }
 
 # 告警抑制树(audit 19,Prometheus inhibition 纪律):根因一条,派生折叠。
@@ -554,6 +586,11 @@ def cmd_init(args):
             "快照自动记 h1/hreflang_hash(顺序无关)/word_count,变更判 "
             "h1_changed(info)/hreflang_changed(warn)/main_content_change(info,"
             "阈值 thresholds.content_change_pct 默认 30%);title/meta 变空=meta_removed(warn)",
+            "slo(可选,R4 监控对标①): {\"keypage_indexable\": {\"target\": 0.995, "
+            "\"window_days\": 30}}——内置三指标 keypage_indexable(优先页可索引率)/"
+            "canonical_ok(canonical 正确率)/healthy_pages(健康页率);diff 后从近 "
+            "window 天快照算实际值,剩余错误预算<25% → slo_budget_low(warn,建议冻结发布);"
+            "report 顶部出 SLO 条形;单模板回归另看 site_crawl(crawl.page 口径)",
             "heartbeat: 配 healthchecks.io 类 ping URL 后,run 成功 ping /ok、失败 ping /fail;"
             "grace 建议 ≈ cron 间隔×2+典型运行时长",
         ],
@@ -1937,6 +1974,8 @@ def apply_accepted(alerts, cfg):
         return 0
     n = 0
     for a in alerts:
+        if a.get("accepted"):
+            continue          # R4:可重入——SLO 告警在 compute_alerts 之后追加,二次套用不重复前缀
         fp = "%s:%s" % (a["code"], a["key"])
         if a["code"] in acc or fp in acc:
             a["from_level"] = a["level"]
@@ -1944,6 +1983,213 @@ def apply_accepted(alerts, cfg):
             a["accepted"] = True
             a["message"] = "已接受(接受≠消失,周报仍计数): " + a["message"]
             n += 1
+    return n
+
+
+# ---------- R4 监控对标①:SLO+错误预算 ----------
+
+def _slo_samples(conn, metric, now, window_days):
+    """近 window_days 天 status='ok' run 的 pages 快照 → (good, bad) 样本计数。
+    口径(SLO 内置三指标,防假 0:缺证据的样本一律不计,不猜):
+    - keypage_indexable:indexable True/False 各计好/坏;缺键(旧库)不计;
+    - canonical_ok:有 canonical_target_status 键才计(canonical_failure 判坏;
+      None=自指/无 canonical 不算失败);缺键不计;
+    - healthy_pages:state 为 error/http_error 计坏,其余(含旧库无 state 键)计好。
+    按模板分账注记:此处是全站(抽样 key_pages)聚合口径——全站 SLO 会藏住单模板回归
+    (1000 页里一个模板 50 页全坏只摊薄成 5%);单模板回归要看 site_crawl(crawl.page
+    口径:crawl.json pages[] 按模板分组聚合),monitor 不做模板级 SLO。"""
+    cutoff = (now - timedelta(days=window_days)).isoformat(timespec="seconds")
+    good = bad = 0
+    for row in conn.execute(
+            "SELECT s.value FROM snapshots s JOIN runs r ON s.run_id=r.id "
+            "WHERE s.\"check\"='pages' AND r.status='ok' AND r.ts>=?", (cutoff,)):
+        try:
+            v = json.loads(row["value"])
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(v, dict):
+            continue
+        if metric == "keypage_indexable":
+            iv = v.get("indexable")
+            if iv is True:
+                good += 1
+            elif iv is False:
+                bad += 1
+        elif metric == "canonical_ok":
+            if "canonical_target_status" in v:
+                if canonical_failure(v["canonical_target_status"]):
+                    bad += 1
+                else:
+                    good += 1
+        else:  # healthy_pages
+            if v.get("state") in ("error", "http_error"):
+                bad += 1
+            else:
+                good += 1
+    return good, bad
+
+
+def compute_slo(conn, cfg, now=None):
+    """① SLO 计算:config slo 节({metric: {target, window_days}})→ 各内置指标
+    实际值与剩余错误预算。返回 {"configured": bool, "metrics": {name: {...}}}:
+      actual=good/(good+bad)(无样本=None 不猜);
+      budget_remaining=1−(1−actual)/(1−target)(可为负=预算超耗;<SLO_BUDGET_LOW_PCT 告警)。
+    未配 slo 节/条目缺省/坏配置 → 对应指标跳过(configured=False 表示整块未启用)。
+    只认 SLO_METRICS 内置键;slo 节里出现的键才算(显式 opt-in,不配不告警)。"""
+    now = now or datetime.now()
+    out = {"configured": False, "metrics": {}}
+    slo_cfg = cfg.get("slo")
+    if not isinstance(slo_cfg, dict) or not slo_cfg:
+        return out
+    out["configured"] = True
+    for name, label in SLO_METRICS.items():
+        conf = slo_cfg.get(name)
+        if conf is None:
+            continue                       # slo 节未列出的指标不计算(opt-in)
+        if isinstance(conf, dict):
+            target, window = conf.get("target", SLO_DEFAULT_TARGET), \
+                conf.get("window_days", SLO_DEFAULT_WINDOW_DAYS)
+        else:                              # 裸 true/数值等简写 → 全默认
+            target, window = SLO_DEFAULT_TARGET, SLO_DEFAULT_WINDOW_DAYS
+        try:
+            target, window = float(target), int(window)
+        except (TypeError, ValueError):
+            continue                       # 坏配置:该指标跳过不猜
+        if not 0 < target <= 1 or window <= 0:
+            continue
+        good, bad = _slo_samples(conn, name, now, window)
+        total = good + bad
+        actual = (good / total) if total else None
+        budget = None
+        if actual is not None:
+            allowed = 1.0 - target
+            budget = (1.0 if actual >= target else 0.0) if allowed <= 0 \
+                else 1.0 - (1.0 - actual) / allowed
+        out["metrics"][name] = {"label": label, "target": target, "window_days": window,
+                                "good": good, "bad": bad, "samples": total,
+                                "actual": round(actual, 6) if actual is not None else None,
+                                "budget_remaining": round(budget, 4) if budget is not None else None}
+    return out
+
+
+def slo_alerts_from(slo):
+    """SLO 计算结果 → 告警列表:剩余错误预算 < SLO_BUDGET_LOW_PCT(已耗 ≥75%)→
+    slo_budget_low(warn,"索引健康 SLO 99.5%:错误预算剩 X%,接近耗尽将建议冻结发布")。
+    无样本(actual=None)不猜不发。"""
+    alerts = []
+    for name, m in (slo.get("metrics") or {}).items():
+        actual, budget = m.get("actual"), m.get("budget_remaining")
+        if actual is None or budget is None or budget >= SLO_BUDGET_LOW_PCT:
+            continue
+        action, boundary = PLAYBOOK["slo_budget_low"]
+        alerts.append({
+            "level": "warn", "code": "slo_budget_low", "key": name,
+            "message": ("索引健康 SLO %.2f%%(%s,近 %d 天 %d 样本实际 %.2f%%):"
+                        "错误预算剩 %.0f%%,接近耗尽将建议冻结发布"
+                        % (m["target"] * 100, m["label"], m["window_days"], m["samples"],
+                           actual * 100, max(budget, 0.0) * 100)),
+            "details": {"metric": name, "label": m["label"], "target": m["target"],
+                        "window_days": m["window_days"], "actual": actual,
+                        "good": m["good"], "bad": m["bad"], "samples": m["samples"],
+                        "budget_remaining": m["budget_remaining"],
+                        "budget_low_pct": SLO_BUDGET_LOW_PCT},
+            "action": action, "boundary": boundary})
+    return alerts
+
+
+def slo_bar(actual, target, width=20):
+    """report 用 SLO 条形(0-100% 线性 width 格):█=实际水位,|=目标格位。
+    近满分区间的条形只是方向感(99.2% 与 99.5% 同格),精确差看百分比数字。"""
+    def pos(v):
+        return max(0, min(width - 1, int(round((v or 0.0) * width))))
+    fill = pos(actual)
+    cells = ["█"] * fill + ["·"] * (width - fill)
+    cells[pos(target)] = "|"
+    return "[" + "".join(cells) + "]"
+
+
+def slo_report_lines(slo):
+    """report 顶部 SLO 段落:各指标 实际 vs 目标 条形 + 剩余错误预算(三档呈现:
+    ≥100% / 剩余百分比 / 0%)+ 按模板分账注记(全站 SLO 会藏住单模板回归)。"""
+    if not slo.get("configured"):
+        return ["-- SLO --",
+                "  (config 未配 slo 节;示例 \"slo\": {\"keypage_indexable\": "
+                "{\"target\": 0.995, \"window_days\": 30}}——R4 监控对标①)"]
+    lines = ["-- SLO 索引健康(错误预算,R4 监控对标①)--"]
+    for name, m in slo["metrics"].items():
+        actual, budget = m.get("actual"), m.get("budget_remaining")
+        if actual is None:
+            lines.append("  %-18s 无样本(不猜)" % m["label"])
+            continue
+        if budget is None:
+            budget_txt = "-"
+        elif budget >= 1:
+            budget_txt = "≥100%"
+        else:
+            budget_txt = "%d%%" % round(max(budget, 0.0) * 100)
+        low = "  (slo_budget_low:已建议冻结发布)" if (
+            budget is not None and budget < SLO_BUDGET_LOW_PCT) else ""
+        lines.append("  %-18s 实际 %6.2f%% / 目标 %5.2f%%  %s  错误预算剩 %s%s"
+                     % (m["label"], actual * 100, m["target"] * 100,
+                        slo_bar(actual, m["target"]), budget_txt, low))
+    lines.append("  注: 全站 SLO 会藏住单模板回归——按模板分账看 site_crawl"
+                 "(crawl.page 口径:crawl.json pages[] 按模板分组);monitor 只看抽样 key_pages")
+    return lines
+
+
+def slo_report_json(slo):
+    """report --json 的 SLO 段({configured, metrics[]};每指标含 actual/budget 口径)。"""
+    return {"configured": bool(slo.get("configured")),
+            "metrics": [dict(m, metric=name) for name, m in (slo.get("metrics") or {}).items()]}
+
+
+# ---------- R4 监控对标④:flapping 检测 ----------
+
+def flap_history_count(conn, code, key, cutoff_s):
+    """(code,key) 近窗内 fire+resolved 事件数:fire=未抑制未自愈告警行(level!='low'),
+    resolved=code+"_resolved" 自愈行。口径注意:纯持续告警(无任何 resolved)不算
+    flapping——持续 critical 是持续事故不是抖动,降级会吞掉真事故的翻页。"""
+    fires = conn.execute(
+        "SELECT COUNT(*) AS c FROM alerts WHERE code=? AND key=? AND level!='low' "
+        "AND suppressed=0 AND ts>=?", (code, key, cutoff_s)).fetchone()["c"]
+    resolved = conn.execute(
+        "SELECT COUNT(*) AS c FROM alerts WHERE code=? AND key=? AND ts>=?",
+        (code + "_resolved", key, cutoff_s)).fetchone()["c"]
+    return fires, resolved
+
+
+def apply_flapping(conn, alerts, now=None):
+    """④ flapping 检测:同 (code,key) FLAP_WINDOW_DAYS 天内 fire+resolved ≥FLAP_THRESHOLD
+    次(且 ≥1 次 resolved)→ 该告警降 info+附 flap_count+"建议修阈值(反复触发/
+    自愈=阈值贴边)"。Nagios/Alertmanager flap_detection 口径:反复触发/自愈说明阈值
+    贴着信号边缘,继续按原级别翻页只会疲劳;降 info 后走 168h 冷却,自然静默一个
+    回看窗。计数只看已入库历史(本 diff 尚未落库,不把自己算进去)。返回降级条数。"""
+    if not alerts:
+        return 0
+    now = now or datetime.now()
+    cutoff_s = (now - timedelta(days=FLAP_WINDOW_DAYS)).isoformat(timespec="seconds")
+    cache = {}
+    n = 0
+    for a in alerts:
+        if a.get("accepted") or a.get("level") == "low":
+            continue
+        ck = (a["code"], a.get("key"))
+        if ck not in cache:
+            cache[ck] = flap_history_count(conn, ck[0], ck[1], cutoff_s)
+        fires, resolved = cache[ck]
+        if resolved < 1:
+            continue          # 无自愈记录:持续事故,不降级(见 flap_history_count 口径注)
+        flap = fires + resolved
+        if flap < FLAP_THRESHOLD:
+            continue
+        a["flap_count"] = flap
+        a["details"] = dict(a.get("details") or {}, flap_count=flap,
+                            flap_from_level=a["level"], flap_window_days=FLAP_WINDOW_DAYS)
+        a["level"] = "info"
+        a["message"] += (";flapping: 近 %d 天 fire+resolved %d 次(fire %d/resolved %d)"
+                         "→ 降 info,建议修阈值(反复触发/自愈=阈值贴边)"
+                         % (FLAP_WINDOW_DAYS, flap, fires, resolved))
+        n += 1
     return n
 
 
@@ -2537,9 +2783,27 @@ def cmd_diff(args):
         inhibited = []
         alerts = compute_alerts(prev, curr, cfg, baseline=baseline, inhibited_out=inhibited,
                                 volatility=volatility)
-        # D1 P1→R5⑤:accepted_codes 白名单已在 compute_alerts 内先于抑制树应用
-        # (接受≠消失:降 low+标 accepted,周报仍计数;此处只汇总命中数,不重复套用)
+        # R4 监控对标①:SLO+错误预算——diff 后从 db 近 window 天 ok run 快照聚合实际值,
+        # 剩余错误预算 <25% → slo_budget_low warn(config 未配 slo 节=整块跳过,不猜)
+        slo = compute_slo(conn, cfg, now)
+        alerts.extend(slo_alerts_from(slo))
+        # accepted_codes 对追加的 SLO 告警二次套用(apply_accepted 可重入,不重复前缀)
+        apply_accepted(alerts, cfg)
+        # R4 监控对标④:flapping——同 (code,key) 7 天内 fire+resolved≥3 次(≥1 次
+        # resolved;纯持续告警不降级)→ 降 info+附 flap_count+建议修阈值
+        n_flap = apply_flapping(conn, alerts, now)
+        if n_flap:
+            print("[i] flapping 检测: %d 条告警近 %d 天反复触发/自愈,已降 info(建议修阈值)"
+                  % (n_flap, FLAP_WINDOW_DAYS))
+        # D1 P1→R5⑤:accepted_codes 白名单先于抑制树应用(接受≠消失)——compute_alerts
+        # 内对主告警、上方对追加的 SLO 告警各套用一次(apply_accepted 可重入)
         n_accepted = sum(1 for a in alerts if a.get("accepted"))
+        if slo.get("configured"):
+            payload_slo = slo_report_json(slo)["metrics"]
+        else:
+            payload_slo = None
+        _order = {l: i for i, l in enumerate(LEVELS)}
+        alerts.sort(key=lambda a: _order.get(a["level"], 9))
 
         cooldowns = cfg.get("cooldown_hours", COOLDOWN_HOURS)
         cur_fps = {("%s:%s" % (a["code"], a["key"])) for a in alerts}
@@ -2583,6 +2847,7 @@ def cmd_diff(args):
                    "baseline_kind_mismatch": kind_mismatch,
                    "alerts": alerts, "healed": healed, "suppressed": suppressed,
                    "inhibited": inhibited, "accepted": n_accepted,
+                   "slo": payload_slo,
                    "counts": {l: sum(1 for a in active if a["level"] == l) for l in LEVELS}}
 
         if not args.dry_run:
@@ -2710,6 +2975,8 @@ def cmd_report(args):
     improved, declined = digest_improved_declined(conn, since)
     lines.append("对比上一期: %d improved, %d declined(improved=上期有本期无;declined=本期新增)"
                  % (len(improved), len(declined)))
+    # R4 监控对标①:report 顶部 SLO 条形(各指标实际 vs 目标+剩余错误预算)
+    slo = compute_slo(conn, cfg)
     if args.json:
         trend = {}
         for metric, check, key in [("visible_pages", "visibility", "site"),
@@ -2729,10 +2996,12 @@ def cmd_report(args):
                           for a in alerts],
                "accepted_alerts": sum(1 for a in alerts if _alert_details(a).get("accepted")),
                "improved": improved, "declined": declined,
+               "slo": slo_report_json(slo),
                "trend": trend}
         conn.close()
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
+    lines.extend(slo_report_lines(slo))
     lines.append("-- 告警汇总 --")
     by_level = {l: [a for a in alerts if a["level"] == l] for l in LEVELS}
     if not alerts:

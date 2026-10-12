@@ -29,6 +29,16 @@
   按 key 清单向当初收到告警的渠道发 RESOLVED 消息并关闭 incident(本处渠道皆单向,
   双向渠道才可只记日志)。
 
+ack 超时(R4 监控对标④,pipeline-completeness.md §五"flapping+ack 超时";PagerDuty
+  ack-deadline 口径的保守子集):
+  critical 即时告警的消息附 ack_deadline(默认 30min 后;config ack_timeout_minutes
+  可调,≤0 关闭);--flush 时检查未 ack 且超期的 critical(从 incidents 记录)→ 升级
+  全渠道再发(升级无视 route——超时未确认的 critical 应全员可见)并标记 escalated
+  (升级只一次;全渠道失败保留待下次 flush 重试);`notify.py ack KEY` 人工确认停升级。
+  webhook 单向限制:Slack 交互式 ack 按钮需常驻回调端点,与本地 CLI/cron 形态冲突,
+  不做——本地形态用 ack 子命令;GitHub Actions 形态约定 issue 评论 `/ack <incident_key>`
+  (continuous-operations 的 issue 兜底同源)由工作流侧转成本命令落盘。
+
 防疲劳/自守恒纪律:
   --max-age N   拒发陈旧 alerts.json(默认 30 分钟;防"run 失败→notify 读昨天文件重发")
   渠道故障隔离  每渠道独立 try,一家失败不阻断其余;失败 detail 脱敏(token 不进日志)
@@ -46,11 +56,13 @@
   cat alerts.json | python3 notify.py run --dir .seo-monitor --stdin
   python3 notify.py resolve --dir .seo-monitor noindex_added@ab12cd34ef56  # 恢复通知
   python3 notify.py resolve --dir .seo-monitor --file resolved-keys.txt
+  python3 notify.py ack --dir .seo-monitor noindex_added@ab12cd34ef56     # 人工确认,停超时升级
+  python3 notify.py ack --dir .seo-monitor --file ack-keys.txt            # GH 形态:issue /ack 转写
   python3 notify.py routes                                                 # 建议路由表模板
   python3 notify.py --self-test
 
 退出码:0=发送成功或无待发;1=发送失败(渠道报错);4=输入错误(含 alerts 文件过期)。
-        resolve 对未知/已过期(>24h)的 key 只提示跳过,不判错。
+        resolve/ack 对未知/已过期(>24h)的 key 只提示跳过,不判错。
 """
 import argparse
 import fnmatch
@@ -67,13 +79,14 @@ import time
 import traceback
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
 STATE_FILE = "notify-state.json"
 INCIDENTS_FILE = "notify-incidents.json"   # 告警生命周期记录(独立 JSON,不动 monitor.db)
 INCIDENT_TTL_HOURS = 24                    # Conductor 口径:24h 无新增即自动关闭
+ACK_DEFAULT_MINUTES = 30                   # R4 监控对标④:critical ack 期限(默认 30min)
 LEVELS = ("critical", "warn", "info", "low")
 DISCORD_LIMIT, TELEGRAM_LIMIT = 1900, 3800
 KNOWN_CHANNELS = ("slack", "discord", "telegram", "webhook", "email")
@@ -297,6 +310,10 @@ def format_alerts(site, alerts, header):
             lines.append("  -> %s (%s)" % (a["action"], a.get("boundary", "human")))
         if a.get("incident_key"):
             lines.append("  id: %s(恢复时: notify.py resolve <此 key>)" % a["incident_key"])
+        # R4 监控对标④:critical 附 ack 期限——超时未确认,--flush 时升级全渠道重发
+        if a.get("ack_deadline") and a.get("level") == "critical":
+            lines.append("  ack 期限: %s(超时未确认将升级全渠道重发;人工确认: notify.py ack %s)"
+                         % (a["ack_deadline"], a.get("incident_key", "<key>")))
     lines.append("")
     lines.append("-- 分级抑制:critical 即时 / warn 日批 / info 周批 / low 静默 --")
     return "\n".join(lines)
@@ -463,20 +480,40 @@ def save_incidents(path, data):
         raise
 
 
-def record_incidents(mdir, alerts, dry_run=False):
-    """发送成功后落 {incident_key: {code,key,level,sent_at}}(resolve 子命令的依据)。
+def record_incidents(mdir, alerts, dry_run=False, ack_minutes=None):
+    """发送成功后落 {incident_key: {code,key,level,sent_at}}(resolve/ack 子命令的依据)。
     同 key 重发刷新 sent_at——24h 窗口自最后一次发出计(Conductor:24h 无新增即关闭)。
-    dry-run 或未实际送达(渠道全败)不记录。"""
+    dry-run 或未实际送达(渠道全败)不记录。
+    R4 监控对标④:critical 告警且给了 ack_minutes(或告警自带 ack_deadline)→ 记录
+    ack_deadline,--flush 时据此检查未 ack 且超期的 critical 做升级;非 critical 不设。"""
     if dry_run or not alerts:
         return
     path = os.path.join(mdir, INCIDENTS_FILE)
     data = load_incidents(path)
     now = datetime.now().isoformat(timespec="seconds")
     for a in alerts:
-        data["incidents"][incident_key(a)] = {
+        ik = incident_key(a)
+        prev = data["incidents"].get(ik) or {}
+        rec = {
             "code": a.get("code", ""), "key": a.get("key", ""),
             "level": a.get("level", ""), "message": str(a.get("message", ""))[:200],
             "sent_at": now}
+        # 重发同 key 不丢人工状态:已 ack(人已确认)/已 escalated(只升一次)跨重发保留
+        for keep in ("acked_at", "escalated_at"):
+            if prev.get(keep):
+                rec[keep] = prev[keep]
+        # ack 期限只在首次记录时设定(PagerDuty 口径:升级计时从首次送达起算,
+        # 告警持续重发不重置时钟——否则持续 critical 永远等不到超期升级);
+        # 已 ack 的重发不再设期限(人已确认,无需再催)
+        if a.get("level") == "critical" and not rec.get("acked_at"):
+            if prev.get("ack_deadline"):
+                rec["ack_deadline"] = prev["ack_deadline"]      # 沿用首次期限
+            elif a.get("ack_deadline"):
+                rec["ack_deadline"] = a["ack_deadline"]
+            elif ack_minutes:
+                rec["ack_deadline"] = (datetime.now()
+                                       + timedelta(minutes=ack_minutes)).isoformat(timespec="seconds")
+        data["incidents"][ik] = rec
     save_incidents(path, data)
 
 
@@ -494,6 +531,131 @@ def format_resolved(site, items):
     lines.append("")
     lines.append("-- Conductor 口径:恢复即关闭;发出超 24h 无新增亦自动过期 --")
     return "\n".join(lines)
+
+
+# ---------- ack 超时升级(R4 监控对标④)----------
+
+def existing_ack_deadline(mdir, alert):
+    """该告警已记录在案的 ack 期限(未 ack 才返回)。重发/再次触发时沿用首次期限,
+    让消息展示与升级判定共用同一时钟(PagerDuty 口径:升级计时从首次送达起算,
+    不因重发重置)。"""
+    data = load_incidents(os.path.join(mdir, INCIDENTS_FILE))
+    inc = (data.get("incidents") or {}).get(incident_key(alert)) or {}
+    if inc and not inc.get("acked_at") and inc.get("ack_deadline"):
+        return inc["ack_deadline"]
+    return None
+
+
+def overdue_unacked(data, now=None):
+    """从 incidents 记录挑出"未 ack 且超期的 critical":level=critical、无 acked_at、
+    无 escalated_at(升级只一次)、ack_deadline 已过。已 ack / 已升级 / 无期限
+    (老记录/非 critical)/ 未到期的一律不选。"""
+    now = now or datetime.now()
+    out = []
+    for k, v in (data.get("incidents") or {}).items():
+        if not isinstance(v, dict) or v.get("level") != "critical":
+            continue
+        if v.get("acked_at") or v.get("escalated_at") or not v.get("ack_deadline"):
+            continue
+        try:
+            if datetime.fromisoformat(str(v["ack_deadline"])) < now:
+                out.append((k, v))
+        except (ValueError, TypeError):
+            continue
+    return out
+
+
+def format_escalation(site, items):
+    """升级消息(items: [(incident_key, 记录)]):超 ack 期限未确认的 critical
+    全渠道重发(升级无视 route——超时未确认的 critical 应全员可见)。"""
+    lines = ["[ESCALATION 升级] %s" % site,
+             "时间: %s" % datetime.now().isoformat(timespec="seconds"),
+             "以下 critical 告警超 ack 期限未确认,升级全渠道重发:", ""]
+    for ik, inc in items:
+        lines.append("[CRITICAL] %s: %s" % (inc.get("code", "?"), inc.get("message")
+                                            or inc.get("key", "")))
+        lines.append("  ack 期限 %s 已过;incident_key: %s(人工确认: notify.py ack %s)"
+                     % (inc.get("ack_deadline"), ik, ik))
+    lines.append("")
+    lines.append("-- 升级只发一次;ack 后不再升级。单向 webhook 无回传 ack:"
+                 "本地形态 notify.py ack;GH Actions 形态约定 issue 评论 /ack <key> --")
+    return "\n".join(lines)
+
+
+def escalate_unacked(mdir, targets, site, dry_run=False):
+    """--flush 时的 ack 超时检查:未 ack 且超期的 critical(从 incidents 记录)→
+    升级全渠道再发+标记 escalated(升级只一次)。任一渠道送达即标记;全渠道失败/
+    无渠道则保留待下次 flush 重试(与 pending_critical 的"绝不丢"口径一致)。
+    返回 0=无事可做或送达,1=渠道失败。"""
+    path = os.path.join(mdir, INCIDENTS_FILE)
+    data = load_incidents(path)
+    items = overdue_unacked(data)
+    if not items:
+        return 0
+    if not targets:
+        print("  [!] %d 条 critical 超 ack 期限未确认,但无已配置渠道——升级暂缓"
+              "(下次 flush 再试,不丢)" % len(items))
+        return 0
+    print("升级: %d 条 critical 超 ack 期限未确认 → 全渠道重发(无视 route)" % len(items))
+    msg = format_escalation(site, items)
+    results = send_all(targets, msg, dry_run)
+    delivered = False
+    for name, ok, detail in results:
+        print("  [%s] %s(升级): %s" % ("OK" if ok else "FAIL", name, detail))
+        delivered = delivered or ok
+    if not dry_run and delivered:
+        now = datetime.now().isoformat(timespec="seconds")
+        for k, _ in items:
+            data["incidents"][k]["escalated_at"] = now
+        save_incidents(path, data)
+        print("  [i] %d 条已标记 escalated(升级只一次;ack 仍可补记止后续升级)" % len(items))
+    elif not dry_run:
+        print("  [!] 升级全渠道失败,未标记 escalated(下次 flush 再试)")
+    return 0 if (delivered or dry_run) else 1
+
+
+def cmd_ack(args):
+    """ack 子命令:人工确认 critical 告警——acked_at 落盘,停掉超时升级重发。
+    webhook 渠道单向,回不来 ack:本地形态用本子命令;GitHub Actions 形态约定
+    issue 评论 `/ack <incident_key>`(continuous-operations 的 issue 兜底同源),
+    由工作流侧转成本命令落盘。未知/已过期(>24h)key 只提示跳过,不判错(resolve 同口径)。"""
+    mdir = args.dir
+    cfg_path = os.path.join(mdir, "config.json")
+    if not os.path.exists(cfg_path):
+        print("错误: %s 不存在,先跑 monitor.py init" % cfg_path, file=sys.stderr)
+        return 4
+    keys = [k for k in (args.keys or []) if k]
+    if args.file:
+        with open(args.file, encoding="utf-8") as f:
+            keys += [ln.strip() for ln in f
+                     if ln.strip() and not ln.strip().startswith("#")]
+    if not keys:
+        print("错误: 需要 incident_key 清单(位置参数或 --file),key 见告警消息 ack 段",
+              file=sys.stderr)
+        return 4
+    path = os.path.join(mdir, INCIDENTS_FILE)
+    data = load_incidents(path)                  # 顺带剔除超 24h 的过期记录
+    now = datetime.now().isoformat(timespec="seconds")
+    acked = 0
+    for k in dict.fromkeys(keys):
+        inc = data["incidents"].get(k)
+        if inc is None:
+            print("[i] %s: 未记录或发出超 24h 已过期,跳过(不判错)" % k)
+            continue
+        if inc.get("acked_at"):
+            print("[i] %s: 已于 %s 确认过,无需重复" % (k, inc["acked_at"]))
+            continue
+        inc["acked_at"] = now
+        extra = ";该告警已升级过(%s),ack 防止后续再升" % inc["escalated_at"] \
+            if inc.get("escalated_at") else ""
+        print("[OK] %s(%s)已确认,超时升级停止%s" % (k, inc.get("code", "?"), extra))
+        acked += 1
+    if acked:
+        if args.dry_run:
+            print("[dry-run] 状态未写盘")
+        else:
+            save_incidents(path, data)
+    return 0
 
 
 def route_alerts(alerts, state):
@@ -613,6 +775,14 @@ def cmd_notify(args):
     state = load_state(os.path.join(mdir, STATE_FILE))
     immediate, nw, ni, ns = route_alerts(alerts, state)
 
+    # R4 监控对标④:critical ack 期限(默认 30min;config ack_timeout_minutes 可调,≤0 关闭)
+    try:
+        ack_minutes = float(cfg.get("ack_timeout_minutes", ACK_DEFAULT_MINUTES))
+    except (TypeError, ValueError):
+        ack_minutes = float(ACK_DEFAULT_MINUTES)
+    if ack_minutes <= 0:
+        ack_minutes = None
+
     # dead man's switch:监控器自身停摆也算"即时"级事件(audit 18)
     dm = dead_man_alert(mdir, cfg)
     if dm:
@@ -640,6 +810,11 @@ def cmd_notify(args):
         header = "CRITICAL 即时告警" if not dm else "即时告警(含 dead_man)"
         for a in immediate:                      # Conductor 生命周期口径:发出的告警附 key
             a.setdefault("incident_key", incident_key(a))
+            # R4 监控对标④:critical 即时发送带 ack_deadline(默认 30min 后;再次触发
+            # 沿用首次期限,不重置升级时钟)——超时未 ack 的 critical 在 --flush 时升级
+            if ack_minutes and a.get("level") == "critical":
+                a["ack_deadline"] = existing_ack_deadline(mdir, a) or (
+                    datetime.now() + timedelta(minutes=ack_minutes)).isoformat(timespec="seconds")
         if not targets and not args.dry_run:
             # R5:全无已配置渠道 = 无处送达,即时告警同样降级暂存(与批口径一致,不丢告警)
             print("  [!] %d 条即时告警无处发送(无已配置渠道),降级暂存进 pending_critical"
@@ -655,7 +830,7 @@ def cmd_notify(args):
                 print("  [%s] %s: %s" % ("OK" if ok else "FAIL", name, detail))
                 rc = rc or (0 if ok else 1)
             if any(ok for _, ok, _ in results):
-                record_incidents(mdir, group, args.dry_run)
+                record_incidents(mdir, group, args.dry_run, ack_minutes=ack_minutes)
             elif not args.dry_run:
                 # R5:渠道全败 → 降级暂存 pending_critical(incident_key 随批保留,
                 # 下次 flush 优先重发)——critical 不再因渠道抖动永久丢失
@@ -663,12 +838,20 @@ def cmd_notify(args):
                       % stash_critical(state, group))
 
     flush = (args.flush or "")
+    # R4 监控对标④:ack 超时——flush 时检查未 ack 且超期的 critical(从 incidents 记录)
+    # → 升级全渠道(无视 route)再发一次+标记 escalated(升级只一次;ack 过/已升级不再发)
+    if flush:
+        rc = rc or escalate_unacked(mdir, targets, site, args.dry_run)
     # R5:pending_critical 降级批(上次渠道全败的即时告警)优先于 warn/info 摘要重发;
     # 任一渠道送达的组出批并照常记 incident,仍全败的组整组保留(下次再试,不丢告警)。
     if flush and state["pending_critical"]:
         batch = state["pending_critical"]
         for a in batch:
             a.setdefault("incident_key", incident_key(a))
+            # R4 监控对标④:重发带 ack 期限(首次送达才起算;此前已送达过则沿用原期限)
+            if ack_minutes and a.get("level") == "critical":
+                a["ack_deadline"] = existing_ack_deadline(mdir, a) or (
+                    datetime.now() + timedelta(minutes=ack_minutes)).isoformat(timespec="seconds")
         print("重发: pending_critical 批 %d 条(上次渠道全败的即时告警,优先于 %s 批)"
               % (len(batch), flush))
         delivered = []
@@ -684,7 +867,7 @@ def cmd_notify(args):
                 print("  [%s] %s: %s" % ("OK" if ok else "FAIL", name, detail))
                 rc = rc or (0 if ok else 1)
             if any(ok for _, ok, _ in results):
-                record_incidents(mdir, group, args.dry_run)
+                record_incidents(mdir, group, args.dry_run, ack_minutes=ack_minutes)
                 delivered.extend(group)
         if not args.dry_run:
             sent_ids = {id(a) for a in delivered}
@@ -713,7 +896,7 @@ def cmd_notify(args):
                 print("  [%s] %s: %s" % ("OK" if ok else "FAIL", name, detail))
                 rc = rc or (0 if ok else 1)
             if any(ok for _, ok, _ in results):
-                record_incidents(mdir, group, args.dry_run)
+                record_incidents(mdir, group, args.dry_run, ack_minutes=ack_minutes)
             if not all(ok for _, ok, _ in results):
                 sent_all_ok = False
         # P1-14(audit 05-§3 反向问题):只在全部渠道成功(或本无渠道)后清批,
@@ -820,6 +1003,14 @@ def build_parser():
     p.add_argument("--file", default="", help="从文件读 key 清单(每行一个,# 为注释)")
     p.add_argument("--dry-run", action="store_true", help="只打印不联网不写盘")
     p.set_defaults(func=cmd_resolve)
+
+    p = sub.add_parser("ack", help="人工确认 critical 告警(停超时升级重发;"
+                                   "GH Actions 形态约定 issue 评论 /ack <key> 转本命令)")
+    p.add_argument("--dir", default=".seo-monitor")
+    p.add_argument("keys", nargs="*", help="incident_key 清单(告警消息里 ack 段)")
+    p.add_argument("--file", default="", help="从文件读 key 清单(每行一个,# 为注释)")
+    p.add_argument("--dry-run", action="store_true", help="只打印不写盘")
+    p.set_defaults(func=cmd_ack)
 
     p = sub.add_parser("routes", help="打印建议路由表注释模板(P0-3,不强制)")
     p.set_defaults(func=cmd_routes)
