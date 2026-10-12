@@ -1,0 +1,125 @@
+{
+ "checked_at": "2026-10-12T07:19:47.723713+00:00",
+ "sources": {
+  "google-blog": {
+   "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
+   "seen": [
+    "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
+    "Announcing web multimodal Search performance reporting in Search Console",
+    "Search Central Live Deep Dive Europe 2026: Meet the community speakers",
+    "Search Central Live India 2026: Bengaluru, We're Coming (For Real This Time)",
+    "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico"
+   ],
+   "ts": "2026-10-11T08:34:44.548408+00:00"
+  },
+  "google-updates": {
+   "hash": "85696a4756bd4bed6f0f9e7b2629705b",
+   "ts": "2026-10-11T08:34:44.969145+00:00"
+  },
+  "gsc-announce": {
+   "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
+   "seen": [
+    "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
+    "Announcing web multimodal Search performance reporting in Search Console",
+    "Search Central Live Deep Dive Europe 2026: Meet the community speakers",
+    "Search Central Live India 2026: Bengaluru, We're Coming (For Real This Time)",
+    "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico"
+   ],
+   "ts": "2026-10-11T08:34:45.596590+00:00"
+  },
+  "status-dashboard": {
+   "hash": "fa46baff2e7076ca5eaacdcb2f52f7b9",
+   "ts": "2026-10-11T08:34:46.994868+00:00"
+  },
+  "lighthouse": {
+   "top": "Lantern Test Data",
+   "seen": [
+    "Lantern Test Data",
+    "v13.5.0",
+    "v13.4.1",
+    "v13.4.0",
+    "v13.3.0"
+   ],
+   "ts": "2026-10-11T08:34:47.823438+00:00"
+  },
+  "bing-wm": {
+   "top": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+   "seen": [
+    "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+    "Does Duplicate Content Hurt SEO and AI Search Visibility?",
+    "How AI Search Is Changing\u202fthe\u202fWay\u202fConversions\u202fare Measured",
+    "Bing Introduces Support for the data-nosnippet HTML Attribute",
+    "Keeping Content Discoverable with Sitemaps in AI Powered Search"
+   ],
+   "ts": "2026-10-11T08:34:48.324403+00:00"
+  },
+  "openai-bots": {
+   "hash": "2a7bc38dc0934e259cdd6a9a8154d83e",
+   "ts": "2026-10-12T07:19:18.113209+00:00"
+  },
+  "ard-spec": {
+   "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
+   "seen": [
+    "Merge pull request #85 from thegovind/conformance-extension-media-types",
+    "Merge pull request #86 from aaitor/add-nevermined-payment-example",
+    "Merge pull request #82 from ards-project/drop-guha-affiliation",
+    "docs(conformance): add Nevermined payment example catalog",
+    "conformance: report extension media types as informational",
+    "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
+    "chore: merge main and update attestation scopes for v0.91 (\u00a74.5.2)",
+    "Merge pull request #106 from ards-project/fix-cddl-explore-facet-buckets",
+    "spec(cddl): allow empty buckets array in explore-facet-result (#34)",
+    "Merge pull request #105 from ards-project/fix-skill-and-recognized-me\u2026"
+   ],
+   "ts": "2026-10-12T07:19:18.894548+00:00"
+  },
+  "anthropic-crawl": {
+   "hash": "351cba2416cda3f91ae0e5d21a2e8ff0",
+   "ts": "2026-10-11T08:34:49.762519+00:00"
+  },
+  "schema-org": {
+   "hash": "77148a1e8e96b49506a4883169899e89",
+   "ts": "2026-10-11T08:34:50.366806+00:00"
+  },
+  "crux": {
+   "hash": "89f0ace9928add52acf9b0c2869226f9",
+   "ts": "2026-10-11T08:34:50.992421+00:00"
+  },
+  "yandex-wm": {
+   "hash": "0fbbfe3721c2c2ce443fd9752036f62b",
+   "ts": "2026-10-11T08:34:53.315998+00:00"
+  },
+  "naver-wm": {
+   "hash": "de2bbe5b92a535632b305ccc49db7c58",
+   "ts": "2026-10-11T08:34:59.338799+00:00"
+  },
+  "baidu-ziyuan": {
+   "hash": "5b970db79a084daa5d7c5e7f41f4db61",
+   "ts": "2026-10-11T08:35:05.849665+00:00"
+  },
+  "statcounter-search": {
+   "hash": "0578c0dc8074b306d6d42f258c3c90cf",
+   "ts": "2026-10-12T07:19:42.507375+00:00"
+  },
+  "statcounter-ai": {
+   "hash": "a428e11f9bf2e8205d4bb5e2650970dc",
+   "ts": "2026-10-12T07:19:43.558178+00:00"
+  },
+  "semrush-sensor": {
+   "hash": "6a6ceca50dde04f4be823f786c370c65",
+   "ts": "2026-10-11T08:35:10.713127+00:00"
+  },
+  "seroundtable": {
+   "top": "Google Search Console Performance Report Extremely Delayed",
+   "seen": [
+    "Daily Search Forum Recap: October 9, 2026",
+    "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
+    "Google Ads Enables Text Customization Asset Previews",
+    "Bing Testing Local Pack Without Borders",
+    "Google Updates Reader Revenue Manager Home Page",
+    "Google Search Console Performance Report Extremely Delayed"
+   ],
+   "ts": "2026-10-12T07:19:47.723491+00:00"
+  }
+ }
+}
