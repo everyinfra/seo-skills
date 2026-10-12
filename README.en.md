@@ -4,17 +4,22 @@
 
 **Free to download. Use your own AI tool and model.**
 
-EveryInfra SEO Skills is version `0.34.4`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency.
+EveryInfra SEO Skills is version `0.35.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency. The model and its quota are whatever AI tool you already use.
 
 **The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
 
-**The 0.5 series: market × capability dual-dimension architecture + per-market deep-dives for all 18.** Every task picks its market first, then routes by capability. `multilingual-workflow.md` carries the **18-market unique-methods index** (what only works/matters in each market — e.g. WeChat Peoplerank & XHS CES score for Chinese, Korea's `nosourceinfo` official AI-citation opt-out, Brazil's Reclame Aqui cited by 22.3% of ChatGPT brand answers, Japan's "AI-flavor" density lint, Thailand's `Intl.Segmenter` word-segmentation settlement) and **23 cross-region fusion principles** (assertion half-life, conflict-noting discipline, sovereign-assistant pattern, register-duality template, etc.).
+## What only this suite ships
 
-**The 0.9 local-community round: what only locals know.** All 17 non-English markets re-mined in their own languages — the spine gains a **local community & information-source index** (per market: where locals learn, insider consensus, international misconceptions corrected): Russia's 76-item commercial-factors checklist and region codes, Korea's posting timetable, Japan's internal-link conventions and the 10x SEO-vs-MEO price gap, Germany's Abmahnung legal risk, Turkey's tanıtım yazısı link market, Thailand's grey-hat red lines, France's one-year AIO head start; a **14-market link-price band table** (from 1,500 VND/link in Vietnam to €5,000 in Spanish top media), **seven marketplace in-store SEO forks**, fusion principles extended to 27.
+- **18 market portals.** `references/markets/` holds one portal per language market (zh, en, ru, ko, ja, es, pt, ar, fr, de, id, hi, it, tr, vi, th, pl, nl), each written from native-language research in October 2026: engine landscape, local tool stack, community intel, compliance notes.
+- **Wikipedia-grade evidence discipline.** Claims carry source types and assertion half-lives; the skill never reports a signal that is not on the page and never promises ranking, traffic or AI-citation gains. GEO advice is bounded by an evidence-constraint file (`references/content/geo-evidence.md`); every Why-now number below has a registered source.
+- **A self-updating intel loop.** `intel_check.py` monitors 18 upstream sources (engine blogs, robots and AI-crawler policies, agent specs, market-share trackers), re-pulls hash changes to confirm them, maps each real change to the affected reference files, and grades the required update P0–P3 under a written self-update protocol — the skill's facts are engineered to decay slower than the market's.
+- **A monitoring daemon, not one-shot audits.** `monitor.py` runs daily four-question checks and weekly drift, keeps SQLite snapshots, and raises four-tier alerts with cooldown and anti-fatigue rules (plus SSRF and secret guards); `notify.py` fans notifications out across four channels by severity; GitHub Actions deployment templates are included.
+- **CI gates for SEO.** A composite action at the repo root (`action.yml`) audits on every pull request, fails the build below a `min-score` threshold, and emits SARIF / JUnit / GitHub PR annotations via `ci_format.py` — SEO regressions surface like test failures.
+- **A pipeline orchestrator.** `project.py` gives each site a workspace and a five-stage state machine (audit → prioritize → fix → verify → monitor): `run triage` chains crawl → audit → health score → priorities in one command, `next` prints the exact command to paste next, `status` shows the score trend. It orchestrates the other scripts as subprocesses and never reimplements them.
 
-**The 0.16–0.23 series: built-in executables + full coverage.** Rules became code — **35 stdlib-zero-dependency scripts** (at the time; page audit / AI-crawler posture / CJK text metrics / GSC-export mining / sitemap 6-bucket / hreflang cluster matrix / citation panel with Wilson-CI / DiD attribution / grid ranking ARP·ATRP·SoLV…), a `markets.json` 18-market rule layer (130 special checks), `market_lint.py` with 24 dynamic auto-checks, and **32 golden tests** run by self_check on every pass. **New modules**: agent-protocol cards, the 373-rule audit catalog, Naver official-doc distillation, head-elements reference, SERP data models, evidence bank, domain strategy, site-networks spectrum, the 9-stage pSEO playbook (4 case studies verified against live sitemaps), **site-type playbooks (8 cards)**, CWV handbook, mobile SEO, penalty recovery (11 manual-action types), redirects & canonicalization, UGC + site search. **18 language-market portals** under `references/markets/`, each from fresh native-language research.
+## How it got here (0.5 → 0.34)
 
-**The 0.24–0.30 series: continuous monitoring + self-update loop.** One-shot audits became a long-running daemon — `monitor.py` (daily four-question checks / weekly drift, SQLite snapshots, four-tier alerts with cooldown and fatigue rules, SSRF and secret guards) + `notify.py` four-channel tiered notifications + a GitHub Actions deployment template; `market_lint.py` grew to 64 checks; **`intel_check.py` + a self-update protocol** (18 monitored sources, change → affected-file mapping → P0–P3 graded updates); golden tests grew to **71**, scripts to **38**.
+One arc, compressed: the 0.5 series introduced the **market × capability dual-dimension architecture** — every task picks its market first, then routes by capability — with per-market deep-dives for all 18 markets and 23 cross-region fusion principles; 0.9 re-mined the 17 non-English markets in their own languages (a local community & information-source index, 14-market link-price bands, fusion principles grown to 27); 0.16–0.23 turned rules into code — stdlib-only scripts, the `markets.json` 18-market rule layer with dynamic `market_lint.py` checks, golden tests, the specialist modules and the 18 market portals; 0.24–0.30 added the monitoring daemon and the self-update loop; since 0.31 the executable layer has grown to **85 scripts and 1,604 golden tests** (self_check runs them all on every pass), plus the CI gates and the `project.py` orchestrator. Full history: [CHANGELOG.md](CHANGELOG.md).
 
 **Install (one command):**
 
@@ -52,6 +57,33 @@ Global-market why-now (0.4–0.5 series, source type noted):
 | Yandex share in Turkey | ~26% (Sept 2026, up from ~13% in March; vs 3-5% in local measurement — conflicting calibers, both noted) — a second Yandex market | StatCounter (industry) |
 | India ChatGPT adoption | ~100M weekly active users, ChatGPT's #2 market | OpenAI (Altman, official) |
 
+## What it does
+
+A single entry point: unified intake (site, market, goals, known issues, available data), then routing across five capability sets — overview / research / content / technical / monitoring — then structured output: conclusions, priorities, and how to validate each one. The target market is the first mandatory intake field, because it decides which engines, toolchains, thresholds and language conventions apply.
+
+| Capability | Typical tasks |
+|---|---|
+| overview | Site-wide SEO diagnosis, roadmap and prioritization, triage when you don't know where to start, target-market intake gates |
+| research | Keyword research and search intent (per-market toolchains + persona × intent SXO layer), SERP analysis (incl. per-market AI-Overview coverage and SERP occupancy), content gaps, competitors, directory-submission engine, backlink profile |
+| content | SEO content briefs and drafting, titles and meta descriptions, GEO / AI-search visibility (incl. regional AI platforms), Chinese AI search, video SEO/GEO (YouTube citation mechanics, manual-caption layer), the five-rung ecommerce GEO ladder + on-site SEO for seven marketplaces (incl. MercadoLibre, Trendyol, Allegro, bol, Shopee), content quality, content refresh |
+| technical | Technical SEO and single-page audits, robots.txt and AI-crawler policy (incl. regional crawlers, MistralAI, Bytespider), hreflang internationalization, structured data (incl. rich-result status), internal linking and site architecture, entity signals, programmatic SEO, Core Web Vitals, JS rendering and SPA SEO (five-engine rendering differences), Agent-Readiness protocol layer (ARD / WebMCP), server-log analysis (AI-visit measurement, a11y triage), attribution instrumentation |
+| monitoring | Rank tracking, backlinks (incl. 14-market local link-price bands and risk table), brand mentions (four-tier citation ladder + per-market monitoring channels), algorithm-update attribution (official timelines and data files), SEO drift monitoring, metrics and reporting |
+| **Specialist modules** | Domain strategy (selection, expired-domain due diligence, migration checklist, AI-citation inheritance), site-network spectrum and white-hat equivalents, 9-stage programmatic-SEO playbook, site-type playbooks (SaaS / ecommerce / media / local / docs / tools / marketplace / YMYL), CWV four metrics, mobile SEO, penalty recovery, redirects and canonicalization, UGC and site search |
+| **Executable layer** | 85 stdlib scripts + the `markets.json` 18-market data layer (150 special checks) + 1,604 golden tests — the AI runs the scripts to get facts first, then interprets them per the capability files |
+
+Global capability is **woven into every capability set**, not a separate module: [multilingual-workflow.md](skills/seo-suite/references/overview/multilingual-workflow.md) is the spine (market table, per-market tool stacks, language conventions, compliance), and each capability file carries the regional knowledge relevant to it.
+
+**Bilingual by design.** The skill answers in the user's language and scores each language version of a multilingual site separately. One flagship: the [Chinese AI-search guide](skills/seo-suite/references/content/chinese-ai-search-guide.md), built on a measured 187,818-citation dataset — brand sites take only 1.37% of citations, 28 ranking sites take 9.1% of earliest positions; engine moats for Baidu AI / Tencent Yuanbao / Doubao / Kimi / DeepSeek; CJK thresholds and a 15-item readiness checklist.
+
+Evidence-first: it never reports signals that are not on the page, and never promises ranking, traffic or AI-citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
+
+## What you bring
+
+- An AI tool that supports Skills, with your own model configured.
+- For data-dependent tasks, your own exports: Google Search Console, GA4, Bing Webmaster Tools, or rank-tracker / backlink / crawler exports from tools on your own accounts.
+- Optional external APIs (e.g. PageSpeed Insights, Knowledge Graph Search) need your own keys — this repo ships none.
+- Outbound actions (outreach email, publishing) are drafted by the skill and executed only after you confirm.
+
 ## 60-second taste
 
 Zero dependencies, zero API keys — every script runs on the Python standard library alone. After cloning or unzipping, no install is needed: one command chain takes `example.com` through the minimal loop **audit → layered health score → fix plan**:
@@ -65,34 +97,36 @@ python3 scripts/fix_plan.py --audit /tmp/audit.json --estimate
 
 Expected output, one line (measured): `main score 0.0 → Weak (example.com really lacks meta description/H1) · Lumar six-category composite 94.3 · AI Search Health 70/100 · fix_plan dry-run previews per-category fix artifacts + benefit estimate (writes nothing by default)`.
 
-## What it does
-
-A single entry point: unified intake (site, market, goals, known issues, available data), then routing across overview / research / content / technical / monitoring, then structured output (Summary, Findings, Priority, Actions, Validation).
-
-**Bilingual by design.** The skill answers in the user's language and scores each language version of a multilingual site separately. Unique capability: a [Chinese AI-search guide](skills/seo-suite/references/content/chinese-ai-search-guide.md) built on a measured 187,818-citation dataset — brand sites take only 1.37% of citations; 28 ranking sites take 9.1% at the earliest positions; engine moats for Baidu AI / Tencent Yuanbao / Doubao / Kimi / DeepSeek; CJK thresholds and a 15-item readiness checklist.
-
-| Capability | Typical tasks |
-|---|---|
-| overview | Site-wide diagnosis, roadmap, triage, multilingual workflow (the global backbone: market table, per-market toolchains, compliance), target-market intake gates |
-| research | Keywords & intent (with per-market toolchains: Wordstat, DataLab, ラッコ), SERP, content gaps, competitors, alternative/vs pages, backlink profile analysis (7-section framework), graded directory, directory-submission engine |
-| content | Briefs, E-E-A-T, GEO citability scoring, llms.txt authoring/validation, AI platform differences (incl. regional AI platforms: Yandex Alice/Neuro, Naver AI Briefing, Japanese AIO), Chinese AI search |
-| technical | Audits, schema, robots + AI crawler policy (incl. YandexAdditional, Naver collection, Bing Japan), hreflang 8-check (incl. es-419, RTL), programmatic SEO gates, sitemaps |
-| monitoring | Rank tracking, KPIs, alerts, brand mention monitoring, SEO drift monitoring |
-
-Global capability is **woven into every capability set**, not a separate module: `overview/multilingual-workflow.md` is the spine (engine landscape, per-market tool stacks, language conventions and compliance across markets), and each capability file carries the regional knowledge relevant to it.
-
-Evidence-first: never reports signals that are not on the page; never promises ranking, traffic or AI citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
-
 ## Install
 
-**Claude Code / ZCode (one line, recommended)** — this repo ships a plugin manifest (`.claude-plugin/`):
+**Claude Code / ZCode (one line, recommended)** — this repo ships plugin manifests (`.claude-plugin/`, `.zcode-plugin/`):
 
 ```bash
 claude plugin marketplace add everyinfra/seo-skills
 claude plugin install seo-suite@everyinfra-seo-skills
 ```
 
-**Any Agent Skills host (Cursor, Codex, Gemini CLI, Copilot, …):** copy `skills/seo-suite` into the tool's skills directory, e.g. `~/.agents/skills/` (the Agent Skills open standard is supported by 25+ tools). Form-factor analysis: [PACKAGING.md](PACKAGING.md).
+**Any Agent Skills host (Codex, Cursor, Gemini CLI, Copilot, Windsurf, Goose, Amp, …):** the `install.sh` one-liner above auto-detects installed hosts and adapts to each, or copy `skills/seo-suite` into the tool's skills directory, e.g. `~/.agents/skills/`. Per-host directories and invocation cheat sheet: [HOSTS.md](HOSTS.md). Form-factor analysis: [PACKAGING.md](PACKAGING.md).
+
+## Repo layout
+
+```text
+seo-skills/
+├── README.md / README.en.md   Chinese original + this file
+├── LICENSE / NOTICE / CHANGELOG.md
+├── action.yml                 CI composite action (PR SEO gate)
+├── install.sh                 One-command installer
+└── skills/seo-suite/
+    ├── SKILL.md               Entry point: intake, routing, script map
+    ├── scripts/               85 stdlib scripts + markets.json (18-market rule layer)
+    ├── tests/                 1,604 golden tests (self_check runs all)
+    ├── examples/              Golden-sample outputs
+    ├── references/
+    │   ├── overview/          Capability map, routing, intake, multilingual spine
+    │   ├── research/ content/ technical/ monitoring/
+    │   └── markets/           18 language-market portals
+    └── templates/             Research / audit / monitor output templates
+```
 
 ## License & attribution
 

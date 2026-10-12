@@ -1,6 +1,6 @@
 {
   "name": "seo-suite",
-  "version": "0.34.4",
+  "version": "0.35.0",
   "description": "Agent-native SEO/GEO workbench: 18 language markets, 59 stdlib scripts, self-updating intel loop, continuous monitoring daemon, 907 golden tests. Knowledge + workflow + local computation for Claude Code / ZCode / any Agent Skills host.",
   "author": {
     "name": "EveryInfra"

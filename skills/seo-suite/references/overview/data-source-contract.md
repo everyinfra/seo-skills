@@ -2,7 +2,7 @@
 
 > **Agent 调用任何脚本前,先查此表确认数据就绪。缺数据时走"降级"列的既定路径,绝不由模型编造数字或观测。**
 
-本表覆盖 `scripts/` 全部 52 个实装脚本(2026-10-10 与源码逐一对勘;当时 SKILL.md 第 3 节称 53、实为 52,SKILL.md 现已写 52。2026-10-11 复核:`scripts/` 已提交 .py 共 54 个——`ai_views.py`、`envelope.py`(v0.34.1 wave7a/7b 新增)尚未入表,见文末"发现的差异")。每行三列:
+本表覆盖 `scripts/` 全部 **85** 个实装脚本(2026-10-12 与源码逐一对勘重生成)。沿革:2026-10-10 首版对勘 52 个;2026-10-11 增至 54+ 并登记 ai_views/envelope/trend_watch/benchmark_report 四行(曾出现 trend_watch 与 benchmark_report 行粘连错位,本轮已修复);2026-10-12 收口波把 R0-R4 建设波次新增的 29 个脚本(数据接入 5/内容运营与 pSEO 6/内链 2/外链 PR 2/归因实验 3/垂直 3/多语言 3/工作流 3/审计 2)全部补齐入表并按 ①-④ 降级模式对勘。每行三列:
 
 - **数据**:输入是什么、从哪来(GSC 导出 CSV / HTML 文件 / server log / URL 实时抓取 / 无输入纯本地)。
 - **降级**:数据缺失时的既定动作,四种模式之一:
@@ -16,7 +16,7 @@
 
 ---
 
-## 一、审计与页面质量(14)
+## 一、审计与页面质量(19)
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
@@ -28,12 +28,17 @@
 | `trust_signals.py` | URL 实时抓取 | ③ 抓取失败→exit 2 | 四维只认文本证据;静态未检出≠页面没有证言(可能在图片/JS 中),报告须注明口径 |
 | `core_eeat.py` | 纯文本/Markdown 文件(本地) | ② 不可机判项(如"≥3 查询变体")固定记 na,离开分母 | na 不稀释分母;不把"未检出"当"不存在";veto 命中封顶 59 只对显式标记 |
 | `content_score.py` | `--draft` 本地文件 + `--competitors` ≥3 个竞品文件 + `--keyword`;术语表从竞品正文提取 | ③ 竞品 <3 个不同来源(按内容哈希去重)→拒绝评分 exit 2(Surfer 官方规则) | 无竞品绝不出分;术语与重要度全部来自竞品语料共现,不引入外部臆测词表 |
-| `fix_plan.py` | `--url`(内部跑 site_audit 实时抓取)或 `--audit` JSON | ③ 审计失败(fetch guard SKIP)→不生成任何修复物 exit 2 | 修复物只基于审计 findings;content 类只出提纲不自动重写;默认 dry-run,`--apply` 只写隔离目录 ./seo-fixes/ |
+| `fix_plan.py` | `--url`(内部跑 site_audit 实时抓取)或 `--audit` JSON;`--git-branch` 落分支+draft PR(R1-10) | ③ 审计失败(fetch guard SKIP)→不生成任何修复物 exit 2 | 修复物只基于审计 findings;content 类只出提纲不自动重写;默认 dry-run,`--apply` 只写隔离目录 ./seo-fixes/ |
 | `grounding_page.py` | brand.yaml(Brand Records 事实库,用户提供);`--check` 校验已有页 | ③ 无 facts 文件→无法生成;② facts 缺消歧记录→生成占位注释提示人工填 | 只重组 YAML 内的已验证事实,绝不新增/改写事实;FAQPage JSON-LD 不生成(2026-05 富结果退役) |
 | `audit_compare.py` | 两次 site_audit `--json`(本地文件) | ③ 缺任一文件→exit 2;② canonical 等字段两侧皆缺→该字段跳过对比 | 两期 URL 样本不同时必须输出 coverage_ratio,不得直接断言"分数升降" |
 | `prioritize.py` | `--audit`(site_audit JSON,逐页)或 health_score JSON(摘要);gsc_clicks/inlinks 等扩展键可选 | ② 摘要输入→条件依赖型规则降级;缺 GSC 上下文→未索引按中优先级并降级标注;canonical 缺 PageRank 数据→标"需人工判定" | 缺数据一律标"需人工判定",不给定论;两栏排序只基于命中的真实 finding |
 | `changelog.py` | `--db`(monitor.py SQLite,读 snapshots 表)或 `--snaps` JSON,二选一 | ③ 两者皆缺→exit 2;② 仅 2xx 快照参与 diff(4xx/5xx 页字段不可信) | 只报白名单字段的真实 diff;事件流不含推测;与 gsc_mining `--decay` 联动定位衰退起点 |
 | `forecast.py` | `--kws` 关键词 CSV(词+search_volume+position[+cpc]);`--ctr` 自有 GSC 曲线、`--actual` 校准流量均可选 | ② 无 `--ctr`→内置行业默认曲线,全输出标 `[est]`;无 cpc 列→acquisition_value/等效付费成本=N/A;>30 位的词不预测 | **Never invent search volumes**——kws.csv 无量不猜;CTR 模型默认是行业 benchmark `[est]`(官方建议换自有 GSC 90 天非品牌曲线 `[real]`);orders/value 是情景推演非承诺 |
+| `site_crawl.py` | 目标站实时爬取(robots/sitemap/BFS 四级发现链取到即止+子域 DNS/CT 日志探测;默认 1 req/s,robots Crawl-delay 更大时以其为准) | ① `--urls` 手工清单替代发现链;② `--max` 默认 500(上限 5000)超预算警告+截断;ct.sh 失败优雅跳过;③ 输入错 exit 2/全部起点失败 exit 3 | 孤儿判定只对实际抓到的 edges;`--strip-params` 开关两种口径的页数不可直接比较;不抓外链目标,`--check-external` 只抽样 HEAD 验活 |
+| `field_data.py` | Google PSI(无 key 低配额)+CrUX(需 key)真实 API;官方阈值判定(LCP/INP/CLS 等) | ② CrUX 无 key 整源跳过并告警(仅 PSI,不算失败);`--as-cwv-csv` 的 DCL 无现场对应→实验 FCP 近似、无数据留空;③ URL 非 http(s)/私网 SSRF 拒 exit 2;全源失败 exit 3 | 现场 p75 与实验数据分列(field/lab);阈值写死官方口径不引入自评;429/403 提示加 key 不硬跑 |
+| `ai_views.py` | URL 实时抓取或 `--html` 离线 | ③ fetch 被拒([SKIP])→停止并说明;无 `--apply` 只预览 | 不承诺引用提升;token 统计是 len//4 估算 `[est]` |
+| `envelope.py` | audit.json(必需)+health/priority(可选) | ② 可选源缺失→标 source_missing 继续;格式不符→exit 2 不静默 | 只聚合不改写上游数字;phases 分派是规则映射非承诺 |
+| `benchmark_report.py` | 多个 audit json/monitor.db/scores.csv(可组合;每源=一站) | ③ 样本<`--min-sites`(默认 5)→拒绝出报告 exit 2 | 只输出聚合数字,绝不含域名(site 读取后即弃,URL 解析即弃);偏差自白照抄 geo-optimizer 纪律 |
 
 ## 二、技术 SEO(7)
 
@@ -59,7 +64,7 @@
 | `serp_occupancy.py` | `--market` + 域名列表(argv/stdin,来自用户 SERP 观测);对照 markets.json 内置占位表(tr/th/in/kr/jp/vn/ru) | ③ 未知市场→exit 并列出可用市场 | 只对提供的域名计数;内置占位表是市场层知识(哪些平台通常霸位),不虚构"某域当前占位"的事实 |
 | `grid_rank.py` | rank_data.csv(keyword,grid_point,rank)——本地网格排名采集结果(如 Text Search API 手工导出) | ② rank 留空/null→该格未找到;rank>20→视同未找到并告警(21 惩罚);全未命中→ARP=null 而 ATRP 永不 null;盲区=ATRP−ARP 必同报 | 只算采集到的格点,不补测不外推;复测须同网格同词表同半径,否则不比 |
 
-## 四、多语言(4)
+## 四、多语言(7)
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
@@ -67,32 +72,39 @@
 | `local_format.py` | `--market` + 采样文本(argv/stdin);惯例表读 markets.json | ③ 缺 `--market`→exit 2 | 只对给定文本逐条 ✓/✗;电话前缀错配仅提示 ⚠ 不判错 |
 | `text_metrics.py` | stdin 文本(本地) | ④ 无输入→空;`--scrub` 输出净化版到 stdout | 水印/slop/AI 节奏是**特征密度**检测,"检出"≠"AI 生成"结论;CJK 词数口径显式声明 |
 | `text_units.py` | `<market>` + stdin 文本(本地;en/zh/ja/th/ko/ru/id) | ③ 未知 market→exit 2 | 换算是确定性计算;全角=1/半角=0.5、泰文按字素的口径在输出中显式 |
+| `parity_check.py` | 源/目标双语页 HTML(本地文件);长度平价带读 markets.json 语言膨胀口径 | ③ 参数/文件/市场错→exit 2;② 无口径市场→通用带 ±30% 并标 [推断];canonical 离线只比互指 | 长度口径=可见文本非空白字符数(显式声明);跨语言不可逐字比对、按位置对齐列差;hreflang 对存在性仅提示不计退出码 |
+| `market_fit.py` | GSC 按 Country 维度导出 CSV(可选)×markets.json 结构因素(引擎格局/文字系/合规注记) | ② 无 GSC 国别数据→全候选等权 0.5 并显著标注"缺数据按结构因素"(不编数字);③ 输入/用法错→exit 2 | 决策支持启发式各因子证据全部打印,不当真值;有数据但国别无记录→0.1 另挂机会注(零足迹≠零机会);合规事实留在 markets.json、脚本只持模式 |
+| `market_batch.py` | 多市场声明 YAML(受限子集:site/market/key_pages/domains);URL 由 market_lint 子进程自抓(本脚本零网络) | ② 单市场步骤失败记原因续跑、不拖垮周报(汇总 exit 1);占位表外市场/无 domains→skipped 记原因;③ 声明坏→exit 2 | lint FAIL(critical>0)是有效结果不是执行失败;只聚合子进程真实输出,不代抓不代查 |
 
 ## 五、GEO 可见性(6)
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
-| `citation_panel.py` | init 建 prompt 面板(本地);record 录入**人工采样的真实引擎回答**;report/diff/decay 基于累积 panel.json | ② prompts<10→"样本太小,结论只能当方向";单 prompt 采样 <3 次→不下结论(CI 跨 0.5→unstable);空分母→N/A;decay 观察窗不足→半衰期用官方中位 11 天作参照并标 `[est]` | **绝不生成"模拟引擎回答"**——面板里的每条回答必须真实采样粘贴;五状态边界分明(failed≠brand_absent:采集失败不是内容缺口);diff 报告 |Δ|≥5pp 且配对 n≥10 才下结论 |
+| `citation_panel.py` | init 建 prompt 面板(本地);record 录入**人工采样的真实引擎回答**;report/diff/decay 基于累积 panel.json | ② prompts<10→"样本太小,结论只能当方向";单 prompt 采样 <3 次→不下结论(CI 跨 0.5→unstable);空分母→N/A;decay 观察窗不足→半衰期用官方中位 11 天作参照并标 `[est]` | **绝不生成"模拟引擎回答"**——面板里的每条回答必须真实采样粘贴;五状态边界分明(failed≠brand_absent:采集失败不是内容缺口);diff 报告 \|Δ\|≥5pp 且配对 n≥10 才下结论 |
 | `fanout_analysis.py` | 输入 CSV(prompt,web_query)——来自 AI 平台 referral 查询或 fan-out 采集导出 | ③ 无 CSV→exit 2 | 三桶(added/dropped/preserved)只对给定查询对分词;不虚构 fan-out 序列 |
 | `ai_referral_log.py` | server access log(apache/nginx combined 或 JSON 行,stdin/文件) | ③ 无日志→无法运行;② 日志缺 referrer→计入无 referrer 桶并声明;④ `--bot-ua` 先行指标可选 | **下界口径**:App 内打开常不带 referrer,测得值是下界,绝不表述为 AI 引流总量;failure_rate 只按日志内状态码计算 |
 | `citation_gaps.py` | `--panel`(citation_panel 的 panel.json)+`--brand-domains` | ② panel 无竞品名单→以"同 cell 共同被引的其他非自有域"代理竞品并标 [推断];failed/no_answer 不入缺口 | 采集失败≠内容缺口;竞品判定是代理推断,报告必须注明;has_competitor_run 是唯一高优先判据 |
 | `oracle_check.py` | `--facts` brand.yaml(已验证品牌事实)+`--responses` responses.json(真实采样回答) | ③ 已验证 facts<25 条→警告"样本不足,结论置信低"并继续(置信降级,报告必须带警告);responses 空→警告无可核查;语义级矛盾不由脚本判,交 agent 复核 | 只判显式数字/日期/布尔冲突(正则近似);possible sources 一律留空由 agent 调查后填——不臆造错误来源归因 |
 | `cite_domain.py` | `--input` answers.json(referring_domains/DR 分布/锚文本等结构化观测,来自外链工具导出+人工观测) | ② 未观测字段=unknown 不计组内均值;某组全 unknown→该组权重按比例重分配到已知组 | unknown 绝不当 0 分(没观测≠零分);veto BLOCK 只对显式命中(manual_penalty 等) |
 
-## 六、监控与 CI(5)
+## 六、监控与 CI(6)
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
-| `monitor.py` | `--site` URL 实时探测(robots/sitemap/状态码/site: 抽查)+ `.seo-monitor/gsc.csv`(GSC 导出,有才查)+ SQLite 本地快照 | ④ 无 gsc.csv→流量问 skipped 不告警、不猜数;site: 被拦/人机验证→blocked 不告警;DOM 改版解析失败→unparseable 不当真 0;canonical HEAD 失败→连续 3 次才告警;`--budget-minutes` 耗尽→budget_skipped | skipped/blocked 状态绝不转成数字进快照;prev 无数据→下降比例返回 None(不猜);low=自愈只进报告 |
+| `monitor.py` | `--site` URL 实时探测(robots/sitemap/状态码/site: 抽查)+ `.seo-monitor/gsc.csv`(GSC 导出,有才查)+ SQLite 本地快照;周检另接 CWV p75(R0-3,field_data)/citation decay(R0-4)/sensor_volatility --context(R0-2)/引荐域月检 | ④ 无 gsc.csv→流量问 skipped 不告警、不猜数;无 PSI key→cwv skipped 不猜;site: 被拦/人机验证→blocked 不告警;DOM 改版解析失败→unparseable 不当真 0;canonical HEAD 失败→连续 3 次才告警;`--budget-minutes` 耗尽→budget_skipped | skipped/blocked 状态绝不转成数字进快照;prev 无数据→下降比例返回 None(不猜);low=自愈只进报告;读不了外链导出不判"外链归零" |
 | `notify.py` | monitor diff 的告警 JSON + config.json 渠道定义(secret 只经环境变量注入) | ④ 渠道未配置→跳过并报告;low 级静默只进报告;冷却期重复指纹→suppressed 只进报告;未知/过期 key→提示跳过不判错 | 不投递不存在的告警;明文 secret 被 monitor 拒写,绝不回显值 |
 | `sensor_volatility.py` | `--gsc`(GSC 多日导出,列含 Date/Query/Position)或 `--positions` 三列 CSV | ③ 单日数据→exit 2(无法算波动);缺列→exit 2;② 基线 <2 天或 std=0→z30=null;GSC 缺日→与最近可用日比(标 [推断]) | 波动分只来自真实排名序列;公式是自研口径对齐 Semrush 分档(源码注释声明),不冒充官方公式;z30 null 时不标"异常日" |
 | `ci_format.py` | 本地 JSON(site_audit `--json` 或 audit_compare `--json` diff) | ③ 输入错误→exit 2 | 格式化不判成败(门禁交给 min-score/baseline-gate);分数透传不重算;helpUri 只在有真实文档 URL 时加;github 注解每 URL 至多 10 行防刷屏 |
-| `doctor.py` | 无外部数据——本地环境探测(Python 版本/文件/环境变量**键名**;`--net` 可选 HEAD 探测) | ② 无任何凭证→T0 纯静态审计可用,missing 列出"配置 X 可解锁 Y";网络探测失败只警告不影响 ready(exit 0=ready/3=需处理) | 只探键名**不读值**,全输出过 redact;报告按 tier 自动声明数据覆盖范围——T0 时绝不暗示能出 GSC/GA4 结论 |
+| `doctor.py` | 无外部数据——本地环境探测(Python 版本/文件/环境变量**键名**;`--net` 可选 HEAD 探测;`--keys` keys manifest 校验 R2-9) | ② 无任何凭证→T0 纯静态审计可用,missing 列出"配置 X 可解锁 Y";网络探测失败只警告不影响 ready(exit 0=ready/3=需处理) | 只探键名**不读值**,全输出过 redact;报告按 tier 自动声明数据覆盖范围——T0 时绝不暗示能出 GSC/GA4 结论 |
+| `log_session.py` | 服务器访问日志(CLF/combined;`--log` 文件或 `-` 读 stdin;按 IP+UA 前缀+时间窗拼会话;`--ua` 默认 Googlebot) | ③ 缺 `--log`/读失败/`--window` 不可解析→exit 4 指名;未捕获异常兜底 exit 3 | 会话指标(入口/深度/命中率)只来自日志内真实行;陷阱特征(param_loop>10/deep_crawl>8/volume>500)按显式阈值断言,不推测爬取意图 |
 
-## 七、工作流(9:归因·管道·套件自维护)
+## 七、工作流与编排(12)
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
+| `project.py` | project.yaml 站点实体(站点+市场+站型)+ `<slug>.seo/` history/ 快照;重活全部子进程调既有脚本(site_crawl/site_audit/health_score/prioritize/envelope/remediation/monitor) | ② 单步失败续跑其余并汇总(triage exit 1);③ 输入/用法错 exit 2 | 编排器只编排不重实现;next/status 只报告五阶段状态机的真实产物位置,不虚构阶段完成 |
+| `trend_watch.py` | 六信号源实时拉取(Google News/Reddit rising/HN/微博/百度热搜;`--config` vertical_tokens 配**产品垂直**三层词表:品类+品牌+竞品;gate 另需 `--angle`/`--exclusive`) | ② 403 源整源跳过告警;③ 全源失败→exit 2;GO 级信号→exit 1(cron 接 notify) | 判定只报闸门分数不预测流量;时效窗口是 24-72h 经验带;`--state` 可指工作区(R0-7 口径) |
+| `remediation.py` | envelope audit-data.json(init)/两份 site_audit `--json`(verify);工单库 remediations.json(原子写+flock) | ③ 输入/结构不符→exit 2;verify 发现新 finding→列"建议 init 增补"清单 exit 1 | verify 只按 audit diff 白名单核销;部分 URL 仍命中→保持 implemented 附 partial 明细;wontfix 必须带 note(接受≠消失,report 单独计数) |
 | `did_attribution.py` | GSC 页面级两期 CSV(`--pre`/`--post`:Page,Clicks[,Date])+ treated/control 页分组 | ② 控制页 <3 或控制组 pre 点击 <5→自动回退 site 级对照并注明;③ treated pre 点击 <5→exit 2"基线流量不足以归因";controlBefore≤0→结果 null | DiD 是**观测估计不是因果**——server-side A/B 才是真因果检验,报告必须声明;窗口与 GSC 断代期(2025-05-13~2026-04-30)重叠→impressions 不可靠警告 |
 | `seo_vs_ads.py` | `--gsc`(GSC queries 导出)+ `--ads`(Google Ads search terms 导出,可选)+ `--competitors` 列表(可选) | ② 缺 Ads 侧→明确列出缺什么,只输出 GSC 侧概览,organic_only 桶不定义、不猜;defensible 桶无 `--competitors`→明说跳过 | 自己的 search terms 报告**看不到竞对竞价**——double_paying 判 HIGH 时注明需 auction insights 复核;省额是 50%~70% 保留率**估算区间**非实测 |
 | `yt_outlier.py` | videos.csv(title,duration_s,views[,is_short][,channel])——YouTube 导出/采集 | ③ 文件/格式错误→exit 2 | 离群=组内均值 2×(频道×形态分基线,长短分开);只统计 CSV 内真实播放量,标题词频只对离群标题计算 |
@@ -103,23 +115,69 @@
 | `link_check.py` | 本地 markdown 文件树 | ③ 断链→exit 1 | 工具脚本,无外部数据 |
 | `intel_check.py` | intel-sources.md 注册的 18 源实时拉取(RSS/hash)+ `.intel-state.json` 基线 | ③ 无基线→先 init;② hash 源二次确认:两次拉取不一致(动态页噪音)→按噪音跳过、不动基线;单源失败→明说 | 变更判定需两次拉取一致才算真变更;噪音不报变更;只输出"源变了→该更新哪些文件",不自动改 |
 
----
+## 八、数据接入(5)
 
-| ai_views.py | URL 实时抓取或 --html 离线 | ③fetch 被拒([SKIP])→停止并说明;无 --apply 只预览 | 不承诺引用提升;token 统计是 len//4 估算[est] |
-| envelope.py | audit.json(必需)+health/priority(可选) | ②可选源缺失→标 source_missing 继续;格式不符→退出 2 不静默 | 只聚合不改写上游数字;phases 分派是规则映射非承诺 |
-| trend_watch.py | 六信号源实时拉取(--config vertical_tokens 配**产品垂直**三层词表:品类+品牌+竞品) | ②403 源整源跳过告警;③全源失败退出 2 | 判定只报闸门分数不预测流量;时效窗口是 24-72h 经验带 | 多个 audit json/monitor.db/scores.csv | ③样本<5→拒绝出报告(退出 2) | 只输出聚合数字,绝不含域名(URL 解析即弃) |
+| 脚本 | 数据 | 降级 | 反编造 |
+|---|---|---|---|
+| `gsc_api.py` | GSC Search Analytics API 真实拉取(OAuth RS256 JWT,纯 stdlib 手写 RSA 签名;SA 凭证寻径 `--sa`>`--key`>`GSC_SA_FILE`>`~/.config/seo-suite/gsc.json`) | ③ 凭证缺失/坏 PEM/auth 失败/网络/HTTP→exit 1 指名;参数/维度/日期/SSRF 拒→exit 2 | 规范化 CSV 列契约固定(CTR 小数);token 只进内存 50 分钟缓存不落盘;匿名查询 API 不返回(与导出同口径,不补数);配额 1200 qpm 明示 |
+| `backlink_import.py` | Ahrefs/Semrush/GSC Links 三格式外链导出 CSV(列头特征自动嗅探;`--format` 显式指定) | ③ 嗅探不出格式/读不了/无有效行→exit 2(数据错误,不猜) | dofollow 列缺失→unknown 不猜(GSC "Text" 只能反推 nofollow);解不出日期的行不计新链;`anchor_exact_ratio` 需 `--brand` 才计,缺省 null |
+| `indexnow.py` | IndexNow 协议 POST(Bing/Yandex/Naver 端点;key 文件自部署 `{host}/{key}.txt`;Google 不支持) | ② 单批 >10000 自动分批;429→提示退避降频;③ 有批次失败→exit 1;用法/SSRF 拒→exit 2 | 只按引擎真实响应码判读(200/202=ok,422=key 未部署或 URL 不属 host,403=key 无效);提交≠收录,不承诺索引时点 |
+| `bing_wmt.py` | Bing Webmaster Tools API(免费需 key+站点验证;GetUrlInfo/SubmitUrl/GetQueryStats) | ③ 凭证缺失/网络/HTTP/API 错→exit 1;用法/SSRF 拒→exit 2;空查询列表≠0≠错(历史不回填,输出声明) | QueryStats CSV 对齐 gsc_mining 契约(CTR 小数;-1 点击哨兵值不用);配额以 GetUrlSubmissionQuota 实读为准不硬编 |
+| `byo_import.py` | Screaming Frog internal.csv / SERP top10 表 / kws.csv 三 kind(省略时按表头特征自动嗅探) | ③ 嗅探失败/必需列缺失/未知 kind→exit 2 指名 | 列头容错(NFKC/数字后缀/同义词)只做归一不改值;`--urls-only` 清单原样透传供 site_audit 批量,不发明 URL |
+
+## 九、内容运营与 pSEO(6)
+
+| 脚本 | 数据 | 降级 | 反编造 |
+|---|---|---|---|
+| `content_queue.py` | trend_watch backlog(`--trend-state`)/gsc_mining striking·衰退导出/serp_overlap 输出,三源任组合→contentops.json 统一 idea 库 | ② 缺源跳过告警不猜;③ 三源全缺→exit 1(没东西可收);文件在但解析不了→exit 2 不静默降级 | trend/serp 源无量级数据取中性 5(不猜);评分公式(流量潜力×意图系数×时效加成)透明打印;六态状态机跳级/回退拒绝 |
+| `pseo_pattern_mining.py` | GSC queries 导出 CSV(必需)+ 现有 URL 清单/sitemap(覆盖度;SSRF 防护) | ③ 缺 `--gsc`→usage 不可跑;② sitemap 抓取失败→覆盖度降级标注 | addressable 量只按 16 正则+CJK 变体表真实聚类;30/25/20/15/10 打分口径=gates §八固定;GO/WATCH/白空间三态有判据 |
+| `pseo_batch_gate.py` | 批次 JSONL(每行一条记录)+ 可选渲染产物目录(按 key.html 逐个读) | ② 缺 `--rendered`→按记录 body 计词数并声明;③ 任一 STOP/警告≥100/唯一度 30-40%→exit 1 阻断发布;用法错→exit 2 | 数据闸只剔除记录列清单非 fatal;爆炸预警只算组合空间与记录数差异;Simhash 唯一度/样板比/页型地板阈值写死可配 |
+| `pseo_cohort.py` | cohort 登记(init 冻结判读标准)+ 周喂 GSC 页面导出(Page/Clicks/Impressions/Position)+ 可选外链导出(prune 红线) | ② 索引口径=有曝光=已索引 `[est]`(非 URL Inspection,一律带标);③ GSC 缺列→exit 2;FAIL 判定/有处置工单→exit 1 | 预注册纪律:判读标准 init 写死入档、之后冻结(看完数据再挑标准=移动球门禁止);有外链/展示史的页 NO-GO 只标注;410 恒需人工确认 |
+| `prune_gate.py` | traffic_funnel JSON 或 URL 清单+GSC 导出(query 级供排名词红线)+crawl.json(入链)+外链导出,四源可组合 | ② 红线证据不全(外链或排名词不可查)/入链缺失→watch(缺证据不下刀);③ 漏斗截断(上游无 --gsc)→exit 2 | 外链>0 或排名词(Position≤20)>0→NO-GO 红线绝不退役;page 级 GSC 排名词不可查→watch 不猜;`--window-days` 只注明口径不参与计算 |
+| `content_inventory.py` | crawl.json(清点范围)+GSC 导出(流量轴)+panel.json(AI 引用轴)+外链导出(外链轴)+战略页清单,轴数据皆可选 | ② 轴数据缺失→该轴不可用逐条注明,不猜;③ 输入/参数错→exit 2 | 被引页绝不入 remove 桶(硬护栏,输出命中数恒 0);remove 桶恒为候选需人工复核;四轴证据逐页打印 |
+
+## 十、内链架构(2)
+
+| 脚本 | 数据 | 降级 | 反编造 |
+|---|---|---|---|
+| `link_graph.py` | site_crawl 的 crawl.json edges[](旧版无 anchor 键按 0 带锚处理) | ② 零入链清单默认排除首页与 sitemap-only 页(大站 sitemap 模式边欠采样防假孤儿);③ 输入坏→exit 2;锚过度优化→exit 1 警告 | PageRank 20 轮/阻尼 0.85/dangling 均摊口径显式;锚审计只对真实锚文本(精确匹配域名>60% 告警) |
+| `orphan_fix.py` | crawl.json orphans × 同目录候选源页(与孤儿路径首段相同的已链出活页) | ② 无同目录候选→空缺提示(需导航/hub 级入口),不跨主题硬配;`--max` 默认 50 限处理量;③ 输入坏→exit 2 | 建议锚文本=孤儿 title 品牌分隔符前首段(缺 title 回退路径末段人类化);规划工具,发现孤儿不算失败 |
+
+## 十一、外链与数字 PR(2)
+
+| 脚本 | 数据 | 降级 | 反编造 |
+|---|---|---|---|
+| `outreach_tracker.py` | outreach.json 状态库;add 吃 citation_gaps `--json` 候选域(原样取 priority 与 outreach_tip) | ③ 输入/结构不符/同域重复→exit 2;due 复查日到期→exit 1(cron 接 notify) | 无 `--source` 手工登记 priority=Standard 不臆测;转化漏斗只按库内真实状态迁移计算;平均回复天数无样本=N/A |
+| `directory_tracker.py` | 目录追踪 CSV(14 列 schema 吃 directory-submissions.md);verify 现场核验(HEAD liveness+GET 查 rel=nofollow;SSRF 拒私网) | ③ init 不覆写既有数据(exit 2);verify 404/410→removed、nofollow/找不到指向目标链接/不可达→exit 1 行不乱动;quarterly 队列非空→exit 1 接 notify | `--dofollow` 缺省 "?"(未知待 verify);DR 用户记账不代查;dofollow 结论只认现场核验的 rel 属性 |
+
+## 十二、归因实验(3)
+
+| 脚本 | 数据 | 降级 | 反编造 |
+|---|---|---|---|
+| `split_test.py` | URL 清单(assign 分层随机)+两期 GSC CSV(analyze);基线点击/页数/周数手工输入(plan 功效计算) | ③ 参数/输入错→exit 2;② crossover 两期表按 `--crossover` 自动生成 | 功效=z 法近似、判读=Welch t(口径打印);预注册 plan 写档核验,看完数据换标准禁止;样本=页×周、泊松 var=φ·mean 口径显式 |
+| `synthetic_control.py` | 处理组 CSV(Date,Metric)+donor pool CSV(逗号分隔)+干预日 YYYY-MM-DD | ③ 输入缺/读不了→报错;`--self-test` 离线冒烟 | donor 加权反事实+placebo 检验输出置信口径;坐标下降轮数显式;观测估计非因果,不写承诺性增量 |
+| `geo_experiment.py` | 分国别流量 CSV(assign 分组+平衡检查;analyze 手写 OLS 2×2 交互 DiD+分国别异质性) | ③ 输入错→exit 2;`--self-test` 冒烟 | 索引级 holdout 诚实边界(Meridian GeoX 思路薄封装不冒充全量 GeoX);异质性只对提供的国别计算 |
+
+## 十三、垂直场景(3)
+
+| 脚本 | 数据 | 降级 | 反编造 |
+|---|---|---|---|
+| `local_audit.py` | `--url` GBP 页或官网实时抓取+NAP 基准三件(`--name`/`--addr` 必填人工提供;`--phone` 可选) | ③ 页面不可达/输入错→exit 2;② `--city` 缺省从地址形态推断并注明;`--phone` 缺省只报告页内检出 | NAP 一致性只比"用户提供基准 vs 页内检出";套房号变体归一口径显式;LocalBusiness schema 只断言页内实际 JSON-LD |
+| `news_sitemap_check.py` | news sitemap XML 实时抓取(具体文件,勿传 index)+引用页 noindex 抽查 | ③ 非 200/不可达/不可解析/传了 index→exit 2;② `--sample` 默认 3 条抽查(0=关闭),结论只覆盖抽查样本 | 48h 窗口红线只按条目真实时间戳;`--pub-name` 缺省只查站内一致性不猜;publication name/时间戳精度只按 XML 实测 |
+| `multimodal_report.py` | GSC Performance 导出 CSV(Page+Clicks+Impressions;含 Search Appearance 列则精确口径)+可选视频清单 CSV(找孤儿视频) | ③ 文件缺/列缺→exit 2;② 无 Search Appearance 列→按落地页目录特征代理,全部数字标 `[est]` | GSC 不拆图片/视频流量——代理口径数字均 `[est]` 明示;候选阈值(曝光≥100/CTR≤3%)显式打印;只报接线建议不承诺流量 |
 
 ## 全局守则(四条,一切脚本与报告通用)
 
 1. **真实数据优先于估算。** 凡能拿到站点自有数据(GSC 导出、server log、真实采样回答、工具导出),一律先用;行业默认曲线/官方参照常数只在自有数据缺席时顶位,且不覆盖、不冒充实测。
-2. **估算必须打 `[est]` 标。** 一切非实测数字——内置 CTR 曲线、半衰期参照值、省额区间、代理竞品口径——在输出中逐个带 `[est]`;关键结论数字可用 `[real]` 明示为实测来源。混标或漏标即违规。
+2. **估算必须打 `[est]` 标。** 一切非实测数字——内置 CTR 曲线、半衰期参照值、省额区间、代理竞品口径、pSEO 索引率代理、multimodal 目录代理——在输出中逐个带 `[est]`;关键结论数字可用 `[real]` 明示为实测来源。混标或漏标即违规。
 3. **Tool availability can vary;每个脚本声明了自己的 fallback。** 外部工具、导出文件、API 凭据的可用性因环境而异——缺什么看本表"降级列"按 ①②③④ 四模式处理,而不是换个数字继续算。
 4. **不拿第三方估算冒充站点自有数据。** 行业基准 KD、默认 CTR、市场占位表、工具 DR 分布是第三方口径;报告里必须与站点实测分列并标注来源,绝不混写为"我们的数据"。
 
 ## 发现的差异(文档 vs 实现,以实现为准)
 
-1. **(2026-10-10 记录)SKILL.md 第 3 节标题曾写"53 个实装脚本",当时 `scripts/` 实为 52 个 .py,后 SKILL.md 已改正为 52**。2026-10-11 复核:已提交 .py 共 54 个——`ai_views.py`、`envelope.py`(v0.34.1 wave7a/7b 新增)尚未入本表[待核:主会话补两行并同步 SKILL.md 计数口径]。
-2. **gsc_mining.py 没有"缺列报错"路径**:列名按前缀+大小写宽容匹配,缺值按 0 参与计算——若 CSV 缺 Clicks/Position 列,脚本会静默跑完而非显式失败。调用前须人工确认列齐全(本表数据列已注明必需列)。
-3. 任务口径中的"gsc_mining 无 GSC→serp_overlap 替代标 `[est]`"是 **agent 层等价替代策略**(模式①);gsc_mining 脚本本身无内建降级(无文件即 usage error exit 2)。本表按"脚本侧 ③ + agent 层 ①"双写。
-4. **oracle_check.py 的 25 条 facts 门槛是"警告置信低并继续输出"**,并非硬停止——按实现写为模式 ③ 的警告变体(执行继续、置信降级、报告必须携带警告原文)。
-5. 其余抽查脚本(traffic_funnel/forecast/health_score/prioritize/monitor/seo_vs_ads/sensor_volatility/did_attribution/trend_scout/content_score/grid_rank/citation_gaps/citation_panel/doctor/notify 共 15 个)的降级行为与 SKILL.md 第 3 节描述一致,未发现文档与实现不符。
+1. **(2026-10-12 重生成)本表曾存在 trend_watch 与 benchmark_report 行粘连错位**:benchmark_report 的"数据/降级/反编造"三列粘在 trend_watch 行尾(2026-10-11 补行事故),本轮已拆开各自成行,并把 59→85 建设波次新增的 29 个脚本全部补齐;头部计数更新为 85,与 `scripts/` 文件系统及 data/capability-matrix.json 的 85 一致。
+2. **SKILL.md 第 3 节标题仍写"59 个实装脚本"**(已知漂移,非本波可写范围):本表与能力矩阵以 `scripts/` 文件系统 85 为准,SKILL.md 计数待后续波次修正。
+3. **gsc_mining.py 没有"缺列报错"路径**:列名按前缀+大小写宽容匹配,缺值按 0 参与计算——若 CSV 缺 Clicks/Position 列,脚本会静默跑完而非显式失败。调用前须人工确认列齐全(本表数据列已注明必需列)。
+4. 任务口径中的"gsc_mining 无 GSC→serp_overlap 替代标 `[est]`"是 **agent 层等价替代策略**(模式①);gsc_mining 脚本本身无内建降级(无文件即 usage error exit 2)。本表按"脚本侧 ③ + agent 层 ①"双写。
+5. **oracle_check.py 的 25 条 facts 门槛是"警告置信低并继续输出"**,并非硬停止——按实现写为模式 ③ 的警告变体(执行继续、置信降级、报告必须携带警告原文)。
+6. **(2026-10-12 抽查记录)本轮对 11 个新脚本做了源码级降级行为复核**(project/content_queue/pseo_cohort/prune_gate/market_fit/backlink_import/bing_wmt/gsc_api/indexnow/content_inventory/outreach_tracker),退出码语义与"缺数据→跳过/watch/拒绝,不猜"路径与 --help 及专属测试一致,未发现文档与实现不符。

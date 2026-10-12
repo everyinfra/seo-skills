@@ -29,7 +29,7 @@ metadata:
 
 详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
 
-### 3. 可执行层(59 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(85 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
 
 **审计与页面质量**

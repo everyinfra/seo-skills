@@ -5,7 +5,7 @@
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
   "source_of_truth": {
-   "scripts": "SKILL.md 第 3 节(55 个实装脚本,唯一事实来源)",
+   "scripts": "SKILL.md 第 3 节(唯一事实来源;其计数文本 59 落后于文件系统 85,已知漂移见 data-source-contract.md「发现的差异」第 2 条)",
    "data_contract": "references/overview/data-source-contract.md(数据/降级/反编造三列)",
    "capability_map": "references/overview/capability-map.md(能力地图,人读姊妹篇)"
   },
@@ -747,7 +747,7 @@
    ],
    "outputs_schema": "json",
    "data_source": "服务器访问日志 access.log(apache/nginx combined 或 CLF;按需工具非常驻)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_log_session.py",
    "status": "beta"
   },
@@ -1271,23 +1271,23 @@
   },
   {
    "type": "script",
-   "group": "scripts/工作流",
+   "script": "trend_watch.py",
+   "group": "工作流与编排",
    "inputs": [
     "Google News/Reddit rising/HN/微博/百度热搜(实时拉取)",
     "--topics 站点主题词表",
     "gate: --angle 观点清单 --exclusive data|quote|access(403 源整源跳过;全源失败退出 2)"
    ],
    "outputs_schema": "json",
-   "data_source": "六信号源实时拉取(403 源整源跳过告警)",
-   "fallback_mode": "②",
+   "data_source": "六信号源实时拉取(Google News/Reddit rising/HN/微博/百度热搜;403 源整源跳过告警;--state 可指工作区)",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_trend_watch.py",
-   "status": "beta",
-   "script": "trend_watch.py"
+   "status": "beta"
   },
   {
    "type": "script",
    "script": "remediation.py",
-   "group": "scripts/工作流",
+   "group": "工作流与编排",
    "inputs": [
     "envelope 的 audit-data.json(init)",
     "两份 site_audit --json(verify)"
@@ -1301,28 +1301,28 @@
   {
    "type": "script",
    "script": "site_crawl.py",
-   "group": "scripts/审计与页面质量",
+   "group": "审计与页面质量",
    "inputs": [
     "--domain 目标域(或 --urls 文件)",
     "robots.txt/sitemap/首页 HTML(实时)"
    ],
    "outputs_schema": "json",
    "data_source": "目标站实时爬取(礼貌:遵守 robots+crawl-delay,默认 1 req/s)",
-   "fallback_mode": "①",
+   "fallback_mode": "①+②+③",
    "tests_file": "tests/test_site_crawl.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "field_data.py",
-   "group": "scripts/审计与页面质量",
+   "group": "审计与页面质量",
    "inputs": [
     "--url|--urls(实时调 PSI/CrUX API)",
     "env PSI_API_KEY/CRUX_API_KEY(可选)"
    ],
    "outputs_schema": "json",
    "data_source": "Google PSI(无 key 低配额)+CrUX(需 key)真实 API",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_field_data.py",
    "status": "beta"
   },
@@ -1340,10 +1340,10 @@
   {
    "type": "script",
    "script": "project.py",
-   "group": "scripts/工作流",
+   "group": "工作流与编排",
    "inputs": [
     "--site URL(init)",
-    "子进程调既有 59 脚本(run triage/next/status)"
+    "子进程调既有脚本(run triage/next/status;编排不重实现)"
    ],
    "outputs_schema": "json",
    "data_source": "编排器只编排不重实现;任何步失败续跑其余",
@@ -1354,243 +1354,259 @@
   {
    "type": "script",
    "script": "content_queue.py",
-   "group": "scripts/内容运营",
+   "group": "内容运营与 pSEO",
    "inputs": [
-    "trend-state/gsc 导出/serp_overlap 输出(三源任组合)"
+    "collect/plan/track/report",
+    "三源: trend-state+gsc 导出+serp_overlap 输出(任组合)"
    ],
    "outputs_schema": "json",
-   "data_source": "缺源跳过告警不猜;三源全缺退出 1",
-   "fallback_mode": "②",
+   "data_source": "trend_watch backlog+gsc_mining striking/衰退+serp_overlap 缺口三源合并→contentops.json(ContentOps 六态+遥测)",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_content_queue.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "gsc_api.py",
-   "group": "scripts/数据接入",
+   "group": "数据接入",
    "inputs": [
     "服务账号 JSON(--sa/env GSC_SA_FILE/~/.config/seo-suite/gsc.json)"
    ],
    "outputs_schema": "csv",
    "data_source": "GSC Search Analytics API(真实 OAuth RS256,纯 stdlib RSA)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_gsc_api.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "backlink_import.py",
-   "group": "scripts/数据接入",
+   "group": "数据接入",
    "inputs": [
     "Ahrefs/Semrush/GSC 外链导出 CSV"
    ],
    "outputs_schema": "csv",
    "data_source": "BYO 三格式嗅探归一(统一 schema 直喂 cite_domain)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_backlink_import.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "indexnow.py",
-   "group": "scripts/数据接入",
+   "group": "数据接入",
    "inputs": [
     "--host --key --urls(Bing/Yandex/Naver 端点)"
    ],
    "outputs_schema": "json",
    "data_source": "IndexNow 协议提交(零 key;Google 不支持)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_indexnow.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "bing_wmt.py",
-   "group": "scripts/数据接入",
+   "group": "数据接入",
    "inputs": [
     "env BING_WMT_KEY(免费,需站点验证)"
    ],
    "outputs_schema": "csv",
    "data_source": "Bing Webmaster API 薄客户端(状态/提交/QueryStats→gsc 契约 CSV)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_bing_wmt.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "byo_import.py",
-   "group": "scripts/数据接入",
+   "group": "数据接入",
    "inputs": [
     "Screaming Frog/SERP/关键词表导出"
    ],
    "outputs_schema": "csv",
    "data_source": "第三方导出归一入口(三 kind 自动嗅探)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_byo_import.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "parity_check.py",
-   "group": "scripts/多语言实装",
+   "group": "多语言实装",
    "inputs": [
     "--source --target 双语页"
    ],
    "outputs_schema": "json",
    "data_source": "双语对照 QA(长度平价带 markets.json/结构对照/JSON-LD 一致)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_parity_check.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "pseo_pattern_mining.py",
-   "group": "scripts/内容运营",
+   "group": "内容运营与 pSEO",
    "inputs": [
-    "GSC queries 导出+URL 清单/sitemap"
+    "--gsc GSC queries 导出 CSV(必需)",
+    "--sitemap/--urls 现有 URL 覆盖度(可选)"
    ],
    "outputs_schema": "json",
    "data_source": "pSEO 模式挖掘(16 正则+CJK 表/gates §8 打分/GO·WATCH·白空间)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_pseo_pattern.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "pseo_batch_gate.py",
-   "group": "scripts/内容运营",
+   "group": "内容运营与 pSEO",
    "inputs": [
-    "批次 jsonl+可选渲染产物"
+    "--records 批次 JSONL(必需)",
+    "--rendered 渲染产物目录(可选,词数以此为准)"
    ],
    "outputs_schema": "json",
    "data_source": "pSEO 批次闸(数据闸/爆炸预警/Simhash 唯一度/样板比/页型地板/STOP·WARN)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_pseo_batch.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "pseo_cohort.py",
-   "group": "scripts/内容运营",
+   "group": "内容运营与 pSEO",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "init 登记并冻结判读标准",
+    "ingest --gsc GSC 页面导出(周喂)",
+    "prune 90 天零展示处置(--backlinks 红线可选)"
    ],
    "outputs_schema": "json",
    "data_source": "pSEO cohort 索引率追踪(预注册判读冻结+90 天 prune 三选一+as-remediation)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_pseo_cohort.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "link_graph.py",
-   "group": "scripts/内链架构",
+   "group": "内链架构",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "--crawl site_crawl 的 crawl.json",
+    "--top/--exact-threshold(可选)"
    ],
    "outputs_schema": "json",
    "data_source": "crawl edges→PageRank/深度直方图/入链清单/锚文本审计(过度优化警告)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_link_tools.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "orphan_fix.py",
-   "group": "scripts/内链架构",
+   "group": "内链架构",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "--crawl site_crawl 的 crawl.json",
+    "--max 处理上限(默认 50)"
    ],
    "outputs_schema": "json",
    "data_source": "孤儿×同目录候选源页→修复清单(hub-spoke 规划输入)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_link_tools.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "market_fit.py",
-   "group": "scripts/多语言实装",
+   "group": "多语言实装",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "--gsc-country GSC 国别导出 CSV(可选,缺省走结构因素)",
+    "--markets 候选市场 --source-lang 源语言"
    ],
    "outputs_schema": "json",
    "data_source": "市场进入决策(GSC 国别×markets.json→优先级矩阵)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_market_fit.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "market_batch.py",
-   "group": "scripts/多语言实装",
+   "group": "多语言实装",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "--decl 多市场声明 YAML(site/market/key_pages/domains)",
+    "--out/--json(可选)"
    ],
    "outputs_schema": "json",
    "data_source": "多市场批量编排(声明文件→批量 lint+occupancy→跨市场周报)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_market_batch.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "prune_gate.py",
-   "group": "scripts/内容运营",
+   "group": "内容运营与 pSEO",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "--funnel traffic_funnel JSON 或 --urls+--gsc(候选源)",
+    "--crawl crawl.json(入链)",
+    "--backlinks 外链导出(红线)"
    ],
    "outputs_schema": "json",
    "data_source": "退役/合并决策(三查红线:外链/排名词 NO-GO;prune·merge·watch 三态)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_prune_inventory.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "content_inventory.py",
-   "group": "scripts/内容运营",
+   "group": "内容运营与 pSEO",
    "inputs": [
-    "上游脚本 JSON/CSV"
+    "--crawl --gsc(必需)",
+    "--panel --backlinks --keep --words(可选四轴补全)"
    ],
    "outputs_schema": "json",
    "data_source": "站点级四轴库存治理(流量/外链/AI 引用/战略→四桶+redirect map;被引页绝不入 remove)",
-   "fallback_mode": "②",
+   "fallback_mode": "②+③",
    "tests_file": "tests/test_prune_inventory.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "outreach_tracker.py",
-   "group": "scripts/外链PR",
+   "group": "外链与数字 PR",
    "inputs": [
-    "上游 CSV/JSON"
+    "add/list/update/due/report(outreach.json)",
+    "add --source 可吃 citation_gaps --json 候选域"
    ],
    "outputs_schema": "json",
    "data_source": "外展状态库(add 吃 gaps 导入/due 复查提醒/转化漏斗;与 citation_gaps 闭环)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_outreach_tracker.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "directory_tracker.py",
-   "group": "scripts/外链PR",
+   "group": "外链与数字 PR",
    "inputs": [
-    "上游 CSV/JSON"
+    "init/add/list/verify/quarterly/export/import(14 列 CSV)",
+    "verify --entry --target 现场核验"
    ],
    "outputs_schema": "json",
    "data_source": "目录提交执行器(14 列 CSV/现场核验 dofollow/季度复检队列)",
-   "fallback_mode": "②",
+   "fallback_mode": "③",
    "tests_file": "tests/test_directory_tracker.py",
    "status": "beta"
   },
   {
    "type": "script",
    "script": "split_test.py",
-   "group": "scripts/归因实验",
+   "group": "归因实验",
    "inputs": [
-    "上游 CSV/JSON"
+    "plan --pages --baseline-clicks --weeks",
+    "assign --urls --seed --crossover",
+    "analyze --treated --control --plan"
    ],
    "outputs_schema": "json",
    "data_source": "页面级增量实验(plan 功效计算+预注册冻结/分层随机+crossover/Welch 分析)",
@@ -1601,9 +1617,11 @@
   {
    "type": "script",
    "script": "synthetic_control.py",
-   "group": "scripts/归因实验",
+   "group": "归因实验",
    "inputs": [
-    "上游 CSV/JSON"
+    "--treated 处理组 CSV",
+    "--donors donor pool CSV",
+    "--intervention 干预日"
    ],
    "outputs_schema": "json",
    "data_source": "合成控制 DiD 升级(donor 加权反事实+placebo 检验)",
@@ -1614,9 +1632,10 @@
   {
    "type": "script",
    "script": "geo_experiment.py",
-   "group": "scripts/归因实验",
+   "group": "归因实验",
    "inputs": [
-    "上游 CSV/JSON"
+    "assign 分国别分组+平衡检查",
+    "analyze DiD+分国别异质性"
    ],
    "outputs_schema": "json",
    "data_source": "GeoX 薄封装(分国别分组+平衡检查+2×2 交互 OLS;索引级 holdout 诚实边界)",
@@ -1627,9 +1646,12 @@
   {
    "type": "script",
    "script": "local_audit.py",
-   "group": "scripts/垂直",
+   "group": "垂直场景",
    "inputs": [
-    "--url/GBP 页/GSC 导出"
+    "--url GBP 页或官网 URL(必需)",
+    "--name 店名(必需)",
+    "--addr 地址(必需)",
+    "--city/--phone(可选)"
    ],
    "outputs_schema": "json",
    "data_source": "本地 SEO 体检(NAP/GBP/LocalBusiness schema/本地信号四节)",
@@ -1640,12 +1662,14 @@
   {
    "type": "script",
    "script": "news_sitemap_check.py",
-   "group": "scripts/垂直",
+   "group": "垂直场景",
    "inputs": [
-    "--url/GBP 页/GSC 导出"
+    "--url news sitemap XML 的 URL(具体文件勿传 index)",
+    "--pub-name 站名(可选,缺省只查站内一致性)",
+    "--sample noindex 抽查条数(默认 3,0=关闭)"
    ],
    "outputs_schema": "json",
-   "data_source": "news sitemap 48h 红线检查(四连 curl 脚本化+扩展)",
+   "data_source": "news sitemap XML 实时抓取(48h 红线/必填三件套/noindex 抽查/publication name/时间戳精度/robots 声明)",
    "fallback_mode": "②",
    "tests_file": "tests/test_news_sitemap_check.py",
    "status": "beta"
@@ -1653,12 +1677,14 @@
   {
    "type": "script",
    "script": "multimodal_report.py",
-   "group": "scripts/垂直",
+   "group": "垂直场景",
    "inputs": [
-    "--url/GBP 页/GSC 导出"
+    "--gsc GSC Performance 导出 CSV(必需)",
+    "--videos 可选视频清单 CSV(url/video 列)",
+    "--top/--min-impr/--ctr(可选阈值)"
    ],
    "outputs_schema": "json",
-   "data_source": "图片/视频流量代理报告(诚实 [est] 口径+接线建议)",
+   "data_source": "GSC Performance 导出 CSV(含 Search Appearance 列则精确口径,否则落地页目录特征代理 [est])",
    "fallback_mode": "②",
    "tests_file": "tests/test_multimodal_report.py",
    "status": "beta"

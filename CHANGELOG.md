@@ -3,6 +3,20 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.35.0 - 2026-10-12
+
+- **50-agent 战役(10 波,37→85 脚本/1604 测试)**——从"分析工具集"进化为"完整管线工作台":
+  - **R5 正确性**:37 个复现验证的 bug 全修(假 Wilson→真公式/robots 假 CRITICAL/冷却失效/oracle 五市场失明/除零/时区/GBK);SSRF 铲平 17 脚本;一致性 12 处+事实 6 处;SKILL 路由重排;
+  - **R0 接线**:sensor 波动上下文/CWV 周检/citation decay 全进 monitor 告警链;remediation verify 云端排期;trend 3h cron;issue 超时;freshness CI;
+  - **R1 管线骨架**:project.py 编排器(init/run triage/next/status+工作区)/strategy-fit 决策层+站型识别+intake 4 问/content_queue 选题队列(ContentOps 遥测)/fix_plan --git-branch 发布通道/ai-use-policy(AP 四象限);
+  - **R2 数据接入**:gsc_api.py(纯 stdlib RSA,openssl 对拍)/backlink_import 三格式+引荐域月检/IndexNow+BingWMT/byo_import+parity_check/schema_version 推广+doctor --keys;
+  - **R3 生产线**:pSEO 三件(pattern_mining/batch_gate/cohort 预注册判读)/link_graph+锚文本采集+orphan_fix/market_fit+market_batch 多市场批量/prune_gate+content_inventory 四轴治理;
+  - **R4 末端+监控对标**:outreach/directory tracker/split_test 功效计算/synthetic_control+geo_experiment+triangulate/SLO+错误预算/flapping+ack 超时/postmortem+log_session+owner_team;
+  - **R6 知识边界**:证据银行 Q3 学术批次(3 修正+8 全新)/冻结协议+四层节奏+program-management/Search Everywhere+Brand SERP+Community 三新文档/IAB 4P+agentic commerce+付费 AI 面/edge-seo+AI Crawl Control 三态/Job+房产垂直卡/Ryze 一方数据桥(referral↔panel 双轨)/站型卡 48 条命令链/云端状态 commit-back 统一/e2e 回归 57 例零新断裂;
+  - README.en 正文完整化;治理矩阵 123 条全刷。
+
+
+
 ## 0.34.4 - 2026-10-11
 
 - **借鉴清单复盘清零**(用户指出的复盘机制首次执行):
