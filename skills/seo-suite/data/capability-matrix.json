@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 81,
-  "template": 24,
+  "script": 85,
+  "template": 25,
   "reference": 13,
-  "stable": 70,
-  "beta": 47,
+  "stable": 71,
+  "beta": 51,
   "draft": 1
  },
  "entries": [
@@ -739,6 +739,20 @@
   },
   {
    "type": "script",
+   "script": "log_session.py",
+   "group": "持续监控守护",
+   "inputs": [
+    "--log access.log(CLF/combined,- 读 stdin)",
+    "--ua/--window/--top/--json(可选)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "服务器访问日志 access.log(apache/nginx combined 或 CLF;按需工具非常驻)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_log_session.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
    "script": "notify.py",
    "group": "持续监控守护",
    "inputs": [
@@ -971,6 +985,21 @@
    "group": "templates/content",
    "inputs": [
     "above_fold/quality_rater/core_eeat/market_lint 机检结果"
+   ],
+   "outputs_schema": "markdown",
+   "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
+   "fallback_mode": null,
+   "tests_file": "scripts/self_check.py",
+   "status": "stable"
+  },
+  {
+   "type": "template",
+   "path": "templates/monitor/postmortem.md",
+   "group": "templates/monitor",
+   "inputs": [
+    "monitor.py diff/alerts JSON",
+    "notify incidents(ack/升级记录)",
+    "deploy 日历"
    ],
    "outputs_schema": "markdown",
    "data_source": "上游脚本产出+agent 结论(模板不自带数据)",
@@ -1593,6 +1622,45 @@
    "data_source": "GeoX 薄封装(分国别分组+平衡检查+2×2 交互 OLS;索引级 holdout 诚实边界)",
    "fallback_mode": "②",
    "tests_file": "tests/test_geo_experiment.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "local_audit.py",
+   "group": "scripts/垂直",
+   "inputs": [
+    "--url/GBP 页/GSC 导出"
+   ],
+   "outputs_schema": "json",
+   "data_source": "本地 SEO 体检(NAP/GBP/LocalBusiness schema/本地信号四节)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_local_audit.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "news_sitemap_check.py",
+   "group": "scripts/垂直",
+   "inputs": [
+    "--url/GBP 页/GSC 导出"
+   ],
+   "outputs_schema": "json",
+   "data_source": "news sitemap 48h 红线检查(四连 curl 脚本化+扩展)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_news_sitemap_check.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "multimodal_report.py",
+   "group": "scripts/垂直",
+   "inputs": [
+    "--url/GBP 页/GSC 导出"
+   ],
+   "outputs_schema": "json",
+   "data_source": "图片/视频流量代理报告(诚实 [est] 口径+接线建议)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_multimodal_report.py",
    "status": "beta"
   }
  ]

@@ -1,8 +1,9 @@
-# 按站型的 SEO 打法手册(八卡)
+# 按站型的 SEO 打法手册(八卡+两垂直扩展卡)
 
 用途:接单/开局先认站型,取对应打法卡定 KPI、渠道、防死清单与 pSEO 方向。
 分工:本文管「打法层」;页面类型、URL 层级与各站型深读在 [site-type-templates.md](../technical/site-type-templates.md)(互为表里,不重复);通用打法流程见 [playbooks.md](../technical/playbooks.md);pSEO 上线闸门见 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md)。
 基准数据均标注来源级别与日期(官方/报告/观察/共识);报告级数字用于对标,不用作对客承诺。
+⑨招聘/⑩房产(2026-10-12 增补)是⑦ Marketplace 的**垂直变体卡**:共用⑦的供需底盘与「库存密度先行」纪律,各叠垂直红线——判型命中⑦且供给为职位/房源时,升级取对应扩展卡。
 
 ## 站型识别判别法(R1-4,识别结果喂给 [strategy-fit.md](strategy-fit.md))
 
@@ -44,6 +45,12 @@
 - vs/alternatives 矩阵截获竞品品牌词——SaaS 转化最高的词群,先打头三名竞品。
 - 集成页三层结构:app 单页 → pair 页(A × B)→ workflow 页;量级来自 pair/workflow 层(Zapier 范式:5000 工具生成约 5 万页,salt.agency 案例)。
 - 支柱内容 + 免费工具引流;G2/Capterra/目录外链垫权威底座。
+
+**ABM 对齐(高客单补充)**
+
+- 把 vs/alternatives/solution 词簇与销售命名账号清单做**关键词↔列名映射**:每个 target account 至少一个对位页(vs 其现有供应商/其行业 solution 页)。
+- SEO 侧交付物=映射表+页面覆盖缺口审计;排名与流量按账号分组报,销售可直接消费。
+- 如实注:套件无独立 ABM 体系(投放/SDR/意图数据编排不在范围)——本节只做 SEO 资产与销售列名的对齐层。
 
 **典型死法**
 
@@ -93,6 +100,12 @@
 - 品类页内链 + 导购内容包抄:品类词 SERP 常被 informational 榜单占据,爬梯打法见 [ecommerce-geo-ladder.md](../content/ecommerce-geo-ladder.md)。
 - 数字 PR:新品测评/unboxing/礼物清单植入换外链与联盟分发。
 - Google 免费 listing(Merchant Center)+ 图片搜索流量(DTC 图片占比常被低估)。
+
+**ASO 桥(品牌词防御)**
+
+- 有购物 App 的 DTC:品牌词 SERP 的 app pack 是移动端第一屏占地——商店页标题/描述带品牌词守住 pack 位(竞品投品牌词抢屏时尤其要紧)。
+- web↔App 互认:商品 deep link 与 web URL 结构化对应(App Indexing 口径),App 内商品页进 Google 索引补移动占位。
+- 全量 ASO(商店关键词排名/评分运营)**明示不做**——本桥只管品牌词 SERP 占位与互认,不越界。
 
 **典型死法**
 
@@ -396,6 +409,112 @@
 - 法条/资格 × 州页(法律);监管 × 产品页(金融)。
 - 计算器矩阵(贷款 APR/赔偿金/税费/报销)——嫁接⑥号工具站打法;症状自查工具页(结果页必须带就诊指引与免责)。
 
+## ⑨ 招聘 / Job 站(⑦的垂直变体:供给=职位,2026-10-12 增补)
+
+**识别信号**
+
+- URL 型谱:`/job/`·`/jobs/`、`/company/<雇主>`、`/salary/`·`/salaries/`、`/jobs-in-<城市>`·`/<职能>` 列表页;apply 外跳或 ATS 内嵌流。
+- schema 分布:JobPosting 全站高频(本型指纹)+ hiringOrganization(Organization);公司页可挂 EmployerAggregateRating。
+- 页面构成:职位详情页占比大且**平均存活期以周计**(高 churn 是本型独有);职位页:公司页数量比=供需密度。
+- 混合判别:多雇主聚合=⑦底盘+本卡;只发自家职位的 ATS/官网招聘页=单侧形态(页面清单仍适用,重复内容边界不适用)。
+
+**页面清单(必争 URL 集)**
+
+- 职位面:`/job/<slug>` 详情页、`<职能> jobs`·`/jobs-in-<城市>`·`remote <职能>` 分类与组合页。
+- 公司面:`/company/<雇主>`(雇主品牌词承接+评价聚合+在招职位列表)。
+- 薪资面:`/salary/<职称>`(自有或来源可溯的聚合薪资库——强需求常青层)。
+- 雇主面:post a job 招商页与定价页(第二受众转化位)。
+
+**Schema 组合(JobPosting 全字段纪律)**
+
+- 必填五件(官方):title/description/hiringOrganization/jobLocation/datePosted;远程岗加 jobLocationType=TELECOMMUTE(+applicantLocationRequirements);推荐 validThrough/baseSalary/employmentType/identifier;schema.org v30.0(2026-03-19)新增 jobDuration(合同期信号)。
+- **datePosted 时效红线**:官方**无「90 天自动下线」硬规则**(2026-10-12 核实)——过期职位的官方下线机制三选一:validThrough 置于过去/页面返回 404·410/摘除 JobPosting 标记,并以 **Indexing API** 通知(官方明确推荐优先于 sitemap);「90 天内下线」是行业运营惯例级(多数板 30-90 天自动下架,观察级),可作自家 SLA 默认值。
+- 富结果现状:JobPosting 结构化数据仍在 Google 官方文档与职位搜索体验内(2026-10-12 核实);垂直盘点报告口径「招聘版 3.605608 不再富结果」的版本号与出处无法核实(全网检索无果)——**按缺口标注、不采信**,以官方文档为准。
+- 同一职位多 URL canonical 归一(官方要求);公司页 Organization+EmployerAggregateRating(评分必须真实,禁编造)。
+
+**双受众词簇(求职者 vs 雇主)**
+
+- 求职者簇:`<job title> jobs`、jobs near me、remote `<role>`——落职位详情/分类页。
+- 雇主簇:post a job、job board pricing、how to hire `<role>`——落招商页/雇佣指南;两簇 intent 分层不得互抢(方法见 [keyword-intent-taxonomy.md](../research/keyword-intent-taxonomy.md))。
+
+**IDX 类比:职位聚合 vs 自有 ATS 的重复内容边界**
+
+- 聚合器接入多源 ATS → 同一职位在雇主官网/Indeed/自家多版本共存。边界纪律:每源唯一 slug+来源标识;聚合页必须加自有增量(薪资对比/公司评价/申请转化数据)才值得独立索引;纯转发无增量时 canonical 给源或不另出页——与⑩的 IDX 同构(行业共识)。
+
+**核心 KPI**
+
+- apply 点击率(职位页→申请动作)与申请完成率——本型的 demo/trial 等价物。
+- 职位页收录率与「过期仍在索引」占比(过期堆积=质量信号流失,直接对应第一死法)。
+- 新职位首收录时延(发布→进索引,Indexing API 生效后的基线)。
+- 雇主侧线索:post a job 页转化(第二受众的收入)。
+
+**典型死法**
+
+- **过期职位堆积成垃圾页**(本型第一死法):职位下架后页面不摘、schema 不摘、sitemap 照报——爬虫预算与站点质量双输,新职位收录被拖慢。
+- 全站 description 用雇主原文镜像,零增量零排名(同⑩ IDX 镜像病)。
+- 求职者词与雇主词塞进同一漏斗,两头转化都低。
+- 薪资页无自有数据源编数字——YMYL 边缘内容,口径必须可溯。
+
+**pSEO 机会**
+
+- `<职称> jobs in <城市>`·`remote <职称>` 矩阵——每格在招库存 ≥ 阈值才生成(过 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md) 闸门)。
+- 薪资库 `<职称> salary`(数据可溯,常青资产)。
+- `职称 × 级别|年限` 变体页;雇佣指南 how to hire `<role>` 吃雇主簇。
+
+## ⑩ 房产 / Real Estate(⑦的垂直变体:供给=房源,2026-10-12 增补)
+
+**识别信号**
+
+- URL 型谱:`/listings/`·`/homes-for-sale/`·`/property/<id>`、`/<城市>-real-estate`、`/community/`·`/neighborhood/`、`/agent/`·`/realtor/`;MLS/IDX 字段特征(mls id、经纬度)。
+- schema 分布:RealEstateListing/Residence+Offer 系、RealEstateAgent(Person)+LocalBusiness;无 Product/SoftwareApplication。
+- 页面构成:房源详情页量大且随成交/下架**高频失效**;社区页/经纪页是常青层——「易失效详情+常青地方页」两层结构是本型指纹。
+- 混合判别:多经纪/MLS 供给=⑦底盘+本卡;自有楼盘开发商=④侧形态;挂估值计算器→嫁接⑥。
+
+**页面清单(必争 URL 集)**
+
+- 房源面:`/property/<id>` 详情页(IDX/MLS 拉取)、在售/待售/已售状态页。
+- 地方面:`/<城市>-real-estate` 市场页、`/<社区>` neighborhood 页(常青:市场数据+学区+通勤)、`<城市> housing market` 报告页。
+- 人方面:`/agent/<经纪人>`(品牌词+评价实体页)。
+- 卖家面:`/home-valuation`·`/sell-my-house`(转化价值最高的一层)。
+
+**Schema 组合**
+
+- 类型选择:RealEstateListing(schema.org 词汇表类型,描述 lease/sell 类 offers)+ Residence/SingleFamilyResidence 承属性细节,价格走 Offer 的 price 或 priceSpecification 嵌套(均现行有效,2026-10-12 核实)。**注意:Google 无 RealEstateListing 富结果**(官方搜索画廊未收录)——标记价值在 AI/实体理解层;度假租赁另有官方 VacationRental 结构化数据,勿混用。
+- **IDX 重复内容纪律**:同一 MLS 房源出现在成百上千经纪站——镜像页必须有自有增量(本地市场解说/图集/估价上下文)才值得独立索引;纯镜像 canonical 到 MLS 源页;canonical 策略在 MLS/IDX 协议层约定,不静默处理(行业共识级)。
+- 经纪页 RealEstateAgent+LocalBusiness(真实评价);社区页/报告页 Article;全站 BreadcrumbList。
+
+**Fair Housing 合规红线(美国市场必读)**
+
+- FHA 七保护类:种族/肤色/宗教/性别/残障/家庭状况/国籍——房源与社区描述禁任何倾向性暗示。
+- 禁词示例(行业词表口径:HUD 1995 广告备忘+NAR/MLS 实操清单):safe/quiet neighborhood、perfect for families、childless/empty nesters、walk to church·Christian home、adults only·no kids、able-bodied、族群/宗教社区名——**铁律:describe the property, not the people(写属性不写人)**。
+- pSEO 模板同过此线:任何按人群/宗教/家庭结构定向的组合字段直接禁——合规优先于需求量。
+
+**双受众(买家词 vs 卖家词)**
+
+- 买家簇:homes for sale in `<城市>`、`<社区>` real estate、`<城市>` open houses——落房源/地方页。
+- 卖家簇:sell my house、home valuation `<城市>`、how to sell——落估值工具+卖家指南(高转化,嫁接⑥工具站打法)。
+
+**核心 KPI**
+
+- lead 表单提交(看房预约/估值请求)与房源页→lead 转化率。
+- 房源页收录率与**失效房源清理时延**(下架→404/摘除的间隔,直接对应第一死法)。
+- 社区页/经纪页常青流量占比——房源流量天然随库存波动,常青层是稳定器。
+- 卖家线索量(home valuation 提交)。
+
+**典型死法**
+
+- **IDX 全量镜像无增量**(本型第一死法):百万近重复页吞爬虫预算,整站质量信号崩,真房源页收录反而慢。
+- 失效房源不摘:已售/下架页长期 200+在索引,用户点了没房,转化与质量双输。
+- 描述触发 Fair Housing 禁词——法律风险大于一切 SEO 损失(美国)。
+- 社区页 doorway 化(换城市名仍通顺)——同④死法整组去索引。
+- 经纪页匿名无实体,信任与品牌词无处累积(同③作者实体逻辑)。
+
+**pSEO 机会**
+
+- `<城市> × <房型|价位>` 房源组合页——每格在售库存 ≥ 阈值才生成(过 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md) 闸门)。
+- `<城市> housing market` 年更数据页——外链磁铁(同③ State of X 范式)。
+- 估值/月供计算器(⑥嫁接);学区·通勤 facet 页(带真实数据字段,非样板)。
+
 ## 来源
 
 本文由 EveryInfra 综合编写,只保留要点与口径,未复制原文。
@@ -404,4 +523,6 @@
 - 电商/Discover/本地:[DigitalApplied 电商(2026-01)](https://www.digitalapplied.com/blog/ecommerce-seo-product-category-page-guide-2026)、[DigitalApplied Discover 更新(2026-02)](https://www.digitalapplied.com/blog/google-discover-core-update-february-2026-seo-guide)、[DigitalApplied 本地核心更新(2026-03)](https://www.digitalapplied.com/blog/local-seo-march-2026-core-update-gbp-optimization-guide)
 - YMYL/文档与 AI 爬虫:[Sure Oak 金融 YMYL(2026-08)](https://sureoak.com/insights/ymyl-eeat-financial-services-seo-rules)、[Limy llms.txt 500M 事件分析(2026-05)](https://limy.ai/blog/llms-txt-in-2026-the-full-guide)、[Google AI 优化指南(官方)](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 - pSEO 范式:[Zapier 案例(salt.agency)](https://salt.agency/blog/how-zapier-quadrupled-organic-traffic/)、[pSEO 案例集(thebcms)](https://www.thebcms.com/blog/programmatic-seo-examples/)
+- ⑨⑩ 官方核实(2026-10-12):[Google JobPosting 结构化数据文档](https://developers.google.com/search/docs/appearance/structured-data/job-posting)(必填字段/移除机制三选一/Indexing API 优先于 sitemap/canonical 要求;**无 90 天自动过期规则**)、[schema.org v30.0 发布说明](https://schema.org/docs/releases.html)(jobDuration 新增)、[Google 富结果画廊](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)(无 RealEstateListing 富结果;VacationRental 在列)
+- Fair Housing(行业):[GBREB 房源描述禁用词 15 条](https://www.gbreb.com/GBAR/Sites/GBAR/News/Agent_Insider/2022/Dont_Violate_Fair_Housing_15_Words_to_Ban_From_Property_Descriptions.aspx)、[SmartMLS Fair Housing 词表(2024-12)](https://compliance.smartmls.com/hc/en-us/articles/13116678459803-Fair-Housing-words-and-phrase-list)、[NFHA 负责任广告指南](https://nationalfairhousing.org/responsibleadvertising/);IDX canonical 纪律为行业共识级(无双源,引用时标注)
 - 本地六行业/网格排名/权重模型深读来源:见 [site-type-templates.md](../technical/site-type-templates.md) 文末及文内标注

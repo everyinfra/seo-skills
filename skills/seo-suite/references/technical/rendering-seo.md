@@ -6,6 +6,7 @@
 
 - **两波索引已死**:官方文档已删除 "two waves" 与 "5 秒超时" 表述。现行:抓取 → 渲染队列 → WRS(Web Rendering Service,evergreen Chromium)渲染 → 索引,无固定延迟。
 - **队列行为**:HTTP 200 全部进渲染队列;官方措辞"排队 2–3 秒或更久";行业实测秒级至分钟级,**低权重/JS 重站点可拖到数小时甚至数周,JS 站消耗约 9 倍抓取预算**(Onely)。**"不在 rendered HTML 里的内容无法被索引"是官方原话**。
+- **WRS 无状态(Google 官方 2026-03-31 口径)**:每次渲染清空 cookies/session/localStorage——依赖客户端存储的内容(consent 同意门、localStorage 驱动的个人化/分支渲染)对 WRS 不可见,与"不在 rendered HTML 里"同罪。行业实测同口径:Google 清 cookies 使同意门对爬虫永远不开(Lantad/wpconsults 2026)。
 - **检测**:GSC URL Inspection(Live Test 看渲染后 HTML)、URL Inspection API、Rich Results Test;Mobile-Friendly Test 已退役(2023-12)。
 - **懒加载红线(官方)**:内容须"进入视口即加载"(`loading=lazy`/IntersectionObserver),**不得依赖用户交互**(Google 不滚动不点击);无限滚动必须给每块持久唯一 URL 并顺序链接。
 
@@ -84,4 +85,4 @@ theninthsky/client-side-rendering(827★,CSR 性能案例库,1747 行 README)全
 
 ## 来源
 
-官方:Google JS SEO 基础/懒加载/动态渲染文档、Next.js SEO 教程、Naver Search Advisor JS 指南、Yandex Webmaster rendering。行业:Patrick Stox、Onely(9× 抓取预算)、SearchVIU 2025(AI 爬虫渲染)、dev.to 2026 综述。GitHub:garmeeh/next-seo(8.5k★)、prerender-node(921★,维护中)/Rendertron(已归档,信号)、theninthsky/client-side-rendering(827★,2026-10-09d 全文深读)。未证实项:WRS 具体 Chromium 版本(官方只说 evergreen);百度渲染官方文档缺失;渲染队列实际延迟无固定值;AI 爬虫渲染能力半年即可能过期。
+官方:Google JS SEO 基础/懒加载/动态渲染文档(JS SEO 文档 2026-03-31 版确认 WRS 无状态:每次渲染清空 cookies/localStorage)、Next.js SEO 教程、Naver Search Advisor JS 指南、Yandex Webmaster rendering。行业:Patrick Stox、Onely(9× 抓取预算)、SearchVIU 2025(AI 爬虫渲染)、dev.to 2026 综述、Lantad/wpconsults 2026(WRS 无状态实测,2026-10-12 复核)。GitHub:garmeeh/next-seo(8.5k★)、prerender-node(921★,维护中)/Rendertron(已归档,信号)、theninthsky/client-side-rendering(827★,2026-10-09d 全文深读)。未证实项:WRS 具体 Chromium 版本(官方只说 evergreen);百度渲染官方文档缺失;渲染队列实际延迟无固定值;AI 爬虫渲染能力半年即可能过期。

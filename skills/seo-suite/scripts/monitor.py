@@ -2804,6 +2804,21 @@ def cmd_diff(args):
             payload_slo = None
         _order = {l: i for i, l in enumerate(LEVELS)}
         alerts.sort(key=lambda a: _order.get(a["level"], 9))
+        # R4 监控对标⑤(incident 角色分工 owner_team,pipeline-completeness §五):
+        # config 可选映射 owner_teams:{code_prefix: "team"} → 告警 payload 逐条透传
+        # owner_team(前缀按最长优先,精确匹配即全长前缀;未配置/无命中/值非字符串
+        # 一律不写键,零侵扰旧 payload)。notify 侧按该字段渲染一行"归属: team"。
+        _oteams = cfg.get("owner_teams")
+        if isinstance(_oteams, dict):
+            _prefixes = sorted((str(k) for k in _oteams
+                                if k and isinstance(_oteams.get(k), str) and str(k)),
+                               key=len, reverse=True)
+            for a in alerts:
+                _code = str(a.get("code") or "")
+                for _pfx in _prefixes:
+                    if _code.startswith(_pfx):
+                        a["owner_team"] = _oteams[_pfx]
+                        break
 
         cooldowns = cfg.get("cooldown_hours", COOLDOWN_HOURS)
         cur_fps = {("%s:%s" % (a["code"], a["key"])) for a in alerts}

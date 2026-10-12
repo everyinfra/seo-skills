@@ -242,7 +242,11 @@ Link: </img/hero.webp>; rel=preload; as=image; fetchpriority=high
 4. INP poor → 先测第三方主线程占比:延迟/facade 第三方往往比改自家代码便宜一个量级。
 5. INP poor 且是自家代码 → 长任务拆分(yield 带兜底)+交互即时反馈:需要工程投入。
 6. TTFB 源站慢 → 数据库/缓存/流式 SSR:后端工程,周期最长。
-7. 全绿后 → Speculation Rules/预渲染抢体验上限。
+7. 全绿后 → Speculation Rules 预取/预渲染 + 跨文档 View Transitions 抢体验上限。
+
+   两项都按渐进增强接入(仅部分引擎支持,不支持则静默退化,不做业务依赖):
+   - Speculation Rules:见第五节(仅 Chromium)。
+   - **跨文档 View Transitions**(2026-10 补):2026-05 起 Chromium(Chrome 126+/Edge)跨文档支持生产可用,Safari/Firefox 跨文档未全量。MPA 两行 CSS 启用:`@view-transition { navigation: auto; }`,按需给元素加 `view-transition-name` 做共享元素过渡。**CLS 注意**:过渡动画渲染在快照伪元素层上,不计入 CLS;但过渡结束(或超时被跳过)后的真实布局变化照常计入——图片尺寸/字体度量/容器预留这些 CLS 基础一项不能省。过渡有约 4 秒上限,超时静默跳过,别把关键内容展示押在过渡动画上。
 
 文字版决策树:
 
@@ -262,3 +266,4 @@ Link: </img/hero.webp>; rel=preload; as=image; fetchpriority=high
 
 - 一手:web.dev [INP](https://web.dev/articles/inp)、[优化 INP](https://web.dev/articles/optimize-inp)、[优化 CLS](https://web.dev/articles/optimize-cls)、[TTFB](https://web.dev/articles/ttfb)、[优化长任务](https://web.dev/articles/optimize-long-tasks)、Chrome [scheduler.yield 博文](https://developer.chrome.com/blog/use-scheduler-yield)、[Speculation Rules 改进](https://developer.chrome.com/blog/speculation-rules-improvements)、MDN [fetchpriority](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/fetchpriority)、[Speculation Rules API](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API)、Google Search Central [page experience](https://developers.google.com/search/docs/appearance/page-experience)
 - 2026-10 检索核实:scheduler.yield Safari 未支持([caniuse](https://caniuse.com/mdn-api_scheduler_yield)、[Firefox 142](https://web.dev/blog/web-platform-08-2025));fetchpriority Baseline(Firefox 132+,[Calibre](https://calibreapp.com/blog/priority-hints));GSC Page Experience 报告 2024-11-18 移除([SEJ](https://www.searchenginejournal.com/google-retires-search-consoles-page-experience-report/532968));Illyes tie-breaker 表述([Seroundtable](https://www.seroundtable.com/google-page-experience-update-tiebreaker-31880.html));Deloitte 速度-营收研究;边缘渲染降 TTFB 60–80% 为行业口径([TotaliWeb](https://www.totaliweb.com/the-silent-website-killer-server-side-rendering-vs-edge-rendering-in-2026))
+- 跨文档 View Transitions(2026-10-12 复核):Chromium 生产可用与 4s 超时、缩放失真等 gotcha([CSS-Tricks 跨文档系列,2026-05-25](https://css-tricks.com/cross-document-view-transitions-part-2/) 及 Part 1);`@view-transition` at-rule([MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@view-transition));跨文档行为与渐进增强([Chrome 文档](https://developer.chrome.com/docs/web-platform/view-transitions))

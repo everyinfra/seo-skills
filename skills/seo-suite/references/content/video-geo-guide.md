@@ -134,6 +134,60 @@ Google **无视频专有 hreflang 指引**(官方确认的缺口):视频集合�
 - **三系统独立**(Browse/Search/Shorts)+ **4 层测试级联**(核心观众→扩展→更广→高权威);满意度信号排序:Shares 最强 > repeat viewing > session continuation > saves > surveys > likes > comments。
 - 标题 clickbait 惩罚(2024 末起全球):Gemini 对比标题/缩略图与实际内容;tags 已残废(最多 30 秒,只用于错拼消歧);hashtags 3-5 个(>15 全忽略);字幕 +12% 观看时长,手动 SRT 索引优于自动;2 小时内回复 50+ 评论=+15-20% 触达;24h 通知上限 3 次;章节须 0:00 起、≥3 章、每章 ≥10 秒。
 
+## 六、YouTube 站内算法(分发层速通,2026-10-12 增补)
+
+> **证据强度声明**:本章讲 YouTube **站内分发**算法——素材几乎全部为行业逆向与创作者实测(复用前文 claude-youtube 精读/深读两节),无官方算法文档;**站内算法证据强度系统性低于搜索 GEO**(后者有 Google 官方文档打底)。数字用于诊断方向,不作对客承诺。
+
+### 6.1 双因子:CTR × 留存
+
+- 分工:CTR 决定「给多少初始展示」(约占初始分发决策 80%,analytics 口径);留存决定「是否继续加码」——单因子优化必然撞墙。
+- 诊断四象限:高曝光+低 CTR=包装问题(换标题/缩略图)/ 高 CTR+低留存=clickbait 嫌疑(承诺须 5-10 秒内兑现)/ 低曝光+高 CTR=词或频道过窄 / 双低=内容问题,先修留存再修包装。
+- **CTR 必须分流量源看**(Search 12.5%/Suggested 9.5%/Browse 3.5%,Focus Digital 2025-12):拿 Browse 的 3.5% 对标 Search 的 12.5% 是最常见误诊;持续 4-8% 即健康(展示扩张自然下滑)。
+- **缩略图**:人脸+夸张真实表情 +20-30% CTR(中性表情比无脸还差);文字 ≤5 词、与标题文字不得重复——缩略图管情绪、标题管关键词承诺。
+- **前 30 秒留存**:前 60 秒丢 55%、10-15 秒 <50% 即钩子废;30 秒 70%/80% 为稳/优;留存高于频道均值 15%+ = 推广量 2.3 倍。
+- **章节**:0:00 起、≥3 章、每章 ≥10 秒——一站三用(站内跳看导航/Google key moments/Gemini 片内引用),双因子通吃的通用零件。
+
+### 6.2 Shorts 与长视频:两套独立分发
+
+- 三系统独立(Browse/Search/Shorts)+ 4 层测试级联(核心观众→扩展→更广→高权威)——同素材跨形态不共享信号。
+- Shorts 信号层级:完播/循环重播 > Viewed vs Swiped Away(<60% 立即换开场)> 评论分享;**CTR 几乎无效**——长视频的包装打法在 Shorts 失效。
+- 甜点与死区:15-60 秒可用、双峰 13s/60s、**30-45 秒是死区**;上限 3 分钟但别用满。
+- 新鲜度不对称:Shorts 28-30 天后降权、断更 2 周≈清零;**长视频常青不受影响——SEO 资产只有长视频形态成立**,Shorts 是获客面。
+- 双形态数据:观众重合仅 ~10%、双形态频道增长快 40-60%;变现靠长视频桥接(长视频 RPM 为 Shorts 的 10-100 倍)。
+- Shorts 的搜索占位:进 YouTube 搜索+Google 移动结果(标题 4-6 词、描述前 125 字符承重,套件已录)。
+
+### 6.3 标题-缩略图配对测试
+
+- 官方工具 Studio「Test & Compare」:最多 3 版、最长 2 周、仅桌面设置、Shorts/儿童内容不可用;2024 末起新增标题 A/B。
+- **优化目标是观看时长份额而非 CTR**(官方口径)——低 CTR 版可因观众看得久而赢,判读别看错指标。
+- 显著性:百万曝光级 0.5% CTR 差即显著;小频道曝光不足时用 6.4 的离群挖掘替代实验(先找假设后验证)。
+- clickbait 惩罚在位(2024 末起,Gemini 对比标题/缩略图与实际内容)——A/B 的边界是「包装更准」,不是「承诺更狠」。
+
+### 6.4 yt_outlier 工具接线(套件脚本)
+
+- `../../scripts/yt_outlier.py`(stdlib,零依赖):CSV 输入 `title,duration_s,views[,is_short][,channel]`,按「频道×形态」分组(≤60s=Short,长短视频基线自动分开),播放 >2× 组均值判离群,输出离群清单+标题高频词 Top 15。
+- 用法:竞品或自家频道视频清单导出 CSV → 跑离群 → 离群标题的高频词=该 niche 实际吃到分发的包装词形——直接喂标题/缩略图选题,不靠拍脑袋。
+- 与 A/B 的分工:yt_outlier 找假设(什么包装吃到流量),Test & Compare 在自家流量上验假设;两者闭环=站内算法层唯一可复制的增长循环。
+
+### 6.5 站内分发诊断检查单(接单即跑)
+
+按序过一遍,任一步不过先修再谈增长(阈值口径均出自本章与前文两节,行业级):
+
+1. 单一流量源占比 >60%?(Analytics;脆弱结构,Browse/Suggested/Search 至少两腿)。
+2. CTR 按流量源分层:Search <12% / Suggested <9% / Browse <3.5% 任一命中 → 包装层问题,进 3;全档位 <4% → 频道权重与选题问题,先修 6.4 选题。
+3. 缩略图三查:有脸且表情真实?文字 ≤5 词且与标题不重复?按 feed 小图(移动端 70%+)检验仍可读?
+4. 前 30 秒留存 ≥70%?(低于即钩子废——先改开场再看包装)。
+5. AVD vs 频道均值:留存低于均值 15% 以内?(超均值 15%+ 才有 2.3 倍推广;持续 <40% AVD 被降权)。
+6. 章节合规:0:00 起、≥3 章、每章 ≥10 秒?(双因子与 GEO 三层共用零件,最便宜的一项)。
+7. 标题长度按流量源对表(Search 向 70-100 字符/Browse 向短标题),关键词进前 40-50 字符。
+8. 有 App 的频道补品牌词 app pack 占位(与 [site-type-playbooks.md](../overview/site-type-playbooks.md) ②的 ASO 桥同款思路)。
+
+### 口径注意(引用时标注)
+
+- 本章数字全为行业级(Focus Digital/Backlinko/claude-youtube 深读,套件已录),单源居多——引用标「行业/观察」。
+- 标题长度三套口径矛盾(70-100 vs <55 vs <50 字符)按流量源取舍:Search 长标题、Browse/MrBeast 式短标题(详见文末「口径矛盾与注意」)。
+- 与搜索 GEO 的分工:本章管 YouTube 站内分发;视频被 AI 引用(GEO)走第 1-3 节文本可及性路线,两层信号不互通。
+
 ## 来源
 
 - 官方:Google 视频 SEO 文档/VideoObject/key moments/视频 sitemap(sitemap 标记与结构化数据等价关系);Gemini API 视频理解;YouTube MLA 帮助页(Help 13338784:视频+Shorts 多音轨);captions API 文档;**Spotify for Creators《Words matter》播客 SEO 官方指南**;Apple Podcasts 转录规范
@@ -141,6 +195,7 @@ Google **无视频专有 hreflang 指引**(官方确认的缺口):视频集合�
 - 平台口径:2pointagency/Toptal(TikTok/IG)、腾讯云开发者(抖音)、开源中国(B站)、Statista/TechTimes/iz.ru(市场格局)
 - GitHub:jdepoix/youtube-transcript-api(8.4k★,免 OAuth 取 transcript 自检)、AgriciDaniel/claude-youtube(436★)、hyperframes-student-kit(1.2k★)
 - 本文件由 EveryInfra 编写,仅收录要点与链接;2026-10-09 深挖轮新增:三点五(三平台文本层)/三点六(转录工具)/五点五(hreflang×MLA)/五点八(Podcast SEO)/视频 sitemap 对照表
+- 2026-10-12 增补:六(YouTube 站内算法速通——CTR×留存双因子/Shorts 独立分发/Test & Compare/yt_outlier 接线;素材复用前文 claude-youtube 两节,**站内算法证据强度低于搜索 GEO 已声明**)
 
 ## (claude-youtube 深读 2026-10-09b)余下全量增量:留存/缩略图/Shorts/变现/模板/工具层
 

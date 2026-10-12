@@ -115,8 +115,29 @@ Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI �
 
 **llms.txt 与双文档的工程参数**(nuxt-seo docs):`/llms.txt` 控制在 **~5K tokens**(结构化索引,先读这个);`/llms-full.txt` 是全量 markdown(**仅预渲染页进静态文件**,运行时访问不索引任何东西——`nuxi generate` 或 `nitro.prerender.routes` 是收录前提);Cursor/Windsurf 用 `@https://site/llms.txt` 引用(**@ 必须手敲,粘贴破坏上下文识别**)。`.md` 双胞胎映射:`/about`→`/about.md`、`/`→`/index.md`;**`/api` 与 `/_` 前缀路径不生成**。每个生成页尾部自动带 `## Sitemap` 段+独立 `/sitemap.md`(关闭项 `sitemapMd: false`)。**Nuxt Content v3 站点 `.md` 路由直接回源 markdown 源文件而非转换 HTML**(`contentSource: false` 才转)——CMS 站做双胞胎时先确认语义。**Agent Skills 发布面**:`skills/<name>/SKILL.md` 发布到 `/.well-known/agent-skills/` + `/skills/<name>/SKILL.md` + llms.txt 内,单 skill 站点额外挂 `/SKILL.md`;这些路径被协商器视为 artifact **原样应答、永不渲染**。**MCP 工具面**:`list_pages`/`search_pages`/`get_page_markdown` 三工具挂 `/mcp`(需运行中的服务器,静态导出无法承载);运行时索引带 **contentHash 变更检测**(hash 不变则跳过重索引)与 TTL。
 
-## 六、来源
+## 六、三态商业决策:封/放/收费(Cloudflare AI Crawl Control,2026)
+
+robots.txt 只有封/放两态;Cloudflare **AI Crawl Control** 对其验证过的爬虫提供第三态:**收费**(Pay Per Crawl)。决策单位是"每爬虫",不是整站一刀切(developers.cloudflare.com 一手口径,2026-10-12 复核)。
+
+**三态×爬虫类型矩阵**(默认值供起步,最终归业务定):
+
+| 爬虫类型 | 默认态 | 理由 |
+|---|---|---|
+| 引用型(OAI-SearchBot/Claude-SearchBot/PerplexityBot 等,第一节) | **放** | 直接影响 AI 答案可见性;对它们收费/封=自绝于引用面 |
+| 训练型(GPTBot/ClaudeBot/CCBot) | **按战略** | 放=让模型"认识"你的内容(品牌暴露);封/收费=内容变现或防白嫖——取决于内容是否有许可市场 |
+| 数据吸血型(未验证抓取、无视 robots 的 scraper) | **收费或封** | 无可见性回报,纯成本;先靠 CF 的爬虫识别/机器人得分定位,再处置 |
+
+**Pay Per Crawl(HTTP 402)**:开启后请求到达但返回 **402 Payment Required** 带价格,爬虫付费才拿到内容。2026-06 起(pay-per-crawl 高级配置文档):
+- **按 URI 收费/免费**:用 Configuration Rules 按 URI 模式关闭 PPC——引用路径(文章页)免费、语料路径(全量数据页)收费,同一站两套策略;
+- **源站动态定价**:origin 返回 `crawler-price` 响应头,CF 只在客户端被要求付费时把它转发给爬虫——价格决策收回源站,不必在面板静态配置。
+
+**Redirects for AI Training(2026-04-17)**:把站点**已有的 `<link rel="canonical">`** 对已验证训练爬虫强制成 **301**——重复页/转载页被训练爬虫抓取时直接 301 到 canonical 指向的权威页,训练语料归一。**审计要认得日志里这个 301 形态**:已验证训练爬虫(GPTBot/ClaudeBot 系)请求 dup 页 → 301 → Location 恰为该页声明的 canonical。这不是重定向配置错误,别当 redirect 链问题去"修";反过来,没开此功能的站出现同形态 301,要查是谁在 CDN/边缘层做的(见 [edge-seo.md](edge-seo.md) 第三节决策表)。CF 日志(Logpush/Edge Log)是验证三态与 301 是否生效的数据面。
+
+**与证据银行口径的衔接(必须一起读)**:本套件证据口径是**训练 bot 不影响搜索可见性**(第一节关键事实:禁 GPTBot 不阻止 ChatGPT 引用,引用走 OAI-SearchBot)——所以三态决策是**商业决策**(内容许可收入 vs 训练暴露),不是 SEO 手段。封/收费训练爬虫既不提升也不损害搜索排名与 AI 引用;审计报告里不得把"封 GPTBot"写成 SEO 建议,也不得把"放行训练爬虫"写成 GEO 优化——引用面由引用型 bot 决定,训练面是钱的事。证据分级与观察协议见 [geo-evidence.md](../content/geo-evidence.md)。
+
+## 七、来源
 
 - 27 bot 引用/训练分类+频率：[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
 - 厂商官方行为声明（OAI-SearchBot/SearchBot/User 系）：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`（2026-10-04 复核一手文档）
 - 区域补充：Yandex Webmaster 官方文档（YandexAdditional）；SEONews（俄媒体退出案例）；Naver 官方 Help（robots 收录）；StatCounter（Bing 日本份额）；PR Times（llms.txt 日企采用率）
+- 三态商业决策：Cloudflare [AI Crawl Control 文档](https://developers.cloudflare.com/ai-crawl-control/)与 [Pay Per Crawl 高级配置](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/use-pay-per-crawl-as-site-owner/advanced-configuration/)（URI 级 Configuration Rules+origin `crawler-price` 头）、[Redirects for AI Training](https://developers.cloudflare.com/ai-crawl-control/reference/redirects-for-ai-training/)（changelog 2026-04-17;canonical 强制为 301）——均 2026-10-12 复核

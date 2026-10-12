@@ -92,6 +92,18 @@
 - 按模板实施、按模板检查：同一模板的页面一起抽查。
 - 交付时给出：每种页面类型用哪些 schema 类型、字段映射表（schema 字段 ← 页面数据来源）、示例 JSON-LD、验证记录。
 
+## 五、大规模验证方法论（分层采样 + CI 门禁 + 部署后漂移对比）
+
+单页用 Rich Results Test 点验只适合个位数页面；千页以上的站按**模板**验证——页面是模板产的，错误也是模板产的。规模基线：Digital Applied 2026-04 对 5,000 站审计，**71% 部署了 ≥1 种 schema 类型，但仅 22% 能干净通过 Rich Results Test**——"部署了"与"验证通过"是两件事，站越多越是方法论问题而非单页问题（测量日期 2026-04，引用时保留两个数字的对照）。
+
+三步闭环：
+
+1. **模板分层采样**：按模板分组（文章/商品/分类/门店…），每模板抽 N 页（N=10 或该模板页数的 5%，取大者；首轮或大改后可全量）。采样页通过 ≈ 模板通过——验证成本从"页数级"降到"模板数级"。
+2. **schema_lint 进 CI**：`schema_lint.py URL` 按 URL 单页跑、退出码非 0 即 fail（覆盖 @id 悬空、占位符黑名单、同名实体分裂、aggregateRating 越界、JSON 解析失败）。CI 对采样清单循环调用，任一页 CRITICAL 即红灯，把 22%/71% 的缺口挡在部署前。套件先例：monitor 告警已有 `--ci-format json|junit` 的 CI 消费格式，schema 校验沿用同一接法（单页退出码 + 汇总）。
+3. **部署后漂移对比**：部署前后各抓一轮同采样页，对比 JSON-LD 指纹（@type 集合 + 必填字段值）。模板级字段消失或类型漂移 = 回归信号：先查模板的字段映射表（第四节交付物），再查是否渲染层/边缘注入改的（[edge-seo.md](edge-seo.md) 第四节注入残留检查项）。漂移对比与 monitor 的页面字段 diff 思路同构，但落在 JSON-LD 层。
+
+方法边界：采样验证给的是"模板级置信"，不是全页保证；高价值模板（首页、货币化页）不采样，直接全量。
+
 ## 常见误区
 
 - 为了拿富结果，标记页面上看不到的内容。
@@ -138,3 +150,4 @@
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · build/schema-markup-generator/references/schema-templates.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/build/schema-markup-generator/references/schema-templates.md)（Apache-2.0）
 - 源码精读:garmeeh/next-seo `src/components/`(ClaimReview/Quiz/MerchantReturnPolicy/VacationRental/DiscussionForumPosting/Dataset/CreativeWork/Image/ProfilePage/Carousel/MovieCarousel/EmployerAggregateRating/Course/JobPosting 等 27 组件)、`src/types/common.types.ts`、`src/utils/processors.ts`、`src/utils/stringify.ts`、`src/core/JsonLdScript.tsx`(2026-10-09,MIT)
 - 一手资料：[结构化数据简介](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)、[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[结构化数据类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)、[schema.org](https://schema.org/)；各类型的 Google 文档见第二节表格中的链接。
+- 规模基线：[Digital Applied 5,000 站 schema 审计](https://www.digitalapplied.com/blog/schema-markup-adoption-5k-site-audit-2026)（2026-04：71% 部署 ≥1 类型，22% 干净通过 Rich Results Test；2026-10-12 复核）。
