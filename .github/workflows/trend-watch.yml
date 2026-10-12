@@ -11,12 +11,14 @@
 # 真实词表由用户改 vertical_tokens 后删 _sample 或改 false 激活。
 #
 # 限 5 分钟预算:job 级 timeout-minutes: 5(watch 无 --budget flag,预算由
-# Actions 硬顶;超时=kill,状态库 cache 未存→下轮重采样,偏保守是特性)。
+# Actions 硬顶;超时=kill,状态库未及 commit→下轮重采样,偏保守是特性)。
 #
-# 状态与产物:--state/--brief-dir 显式指到 CI 工作区 artifacts/(R0-7 未修前
-# STATE_FILE 默认落在 skill 安装目录,CI 必须显式改道);state+决策件走
-# actions/cache 持久(驱逐只致去重重采,不致错判),GO 时决策件另上传
-# artifact(30 天)。均不进 git。
+# 状态与产物(审计③统一):--state/--brief-dir 显式指到 .github/state/trend/
+# (R0-7 未修前 STATE_FILE 默认落在 skill 安装目录,CI 必须显式改道);state+
+# 决策件 commit-back 进 git(权威=git——cache 停跑>7 天驱逐只致去重重采,改
+# git 后连这也不怕),cache 步保留作加速,另有旧 artifacts/ 路径的一次性迁移
+# shim;GO 时决策件另上传 artifact(30 天)。机读输出 artifacts/trend-watch.json
+# 为瞬时态,不进 git。
 #
 # market:读仓库 Variable SEO_MARKET(缺省 en;与 seo-monitor 同源)。
 # X/Twitter、抖音需 key——脚本明说跳过不猜。
@@ -24,7 +26,7 @@
 # 本地等价命令(仓库根):
 #   python3 skills/seo-suite/scripts/trend_watch.py watch \
 #     --config .github/trend-config.json --market "$SEO_MARKET" \
-#     --state artifacts/trend-state.json --brief-dir artifacts/trend-briefs --json
+#     --state .github/state/trend/state.json --brief-dir .github/state/trend/briefs --json
 # ----------------------------------------------------------------------------
 
 name: trend-watch
@@ -35,7 +37,7 @@ on:
   workflow_dispatch: {}       # 手动触发按钮
 
 permissions:
-  contents: read    # 只读扫描+产决策件;状态走 cache,不 commit-back
+  contents: write   # 审计③:state+决策件 commit-back(.github/state/trend/);不写库不评论
 
 concurrency:
   group: trend-watch
@@ -69,28 +71,52 @@ jobs:
             echo "SKIP_TREND=true" >> "$GITHUB_ENV"
           fi
 
-      # state+决策件 cache 持久(驱逐只致重复告警,不致错判);post 步骤自动回存
-      - name: Restore trend state (cache 兜底)
+      # ── 状态持久化(审计③:cache-only → commit-back;权威=git)──────────────
+      # 迁移 shim(一次性):旧 artifacts/ 路径的 cache 若还在(≤7 天),导入新
+      # .github/state/trend/,避免切换日去重记忆清零;restore-only 不再回存旧路径
+      - name: Restore legacy trend state (迁移 shim;旧路径只读)
         if: env.SKIP_TREND != 'true'
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             artifacts/trend-state.json
             artifacts/trend-briefs
-          key: trend-state-${{ github.run_id }}
+          key: trend-state-migrate-${{ github.run_id }}
           restore-keys: trend-state-
+
+      - name: Migrate legacy state → .github/state/trend/ (git/新 cache 均无才导入)
+        if: env.SKIP_TREND != 'true'
+        run: |
+          mkdir -p .github/state/trend/briefs
+          if [ ! -e .github/state/trend/state.json ] && [ -f artifacts/trend-state.json ]; then
+            cp artifacts/trend-state.json .github/state/trend/state.json
+            echo "已导入旧 state(git 与新 cache 均无历史;一次性迁移)"
+          fi
+          if [ -d artifacts/trend-briefs ]; then
+            cp -an artifacts/trend-briefs/. .github/state/trend/briefs/ 2>/dev/null || true
+          fi
+
+      # 新路径 cache(加速;权威=git——checkout 自带 .github/state/trend/,
+      # cache 仅在 push 失败等场景兜住更新的 state)
+      - name: Restore trend state (cache 加速;权威=git)
+        if: env.SKIP_TREND != 'true'
+        uses: actions/cache@v4
+        with:
+          path: .github/state/trend
+          key: trend-state-git-${{ github.run_id }}
+          restore-keys: trend-state-git-
 
       - name: trend_watch watch (rc=1=有 GO,不红;2/3 红)
         id: watch
         if: env.SKIP_TREND != 'true'
         run: |
-          mkdir -p artifacts/trend-briefs
+          mkdir -p .github/state/trend/briefs artifacts
           set +e
           python3 skills/seo-suite/scripts/trend_watch.py watch \
             --config "$TREND_CONFIG" \
             --market "$TREND_MARKET" \
-            --state artifacts/trend-state.json \
-            --brief-dir artifacts/trend-briefs \
+            --state .github/state/trend/state.json \
+            --brief-dir .github/state/trend/briefs \
             --json > artifacts/trend-watch.json
           rc=$?
           set -e
@@ -128,6 +154,31 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: trend-decisions
-          path: artifacts/trend-briefs/
+          path: .github/state/trend/briefs/
           retention-days: 30
           if-no-files-found: warn   # GO 信号必然产决策件草稿;空=异常但不掩盖 GO notice
+
+      # 状态+决策件 commit-back(审计③;同 monitor.db 模式):权威=git,cache 仅
+      # 加速。trend_watch 每轮 save_state(checked_at 必更新)→ 每 3h 一个小
+      # commit,文件小、频率低,可接受。!cancelled():watch 红(rc=2 全源失败)时
+      # 脚本也已 save_state(落盘在退出判定之前),提交保住去重记忆。
+      - name: Commit trend state & briefs (commit-back;权威=git)
+        if: env.SKIP_TREND != 'true' && !cancelled()
+        run: |
+          if [ ! -e .github/state/trend/state.json ]; then
+            echo "无 state 可提交(watch 未落盘)"
+            exit 0
+          fi
+          git config user.name "seo-trend-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add .github/state/trend
+          if git diff --cached --quiet; then
+            echo "trend state 无变化,不提交"
+          else
+            git commit -m "chore(trend): state update $(date -u +%F) [skip ci]"
+            if ! git push; then
+              echo "::warning::push 冲突(并发提交)——pull --rebase 后重试一次"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+              git push || echo "::warning::重试后仍失败(下轮 run 以 git 基线继续)"
+            fi
+          fi

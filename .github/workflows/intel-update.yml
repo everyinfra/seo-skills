@@ -7,6 +7,13 @@
 # 在收到通知后按 self-update-protocol.md 执行——P0 规则级自动改,
 # P1 事实级自动改,行为性变更(评分权重/检查阈值)标 [HUMAN-REVIEW]。
 #
+# 状态持久化(审计③统一):intel 基线从 cache-only 改 commit-back——cache 停跑
+# >7 天驱逐=基线静默重置(全部 RSS 源误报变更)。脚本 intel_check.py 无 --state
+# 参数,STATE_FILE 硬编码为脚本相对路径 skills/seo-suite/.intel-state.json
+# (.gitignore 排除,绝不 force-add)→ workflow 层桥接:check 后 copy-out 到
+# .github/state/intel-state.json(未被 ignore 匹配)并 commit;权威=git,
+# cache 步保留作加速/一次性迁移(脚本路径未变,旧 cache 自动续命)。
+#
 # 使用(两种方式):
 #
 # A. GitHub Actions(推荐,免费):
@@ -53,7 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Restore intel state
+      # cache 仅加速(权威=git 的 .github/state/intel-state.json);路径=脚本
+      # STATE_FILE 原生位置,故它同时是旧 cache 的一次性迁移源,无需额外 shim
+      - name: Restore intel state (cache 加速/迁移;权威=git)
         uses: actions/cache@v4
         with:
           path: skills/seo-suite/.intel-state.json
@@ -66,6 +75,34 @@ jobs:
           cd skills/seo-suite
           python3 scripts/intel_check.py check || echo "changed=true" >> "$GITHUB_OUTPUT"
         continue-on-error: true
+
+      # 状态 commit-back(审计③):check 每轮 save_state(checked_at 必更新)→
+      # 无条件 copy-out+diff 提交,与 changed 无关。桥接原因:脚本 STATE_FILE 固定
+      # 在 skills/seo-suite/.intel-state.json(.gitignore 排除且无 --state 参数,
+      # 禁改脚本),git 权威副本放 .github/state/intel-state.json(不匹配 ignore
+      # 的 .intel-state.json 模式——该模式要求点前缀文件名)。每日一个小 commit,
+      # 同 monitor.db 模式。
+      - name: Persist intel state (copy-out → .github/state/, commit-back)
+        run: |
+          if [ ! -f skills/seo-suite/.intel-state.json ]; then
+            echo "::warning::脚本状态文件未生成(check 未跑成?)——无物可提交"
+            exit 0
+          fi
+          mkdir -p .github/state
+          cp skills/seo-suite/.intel-state.json .github/state/intel-state.json
+          git config user.name "seo-intel-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add .github/state/intel-state.json
+          if git diff --cached --quiet; then
+            echo "intel state 无变化,不提交"
+          else
+            git commit -m "chore(intel): state update [skip ci]"
+            if ! git push; then
+              echo "::warning::state push 冲突(并发提交)——pull --rebase 后重试一次"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+              git push || echo "::warning::重试后仍失败(下轮 run 以 git 基线继续)"
+            fi
+          fi
 
       - name: Generate update task file
         if: steps.intel.outputs.changed == 'true'
@@ -82,16 +119,19 @@ jobs:
           EOF
           cd skills/seo-suite && python3 scripts/intel_check.py check >> ../../.intel-update-task.md 2>&1 || true
 
-      - name: Commit task file (state via actions/cache)
+      - name: Commit task file (state 已由上一步 commit-back)
         if: steps.intel.outputs.changed == 'true'
         run: |
           git config user.name "seo-intel-bot"
-          git config user.email "intel@local"
-          # .intel-state.json 被 .gitignore 排除且由 actions/cache 持久化——
-          # git add 一个被忽略的路径会以退出码 1 失败(bash -e),只提交任务文件
+          git config user.email "bot@users.noreply.github.com"
+          # 只提交任务文件;intel state 走 .github/state/(上一步已提交,不重复 add)
           git add .intel-update-task.md
-          git commit -m "intel-update: sources changed, task file generated — follow self-update-protocol.md" || exit 0
-          git push
+          git commit -m "intel-update: sources changed, task file generated — follow self-update-protocol.md [skip ci]" || exit 0
+          if ! git push; then
+            echo "::warning::push 冲突(并发提交)——pull --rebase 后重试一次"
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+            git push || echo "::warning::重试后仍失败(任务文件已在本地 commit,下轮变更会再生成)"
+          fi
 
       - name: Open/flag issue
         if: steps.intel.outputs.changed == 'true'

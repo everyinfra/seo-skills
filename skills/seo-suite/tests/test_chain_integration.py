@@ -53,8 +53,48 @@
   - prioritize 吃 health_score 摘要时,不在 AREA_RULE 映射表的 area(og/schema/bluf/
     rendering 等)按恒等透传(rule==source_rule),修复文案退化为通用占位——可用但
     信息量降级,envelope 侧靠 RULE_TO_AREA/恒等映射接得住。
+
+=============================================================================
+第二部分(2026-10-12 扩展):三高危零捕获 bug 的回归钉死 + 新管线链路冒烟(零网络)
+=============================================================================
+A. 回归钉死(测试审计报告②的三高危,脚本已修——此处防复发):
+  A1 oracle_check 币种冲突:货币按 ISO 币种分桶,$49(USD) vs €49(EUR)/49元(CNY)
+     数值相同币种不同 → 必须判冲突(旧实现只比数值,会把跨币种报一致);
+     $49 vs $49(同币种同数值)→ 不报。fixture: oracle-brand.yaml/oracle-responses.json。
+  A2 site_audit GBK 解码:fetch 解码链 Content-Type charset → BOM → 前 2KB meta
+     charset 嗅探 → utf-8 replace 兜底。fixture gbk-page.html 为真 GBK 字节;测试
+     打桩 urllib.request.urlopen(保留 sa.fetch→detect_encoding→decode 全真码路径),
+     两条解码路由(响应头 charset=GBK / 无头靠 meta 嗅探)各自不乱码。
+  A3 citation_panel.wilson_ci 真公式:Wald 近似在 k=0/n 时区间宽 0 → 零命中样本被
+     误判 stable;真 Wilson k=0,n=3 → 上界≈0.5615(非零),k=n=3 → 下界≈0.4385,
+     区间跨 0.5 → unstable。模块级断言钉死。
+B. 新管线链路冒烟(上一步 stdout/文件 即 下一步输入):
+  B1 pseo 生产线:pseo_pattern_mining(合成 GSC → GO 模式)→ pseo_batch_gate
+     (同轴 batch.jsonl → PASS;title+h1 全同批 → STOP)→ pseo_cohort
+     (init 冻结判读 + 两周 ingest + report PASS;同 id 重建拒绝)。
+  B2 project.py run triage:SEO_PROJECT_SCRIPTS_DIR 打桩五脚本(site_crawl/
+     site_audit/health_score/prioritize/envelope),断言编排序、审计 URL 选取
+     (crawl 产物 status<400 前 5)、envelope 增量 --health/--priority、health 步
+     失败时的容错降级与退出码。
+  B3 content_queue collect 三源:trend_watch(只收 WATCH 态)+ gsc_mining(striking/
+     decay 双桶,缺桶不猜)+ serp_overlap(真跑 serp_overlap.py 的存盘输出 → 共享
+     ≥4 才入队);幂等去重;track 状态机 + report 遥测。
+  B4 backlink_import → monitor 月检:ahrefs 原始导出 --out 统一格式;monitor
+     check_backlinks 直接 import 兄弟模块 parse_export,原始/统一两形态通吃;
+     缺文件 skipped 不猜、损坏 error 不猜(防假 0)。
+  B5 split_test plan→assign→analyze:plan --save-plan 冻结预注册 → assign 分层
+     随机(period1 分组)→ 按 assign 输出构造两臂 GSC CSV → analyze --plan 按冻结
+     口径判读 significant_positive。
+C. 输出契约快照:对上述全部新链的关键 JSON 字段做轻量形状断言
+   (schema_version/verdict/judgment 等键存在与类型)。
+新增 fixture(全部合成,域名 *.test 保留 TLD 永不可解析):oracle-brand.yaml、
+oracle-responses.json、gbk-page.html(GBK 字节)、pseo-queries.csv、pseo-urls.txt、
+pseo-batch.jsonl、pseo-batch-stop.jsonl、pseo-cohort-urls.txt、pseo-cohort-week1/2.csv、
+cq-trend-state.json、cq-gsc-cur/prev.csv、cq-serp-keywords.csv、backlinks-ahrefs.csv、
+st-urls.txt。
 """
 import contextlib
+import csv
 import io
 import json
 import os
@@ -63,6 +103,7 @@ import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(HERE)
@@ -144,6 +185,66 @@ def extract_audit_blob(text):
     if data is None:
         raise AssertionError("无法从文本提取 site_audit JSON blob")
     return data
+
+
+# ---------------------------------------------------------------- 助手(第二部分)
+def run_script_env(name, args=(), env_extra=None):
+    """run_script + 额外环境变量(project triage 打桩需要 SEO_PROJECT_SCRIPTS_DIR)。"""
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", **(env_extra or {}))
+    return subprocess.run([sys.executable, os.path.join(SCRIPTS, name), *args],
+                          capture_output=True, text=True, encoding="utf-8", env=env)
+
+
+def read_fixture_bytes(name):
+    with open(os.path.join(FIXTURES, name), "rb") as f:
+        return f.read()
+
+
+def run_site_audit_real_fetch(pages, extra=None, market="zh"):
+    """真实运行 site_audit.main() 且**保留 sa.fetch 真码路径**(fetch→detect_encoding
+    →decode),仅打桩 urllib.request.urlopen(零网络;编码探测/解码与联网运行一致)。
+    pages: {url: (status, headers, body_bytes)};extra 同型(根文件)。
+    返回 (完整 stdout, 退出码)。"""
+    import site_audit as sa
+    import urllib.request
+    responses = dict(pages)
+    if extra:
+        responses.update(extra)
+
+    class _Resp:
+        def __init__(self, status, headers, body):
+            self.status, self.headers, self._body = status, headers, body
+
+        def read(self, n=-1):
+            return self._body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def stub_open(req, timeout=15):
+        url = getattr(req, "full_url", None) or str(req)
+        if url in responses:
+            st, hdrs, body = responses[url]
+            return _Resp(st, dict(hdrs), body)
+        raise OSError("unreachable stub: %s" % url)
+
+    orig_open, orig_argv = urllib.request.urlopen, sys.argv
+    urllib.request.urlopen = stub_open
+    buf = io.StringIO()
+    sys.argv = ["site_audit.py", *pages.keys(), "--market", market, "--json"]
+    rc = 0
+    try:
+        with contextlib.redirect_stdout(buf):
+            sa.main()
+    except SystemExit as e:
+        rc = e.code or 0
+    finally:
+        urllib.request.urlopen = orig_open
+        sys.argv = orig_argv
+    return buf.getvalue(), rc
 
 
 # ---------------------------------------------------------------- 链路工件(惰性,一次构建全链共享)
@@ -746,6 +847,759 @@ class TestDiscoveredInteropBreaks(unittest.TestCase):
                          "citation_gaps 应能吃对象化 prompt 面板;实际 rc=%s stderr=%s"
                          % (r.returncode, r.stderr.strip().splitlines()[-1:]))
         self.assertTrue(os.path.exists(gaps))
+
+
+# =====================================================================
+# 第二部分 A:三高危零捕获 bug 的回归钉死(脚本已修,此处防复发)
+# =====================================================================
+
+# ---- A1 oracle 币种冲突:工件(惰性一次构建) ----
+_ORACLE_ART = None
+
+
+def oracle_artifacts():
+    """oracle_check 真跑:brand.yaml($49/月 定价事实)× responses(€49/$49/49元)。"""
+    global _ORACLE_ART
+    if _ORACLE_ART is not None:
+        return _ORACLE_ART
+    tmp = tempfile.mkdtemp(prefix="seo_chain_oracle_")
+    out_state = os.path.join(tmp, "findings.json")
+    r = run_script("oracle_check.py",
+                   ["--facts", os.path.join(FIXTURES, "oracle-brand.yaml"),
+                    "--responses", os.path.join(FIXTURES, "oracle-responses.json"),
+                    "--out", out_state, "--json"])
+    assert r.returncode == 0, "oracle_check 失败: %s" % r.stderr[:400]
+    art = {"payload": json.loads(r.stdout), "state_path": out_state,
+           "report": run_script("oracle_check.py", [
+               "--facts", os.path.join(FIXTURES, "oracle-brand.yaml"),
+               "--responses", os.path.join(FIXTURES, "oracle-responses.json"),
+               "--out", out_state]).stdout}
+    with open(out_state, encoding="utf-8") as f:
+        art["state"] = json.load(f)
+    _ORACLE_ART = art
+    return art
+
+
+class TestRegressionOracleCurrency(unittest.TestCase):
+    """R5 回归钉死①:$49(USD) vs €49(EUR)/49元(CNY) 数值相同币种不同 → 必须判冲突;
+    $49 vs $49 同币种同数值 → 不报(货币按 ISO 分桶,数值与币种都相同才判一致)。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = oracle_artifacts()
+
+    def test_currency_conflicts_flagged(self):
+        p = self.art["payload"]
+        self.assertEqual(p["schema_version"], 2)
+        self.assertEqual(p["facts_count"], 3)
+        self.assertEqual(len(p["findings"]), 2)              # €49 与 49元 两条冲突
+        for f in p["findings"]:
+            self.assertEqual(f["kind"], "number")
+            self.assertEqual(f["severity"], "critical")      # 定价事实 → critical
+            self.assertIn("currency/USD", f["why_flagged"])  # 已验证事实按币种标 USD
+        claims = {f["ai_claim"] for f in p["findings"]}
+        self.assertTrue(any("€49" in c for c in claims))
+        self.assertTrue(any("49元" in c for c in claims))
+
+    def test_same_currency_not_flagged_and_metrics(self):
+        """同币种同数值($49 USD)的响应不产 finding;指标只按 active finding 计。"""
+        p = self.art["payload"]
+        flagged_idx = {f["source_response"]["index"] for f in p["findings"]}
+        self.assertEqual(flagged_idx, {0, 2})                # 响应 1($49 一致)干净
+        m = p["metrics"]
+        self.assertEqual(m["inaccuracy_pct"], 66.7)          # 2/3 响应含 active finding
+        self.assertEqual(m["model_accuracy"], {"chatgpt": 50.0, "perplexity": 0.0})
+        self.assertEqual(m["topics_ai_gets_wrong"], {"offerings": 2})
+        for f in p["findings"]:                              # Athena finding 字段契约
+            for key in ("fingerprint", "status", "possible_sources", "source_response"):
+                self.assertIn(key, f)
+            self.assertEqual(f["status"], "pending")
+            self.assertEqual(f["possible_sources"], [])      # 由 agent 调查后填写
+        self.assertIn("样本不足", "".join(p["warnings"]))    # <25 条 facts 的置信警告
+
+
+# ---- A2 GBK 解码:真 fetch→detect_encoding→decode,仅 urlopen 打桩 ----
+_GBK_ART = None
+
+
+def gbk_artifacts():
+    """GBK 字节 fixture 走两条解码路由:响应头 charset=GBK / 无头 meta 嗅探。"""
+    global _GBK_ART
+    if _GBK_ART is not None:
+        return _GBK_ART
+    gbk_body = read_fixture_bytes("gbk-page.html")
+    raw, rc = run_site_audit_real_fetch({
+        HOST + "/gbk-meta": (200, {"Content-Type": "text/html"}, gbk_body),
+        HOST + "/gbk-ctype": (200, {"Content-Type": "text/html; charset=GBK"}, gbk_body),
+    }, extra={HOST + "/robots.txt": (200, {}, read_fixture("robots.txt").encode("utf-8")),
+              HOST + "/sitemap.xml": (200, {}, read_fixture("sitemap.xml").encode("utf-8"))})
+    _GBK_ART = {"raw": raw, "rc": rc, "blob": extract_audit_blob(raw)}
+    return _GBK_ART
+
+
+class TestRegressionGbkDecoding(unittest.TestCase):
+    """R5 回归钉死②:site_audit fetch 解码链(Content-Type charset→BOM→meta 嗅探→
+    utf-8 兜底)——GBK 页面不再全量乱码(旧实现 utf-8 replace 把 GBK 双字节打烂)。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = gbk_artifacts()
+
+    def _page(self, url):
+        r = self.art["blob"]["results"][HOST + url]
+        title = r["meta"]["title"]
+        self.assertNotIn("\ufffd", title)                    # 无替换符(乱码标志)
+        self.assertNotIn("锟斤拷", title)                    # 无 GBK→UTF8 双重错译特征
+        return r, title
+
+    def test_meta_charset_sniffing_route(self):
+        """无响应头 charset → 前 2KB meta charset=gbk 嗅探命中。"""
+        r, title = self._page("/gbk-meta")
+        self.assertEqual(title, "项目管理软件选购指南")       # 逐字符精确解码
+        self.assertEqual(r["verdict"], "pass")               # 无 CRITICAL
+        self.assertGreater(r["meta"]["words"], 200)          # CJK 逐字计词不丢
+
+    def test_content_type_charset_route(self):
+        """响应头 charset=GBK 优先命中(同字节,同解码结果)。"""
+        r, title = self._page("/gbk-ctype")
+        self.assertEqual(title, "项目管理软件选购指南")
+        self.assertEqual(self.art["rc"], 0)                  # 双页 pass → 退出码 0
+
+    def test_decoding_does_not_fabricate_findings(self):
+        """解码正确性以"不产解码类噪音 finding"为证:两页只允许结构性
+        WARN/INFO(og/canonical 等),不得出现因乱码导致的标题/描述长度误判 CRITICAL。"""
+        for url in ("/gbk-meta", "/gbk-ctype"):
+            r = self.art["blob"]["results"][HOST + url]
+            crit = [f for f in r["findings"] if f["severity"] == "CRITICAL"]
+            self.assertEqual(crit, [], url)
+            descs = [f for f in r["findings"] if f["area"] == "description"]
+            self.assertTrue(all(f["severity"] != "CRITICAL" for f in descs), url)
+
+
+# ---- A3 Wilson 真公式:模块级断言 ----
+class TestRegressionWilsonCi(unittest.TestCase):
+    """R5 回归钉死③:Wilson score interval 真公式(旧 Wald 近似 k=0/n 时区间宽 0,
+    零命中/全命中样本被误判 stable)。k=0,n=3 → 上界≈0.5615 非零、跨 0.5 → unstable。"""
+
+    def test_zero_hits_interval_nonzero_width(self):
+        import citation_panel as cp
+        p, lo, hi, unstable = cp.wilson_ci(0, 3)             # 零命中样本
+        self.assertEqual(p, 0.0)
+        self.assertEqual(lo, 0.0)
+        self.assertAlmostEqual(hi, 0.5615, places=3)         # 非零上界(Wald 会得 0)
+        self.assertGreater(hi, 0.5)                          # 区间跨 0.5 线
+        self.assertTrue(unstable)                            # 不得误判 stable
+        p, lo, hi, unstable = cp.wilson_ci(3, 3)             # 全命中样本
+        self.assertEqual(p, 1.0)
+        self.assertAlmostEqual(lo, 0.4385, places=3)         # 非零宽下界
+        self.assertLess(lo, 0.5)
+        self.assertTrue(unstable)
+
+    def test_typical_cases_and_guard(self):
+        import citation_panel as cp
+        p, lo, hi, unstable = cp.wilson_ci(2, 3)             # p̂=2/3 → CI 跨 0.5
+        self.assertAlmostEqual(p, 2 / 3, places=6)
+        self.assertAlmostEqual(lo, 0.2077, places=3)
+        self.assertAlmostEqual(hi, 0.9385, places=3)
+        self.assertTrue(unstable)
+        _p, lo, hi, unstable = cp.wilson_ci(80, 100)         # 80% 大样本 → 不跨 0.5
+        self.assertGreater(lo, 0.5)
+        self.assertLess(hi, 1.0)
+        self.assertFalse(unstable)
+        self.assertIsNone(cp.wilson_ci(0, 0))                # n=0 守卫 → None(不猜)
+
+
+# =====================================================================
+# 第二部分 B1:pseo 生产线链(pattern_mining → batch_gate → cohort)
+# =====================================================================
+_PSEO_ART = None
+
+
+def pseo_artifacts():
+    """pseo 三件套真跑:模式挖掘(GO 判定)→ 批次闸门(PASS/STOP)→ cohort 两周判读。"""
+    global _PSEO_ART
+    if _PSEO_ART is not None:
+        return _PSEO_ART
+    tmp = tempfile.mkdtemp(prefix="seo_chain_pseo_")
+    art = {"tmp": tmp}
+
+    mining = run_script("pseo_pattern_mining.py", [
+        "--gsc", os.path.join(FIXTURES, "pseo-queries.csv"),
+        "--urls", os.path.join(FIXTURES, "pseo-urls.txt"), "--json"])
+    assert mining.returncode == 0, mining.stderr[:400]
+    art["mining"] = json.loads(mining.stdout)
+
+    gate = run_script("pseo_batch_gate.py",
+                      ["--records", os.path.join(FIXTURES, "pseo-batch.jsonl"), "--json"])
+    assert gate.returncode == 0, gate.stderr[:400]
+    art["gate_pass"] = json.loads(gate.stdout)
+    gate_stop = run_script("pseo_batch_gate.py",
+                           ["--records", os.path.join(FIXTURES, "pseo-batch-stop.jsonl"),
+                            "--json"])
+    assert gate_stop.returncode == 1, "must_differ 批次应 STOP 阻断(exit 1)"
+    art["gate_stop"] = json.loads(gate_stop.stdout)
+
+    state = os.path.join(tmp, "pseo_cohorts.json")
+    crit = '{"weeks":2,"min_index_rate":0.6,"consec_pos_wow":1}'
+    art["init"] = run_script("pseo_cohort.py", [
+        "init", "--cohort_id", "vs-batch-01", "--template-version", "v1",
+        "--urls", os.path.join(FIXTURES, "pseo-cohort-urls.txt"),
+        "--criteria", crit, "--state", state, "--json"])
+    art["ing1"] = run_script("pseo_cohort.py", [
+        "ingest", "--cohort", "vs-batch-01",
+        "--gsc", os.path.join(FIXTURES, "pseo-cohort-week1.csv"),
+        "--week", "2026-09-28", "--state", state, "--json"])
+    art["ing2"] = run_script("pseo_cohort.py", [
+        "ingest", "--cohort", "vs-batch-01",
+        "--gsc", os.path.join(FIXTURES, "pseo-cohort-week2.csv"),
+        "--week", "2026-10-05", "--state", state, "--json"])
+    rep = run_script("pseo_cohort.py", ["report", "--cohort", "vs-batch-01",
+                                        "--state", state, "--json"])
+    assert rep.returncode == 0, rep.stderr[:400]
+    art["report"] = json.loads(rep.stdout)
+    art["reinit"] = run_script("pseo_cohort.py", [
+        "init", "--cohort_id", "vs-batch-01", "--template-version", "v2",
+        "--urls", os.path.join(FIXTURES, "pseo-cohort-urls.txt"), "--state", state])
+    _PSEO_ART = art
+    return art
+
+
+class TestPseoPipelineChain(unittest.TestCase):
+    """pseo 生产线三件互操作:挖掘的 GO 模式 → 同轴批次过闸 → 发布成 cohort 周喂判读。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = pseo_artifacts()
+
+    def test_pattern_mining_go_verdict(self):
+        m = self.art["mining"]
+        self.assertEqual(m["tool"], "pseo_pattern_mining")
+        self.assertEqual(sum(m["weights"].values()), 100)    # gates §八 30/25/20/15/10
+        by_id = {r["id"]: r for r in m["patterns"]}
+        vs = by_id["vs"]
+        self.assertEqual(vs["variants"], 5)                  # 4 英文 + 1 中文变体
+        self.assertEqual(vs["verdict"], "GO")                # score 97 ≥50 且变体 ≥3
+        self.assertEqual(vs["score"], 97)
+        self.assertEqual(vs["coverage_urls"], 1)             # urls 清单命中 /vs/acme-vs-hubspot
+        self.assertEqual(vs["entities_distinct"], 5)         # acme/hubspot/zoho/salesforce/pipedrive
+        self.assertEqual(by_id["pricing"]["verdict"], "WHITE_SPACE")   # 变体 2<3
+        self.assertEqual(by_id["glossary"]["verdict"], "WHITE_SPACE")
+        self.assertEqual(m["meta"]["editorial"], 2)          # /blog/ 编辑页排除出分析
+        self.assertEqual(m["meta"]["unmatched_count"], 1)
+
+    def test_batch_gate_pass(self):
+        g = self.art["gate_pass"]
+        self.assertEqual(g["verdict"], "PASS")
+        st = g["stats"]
+        self.assertEqual(st["records_kept"], 4)
+        self.assertEqual(st["facts_total"], 8)
+        self.assertEqual(st["warnings"], 0)
+        self.assertGreaterEqual(st["uniqueness_pct"], 40)    # 唯一度闸
+        self.assertLess(st["boilerplate_pct"], 60)           # 样板比闸
+        self.assertGreaterEqual(st["word_count_min"], 400)   # 页型地板闸
+        self.assertEqual(st["near_dup_pairs"], 0)
+        self.assertEqual(g["stop_items"], [])
+
+    def test_batch_gate_stops_must_differ(self):
+        """title+h1(必须不同区块)全同 → STOP 阻断发布并退回数据层清单。"""
+        g = self.art["gate_stop"]
+        self.assertEqual(g["verdict"], "STOP")
+        kinds = [s["kind"] for s in g["stop_items"]]
+        self.assertIn("must_differ_duplicate", kinds)
+        self.assertEqual(sorted(g["stats"]["return_to_data"]), ["dup-a", "dup-b"])
+
+    def test_cohort_two_week_pass(self):
+        i1, i2 = json.loads(self.art["ing1"].stdout), json.loads(self.art["ing2"].stdout)
+        init = json.loads(self.art["init"].stdout)
+        self.assertTrue(init["criteria_frozen"])             # 预注册判读冻结
+        self.assertEqual(init["criteria"], {"weeks": 2, "min_index_rate": 0.6,
+                                            "consec_pos_wow": 1})
+        self.assertEqual((i1["source_rows"], i1["matched_urls"], i1["indexed_proxy_est"]),
+                         (5, 4, 3))                          # cohort 外行(/blog/)被忽略
+        self.assertEqual((i2["matched_urls"], i2["indexed_proxy_est"]), (5, 4))
+        rep = self.art["report"]
+        self.assertEqual(rep["judgment"]["state"], "PASS")
+        checks = rep["judgment"]["checks"]
+        self.assertEqual(checks["index_rate_cum_est"]["value"], 0.8)   # 累计 4/5
+        self.assertTrue(checks["index_rate_cum_est"]["pass"])
+        self.assertEqual(checks["consec_pos_wow"]["value"], 1)         # 周环比上行为
+        self.assertEqual([s["week"] for s in rep["series"]],
+                         ["2026-09-28", "2026-10-05"])
+        self.assertIn("[est]", rep["disclaimers"][0])        # 索引代理口径声明
+
+    def test_cohort_reinit_refused(self):
+        """同 id 重复 init 直接拒绝(判读标准冻结,防事后移动球门)。"""
+        self.assertEqual(self.art["reinit"].returncode, 2)
+        self.assertIn("禁止同 id 重建", self.art["reinit"].stderr)
+
+
+# =====================================================================
+# 第二部分 B2:project.py run triage 编排(SEO_PROJECT_SCRIPTS_DIR 打桩)
+# =====================================================================
+_TRIAGE_SITE = "https://proj-fixture.test"
+_TRIAGE_PAGES = [(_TRIAGE_SITE + "/pricing/acme-pro", 200),
+                 (_TRIAGE_SITE + "/pricing/acme-team", 200),
+                 (_TRIAGE_SITE + "/features/board", 200),
+                 (_TRIAGE_SITE + "/features/timeline", 200),
+                 (_TRIAGE_SITE + "/docs/setup", 200),
+                 (_TRIAGE_SITE + "/broken-link", 404)]
+_TRIAGE_STUB_HDR = '''import json, os, sys
+LOG = os.environ.get("TRIAGE_STUB_LOG")
+if LOG:
+    with open(LOG, "a") as f:
+        f.write(json.dumps({"script": "%(name)s", "argv": sys.argv[1:]}) + "\\n")
+'''
+_TRIAGE_STUBS = {
+    "site_crawl.py": (
+        'site, rest = sys.argv[1], sys.argv[2:]\n'
+        'out = rest[rest.index("--out") + 1]; urls_out = rest[rest.index("--urls-out") + 1]\n'
+        'pages = ' + repr(_TRIAGE_PAGES) + '\n'
+        'doc = {"schema_version": 1, "site": site, "pages": [{"url": u, "status": s} for u, s in pages]}\n'
+        'json.dump(doc, open(out, "w"))\n'
+        'open(urls_out, "w").write("\\n".join(u for u, _ in pages))\n'
+        'print("crawl stub done")\n'),
+    "site_audit.py": (
+        'urls = [a for a in sys.argv[1:] if "://" in a]\n'
+        'results = {}\n'
+        'for u in urls:\n'
+        '    results[u] = {"verdict": "fail", "findings": [{"severity": "CRITICAL", "area": "description", "message": "stub: 缺失"}], "meta": {"title": "t", "words": 300, "h1": 1}}\n'
+        'print("== 审计(stub) ==")\n'
+        'print(json.dumps({"schema_version": 1, "audited": len(urls), "critical": len(urls), "results": results}))\n'),
+    "health_score.py": 'print(json.dumps({"main_score": 0.0, "band": "Weak", "urls_total": 5, "urls_clean": 0}))\n',
+    "prioritize.py": 'print(json.dumps({"input_format": "site_audit", "fix_now": [{"rule": "desc_missing"}], "degraded_rules": []}))\n',
+    "envelope.py": (
+        'rest = sys.argv[1:]\n'
+        'od = rest[rest.index("--out-dir") + 1]\n'
+        'os.makedirs(od, exist_ok=True)\n'
+        'cats = [{"name": "rankability", "findings": [{"rule_id": "description", "title": "缺失 meta description", "severity": "CRITICAL", "affected": 5, "recommendation": "补 meta description"}]}]\n'
+        'json.dump({"inputs": {"audit": "ok"}, "categories": cats, "summary": {"main_score": 0.0}}, open(os.path.join(od, "audit-data.json"), "w"))\n'
+        'print("envelope stub done")\n'),
+}
+_TRIAGE_HEALTH_FAIL = ('import sys\nsys.stderr.write("stub health failure\\n")\nsys.exit(2)\n')
+_TRIAGE_ART = None
+
+
+def _write_triage_stubs(stubs_dir, health_fail=False):
+    os.makedirs(stubs_dir, exist_ok=True)
+    for name, body in _TRIAGE_STUBS.items():
+        if name == "health_score.py" and health_fail:
+            body = _TRIAGE_HEALTH_FAIL
+        with open(os.path.join(stubs_dir, name), "w", encoding="utf-8") as f:
+            f.write(_TRIAGE_STUB_HDR % {"name": name[:-3]} + body)
+
+
+def triage_artifacts():
+    """打桩脚本下真实跑 project.py init + run triage 两次(健康步失败降级向)。"""
+    global _TRIAGE_ART
+    if _TRIAGE_ART is not None:
+        return _TRIAGE_ART
+    tmp = tempfile.mkdtemp(prefix="seo_chain_triage_")
+    ws = os.path.join(tmp, "proj-fixture.seo")
+    stubs = os.path.join(tmp, "stubs")
+    _write_triage_stubs(stubs)
+    assert run_script("project.py", ["init", "--site", _TRIAGE_SITE, "--market", "en",
+                                     "--dir", ws, "--json"]).returncode == 0
+    log1 = os.path.join(tmp, "calls-1.jsonl")
+    r1 = run_script_env("project.py", ["run", "triage", "--dir", ws, "--max", "5", "--json"],
+                        env_extra={"SEO_PROJECT_SCRIPTS_DIR": stubs, "TRIAGE_STUB_LOG": log1})
+    assert r1.returncode == 0, r1.stderr[:600]
+    art = {"tmp": tmp, "ws": ws, "stubs": stubs,
+           "triage": json.loads(r1.stdout), "log_path": log1,
+           "calls": [json.loads(ln) for ln in open(log1, encoding="utf-8")]}
+
+    # 第二轮:health 步失败(rc=2)→ envelope 不吃 --health,prioritize 照跑,总 rc=1
+    _write_triage_stubs(stubs, health_fail=True)
+    log2 = os.path.join(tmp, "calls-2.jsonl")
+    r2 = run_script_env("project.py", ["run", "triage", "--dir", ws, "--max", "5", "--json"],
+                        env_extra={"SEO_PROJECT_SCRIPTS_DIR": stubs, "TRIAGE_STUB_LOG": log2})
+    art["triage_degraded"] = (r2.returncode, json.loads(r2.stdout))
+    art["calls_degraded"] = [json.loads(ln) for ln in open(log2, encoding="utf-8")]
+    _TRIAGE_ART = art
+    return art
+
+
+class TestProjectTriageOrchestration(unittest.TestCase):
+    """run triage 编排契约:五步子进程顺序、审计样本选取、产物落 history/、容错降级。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = triage_artifacts()
+
+    def test_step_order_and_audit_sampling(self):
+        """编排序 = crawl→audit→health→prioritize→envelope;审计 URL = crawl 产物
+        status<400 的前 5(404 剔除);envelope 增量拿到 --health/--priority。"""
+        self.assertEqual([s["name"] for s in self.art["triage"]["steps"]],
+                         ["crawl", "audit", "health", "prioritize", "envelope"])
+        self.assertTrue(all(s["ok"] for s in self.art["triage"]["steps"]))
+        order = [c["script"] for c in self.art["calls"]]
+        self.assertEqual(order, ["site_crawl", "site_audit", "health_score",
+                                 "prioritize", "envelope"])
+        audit_call = next(c for c in self.art["calls"] if c["script"] == "site_audit")
+        audited = [a for a in audit_call["argv"] if a.startswith("http")]
+        self.assertEqual(len(audited), 5)
+        self.assertNotIn(_TRIAGE_SITE + "/broken-link", audited)   # 404 不喂审计
+        env_call = next(c for c in self.art["calls"] if c["script"] == "envelope")
+        self.assertIn("--health", env_call["argv"])
+        self.assertIn("--priority", env_call["argv"])
+
+    def test_triage_json_contract_and_artifacts(self):
+        t = self.art["triage"]
+        self.assertEqual(t["schema_version"], 1)
+        self.assertEqual(t["site"], _TRIAGE_SITE)
+        for s in t["steps"]:                                 # 逐步完整命令/退出码契约
+            self.assertIn("cmd", s)
+            self.assertIsInstance(s["rc"], int)
+            self.assertIsNone(s["skipped"])
+        hist = t["run_dir"]
+        for rel in ("crawl.json", "urls.txt", "audit.json", "health.json",
+                    "priority.json", "envelope/audit-data.json", "triage.json"):
+            self.assertTrue(os.path.isfile(os.path.join(hist, rel)), rel)
+        v = t["verdict"]
+        self.assertEqual(v["site_type"]["suggested"], "SaaS / 软件营销站")
+        self.assertEqual(v["site_type"]["share"], 0.667)     # /pricing,/features 4/6 页
+        self.assertEqual(v["basis"], "envelope summary")
+        self.assertEqual([(a["severity"], a["rule_id"], a["affected"])
+                          for a in v["top_actions"]],
+                         [("CRITICAL", "description", 5)])   # envelope 透传的修复建议
+
+    def test_health_failure_degrades_not_halts(self):
+        """health 步 rc=2 → envelope 少吃 --health(仍吃 --priority),总退出码 1。"""
+        rc, t = self.art["triage_degraded"]
+        self.assertEqual(rc, 1)
+        by_name = {s["name"]: s for s in t["steps"]}
+        self.assertFalse(by_name["health"]["ok"])
+        self.assertTrue(by_name["prioritize"]["ok"])         # 失败不终止,续跑其余
+        self.assertTrue(by_name["envelope"]["ok"])
+        env_call = next(c for c in self.art["calls_degraded"]
+                        if c["script"] == "envelope")
+        self.assertNotIn("--health", env_call["argv"])       # 缺输入的下游增量不传
+        self.assertIn("--priority", env_call["argv"])
+
+
+# =====================================================================
+# 第二部分 B3:content_queue collect 三源(serp_overlap 真跑 → 存盘输出入队)
+# =====================================================================
+_CQ_ART = None
+
+
+def cq_artifacts():
+    global _CQ_ART
+    if _CQ_ART is not None:
+        return _CQ_ART
+    tmp = tempfile.mkdtemp(prefix="seo_chain_cq_")
+    serp_out = os.path.join(tmp, "serp-out.txt")
+    so = run_script("serp_overlap.py", [os.path.join(FIXTURES, "cq-serp-keywords.csv")])
+    assert so.returncode == 0, so.stderr[:300]
+    with open(serp_out, "w", encoding="utf-8") as f:
+        f.write(so.stdout)
+    ops = os.path.join(tmp, "contentops.json")
+    c1 = run_script("content_queue.py", [
+        "collect", "--trend-state", os.path.join(FIXTURES, "cq-trend-state.json"),
+        "--gsc", os.path.join(FIXTURES, "cq-gsc-cur.csv"),
+        "--gsc", os.path.join(FIXTURES, "cq-gsc-prev.csv"),
+        "--serp-out", serp_out, "--file", ops, "--json"])
+    assert c1.returncode == 0, c1.stderr[:400]
+    art = {"tmp": tmp, "serp_out_text": so.stdout, "collect": json.loads(c1.stdout),
+           "ops_path": ops}
+    art["collect_again"] = json.loads(run_script("content_queue.py", [
+        "collect", "--gsc", os.path.join(FIXTURES, "cq-gsc-cur.csv"),
+        "--file", ops, "--json"]).stdout)
+    for status in ("briefed", "drafting", "gated"):
+        r = run_script("content_queue.py", ["track", "CQ-002", "--status", status,
+                                            "--file", ops])
+        assert r.returncode == 0, r.stderr[:300]
+    assert run_script("content_queue.py", [
+        "track", "CQ-002", "--status", "published", "--url",
+        "https://chain-fixture.test/crm-vs-alternatives", "--file", ops]).returncode == 0
+    art["report"] = json.loads(run_script("content_queue.py", [
+        "report", "--file", ops, "--json"]).stdout)
+    art["skip_transition"] = run_script("content_queue.py", [
+        "track", "CQ-001", "--status", "published", "--file", ops])
+    _CQ_ART = art
+    return art
+
+
+class TestContentQueueCollectChain(unittest.TestCase):
+    """collect 三源合并:trend 只收 WATCH 态、gsc 双桶、serp 共享≥4 才入队;幂等去重。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = cq_artifacts()
+
+    def test_three_sources_merged(self):
+        c = self.art["collect"]
+        self.assertEqual(c["schema_version"], 1)
+        self.assertEqual(c["new"], 8)                        # trend1 + gsc6 + serp1
+        self.assertEqual(c["skipped_dup"], 0)
+        by_src = {}
+        for it in c["ideas"]:
+            by_src[it["source"]] = by_src.get(it["source"], 0) + 1
+            for key in ("id", "source", "topic", "evidence", "score", "status",
+                        "created", "history"):
+                self.assertIn(key, it)                       # idea 统一形状
+            self.assertEqual(it["status"], "idea")
+        self.assertEqual(by_src, {"trend_watch": 1, "gsc_mining:striking": 3,
+                                  "gsc_mining:decay": 3, "serp_overlap": 1})
+        self.assertEqual([it["id"] for it in c["ideas"]],
+                         ["CQ-%03d" % i for i in range(1, 9)])   # id 连续分配
+        topics = {it["topic"] for it in c["ideas"]}
+        self.assertIn("AI 搜索引用新规", topics)              # watch 态收录
+        self.assertNotIn("已过闸走 trend-jack 的热点", topics)  # go 态不收
+        self.assertNotIn("尚未机检完的信号", topics)           # open 态不收
+
+    def test_source_routing_and_scoring(self):
+        """serp 源吃的是 serp_overlap.py 真实存盘输出(共享 5 → 缺口;共享 2 → 互链跳过);
+        gsc striking 门槛(pos 5-20 且曝光≥20)与评分口径(TP×IC,常青 FB=1)。"""
+        self.assertIn("crm for startups × crm for agencies", self.art["serp_out_text"])
+        self.assertIn("同簇", self.art["serp_out_text"])
+        serp_ideas = [it for it in self.art["collect"]["ideas"]
+                      if it["source"] == "serp_overlap"]
+        self.assertEqual(len(serp_ideas), 1)                 # 共享 5 的对入队
+        self.assertIn("SERP 重叠 5/10", serp_ideas[0]["evidence"])
+        topics = {it["topic"] for it in self.art["collect"]["ideas"]}
+        self.assertNotIn("crm for startups × crm for clinics", topics)  # 互链不入队
+        by_topic = {it["topic"]: it for it in self.art["collect"]["ideas"]}
+        striking_top = next(it for it in self.art["collect"]["ideas"]
+                            if it["source"] == "gsc_mining:striking"
+                            and it["topic"] == "crm vs alternatives")
+        self.assertAlmostEqual(striking_top["score"], 4.8)   # 10×800/2000×1.2
+        self.assertNotIn("best crm for startups", topics)    # pos 3.1<5 不进 striking
+        self.assertNotIn("deep dive niche topic", topics)    # 曝光 5<20 不进 striking
+        self.assertIn("crm pricing calculator", topics)      # striking + decay 双桶
+        trend = by_topic["AI 搜索引用新规"]
+        self.assertTrue(4.0 <= trend["score"] <= 6.0)        # 5×0.8×FB(first_seen 时效)
+
+    def test_collect_idempotent_and_state_machine(self):
+        self.assertEqual((self.art["collect_again"]["new"],
+                          self.art["collect_again"]["skipped_dup"]), (0, 3))  # 同源同题不重复
+        rep = self.art["report"]
+        self.assertEqual(rep["total"], 8)
+        self.assertEqual(rep["counts"], {"idea": 7, "briefed": 0, "drafting": 0,
+                                         "gated": 0, "published": 1, "measured": 0})
+        self.assertEqual(rep["wip"], 0)                      # published 即出制
+        self.assertEqual(rep["telemetry"]["lead_time_days"]["n"], 1)
+        self.assertEqual(self.art["skip_transition"].returncode, 2)   # idea→published 跳级拒绝
+
+
+# =====================================================================
+# 第二部分 B4:backlink_import → monitor 月检(第 6 检查组)
+# =====================================================================
+_BL_ART = None
+
+
+def backlink_artifacts():
+    global _BL_ART
+    if _BL_ART is not None:
+        return _BL_ART
+    import monitor
+    tmp = tempfile.mkdtemp(prefix="seo_chain_bl_")
+    unified = os.path.join(tmp, "unified.csv")
+    payload = os.path.join(tmp, "bi.json")
+    r = run_script("backlink_import.py", [os.path.join(FIXTURES, "backlinks-ahrefs.csv"),
+                                          "--out", unified, "--brand", "acme",
+                                          "--json", payload])
+    assert r.returncode == 0, r.stderr[:400]
+    with open(payload, encoding="utf-8") as f:
+        bi = json.load(f)
+    frozen_now = datetime(2026, 10, 12, 12, 0, 0)
+    checks = {
+        "ahrefs": monitor.check_backlinks(
+            tmp, cfg={"backlinks_csv": os.path.join(FIXTURES, "backlinks-ahrefs.csv")},
+            now=frozen_now),
+        "unified": monitor.check_backlinks(tmp, cfg={"backlinks_csv": unified},
+                                           now=frozen_now),
+        "missing": monitor.check_backlinks(
+            tmp, cfg={"backlinks_csv": os.path.join(tmp, "nope.csv")}, now=frozen_now),
+    }
+    bad = os.path.join(tmp, "bad.csv")
+    with open(bad, "w", encoding="utf-8") as f:
+        f.write("garbage header\nno structure here\n")
+    checks["corrupt"] = monitor.check_backlinks(tmp, cfg={"backlinks_csv": bad},
+                                                now=frozen_now)
+    _BL_ART = {"tmp": tmp, "unified_path": unified, "bi": bi, "checks": checks,
+               "unified_head": open(unified, encoding="utf-8").readline().strip()}
+    return _BL_ART
+
+
+class TestBacklinkMonitorChain(unittest.TestCase):
+    """BYO 导入统一 → monitor 月检直接 import 兄弟 parse_export 消费(四形态通吃);
+    缺文件 skipped 不猜、损坏 error 不猜(防假 0:绝不把读不了当外链归零)。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = backlink_artifacts()
+
+    def test_backlink_import_unifies_ahrefs(self):
+        bi = self.art["bi"]
+        self.assertEqual(bi["format"], "ahrefs")             # 列头特征嗅探
+        self.assertEqual(bi["input_rows"], 5)
+        self.assertEqual(bi["dedup_dropped"], 0)
+        self.assertEqual(len(bi["rows"]), 5)
+        self.assertEqual(self.art["unified_head"],
+                         "referring_domain,url,dr_or_urgency,anchor,first_seen,"
+                         "last_seen,dofollow,type")          # 统一 8 列 schema
+        for row in bi["rows"]:
+            self.assertEqual(sorted(row), sorted(["referring_domain", "url",
+                                                  "dr_or_urgency", "anchor",
+                                                  "first_seen", "last_seen",
+                                                  "dofollow", "type"]))
+        feed = bi["summary"]["cite_domain_feed"]             # 直喂 cite_domain 契约
+        self.assertEqual(feed["referring_domains"], 5)
+        self.assertEqual(feed["dr_distribution"], {"0-30": 1, "30-50": 2,
+                                                  "50-70": 1, "70-100": 1})
+        self.assertEqual(len(feed["months"]), 5)             # first_seen 按月新链计数
+        self.assertIsInstance(feed["anchor_exact_ratio"], float)
+
+    def test_monitor_monthly_eats_both_forms(self):
+        """月检消费原始 Ahrefs 导出与统一格式 CSV 同口径(引荐域总数/当月新增/清单)。"""
+        for form in ("ahrefs", "unified"):
+            c = self.art["checks"][form]
+            self.assertEqual(c["state"], "ok", form)
+            self.assertEqual(c["check"], "backlinks")
+            self.assertEqual(c["metrics"]["format"], form)   # parse_export 嗅探互操作
+            self.assertEqual(c["metrics"]["refdomains_total"], 5)
+            self.assertEqual(c["metrics"]["refdomains_new"], 2)   # 近 31 天 first_seen
+            self.assertEqual(c["metrics"]["domains"],
+                             ["blog-partner.test", "dev-notes.test", "indie-blog.test",
+                              "news-site.test", "roundup.test"])
+            self.assertFalse(c["metrics"]["domains_truncated"])
+
+    def test_monitor_never_guesses_on_bad_input(self):
+        self.assertEqual(self.art["checks"]["missing"]["state"], "skipped")
+        self.assertIn("不猜", self.art["checks"]["missing"]["notes"][0])
+        self.assertEqual(self.art["checks"]["corrupt"]["state"], "error")
+        self.assertIn("error", self.art["checks"]["corrupt"]["metrics"])
+
+
+# =====================================================================
+# 第二部分 B5:split_test plan→assign→analyze 数据流
+# =====================================================================
+_ST_ART = None
+
+
+def split_artifacts():
+    global _ST_ART
+    if _ST_ART is not None:
+        return _ST_ART
+    tmp = tempfile.mkdtemp(prefix="seo_chain_st_")
+    plan_file = os.path.join(tmp, "plan.json")
+    pl = run_script("split_test.py", ["plan", "--pages", "24", "--baseline-clicks", "1.5",
+                                      "--weeks", "2", "--mde", "0.1",
+                                      "--save-plan", plan_file, "--json"])
+    assert pl.returncode == 0, pl.stderr[:300]
+    asg = run_script("split_test.py", ["assign", "--urls",
+                                       os.path.join(FIXTURES, "st-urls.txt"),
+                                       "--ratio", "0.5", "--seed", "42",
+                                       "--crossover", "4", "--json"])
+    assert asg.returncode == 0, asg.stderr[:300]
+    assign = json.loads(asg.stdout)
+    treated = [r["url"] for r in assign["assignments"] if r["period1"] == "treatment"]
+    control = [r["url"] for r in assign["assignments"] if r["period1"] == "control"]
+    t_csv, c_csv = os.path.join(tmp, "treated.csv"), os.path.join(tmp, "control.csv")
+    with open(t_csv, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Page", "Clicks", "Date"])
+        for i, u in enumerate(treated):
+            w.writerow([u, 20 + (i % 5) * 3, "2026-09-2%d" % (1 + i % 8)])
+            w.writerow([u, 21 + (i % 4) * 3, "2026-10-0%d" % (1 + i % 8)])
+    with open(c_csv, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Page", "Clicks", "Date"])
+        for i, u in enumerate(control):
+            w.writerow([u, 10 + (i % 4) * 2, "2026-09-2%d" % (1 + i % 8)])
+            w.writerow([u, 11 + (i % 5) * 2, "2026-10-0%d" % (1 + i % 8)])
+    an = run_script("split_test.py", ["analyze", "--treated", t_csv, "--control", c_csv,
+                                      "--weeks", "2", "--plan", plan_file, "--json"])
+    assert an.returncode == 0, an.stderr[:400]
+    _ST_ART = {"tmp": tmp, "plan": json.loads(pl.stdout),
+               "plan_file": json.load(open(plan_file, encoding="utf-8")),
+               "assign": assign, "analyze": json.loads(an.stdout),
+               "n_treated": len(treated), "n_control": len(control)}
+    return _ST_ART
+
+
+class TestSplitTestDataFlow(unittest.TestCase):
+    """plan 冻结预注册 → assign 分层随机 → analyze 吃 assign 产出的两臂数据并按冻结口径判读。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.art = split_artifacts()
+
+    def test_plan_freezes_preregistration(self):
+        p = self.art["plan"]
+        self.assertEqual(p["schema_version"], 1)
+        self.assertEqual(p["inputs"]["pages"], 24)
+        self.assertEqual(p["power_at_mde"]["mde"], 0.1)
+        self.assertIn("power", p["power_at_mde"])            # 功效 + adequate 旗标
+        self.assertIn("adequate", p["power_at_mde"])
+        self.assertEqual([r["power"] for r in p["requirements"]], [0.6, 0.8, 0.9])
+        pf = self.art["plan_file"]                           # --save-plan 落档内容
+        self.assertEqual(pf["params"]["weeks"], 2)
+        self.assertEqual(pf["params"]["mde"], 0.1)
+        self.assertEqual(pf["judgement"]["direction"], "positive")   # 判读口径冻结
+        self.assertIn("read_when", pf["judgement"])
+
+    def test_assign_strata_and_crossover(self):
+        a = self.art["assign"]
+        self.assertEqual(a["counts"], {"pages": 24, "treatment": 12, "control": 12})
+        self.assertEqual(sorted(a["strata"]), ["how-to", "pricing", "vs"])   # 目录首段分层
+        for st in a["strata"].values():
+            self.assertEqual(st["treatment"], st["control"])  # 层内均分
+        self.assertEqual(a["crossover_week"], 4)
+        for r in a["assignments"]:                            # 第 4 周组间互换计划
+            expected = {"treatment": "control", "control": "treatment"}[r["period1"]]
+            self.assertEqual(r["period2"], expected)
+
+    def test_analyze_eats_assign_output(self):
+        """两臂 CSV 由 assign 的 period1 分组构造 → analyze 检出显著正向且达预注册 MDE。"""
+        d = self.art["analyze"]
+        self.assertEqual(d["schema_version"], 1)
+        self.assertEqual((d["n_treated"], d["n_control"]),
+                         (self.art["n_treated"], self.art["n_control"]))   # 12/12 全有效
+        self.assertEqual(d["preprocess"]["treated"]["zero_click_removed"], 0)
+        self.assertTrue(d["preregistered"])                  # --plan 预注册判读
+        self.assertEqual(d["alpha_used"], 0.05)              # α 按冻结档
+        self.assertEqual(d["verdict"], "significant_positive")
+        self.assertGreater(d["ci95"][0], 0)                  # CI 下界>0
+        self.assertGreater(d["relative_lift"], 0.5)          # ~2× 提升
+        self.assertTrue(d["meets_preregistered_mde"])        # lift ≥ MDE 0.1
+        self.assertEqual(d["weeks"], 2)
+
+
+# =====================================================================
+# 第二部分 C:新链输出契约快照(关键 JSON 字段形状断言)
+# =====================================================================
+class TestNewChainContractSnapshots(unittest.TestCase):
+    """轻量形状快照:各新链输出的关键键存在性与类型(供 agent/CI 消费的字段名冻结)。"""
+
+    def test_oracle_state_file_contract(self):
+        state = oracle_artifacts()["state"]
+        self.assertEqual(state["schema_version"], 2)
+        self.assertIn("generated", state)
+        self.assertTrue(all(f["fingerprint"] for f in state["findings"]))
+
+    def test_pseo_and_triage_key_fields(self):
+        self.assertIn("verdict", pseo_artifacts()["gate_pass"])
+        self.assertIn("stats", pseo_artifacts()["gate_pass"])
+        self.assertIn("judgment", pseo_artifacts()["report"])
+        self.assertIn("series", pseo_artifacts()["report"])
+        t = triage_artifacts()["triage"]
+        for key in ("schema_version", "site", "run_dir", "steps", "verdict"):
+            self.assertIn(key, t)
+        self.assertIn("top_actions", t["verdict"])
+        self.assertIn("recheck", t["verdict"])
+
+    def test_queue_backlink_split_key_fields(self):
+        cq = cq_artifacts()["collect"]
+        for key in ("schema_version", "file", "new", "total", "sources", "ideas"):
+            self.assertIn(key, cq)
+        self.assertIn("wip", cq_artifacts()["report"])
+        bi = backlink_artifacts()["bi"]
+        for key in ("tool", "format", "rows", "summary"):
+            self.assertIn(key, bi)
+        an = split_artifacts()["analyze"]
+        for key in ("verdict", "ci95", "relative_lift", "preprocess", "warnings"):
+            self.assertIn(key, an)
 
 
 if __name__ == "__main__":

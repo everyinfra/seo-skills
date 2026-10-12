@@ -1,0 +1,4 @@
+crm for startups,d1.example.com/a;d2.example.com/b;d3.example.com/c;d4.example.com/d;d5.example.com/e;d6.example.com/f
+crm for agencies,d1.example.com/a;d2.example.com/b;d3.example.com/c;d4.example.com/d;d5.example.com/e;d7.example.com/g
+crm for clinics,d8.example.com/h;d9.example.com/i;d10.example.com/j;d1.example.com/a;d2.example.com/b
+standalone topic,d11.example.com/k;d12.example.com/l

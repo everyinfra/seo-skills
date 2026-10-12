@@ -18,9 +18,10 @@
 #   5. GSC 流量问(可选):在 run 前把 GSC 导出放到 .seo-monitor-<host>/gsc.csv
 #      (没有该文件则该问自动跳过,不猜数)
 #
-# 状态持久化(audit 02 决策):基线用 commit-back(monitor.db 提交回仓库,永不过期、
-# 可 diff、可回滚),actions/cache 仅作迁移期兜底;config.json/alerts.json/
-# notify-state.json/gsc.csv 永不提交(secret 与瞬时态不进 git)。
+# 状态持久化(audit 02 决策;审计③统一):基线一律 commit-back——monitor job 提交
+# monitor.db+runs/,envelope job 提交 artifacts/baseline/*.json 按日快照(永不过期、
+# 可 diff、可回滚);actions/cache 仅作加速/迁移期兜底,权威=git。config.json/
+# alerts.json/notify-state.json/gsc.csv 永不提交(secret 与瞬时态不进 git)。
 #
 # critical → 自动开/复用 label=seo-monitor-active 的 issue(GITHUB_TOKEN 自带,
 # 零新 secret);diff 归零自动关 issue。workflow 自身失败有 if: failure() 兜底通知。
@@ -215,8 +216,11 @@ jobs:
             echo "基线无变化,不提交"
           else
             git commit -m "chore(seo-monitor): baseline update $SITE [skip ci]"
-            git pull --rebase --autostash origin ${GITHUB_REF_NAME:-main} || true
-            git push || echo "::warning::基线 push 失败(下轮 run 会重试;cache 仍在)"
+            if ! git push; then
+              echo "::warning::基线 push 冲突(并发提交)——pull --rebase 后重试一次"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+              git push || echo "::warning::重试后仍失败(下轮 run 会重试;cache 仍在)"
+            fi
           fi
 
       # 安全网(audit 02 rec3):run 步骤崩溃/超时时,notify 被跳过=静默空窗——
@@ -361,8 +365,9 @@ jobs:
   # ── envelope-report(定时 envelope 三源聚合 + 月度匿名基准;borrow-specs E4/E8)──
   # 与 monitor 同 cadence(schedule 两个 cron 均触发;workflow_dispatch 可手动干跑;
   # pull_request 不触发——与 monitor job 同守卫)。链路:对 env SITE_URL 现场
-  # site_audit --json → 当日快照按日归档 artifacts/baseline/YYYY-MM-DD.json(cache
-  # 持久化;重跑同日覆盖,幂等)→ 有上期基线则 audit_compare --baseline-gate 跌幅门
+  # site_audit --json → 当日快照按日归档 artifacts/baseline/YYYY-MM-DD.json
+  # (commit-back 持久化+cache 加速;重跑同日覆盖,幂等)→ 有上期基线则
+  # audit_compare --baseline-gate 跌幅门
   # (ci-gates.md §七:基线缺失=响亮 WARNING + skipped(baseline_missing),绝不静默)→
   # envelope 三源聚合(audit+health+priority)→ upload-artifact 保留 90 天。
   # 月度基准:每月第一次运行时对归档目录跑 benchmark_report --audits(每个日期
@@ -377,10 +382,10 @@ jobs:
   #
   # secrets/变量缺省:SITE_URL 未配(Variables: SEO_ENVELOPE_URL 或复用
   # SEO_AUDIT_URL)→ ::warning + 优雅跳过(job 绿,不审计 example.com 占位站)。
-  # cache 被驱逐只损失基准样本量(月度报告自动跳过),当日 envelope/门不受影响;
-  # 权威基线仍是 monitor job 的 monitor.db commit-back;本 job 不写监控库——
-# 例外(R0-5):remediation 工单(artifacts/remediations.json)随 baseline
-# commit-back 持久化(verify 自动核销跨 run 生效),其余产物只走 cache/artifact。
+  # 状态持久化(审计③统一):基线快照(artifacts/baseline/*.json)与 remediation
+  # 工单(artifacts/remediations.json,R0-5)commit-back 进 git——权威=git,cache
+  # 仅加速(被驱逐不再丢月度基准样本);本 job 不写监控库(monitor.db 归 monitor
+  # job),envelope 产物(audit/health/priority/compare/benchmark)只走 artifact 不进 git。
   #
   # 本地等价命令(仓库根;scripts/ 指 skills/seo-suite/scripts/):
   #   python3 skills/seo-suite/scripts/site_audit.py "$SITE_URL" --json > audit.json
@@ -424,7 +429,7 @@ jobs:
             echo "SKIP_ENVELOPE=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Restore dated baseline archive (cache 持久化;驱逐只损样本量)
+      - name: Restore dated baseline archive (cache 加速;权威=git 的 baseline/)
         if: env.SKIP_ENVELOPE != 'true'
         uses: actions/cache/restore@v4
         with:
@@ -456,6 +461,27 @@ jobs:
         with:
           path: artifacts/baseline
           key: envelope-baseline-${{ github.run_id }}
+
+      # 基线快照 commit-back(审计③:cache 7 天驱逐=月度基准样本静默流失;同
+      # monitor.db 模式,权威=git,上方 cache 仅加速)。快照写完即提交——后续步骤
+      # (compare/envelope)失败也不丢当日样本,与 cache save 同一保险位。artifacts/
+      # 不在 .gitignore,普通 add 即可(无 -f);同日重跑覆盖同名文件,幂等。
+      - name: Commit dated baseline snapshots (commit-back;权威=git)
+        if: env.SKIP_ENVELOPE != 'true'
+        run: |
+          git config user.name "seo-envelope-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add "$BASELINE_DIR"
+          if git diff --cached --quiet; then
+            echo "基线无变化,不提交"
+          else
+            git commit -m "chore(envelope): baseline snapshot $TODAY [skip ci]"
+            if ! git push; then
+              echo "::warning::基线 push 冲突(并发提交)——pull --rebase 后重试一次"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+              git push || echo "::warning::重试后仍失败(下轮 run 幂等覆盖同日快照;权威=git)"
+            fi
+          fi
 
       - name: audit_compare --baseline-gate (有上期基线才比对;缺失=响亮跳过)
         id: compare
@@ -549,8 +575,8 @@ jobs:
           exit 0
 
       # 工单随 baseline commit-back(R0-5):verify 的自动核销/partial 明细要跨 run
-      # 持久;artifacts/ 不在 .gitignore,只显式 add 工单文件——baseline/ 快照与
-      # envelope 产物仍走 cache/artifact,不进 git
+      # 持久;artifacts/ 不在 .gitignore,只显式 add 工单文件——baseline/ 快照已由
+      # 上方专用步骤 commit-back,envelope 产物仍只走 artifact,不进 git
       - name: Commit remediation tickets (工单随 baseline commit-back)
         if: env.SKIP_ENVELOPE != 'true' && steps.verify.conclusion == 'success'
         run: |
@@ -565,8 +591,11 @@ jobs:
             echo "工单无变化,不提交"
           else
             git commit -m "chore(envelope): remediation tickets update [skip ci]"
-            git pull --rebase --autostash origin ${GITHUB_REF_NAME:-main} || true
-            git push || echo "::warning::工单 push 失败(下轮 run 会重试;verify 核销幂等可重跑)"
+            if ! git push; then
+              echo "::warning::工单 push 冲突(并发提交)——pull --rebase 后重试一次"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+              git push || echo "::warning::重试后仍失败(下轮 run 会重试;verify 核销幂等可重跑)"
+            fi
           fi
 
       - name: 月度基准 benchmark_report --audits (每月第一次运行时)

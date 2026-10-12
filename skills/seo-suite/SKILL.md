@@ -35,7 +35,7 @@ metadata:
 **审计与页面质量**
 - `field_data.py --url U [--strategy mobile] [--as-cwv-csv out.csv]`:CWV 现场数据真实 API 客户端——PSI(无 key 低配额)现场 p75 vs 实验数据分开呈现+CrUX(需 key)双源;官方阈值判定;--as-cwv-csv 直喂 traffic_funnel 的 good_ux 阶段
 - `doctor.py --wizard [--want cwv,rank,...]`:数据接入向导——逐项列需要的数据源/当前已配否/获取方式/降级路径(配 references/overview/data-onboarding.md)
-- `site_crawl.py --domain example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
+- `site_crawl.py example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
 - `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节;--export-dir 出每规则具名受影响 URL 清单+summary.json+报告受影响面% 列)
 - `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
 - `traffic_funnel.py --audit audit.json --gsc gsc.csv`:六阶段页面流失漏斗(available⊃indexable⊃uniqueness[Simhash+DeepRank]⊃in_serps⊃with_clicks⊃good_ux);无 GSC 自动截断+coverage 声明

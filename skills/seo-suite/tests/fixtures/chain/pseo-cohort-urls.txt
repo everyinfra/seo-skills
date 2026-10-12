@@ -1,0 +1,6 @@
+# cohort 批次:与 batch gate PASS 批同一组 vs 页(链:pattern_mining GO → gate PASS → 发布成 cohort)
+https://chain-fixture.test/vs/acme-vs-hubspot
+https://chain-fixture.test/vs/acme-vs-zoho
+https://chain-fixture.test/vs/salesforce-vs-acme
+https://chain-fixture.test/vs/acme-vs-pipedrive
+https://chain-fixture.test/vs/acme-vs-monday

@@ -18,6 +18,13 @@
     (Otterly 90 天实验参考值)+ retrieval vs training 分层结论
   - --attribution:归因工具箱输出——GA4 custom channel 正则(锚定官方域名)+
     三条纪律注记 + "自报归因"问卷模板两问
+  - --as-panel-import:分析输出之外,追加 citation_panel 导入 JSON(R6 竞品 Ryze
+    一方数据线对齐:GA4/GSC 式真实 AI-referral 流量即可见性证据,比 prompt 采样
+    便宜且真实)——referrer 域→引擎映射(chatgpt.com→chatgpt 等,对齐面板六引擎),
+    每引擎 sessions=请求命中数(未做会话化)、cited_urls=目标路径聚合(按命中数降序)。
+    诚实口径注释:这是下界证据(real)——App 内打开常不带 referrer,真实 AI 引流
+    ≥ 此数;与 prompt 采样(est)分轨,导入面板时标 source:referral,由
+    `citation_panel.py record --from-referral file.json` 消费(两轨分开列,不加权混合)
 
 日志格式:combined(CLF)或每行一个 JSON 对象
   (path/uri/url、status/status_code、user_agent/ua、referer/referrer 等常见键名)。
@@ -25,6 +32,9 @@
 用法:
   cat access.log | python3 ai_referral_log.py
   python3 ai_referral_log.py access.log [--top 20] [--bot-ua] [--classify] [--attribution]
+                                        [--as-panel-import]
+  python3 ai_referral_log.py access.log --as-panel-import > referral.json
+                                        # 重定向整文件给 citation_panel record --from-referral
   python3 ai_referral_log.py --attribution          # 只输出归因工具箱,无需日志
   python3 ai_referral_log.py --self-test
 """
@@ -34,11 +44,26 @@ import re
 import sys
 import traceback
 from collections import Counter
+from datetime import datetime
 
 AI_REFERRER_DOMAINS = ("chatgpt.com", "perplexity.ai", "gemini.google.com",
                        "copilot.microsoft.com", "claude.ai", "grok.com")
 BOT_UAS = ("GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot",
            "Claude-SearchBot", "PerplexityBot")
+
+# ---- R6 referral 桥(referrer 域 → citation_panel 面板引擎,对齐六引擎) ----
+DOMAIN_TO_ENGINE = {
+    "chatgpt.com": "chatgpt",
+    "perplexity.ai": "perplexity",
+    "gemini.google.com": "gemini",
+    "copilot.microsoft.com": "copilot",
+    "claude.ai": "claude",
+    "grok.com": "grok",
+}
+PANEL_IMPORT_MARKER = "-- referral panel import (source=referral; citation_panel record --from-referral) --"
+PANEL_IMPORT_SCOPE = ("下界证据(real): App 内打开常不带 referrer,真实 AI 引流 ≥ 此数;"
+                      "sessions=请求命中数(未做会话化);与 prompt 采样(est)分轨,"
+                      "导入面板标 source:referral,两轨分开列不加权混合")
 
 LOG_RE = re.compile(
     r'^(\S+)\s+\S+\s+\S+\s+\[([^\]]+)\]\s+"([^"]*)"\s+(\d{3})\s+(\S+)'
@@ -174,6 +199,55 @@ def match_ai_domain(host):
     return None
 
 
+# ---- R6 referral 桥:面板导入导出(--as-panel-import) ----
+_CLF_TS_RE = re.compile(r"(\d{1,2})/([A-Za-z]{3})/(\d{4})")
+_ISO_TS_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
+_MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+           "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+
+
+def log_date_of(ts):
+    """日志 ts 串 → YYYY-MM-DD。支持 CLF(09/Oct/2026:10:00:00 +0800)与
+    ISO(2026-10-09T12:06:00Z)两种形态;无法解析 → None。"""
+    if not ts:
+        return None
+    m = _CLF_TS_RE.search(ts)
+    if m:
+        mon = _MONTHS.get(m.group(2).lower())
+        if mon:
+            try:
+                return "%s-%02d-%02d" % (m.group(3), mon, int(m.group(1)))
+            except ValueError:
+                return None
+    m = _ISO_TS_RE.search(ts)
+    if m:
+        return "%s-%s-%s" % m.groups()
+    return None
+
+
+def panel_import_payload(res, fallback_date=None):
+    """分析结果 → citation_panel 导入 payload(source=referral,下界 real 证据)。
+    records 只含命中的 referrer 域;engine 经 DOMAIN_TO_ENGINE 映射;
+    sessions=该域请求命中数(未做会话化的下界);cited_urls=该域目标路径聚合
+    (按命中数降序、同数按字典序)。date=日志内可解析的最新日期(证据自带),
+    无可解析日期时用 fallback_date/今天。诚实口径进 scope 字段——与 prompt
+    采样(est)分轨,由 citation_panel record --from-referral 消费。"""
+    dates = sorted(res.get("log_dates") or ())
+    date = dates[-1] if dates else (fallback_date
+                                    or datetime.now().strftime("%Y-%m-%d"))
+    records = []
+    for dom in AI_REFERRER_DOMAINS:
+        s = res["stats"][dom]
+        if not s["hits"]:
+            continue
+        urls = [p for p, _c in sorted(s["paths"].items(),
+                                      key=lambda kv: (-kv[1], kv[0]))]
+        records.append({"date": date, "engine": DOMAIN_TO_ENGINE[dom],
+                        "sessions": s["hits"], "cited_urls": urls})
+    return {"tool": "ai_referral_log", "source": "referral",
+            "scope": PANEL_IMPORT_SCOPE, "date": date, "records": records}
+
+
 def analyze(lines, with_bots=False):
     stats = {d: {"hits": 0, "paths": Counter()} for d in AI_REFERRER_DOMAINS}
     all_paths = Counter()
@@ -185,6 +259,7 @@ def analyze(lines, with_bots=False):
     bot_rows = {}                      # token → 桶级行(hits/fail/statuses 矩阵)
     llms = {"hits": 0, "bot_hits": 0}  # /llms.txt 请求(总/AI bot)
     ai_bot_total = 0
+    log_dates = set()                    # R6: 可解析的日志日期(面板导入 date 用)
     for line in lines:
         line = (line or "").rstrip("\n")
         if not line.strip():
@@ -194,6 +269,9 @@ def analyze(lines, with_bots=False):
         if rec is None:
             continue
         parsed += 1
+        d = log_date_of(rec["ts"])
+        if d:
+            log_dates.add(d)
         all_paths[rec["path"]] += 1
         host = referrer_host(rec["referer"])
         if not host:
@@ -234,7 +312,7 @@ def analyze(lines, with_bots=False):
             "stats": stats, "all_paths": all_paths, "bots": bots,
             "ai_total": sum(s["hits"] for s in stats.values()),
             "tiers": tiers, "bot_rows": bot_rows, "llms": llms,
-            "ai_bot_total": ai_bot_total,
+            "ai_bot_total": ai_bot_total, "log_dates": log_dates,
             "site_avg_per_page": (parsed / len(all_paths)) if all_paths else 0.0}
 
 
@@ -448,9 +526,31 @@ def _self_test():
     assert "utm_source" in att and "从哪听说我们" in att and "你问了 AI 什么" in att
     rec_j = parse_line('{"path":"/j","status":404,"user_agent":"x","referer":"-"}')
     assert rec_j and rec_j["path"] == "/j" and rec_j["status"] == "404"
+    # R6 referral 桥(Ryze 一方数据线对齐): 面板导入导出(下界 real,与采样 est 分轨)
+    imp = panel_import_payload(res)
+    assert imp["source"] == "referral" and imp["tool"] == "ai_referral_log"
+    assert imp["date"] == "2026-10-09"                    # 从日志 ts 推导(CLF)
+    assert "下界" in imp["scope"] and "(real)" in imp["scope"] and "est" in imp["scope"]
+    got = {r["engine"]: (r["sessions"], r["cited_urls"]) for r in imp["records"]}
+    assert got == {"chatgpt": (1, ["/pricing"]), "perplexity": (1, ["/blog/geo"]),
+                   "gemini": (1, ["/pricing"]), "claude": (1, ["/"])}, got
+    assert set(DOMAIN_TO_ENGINE) == set(AI_REFERRER_DOMAINS)
+    assert set(DOMAIN_TO_ENGINE.values()) == {"chatgpt", "perplexity", "gemini",
+                                              "copilot", "claude", "grok"}
+    assert DOMAIN_TO_ENGINE[match_ai_domain("www.grok.com")] == "grok"
+    assert log_date_of("09/Oct/2026:10:00:00 +0800") == "2026-10-09"
+    assert log_date_of("2026-10-09T12:06:00Z") == "2026-10-09"
+    assert log_date_of("-") is None and log_date_of("garbage") is None \
+        and log_date_of("") is None
+    empty = panel_import_payload({"stats": {d: {"hits": 0, "paths": Counter()}
+                                            for d in AI_REFERRER_DOMAINS},
+                                  "log_dates": set()})
+    assert empty["records"] == [] and empty["source"] == "referral"  # 零命中也诚实导出
+    assert PANEL_IMPORT_MARKER.startswith("-- referral panel import")
     print("[self-test] PASS ai_referral_log(7 行解析,4 域命中,无 referrer=3,"
           "bot UA 先行指标,子域匹配,anti 误匹配;"
-          "B5: 四桶分类/failure 两级/llms.txt 双基线/归因工具箱/JSON 行)")
+          "B5: 四桶分类/failure 两级/llms.txt 双基线/归因工具箱/JSON 行;"
+          "R6: --as-panel-import 导出(域→引擎/下界口径/date 推导))")
 
 
 def read_lines(args_input):
@@ -473,6 +573,11 @@ def main(argv=None):
     ap.add_argument("--attribution", dest="attribution", action="store_true",
                     help="输出 AI 归因工具箱(GA4 custom channel 正则 + 纪律注记 + "
                          "自报归因问卷;无日志也可单独使用)")
+    ap.add_argument("--as-panel-import", dest="as_panel_import", action="store_true",
+                    help="分析输出之外追加 citation_panel 导入 JSON(source=referral,"
+                         "下界 real 证据,与 prompt 采样 est 分轨;referrer 域→引擎映射,"
+                         "sessions=请求命中数,cited_urls=目标路径聚合;由 "
+                         "citation_panel record --from-referral 消费)")
     ap.add_argument("--self-test", action="store_true", help="冒烟自测(不联网)")
     args = ap.parse_args(argv)
     if args.self_test:
@@ -494,6 +599,11 @@ def main(argv=None):
     if args.attribution:
         out += "\n" + "\n".join(render_attribution())
     print(out)
+    if args.as_panel_import:
+        # R6 referral 桥: marker 行之后是纯 JSON——整文件重定向后
+        # `citation_panel record --from-referral file.json` 按 marker 定位切取
+        print(PANEL_IMPORT_MARKER)
+        print(json.dumps(panel_import_payload(res), ensure_ascii=False, indent=2))
     return 0
 
 

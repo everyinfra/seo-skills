@@ -1,0 +1,17 @@
+[
+  {
+    "prompt": "acme pro 多少钱一个月",
+    "engine": "chatgpt",
+    "text": "Acme Pro 定价 €49 每月,性价比很高。"
+  },
+  {
+    "prompt": "acme pro 价格是多少",
+    "engine": "chatgpt",
+    "text": "Acme Pro 定价 $49 每月,与官网一致。"
+  },
+  {
+    "prompt": "acme pro 价格是多少",
+    "engine": "perplexity",
+    "text": "Acme Pro 定价 49元 每月,很便宜。"
+  }
+]

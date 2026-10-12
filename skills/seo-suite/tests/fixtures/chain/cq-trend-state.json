@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-10-12T09:00:00",
+  "sources": {},
+  "seen": {},
+  "signals": {
+    "sig-ai-cite": {
+      "title": "AI 搜索引用新规",
+      "status": "watch",
+      "first_seen": "2026-10-11T08:00:00",
+      "rel_score": 4,
+      "sources": ["news", "reddit"],
+      "deadline": "2026-10-13T08:00:00"
+    },
+    "sig-already-go": {
+      "title": "已过闸走 trend-jack 的热点",
+      "status": "go",
+      "first_seen": "2026-10-10T08:00:00",
+      "rel_score": 5,
+      "sources": ["news"],
+      "deadline": "2026-10-12T08:00:00"
+    },
+    "sig-open": {
+      "title": "尚未机检完的信号",
+      "status": "open",
+      "first_seen": "2026-10-11T10:00:00",
+      "rel_score": 2,
+      "sources": ["reddit"],
+      "deadline": "2026-10-14T10:00:00"
+    }
+  }
+}

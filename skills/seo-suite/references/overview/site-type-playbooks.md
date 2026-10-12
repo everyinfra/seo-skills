@@ -11,6 +11,8 @@
 ①**URL 型谱**——路径段直方图取前 10,对照各卡"识别信号"的型谱;②**schema 类型分布**——JSON-LD 主类型占比;③**页面构成比例**——各面页面量占比。
 **判型纪律**:单一信号不算数,型谱+schema+构成至少两处吻合才判型;**模糊或双信号强(混合站)→列前二站型连同证据让用户确认,不得静默选一**;判型结果写入 project.yaml 的 `site_type` / `site_type_secondary`,混合站主卡按 GSC 流量占比定、副卡只取对应小节。
 
+**开局命令链约定(R1-6)**:各卡末节的「开局命令链」=接单后第一批精确命令,默认在套件根目录运行(`python3 scripts/…`);示例域名/页面路径/GSC 导出与日志文件名均为占位,按实际站点替换。`project.py init` + `project.py run triage`(R1-7,30 分钟首答)可作**任意站型**的前置体检链,各卡不逐条重复,仅①号卡演示完整用法。命令参数以 `--help` 为准;每卡末行给出配套示例(examples/)互引。
+
 ## ① SaaS / 软件营销站
 
 **识别信号**
@@ -65,6 +67,24 @@
 - 集成对 `app1 × app2` 与 `app × 用例` workflow 页。
 - `行业 × 角色` 解决方案矩阵(每格要有该行业真实痛点文案与案例)。
 - 模板库 `/templates/<场景>`(带下载/复制价值,天然外链资产)。
+
+**开局命令链(R1-6)**
+
+```bash
+# 0) 建工作区+30 分钟首答(R1-7;--type 取本卡名,判型后回写 project.yaml)
+python3 scripts/project.py init --site https://example.com --type "SaaS / 软件营销站"
+python3 scripts/project.py run triage
+# 1) URL 型谱判型(vs/alternatives/solutions 占比)+内外链图(孤儿支柱文现形)
+python3 scripts/site_crawl.py example.com --max 1000 --out crawl.json --urls-out urls.txt
+# 2) 比价拦截面重点页审计(vs/alternatives/pricing 各抽样本;--export-dir 出受影响 URL 清单)
+python3 scripts/site_audit.py https://example.com/vs/rival https://example.com/pricing --json --export-dir exports/ > audit.json
+# 3) solution/feature 词-页对位错配+蚕食(GSC Query×Page 矩阵导出)
+python3 scripts/gsc_mining.py matrix.csv --mode matrix --json
+# 4) 集成对 `app×app`/workflow 页与模板库的模式挖掘(30/25/20/15/10 打分)
+python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://example.com/sitemap.xml --json
+```
+
+配套示例:[examples/citation-decision-demo-20261011](../../examples/citation-decision-demo-20261011/REPORT.md)(AI 引用缺口侧,比价/替代词形,合成数据);通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
 
 ## ② 电商(DTC)
 
@@ -121,6 +141,21 @@
 - 兼容性页(`fits <型号>`/`for iPhone 17`)——自带真实需求分布。
 - 材质/尺寸组合页;全部过 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md) 闸门,无需求组合不生成。
 
+**开局命令链(R1-6)**
+
+```bash
+# 1) 判型+facet 泄漏口径(PDP/PLP 型谱;默认保留参数,参数 URL 量=索引泄漏面)
+python3 scripts/site_crawl.py example.com --max 2000 --out crawl.json --urls-out urls.txt
+# 2) PDP/PLP 样本审计:Product/Offer 三必填、变体 canonical、BreadcrumbList
+python3 scripts/site_audit.py https://example.com/p/sample-pdp https://example.com/c/sample-plp --json --export-dir exports/ > audit.json
+python3 scripts/health_score.py --input audit.json --json
+# 3) 品牌×类目/兼容/礼物场景组合的模式挖掘与闸门打分
+python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://example.com/sitemap.xml --json
+```
+
+品类词爬梯(品类页+导购内容包抄)深读锚:[ecommerce-geo-ladder.md](../content/ecommerce-geo-ladder.md)。
+配套示例:暂无电商对位示例;通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
+
 ## ③ 媒体 / 新闻 / 内容站
 
 **识别信号**
@@ -169,6 +204,23 @@
 - 事件 × 地区报道模板页(重大事件的本地化角度)。
 - topic hub 持续聚合旧稿吃实体词与 AI 引用。
 
+**开局命令链(R1-6)**
+
+```bash
+# 1) news sitemap 合规(传具体文件勿传 index;--pub-name 比对站名一致性)
+python3 scripts/news_sitemap_check.py --url https://example.com/news-sitemap.xml --pub-name "Example News" --json
+# 2) 文章样本审计:NewsArticle/时间戳精确到秒/作者实体
+python3 scripts/site_audit.py https://example.com/2026/10/sample-story --json > audit.json
+# 3) 热点监控+四问闸门(--vertical=品类+品牌+竞品,不是 SEO 元领域;signal-id 取 watch 输出)
+python3 scripts/trend_watch.py watch --market en --vertical "品类词 品牌名 竞品A"
+python3 scripts/trend_watch.py gate --signal-id <signal-id> --exclusive data
+# 4) 标题党/薄 tag 页六维内容抽检(页面正文另存 md 再跑)
+python3 scripts/quality_rater.py story.md --market en
+```
+
+Discover/Top Stories 细则锚:[discover-news-seo.md](../content/discover-news-seo.md)。
+配套示例:examples/trend-gate-geo-survey-20261011/(trend_watch watch→gate 全链;含首跑误用 SEO 元领域话题的更正记录)。
+
 ## ④ 本地服务
 
 **识别信号**
@@ -215,6 +267,22 @@
 
 - `服务 × 城市` 页——唯一可行模式但必须过证据闸门:真实案例/本地照片/区域实据,无证据组合不生成(闸门见 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md))。
 - 门店定位器 SSR/SSG 可爬,不留 CSR 黑洞。
+
+**开局命令链(R1-6)**
+
+```bash
+# 1) 整站页量小(常 <100):全量爬取判型(服务页/位置页型谱+NAP 文本)
+python3 scripts/site_crawl.py example.com --same-host --max 100 --out crawl.json --urls-out urls.txt
+# 2) 本地四节体检:NAP 一致性/GBP 抓取/LocalBusiness 精确子类/落地页本地信号(--url 也可传 GBP 页)
+python3 scripts/local_audit.py --url https://example.com --name "Example Plumbing" --addr "123 Main St, Springfield, IL 62701" --phone "2175550123" --json
+# 3) 本地包网格排名三口径同报(ARP/ATRP/SoLV;CSV 列 keyword,grid_point,rank)
+python3 scripts/grid_rank.py rank_data.csv --detail
+# 4) 服务页样本审计(每项服务一页=本地自然排名 #1 因素)
+python3 scripts/site_audit.py https://example.com/services/drain-cleaning --json > audit.json
+```
+
+网格排名公式与工具深读锚:[local-grid-ranking.md](../monitoring/local-grid-ranking.md);GBP 行为量(来电/问路/预约)在 GBP 后台取数,套件外。
+配套示例:暂无本地对位示例;通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
 
 ## ⑤ 文档 / 开发者站
 
@@ -264,6 +332,22 @@
 - `语言 × 功能` SDK 示例页;`集成 × 平台` how-to。
 - changelog 条目独立化吃 `<功能> release` 词。
 
+**开局命令链(R1-6)**
+
+```bash
+# 1) docs 子域全量爬取:版本路径/错误码页覆盖盘点(--same-host 收紧到 docs 本身)
+python3 scripts/site_crawl.py docs.example.com --same-host --max 1000 --out crawl.json --urls-out urls.txt
+# 2) AI 爬虫放行矩阵(封引用型 bot=把 AI 答案位让给竞品文档)
+python3 scripts/robots_posture.py https://docs.example.com/robots.txt --signal visibility --json
+# 3) quickstart 的 CSR 兜底+AI 视图层(dry-run 预览;--apply 才写盘,部署由人完成)
+python3 scripts/ai_views.py --url https://docs.example.com/quickstart --json
+# 4) AI 引荐流量与 AI 爬虫 UA 到访增速(服务器日志;GA4 归因正则另配 --attribution)
+python3 scripts/ai_referral_log.py access.log --classify --bot-ua
+```
+
+放行三态决策锚:[ai-crawler-policy.md](../technical/ai-crawler-policy.md)。
+配套示例:[ai-views-example.com-20261011](../../examples/ai-views-example.com-20261011/REPORT.md)(ai_views 离线重放全链)。
+
 ## ⑥ 工具 / 免费计算器站
 
 **识别信号**
@@ -311,6 +395,21 @@
 - 参数化结果 URL:固定输入的分享链接各成一页(结果数据真实唯一,非样板)。
 - 单位/货币/进制换算矩阵(每页带换算表静态文本)。
 - `行业 × 计算器` 变体页(每页配该行业口径与公式说明)。
+
+**开局命令链(R1-6)**
+
+```bash
+# 1) 判型:工具页/配套文成对结构型谱(/tools/·/calculators/·/converters/)
+python3 scripts/site_crawl.py example.com --max 500 --out crawl.json --urls-out urls.txt
+# 2) 工具页+配套文成对审计(纯 JS 零可索引文本=本型第一死法)
+python3 scripts/site_audit.py https://example.com/calculators/roi https://example.com/blog/roi-formula --json > audit.json
+# 3) 参数化结果 URL(`?input=` 分享页)与换算矩阵的模式挖掘(--urls 走离线覆盖度口径)
+python3 scripts/pseo_pattern_mining.py --gsc queries.csv --urls urls.txt --json
+# 4) 引用域基线(Ahrefs/Semrush/GSC 外链导出统一导入,后续按月比增速)
+python3 scripts/backlink_import.py ahrefs.csv --format auto --out unified-backlinks.csv
+```
+
+配套示例:暂无对位示例;通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
 
 ## ⑦ Marketplace / 平台型
 
@@ -360,6 +459,24 @@
 - 属性长尾:pet-friendly / 24h / open-now / accepts-insurance。
 - best-of 榜单页(真实评分与评价摘要,非软文);比价/询价聚合页。
 
+**开局命令链(R1-6)**
+
+```bash
+# 1) 双侧结构判型+空/薄列表页盘点(/s/ 供给详情+/c/ 类目列表)
+python3 scripts/site_crawl.py example.com --max 2000 --out crawl.json --urls-out urls.txt
+python3 scripts/site_audit.py https://example.com/c/sample-cat https://example.com/s/sample-provider --json > audit.json
+# 2) 六阶段漏斗:空货架在 availability/indexability 层现形(供给先行纪律的量化口径)
+python3 scripts/traffic_funnel.py --audit audit.json --gsc pages.csv --json
+# 3) `城市×类目` 批次上线闸门(数据闸/爆炸预警/唯一度/样板比/页型地板)
+python3 scripts/pseo_batch_gate.py --records city-cat-batch.jsonl --rendered dist/
+# 4) 批次索引率曲线:预注册判读,90 天零展示出 prune 工单
+python3 scripts/pseo_cohort.py init --cohort_id city-cat-v1 --template-version v1 --urls urls.txt
+python3 scripts/pseo_cohort.py ingest --cohort city-cat-v1 --gsc pages.csv
+```
+
+闸门数字锚:[programmatic-seo-gates.md](../technical/programmatic-seo-gates.md)。
+配套示例:暂无对位示例;通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
+
 ## ⑧ YMYL(医疗 / 金融 / 法律)
 
 **识别信号**
@@ -408,6 +525,22 @@
 - `费用 × 地区` 页:`cost of <procedure|case> in <state>`——医疗/法律通用强需求。
 - 法条/资格 × 州页(法律);监管 × 产品页(金融)。
 - 计算器矩阵(贷款 APR/赔偿金/税费/报销)——嫁接⑥号工具站打法;症状自查工具页(结果页必须带就诊指引与免责)。
+
+**开局命令链(R1-6)**
+
+```bash
+# 1) 判型:主题词命中(conditions/practice-areas/费率)+实名作者页型谱
+python3 scripts/site_crawl.py example.com --max 500 --out crawl.json --urls-out urls.txt
+# 2) CORE-EEAT 机械化(GEO/SEO 双分+veto 封顶;合规四项[署名/来源/引用/披露]起查)
+python3 scripts/core_eeat.py --url https://example.com/conditions/sample
+# 3) 信任信号四类:证言/社会证明/风险反转/权威(方法论页 how-we-review 一起查)
+python3 scripts/trust_signals.py https://example.com/how-we-review
+# 4) 六维内容评分:证据行核验/复核新鲜度(页面正文另存 md 再跑)
+python3 scripts/quality_rater.py condition-page.md --market en --keyword "<条件|业务主题词>"
+```
+
+AI 引用份额口径锚:[ai-citation-patterns.md](../content/ai-citation-patterns.md)。
+配套示例:暂无 YMYL 对位示例;AI 引用份额的面板采样形态(通用)见 [citation-panel-demo-20261010](../../examples/citation-panel-demo-20261010/REPORT.md)(合成数据)。
 
 ## ⑨ 招聘 / Job 站(⑦的垂直变体:供给=职位,2026-10-12 增补)
 
@@ -460,6 +593,24 @@
 - `<职称> jobs in <城市>`·`remote <职称>` 矩阵——每格在招库存 ≥ 阈值才生成(过 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md) 闸门)。
 - 薪资库 `<职称> salary`(数据可溯,常青资产)。
 - `职称 × 级别|年限` 变体页;雇佣指南 how to hire `<role>` 吃雇主簇。
+
+**开局命令链(R1-6)**
+
+```bash
+# 1) 判型:职位/公司/薪资页型谱+过期职位堆积面(高 churn 详情页)
+python3 scripts/site_crawl.py example.com --max 2000 --out crawl.json --urls-out urls.txt
+python3 scripts/site_audit.py https://example.com/job/sample-job --json > audit.json
+# 2) 新职位收录通知:key 生成+批量提交(IndexNow 覆盖 Bing/Yandex/Naver;Google 侧官方 Indexing API 在套件外,勿混称)
+python3 scripts/indexnow.py key --out .
+python3 scripts/indexnow.py submit --host example.com --key <KEY> --urls new-jobs.txt
+# 3) 过期职位退役三查(入链/外链/排名词)→ NO-GO/prune(410)/merge(301)/watch
+python3 scripts/prune_gate.py --urls expired-jobs.txt --gsc queries.csv --crawl crawl.json
+# 4) `<职称> jobs in <城市>` 批次闸门(每格在招库存 ≥ 阈值才生成)
+python3 scripts/pseo_batch_gate.py --records jobs-batch.jsonl
+```
+
+闸门锚:[programmatic-seo-gates.md](../technical/programmatic-seo-gates.md);JobPosting 字段与下线三选一见本卡 Schema 节。
+配套示例:暂无对位示例;通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
 
 ## ⑩ 房产 / Real Estate(⑦的垂直变体:供给=房源,2026-10-12 增补)
 
@@ -514,6 +665,23 @@
 - `<城市> × <房型|价位>` 房源组合页——每格在售库存 ≥ 阈值才生成(过 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md) 闸门)。
 - `<城市> housing market` 年更数据页——外链磁铁(同③ State of X 范式)。
 - 估值/月供计算器(⑥嫁接);学区·通勤 facet 页(带真实数据字段,非样板)。
+
+**开局命令链(R1-6)**
+
+```bash
+# 1) 判型:房源/社区/经纪两层结构+失效房源堆积面(易失效详情+常青地方页)
+python3 scripts/site_crawl.py example.com --max 2000 --out crawl.json --urls-out urls.txt
+python3 scripts/site_audit.py https://example.com/property/123 https://example.com/atlanta-real-estate --json > audit.json
+# 2) 失效房源退役(已售/下架仍 200 的页 → 404/摘除决策闸;清理时延=本型 KPI)
+python3 scripts/prune_gate.py --urls sold-listings.txt --gsc queries.csv --crawl crawl.json
+# 3) 经纪页信任面:LocalBusiness/NAP 四节体检
+python3 scripts/local_audit.py --url https://example.com/agent/jane-doe --name "Jane Doe" --addr "456 Oak St, Atlanta, GA 30309" --json
+# 4) `<城市>×<房型|价位>` 组合矩阵与 housing market 年更页机会
+python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://example.com/sitemap.xml --json
+```
+
+闸门锚:[programmatic-seo-gates.md](../technical/programmatic-seo-gates.md);Fair Housing 禁词红线见本卡上文(组合字段定向人群直接禁)。
+配套示例:暂无对位示例;通用体检链交付物形态见 [site-audit-chain-example.com-20261010](../../examples/site-audit-chain-example.com-20261010/REPORT.md)。
 
 ## 来源
 

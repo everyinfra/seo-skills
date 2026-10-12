@@ -28,8 +28,14 @@
           [--persona-fanout "core query" --personas CMO,Founder]
           [--panel PATH] [--force]
   record  --engine chatgpt --file run.csv [--run-id ID] [--date ISO] [--panel PATH]
+  record  --from-referral referral.json [--panel PATH]
+          # R6 竞品 Ryze 一方数据线对齐: 吃 ai_referral_log --as-panel-import 导出
+          #   (纯 JSON / 整 stdout 重定向均可,按 marker 行切取)→ 建 source=referral
+          #   run(engine 对齐面板六引擎,未知引擎/域→other+警告);referral 轨与采样轨
+          #   在 report 分开列,不加权混合(证据分级: referral=下界 real,采样=est)
   report  [--engine E] [--panel PATH]      # 含指标族节: SoV/win_rate/citation_rate/
                                            #   brand_visibility vs source_visibility(Peec 官方公式)
+                                           #   + referral 流量轨(有 source=referral run 时)
   diff    RUN1 RUN2 [--panel PATH]         # RUN 为 run 文件路径或面板内 run_id
                                            # 新增 signals 节(Scrunch 口径): |Δ|≥5pp 且配对 n≥10
                                            #   才报;fingerprint=sha1(metric+engine+topic)[:10];
@@ -70,6 +76,18 @@ v4(借鉴 niubigeo,出处逐条标注 references/research/niubigeo-deep-read.md 
                 版本);diff 增配对门: 只对同 prompt×engine 且同指纹的配对算 Δ,
                 未配对单列不入 Δ;跨引擎/跨指纹强制标注"不可比"。
 
+R6 referral 桥(竞品 Ryze 一方数据线对齐: GA4/GSC 式真实 AI-referral 流量
+  即可见性证据,比 prompt 采样便宜且真实;规格 pipeline-completeness.md R6 竞品节):
+  导出侧  ai_referral_log.py --as-panel-import(referrer 域→引擎映射 chatgpt.com→
+          chatgpt 等、sessions=请求命中数、cited_urls=目标路径聚合,scope 标注
+          下界 real 与采样 est 分轨)
+  导入侧  record --from-referral FILE → 每引擎一条 source="referral" run
+          (results 恒空——referral 轨不伪造 prompt cell);engine 对齐面板六引擎,
+          未知引擎/域映射 other 并警告;采样 run 显式标 source="sampling"
+  兼容    旧面板 run 无 source 字段 → 视为采样 run,一切旧口径不变;
+          compute_stats 排除 referral run(coverage/share/stability/decay 只算采样);
+          report 的 referral 轨与采样轨分开列,不加权混合(证据分级纪律)
+
 run.csv 列: prompt, mentioned, cited, cited_urls[, state][, rank]
   mentioned/cited ∈ {0,1};cited_urls 分号分隔;state 可显式给 failed/no_answer
   或三态之一覆盖,否则由 mentioned/cited 推导;cited=1 蕴含 mentioned=1;
@@ -86,6 +104,8 @@ prompts 对象化: panel.prompts 支持对象 {text, topic, tags[], stage, brand
   python3 citation_panel.py init --brand Acme --prompts-file templates/research/prompt-bank.md \
       --stage-mix --persona-fanout "best CRM" --personas CMO,Founder --competitors hub.com
   python3 citation_panel.py record --engine chatgpt --file run1.csv
+  python3 ai_referral_log.py access.log --as-panel-import > referral.json
+  python3 citation_panel.py record --from-referral referral.json   # 一方 referral 轨(R6)
   python3 citation_panel.py report
   python3 citation_panel.py diff runs/r1.json runs/r2.json
   python3 citation_panel.py decay --engine chatgpt [--json]
@@ -108,6 +128,17 @@ from datetime import datetime, timedelta
 DEFAULT_ENGINES = ["chatgpt", "perplexity", "gemini", "copilot", "claude", "grok"]
 STATES = ("no_answer", "failed", "brand_absent", "name_only_mention", "cited_brand")
 Z = 1.96
+
+# ---------- R6 referral 桥(竞品 Ryze 一方数据线对齐: AI-referral 流量即可见性证据) ----------
+# 面板 run 增加 source 字段: "referral"=一方 referral 日志导入(下界 real 证据),
+# "sampling"=prompt 采样(est);旧 run 无 source → 视为 sampling(向后兼容)。
+# 证据分级纪律: referral 轨与采样轨分开列、不加权混合(与 triangulate
+# "永不跨源求和"同路数);referral run 不伪造 prompt cell(results 恒空)。
+REFERRAL_SOURCE = "referral"
+SAMPLING_SOURCE = "sampling"
+REFERRAL_MARKER_HINT = "referral panel import"   # ai_referral_log --as-panel-import 标记行关键词
+REFERRAL_SCOPE_NOTE = ("下界(real): App 内打开常不带 referrer,真实引流 ≥ 此数;"
+                       "sessions=请求命中数(未做会话化)")
 
 # ---------- v2 扩展常数(出处见各节注释) ----------
 # prompts 对象化(references/research/borrow-specs.md B3;+ v4 N5 意图档案字段)
@@ -581,7 +612,149 @@ def read_run_csv(path, panel, explicit=None):
     return results, warnings
 
 
+# ---------- R6 referral 桥导入: record --from-referral(一方 AI-referral 日志) ----------
+
+def _slice_marker_json(raw):
+    """混合输出(文本报告 + marker 行 + JSON)→ marker 行之后的 JSON 文本。
+    ai_referral_log --as-panel-import 的整 stdout 重定向文件按 marker 定位切取;
+    无 marker → None(调用方回退整文件直解)。"""
+    lines = raw.splitlines()
+    for i, ln in enumerate(lines):
+        if REFERRAL_MARKER_HINT in ln:
+            for j in range(i + 1, len(lines)):
+                s = lines[j].lstrip()
+                if s.startswith("{") or s.startswith("["):
+                    return "\n".join(lines[j:])
+            return ""                      # 有 marker 无 JSON 体(调用方报解析错)
+    return None
+
+
+def load_referral_import(path):
+    """--from-referral FILE → (records, warnings)。
+    吃 ai_referral_log --as-panel-import 的三种形态: ① 整 stdout 重定向(文本
+    报告 + marker 行 + JSON,按 marker 切取);② 纯 wrapper
+    {"source":"referral","records":[…]} 或裸 records 列表;③ 单条记录对象。
+    每条 {date, engine, sessions, cited_urls};无效条目跳过并计 warning,
+    一条有效条目都没有 → ValueError(整文件拒绝,不落盘)。"""
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            raw = f.read()
+    except OSError as e:
+        raise ValueError("无法读取 --from-referral %s: %s" % (path, e))
+    if not raw.strip():
+        raise ValueError("--from-referral %s 为空文件" % path)
+    body = _slice_marker_json(raw)
+    if body is None:
+        body = raw
+    data = None
+    try:
+        data = json.loads(body)
+    except ValueError:
+        try:
+            data = json.loads(raw)         # 无 marker 纯文件兜底再试一次
+        except ValueError as e:
+            raise ValueError("--from-referral JSON 解析失败(需 ai_referral_log "
+                             "--as-panel-import 输出,或 {date,engine,sessions,"
+                             "cited_urls} 记录列表): %s" % e)
+    if isinstance(data, dict) and isinstance(data.get("records"), list):
+        items = data["records"]
+    elif isinstance(data, list):
+        items = data
+    elif isinstance(data, dict) and "engine" in data:
+        items = [data]
+    else:
+        raise ValueError("--from-referral 需 records 列表(wrapper/裸列表)或单条 "
+                         "{date,engine,sessions,cited_urls} 对象")
+    records, warnings = [], []
+    for i, it in enumerate(items):
+        if not isinstance(it, dict):
+            warnings.append("referral 记录 %d 非对象,已跳过: %r" % (i + 1, it))
+            continue
+        eng = str(it.get("engine") or "").strip().lower()
+        sess = it.get("sessions")
+        if not eng or isinstance(sess, bool) or not isinstance(sess, (int, float)) \
+                or sess < 0:
+            warnings.append("referral 记录 %d 缺 engine/sessions 或 sessions 非负数,"
+                            "已跳过: %r" % (i + 1, it))
+            continue
+        urls = it.get("cited_urls") or []
+        if not isinstance(urls, list):
+            warnings.append("referral 记录 %d cited_urls 非列表,按空处理: %r"
+                            % (i + 1, it))
+            urls = []
+        records.append({
+            "date": str(it.get("date") or datetime.now().isoformat(timespec="seconds")),
+            "engine": eng,
+            "sessions": (int(sess) if float(sess).is_integer() else float(sess)),
+            "cited_urls": [str(u) for u in urls]})
+    if not records:
+        raise ValueError("--from-referral 无有效记录(警告 %d 条): %s"
+                         % (len(warnings), "; ".join(warnings[:3]) or "(空 records)"))
+    return records, warnings
+
+
+def cmd_record_referral(args):
+    """record --from-referral(R6 Ryze 一方数据线对齐): 一方 AI-referral 日志 →
+    source=referral run。每引擎记录一条 run,results 恒空(referral 轨不伪造
+    prompt cell);engine 对齐面板六引擎,未知引擎/域映射 other 并警告;
+    panel.json 与 runs/<id>.json 双写(与采样 record 同纪律,原子写)。"""
+    try:
+        records, warnings = load_referral_import(args.from_referral)
+    except ValueError as e:
+        print("错误: %s" % e, file=sys.stderr)
+        return 1
+    panel = load_panel(args.panel)
+    existing = {r.get("run_id") for r in panel.get("runs", [])}
+    known_engines = set(DEFAULT_ENGINES) | set(panel.get("engines") or [])
+    created = []
+    for rec in records:
+        eng = rec["engine"]
+        if eng not in known_engines:       # 未知引擎/域 → other + 警告(六引擎对齐)
+            warnings.append("未知引擎/域 %r → 映射 other(referral 轨;面板六引擎: %s)"
+                            % (rec["engine"], ",".join(DEFAULT_ENGINES)))
+            eng = "other"
+        if eng not in panel["engines"]:
+            panel["engines"].append(eng)
+        run_id = "referral-%s-%s" % (eng, re.sub(r"[^\w.-]+", "-", rec["date"]))
+        base, n = run_id, 2
+        while run_id in existing:
+            run_id = "%s-%d" % (base, n)
+            n += 1
+        existing.add(run_id)
+        run = {"run_id": run_id, "engine": eng, "date": rec["date"],
+               "brand": panel["brand"], "source": REFERRAL_SOURCE, "results": {},
+               "referral": {"sessions": rec["sessions"],
+                            "cited_urls": rec["cited_urls"],
+                            "scope": REFERRAL_SCOPE_NOTE}}
+        panel["runs"].append(run)
+        created.append(run)
+    save_panel(args.panel, panel)
+    rdir = runs_dir_for(args.panel)
+    os.makedirs(rdir, exist_ok=True)
+    for run in created:
+        atomic_write_json(os.path.join(rdir, run["run_id"] + ".json"), run)
+    print("已导入 referral runs: %d 条(engine 记录 %d,Σsessions=%d;"
+          "source=referral,下界 real 证据)→ %s"
+          % (len(created), len(records),
+             sum(r["referral"]["sessions"] for r in created), args.panel))
+    for run in created:
+        print("  run %s engine=%s date=%s sessions=%s cited_urls=%d"
+              % (run["run_id"], run["engine"], run["date"],
+                 run["referral"]["sessions"], len(run["referral"]["cited_urls"])))
+    for w in warnings:
+        print("  [!] %s" % w)
+    print("  [i] report 中 referral 轨与采样轨分开列,不加权混合(证据分级纪律;"
+          "referral=下界 real,采样=est)")
+    return 0
+
+
 def cmd_record(args):
+    if getattr(args, "from_referral", None):
+        return cmd_record_referral(args)     # R6: 一方 referral 轨导入
+    if not (args.engine and args.file):
+        print("错误: record 需要 --engine+--file(采样 run)或 "
+              "--from-referral referral.json(一方 referral 轨)", file=sys.stderr)
+        return 1
     panel = load_panel(args.panel)
     if args.engine not in panel["engines"]:
         panel["engines"].append(args.engine)
@@ -639,7 +812,8 @@ def cmd_record(args):
         run_id = "%s-%d" % (base, n)
         n += 1
     run = {"run_id": run_id, "engine": args.engine, "date": date,
-           "brand": panel["brand"], "results": results}
+           "brand": panel["brand"], "results": results,
+           "source": SAMPLING_SOURCE}   # R6: 采样轨显式标注(旧 run 无 source 视为采样)
     # v4(niubigeo-deep-read.md N6/N5)run 时点快照: 探针指纹 + 分母冻结 hash
     run["fingerprint"] = run_fingerprint(run)
     run["denominator_freeze_hash"] = denominator_freeze(panel)["freeze_hash"]
@@ -681,7 +855,11 @@ def wilson_ci(k, n):
 
 
 def compute_stats(panel, engine=None, _per_engine=True, brand_override=None):
-    runs = [r for r in panel.get("runs", []) if not engine or r["engine"] == engine]
+    # R6 referral 桥: referral run 不入采样指标(coverage/share/stability 只算采样轨,
+    # 两轨分开列不加权混合);旧 run 无 source 字段 → 视为采样,行为不变
+    runs = [r for r in panel.get("runs", [])
+            if r.get("source") != REFERRAL_SOURCE
+            and (not engine or r["engine"] == engine)]
     state_counts = Counter()
     cells = mentioned_sum = brand_hits = domain_total = 0
     co_cited = Counter()
@@ -834,15 +1012,69 @@ def _pct(x):
     return "N/A" if x is None else "%.1f%%" % (100 * x)
 
 
+def referral_summary(panel, engine=None):
+    """source=referral runs → {engine: {runs, sessions, urls: Counter, dates: set}}。
+    report referral 轨数据源——与采样轨分开聚合,不加权混合(证据分级纪律)。"""
+    agg = {}
+    for run in panel.get("runs", []):
+        if run.get("source") != REFERRAL_SOURCE:
+            continue
+        if engine and run.get("engine") != engine:
+            continue
+        ref = run.get("referral") or {}
+        a = agg.setdefault(run.get("engine") or "other",
+                           {"runs": 0, "sessions": 0, "urls": Counter(),
+                            "dates": set()})
+        a["runs"] += 1
+        sess = ref.get("sessions") or 0
+        a["sessions"] += (sess if isinstance(sess, (int, float)) else 0)
+        for u in ref.get("cited_urls") or []:
+            a["urls"][str(u)] += 1
+        d = str(run.get("date") or "")[:10]
+        if d:
+            a["dates"].add(d)
+    return agg
+
+
+def render_referral_section(panel, engine=None):
+    """report 的 referral 轨节;无 source=referral run 时返回 [](旧面板整节不出现,
+    向后兼容)。下界 real 证据,与采样轨分开列——不加权混合。"""
+    agg = referral_summary(panel, engine)
+    if not agg:
+        return []
+    L = ["-- referral 流量轨(source=referral;一方日志下界 real 证据,"
+         "与采样轨分开列,不加权混合)--"]
+    for eng in sorted(agg):
+        a = agg[eng]
+        top = " ".join("%s(%d)" % (u, c) for u, c in a["urls"].most_common(3))
+        L.append("  %-12s runs=%-3d sessions=%-6d cited_urls=%-3d  top: %s"
+                 % (eng, a["runs"], a["sessions"], len(a["urls"]), top or "-"))
+    L.append("  [i] referral=下界(real): App 内打开常不带 referrer,真实引流 ≥ 此数;"
+             "sessions 为请求命中数(未做会话化)")
+    L.append("  [i] 采样轨 = prompt 采样(est);两轨证据分级,分开读取,永不合并或求和")
+    return L
+
+
 def render_report(panel, stats, engine=None):
     L = []
     L.append("== AI 可见性面板报告: %s ==" % panel["brand"])
     L.append("prompts=%d runs=%d cells=%d engines=%s"
              % (len(panel["prompts"]), stats["runs"], stats["cells"],
                 ",".join(panel["engines"])))
-    if stats["runs"] == 0:
+    ref_sec = render_referral_section(panel, engine)   # R6: referral 轨(有才出现)
+    if stats["runs"] == 0 and not ref_sec:
         L.append("尚无运行记录。先用 record 录入采样。")
         return "\n".join(L)
+    if ref_sec:
+        L.extend(ref_sec)
+    if stats["runs"] == 0:                 # 只有 referral run: 采样轨缺,不崩不混
+        L.append("-- 采样轨(prompt 采样,est): 无 runs --")
+        L.append("  [i] 尚无采样 run;先用 record --engine --file 录入采样"
+                 "(referral run 不充当采样证据)")
+        return "\n".join(L)
+    if ref_sec:                            # 双轨并存时给采样轨显式标签
+        L.append("-- 采样轨(prompt 采样,est;以下指标只算采样 cell,"
+                 "不含 referral runs)--")
     sc = stats["state_counts"]
     L.append("-- 五状态分类 --")
     notes = {"failed": "  ← 采集失败≠内容缺口,不入分母",
@@ -2414,9 +2646,15 @@ def build_parser():
     p.add_argument("--panel", default="panel.json")
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_init)
-    p = sub.add_parser("record", help="记录一次采样运行")
-    p.add_argument("--engine", required=True)
-    p.add_argument("--file", required=True, help="run.csv(prompt,mentioned,cited,cited_urls[,state][,rank])")
+    p = sub.add_parser("record",
+                       help="记录一次采样运行(或 --from-referral 导入一方 referral 轨)")
+    p.add_argument("--engine", default="",
+                   help="AI 引擎(如 chatgpt;采样 run 必填,--from-referral 时不需要)")
+    p.add_argument("--file", default="", help="run.csv(prompt,mentioned,cited,cited_urls[,state][,rank])")
+    p.add_argument("--from-referral", dest="from_referral", default="",
+                   help="R6 Ryze 对齐: ai_referral_log --as-panel-import 导出 JSON → "
+                        "source=referral run(engine 对齐六引擎,未知域→other+警告;"
+                        "与采样轨分开列不加权混合;整 stdout 重定向文件按 marker 切取)")
     p.add_argument("--answer-file", default="",
                    help="纯文本回答文件(CSV: prompt,answer 列;或 JSON {prompt: 回答});"
                         "URL 掩码提及检测自动填 mentioned/rank,人工显式列优先"
@@ -2689,11 +2927,58 @@ def _self_test():
     assert tslices["branded_or_direct"]["mention_rate"]["value"] == 1.0
     assert tslices["organic_unbranded"]["mention_rate"]["value"] == 0.0
     assert st4["frozen"]["mention_rate"]["value"] == 0.5   # 全 eligible → =coverage
+
+    # ---- R6 referral 桥(详细用例见 tests/test_referral_bridge.py) ----
+    ref_json = os.path.join(tmp, "referral.json")
+    with open(ref_json, "w", encoding="utf-8") as f:
+        json.dump({"tool": "ai_referral_log", "source": "referral",
+                   "scope": "下界证据(real)", "date": "2026-10-09",
+                   "records": [
+                       {"date": "2026-10-09", "engine": "chatgpt", "sessions": 4,
+                        "cited_urls": ["/pricing", "/blog/geo"]},
+                       {"date": "2026-10-09", "engine": "duck.ai", "sessions": 2,
+                        "cited_urls": []}]}, f, ensure_ascii=False)
+    assert cmd_record(build_parser().parse_args(
+        ["record", "--from-referral", ref_json, "--panel", panel_path])) == 0
+    panel = load_panel(panel_path)
+    assert len(panel["runs"]) == 5                        # 3 采样 + 2 referral
+    ref_runs = [r for r in panel["runs"] if r.get("source") == REFERRAL_SOURCE]
+    samp_runs = [r for r in panel["runs"] if r.get("source") != REFERRAL_SOURCE]
+    assert len(ref_runs) == 2 and all(r["results"] == {} for r in ref_runs)
+    assert all(r.get("source") == SAMPLING_SOURCE for r in samp_runs)  # 新采样 run 显式标注
+    assert {r["engine"] for r in ref_runs} == {"chatgpt", "other"}     # duck.ai → other
+    stats_r = compute_stats(panel)                        # referral run 不入采样指标
+    assert stats_r["runs"] == 3 and stats_r["cells"] == 9
+    assert stats_r["coverage"] == stats["coverage"] and stats_r["share"] == stats["share"]
+    rep = render_report(panel, stats_r)
+    assert "referral 流量轨" in rep and "source=referral" in rep and "不加权混合" in rep
+    assert "采样轨" in rep and "下界(real)" in rep and "sessions=4" in rep
+    # 混合输出(marker 行 + JSON)同样可导入;旧面板(无 source)视为采样轨
+    mixed = os.path.join(tmp, "mixed.txt")
+    with open(mixed, "w", encoding="utf-8") as f:
+        f.write("== AI 引用流量日志分析 ==\n文本行\n-- referral panel import "
+                "(source=referral; citation_panel record --from-referral) --\n"
+                '{"source": "referral", "records": [{"date": "2026-10-10", '
+                '"engine": "perplexity", "sessions": 3, "cited_urls": ["/x"]}]}')
+    recs, _w = load_referral_import(mixed)
+    assert recs == [{"date": "2026-10-10", "engine": "perplexity",
+                     "sessions": 3, "cited_urls": ["/x"]}]
+    legacy = {"brand": "Acme", "domain": "acme.ai", "aliases": [], "prompts": ["p1"],
+              "engines": ["chatgpt"],
+              "runs": [{"run_id": "old-1", "engine": "chatgpt", "date": "2026-10-01",
+                        "brand": "Acme",
+                        "results": {"p1": {"state": "cited_brand", "mentioned": 1,
+                                           "cited": 1,
+                                           "cited_urls": ["https://acme.ai/a"]}}}]}
+    lst = compute_stats(legacy)
+    assert lst["runs"] == 1 and lst["cells"] == 1 and lst["coverage"] == 1.0
+    assert render_referral_section(legacy) == []          # 旧面板无 referral 轨节
     print("[self-test] PASS citation_panel(9 cells, coverage=62.5%, share=60.0%, "
           "wilson unstable 案例, 配对 diff, cited/mentioned 纠正; "
           "v2: prompts 对象化/signals/decay 半衰/指标族; "
           "v3: geo 写回/硬 cap 机检/top_pick 佐证降级/反通胀聚合; "
-          "v4: niubigeo N1 掩码提及检测/N2 targeting 切片/N5 冻结分母/N6 配对差分门)")
+          "v4: niubigeo N1 掩码提及检测/N2 targeting 切片/N5 冻结分母/N6 配对差分门; "
+          "R6: referral 桥(--from-referral 导入/双轨分开列/旧面板兼容))")
 
 
 def main(argv=None):

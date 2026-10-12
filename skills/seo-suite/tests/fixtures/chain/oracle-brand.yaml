@@ -1,0 +1,22 @@
+# 回归钉死 fixture:oracle_check 币种冲突($49 vs €49 应判冲突,R5 修复)
+# 口径:货币按币种(ISO)分桶,数值与币种都相同才判一致。
+brand: Acme
+facts:
+  - fact: Acme Pro 定价 $49/月
+    record: offerings
+    source: https://acme-corp.test/pricing
+    date: 2026-09-01
+    confidence: high
+    keywords: [acme, pro, 定价]
+  - fact: Acme 成立于 2018 年
+    record: company
+    source: https://acme-corp.test/about
+    date: 2026-09-01
+    confidence: high
+    keywords: [acme, 成立]
+  - fact: Acme 支持 SSO 单点登录
+    record: offerings
+    source: https://acme-corp.test/docs/sso
+    date: 2026-09-01
+    confidence: med
+    keywords: [acme, sso]
