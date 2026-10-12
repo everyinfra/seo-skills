@@ -25,9 +25,17 @@ metadata:
 - 站点 / 域名 / 页面 URL
 - 站点类型（SaaS、电商、内容站、文档站、本地业务等）
 - 目标（流量、排名、CTR、转化、AI 引用、监控）
-- 当前已知问题 / 近期变更 / 可用数据源
+- 当前已知问题 / 近期变更
 
-详细清单(含逐市场闸门)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md)。
+**数据接入三问(拿到新站必问,不等用户提)**:
+1. 你已有哪些数据源?(GSC/GA4/Bing WMT 账号/Ahrefs 等付费订阅/服务器日志——逐项问)
+2. 愿意配哪些免费 key?(Google PSI/CrUX 五分钟、Bing WMT 免费——按用户想做的分析用 `doctor.py --wizard --want X` 逐项给出需要什么/怎么配)
+3. 都没有?→ **明确告知降级口径**:"按零凭证模式执行,报告将声明数据覆盖范围(排名/流量结论基于抓取样而非你的一方数据)";绝不因缺数据拒跑,也绝不让用户误以为结论来自完整数据。
+
+详细清单(含逐市场闸门与资源四问)见 [references/overview/intake-checklists.md](references/overview/intake-checklists.md);数据源矩阵与 T0-T4 阶梯见 [数据接入指南](references/overview/data-onboarding.md)。
+
+**新站开局协议(用户给出新域名的默认动作序列)**:
+intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want seo-audit,rank,backlinks,cwv`(探测已配源)→ `project.py init <域名>` + `project.py run triage`(全站发现→体检→优先级→封套→"站型+该做三件事")→ 按 [strategy-fit](references/overview/strategy-fit.md) 与对应站型卡的开局命令链推进 → CRITICAL 未清零前不做内容量产(原则 0)。
 
 ### 3. 可执行层(85 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
