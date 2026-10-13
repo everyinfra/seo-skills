@@ -192,6 +192,9 @@
 | Keys.so | 竞品语义核/链接反查 | 与 Топвизор 互补 |
 | Yandex Metrica Вебвизор | 免费会话回放+点击图/滚动图/表单图 | 三图=ПФ 优化闭环,本区独有粒度 |
 | Yandex Webmaster | ИКС+«Видимость в Алиса AI» SoV+索引诊断 | 就绪闸门:必须已验证 |
+
+> [待核 2026-10-13] Yandex Webmaster new-features 页已更新(intel_check 检出;新条目为 JS 渲染未提取到)——引用该页功能清单前人工核对新特性。
+
 | Wordstat(MCP→Yandex Cloud) | 语义核(算子+lr 区域码) | 401/403/429 三态分诊 |
 | TGStat | Telegram 频道统计/目录/监测 | 镜像 SEO 配套 |
 | Букварикс/arsenkin 类 | 俄语语义扩展与快检 | 从业者圈常用 |

@@ -98,7 +98,7 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 - 平台侧重与统计：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
 - 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional、SoV）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest、lizck.com 定点综述（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）；Naver 官方博客 224296857688 与 help.naver.com/service/30056（AI Briefing 标准与메이트）；Peec AI（ChatGPT 5.6 格式）；Machine Relations（AIO/AI Mode）；微信公开课 PRO 2023、卢松松博客（Peoplerank）、极搜AI（元宝）、CSDN 2026-07 横评与 [geo-book](https://github.com/JingHao-Leon/geo-book)（豆包/知乎修正，一手）
 
-> [待核 2026-10-11] StatCounter 图表页已更新(intel_check 检出稳定变更;数值 JS 渲染,HTML 不可提取)——引用本页份额数字前先人工核对最新榜值;引用时沿用已标注测量期的数字。
+> [待核 2026-10-13] StatCounter 图表页再次更新(intel_check 检出稳定变更;数值 JS 渲染,HTML 不可提取)——引用本页份额数字前先人工核对最新榜值;引用时沿用已标注测量期的数字。
 
 ## 测量定义层(elmo/seo-monster/indranilbanerjee,百仓扫描批 3-4)
 

@@ -27,3 +27,5 @@ node_modules/
 skills/seo-suite/.intel-state.json
 # research clones (never commit)
 claude-seo/
+.trend-state.json
+briefs/
