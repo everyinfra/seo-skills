@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-12T07:19:47.723713+00:00",
+ "checked_at": "2026-10-13T07:41:03.857490+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -54,8 +54,8 @@
    "ts": "2026-10-11T08:34:48.324403+00:00"
   },
   "openai-bots": {
-   "hash": "2a7bc38dc0934e259cdd6a9a8154d83e",
-   "ts": "2026-10-12T07:19:18.113209+00:00"
+   "hash": "d56b62f37123f63ea794c7ee1e1d9996",
+   "ts": "2026-10-13T07:40:48.395406+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -79,15 +79,16 @@
   },
   "schema-org": {
    "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-10-11T08:34:50.366806+00:00"
+   "ts": "2026-10-13T07:40:49.522420+00:00",
+   "unstable_streak": 2
   },
   "crux": {
    "hash": "89f0ace9928add52acf9b0c2869226f9",
    "ts": "2026-10-11T08:34:50.992421+00:00"
   },
   "yandex-wm": {
-   "hash": "0fbbfe3721c2c2ce443fd9752036f62b",
-   "ts": "2026-10-11T08:34:53.315998+00:00"
+   "hash": "a8408f5a755267378f4e9d003e9993fb",
+   "ts": "2026-10-13T07:40:53.060664+00:00"
   },
   "naver-wm": {
    "hash": "de2bbe5b92a535632b305ccc49db7c58",
@@ -98,28 +99,33 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "0578c0dc8074b306d6d42f258c3c90cf",
-   "ts": "2026-10-12T07:19:42.507375+00:00"
+   "hash": "52d064a0f834245320202bc8d6e97690",
+   "ts": "2026-10-13T07:41:01.209528+00:00"
   },
   "statcounter-ai": {
-   "hash": "a428e11f9bf2e8205d4bb5e2650970dc",
-   "ts": "2026-10-12T07:19:43.558178+00:00"
+   "hash": "c3b2d91f3261af246c35c0020c2a58c5",
+   "ts": "2026-10-13T07:41:01.977843+00:00"
   },
   "semrush-sensor": {
-   "hash": "6a6ceca50dde04f4be823f786c370c65",
-   "ts": "2026-10-11T08:35:10.713127+00:00"
+   "hash": "225cbc8fe7dd85a0f4ca57b5da801195",
+   "ts": "2026-10-13T07:41:02.714338+00:00"
   },
   "seroundtable": {
-   "top": "Google Search Console Performance Report Extremely Delayed",
+   "top": "The Industry Mourns The Loss Of Nick Wilsdon - Loved By Industry",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
     "Google Ads Enables Text Customization Asset Previews",
     "Bing Testing Local Pack Without Borders",
     "Google Updates Reader Revenue Manager Home Page",
-    "Google Search Console Performance Report Extremely Delayed"
+    "Google Search Console Performance Report Extremely Delayed",
+    "The Industry Mourns The Loss Of Nick Wilsdon - Loved By Industry",
+    "Daily Search Forum Recap: October 12, 2026",
+    "Third-Party Google Rank Tracking Struggling Now",
+    "Google Ads Tests Using Google AI For Goals & Assets",
+    "Bing & Copilot Experimenting With Microsoft-Decision-1"
    ],
-   "ts": "2026-10-12T07:19:47.723491+00:00"
+   "ts": "2026-10-13T07:41:03.857261+00:00"
   }
  }
 }
