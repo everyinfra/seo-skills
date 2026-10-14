@@ -2,6 +2,8 @@
 
 > 建立于 2026-10-09,关键事实经 2026-10 检索核实。本手册是 CWV 总纲:四指标全景、INP/CLS/TTFB 深度、第三方脚本治理、优化优先级。分工边界:LCP 的四段拆解与诊断顺序见 [LCP.md](LCP.md),本文只补 2026 新实践;JS 渲染策略见 [rendering-seo.md](rendering-seo.md);审计扣分规则见 [audit-rule-catalog.md](audit-rule-catalog.md)。
 
+> [2026-10-13 CrUX 更新(P1)] CrUX 新增**软导航实验性 CWV 变体**(soft navigation 的 LCP/INP/CLS,SPA 站点适用)——官方 release notes 2026-10-13(developer.chrome.com/docs/crux/release-notes);同页披露 INP 持续回归趋势(2026-09-08 注)但无定论。引用软导航指标时标 [experimental]。
+
 ## 一、四指标全景
 
 | 指标 | 衡量对象 | Good | 需改进 | Poor |

@@ -8,6 +8,9 @@
 - **队列行为**:HTTP 200 全部进渲染队列;官方措辞"排队 2–3 秒或更久";行业实测秒级至分钟级,**低权重/JS 重站点可拖到数小时甚至数周,JS 站消耗约 9 倍抓取预算**(Onely)。**"不在 rendered HTML 里的内容无法被索引"是官方原话**。
 - **WRS 无状态(Google 官方 2026-03-31 口径)**:每次渲染清空 cookies/session/localStorage——依赖客户端存储的内容(consent 同意门、localStorage 驱动的个人化/分支渲染)对 WRS 不可见,与"不在 rendered HTML 里"同罪。行业实测同口径:Google 清 cookies 使同意门对爬虫永远不开(Lantad/wpconsults 2026)。
 - **检测**:GSC URL Inspection(Live Test 看渲染后 HTML)、URL Inspection API、Rich Results Test;Mobile-Friendly Test 已退役(2023-12)。
+
+> [2026-10-14 P2] Google 官方发布 **PDF 在搜索中的处理文档**(转换/链接/图片/文件限制/排名与 AI 摘要)——白皮书类 PDF 内容可入索引与 AI 摘要但限制多于 HTML;迁移建议:核心内容应有 HTML 版(SER 2026-10-13 报道)。
+
 - **懒加载红线(官方)**:内容须"进入视口即加载"(`loading=lazy`/IntersectionObserver),**不得依赖用户交互**(Google 不滚动不点击);无限滚动必须给每块持久唯一 URL 并顺序链接。
 
 ## 二、渲染策略决策表

@@ -17,7 +17,7 @@
 | 英文(全球) | Google AIO / ChatGPT / Perplexity / Gemini / Copilot | 92% AIO 引用来自自然 top-10 | Wikidata 实体一致+Bing 收录 |
 | 俄语区 | Yandex ~70–73%,Google ~25–28%(StatCounter) | Alice AI 从自然 SERP 取源——**经典 top-10 即引用前提** | Webmaster 验证+Metrica(152-ФЗ 姿态) |
 
-> [待核 2026-10-13] StatCounter 图表页再次更新(intel_check 检出稳定变更;数值 JS 渲染,HTML 不可提取)——引用本页份额数字前先人工核对最新榜值;引用时沿用已标注测量期的数字。
+> [待核 2026-10-14] StatCounter 图表页再次更新(intel_check 检出稳定变更;数值 JS 渲染,HTML 不可提取)——引用本页份额数字前先人工核对最新榜值;引用时沿用已标注测量期的数字。
 | 韩语区 | 双口径:StatCounter 并列 vs 本土面板 Naver 63–64% | AI Briefing 几乎只引 Naver 自有生态 | Search Advisor+Naver Blog(C-Rank) |
 | 日语区 | Google 59–75%(口径差大)+Bing **28–33%** | Yahoo! Japan=Google 索引;>95% AI 证据来自第三方站 | SC 生成AIパフォーマンス报告+Bing 可爬验证 |
 | 西语 | Google 88–94%,无本地引擎 | **es-419 是 Google 接受的唯一 UN 区域码**;西语查询 83–84% 引西语源 | es-ES+es-419 hreflang 决策 |

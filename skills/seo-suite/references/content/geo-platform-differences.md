@@ -16,6 +16,9 @@
 | Google AIO | 无特殊 AI Schema 要求；一次提问可能扇出多次搜索 | 官方文档 |
 | Copilot | 与 Bing 共享抓取/收录/排名基础；官方声明"GEO 不保证 grounding 或引用"；IndexNow 可即时提交 | 官方文档 |
 
+> [2026-10-14 P2] **Bing WMT AI 报告新增 Topics Portfolio(Beta)**:AI Performance 报告按主题组合聚合(Bing 官方博客);同日 Google 确认 **Gemini 4 Argon 进入 Google 搜索(AI Mode)**(SER 2026-10-13)——AI Mode 侧模型能力升级,引用时注明发布期。
+
+
 ## 二、社区观察与相关性研究（次级证据，不外推为算法）
 
 | 引擎 | 观察 | 来源性质 |
@@ -98,7 +101,7 @@ Google 系之外的 AI 搜索入口,行为与上表五引擎不同,不能套用�
 - 平台侧重与统计：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-platform-optimizer/SKILL.md`、[onvoyage-ai/gtm-engineer-skills](https://github.com/onvoyage-ai/gtm-engineer-skills)
 - 第六节（区域平台）：Yandex Webmaster 官方文档（Alice 取源、YandexAdditional、SoV）；giga.chat 官方 FAQ；Andgentic/The Egg（AI Briefing）；Itera、CyberAgent GEO Lab（日语 AIO）；Ahrefs 经 Nikkei xTREND、SiTest、lizck.com 定点综述（日语引用行为）；LLMOチェキ（PR Times，120 万引用）；Temso、Weglot（引用语言绑定）；arXiv:2305.14976、arXiv:2510.27543（阿拉伯方言退化）；StatCounter/OpenAI/Chosun（Wrtn、巴西采用）；Naver 官方博客 224296857688 与 help.naver.com/service/30056（AI Briefing 标准与메이트）；Peec AI（ChatGPT 5.6 格式）；Machine Relations（AIO/AI Mode）；微信公开课 PRO 2023、卢松松博客（Peoplerank）、极搜AI（元宝）、CSDN 2026-07 横评与 [geo-book](https://github.com/JingHao-Leon/geo-book)（豆包/知乎修正，一手）
 
-> [待核 2026-10-13] StatCounter 图表页再次更新(intel_check 检出稳定变更;数值 JS 渲染,HTML 不可提取)——引用本页份额数字前先人工核对最新榜值;引用时沿用已标注测量期的数字。
+> [待核 2026-10-14] StatCounter 图表页再次更新(intel_check 检出稳定变更;数值 JS 渲染,HTML 不可提取)——引用本页份额数字前先人工核对最新榜值;引用时沿用已标注测量期的数字。
 
 ## 测量定义层(elmo/seo-monster/indranilbanerjee,百仓扫描批 3-4)
 
