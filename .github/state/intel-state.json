@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-13T07:41:03.857490+00:00",
+ "checked_at": "2026-10-14T06:06:44.959504+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -43,19 +43,20 @@
    "ts": "2026-10-11T08:34:47.823438+00:00"
   },
   "bing-wm": {
-   "top": "Introducing AI Performance in Bing Webmaster Tools Public Preview",
+   "top": "Introducing Topics Portfolio (Beta) in AI Performance",
    "seen": [
     "Introducing AI Performance in Bing Webmaster Tools Public Preview",
     "Does Duplicate Content Hurt SEO and AI Search Visibility?",
     "How AI Search Is Changing\u202fthe\u202fWay\u202fConversions\u202fare Measured",
     "Bing Introduces Support for the data-nosnippet HTML Attribute",
-    "Keeping Content Discoverable with Sitemaps in AI Powered Search"
+    "Keeping Content Discoverable with Sitemaps in AI Powered Search",
+    "Introducing Topics Portfolio (Beta) in AI Performance"
    ],
-   "ts": "2026-10-11T08:34:48.324403+00:00"
+   "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "d56b62f37123f63ea794c7ee1e1d9996",
-   "ts": "2026-10-13T07:40:48.395406+00:00"
+   "hash": "f8f5cc3ca216349c9872dfad4a02f7c4",
+   "ts": "2026-10-14T06:06:28.141271+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -74,21 +75,21 @@
    "ts": "2026-10-12T07:19:18.894548+00:00"
   },
   "anthropic-crawl": {
-   "hash": "351cba2416cda3f91ae0e5d21a2e8ff0",
-   "ts": "2026-10-11T08:34:49.762519+00:00"
+   "hash": "b13204e89eff38478b387649ff09dd6a",
+   "ts": "2026-10-14T06:06:29.148885+00:00"
   },
   "schema-org": {
    "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-10-13T07:40:49.522420+00:00",
-   "unstable_streak": 2
+   "ts": "2026-10-13T07:41:06.980889+00:00",
+   "unstable_streak": 0
   },
   "crux": {
-   "hash": "89f0ace9928add52acf9b0c2869226f9",
-   "ts": "2026-10-11T08:34:50.992421+00:00"
+   "hash": "2e4eb096c8af932e1d24266149ae3c2f",
+   "ts": "2026-10-14T06:06:30.641452+00:00"
   },
   "yandex-wm": {
-   "hash": "a8408f5a755267378f4e9d003e9993fb",
-   "ts": "2026-10-13T07:40:53.060664+00:00"
+   "hash": "16e528532917381d9edeb4d5972107d9",
+   "ts": "2026-10-14T06:06:33.169219+00:00"
   },
   "naver-wm": {
    "hash": "de2bbe5b92a535632b305ccc49db7c58",
@@ -99,19 +100,19 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "52d064a0f834245320202bc8d6e97690",
-   "ts": "2026-10-13T07:41:01.209528+00:00"
+   "hash": "f28cf224e7c0fab9b4483d18f3f49824",
+   "ts": "2026-10-14T06:06:43.099438+00:00"
   },
   "statcounter-ai": {
-   "hash": "c3b2d91f3261af246c35c0020c2a58c5",
-   "ts": "2026-10-13T07:41:01.977843+00:00"
+   "hash": "80e8bf9c456fba0ba2af12e4e4084f34",
+   "ts": "2026-10-14T06:06:44.008726+00:00"
   },
   "semrush-sensor": {
    "hash": "225cbc8fe7dd85a0f4ca57b5da801195",
    "ts": "2026-10-13T07:41:02.714338+00:00"
   },
   "seroundtable": {
-   "top": "The Industry Mourns The Loss Of Nick Wilsdon - Loved By Industry",
+   "top": "Google Search On PDFs: Conversion, Links, HTML, Ranking, Limits, Crawling...",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -123,9 +124,14 @@
     "Daily Search Forum Recap: October 12, 2026",
     "Third-Party Google Rank Tracking Struggling Now",
     "Google Ads Tests Using Google AI For Goals & Assets",
-    "Bing & Copilot Experimenting With Microsoft-Decision-1"
+    "Bing & Copilot Experimenting With Microsoft-Decision-1",
+    "Google Search On PDFs: Conversion, Links, HTML, Ranking, Limits, Crawling...",
+    "Gemini 4 Argon In Google Search Via AI Mode",
+    "Topics Portfolio In Bing Webmaster Tools AI Reports",
+    "Daily Search Forum Recap: October 13, 2026",
+    "Google Search Showing Sites Old Domain Fourth Months After Domain Move?"
    ],
-   "ts": "2026-10-13T07:41:03.857261+00:00"
+   "ts": "2026-10-14T06:06:44.959313+00:00"
   }
  }
 }
