@@ -208,7 +208,7 @@ rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.jso
 
 ## 审计致谢(2026-10-09,20 路外部审计全量融入)
 
-本轮加固的实现全部来自以下审计的建议部分(报告存档于 seo-enrichment-notes/monitor-audit/):
+本轮加固的实现全部来自以下审计的建议部分(审计报告是维护方的过程材料,未入库):
 
 - **红队自审(05)**:suppressed 不进通知路径与退出码(P0)、notify --max-age 陈旧拒发、
   SQLite WAL+busy_timeout+flock、基线 status='ok' 守卫+quarantine+budget 半截标 partial、

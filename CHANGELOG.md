@@ -3,6 +3,14 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 未发版 / Unreleased
+
+- **intel-update 工单修复**:workflow 此前在生成工单时再跑一次 intel_check,第二次比对的是第一次刚存下的基线,工单头部写"有变更"、正文恒为"无变更"(10-13/10-14/10-15 复现)。现在只跑一次,报告直接写进 `intel-update-pending` issue(新开或追加评论),不再提交仓根 `.intel-update-task.md`;无变更时不再自动关单;异常退出(无 `[CHANGED]` 行)单独记 error,不开 issue。
+- **运行态文件移出仓库**:`findings.json`、`crawl.json`、`briefs/`、`.intel-update-task.md` 加入 .gitignore 并从仓库删除;`tests/test_fix_oracle.py` 改为把 findings 写进临时目录(此前每跑一次测试都在 CWD 落一份 findings.json);trend-watch 的 `.github/state/trend/briefs/` 不再被 `briefs/` 规则误吞。
+- **自更新协议改写**:`self-update-protocol.md` 按现行方式改为「云端检测 + issue 工单 + 本地处理」,触发模板路径改占位符,提交改精确路径(不用 `git add -A`)。
+- CHANGELOG:合并重复的 0.28.0,0.23.1 归位,补写 0.11.0–0.19.0。
+  intel-update now reuses a single check run and files the report into the pending issue (no committed task file, no auto-close); runtime outputs ignored and removed from the repo; self-update protocol rewritten for cloud detection + issue tickets + local processing; CHANGELOG duplicates/gaps fixed.
+
 ## 0.35.0 - 2026-10-12
 
 - **50-agent 战役(10 波,37→85 脚本/1604 测试)**——从"分析工具集"进化为"完整管线工作台":
@@ -129,36 +137,14 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 0.28.0 - 2026-10-09
 
-- **孤儿文件清零 + market_lint v3(完善度清单第 2、3 项)——special_checks 机检映射 24→52 条 + v3 常开机检 12 项(检查函数注册表共 64),golden 测试 62→71**:
+- **模板深化 + 孤儿文件清零 + market_lint v3(完善度清单第 1-3 项)——special_checks 机检映射 24→52 条 + v3 常开机检 12 项(检查函数注册表共 64),golden 测试 62→71**:
+  - **templates 层全面深化(第 1 项)**:12 个骨架模板全文重写到标杆水准(60-84 行/个)——每模板加 Key numbers 区/核心结构表/What could change;代表:serp 九特征矩阵/competitor 每家竞品卡+对位表/pages-plan 内链图+发布顺序/strategy 支柱集群+90 天日历/on-page 九元素市场阈值表/technical 五层栈/entity 实体矩阵/alert 四级 playbook+升级链/backlink 价带三层/performance AI 引荐趋势/rank 五桶×市场×引擎分列;
   - **孤儿修复**:audit-tool-output.md(56→140 行已深化)SKILL.md 裸路径升级为带描述链接行;basename 全量反查再发现两个真孤儿并全部入链——grid_rank.py 与 head_check.py(S7 可执行层漏排,37 脚本清单补齐)+ examples/gold-standard-keyword-research.md(research 路由挂黄金样例);复检孤儿=0;
   - **⑨ special_checks 第二批映射 +28 条**(可机检未实现项,覆盖 30 条 special_checks 条目):ko nosourceinfo(全球唯一官方 AI 引用退出 meta)/标签-值网格/연관채널 sameAs、ja 星5つ QR 王道违法话术、en 段落级可引性四要素(专名+数字+as-of+方法学)、es coche/carro 词汇分流+支付词层、pt CNPJ·OAB 凭证/仅收 PIX·boleto 骗局信号/publieditorial rel 披露、de Werbung 标签+rel 双披露(OLG Köln 口径)、fr courriel/balado 术语表(fr-CA 硬判)、id desc 120 字符安全区/baku-gaul 正文词典化/EYD V 新旧拼法并存、hi 语音助词、it it-CH(.ch+CHF 分裂)/P.IVA/估算声明降级、tr tanıtım 披露、vi 标题词前 30 字符(t0mmy)、th 佛历年(泰月名配公历年即 FAIL)/词中截断余量、pl 剥变音残留/sierotki 行尾孤字、nl je-u 混用/[INVULLEN] 占位/KvK 号;
   - **⑩ v3 常开机检 12 项(全市场注册表,输出数值供阈值判定)**:内容类 营销词密度(per 千词/千字)/句长 CV(<0.25=AI 均匀签名)/FAQ 问句密度/有源数字密度(同句来源线索占比<30% 且数字≥5=无源堆砌);结构类 H2 疑问式占比(¿/什么/怎么/why/how/wie/wat… 12 语)/列表密度 li/(li+p)/标题关键词位次(高频词代理);格式类 日期格式按市场(de 见 10/9/2026 即 WARN)/电话前缀(+7/+82/+86/+91/+55…)/货币符号(€ vs 元、R$ vs $);语言类 ru 西里尔/ko 谚文/th 泰文字符占比;robots 类 页面级 noai/noimageai/nosnippet AI 退出 meta;
   - **--report 尾部新增 AUTO 比例行**;18 市场全量跑通无崩溃;zh/de/ja 真实样文冒烟:special_checks AUTO 比例 zh 2/10=20%(剩余 8 条均为平台级 offpage,不可页内机检)+12 项常开机检(营销词密度 11.4/千字、标题关键词位次命中)、de 2/9=22%→3/9=33%(+Werbung 双披露)、ja 6/10=60%→7/10=70%(+星5つ);
   - 测试 62→71(+9:电话前缀/日期格式/AI 退出 meta/货币符号/句长 CV/AUTO 比例行/ko nosourceinfo/de Werbung 披露/H2 疑问式占比),零网络全绿。
-  Orphan files zeroed (audit-tool-output descriptive link; grid_rank+head_check wired into S7; gold-standard example linked); market_lint v3: +28 special_checks mappers (24→52) + 12 always-on checks (64-function registry), AUTO-ratio line in --report; tests 62→71.
-
-## 0.23.1 - 2026-10-09
-
-- **S2 实测工具盲区修复轮(9.5 冲刺自动化提升)**——7 项,site_audit.py 重写 + head_check.py 中文场景门控,golden 测试 32→46 全绿:
-  - **site_audit title 解析吞 head 内 script/JSON-LD(最高优先)**:HTMLParser 的 title 收集改为只在 `<title>…</title>` 内——此前 title 开启后 head 内全部裸文本(含 JS/JSON-LD)被拼进 title,6+ 站触发 2-75 万字符假 title;连带修复 title 内空白被丢导致的词粘连;
-  - **泰文字素计长 + 泰文词数**:wc() 与 title/desc 长度接入 grapheme 近似(unicodedata.combining==0 且非 Mn/Cf,同 markets.json units 口径)——码点计长高估 30-50%、词数恒 0 双修复(实测 20 码点→14 字素);
-  - **天城文(印地)词数计 0**:wc() 对 Devanagari 块(0x0900-0x097F)按字符计(同 CJK 口径);
-  - **越南/波兰变音词被 ASCII 正则切碎**:wc() 词字符从 `[A-Za-z0-9']` 泛化为一切 Unicode 字母的连续段——拉丁扩展(0x00C0-0x024F 波兰/土耳其 + 0x1E00-0x1EFF 越南)之外连带修复阿文/俄文/希腊/希伯来整段记 0(youm7 实测 141→2204 词,假 soft-thin WARN 消失);
-  - **土耳其 İ 双码点**:wc() 先 replace('İ','i') 再清洗 U+0307(casefold 前替换口径,同 keyword_variants canon 链),分解形 I+U+0307 不再把一个词劈成两个;
-  - **--market 接线 markets.json**:title/desc 阈值不再硬编码(ja 32/120 全角),按市场单位(chars/fullwidth/grapheme)判定,18 市场全量可用,未知市场列出可用值退出;
-  - **微信/QQ itemprop WARN 跨市场噪音(head_check)**:仅 zh 市场(新增 --market 参数)或检出中文内容时报——日文页满篇 kanji 但有假名即判日文跳过(note.com 实测 INFO 跳过;--market zh 仍可强制);
-  - golden 测试新增 SiteAuditTests(9)+ HeadCheckChineseScopeTests(4)+ 全字母文字(1),零网络;
-  - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
-  S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
-
-## 0.28.0 - 2026-10-09
-
-- **完善度清单 1-3 项落地**:
-  - **templates 层全面深化(第 1 项)**:12 个骨架模板全文重写到标杆水准(60-84 行/个)——每模板加 Key numbers 区/核心结构表/What could change;代表:serp 九特征矩阵/competitor 每家竞品卡+对位表/pages-plan 内链图+发布顺序/strategy 支柱集群+90 天日历/on-page 九元素市场阈值表/technical 五层栈/entity 实体矩阵/alert 四级 playbook+升级链/backlink 价带三层/performance AI 引荐趋势/rank 五桶×市场×引擎分列;
-  - **孤儿修复(第 2 项)**:audit-tool-output 挂入 SKILL.md 路由;另发现并修复 grid_rank/head_check(脚本清单 35→37)和 gold-standard 样例共 3 个孤儿——**复检孤儿=0**;
-  - **MANUAL→AUTO 特检自动化(第 3 项)**:market_lint v3 检查注册表 24→**64 条**(+28 条 special_checks 语义映射覆盖 30 条 MANUAL:+12 项常开机检:营销词密度/句长 CV/FAQ 密度/有源数字密度/H2 疑问式占比/列表密度/标题词位次/日期格式/电话前缀/货币符号/字符占比/noai meta);三市场冒烟 AUTO 比例:de 22→33%/ja 60→70%/zh 持平(余为平台级 offpage);
-  - 测试 62→**71**(+9),self_check 全绿。
-  Completeness items 1-3: 12 templates rewritten to benchmark depth, orphan files fixed (now zero), market_lint v3 auto-checks 24→64, tests 62→71.
+  12 templates rewritten to benchmark depth; orphan files zeroed (audit-tool-output descriptive link; grid_rank+head_check wired into S7; gold-standard example linked); market_lint v3: +28 special_checks mappers (24→52) + 12 always-on checks (64-function registry), AUTO-ratio line in --report; tests 62→71.
 
 ## 0.27.0 - 2026-10-09
 
@@ -196,6 +182,20 @@ Future content or structure changes must bump the version and add a dated entry.
   - RU 实测发现的 stdlib robotparser 误报(Disallow:/? 被当整站禁)已记录为已知边界。
   Multilingual 9.5 push: 9 thin markets deepened with dual-source verification, 18 markets × 2 real sites × 3 tools = 108 live audits written back into portals, review cycles for all 18, 7 tool blind-spots fixed (tests 32→46).
 
+## 0.23.1 - 2026-10-09
+
+- **S2 实测工具盲区修复轮(9.5 冲刺自动化提升)**——7 项,site_audit.py 重写 + head_check.py 中文场景门控,golden 测试 32→46 全绿:
+  - **site_audit title 解析吞 head 内 script/JSON-LD(最高优先)**:HTMLParser 的 title 收集改为只在 `<title>…</title>` 内——此前 title 开启后 head 内全部裸文本(含 JS/JSON-LD)被拼进 title,6+ 站触发 2-75 万字符假 title;连带修复 title 内空白被丢导致的词粘连;
+  - **泰文字素计长 + 泰文词数**:wc() 与 title/desc 长度接入 grapheme 近似(unicodedata.combining==0 且非 Mn/Cf,同 markets.json units 口径)——码点计长高估 30-50%、词数恒 0 双修复(实测 20 码点→14 字素);
+  - **天城文(印地)词数计 0**:wc() 对 Devanagari 块(0x0900-0x097F)按字符计(同 CJK 口径);
+  - **越南/波兰变音词被 ASCII 正则切碎**:wc() 词字符从 `[A-Za-z0-9']` 泛化为一切 Unicode 字母的连续段——拉丁扩展(0x00C0-0x024F 波兰/土耳其 + 0x1E00-0x1EFF 越南)之外连带修复阿文/俄文/希腊/希伯来整段记 0(youm7 实测 141→2204 词,假 soft-thin WARN 消失);
+  - **土耳其 İ 双码点**:wc() 先 replace('İ','i') 再清洗 U+0307(casefold 前替换口径,同 keyword_variants canon 链),分解形 I+U+0307 不再把一个词劈成两个;
+  - **--market 接线 markets.json**:title/desc 阈值不再硬编码(ja 32/120 全角),按市场单位(chars/fullwidth/grapheme)判定,18 市场全量可用,未知市场列出可用值退出;
+  - **微信/QQ itemprop WARN 跨市场噪音(head_check)**:仅 zh 市场(新增 --market 参数)或检出中文内容时报——日文页满篇 kanji 但有假名即判日文跳过(note.com 实测 INFO 跳过;--market zh 仍可强制);
+  - golden 测试新增 SiteAuditTests(9)+ HeadCheckChineseScopeTests(4)+ 全字母文字(1),零网络;
+  - 真实验证:note.com(--market ja)title「note ――つくる、つながる、とどける。」18/32 全角、desc 109/120;youm7.com(--market ar)title「اليوم السابع」12/60、desc 120/155、JSON-LD 1、词数 2204。
+  S2 field-test blind-spot fixes: title no longer swallows head scripts/JSON-LD; Thai grapheme length + word count; Devanagari per-char words; Unicode-letter word runs (vi/pl/ar/ru); Turkish İ fold-before-casefold; --market wired to markets.json thresholds; WeChat/QQ itemprop WARN gated to zh/Chinese content.
+
 ## 0.23.0 - 2026-10-09
 
 - **六缺口补全轮(审计驱动)**——5 个新模块:
@@ -222,6 +222,53 @@ Future content or structure changes must bump the version and add a dated entry.
 ## 0.20.0 - 2026-10-09
 
 - **新增 [站群与多站点策略](skills/seo-suite/references/research/site-networks.md)**(教育性/防御性,不提供规避检测指南):**六级光谱**(合法 ccTLD 网络/加盟多地点/品牌矩阵→卫星站→寄生→PBN→泛站群/doorway/链接轮,每级特征×动机×SpamBrain 三层检测)+伪装话术识别;**多站架构决策树**——权重聚合 vs 风险隔离权衡表、ccTLD/子目录/子域对照、反向拆分仅三种正当情形、四种误判;**四市场站群实况**(百度泛站群+清风/AI 低质专项、Yandex сателлиты+Минусинск 滤镜口径未换代、日语区卫星站终结论引用、英文区 PBN 市场化+忽略/降值为主);**风险量化**——恢复期 3 个月–1 年/Yandex 滤镜 6-12 月/传染性网络联坐/**SRA 2026-08-30 EEA 分叉核实**(EEA 内板块独立排序替代降权)+处罚模式速查表;**白帽等效对照**(6 目标×灰帽×白帽)+时间维度财务对照;**存量站群审计**——前置三问+四层指纹(WHOIS/基础设施/内容/链接)+A-D 分级处置+六件交付物。与既有卫星站定论/寄生分层/换城测试只引用不复述;backlink-directory 头部已加链接,SKILL.md 外链节已注册。
+
+## 0.19.0 - 2026-10-09
+
+> 0.11.0–0.19.0 发版时没写条目,以下 9 条于 2026-10-15 按各 tag 的提交说明补写。
+
+- **大规模并行轮**:33 个仓库 agent 新增 agent-protocols、audit-rule-catalog、naver-searchadvisor、head-elements、serp-data-models、geo-evidence-bank、local-grid-ranking、scoring-calibration 等模块,并深化 37 个既有文件;18 个语言 agent 各写一个市场门户页(母语一手调研);markets.json 合并到 130 条 special checks。
+  Massive parallel round: new modules (agent-protocols, audit-rule-catalog, naver-searchadvisor, head-elements, serp-data-models, geo-evidence-bank, local-grid-ranking, scoring-calibration), 37 files deepened, one portal page per market (18), markets.json at 130 special checks.
+
+## 0.18.0 - 2026-10-09
+
+- **深度吸收轮**:5 个 agent 小组读开源仓内部实现(不止 README)后写入套件——三套站点级评分体系并列对照、seo-ops 30 项检查、next-seo 15 个组件字段级说明、react-snap 预渲染流程、nuxt 内容协商状态机、NEO 测量协议、Grokipedia 字段级打法、Impact×Confidence 公式;18 个语言的定向分析(渠道/机制/信源/红旗),markets.json 为 18 个市场补 special_checks。
+  Deep-absorption round: repo-internal reads written into the suite; 18 per-language analyses and special_checks for all 18 markets.
+
+## 0.17.0 - 2026-10-09
+
+- **可执行层扩到 33 个内置脚本**(4 个 agent 小组并行):审计组(sitemap 六桶 + lastmod 取证、hreflang 集群矩阵、首屏 5 秒测试、质量评估)、GEO 测量组(citation panel 带 Wilson 置信区间采样纪律、fan-out 三桶、CORE-EEAT 机检、CITE 域评级)、多语言实现组(markets.json 18 市场数据层 + 全角/字素校验、关键词变体归一、支付意图标注、SERP 占位、本地格式)、归因管线组(DiD、SEO 与 Ads 四桶对照、YouTube 离群、趋势侦察、freshness、报告生成);SKILL.md 第 7 节改为 33 个脚本的完整路由。
+  Executable layer expanded to 33 built-in scripts across audit, GEO measurement, multilingual and attribution groups; SKILL.md section 7 routes all 33.
+
+## 0.16.0 - 2026-10-09
+
+- **归档层换成内置可执行脚本**:移除 0.15.0 的 mining-archive 层,新增 7 个纯 stdlib 工具(site_audit 全套阈值、robots_posture 三级矩阵 + Cloudflare 注入检测、text_metrics 节拍/slop/水印检测、gsc_mining 读 CSV 导出、schema_lint 实体规则、llmstxt v2 校验/检查/生成、serp_overlap 四分位);SKILL.md 第 7 节改为脚本路由,全部冒烟通过。
+  Archive layer replaced by 7 stdlib-only scripts; SKILL.md section 7 rewritten as script routing.
+
+## 0.15.0 - 2026-10-09
+
+- **mining-archive 层(已在 0.16.0 移除)**:100 仓深扫的逐仓提取笔记归档进套件(索引 + 6 个批次文件)并接入 SKILL.md。
+  Mining-archive layer for the 100-repo deep scan (index + 6 batch files); removed in 0.16.0.
+
+## 0.14.0 - 2026-10-09
+
+- **满载轮**:100 仓深扫剩余的高价值条目并入 12 个文件——渲染三件套细节、Indexing API 状态机、三个生产级评分器、14 个少见 JSON-LD 字段、内容协商实现、审计 JSON schema + 预注册校准 + 文件治理、AI 引用五层面 + 提示词分类、归因模型表 + 报告工程约束、GEO 难度公式、寄生 SEO 分层、中国获客渠道、邮件认证信任信号。
+  Full-load round: remaining high-value items from the 100-repo deep scan merged into 12 files.
+
+## 0.13.0 - 2026-10-09
+
+- **100 仓深扫重做**:20 个 agent 各读 5 个仓的完整文件,带行级阈值;并入 10 个文件——YouTube CTR/AVD 基准、ARP/ATRP/SoLV 网格定义、fan-out 三桶 + SOV LVCF + Bray-Curtis、英文 slop 特征全表、CORE-EEAT 80、seonaut 70 项阈值表 + head 白名单 + C26 移除顺序、五层流量诊断 + DiD 参数、SERP 重叠四分位 + CTR 曲线、llms.txt 语料证据 + Google 反证链、欧盟 AI 法案第 50 条速查卡。
+  100-repo deep scan redone (20 agents × 5 repos, full-file reads); merged into 10 files.
+
+## 0.12.0 - 2026-10-09
+
+- **100 仓扫描**:分四批逐个阅读 100 个最热门的 SEO/GEO 开源仓(53.8k–397 星),要点并入 8 个文件(llms.txt v2、AIV 评分 v1.1 带 Wilson 置信区间采样纪律、seo-ops 少见判断方法、证据新鲜度登记、度量定义层、Unicode 水印清除清单、对照组归因 + 部署回归检查、SEO 与 Ads 四桶合并);登记 6 个新能力缺口。
+  100-repo scan: the 100 most popular SEO/GEO repos read in four batches; top items merged into 8 files; 6 capability gaps registered.
+
+## 0.11.0 - 2026-10-09
+
+- **合规 + 可执行层起步**:SKILL.md description 压到 918/1024 字符并加 Not-for 条款;新增 scripts/(self_check 评测、link_check、text_units 市场单位换算);新增 examples/ 关键词研究黄金样例。
+  Compliance + executable layer: description at 918/1024 with a Not-for clause; scripts/ (self_check, link_check, text_units); gold-standard keyword-research example.
 
 ## 0.10.0 - 2026-10-09
 

@@ -29,3 +29,12 @@ skills/seo-suite/.intel-state.json
 claude-seo/
 .trend-state.json
 briefs/
+
+# 运行态产物不入库:脚本默认写 CWD(oracle_check → findings.json、site_crawl → crawl.json、
+# trend_watch → briefs/),intel-update 工单只进 issue。要入库的样例放 examples/ 或
+# tests/fixtures/ 并 `git add -f`。
+findings.json
+crawl.json
+.intel-update-task.md
+# 上面的 briefs/ 规则不该吞掉 trend-watch 的 commit-back 目录
+!.github/state/trend/briefs/

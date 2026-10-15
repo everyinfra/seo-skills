@@ -1,7 +1,9 @@
 # intel-update: SEO skill 自更新 cron(信源变更 → agent 更新 skill → commit+push)
 # ----------------------------------------------------------------------------
 # 每日 UTC 01:11 跑一次。拉 18 个信源(intel_check.py)检测变更,
-# 有变更 → 生成"待更新任务文件" → commit(触发人工/agent 后续处理)。
+# 有变更 → 工单(本轮报告)写进 label=intel-update-pending 的 issue:无 open issue 则新开,
+# 已有则追加评论(触发人工/agent 后续处理)。工单不再提交成仓根文件——运行态不入库。
+# 无变更不自动关 issue:关单只由处理方在按协议处理完后执行,避免未处理的工单被静默关掉。
 #
 # 这是 self-update 循环的 CI 端:检测+标记自动;文件级更新由 agent(或你)
 # 在收到通知后按 self-update-protocol.md 执行——P0 规则级自动改,
@@ -69,11 +71,27 @@ jobs:
           key: intel-state-${{ github.run_id }}
           restore-keys: intel-state-
 
+      # 只 check 一次:报告落 $RUNNER_TEMP,工单直接复用。此前生成工单时再跑一次 check,
+      # 第二次比对的是第一次刚存下的基线 → 工单头部写"有变更"、正文恒为"无变更"
+      # (10-13/10-14/10-15 复现)。退出码:0=无变更 / 1 且有 [CHANGED] 行=有变更 /
+      # 其余(参数错、未捕获异常也是 1 但无 [CHANGED])=error,不开 issue。
       - name: Run intel check
         id: intel
         run: |
           cd skills/seo-suite
-          python3 scripts/intel_check.py check || echo "changed=true" >> "$GITHUB_OUTPUT"
+          set +e
+          python3 scripts/intel_check.py check > "$RUNNER_TEMP/intel-report.txt" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/intel-report.txt"
+          if [ "$rc" -eq 0 ]; then
+            echo "result=unchanged" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" -eq 1 ] && grep -q '^\[CHANGED\]' "$RUNNER_TEMP/intel-report.txt"; then
+            echo "result=changed" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=error" >> "$GITHUB_OUTPUT"
+            echo "::error::intel_check 异常退出(rc=$rc,输出里没有 [CHANGED] 行)——本轮不开 issue,见上方输出"
+          fi
         continue-on-error: true
 
       # 状态 commit-back(审计③):check 每轮 save_state(checked_at 必更新)→
@@ -104,43 +122,32 @@ jobs:
             fi
           fi
 
-      - name: Generate update task file
-        if: steps.intel.outputs.changed == 'true'
+      # 工单 = 头部 + 上面唯一一次 check 的报告;只写 $RUNNER_TEMP 和 Actions Summary,不入库
+      - name: Build update task (report from the single check above)
+        if: steps.intel.outputs.result == 'changed'
         run: |
-          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M)
-          # 头部用展开式 heredoc(真实时间戳);正文再追加,保持 'EOF' 不展开
-          cat > .intel-update-task.md << EOF_HEADER
-          # Intel Update Task (auto-generated)
-          Generated: ${TIMESTAMP}
-          EOF_HEADER
-          cat >> .intel-update-task.md << 'EOF'
+          {
+            echo "# Intel Update Task (auto-generated)"
+            echo "Generated: $(date -u +%Y-%m-%dT%H:%MZ) · run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "intel_check.py detected source changes."
+            echo "Follow \`skills/seo-suite/references/overview/self-update-protocol.md\` to update the skill."
+            echo
+            echo "## Changed sources"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/intel-report.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/intel-update-task.md"
+          cat "$RUNNER_TEMP/intel-update-task.md" >> "$GITHUB_STEP_SUMMARY"
 
-          intel_check.py detected source changes.
-          Follow skills/seo-suite/references/overview/self-update-protocol.md to update.
-
-          ## Changed sources
-          EOF
-          cd skills/seo-suite && python3 scripts/intel_check.py check >> ../../.intel-update-task.md 2>&1 || true
-
-      - name: Commit task file (state 已由上一步 commit-back)
-        if: steps.intel.outputs.changed == 'true'
-        run: |
-          git config user.name "seo-intel-bot"
-          git config user.email "bot@users.noreply.github.com"
-          # 只提交任务文件;intel state 走 .github/state/(上一步已提交,不重复 add)
-          git add .intel-update-task.md
-          git commit -m "intel-update: sources changed, task file generated — follow self-update-protocol.md [skip ci]" || exit 0
-          if ! git push; then
-            echo "::warning::push 冲突(并发提交)——pull --rebase 后重试一次"
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
-            git push || echo "::warning::重试后仍失败(任务文件已在本地 commit,下轮变更会再生成)"
-          fi
-
-      - name: Open/flag issue
-        if: steps.intel.outputs.changed == 'true'
+      - name: Open issue or append task as comment
+        if: steps.intel.outputs.result == 'changed'
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const body = fs.readFileSync(`${process.env.RUNNER_TEMP}/intel-update-task.md`, 'utf8');
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -152,40 +159,27 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: '📚 Intel sources changed — skill update needed',
-                body: 'intel_check.py detected changes. See .intel-update-task.md.\n\nFollow `skills/seo-suite/references/overview/self-update-protocol.md` to update the skill.',
+                body,
                 labels: ['intel-update-pending']
               });
-            }
-
-      - name: Close issue on no changes
-        if: steps.intel.outputs.changed != 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'intel-update-pending',
-              state: 'open'
-            });
-            for (const i of issues) {
-              await github.rest.issues.update({
+            } else {
+              // 已有未处理工单:追加本轮报告,处理方按评论逐轮处理完再关单
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: i.number,
-                state: 'closed',
-                state_reason: 'completed'
+                issue_number: issues[0].number,
+                body
               });
             }
 
       - name: Notify (optional)
-        if: steps.intel.outputs.changed == 'true' && env.SEO_INTEL_SLACK_WEBHOOK
+        if: steps.intel.outputs.result == 'changed' && env.SEO_INTEL_SLACK_WEBHOOK
         env:
           SEO_INTEL_SLACK_WEBHOOK: ${{ secrets.SEO_INTEL_SLACK_WEBHOOK }}
         run: |
           curl -s -X POST "$SEO_INTEL_SLACK_WEBHOOK" \
             -H 'Content-Type: application/json' \
-            -d '{"text":"📚 SEO skill intel-update: sources changed. See .intel-update-task.md in repo."}' || true
+            -d '{"text":"📚 SEO skill intel-update: sources changed. See the open intel-update-pending issue."}' || true
 
       # ── R0-9:intel issue 无超时升级 ─────────────────────────────────────────
       # job 末步:列出 label=intel-update-pending 且 open 超 72h 的 issue →

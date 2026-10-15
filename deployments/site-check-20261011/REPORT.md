@@ -1,4 +1,6 @@
-# EveryInfra 站点完整体检(2026-10-11)——"先体检,后内容"原则的首次执行
+# EveryInfra 开源仓库页完整体检(2026-10-11)——"先体检,后内容"原则的首次执行
+
+> 体检对象是 GitHub 上的 everyinfra/seo-skills 和 everyinfra/jev-radar 仓库页,不是 everyinfra.com 官网。
 
 **判定(The answer):技术地基 PASS(主分 100.0/Excellent,零 CRITICAL)——内容策略可以启动。** 全部 WARN 均为 GitHub 模板页平台固有限制(我们不可控),记录不修;AI Search Health 85/100。
 

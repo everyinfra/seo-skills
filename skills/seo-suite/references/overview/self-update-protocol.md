@@ -1,18 +1,38 @@
 # Skill 自更新协议(信源变更→直接更新 skill)
 
-> 建立于 2026-10-10。配合 intel_check.py 使用:当信源变更被检测到,本协议规定 agent 如何**直接更新 skill 文件**(不只是知识文档——规则/阈值/脚本/清单都改)。用户开定时任务(如每周一次)发送触发指令,agent 按本协议执行。
+> 建立于 2026-10-10;2026-10-15 按实际运行方式改写为「云端检测 + issue 工单 + 本地处理」。配合 intel_check.py 使用:当信源变更被检测到,本协议规定 agent 如何**直接更新 skill 文件**(不只是知识文档——规则/阈值/脚本/清单都改)。
 
-## 触发指令模板(用户的 cron 发这个)
+## 两端分工
+
+- **云端检测(自动)**:`.github/workflows/intel-update.yml` 每天 UTC 01:11 跑一次 intel_check;有变更就把本轮报告写进 label=`intel-update-pending` 的 issue(没有 open issue 就新开,已有就追加一条评论)。云端不改 skill 文件,也不自动关单。
+- **本地处理(定时任务或人工)**:按下面的触发指令读工单、改文件、自检、提交、关单。频率自定(见文末「频率建议」);工单 open 超过 72 小时,云端会在 Actions 日志里报 warning。
+
+## 触发指令模板(定时任务发这个)
+
+`<REPO>` 换成本地克隆路径,`<OWNER/REPO>` 换成你的 GitHub 仓库。
 
 ```
-检查信源并更新 SEO skill:
-1. cd /path/to/seo-skills-work && python3 skills/seo-suite/scripts/intel_check.py check
-2. 如有变更(退出码 1):按 self-update-protocol.md 逐个处理变更源
-3. 更新受影响的 references/scripts 文件(按映射表)
-4. python3 skills/seo-suite/scripts/self_check.py 必须全绿
-5. git add -A && git commit -m "intel-update: <源名> <变更摘要>" && git push
-6. 给一段简短中文总结:什么变了,改了什么
+检查 SEO skill 信源工单并更新:
+1. cd <REPO> && git pull --rebase
+2. 查工单:gh issue list -R <OWNER/REPO> -l intel-update-pending --state open
+   有 open issue 就读正文和全部评论(每条是一轮报告:[CHANGED] 源 + 应更新文件)
+3. 无工单(云端失败或没配 workflow):本地兜底跑 python3 skills/seo-suite/scripts/intel_check.py check
+   退出码 0 = 无变更,1 = 有变更(报告格式同工单)
+4. 有变更:按 self-update-protocol.md「更新流程」逐源处理
+   (P0 规则级 / P1 事实级 / P2 事件级要改文件,P3 噪声跳过并记录;行为性变更标 [HUMAN-REVIEW])
+5. python3 skills/seo-suite/scripts/self_check.py 必须全绿(测试数以仓库当前为准,不写死)
+6. 只 add 本轮改过的文件(精确路径,不用 git add -A)
+   git commit -m "intel-update <日期>: <变更源> <摘要>" && git push
+7. 关单:gh issue close <N> -R <OWNER/REPO> -c "已处理: <摘要>"
+8. 最终无变更:仓库根 .intel-cron.log 追加一行"<日期> 无变更",只 add 这个文件后 commit + push
+9. 给一段简短中文总结:什么变了、改了什么(或"无变更")
+绝不提交 API key/.env/.intel-state.json 和运行态产物(findings.json、crawl.json、briefs/ 已在 .gitignore)。
 ```
+
+可选附加(按需写进同一个定时任务):
+
+- **每周一**:有 citation 面板就跑 `python3 skills/seo-suite/scripts/citation_panel.py decay-summary --panel <panel.json> --json`,报告重写队列;`gh run list -R <OWNER/REPO> --limit 5` 看云端 workflow 是否全绿,红了只报告、不改 workflow。
+- **每月 1 日**:数字巡检。实测脚本数(`ls skills/seo-suite/scripts/*.py | wc -l`)、测试数(`python3 skills/seo-suite/tests/run_tests.py` 的 `Ran` 行)、模板数(`find skills/seo-suite/templates -name '*.md' | wc -l`),对齐 README.md、README.en.md、manifest.json、`.claude-plugin/` 里的版本号与数字以及 CHANGELOG 最新版本;跑 `python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references` 列出过期断言(只报告,修复走正常工单)。
 
 ## 更新流程(收到变更报告后)
 
@@ -60,9 +80,10 @@ python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references --line
 ### 第四步:提交推送
 
 ```bash
-git add -A
+git add <本轮改过的文件>   # 精确路径;git add -A 会把测试/脚本落在 CWD 的运行态产物一起带上
 git commit -m "intel-update <日期>: <源名> — <一句话变更> | 改了 N 文件"
 git push
+gh issue close <N> -R <OWNER/REPO> -c "已处理: <摘要>"   # 有工单时
 ```
 
 ## 安全边界
@@ -76,11 +97,12 @@ git push
 
 | 检查 | 频率 | 原因 |
 |---|---|---|
-| 全量 intel_check | 周一次 | Google Blog 周更/Sensor 日更,周检能抓住主要变化 |
+| 全量 intel_check(云端) | 每天 | workflow 自动跑,只检测、开/追加工单,不改文件 |
+| 工单处理(本地) | 至少每周一次 | Google Blog 周更/Sensor 日更,按周处理能抓住主要变化;积压超 72 小时云端报 warning |
 | StatCounter+Dashboard | 可加到 monitor.py 日检 | 份额漂移+事故检测 |
 | freshness.py 扫 references | 月一次 | 兜底:防止漏检的过期声明 |
 | 竞品仓扫描(GitHub API) | 双周 | 新趋势起点(见 intel-sources.md 检索式) |
 
 ## 来源
 
-intel_check.py 源注册表与 references/overview/intel-sources.md 同步维护;本协议 2026-10-10 建立。
+intel_check.py 源注册表与 references/overview/intel-sources.md 同步维护;本协议 2026-10-10 建立,2026-10-15 改为云端检测 + issue 工单 + 本地处理。

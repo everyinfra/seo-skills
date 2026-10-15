@@ -17,8 +17,10 @@ def tmp_file(content, suffix):
 
 def run_cli(facts, responses, extra=()):
     fp = tmp_file(facts, ".yaml"); rp = tmp_file(json.dumps(responses, ensure_ascii=False), ".json")
+    # --out 指向临时目录:不向 CWD 滴 findings.json(同 test_oracle_check._run)
+    out = os.path.join(tempfile.mkdtemp(prefix="oracle_fix_"), "findings.json")
     r = subprocess.run([sys.executable, os.path.join(SCRIPTS, "oracle_check.py"),
-                        "--facts", fp, "--responses", rp, "--json", *extra],
+                        "--facts", fp, "--responses", rp, "--json", "--out", out, *extra],
                        capture_output=True, text=True, encoding="utf-8", timeout=60)
     d = {}
     i = r.stdout.find("{")
