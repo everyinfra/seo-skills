@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-14T06:06:44.959504+00:00",
+ "checked_at": "2026-10-15T05:52:39.150095+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -13,8 +13,8 @@
    "ts": "2026-10-11T08:34:44.548408+00:00"
   },
   "google-updates": {
-   "hash": "85696a4756bd4bed6f0f9e7b2629705b",
-   "ts": "2026-10-11T08:34:44.969145+00:00"
+   "hash": "a71dfec7d3fcc4d0d1e011f33df3bda1",
+   "ts": "2026-10-15T05:52:22.437494+00:00"
   },
   "gsc-announce": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "f8f5cc3ca216349c9872dfad4a02f7c4",
-   "ts": "2026-10-14T06:06:28.141271+00:00"
+   "hash": "618a518f88c692dd57fda673792fb612",
+   "ts": "2026-10-15T05:52:24.085616+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -75,21 +75,20 @@
    "ts": "2026-10-12T07:19:18.894548+00:00"
   },
   "anthropic-crawl": {
-   "hash": "b13204e89eff38478b387649ff09dd6a",
-   "ts": "2026-10-14T06:06:29.148885+00:00"
+   "hash": "99e694717cf8adc522f0080d95c99d3e",
+   "ts": "2026-10-15T05:52:24.988999+00:00"
   },
   "schema-org": {
-   "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-10-13T07:41:06.980889+00:00",
-   "unstable_streak": 0
+   "hash": "c28ae2197ecacc4469ac00319b179a7f",
+   "ts": "2026-10-15T05:52:25.753060+00:00"
   },
   "crux": {
-   "hash": "2e4eb096c8af932e1d24266149ae3c2f",
-   "ts": "2026-10-14T06:06:30.641452+00:00"
+   "hash": "d2a1552151cc94d26df43f95f48a1c80",
+   "ts": "2026-10-15T05:52:26.249138+00:00"
   },
   "yandex-wm": {
-   "hash": "16e528532917381d9edeb4d5972107d9",
-   "ts": "2026-10-14T06:06:33.169219+00:00"
+   "hash": "9fe6cb4fd63aa4c47b671f099a48226b",
+   "ts": "2026-10-15T05:52:28.915359+00:00"
   },
   "naver-wm": {
    "hash": "de2bbe5b92a535632b305ccc49db7c58",
@@ -100,19 +99,19 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "f28cf224e7c0fab9b4483d18f3f49824",
-   "ts": "2026-10-14T06:06:43.099438+00:00"
+   "hash": "699a4da992320bf2d60c42d8e39dd5c6",
+   "ts": "2026-10-15T05:52:36.670330+00:00"
   },
   "statcounter-ai": {
-   "hash": "80e8bf9c456fba0ba2af12e4e4084f34",
-   "ts": "2026-10-14T06:06:44.008726+00:00"
+   "hash": "0c3dfa8cb464100e27c6d8f496d168d2",
+   "ts": "2026-10-15T05:52:37.314188+00:00"
   },
   "semrush-sensor": {
-   "hash": "225cbc8fe7dd85a0f4ca57b5da801195",
-   "ts": "2026-10-13T07:41:02.714338+00:00"
+   "hash": "2f10653c1ffc53cd3470159895ee4dc6",
+   "ts": "2026-10-15T05:52:38.103544+00:00"
   },
   "seroundtable": {
-   "top": "Google Search On PDFs: Conversion, Links, HTML, Ranking, Limits, Crawling...",
+   "top": "New Google Ads Controls: Channel Prioritization & Budget Allocation",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -129,9 +128,14 @@
     "Gemini 4 Argon In Google Search Via AI Mode",
     "Topics Portfolio In Bing Webmaster Tools AI Reports",
     "Daily Search Forum Recap: October 13, 2026",
-    "Google Search Showing Sites Old Domain Fourth Months After Domain Move?"
+    "Google Search Showing Sites Old Domain Fourth Months After Domain Move?",
+    "New Google Ads Controls: Channel Prioritization & Budget Allocation",
+    "Google Search On URLs: Ranking Factor, Hyphens vs Underscores & Emojis",
+    "Daily Search Forum Recap: October 14, 2026",
+    "Google Ads Search Terms & Ad Combinations As One Report",
+    "Google Tests AI Mode Left Sidebar On Main Google Search Results Page"
    ],
-   "ts": "2026-10-14T06:06:44.959313+00:00"
+   "ts": "2026-10-15T05:52:39.149822+00:00"
   }
  }
 }
