@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-15T05:52:39.150095+00:00",
+ "checked_at": "2026-10-16T05:49:16.669980+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "618a518f88c692dd57fda673792fb612",
-   "ts": "2026-10-15T05:52:24.085616+00:00"
+   "hash": "6a4059f2605bfa02c4402048d333978c",
+   "ts": "2026-10-16T05:49:01.061859+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -75,12 +75,12 @@
    "ts": "2026-10-12T07:19:18.894548+00:00"
   },
   "anthropic-crawl": {
-   "hash": "99e694717cf8adc522f0080d95c99d3e",
-   "ts": "2026-10-15T05:52:24.988999+00:00"
+   "hash": "d9923d3d336e71149c855b5e51cbf888",
+   "ts": "2026-10-16T05:49:01.982495+00:00"
   },
   "schema-org": {
-   "hash": "c28ae2197ecacc4469ac00319b179a7f",
-   "ts": "2026-10-15T05:52:25.753060+00:00"
+   "hash": "77148a1e8e96b49506a4883169899e89",
+   "ts": "2026-10-16T05:49:02.865330+00:00"
   },
   "crux": {
    "hash": "d2a1552151cc94d26df43f95f48a1c80",
@@ -91,27 +91,27 @@
    "ts": "2026-10-15T05:52:28.915359+00:00"
   },
   "naver-wm": {
-   "hash": "de2bbe5b92a535632b305ccc49db7c58",
-   "ts": "2026-10-11T08:34:59.338799+00:00"
+   "hash": "a26b9df40fce5e2a1b96978387faf90d",
+   "ts": "2026-10-16T05:49:07.161949+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "699a4da992320bf2d60c42d8e39dd5c6",
-   "ts": "2026-10-15T05:52:36.670330+00:00"
+   "hash": "88b4349e9d861acb18ead3279f359cdb",
+   "ts": "2026-10-16T05:49:14.503022+00:00"
   },
   "statcounter-ai": {
-   "hash": "0c3dfa8cb464100e27c6d8f496d168d2",
-   "ts": "2026-10-15T05:52:37.314188+00:00"
+   "hash": "3aeff5f3fa450925e8ad8fa23415e4dc",
+   "ts": "2026-10-16T05:49:15.000079+00:00"
   },
   "semrush-sensor": {
-   "hash": "2f10653c1ffc53cd3470159895ee4dc6",
-   "ts": "2026-10-15T05:52:38.103544+00:00"
+   "hash": "3e84638e76730e3cbc89569d59f815d0",
+   "ts": "2026-10-16T05:49:15.724368+00:00"
   },
   "seroundtable": {
-   "top": "New Google Ads Controls: Channel Prioritization & Budget Allocation",
+   "top": "Google Dataset Search Currently Not Returning Search Results",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -133,9 +133,14 @@
     "Google Search On URLs: Ranking Factor, Hyphens vs Underscores & Emojis",
     "Daily Search Forum Recap: October 14, 2026",
     "Google Ads Search Terms & Ad Combinations As One Report",
-    "Google Tests AI Mode Left Sidebar On Main Google Search Results Page"
+    "Google Tests AI Mode Left Sidebar On Main Google Search Results Page",
+    "Google Dataset Search Currently Not Returning Search Results",
+    "Google Updates Links In AI Mode & AI Overviews Again, Won't Show Click Data",
+    "Daily Search Forum Recap: October 15, 2026",
+    "Universal Cart Launches In Google Search (U.S.)",
+    "Google Automotive Model Feeds On Search Ads (Vehicle Top Ads)"
    ],
-   "ts": "2026-10-15T05:52:39.149822+00:00"
+   "ts": "2026-10-16T05:49:16.669745+00:00"
   }
  }
 }
