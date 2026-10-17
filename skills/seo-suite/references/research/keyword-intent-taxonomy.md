@@ -192,6 +192,10 @@
 - `allintitle` 要人工查:提出者说明该运算符被 Google 限频;Google 垃圾政策把未经许可向 Google 发送自动查询(包括为查排名抓取结果)列为违规——不要写脚本批量跑。
 - 同一对象的多个近似 KGR 词(加 review、加型号后缀之类),内容高度相似时合并成一页(提出者 FAQ),和上文「混合意图」的拆页判断一致。
 
+**SERP 供给缺口怎么读(社区经验,2026-10-17 并入)**:新站常用的弱 SERP 信号是「前一两页以论坛、问答帖为主(Reddit、Quora、X),没有一个专门解决这件事的页面」——用户在搜一个任务,结果里只有人在讨论它。Rank Math 知识库也把「论坛、Quora、过时内容占前排」列为低竞争信号。两条边界:
+- 只对**任务型、工具型**查询成立(要转换、要生成、要计算)。评测、经验、「值不值得买」类查询上,论坛占位是 Google 有意为之:Google 有专门展示论坛讨论的 Discussions and forums 结果功能,detailed.com 2024-07 抽查 10,000 个产品评测词,7,085 个出现该功能。这类词上论坛就是意图本身,不是空档。
+- 素材另列的两条信号(官方站刚注册、主流后缀还空着)不是排名判据:后缀与精确匹配域名的口径见 [domain-strategy.md](domain-strategy.md) 1.2(EMD 中性偏微小正效应,残值只在本地词等少数场景),抢注只关乎品牌与好记。
+
 **「四找」研究循环**:词找词(种子词扩相关词)→ 词找站(搜这些词,记 SERP 前十的站)→ 站找词(把站放进流量工具,看它的非品牌词和着陆页)→ 站找站(SERP 里冒出来的新站再放回工具)→ 回到词找词。原文转述的新手训练版:
 1. 在 Similarweb 一类流量工具里打开一个靠自然搜索起量的标杆站,先看自然搜索流量占比;
 2. 抽出非品牌核心词,记下每个词对应的着陆页 URL;
@@ -218,6 +222,7 @@
 - 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（西语 es-419 组合经 Google hreflang 文档核实；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）
 - 需求发现段（2026-10-17 核验）：方法出处 [X @aiRobertDaily 2026-10-16](https://x.com/aiRobertDaily/status/2110993420424778028)（帖文与截图，社区经验）；[Similarweb Knowledge Center · Using Landing Pages](https://support.similarweb.com/hc/en-us/articles/17226212657693-Using-Landing-Pages)（输入类型、Clicks change 四档口径、估算点击）；[Similarweb Web Intelligence 定价页](https://www.similarweb.com/packages/web/)（Entrepreneurs 档功能表）；[Similarweb 博客 · 13 Things You Can Do With Similarweb for Free](https://www.similarweb.com/blog/marketing/marketing-strategy/similarweb-free/)（2024-06，试用条款）；[Semrush 博客 · competitor keyword analysis tools](https://www.semrush.com/blog/competitor-keyword-analysis-tool/)（2024-09，Position Changes 与免费额度）；[Ahrefs Traffic Checker](https://ahrefs.com/traffic-checker)（Site Explorer 报告名）
 - 新站选词段（2026-10-17 核验）：素材 [X @qianshuixia2026 2026-10-17](https://x.com/qianshuixia2026/status/2111268767342997847)（整理哥飞公众号文章的二手笔记，社区经验）；KGR 定义、<250 上限、判读档位与近似词合并按提出者原文 [Niche Site Project · Keyword Golden Ratio](https://nichesiteproject.com/keyword-golden-ratio/) 及其 [FAQ](https://nichesiteproject.com/keyword-golden-ratio/faq/)；自动查询口径见 [Google 垃圾政策 · Machine-generated traffic](https://developers.google.com/search/docs/essentials/spam-policies#machine-generated-traffic)
+- SERP 供给缺口段（2026-10-17 核验）：素材 [X @liangzhu_AI 2026-09-25 长文](https://x.com/liangzhu_AI/status/2103402474677670352)（社区经验）；[Rank Math 知识库 · Find Low Competition Keywords](https://rankmath.com/kb/find-low-competition-keywords/)（SERP 低竞争核查表）；[detailed.com · forum SERPs](https://detailed.com/forum-serps/)（10,000 个产品评测词，2024-07 数据，2026-03 更新）；Discussions and forums 功能见 [Google Search Central 博客 2023-11](https://developers.google.com/search/blog/2023/11/discussion-and-profile-markup)
 
 ## (ericosiu 深读 2026-10-09c)转化信号词表/异议分类/闭环回读/意图交付闸门
 

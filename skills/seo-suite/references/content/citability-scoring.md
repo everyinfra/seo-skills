@@ -138,6 +138,8 @@
 
 **Schema 十组件分值**:Organization 20(存在 10,sameAs≥3 平台 20)/ Article 15(存在 8,作者为 Person 对象 12,带 dateModified 15)/ Person 15(jobTitle+knowsAbout 齐 15)/ sameAs 完整度 15(1–2 平台 5,3–4 平台 10,**5+ 平台含 Wikipedia 15**)/ speakable 10 / BreadcrumbList 5 / WebSite+SearchAction 5 / 无废弃 schema 5(HowTo 2023-09 移除;⚠️ 该仓称"FAQPage 2023-08 起限政府/健康站"**已过期**——现行口径是 2026-05-07 起富媒体全停,见 geo-evidence 第二节)/ 全 JSON-LD 5 / 校验无错 5。**JS 注入的 schema 一律降权**:AI 爬虫不执行 JS,初始 HTML 里没有就等于没有;校验是结构性的,不验值真伪。
 
+> ⚠️ 2026-10-17 口径注:本节和下文各工具里的 Schema 分值(六类合成里的 Schema 10%、上面的 Schema 十组件、第三套的 schema 16 分等)都是第三方源码原值,量的是机器可读性卫生,**不是被引概率**。生产引用研究显示通用 Schema 对 AI 引用没有可测的独立效应([geo-evidence-bank.md](geo-evidence-bank.md) 第七节第 1 条、第八节);拿这些分数排整改顺序时,Schema 项排在提示-内容对齐和站外权威之后,产品页的价格、规格字段除外。
+
 **Platform 类子分**:AIO=内容结构 40/来源权威 30/技术 30;ChatGPT=实体识别 35(Wikipedia/Wikidata/sameAs)/内容偏好 40(可归因的事实陈述)/爬虫可达 25。Perplexity=社区验证(Reddit/Quora/SO)与来源直给分列。
 
 **按站型加权的审计侧重**(geo-audit):SaaS=功能对比表(高可引)+集成页+文档质量;本地=NAP 一致性+GBP+本地 schema;电商=产品描述可引性+对比内容+购买指南;出版=文章质量+作者资质+引用惯例;B2B 服务=案例研究+专业展示+思想领导。

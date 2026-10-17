@@ -147,6 +147,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 | 「看排名变化和告警」 | monitoring |
 | 「持续盯竞品排名变化」 | monitoring + research(明示降级:内置仅 citation_gaps 被引对照 / serp_overlap SERP 重叠近似;连续排名监控需自备外部排名追踪导出) |
 | 「本地起个守护,长期监控我的站并自动完善」 | monitoring(monitor.py+notify.py,continuous-operations.md) |
+| 「用 agent 自动化 SEO,每周帮我挑一页改」 | monitoring(agent-growth-loop.md:GSC×转化选赚钱页 → 一次一改 → 人批准上线 → 搜索+业务联合判定) |
 | 「分析外链和权威度」 | monitoring |
 | 「评估要不要进多语言/新市场」 | overview:先过 [intake-checklists.md](references/overview/intake-checklists.md) 目标市场闸门,再按 [multilingual-workflow.md](references/overview/multilingual-workflow.md) 逐市场分开评分 |
 | 「不知道先做什么，帮我整体判断」 | overview |
@@ -356,6 +357,7 @@ Schema 实现和 programmatic SEO 方案直接依据 `references/technical/` 生
 优先参考：
 - `scripts/monitor.py`(持续监控守护入口:init 建库 → run 日检/周检 → diff 告警 → report 周报;通知走 `scripts/notify.py`)
 - [references/monitoring/continuous-operations.md](references/monitoring/continuous-operations.md)：持续运营手册——日四问/周趋势/月校准分层、告警四级×playbook、防疲劳三律、自动安全项 vs draft PR 人审边界、三种部署形态(GH Actions/本地 cron/claude -p headless 含 prompt 模板)
+- [references/monitoring/agent-growth-loop.md](references/monitoring/agent-growth-loop.md):增长周循环——GSC×转化联合选「赚钱页」、流量陷阱标记、agent 三文件(brief/state/log)与对外动作批准门、一次一改的周循环与搜索+业务联合判定、前四周排期
 - `references/monitoring/tracking-setup-guide.md`
 - `references/monitoring/link-quality-rubric.md`
 - `references/monitoring/outreach-templates.md`

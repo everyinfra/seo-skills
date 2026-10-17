@@ -199,6 +199,7 @@ rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.jso
 - [kpi-definitions](kpi-definitions.md) / [report-templates](report-templates.md) = 周报口径与对外模板;monitor.py report 的"趋势+告警汇总+建议 PR"是它们的机器底座,人写 stakeholder 报告时直接引用。
 - 处罚/负面 SEO 处置在 [penalty-recovery](penalty-recovery.md)(monitor.py 只负责发现,不负责处置)。
 - [program-management](program-management.md) = **改动治理层**:大改 PRD/小改 ticket/证据库/RACI。monitor 发现问题、drift 归因、算法冻结(见 seo-drift-monitoring 第五节第 0 步)之后,"改不改、谁批、怎么复盘"在这一层。
+- [agent-growth-loop](agent-growth-loop.md) = **增长周循环**:按「搜索曝光 × 落地页转化」选一张赚钱页,AI agent 每周只推荐一处改动、人批准后上线,搜索与业务一起判输赢。本手册回答"有没有出事",它回答"这周把力气花在哪"。
 
 ## 来源
 

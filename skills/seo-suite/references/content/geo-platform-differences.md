@@ -27,7 +27,7 @@
 | Google AIO | 92% 引用来自自然搜索前 10；47% 来自第 5 位以下；~70% 与精选摘要优化重叠；偏好 40–60 词简洁答案块 | 行业研究 |
 | ChatGPT | 基于 Bing 索引；引用域中 Wikipedia 47.9%、Reddit 11.3%、YouTube 居前；重实体识别（Wikidata/Crunchbase）；偏好 2000+ 词权威源；每次引 2–4 源 | 行业研究 |
 | Perplexity | Reddit 46.7% 居首；社区验证权重最重；每答案 5–15 源（中权站机会多）；**新鲜度强信号** | 行业研究 |
-| Gemini | Google 索引 + Google 系资产加权（YouTube 高于一切）；直接消费 Knowledge Graph 与 Schema.org；本地拉 GBP；多模态 | 行业研究 |
+| Gemini | Google 索引 + Google 系资产加权（YouTube 高于一切）；直接消费 Knowledge Graph 与 Schema.org（⚠️ 实时抓取阶段实测不读 JSON-LD，Schema 对引用的加权未证实，见 [geo-evidence-bank.md](geo-evidence-bank.md) 第八节第 3 条）；本地拉 GBP；多模态 | 行业研究 |
 | Copilot | LinkedIn/GitHub/Microsoft Learn 加权；meta 描述与精确关键词权重高于 Google | 行业研究 |
 | 跨平台 | 仅 11% 域同时被 ChatGPT 与 Google AIO 引用（同一查询） | 行业研究 |
 
@@ -50,18 +50,19 @@ robots 决策速查：
 | Google AIO | 自然排名前 10 是入场券；答案块 40–60 词、先给结论；结构化摘要友好 |
 | ChatGPT | 实体建设（Wikidata/Crunchbase 一致性）；2000+ 词权威长文；Bing 收录是前提 |
 | Perplexity | Reddit/社区存在感；内容新鲜度（dateModified 与可见日期一致）；中权站机会窗口 |
-| Gemini | YouTube 存在感；Schema.org 完整；Knowledge Graph 实体对齐 |
+| Gemini | YouTube 存在感；Schema.org 与可见正文一致（不作引用杠杆，见第二节）；Knowledge Graph 实体对齐 |
 | Copilot | IndexNow 提交；LinkedIn/GitHub 资料；精确关键词在 meta 的权重比 Google 高 |
 
 ## 五、引用行为统计（README 或报告可引，均带来源）
 
 - KDD 2024（Princeton/GT/IITD，10K 查询）：GEO 优化可见性 +30–115%；加引号 +41% / 加统计 +33% / 标来源 +28%
-- SE Ranking 2025（2.3M 页）：2900+ 词 vs <800 词 = 5.1 vs 3.2 次引用；标题间距 120–180 词 +70% ChatGPT 引用；FAQ 页 4.9 vs 4.4
+- SE Ranking 2025（2.3M 页）：2900+ 词 vs <800 词 = 5.1 vs 3.2 次引用；标题间距 120–180 词 +70% ChatGPT 引用；FAQ 页 4.9 vs 4.4（⚠️ 合并口径相关，未按域名控制；控制后见下方 Discovered Labs 条）
 - Ahrefs（17M 引用）：AI 引用的内容平均新 25.7%；Conductor（13.7K 域）：ChatGPT 占 AI 引荐流量 87.4%
 - Kevin Indig（1.2M 答）：44.2% ChatGPT 引用来自页面前 30% 内容
+- Discovered Labs（[arXiv 2609.35077](https://arxiv.org/abs/2609.35077)，约 200 万条引用 × ChatGPT/Claude/Google AI/Gemini，B2B SaaS，2026-10-17 全文核读）：每页「最佳匹配段」的中位深度 0.36（0=页顶），与上条同向；口径是作者按相似度算出的段落，不是引擎实际摘取的段落。按域名控制后 Schema、CWV 无独立效应，FAQ 段 +0.07。同研究的引擎差异：被引内容中位年龄 Claude 5.1 / Google AI 6.0 / Gemini 7.8 / ChatGPT 8.0 个月；ChatGPT 被引 URL 中品牌自有与竞品页占 39.3%（Gemini 13.8%）；第三方 LinkedIn 引用 96.6% 来自 Google AI Overviews，Gemini 为 0。限定与局限见 [geo-evidence-bank.md](geo-evidence-bank.md) 第七节第 1 条
 - Seer Interactive：AIO 引用 85% 来自近两年内容
 - AirOps 2025：H2/H3 层级 2.8x 引用
-- BrightEdge（1M AI 答）：68% 引高权站；43% 引用来自 FAQ 标记页
+- BrightEdge（1M AI 答）：68% 引高权站；43% 引用来自 FAQ 标记页（⚠️ 合并口径：带标记的多是高权站，新加 Schema 的对照实验无提升，见 [geo-evidence-bank.md](geo-evidence-bank.md) 第八节）
 
 ## 六、市场差异:区域 AI 搜索平台
 

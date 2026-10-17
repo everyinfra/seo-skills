@@ -103,6 +103,19 @@ PAT_PAGE_EXP = (r"(Page Experience ?报告|Page Experience report)[^。\n.]{0,30
                 r"|(打开|查看|去看|检查|找到) ?(GSC|Search Console)[^。\n.]{0,30}Page Experience"
                 r"|(GSC|Search Console)[^。\n.]{0,20}(查看|打开|去看)[^。\n.]{0,20}Page Experience")
 
+# "加 Schema/FAQPage → AI 引用提升"类因果陈述(2026-10-17,口径见 geo-evidence.md 第二节第 2 条):
+# 中文要求动词与"提升"之间无否定词;英文排除 n't/not/no/never/without/barely。
+PAT_SCHEMA_AI_UPLIFT = (
+    r"(?<![不未没无非别勿])(加上?|添加|部署|新增|补齐|补全|完善|铺满?)[^。\n不未没无非别勿]{0,4}"
+    r"(FAQ ?(Page)? ?([Ss]chema|标记|结构化数据)|FAQPage|[Ss]chema( ?标记| ?markup)?|结构化数据|JSON-LD)"
+    r"[^。\n不未没无非别勿否]{0,16}(AI ?(引用|被引)|被 ?AI ?引用|AI ?搜索(可见度|引用))(率|次数|频次|概率)?"
+    r" ?(可|能|会|将|就)? ?(提升|提高|增加|翻倍|上涨|暴涨|\+ ?\d)"
+    r"|([Aa]dd(s|ed|ing)?|[Ii]mplement(s|ed|ing)?|[Dd]eploy(s|ed|ing)?|with) "
+    r"(?:(?!n't|not |no |never|without)[^.\n]){0,20}?"
+    r"(FAQ ?(Page)? ?)?(schema|structured data|JSON-LD)(?:(?!n't|not |no |never|didn|barely)[^.\n]){0,30}?"
+    r"(get|gets|got|are|is|were)? ?(cited|AI citations?)(?:(?!n't|not |no |never)[^.\n]){0,12}?"
+    r"(\d+ ?% more|\d+x more|more often|increase|boost|doubl)")
+
 
 # ------------------------------------------------- (正则, 为何错) 清单本体 --
 WRONG_STATEMENTS = [
@@ -149,6 +162,10 @@ WRONG_STATEMENTS = [
     (PAT_PAGE_EXP,
      "GSC 的 Page Experience 报告已于 2024-11-18 移除;"
      "看页面体验改用 CWV 报告+HTTPS 报告(信号本身仍在)"),
+    (PAT_SCHEMA_AI_UPLIFT,
+     "'加 Schema/FAQPage 能提升 AI 引用'无生产证据:域名固定效应观测(arXiv 2609.35077)、"
+     "匹配双重差分(Ahrefs 2026-05,1,885 页)、按查询聚类 GEE(SSRN 6284518)均无独立效应;"
+     "口径见 geo-evidence.md 第二节第 2 条与 geo-evidence-bank.md 第八节"),
 ]
 
 # 自检样例(keyed by 正则文本):(必须全部命中的 bad, 必须全部放过的 ok)
@@ -229,6 +246,16 @@ SELF_CHECK = {
         ["去 GSC 查看 Page Experience 报告", "Page Experience report is still available"],
         ["Page Experience 报告已于 2024-11-18 移除",
          "GSC 的 Page Experience 报告已于 2024-11-18 移除(汇总视图,两者均保留)——信号仍在"],
+    ),
+    PAT_SCHEMA_AI_UPLIFT: (
+        ["添加 FAQ Schema 可让 AI 引用提升 40%", "部署结构化数据,AI 引用率提升",
+         "加上 FAQPage 后 AI 引用翻倍", "pages with FAQ schema get cited 40% more often",
+         "Implementing FAQ schema means pages are cited 40% more often"],
+        ["加 schema 不提升 AI 引用", "Ahrefs DiD:1,885 页新增 JSON-LD 后 AI 引用无显著提升",
+         "BrightEdge(1M AI 答):68% 引高权站;43% 引用来自 FAQ 标记页",
+         "部署 schema 并不会让 AI 引用提升", "堆 schema 不等于 E-E-A-T",
+         "Adding schema didn't boost citations on any platform",
+         "pages that added JSON-LD were not cited more often"],
     ),
 }
 

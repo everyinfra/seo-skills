@@ -64,7 +64,7 @@
 
 ## 五、与回归看门的联动
 
-- 上表口径已固化为 `tests/test_canonical_facts.py` 的 `WRONG_STATEMENTS` 正则清单(FID-as-current、faqpage-for-serp、cwv-2.0、vsi-hallucination、engagement-reliability-hallucination、lcp-2.0s-threshold、sitemap-priority-ranking、changefreq-crawl-rate、ai-crawlers-no-js-absolute、gbp-chat-still-live、pagerank-next、pr-sculpting、indexing-api-any-url、page-experience-report-alive 等 ID):`python3 tests/test_canonical_facts.py` 单跑,或随 `python3 tests/run_tests.py` 全量。
+- 上表口径已固化为 `tests/test_canonical_facts.py` 的 `WRONG_STATEMENTS` 正则清单(FID-as-current、faqpage-for-serp、cwv-2.0、vsi-hallucination、engagement-reliability-hallucination、lcp-2.0s-threshold、sitemap-priority-ranking、changefreq-crawl-rate、ai-crawlers-no-js-absolute、gbp-chat-still-live、pagerank-next、pr-sculpting、indexing-api-any-url、page-experience-report-alive、schema-ai-citation-uplift(此项不属本表三类,口径见 [geo-evidence.md](../content/geo-evidence.md) 第二节第 2 条)等 ID):`python3 tests/test_canonical_facts.py` 单跑,或随 `python3 tests/run_tests.py` 全量。
 - 新增"官方已停用"条目的流程:本表加行(时间戳 + 验证方式)→ 需要机检的补进 `WRONG_STATEMENTS`(正则必须同时通过其 bad/ok 自检样例)→ 两个测试都绿才算落账。
 
 ## 来源
