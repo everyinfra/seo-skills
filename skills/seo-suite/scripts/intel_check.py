@@ -50,6 +50,10 @@ SOURCES = {
         "modules": ["content/geo-platform-differences.md"]},
     "semrush-sensor": {"url": "https://www.semrush.com/sensor/", "type": "hash",
         "modules": ["monitoring/seo-drift-monitoring.md"]},
+    "google-docs-rss": {"url": "https://developers.google.com/search/updates/search_docs_updates.rss", "type": "rss",
+        "modules": ["technical/validation-guide.md", "technical/audit-rule-catalog.md"]},
+    "openai-bots-rss": {"url": "https://developers.openai.com/api/docs/bots/rss.xml", "type": "rss",
+        "modules": ["technical/ai-crawler-policy.md"]},
     "seroundtable": {"url": "https://www.seroundtable.com/index.xml", "type": "rss",
         "modules": ["monitoring/penalty-recovery.md", "technical/rendering-seo.md"]},
 }

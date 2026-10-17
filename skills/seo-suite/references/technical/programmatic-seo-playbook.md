@@ -252,3 +252,5 @@ cohort 间对比(批次 A vs B)是模板迭代的依据:改模板→新 cohort�
 - [Webflow 官方 pSEO 文章](https://webflow.com/blog/programmatic-seo)、[Kisi 案例](https://webflow.com/blog/kisi-and-webflow-seo)
 - [IndexNow 官网](https://www.indexnow.org/)(支持引擎列表)、[Google: site reputation abuse 政策更新 2024-11](https://developers.google.com/search/blog/2024/11/site-reputation-abuse)、[2024-03 政策公告](https://blog.google/products-and-platforms/products/search/google-search-update-march-2024/)
 - 生命周期框架与闸门衔接:本套件 [programmatic-seo-gates.md](programmatic-seo-gates.md)、[playbooks.md](playbooks.md)、[log-analysis.md](log-analysis.md)、[link-architecture-patterns.md](link-architecture-patterns.md)
+
+> [2026-10-17 P2] **Google 生成式 AI 内容指南 2026-10-01 更新**([官方页](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content)):新增引用 Search Quality Raters 指南的两个节点作为自检尺子——**4.6.5 规模化内容滥用**、**4.6.6 低投入/低原创/低附加值主内容**(官方强调评分员评分不直接影响排名);人工核查范围明确覆盖 title、meta description、结构化数据和图片 alt;电商站 AI 生成图片须带 IPTC `DigitalSourceType=TrainedAlgorithmicMedia` 元数据,AI 生成的商品标题/描述须在 Merchant Center 单独标注。pSEO 上线闸门把这两节当作「批量页是否越线」的判定参照。

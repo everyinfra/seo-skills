@@ -3,6 +3,7 @@
 > 建立于 2026-10-09,关键事实经 2026-10 检索核实。本手册是 CWV 总纲:四指标全景、INP/CLS/TTFB 深度、第三方脚本治理、优化优先级。分工边界:LCP 的四段拆解与诊断顺序见 [LCP.md](LCP.md),本文只补 2026 新实践;JS 渲染策略见 [rendering-seo.md](rendering-seo.md);审计扣分规则见 [audit-rule-catalog.md](audit-rule-catalog.md)。
 
 > [2026-10-13 CrUX 更新(P1)] CrUX 新增**软导航实验性 CWV 变体**(soft navigation 的 LCP/INP/CLS,SPA 站点适用)——官方 release notes 2026-10-13(developer.chrome.com/docs/crux/release-notes);同页披露 INP 持续回归趋势(2026-09-08 注)但无定论。引用软导航指标时标 [experimental]。
+> [2026-10-17 P1] 同期(2026-09 数据集)全量 origin 统计([CrUX release notes](https://developer.chrome.com/docs/crux/release-notes/)):18,376,044 个 origin;good LCP 68.3% / CLS 81.7% / INP 85.4% / 三项全过 55.9%。**计入软导航后**分别为 72.1% / 85.1% / 87.4% / 59.5%——SPA 重的站计入软导航后通过率普遍上升,做竞品基准对比时两口径不能混用,报告里注明「含/不含 soft nav」。说明文见 [web.dev 博客](https://web.dev/blog/crux-experimental-soft-navs/)。
 
 ## 一、四指标全景
 

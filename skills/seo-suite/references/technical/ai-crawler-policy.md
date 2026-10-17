@@ -23,6 +23,8 @@
 
 **关键事实**：**禁 `GPTBot` 不阻止 ChatGPT 引用你**——引用走 `OAI-SearchBot`。大量站点把两者搞混，想保留引用却把训练 bot 的规则套在搜索 bot 上，或反之。Copilot 无独立 bot，读 Bing 索引。
 
+> [2026-10-17 P2] **OpenAI bots 页 UA 版本与 robots.txt 标记**([官方 bots 页](https://developers.openai.com/api/docs/bots),2026-10-17 读取):OAI-SearchBot 示例 UA 为 `OAI-SearchBot/1.4`、GPTBot 为 `GPTBot/1.4`(官方注明版本号会变);两者抓 robots.txt 时可能在 UA 里加一个 `robots.txt;` 标记,方便在不记路径的日志里区分 robots 请求。**日志识别规则按 bot 名子串匹配,不要写死版本号**;IP 校验分别对 `searchbot.json` / `gptbot.json` / `chatgpt-user.json` / `adsbot.json`。官方提供页面更新 RSS(`/api/docs/bots/rss.xml`),已加进 intel_check 信源。Anthropic 爬虫页同期复核:仍为三类 bot + Crawl-delay 支持 + `claude.com/crawling/bots.json` IP 表,无实质变更。
+
 ## 二、四种典型诉求的配置
 
 ### 1. 全开放（默认推荐）

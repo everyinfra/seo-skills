@@ -2,6 +2,8 @@
 
 > 涉及 FAQPage 或 AI 引用的判断，先读 [geo-evidence.md](../content/geo-evidence.md)。
 
+> [2026-10-17 P2] **schema.org v30.1(2026-09-16)**([发布说明](https://schema.org/docs/releases.html)):Product 新增 `consumerNotice` / `isOftenBoughtWith` / `specification`,Offer 新增 `itemPopularity`,ShippingRateSettings 新增 `minimumOrderValue`,PriceTypeEnumeration 新增 `MaximumRetailPrice`,PropertyValue 新增 `valueGroup`;**欧盟数字产品护照**:新类 `DigitalProductPassport` + 属性 `hasDigitalProductPassport`(Product/Offer),`EnvironmentalProductDeclaration` 与 `DeclarationOfConformity` 作为 Certification 子类,Product 新增 `importer` / `recycledContentPercentage` / `substanceOfConcern`,Product/Organization 新增 `authorizedRepresentative`;MedicalSpecialty 新增 Ophthalmology、Audiology。这些是词汇层新增,**Google 富结果是否消费以 Google 结构化数据文档为准**(截至 2026-10-17 未见文档提及),写进模板时标「词汇可用,富结果未承诺」。
+
 ## 用途
 
 决定给哪类页面加哪种 schema、编写 JSON-LD 时读。一个页面组合多种类型的写法见 [schema-examples.md](schema-examples.md)，验证方法见 [validation-guide.md](validation-guide.md)。

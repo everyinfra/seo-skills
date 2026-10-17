@@ -17,6 +17,7 @@
 | Copilot | 与 Bing 共享抓取/收录/排名基础；官方声明"GEO 不保证 grounding 或引用"；IndexNow 可即时提交 | 官方文档 |
 
 > [2026-10-14 P2] **Bing WMT AI 报告新增 Topics Portfolio(Beta)**:AI Performance 报告按主题组合聚合(Bing 官方博客);同日 Google 确认 **Gemini 4 Argon 进入 Google 搜索(AI Mode)**(SER 2026-10-13)——AI Mode 侧模型能力升级,引用时注明发布期。
+> [2026-10-17 P2] **Google AI Mode / AI Overviews 链接展示再改版**([Google 官方博客 2026-10-15](https://blog.google/products-and-platforms/products/search/updates-ai-mode-overviews-explore-web/)):①内联链接数量继续增加、并更多地放在回答靠前位置;②测试在回答顶部单列「1–2 个完成该任务的正确网页」并附说明(官方/办事类查询);③时效新闻文章轮播扩展到更多国家和语言,并高亮用户的 Preferred Sources(官方称 Preferred Sources 使用人数年初至今增长 7 倍以上);④回答末尾相关文章改为带缩略图的更显眼链接;⑤AI Mode 视频结果里的创作者/发布者名可点,跳到其 Search profile。GEO 含义:办事/官方信息类页面争取「顶部正确网页」位,新闻站优先争取被设为 Preferred Source、并完善 Search profile;GSC AI 报告**仍无点击数据**,效果验收照旧靠日志+referrer 下界。
 
 
 ## 二、社区观察与相关性研究（次级证据，不外推为算法）

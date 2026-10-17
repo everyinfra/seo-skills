@@ -56,6 +56,8 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 
 **数据源**:Google 官方 Search Status Dashboard 的 Ranking 历史是最强"官方传感器"(只报确认事件);Semrush Sensor(活跃;**2026-09-18 全市场重算波动基线,历史分不可直接比**)/MozCast(活跃,偏美)/Algoroo(存活)为旁证;**RankRanger 实质死亡**(2022 被收购后不独立销售,2025 清理历史数据)——勿依赖单一传感器,固定面板会漏(2026-06-08~12 社区观测波动未被捕捉)。
 
+> [2026-10-17 P2] 时间线增补:**Google 2026 年 9 月垃圾内容更新** 2026-09-24 约 12:00 ET 开始、2026-10-08 04:37 ET 完成(SER 归纳三波:9-25~27、9-30、10-04~06;[开始](https://www.seroundtable.com/google-september-2026-spam-update-42163.html)/[完成](https://www.seroundtable.com/google-september-2026-spam-update-done-42235.html),官方 Dashboard 为 JS 渲染无法抓取,起止时间以 Dashboard 为准[待核]);**2026-10-15~16 未确认波动**:社区大量反馈流量骤降、News/Discover 出现过时内容,部分工具同步见波动([SER 2026-10-16](https://www.seroundtable.com/google-search-ranking-volatility-chatter-42317.html))——归因时记为 `unconfirmed_volatility`,且第三方工具读数受 poisoned SERPs 影响(见下文 DiD 段),先用 GSC 一方数据交叉。同期 Google Dataset Search 2026-10-15 起数小时不返回结果([SER](https://www.seroundtable.com/google-dataset-search-broken-42315.html)),属 `bug_incident`,只影响 Dataset 消费面。
+
 **第 0 步:算法更新 rollout 期间变更冻结(Freeze→Pause→Review;SEJ 2026-10 口径,20 视角调研 R6 定为最大单点缺口)**——归因流程启动前先过这一关。确认更新在 rollout 中(Status Dashboard 标 `rolling_out`,或传感器 z30 异常且窗口对齐)时:
 - **Freeze**:冻结一切对站点的变更——代码发布、title/meta 改写、批量内容上下线全部暂停。rollout 期间改站=污染归因:事后无法区分波动来自算法还是自家改动,也毁掉 DiD 对照组的事后纯净性;
 - **Pause 期间只做带日期快照**:GSC 逐日导出存档(标日期,供窗口对齐),monitor.py 照常 run/diff——监控是存证不是变更。critical 级事故响应(站点 down、robots 误封)**不受冻结约束**:那是救火不是变更,走 [continuous-operations](continuous-operations.md) 告警 playbook(第三节);

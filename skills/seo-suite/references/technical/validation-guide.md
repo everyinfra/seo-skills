@@ -150,8 +150,10 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 ### 配额与鉴权速查
 
 - PSI 240 QPM/25K QPD(API key);CrUX+History **共享** 150 QPM;GSC Search Analytics 1,200 QPM/站、30M QPD/项目;URL Inspection 600 QPM、**2,000 QPD/站**;Indexing API **200 publish/天**(太平洋午夜重置;batch 逐条计数,100 条 batch=100 配额);GA4 令牌制:25K/天、5K/时、10 并发(`returnPropertyQuota:true` 监控;简单报表 ~1-10 token、复杂 ~100)。
+- [2026-10-17 P1] **Indexing API 配额页 2026-10-16 改版**([官方配额页](https://developers.google.com/search/apis/indexing-api/v3/quota-pricing),[文档更新日志](https://developers.google.com/search/updates#updating-the-indexing-api-quota-page)):现行三项默认配额=**publish 200/天/项目**(含 URL_UPDATED 与 URL_DELETED,太平洋午夜重置,新配额最长 24 小时生效)、**getMetadata 只读 180/分钟/项目**、**全端点合计 380/分钟/项目**;旧的「默认配额仅供测试+填表申请审批」表述与申请表单已从文档删除,Quickstart 也删掉了「短期页用 Indexing API 而非 sitemap」那段([SER 2026-10-16 对比](https://www.seroundtable.com/google-updates-indexing-api-quota-information-42316.html))。**适用面不变**:Quickstart 仍写明只能用于 JobPosting 与嵌在 VideoObject 里的 BroadcastEvent;社区实测新服务账号默认仍为 200,提额入口转到 Cloud Console 配额页。审计口径:读请求限速按 180/分钟设计,不要再按旧文档给普通 URL 推荐「申请审批后可用」。
 - 429 处理:指数退避(1/2/4/8/16s)+随机抖动,最多 5 次;响应带 `Retry-After` 时优先用它。403=GSC/GA4 权限(SA 邮箱未加进属性;Indexing API 要求 SA 是 GSC **Owner**,只读分析 Full 即可);404 于 CrUX=流量不足非凭据问题。
 - Indexing API 官方适用面:仅 **JobPosting** 与 **BroadcastEvent(嵌 VideoObject)**——普通 URL 少量用 URL Inspection、大量用 sitemap;`URL_DELETED` 仅限永久下线(404/410)。
+- [2026-10-17 P2] **UGC Fresh Data Program**(Google 2026-10-08 新文档,[官方页](https://developers.google.com/search/docs/appearance/ugc-fresh-data-program)):面向大体量 UGC/社交/论坛平台的专用数据接入管道(OAuth 2.0 + 严格校验的 JSON-LD 推送),让新内容和互动计数尽快进入 Search。门槛:内容在稳定 URL 的独立页(非资料页/信息流)、公开可抓无登录墙、作者有公开资料页、页内已有 `SocialMediaPosting` / `DiscussionForumPosting` 带 `interactionStatistic`、有审核与举报机制、互动计数 72 小时内持续更新;申请制,6–8 周答复,不保证入选。对普通站不是 Indexing API 的替代通道;论坛/社区站审计时把「页内 DiscussionForumPosting+interactionStatistic 是否完整」列为申请前置项。
 
 ### 打分纪律
 

@@ -50,6 +50,7 @@ curl -s https://shop.example.com/p/123 | grep -o '"price":\s*"[^"]*"'
 **L5(agent 交互)——细节(2026-10 更新)**:
 
 - **Merchant Center「UCP Integration Hub」已在美国先上线**(SEL/Seroundtable 2026 报道;官方文档 developers.google.com/merchant/ucp):商家可在 GMC 内连接 cart/checkout/identity,启用 AI Mode/Gemini/Search 的 agentic 动作——**L5 的入口从"手写 well-known 文件"升级为"GMC 后台向导+文件"双路径**;
+- [2026-10-17 P2] **Universal Cart 在美国上线**(2026-10-15,[Google 官方博客](https://blog.google/products-and-platforms/products/shopping/universal-cart-launch/)):Google 搜索和 Gemini App 里的跨商家购物车,由 UCP 驱动结账,可跨零售商存品、提示降价、自动套用可用优惠码、Google Pay 结账;底层是 Shopping Graph 600 亿+ 持续刷新的商品条目;合作商家含 Nike、Sephora、Target、Ulta Beauty、Walmart、Wayfair 和大量 Shopify 商家([SER 转述](https://www.seroundtable.com/universal-cart-google-search-42312.html))。**L5 从「可被 agent 读取」进入「可被 agent 加购结账」**——美国站点检查 UCP profile 与 GMC UCP 接入是否打通,价格/促销数据须与落地页一致(购物车会追踪降价)。
 - `/.well-known/ucp` 声明用 [Shopify/ucp-cli] 生成校验;AI 爬虫 UA(GPTBot 等)在 robots 里留白名单可读层(价格页不设登录墙);
 - 验收命令:
 

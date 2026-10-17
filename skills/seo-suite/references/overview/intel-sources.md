@@ -23,6 +23,8 @@
 | 16-18 | Yandex Webmaster / Naver webmaster 博客 / Baidu ziyuan | 月 | diff/RSS | 三引擎生态→对应市场 |
 | 19 | StatCounter 国家页×5(RU/KR/CN/JP/US) | 周 | 抓取 | 市场门户数字 |
 | 20 | robots.txt RFC 9309+文档 | 年 | 哈希季 | 爬虫政策底层 |
+| 21 | [Search 文档 changelog RSS](https://developers.google.com/search/updates/search_docs_updates.rss) | 周 | RSS | 与第 2 行同源,逐条给出标题,比整页哈希少误报(2026-10-17 加入 intel_check) |
+| 22 | [OpenAI bots 页 RSS](https://developers.openai.com/api/docs/bots/rss.xml) | 不定期 | RSS | 官方爬虫变更逐条通告,补第 7 行哈希的噪声(2026-10-17 加入 intel_check) |
 
 注:旧"ranking updates history"页 2025 已下线,改盯 Blog+Dashboard。
 注:StatCounter 图表页是 JS 渲染,服务端 HTML 每次拉取都在抖——intel_check 对 hash 源做
