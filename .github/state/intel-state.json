@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-16T05:49:16.669980+00:00",
+ "checked_at": "2026-10-17T05:33:56.358790+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -13,8 +13,8 @@
    "ts": "2026-10-11T08:34:44.548408+00:00"
   },
   "google-updates": {
-   "hash": "a71dfec7d3fcc4d0d1e011f33df3bda1",
-   "ts": "2026-10-15T05:52:22.437494+00:00"
+   "hash": "b68402534749aaf12faa0e4893e610fd",
+   "ts": "2026-10-17T05:33:38.419606+00:00"
   },
   "gsc-announce": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "6a4059f2605bfa02c4402048d333978c",
-   "ts": "2026-10-16T05:49:01.061859+00:00"
+   "hash": "0545acba33132dcf27c5e37f1514790c",
+   "ts": "2026-10-17T05:33:40.420286+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -75,20 +75,20 @@
    "ts": "2026-10-12T07:19:18.894548+00:00"
   },
   "anthropic-crawl": {
-   "hash": "d9923d3d336e71149c855b5e51cbf888",
-   "ts": "2026-10-16T05:49:01.982495+00:00"
+   "hash": "d3e55aa4d72aba3076fd4b4f013da585",
+   "ts": "2026-10-17T05:33:41.281287+00:00"
   },
   "schema-org": {
-   "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-10-16T05:49:02.865330+00:00"
+   "hash": "c28ae2197ecacc4469ac00319b179a7f",
+   "ts": "2026-10-17T05:33:42.149230+00:00"
   },
   "crux": {
    "hash": "d2a1552151cc94d26df43f95f48a1c80",
    "ts": "2026-10-15T05:52:26.249138+00:00"
   },
   "yandex-wm": {
-   "hash": "9fe6cb4fd63aa4c47b671f099a48226b",
-   "ts": "2026-10-15T05:52:28.915359+00:00"
+   "hash": "0eb71441e6b430dc42e672c19ba72ff5",
+   "ts": "2026-10-17T05:33:45.872307+00:00"
   },
   "naver-wm": {
    "hash": "a26b9df40fce5e2a1b96978387faf90d",
@@ -100,18 +100,19 @@
   },
   "statcounter-search": {
    "hash": "88b4349e9d861acb18ead3279f359cdb",
-   "ts": "2026-10-16T05:49:14.503022+00:00"
+   "ts": "2026-10-17T05:33:54.701852+00:00",
+   "unstable_streak": 1
   },
   "statcounter-ai": {
-   "hash": "3aeff5f3fa450925e8ad8fa23415e4dc",
-   "ts": "2026-10-16T05:49:15.000079+00:00"
+   "hash": "f0f163599d8305c51238215b2c0ff9dd",
+   "ts": "2026-10-17T05:33:55.318003+00:00"
   },
   "semrush-sensor": {
    "hash": "3e84638e76730e3cbc89569d59f815d0",
    "ts": "2026-10-16T05:49:15.724368+00:00"
   },
   "seroundtable": {
-   "top": "Google Dataset Search Currently Not Returning Search Results",
+   "top": "Daily Search Forum Recap: October 16, 2026",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -138,9 +139,14 @@
     "Google Updates Links In AI Mode & AI Overviews Again, Won't Show Click Data",
     "Daily Search Forum Recap: October 15, 2026",
     "Universal Cart Launches In Google Search (U.S.)",
-    "Google Automotive Model Feeds On Search Ads (Vehicle Top Ads)"
+    "Google Automotive Model Feeds On Search Ads (Vehicle Top Ads)",
+    "Daily Search Forum Recap: October 16, 2026",
+    "Search News Buzz Video Recap: Google Poisoning Tracking Tools, Google AI Results Updates, Discover To Change, Google Ads, ChatGPT & SEO",
+    "Google Search Ranking Volatility & Chatter Spike Today",
+    "Google Ads To Allow Certification For Online Gambling Advertisers",
+    "Bing Tests Read More Links In Search Result Snippets"
    ],
-   "ts": "2026-10-16T05:49:16.669745+00:00"
+   "ts": "2026-10-17T05:33:56.358511+00:00"
   }
  }
 }
