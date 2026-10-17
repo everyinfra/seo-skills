@@ -148,6 +148,66 @@
 
 **Impact × Confidence 双轴评分**(ericosiu content_attack_brief,可直接代码化,已同步进 scripts/gsc_mining.py 头注):Impact(0-10)=量档(≥10k+3/≥2k+2/≥500+1)+CPC 档($15+3/$5+2/$1+1)+漏斗档(BOFU+2/MOFU+1)+趋势档(>50%+2/>20%+1);Confidence(0-10)=KD 档(≤10+4/≤20+3/≤35+2/≤50+1)+现有位次(≤10+3/≤30+2/≤50+1)+主题权威加成(该词落在本站内容指纹主题内且指纹计数>5,+2);优先级=Impact×Confidence。**趋势判读**:12 个月量史取首 3 月均值 vs 末 3 月均值,>50%=Surging/>20%=Rising/>5%=Growing/±5%=Stable/≥-20%=Declining/更低=Falling。**漏斗词表**:BOFU 触发词=agency/services/hire/pricing/tools/software/best/vs/alternative/platform/cost/price/company/firms/consultant/consultancy/outsource;MOFU=how to/guide/strategy/examples/case study/roi/tutorial/template/checklist/tips/framework/what is/explained/overview/comparison。**执行路径分派**:KD≤20 且无页→全自动新建;已有页且 KD≤50→全自动刷新;KD≤40→半自动(AI 起草人审);KD≤60→人写 AI 优化;更高→专家写+外链。**衰退检测 28d vs 90d 口径**:90 天点击×(28/90) 归一成日均再比,仅 c90>5 才判,c28<c90×0.7(即降 >30%)记衰退。**竞品 gap 硬阈值**:对手 best_position ≤20 且我 >50(或零曝光),过相关性词表+噪音黑名单双滤(login/coupon/what is/wikipedia 类不进 gap)。
 
+## 需求发现:反查平台免费子域的「新出现自然点击」(2026-10-17 并入)
+
+**思路**(社区经验,来源 X @aiRobertDaily 2026-10-16;工具界面与付费边界 2026-10-17 核验):不少人先用托管平台的免费子域(如 `*.vercel.app`)快速上线试水。某个子域开始拿到自然搜索点击,相当于别人替你试过一轮需求。反查「平台根域下新出现点击的子域落地页」,能拿到一份低成本的**选题种子**清单——只是线索,不是结论,后面必须过本文的意图判定和 SERP 核验。和 `scripts/trend_scout.py`(HN/Reddit 热度)互补:那边看讨论热度,这边看已经被搜索验证过的落地页。
+
+**操作(Similarweb,菜单名以 2026-10 界面为准)**:
+1. Keyword research → Website explorer → Landing pages,输入平台根域 `vercel.app`(输入类型显示为 Domain)。
+2. 切到 Organic Pages,Clicks change 筛选选 **New Clicks**,时间选单月或最近 28 天。
+3. 看哪些子域 URL 进了榜,点该行的 All keywords 展开驱动点击的关键词。
+4. 先剔除子域自己的名字(导航词),剩下的词去 Google Trends 看形态和地区分布(字段口径见 [serp-data-models.md](serp-data-models.md)),再按上文「用实际 SERP 核验」判意图。
+
+**已核实(2026-10-17)**:
+- Landing Pages 工具在 Similarweb 官方知识库有说明:按 URL 列出估算点击、环比变化、排名词数和 Top Keyword,行内可展开驱动该 URL 的关键词;输入类型分 Domain / Exact URL / Prefix / Subdomain 四种。
+- Clicks change 的官方口径:Trending=点击环比 >10% 且当月 >100;De-Trending=环比 <-10% 且当月 >100;Lost Clicks=当月 0、上月 >0;**New Clicks=当月 >0 且上月 =0**。这是**环比**口径:"新出现"只表示上月没有点击,不等于新建的站,季节性回流也会落进来。原帖说时间选最近 1–12 个月,截图里实际选的是单月;选多月区间时 New Clicks 怎么算,未核实。
+- 输入平台根域后能列出子域 URL:原帖截图可见(vercel.app 以 Domain 类型输入,单月列出 1.7 万余个 URL)。官方文档没写明 Domain 输入是否涵盖子域;换平台用之前,先确认列表里出现的确实是子域 URL。
+
+**付费边界(Similarweb 官网定价页,2026-10-17)**:
+- Landing Pages(organic and paid)只在带 SEO Intelligence 的自助档里:Competitive Intel & SEO & AEO,年付折合 $333/月,按月付 $399/月(更高的含 Ads 档也有)。入门的 Competitive Intelligence 档(年付折合 $125/月)不含。
+- 单独的 Subdomains 报告不在任何自助档里,只出现在企业定制套餐;自助用户只能走 Landing Pages 这条路。
+- 免费部分:similarweb.com 的公开页面只给高层样本,不能下钻。官方博客(2024-06)写的是 7 天试用、需绑卡、每天限 15 次操作;试用期能不能打开 Landing Pages,未核实。
+
+**局限**:
+- 点击数是 Similarweb 的**估算值**(官方文档原词即 estimated),小子域误差更大。只拿来排序找线索,不当搜索量入账,不写进对外材料。
+- 原帖截图里排在前面的子域,Top Keyword 多是子域自己的名字。这类导航词证明不了需求,要先剔除。
+- 子域站本身质量参差,拿到的词必须过意图判定和 SERP 实看;Trends 是相对值,只用来看形态和拐点,不用来比绝对量。
+- 只能看到已经拿到点击、且被 Similarweb 数据覆盖的子域;覆盖不到的地区和长尾小词看不见。
+
+**同一思路可延伸到(未核实)**:netlify.app、pages.dev、github.io、replit.app、framer.website 等提供免费子域的平台。用之前先确认工具能把该根域下的子域 URL 列出来。
+
+**其他工具里的相近能力(只列核实过的功能,没有在平台根域上实测过)**:
+- Semrush Organic Research 的 Position Changes 报告可按 New / Improved / Declined / Lost 筛选(官方博客 2024-09)。同一来源写的免费账号额度是每天 10 次请求、每份报告 10 行、无历史数据——对平台根域这种量级基本不够用。
+- Ahrefs Site Explorer(付费)有 Top pages、Top subdomains 报告(官方 Traffic Checker 页介绍)。免费 Traffic Checker 能不能列出平台根域下的子域,未核实。
+
+## 新站选词:词根拓词、KGR 粗筛与「四找」研究循环(社区经验,2026-10-17 并入)
+
+来源:X @qianshuixia2026 2026-10-17 长文(作者整理哥飞公众号文章的二手笔记);KGR 定义按提出者原文核对。本节都是社区经验法则,**不是 Google 指标**,只用于新站起步阶段的粗筛和练手;正式选词仍按本文前面的意图判定和 SERP 核验。
+
+**需求词根拓长尾**:工具型需求常挂在固定的动作词根上,原文列出 generator / creator / maker / builder / checker / converter(原文称共 51 个,只列了这 6 个,其余不补猜)。做法:`[对象] + [词根]` 批量组合 → 进关键词工具补搜索量 → 用下面的 KGR 粗筛 → 判意图(要生成、要转换还是要看教程,页面形态完全不同)。工具页与配套说明文的打法见 [site-type-playbooks.md](../overview/site-type-playbooks.md) 的 ⑥ 工具站。
+
+**KGR(Keyword Golden Ratio)**:由 Doug Cunnington(Niche Site Project)提出。KGR = 标题含该短语的 Google 结果数(搜 `allintitle:短语`)÷ 月搜索量,**只适用于月搜索量 <250 的词**(素材原文漏了这个上限)。提出者的判读:<0.25 收录后应进前 100;0.25–1 应较快进前 250;>1 说明量虽低但竞争已不小。使用边界:
+- 依据是提出者自家站的案例,没有对照研究;筛出来的词仍要看 SERP 前十的页面类型和强弱。
+- 各工具的搜索量口径不同,提出者建议固定用一个工具算,只比相对大小。
+- `allintitle` 要人工查:提出者说明该运算符被 Google 限频;Google 垃圾政策把未经许可向 Google 发送自动查询(包括为查排名抓取结果)列为违规——不要写脚本批量跑。
+- 同一对象的多个近似 KGR 词(加 review、加型号后缀之类),内容高度相似时合并成一页(提出者 FAQ),和上文「混合意图」的拆页判断一致。
+
+**「四找」研究循环**:词找词(种子词扩相关词)→ 词找站(搜这些词,记 SERP 前十的站)→ 站找词(把站放进流量工具,看它的非品牌词和着陆页)→ 站找站(SERP 里冒出来的新站再放回工具)→ 回到词找词。原文转述的新手训练版:
+1. 在 Similarweb 一类流量工具里打开一个靠自然搜索起量的标杆站,先看自然搜索流量占比;
+2. 抽出非品牌核心词,记下每个词对应的着陆页 URL;
+3. 逐个打开着陆页,记 Title、Description、H1 和页面字数(原文用 AITDK 浏览器插件);
+4. 拿这些词去 Google 搜,记下第一页前十的全部竞争页;
+5. 前十里冒出来的新站,再放回流量工具,循环。
+
+流量工具的数字都是估算(口径与局限见上一节);按 SERP 选竞品的方法见 [gap-analysis-frameworks.md](gap-analysis-frameworks.md)。
+
+**三个练手站(社区经验,逐级加难度)**:
+1. **只练全流程**:起一个独一无二的站名,买便宜域名,跑通解析、部署、统计代码、Search Console 验证、等收录。验收=在 Google 搜这个站名排第一。
+2. **练选词和基础外链**:挑一个每天几十次搜索、几乎没有竞争的长尾词做核心页,收录后补几条基础外链或目录提交(纪律见 [backlink-directory.md](backlink-directory.md)),观察排名从几百名外逐步进前三页、再到第一页。
+3. **练内页矩阵和树形内链**:挑一个每天几百次搜索、有一定竞争的实用词,铺一批内页,按分类组织内链([link-architecture-patterns.md](../technical/link-architecture-patterns.md))。验收=内页开始拿长尾流量,首页核心词进第一页。
+
+正式做站时「先收词,再建站」的流程见 [topic-cluster-templates.md](topic-cluster-templates.md)「规划步骤」的新站版。
+
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
@@ -156,6 +216,8 @@
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/keyword-research/references/keyword-intent-taxonomy.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/keyword-research/references/keyword-intent-taxonomy.md)（Apache-2.0）
 - 一手资料：[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
 - 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（西语 es-419 组合经 Google hreflang 文档核实；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）
+- 需求发现段（2026-10-17 核验）：方法出处 [X @aiRobertDaily 2026-10-16](https://x.com/aiRobertDaily/status/2110993420424778028)（帖文与截图，社区经验）；[Similarweb Knowledge Center · Using Landing Pages](https://support.similarweb.com/hc/en-us/articles/17226212657693-Using-Landing-Pages)（输入类型、Clicks change 四档口径、估算点击）；[Similarweb Web Intelligence 定价页](https://www.similarweb.com/packages/web/)（Entrepreneurs 档功能表）；[Similarweb 博客 · 13 Things You Can Do With Similarweb for Free](https://www.similarweb.com/blog/marketing/marketing-strategy/similarweb-free/)（2024-06，试用条款）；[Semrush 博客 · competitor keyword analysis tools](https://www.semrush.com/blog/competitor-keyword-analysis-tool/)（2024-09，Position Changes 与免费额度）；[Ahrefs Traffic Checker](https://ahrefs.com/traffic-checker)（Site Explorer 报告名）
+- 新站选词段（2026-10-17 核验）：素材 [X @qianshuixia2026 2026-10-17](https://x.com/qianshuixia2026/status/2111268767342997847)（整理哥飞公众号文章的二手笔记，社区经验）；KGR 定义、<250 上限、判读档位与近似词合并按提出者原文 [Niche Site Project · Keyword Golden Ratio](https://nichesiteproject.com/keyword-golden-ratio/) 及其 [FAQ](https://nichesiteproject.com/keyword-golden-ratio/faq/)；自动查询口径见 [Google 垃圾政策 · Machine-generated traffic](https://developers.google.com/search/docs/essentials/spam-policies#machine-generated-traffic)
 
 ## (ericosiu 深读 2026-10-09c)转化信号词表/异议分类/闭环回读/意图交付闸门
 

@@ -25,7 +25,7 @@
 | T1 | 发布周 | Product Hunt / Hacker News（Show HN）——锚定事件 |
 | T1B | 发布周 | 徽章经济发布站（审 72h，1 dofollow） |
 | T2 | 第 1 周+滚动 | ~50 个通用目录（AlternativeTo 等） |
-| T3A/B | 第 1–3 周 | AI 工具目录 / MCP 目录 |
+| T3A/B | 第 1–3 周 | AI 工具目录 / MCP 目录（逐条入口、免费/付费档与实抓 rel 见 [backlink-directory](backlink-directory.md) 第四节「MCP 目录」） |
 | T4 | 按需 | 官方 MCP Registry（CLI 发布）/ agent 目录 / GitHub awesome 列表 / Claude 插件目录 |
 | T6 | 冷启 | "best of" 榜单文（ outreach DR 40+ 博文） |
 | T7 | 稳定期 | 集成市场（DR 最高：HubSpot 93 / Zapier 91 / Slack 89 / Notion 88） |
@@ -49,7 +49,7 @@
 ## 五、安全与验证
 
 - 提交前安全闸：目标目录页**当不可信输入**处理（提示注入面）；DNS 解析验证目标；每个对外动作需人工批准
-- 提交后 dofollow 验证：`curl -sIL <listing> | grep -i rel=`
+- 提交后 dofollow 验证：`curl -sL <listing> | grep -oE '<a [^>]*href="https?://你的域名[^"]*"[^>]*>'`，看输出里的 rel（2026-10-17 修正：原写 `curl -sIL` 只取响应头，看不到页面里 `<a>` 的 rel）；前端渲染的目录页 curl 拿不到链接，要看浏览器渲染后的 DOM；批量复检用 `scripts/directory_tracker.py verify`
 
 ## 六、KPI
 

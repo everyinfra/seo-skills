@@ -84,6 +84,26 @@
 - **Medium / Dev.to / 知乎专栏 / 微信公众号**：内容分发+个人页链接
 - **YouTube 频道关于页**：Gemini/ChatGPT 偏好的引用源（品牌权威权重最高的平台）
 
+### MCP 目录（产品有 MCP server 才做；2026-10-17 逐条核验）
+
+**适用对象**：已有可安装或可远程连接的 MCP server 的产品。没有 MCP server 的不要为了外链去造一个。提交时机与分层见 [directory-submissions](directory-submissions.md) 的 T3B/T4 层。
+
+| 渠道 | 提交入口与所需材料 | 成本 | 链接属性（实抓条目页 HTML） | 权威参考（口径） | 核验 |
+|---|---|---|---|---|---|
+| [mcp.so](https://mcp.so/submit) | 分 MCP Server / Remote Server / MCP Client / AI Product 四类；表单填 Repository URL 和 Name。未登录访问时页面只显示 $39 一次性付费提交（免审即发、Verified 徽章、精选位、dofollow 项目链接），免费通道是否要登录后才出现，未核实。另有人在 GitHub `chatmcp/mcpso` 开 issue 提交，但该仓 README 没把它写成提交通道，open issue 已积压 3,500 多个 | 付费 $39；免费档待登录核实 | **免费条目的项目链接是 `rel="nofollow ugc noopener noreferrer"`；Verified（付费）条目的项目链接是 `rel="noopener noreferrer"`，没有 nofollow，即 dofollow**（各抽 1–2 页） | DR 72（提交页自述，2026-10-17 看到）；DR 73（站长 X 帖，2026-10-16）。两者都是站方自述，Ahrefs 免费检查器要过人机验证，免费 DR API 要 key，本次没有独立印证 | 2026-10-17 |
+| [mcpservers.org](https://mcpservers.org/submit) | 表单：名称、分类、短描述、仓库/官网/文档 URL、Official MCP Registry 名（可选）、是否支持远程、联系邮箱 | Free（2 周内审核）/ $39 Premium（24 小时内审核、Official 徽章、搜索优先） | 付费档写明「Dofollow link」，言下免费档不是；免费条目 rel 未实抓（条目页对脚本请求返回 403） | DR 71（提交页自述） | 2026-10-17 |
+| [Smithery](https://smithery.ai/docs) | 登录后在 smithery.ai/new 发布自己的 server | Free | 抽 2 个条目页：GitHub 仓库和官网链接都是 `rel="noopener noreferrer"`（dofollow） | 未查 | 2026-10-17 |
+| [Glama](https://glama.ai/mcp/servers) | 目录页有 Add Server 入口；另有按 Official Registry 名组织的 connectors 页（URL 形如 `/mcp/connectors/io.github.<user>/<name>`） | Free | 抽 1 个条目页：GitHub 仓库链接不带 rel（dofollow）；官网链接和 README 内链接是 `rel="ugc nofollow"`——权重给的是仓库，不是官网 | 未查 | 2026-10-17 |
+| [PulseMCP](https://www.pulsemcp.com/submit) | **暂停接收新提交，也不改已有条目**（页面 2026-09-03 更新）；官方建议先发 Official MCP Registry，恢复后会自动收录 | — | 未查 | 未查 | 2026-10-17 |
+| [Official MCP Registry](https://modelcontextprotocol.io/registry/quickstart) | 用官方 `mcp-publisher` CLI：写 `server.json` → login（GitHub 或 DNS 鉴权）→ publish；npm 包需在 `package.json` 写 `mcpName` 并与 `server.json` 的 name 一致；Registry 只托管元数据，不托管包 | Free | API 型注册表，本身不产生 HTML 外链；价值在下游目录据此收录（PulseMCP 已明说） | — | 2026-10-17 |
+
+**怎么用这张表**：
+- **免费条目基本拿不到 dofollow**：mcp.so、Glama 官网链接实抓都是 nofollow/ugc，mcpservers.org 也只把 dofollow 写进付费档。免费上架的价值在开发者可发现性、品牌实体一致和引荐流量，按第六节的反虚荣 KPI 度量，不按 dofollow 数度量。
+- **为 dofollow 付费前先看政策**：Google 垃圾政策原文把「用钱换链接、以影响排名为目的」列为 link spam，合规做法是给这类链接加 `rel="nofollow"` 或 `rel="sponsored"`；同一页也把低质量目录链接列入 link spam。$39 付费档的 dofollow 链接属于付费链接，买不买自己权衡，本目录不推荐为了 dofollow 付费。付费档的审核提速、徽章和精选位是另一回事，按引荐流量值不值单独算。
+- **DR 是站方自述且会漂移**：mcp.so 推文 73、提交页 72，相差一天口径就不同；引用时写明「站方自述 + 日期」，要用作决策先自己用 Ahrefs 复核。
+- **先发 Official Registry**：至少 PulseMCP 会从 Registry 自动收录，Glama 的 connectors 页按 Registry 名组织；官方 FAQ 写明已发布版本的元数据不可改（同 npm），改描述只能发新版本，所以 `server.json` 先定稿再 publish。
+- **上架后验 rel**：本节表里的条目页都是服务端渲染，`curl -sL <条目页> | grep -oE '<a [^>]*href="https?://你的域名[^"]*"[^>]*>'` 就能看到 rel；前端渲染的目录要用浏览器开发者工具看渲染后的 DOM。
+
 ## 五、核验纪律（本目录的维护规则）
 
 1. **六字段数据溯源**（借自 flaqai）：任何流量/权威数字记录 `数据源/指标/统计月份/地域/设备/核验日期`——无源数字不收录。
@@ -101,6 +121,7 @@
 - 渠道数据与周同步 JSON：[alvinunreal/awesome-submitlist](https://github.com/alvinunreal/awesome-submitlist) `data/destinations.json`
 - 中文渠道全量+溯源约定：[flaqai/backlink_skills](https://github.com/flaqai/backlink_skills) `Free-backlink-list.md`
 - 分级格式（Easy/Medium/Hard 徽章）：[indie-hacking/Awesome-SEO-Backlinks](https://github.com/indie-hacking/Awesome-SEO-Backlinks)
+- MCP 目录小节（2026-10-17 核验）：线索出自 mcp.so 站长 [X @idoubicc 2026-10-16](https://x.com/idoubicc/status/2111041976376373489)（DR 73 自述）；各目录提交页原文（[mcp.so/submit](https://mcp.so/submit)、[mcpservers.org/submit](https://mcpservers.org/submit)、[pulsemcp.com/submit](https://www.pulsemcp.com/submit)）；条目页 rel 为当日 `curl` 抓取 HTML 解析所得（mcp.so 免费 2 页/付费 1 页、Smithery 2 页、Glama 1 页，抽样不代表全站）；[MCP Registry Quickstart](https://modelcontextprotocol.io/registry/quickstart) 与 [Registry FAQ](https://modelcontextprotocol.io/registry/faq)；付费链接口径：[Google 垃圾政策 · Link spam](https://developers.google.com/search/docs/essentials/spam-policies#link-spam)
 
 ## 完全装载:寄生 SEO 平台分层(百仓深扫;kostja94 parasite-seo)
 

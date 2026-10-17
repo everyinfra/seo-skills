@@ -57,6 +57,19 @@
 7. **排发布顺序**：Pillar 先上线或与首批深入页同时上线；先做需求明确、你最有把握的子问题。
 8. **定衡量口径**：按集群（URL 目录或自定义分组）看展示、点击、覆盖到的查询和转化；复盘节奏按内容更新频率定。
 
+**新站版：先收词，再建站**（还没有 Search Console 数据、域名和首页都还没定的时候；社区经验，来源 X @qianshuixia2026 2026-10-17，2026-10-17 并入）。常见的错误顺序是先拍脑袋买域名、搭首页，再回头想要做哪些词。新站按下面的顺序倒推，让每个页面从第一天起就对着具体的搜索需求：
+
+1. **多入口收词**：Google 搜索框下拉、结果页底部的相关搜索、Google Trends、Keyword Planner，以及 Similarweb / Semrush / Ahrefs 这类工具（需要你自己的账号）。工具型需求可用词根拓词，见 [keyword-intent-taxonomy.md](keyword-intent-taxonomy.md)「新站选词」一节。
+2. **补全月搜索量和趋势**：量和趋势同一工具取数，标注口径和取数日期。
+3. **剔除无关词，合并同义意图**：同一意图的不同说法归成一组，不按字面拆。
+4. **按搜索意图分组**：对应上面第 3 步的聚类，每组对应一个 URL。
+5. **定页面形态**：工具、教程、对比、列表……按意图和 SERP 实际形态选。
+6. **生成第一批 URL 清单**：同上面第 5 步。
+7. **人工剔除薄内容页**：撑不起独立内容的变体并入父页或直接放弃，不为凑数量开页。
+8. **先上最有把握的 5–10 个核心页**：其余排队，上线后按第 8 步的口径看数据再扩。
+
+和上面八步的差别：收查询不靠 Search Console；多了「人工剔除薄内容页」这道闸；首批只上 5–10 页。
+
 ## 交付物
 
 1. 主题地图：Pillar 到各 Cluster 页的树状结构。
@@ -82,6 +95,7 @@
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/keyword-research/references/topic-cluster-templates.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/keyword-research/references/topic-cluster-templates.md)（Apache-2.0）
 - 一手资料：[可抓取链接与锚文本](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)、[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)、[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
+- 新站版「先收词，再建站」：[X @qianshuixia2026 2026-10-17](https://x.com/qianshuixia2026/status/2111268767342997847)（整理哥飞公众号文章的二手笔记，社区经验；2026-10-17 并入）
 
 ---
 
