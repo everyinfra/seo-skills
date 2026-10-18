@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-17T05:33:56.358790+00:00",
+ "checked_at": "2026-10-18T05:51:39.213880+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "0545acba33132dcf27c5e37f1514790c",
-   "ts": "2026-10-17T05:33:40.420286+00:00"
+   "hash": "c91662d959ad110ac351b917d1d73bc4",
+   "ts": "2026-10-18T05:51:25.912975+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -100,12 +100,13 @@
   },
   "statcounter-search": {
    "hash": "88b4349e9d861acb18ead3279f359cdb",
-   "ts": "2026-10-17T05:33:54.701852+00:00",
-   "unstable_streak": 1
+   "ts": "2026-10-18T05:51:36.840418+00:00",
+   "unstable_streak": 2
   },
   "statcounter-ai": {
    "hash": "f0f163599d8305c51238215b2c0ff9dd",
-   "ts": "2026-10-17T05:33:55.318003+00:00"
+   "ts": "2026-10-18T05:51:37.534418+00:00",
+   "unstable_streak": 1
   },
   "semrush-sensor": {
    "hash": "3e84638e76730e3cbc89569d59f815d0",
@@ -147,6 +148,21 @@
     "Bing Tests Read More Links In Search Result Snippets"
    ],
    "ts": "2026-10-17T05:33:56.358511+00:00"
+  },
+  "google-docs-rss": {
+   "top": "Updating the Indexing API quota page",
+   "seen": [
+    "Updating the Indexing API quota page",
+    "Added documentation on the UGC Fresh Data Program",
+    "Updated guidance on using generative AI content",
+    "Added creator property and updated interactionStatistic in VideoObject structured data",
+    "Added local business query support to the aggregator and supplier units"
+   ],
+   "ts": "2026-10-18T05:51:38.587704+00:00"
+  },
+  "openai-bots-rss": {
+   "hash": "f237661cad613ae8cbd3da9f508b2565",
+   "ts": "2026-10-18T05:51:38.708920+00:00"
   }
  }
 }
