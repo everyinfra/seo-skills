@@ -1,91 +1,103 @@
-# JS 渲染与 SPA SEO(2026 口径)
+# JS 渲染与 SPA SEO
 
-> 建立于 2026-10-09。以 Google/Naver/Yandex 官方文档为基准;行业实测标注。与 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md) 的"SPA 空壳=P0"条目呼应,本文件是系统版。移动端专项(移动优先索引/触摸目标/插页惩罚/AMP 遗产/移动 SERP)另见 [mobile-seo.md](mobile-seo.md)。
+> 2026-10-18 按 Google、Bing、Naver、Yandex 官方文档核对。与 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md) 的「SPA 空壳=P0」条目呼应，本文件是系统版。移动端专项见 [mobile-seo.md](mobile-seo.md)。
 
-## 一、Google 渲染管线(现行口径)
+## 一、Google 渲染管线（现行口径）
 
-- **两波索引已死**:官方文档已删除 "two waves" 与 "5 秒超时" 表述。现行:抓取 → 渲染队列 → WRS(Web Rendering Service,evergreen Chromium)渲染 → 索引,无固定延迟。
-- **队列行为**:HTTP 200 全部进渲染队列;官方措辞"排队 2–3 秒或更久";行业实测秒级至分钟级,**低权重/JS 重站点可拖到数小时甚至数周,JS 站消耗约 9 倍抓取预算**(Onely)。**"不在 rendered HTML 里的内容无法被索引"是官方原话**。
-- **WRS 无状态(Google 官方 2026-03-31 口径)**:每次渲染清空 cookies/session/localStorage——依赖客户端存储的内容(consent 同意门、localStorage 驱动的个人化/分支渲染)对 WRS 不可见,与"不在 rendered HTML 里"同罪。行业实测同口径:Google 清 cookies 使同意门对爬虫永远不开(Lantad/wpconsults 2026)。
-- **检测**:GSC URL Inspection(Live Test 看渲染后 HTML)、URL Inspection API、Rich Results Test;Mobile-Friendly Test 已退役(2023-12)。
+来源：[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)（2026-03-04 更新）、[修复与 JS 相关的搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)（2025-12-18 更新）、[文档更新记录](https://developers.google.com/search/updates)。
 
-> [2026-10-14 P2] Google 官方发布 **PDF 在搜索中的处理文档**(转换/链接/图片/文件限制/排名与 AI 摘要)——白皮书类 PDF 内容可入索引与 AI 摘要但限制多于 HTML;迁移建议:核心内容应有 HTML 版(SER 2026-10-13 报道)。
+- **三个阶段**：抓取 → 渲染 → 索引。Googlebot 把返回 200 的页面全部放进渲染队列，除非 robots meta 或响应头要求不索引。页面可能在队列里停几秒，也可能更久；资源允许时，无头 Chromium（常青版）执行 JS，渲染后的 HTML 用于索引和发现链接。
+- **非 200 页面**：200 的页面会送去渲染，非 200 的可能不会（2025-12-18 补充）。错误页上用 JS 注入的内容和标记，不要指望被看到。
+- **原始 HTML 里的 noindex**：Google 是否还会渲染这类页面没有明确定义，也可能变化。只要页面有可能需要被索引，原始 HTML 里就不要写 noindex，不要指望 JS 再把它删掉（2025-12-15 补充）。
+- **canonical**：规范化在渲染前后都会发生。原始 HTML 写了 canonical，JS 就不要改成别的值；HTML 里写不了时，HTML 里干脆不写，只用 JS 设置（2025-12-17 补充）。
+- **WRS 不保留状态**：每次页面加载都会清空 Local Storage、Session Storage 和 HTTP Cookie。依赖客户端存储才出现的内容（同意门后的正文、按 localStorage 分支的个性化）对 Google 不可见。
+- **缓存**：WRS 可能忽略缓存头，用到旧的 JS/CSS。用内容指纹文件名（如 `main.2bb85551.js`），文件内容变了文件名才变。
+- **能力边界**：Googlebot 拒绝权限请求（摄像头等）；不支持 WebSocket、WebRTC，要有 HTTP 回退；不支持 WebGL 等特性时要做特性检测。Shadow DOM 会被展平，内容必须出现在渲染后的 HTML 里。
+- **路由与链接**：只发现带 `href` 的 `<a>` 链接；SPA 用 History API，不要用片段（`#/products`）加载不同内容。客户端路由的错误页要么 JS 跳到返回 404 的 URL，要么用 JS 加 `noindex`。
+- **懒加载**：内容进入视口就加载（原生 `loading="lazy"`、IntersectionObserver），不依赖滚动或点击——Google 不和页面交互；首屏立即可见的内容不要懒加载（[懒加载文档](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)）。
+- **抓取上限**：Googlebot 只抓每个资源的前 2MB（未压缩），PDF 前 64MB；页面引用的每个 CSS、JS 单独计算（[Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)）。
+- **检测工具**：Search Console 网址检查（渲染后 HTML、加载的资源、JS 控制台输出；截图只在实时测试里有）、富媒体搜索结果测试。Mobile-Friendly Test 工具与 API 已于 2023-12-01 退役（[Google 博客 2023-04-19](https://developers.google.com/search/blog/2023/04/page-experience-in-search)）。
 
-- **懒加载红线(官方)**:内容须"进入视口即加载"(`loading=lazy`/IntersectionObserver),**不得依赖用户交互**(Google 不滚动不点击);无限滚动必须给每块持久唯一 URL 并顺序链接。
+> PDF：2026-10-13 Google Search Central 发布了一期讨论 PDF 转换、链接与 AI 结果的播客视频（第三方报道：[PPC Land](https://ppc.land/google-podcast-hosts-cant-name-the-pdf-crawl-limit-it-documents-as-64mb/)），不是新文档。核心内容仍应有 HTML 版本（本套件口径）。
 
 ## 二、渲染策略决策表
 
-| 站点类型 | 推荐 | SEO 后果 |
+Google 的总原则：服务端渲染或预渲染「仍然是好主意」，因为对用户和爬虫都更快，而且不是所有爬虫都能运行 JavaScript。下表是本套件口径：
+
+| 站点类型 | 推荐 | 理由 |
 |---|---|---|
-| 内容站/媒体 | SSG+ISR(on-demand) | 纯 CSR=Google 延迟索引、**Bing/AI 爬虫直接丢内容**(约 69% 主流爬虫不渲染 JS——SearchVIU 2025) |
-| 电商 | 产品页 SSG/ISR;筛选 SSR 或规范化分页 | 价格/库存个性化部分客户端注水,主内容必须服务端 |
-| SaaS | 营销站/docs SSR/SSG;app.* 子域整体 noindex | 混合渲染(Next.js per-page)是主流 |
-| 文档 | SSG+ISR | 静态最优 |
+| 内容站 / 媒体 | SSG + 按需增量再生成（ISR） | 纯 CSR 依赖每个爬虫都执行 JS；Bing 明确要求不要把关键内容藏在客户端渲染后面 |
+| 电商 | 商品页 SSG/ISR；筛选页 SSR 或按分页规范处理 | 价格、库存的个性化部分可以客户端注水，主内容必须在服务端 |
+| SaaS | 营销站、文档 SSR/SSG；`app.*` 子域整体 noindex | 按页面选渲染方式（如 Next.js 逐页配置） |
+| 文档 | SSG + ISR | 静态最稳 |
 
-**meta 注入红线**:title/OG/canonical/hreflang 必须在初始 HTML。Google 渲染后能读 JS 注入的 meta(官方:JS 注入 canonical 可读但须单标签且与响应头一致);**社交爬虫(Facebook/LinkedIn/微信)与多数 AI 爬虫不执行 JS——客户端注入 OG=分享卡片全挂**,且 Facebook 只解析前 ~60KB HTML。
+**meta 注入红线**：
+- Google 可以用 JS 设置 title 和 meta description；canonical 按第一节的规则；noindex 不要依赖 JS 删除。
+- Meta（Facebook）爬虫文档要求 Open Graph 属性出现在页面前 1 MB 内，否则被截断（[Meta Web Crawlers](https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers)）。社交与多数 AI 爬虫是否执行 JS，官方大多没写；按「不执行」设计——OG、canonical、hreflang、JSON-LD 写进初始 HTML（本套件口径）。
 
-## 三、市场差异:各引擎渲染能力
+## 三、市场差异：各引擎的渲染
 
-| 引擎 | 口径(来源类型) | 实操 |
+| 引擎 | 官方口径 | 实操 |
 |---|---|---|
-| Google | WRS evergreen Chromium(官方) | 常规 |
-| Bing | "一般能渲染 JS"但规模化受限,可靠性低于 Googlebot(官方 2018+行业实测) | **SPA 纯 CSR 连带伤 ChatGPT 可见性**(Bing 生态) |
-| Naver Yeti | **官方确认解析 JS**,但资源消耗"数倍于 HTML",**官方明确建议 SSR**;两段式管线(先静态索引,JS 另行抓取渲染);JS/CSS 必须 robots 放行;fragment(#)URL 被剥离→SPA 必须用 History API(官方 JS 指南) | 韩语区 SPA 一律 SSR |
-| Yandex | 站长侧 JS 渲染开关(β,官方);历史上不渲染 | 俄语区以开关+实测为准 |
-| Baiduspider | "百度不执行 JS"为行业共识;有独立渲染 UA `Baiduspider-render`(行业实测,官方文档缺失)——**以百度站长平台"抓取诊断"实测为准** | 中文区 SSR/预渲染兜底 |
+| Google | 常青版 Chromium 渲染；限制见第一节 | 按第一节自查 |
+| Bing | 现行指南：不要把关键内容藏在客户端渲染后面；不能可靠渲染的内容可能不被索引，也不会被选作 Copilot 的 grounding 结果（[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)） | 面向 Bing / Copilot 的内容一律服务端输出 |
+| Naver（Yeti） | 支持 SPA 收录，但解析 JS 要多耗数倍资源，官方建议主要区域服务端渲染；JS/CSS 不要被 robots.txt 屏蔽；URL 片段（`#`）会被去掉，用永久链接；JS 资源单独抓取，没抓到前先按静态 HTML 索引；不建议在 JS URL 里加时间戳或哈希来强制刷新（[Naver JS 指南](https://searchadvisor.naver.com/guide/seo-advanced-javascript)） | 韩语区 SPA 做 SSR。指纹文件名只在文件内容变化时才变，不要每次构建都换名 |
+| Yandex | 站长后台「索引 → JavaScript 页面渲染」（β），默认由机器人自行决定；已做 SSR 或预渲染的站点建议关闭渲染；内容延迟加载时可用 `window.YandexRotorSettings` 告知（[Yandex 渲染文档](https://yandex.com/support/webmaster/en/yandex-indexing/rendering)） | 俄语区以该设置和实测为准 |
+| 百度 | 未找到百度关于执行 JS 的一手文档（未核） | 中文区做 SSR 或预渲染兜底；以百度搜索资源平台的抓取诊断实测为准 |
 
-## 四、SPA SEO 审计清单(7 项)
+## 四、SPA SEO 审计清单
 
-1. `view-source`:主内容/title/meta/OG/canonical/hreflang/JSON-LD 是否在原始 HTML(空壳=P0)。
-2. 单页 `curl -A "Mozilla/5.0 (compatible; Googlebot/2.1)"` 对比正常 UA(**只做诊断,不做差异化输出**)。
-3. GSC Live Test 看渲染后 HTML;禁 JS 看退化内容。
-4. robots.txt 放行 JS/CSS;JS/CSS 用指纹文件名(WRS 可能忽略缓存头)。
-5. SPA 路由用 History API;JS 软 404 用 meta noindex 注入或真 404(官方)。
-6. **cloaking 红线**:bot 与用户返回显著不同内容=违规;动态渲染"一般不算 cloaking"(输出一致前提下)但官方已降级为**临时变通,非长期方案**。
-7. 预渲染:Google 自家 Rendertron 已归档(2022);Prerender.io 系仍在维护;2026 主流风险是**内容漂移**(bot 版与用户版不一致)而非惩罚——能 SSR 就别长期挂预渲染。
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 关键元素在原始 HTML 里 | 命令 1：对比原始 HTML 与渲染后 DOM 中 title、canonical、robots、hreflang、JSON-LD、h1 的出现次数 | 失败：任何一项只在渲染后出现（空壳 = P0）。计数会把脚本里的字符串算进去，最终看命令 2 |
+| 2 | 服务端内容完整 | 命令 2：原始 HTML 可见文本 ÷ 渲染后可见文本 | 本套件口径（C9）：≥0.9 通过；<0.5 判空壳 |
+| 3 | 套件规则扫描 | `python3 scripts/site_audit.py https://example.com/page --json`，看 rendering 五项（CSR 空挂载点、noscript 回退、JS 重量、服务端内容、H1/H2） | 失败：出现 CSR 空挂载点警告 |
+| 4 | Google 看到的版本 | Search Console 网址检查 → 测试实际网址 → 查看已测试的网页（HTML、截图、更多信息里的资源加载和控制台） | 失败：渲染后 HTML 缺主内容；资源被 robots.txt 拦截；控制台报错 |
+| 5 | 资源可抓 | 对主要 JS、CSS 跑 [robots-txt-reference.md](robots-txt-reference.md) 检查清单第 5 项 | 失败：任何渲染必需资源被屏蔽 |
+| 6 | 路由与状态码 | 检查导航链接都是 `<a href>`，没有 `#/` 路由；访问不存在的路由 | 失败：片段路由；错误路由返回 200 且没有 noindex |
+| 7 | 不依赖客户端状态 | 用无痕窗口（清空存储）打开主要页面 | 失败：主内容要先接受同意弹窗或依赖 localStorage 才出现 |
+| 8 | 爬虫与用户内容一致 | 同一 URL 用浏览器 UA 与 Googlebot UA 各抓一次，对比主内容（只做诊断，不做差异化输出） | 失败：两者主体内容不同（伪装风险） |
 
-## 五、CWV 关联
+```bash
+# 命令 1：原始 HTML 与渲染后 DOM 的关键元素计数（macOS 路径；Linux 用 google-chrome）
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+curl -s https://example.com/page > raw.html
+"$CHROME" --headless=new --disable-gpu --user-data-dir=/tmp/chrome-seo --dump-dom https://example.com/page > rendered.html
+for p in '<title' 'rel="canonical"' 'name="robots"' 'hreflang=' 'application/ld+json' '<h1'; do
+  printf '%-22s raw=%s rendered=%s\n' "$p" "$(grep -oi "$p" raw.html | wc -l | tr -d ' ')" "$(grep -oi "$p" rendered.html | wc -l | tr -d ' ')"
+done
 
-- **INP(200ms)**:hydration backlog 与长任务是 React 系最大杀手;解法:RSC、岛屿/partial hydration、`scheduler.yield`。
-- **LCP**:CSR 空壳天然差(等 JS bundle);SSR/流式渲染;勿对首屏 LCP 图 lazy-load;hydration 重写 DOM 可引发 CLS。
+# 命令 2：可见文本比（去掉 script/style/noscript/template 后的非空白字符数）
+python3 -I -c '
+import re
+def n(p):
+    s = open(p, encoding="utf-8", errors="replace").read()
+    s = re.sub(r"(?is)<(script|style|noscript|template)[^>]*>.*?</\1>", " ", s)
+    s = re.sub(r"(?s)<[^>]+>", " ", s)
+    return len(re.sub(r"\s+", "", s))
+r, d = n("raw.html"), n("rendered.html")
+print("raw=%d rendered=%d ratio=%.2f" % (r, d, r / d if d else 0))'
+```
 
-## 渲染工程三件套全文细节(百仓深扫完全装载)
+## 五、动态渲染与预渲染
 
-**rendertron(官方弃用遗产,参数仍可引用)**:动态渲染 UA 白名单 16 个(Baiduspider/bingbot/Embedly/facebookexternalhit/LinkedInBot/pinterest/quora/Slackbot/Telegrambot/Twitterbot/vkShare/WhatsApp 等——**名单里没有 Googlebot**,Google 不需要);静态扩展名豁免 45 项(.js/.css/.svg/.xml… 命中不代理);渲染硬预算 **10 秒**;中间件超时 11000ms;缓存默认 24h、datastore 下 >1000 条性能劣化;`<meta name="render:status_code">` 可控代理返回码;代理失败 next() 回落原 SPA 不 5xx。
-**react-snap 失败模式清单**:只支持 History 路由(hash 不可预渲染);snapSaveState 仅支持基本 JSON 类型(Date/Set/Map/NaN 会坏);Service Worker navigateFallback 须指 200.html 而非 index.html(否则他页闪首页);skipThirdPartyRequests 屏蔽 GA/Mapbox;爬取 UA 固定 "ReactSnap";JS 注入样式须关 speedy 才进 DOM;JSS 不支持 rehydration;决策三选——renderToString(锁库)/JSDOM(不支持 Blob,行为分叉)/headless(SSR 分叉 caveat)。
-**astro-paper(静态主题 SEO 基线)**:OG 图 satori+sharp 1200×630 内嵌本地字体(不外链 Google Fonts);**文章自带 ogImage 时跳过自动生成(自定义优先)**;草稿不生成;robots-as-code 三行式指向 sitemap-index;GSC 验证走环境变量非硬编码;极简 BlogPosting JSON-LD(无 publisher,刻意)。
-**CSR 落地(theninthsky)**:**Bing 不能渲染 JS→预渲染是 Bing/AI 可见性的实际前提**;Worker 按 UA 分流(bot 列表含 bingbot/yandex/twitterbot,**必须排除 googlebot**);Prerender.io 1000 次/月免费;"Vercel 组合过滤 65536(2^16) 种只能单文件"=SSG 反例;CSR 渲染即 JS 就绪、结构性免疫水合失焦。
+- Google 把动态渲染定位为**临时变通，不推荐**：它增加复杂度和资源消耗（[动态渲染文档](https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering)）。
+- 只要动态渲染给爬虫的内容与用户看到的相似，Google 一般不视为伪装；给用户和爬虫完全不同的内容（例如用户看猫、爬虫看狗）才算伪装。
+- Google 的 Rendertron 仓库已归档（最后提交 2022-10）。能做 SSR/SSG 就不要长期挂预渲染；长期预渲染的主要风险是两个版本内容漂移（本套件口径）。
+- 按 UA 分流给非 Google 爬虫预渲染时：分流名单不要包含 Googlebot（Google 自己能渲染）；预渲染服务回头抓站点时要排除自身 UA，防止递归（本套件口径）。
+- SPA 的动态路由（如 `/product/:id`）没有别的发现渠道，要全部枚举进 sitemap（本套件口径）。
 
-## 源码级实现细节:rendertron 中间件/react-snap 管线/astro-paper 端点(rendertron·react-snap·astro-paper 源码深读,2026-10-09)
+## 六、与 Core Web Vitals 的关联
 
-补上节"渲染工程三件套"的内部实现,审计遗留动态渲染栈或自建预渲染管线时直接引用。
-
-**rendertron 中间件路由逻辑**(`middleware/src/middleware.ts`):UA 正则默认 `new RegExp(botUserAgents.join('|'), 'i')` 对 16 个 bot 名做**不区分大小写任意位置匹配**;命中后构造 `proxyUrl + encodeURIComponent(完整入站 URL)`——整 URL 二次编码是关键,防路径注入;`injectShadyDom` 选项追加 `?wc-inject-shadydom=true`(Web Components 站必须);`allowedForwardedHosts` + `X-Forwarded-Host`(默认头名可换)防 host 头伪造——**只有白名单内的 forwarded host 才被采用**,否则回落 `req.get('host')`;代理失败仅 console.error 后 `next()` 回落原 SPA(不 5xx)。服务端(`src/rendertron.ts` + `src/config.ts`):`restricted()` 三重防线——非 http(s) 协议拒、`*.internal` 内网域拒、配置了 `renderOnly` 前缀列表则非成员拒,全部 403(**SSRF 防护**);`x-renderer: rendertron` 响应头自曝身份;`/_ah/health` 健康检查;缓存三选(datastore/memory/filesystem)各带 `/invalidate/:url` 与 `/invalidate/` 全清端点;默认 viewport 1000×1000、超时 10000ms、`puppeteerArgs: ['--no-sandbox']`;`?mobile` 查询参数切移动渲染、`?timezoneId` 传时区。
-
-**react-snap 内部管线**(`doc/behind-the-scenes.md` 14 步 + `index.js` 默认参数):复制 index.html→200.html → 起 express+serve-static+history-api-fallback 本地服务(默认端口 **45678**,源目录 `build/`)→ 从 `include:["/"]` 起爬同域链接入队(>1 页时追加 /404.html)→ puppeteer 渲染(**并发 4 tab**,`concurrency` 可调)→ **等待无活跃网络请求 0.5s** → CRA1/CRA2/Parcel chunk 修复(删 chunk script 换 `<link rel=preload as=script>`,按 package.json 里 react-scripts/parcel-bundler 版本自动判型)→ 删 blob 样式 → 重建 CSS-in-JS style 文本(`fixInsertRule`:空 style 从 `style.sheet.rules` 重生成 cssText)→ 可选 inlineCss(minimalcss 关键 CSS)→ 可选 http2PushManifest → 压缩 HTML 落盘(route 以 .html 结尾用原名,否则 route/index.html)。**表单状态固化**(`fixFormFields`):radio/checkbox 的 checked 与 option 的 selected 转成 HTML 属性,防止水合错位。**落盘告警**:404 页 title 不含 "404" 与普通页 title 含 "404" 都 console.warn(soft-404 语义自检)。**默认移动优先 viewport 480×850**、UA 固定 "ReactSnap"、`saveAs` ∈ html|png|jpeg。**anatomy 文档的预渲染器选型矩阵**:DOM 层三选——renderToString(锁框架、组件须支持 SSR、可缓存)/JSDOM(不支持 Blob 等新特性、SSR 分叉 caveat)/headless(react-snap 路线,真浏览器无特性缺口);路由发现三选——手列清单(会漏)/程序生成(gatsby createPages)/爬取(**react-snap 默认,爬不到的手动补**);数据层 agnostic(不做数据生成器)+ 水合靠 `window.snapSaveState` 序列化状态(Redux/loadable-components/Apollo 同一钩子)。**性能实测**(an-almost-static-stack,Moto G4/3G):inlineCss 使 Start Render -0.5s;Link 头(superstatic JSON 格式 `</static/js/main.df90a75f.js>;rel=preload;as=script`)使 First Interactive -0.6s;HTTP2 push 经 Cloudflare "几乎无变化";`removeScriptTags`(Netflix 式 server-only React)Load Time 3.6s→1.16s 但 PWA 分 91→45;换 Preact JS -35KB 但 React 16 特性不兼容。
-
-**astro-paper 六文件细节**:`Layout.astro` 全站 head 模板——canonical 默认 `new URL(Astro.url.pathname, Astro.site)`;og:image 绝对化 `new URL(ogImage, Astro.site)`;**`<slot name="head">` 让子布局注入 JSON-LD/article meta**(分层注入模式);RSS 自动发现 `<link rel=alternate type=application/rss+xml>`;FOUC 防御用内联同步脚本读 localStorage+prefers-color-scheme 设 data-theme(**渲染前设,无闪烁,与 SSR 兼容**);`theme-color` 运行时填充。`PostLayout.astro`:BlogPosting 极简 JSON-LD(headline/image/author[Person]+条件 datePublished/dateModified 均toISOString);**og:type 覆盖模式**——Layout 默认 website,文章页用 slot 注入 `<meta property=og:type content=article>` **重复标签覆盖**(HTML 去重取第一个/最后因解析器而异,Astro 里靠注入顺序可控)——自研模板更稳的做法是 prop 传参;article:published_time/modified_time 与 JSON-LD 同源(props 直出)。`og.png.ts` + `posts/[...slug]/index.png.ts`:satori+sharp 生成 1200×630 PNG;**字体从 `astro:assets` 的 fontData 按权重(400/700)取本地文件**,不请求 Google Fonts(构建确定性+隐私);`embedFont:true` 字体内嵌进 SVG;视觉规范:双卡片边框(absolute 偏移 1px 阴影层 opacity .9)+标题 72px 粗体+站名/作者 28px、`overflow:hidden` 截断;文章 OG 的 `getStaticPaths()` **过滤 draft 与自带 ogImage 的文章**(自定义优先)+`config.features.dynamicOgImage` 总开关(关则 404)。`robots.txt.ts`:APIRoute 三行式输出 `User-agent: * / Allow: / / Sitemap: {site}/sitemap-index.xml`(robots-as-code,与构建产物同源)。`astro.config.ts`:`@astrojs/sitemap` 的 filter 回调按 `features.showArchives` 剔除 /archives/(**功能开关直接映射 sitemap 收录**);i18n `prefixDefaultLocale:false`(默认语言无前缀,canonical 干净);GSC 验证走 `envField.string({access:"public"})` 环境变量注入,不硬编码进模板;shiki 双主题(min-light/night-owl)+`defaultColor:false`(暗色模式不重排)。
-
-## (client-side-rendering 深读 2026-10-09d)
-
-theninthsky/client-side-rendering(827★,CSR 性能案例库,1747 行 README)全文装载。上节"CSR 落地"摘要行的源码级展开:README # SEO/# Benchmark/CSR vs. SSR 节 + `public/_worker.js` + `src/pages.js` + `scripts/create-sitemap.js` + `src/pages/Comparison.tsx`。
-
-**Worker UA 分流实现细节(仓库实际版 vs README 简化版)**:README 展示的分流只有一行门:`BOT_AGENTS.some(agent => userAgent.includes(agent)) && !pathname.includes('.')` → 预渲染,否则 `env.ASSETS.fetch(request)`;仓库实际 `_worker.js` 是复合边缘文档 Worker,SEO 分流仅占顶部几行,完整判定顺序为——①`If-None-Match`(含 service-worker-navigation-preload 头透传的 ETag)命中文档 ETag → 直接 304 短路;②pathname 与 UA 各自 `toLowerCase()`(小写化实现大小写不敏感,对照 rendertron 用正则 `i` 标志);③`bypassWorker = ['prerender','googlebot'].includes(userAgent) || pathname.includes('.')` → 回落静态资产;④BOT_AGENTS 子串命中 → `fetchPrerendered`;⑤其余请求走文档组装(SW 缓存态 `X-Cached` 差异化内联脚本、按 `:param` 路由匹配注入 async 页面脚本)。**匹配语义陷阱**:bot 列表是 `userAgent.includes(agent)` 子串匹配,而 bypass 列表是数组 `.includes(userAgent)` **整串相等**——真 Googlebot UA(`Mozilla/5.0 (compatible; Googlebot/2.1; ...)`)既不等于 `'googlebot'` 也不在 bot 列表,于是落入⑤拿到原始 CSR 文档,恰是意图(Google 自渲染 JS,喂预渲染版无益且有内容漂移风险);`'prerender'` 整串匹配是防自研渲染器回头抓取造成递归。**bot 列表 32 项**(bingbot、yahoo! slurp、yandex、baiduspider、facebookexternalhit、twitterbot、rogerbot、linkedinbot、embedly、quora link preview、showyoubot、outbrain、pinterest/0.、developers.google.com/+/web/snippet、slackbot、vkshare、w3c_validator、redditbot、applebot、whatsapp、flipboard、tumblr、bitlybot、skypeuripreview、nuzzel、discordbot、qwantify、pinterestbot、bitrix link preview、xing-contenttabreceiver、telegrambot)——**社交/链接展开 UA 占大半**;官方维护源 https://docs.prerender.io/docs/how-to-add-additional-bots#cloudflare,README 明示"必须把 googlebot 从名单里排除"。**预渲染后端二选一**:自托管(`${YOUR_PRERENDERER_URL}?url=${url}`,仓库实际指向作者自研 Renderless worker)或 Prerender.io(`https://service.prerender.io/${url}` + `X-Prerender-Token` 头);均 `redirect: 'manual'` 且透传原始请求头。
-
-**Prerender.io 经济学与动态渲染背书**:README 原话"very expensive but offers **1000 free prerenders a month**"——免费额度只够小站/低频页,故 **serverless 自托管预渲染是推荐路线**(GCP 上可非常便宜);动态渲染(Dynamic Rendering)被 Microsoft/Bing 官方鼓励(2018 Bing 博客)且 Twitter 等大站在用。
-
-**GSC "Other error" 判读(独家增量)**:Googlebot 渲染失败多数不是应用问题,而是 Google 不愿花抓取资源(Crawl Budget 低);确认方法 = GSC 里 View Crawled Page 查看失败请求,若全是 **"Other error" 标记 = Googlebot 主动中断请求**(insufficient fetch quota),仅发生在 Google 判定内容无价值/流量极低的站。配套口径:Google 2017 年后对 CSR 应用"基本完美索引",前提是动态设 title/description(react-helmet 或手写 Meta.tsx);Googlebot 用最新 Chromium;数据接口慢时多数情况会等完再快照(support.google.com 实测帖);GSC Live URL Test 可当场验证渲染。
-
-**社交预览同路解决**:CSR 单一无内容 HTML → 任意页分享预览都相同(社交爬虫不执行 JS);上述同一个 UA 分流网关顺带解决——bot 列表里 facebookexternalhit/twitterbot/whatsapp/discordbot/telegrambot/slackbot/skypeuripreview/linkedinbot/pinterest 全命中预渲染,WhatsApp/Facebook 实测截图为证。**一个边缘网关 = 非 Google 搜索引擎 + 社交链接展开双覆盖**。CSS-in-JS 配套:`src/utils/disable-speedy.ts` 仅两行——`if (navigator.userAgent.includes('Prerender')) sheet.speedy(false)`,客户端运行时按 UA 关闭 emotion speedy,样式落进 DOM 供预渲染快照。
-
-**SSG 65536 组合反例(Vercel Guides)**:`vercel.com/guides?topics=analytics` 刷新即布局偏移——过滤组合有 **65536(2^16) 种**,每组合存一个静态 HTML 存储上不可行,于是只生成含全量数据的单 `guides.html`,JS 加载前不知道过滤态。同族论据:death-to-ie11.com 计时器 JS 前不可见;依赖 `window.matchMedia` 的组件初始错渲染;ISR 也救不了(未缓存页仍等服务器响应,同 SSR);电商价格/库存陈旧 → "没有任何主流电商用 SSG"。
-
-**sitemap 从集中路由生成**:`src/pages.js` 是单一真相(home/lorem-ipsum/pokemon/`/pokemon/:name`/comparison/web-vitals,每页 path+title+description+data 抓取规格(url/method/headers/body/preconnect)+menuItem);`scripts/create-sitemap.js` 实际版比 README 示例多一步**动态参数展开**——静态 path 过滤 `!path.includes(':')`,动态 `/pokemon/:` 模板 fetch PokeAPI(limit=1025)展开成 1025 条具体 URL,`changefreq:'weekly'`,经 sitemap npm 的 SitemapStream 写 `public/sitemap.xml`,挂在 `prebuild` 钩子并行执行;**SPA 动态 `:param` 路由必须枚举进 sitemap**(爬虫对参数化路径无别的发现渠道);产出手动提交 GSC + Bing Webmaster Tools。
-
-**Benchmark 节口径**:对照 Next.js 文档站(全 SSG)Accessibility 页 vs 本仓 Lorem Ipsum 页,两边 render-critical JS 均 ~246KB(后续 preload/prefetch 不计),PSI 慢 4G 各跑约 20 次取最高分;结论"performance is not a default in Next.js";注:仅测首载、未计 CSR 全缓存优势。部署 Cloudflare Pages(250+ PoP);未尽优化:Brotli 11 级(CF 为省算力只用 4 级)、付费 Argo。
-
-**Comparison.tsx 四法矩阵**:CSR 唯一 SEO con 原文语义——"HTML 无数据,SEO 完全依赖爬虫 JS 渲染能力(当前仅 Googlebot)→ 须设预渲染服务器";SSR/SSG/RSC 均列 "Great for SEO"。评分表(慢网):CSR 首载 C、重载 A(全缓存)/B(部分)、导航 S;CSR+SWR 重载/导航双 S;SSR 导航 A or lower;快网 CSR 首载即 A。11 条表注要点:评分=可见性+可交互、假设 React 48KB gzipped、CSR/SSG 假设 CDN 而 SSR/RSC 假设 serverless、数据获取不计(SSR 内嵌除外)、SSG 可能陈旧。RSC 侧引用价值:流式渲染**无法内联 critical CSS**(Next.js discussion #59989)、"无限 bundle"(每次导航下载全量 code-split 模板)、emotion 等基础库不兼容;SSG cons:场景极窄(About/Login 类页)、全页存 CDN 有存储费、连桌面/移动视口都无法区分(继承 SSR con #3)。
+- 阈值与诊断以 [cwv-playbook.md](cwv-playbook.md) 为准（LCP ≤2.5s、INP ≤200ms、CLS ≤0.1，按 p75）。
+- CSR 空壳要等 JS 下载执行完才有主内容，LCP 天然偏慢；SSR 或流式渲染改善首屏。
+- 水合期间的长任务拖慢 INP：拆分长任务、按需水合（岛屿架构）。
+- 水合重写 DOM 会引起 CLS；首屏 LCP 图不要懒加载。
 
 ## 来源
 
-官方:Google JS SEO 基础/懒加载/动态渲染文档(JS SEO 文档 2026-03-31 版确认 WRS 无状态:每次渲染清空 cookies/localStorage)、Next.js SEO 教程、Naver Search Advisor JS 指南、Yandex Webmaster rendering。行业:Patrick Stox、Onely(9× 抓取预算)、SearchVIU 2025(AI 爬虫渲染)、dev.to 2026 综述、Lantad/wpconsults 2026(WRS 无状态实测,2026-10-12 复核)。GitHub:garmeeh/next-seo(8.5k★)、prerender-node(921★,维护中)/Rendertron(已归档,信号)、theninthsky/client-side-rendering(827★,2026-10-09d 全文深读)。未证实项:WRS 具体 Chromium 版本(官方只说 evergreen);百度渲染官方文档缺失;渲染队列实际延迟无固定值;AI 爬虫渲染能力半年即可能过期。
+- Google：[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[修复与 JS 相关的搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)、[懒加载与无限滚动](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)、[动态渲染](https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering)、[Googlebot 抓取上限](https://developers.google.com/search/docs/crawling-indexing/googlebot)、[文档更新记录（2025-12 三条 JS 补充）](https://developers.google.com/search/updates)、[2023-04-19 页面体验博客（MFT 退役）](https://developers.google.com/search/blog/2023/04/page-experience-in-search)
+- 其他引擎：[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)、[Naver 자바스크립트 검색 최적화](https://searchadvisor.naver.com/guide/seo-advanced-javascript)、[Yandex JavaScript 页面渲染](https://yandex.com/support/webmaster/en/yandex-indexing/rendering)
+- 社交：[Meta Web Crawlers](https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers)
+- 工具状态：[GoogleChrome/rendertron](https://github.com/GoogleChrome/rendertron)（已归档）
+- 未核项：百度是否执行 JS；社交与 AI 爬虫的 JS 能力（各家多未公开，按不执行设计）。

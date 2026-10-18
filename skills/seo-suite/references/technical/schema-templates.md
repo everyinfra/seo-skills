@@ -2,35 +2,38 @@
 
 > 涉及 FAQPage 或 AI 引用的判断，先读 [geo-evidence.md](../content/geo-evidence.md)。
 
-> [2026-10-17 P2] **schema.org v30.1(2026-09-16)**([发布说明](https://schema.org/docs/releases.html)):Product 新增 `consumerNotice` / `isOftenBoughtWith` / `specification`,Offer 新增 `itemPopularity`,ShippingRateSettings 新增 `minimumOrderValue`,PriceTypeEnumeration 新增 `MaximumRetailPrice`,PropertyValue 新增 `valueGroup`;**欧盟数字产品护照**:新类 `DigitalProductPassport` + 属性 `hasDigitalProductPassport`(Product/Offer),`EnvironmentalProductDeclaration` 与 `DeclarationOfConformity` 作为 Certification 子类,Product 新增 `importer` / `recycledContentPercentage` / `substanceOfConcern`,Product/Organization 新增 `authorizedRepresentative`;MedicalSpecialty 新增 Ophthalmology、Audiology。这些是词汇层新增,**Google 富结果是否消费以 Google 结构化数据文档为准**(截至 2026-10-17 未见文档提及),写进模板时标「词汇可用,富结果未承诺」。
+> **schema.org v30.1（2026-09-16）**（[发布说明](https://schema.org/docs/releases.html)，核对 2026-10-18）：Product 新增 `consumerNotice`、`isOftenBoughtWith`、`specification`；Offer 新增 `itemPopularity`；ShippingRateSettings 新增 `minimumOrderValue`；PriceTypeEnumeration 新增 `MaximumRetailPrice`；PropertyValue 新增 `valueGroup`。欧盟数字产品护照：新类 `DigitalProductPassport` 和属性 `hasDigitalProductPassport`（Product/Offer）；`EnvironmentalProductDeclaration`、`DeclarationOfConformity` 是 Certification 的子类；Product 新增 `importer`、`recycledContentPercentage`、`substanceOfConcern`；Product/Organization 新增 `authorizedRepresentative`；MedicalSpecialty 新增 Ophthalmology、Audiology。以上新增词汇都在 schema.org 的 pending 区（[词汇表 JSON-LD](https://schema.org/version/latest/schemaorg-current-https.jsonld)）。Google 文档截至 2026-10-18 未提到它们：写进模板时标「词汇可用，富结果未承诺」。
 
 ## 用途
 
-决定给哪类页面加哪种 schema、编写 JSON-LD 时读。一个页面组合多种类型的写法见 [schema-examples.md](schema-examples.md)，验证方法见 [validation-guide.md](validation-guide.md)。
+决定给哪类页面加哪种 schema、编写 JSON-LD 时读。一个页面组合多种类型的写法见 [schema-examples.md](schema-examples.md)；验证方法见 [validation-guide.md](validation-guide.md)；停用类型见 [deprecated-signals.md](deprecated-signals.md)。
 
 ## 一、基本规则
 
-- 格式首选 JSON-LD，放在 head 或 body 里都可以，位置不影响权重。
-- **标记必须与页面上可见的正文一致**：不标记用户看不到的内容，不写误导性的内容（见[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。
-- 只标记页面的主要内容：页面讲的是什么，就用什么类型。
-- **没有真实评分数据，不写 `aggregateRating` 或 `review`。** 评分必须来自页面上可见的真实评价；商家给自己打的评价不能用于 LocalBusiness 和 Organization 的评价富结果。
-- 词汇合法、符合 Google 富结果资格、真的展示富结果是三件事；标记正确也不保证展示。
-- 没有专门的「AI Schema」，加结构化数据不等于会被 AI 引用。
-- 必填和推荐属性以 Google [类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)中对应类型的文档和 [schema.org](https://schema.org/) 为准，每次动手前现查，不凭记忆写。
+- 格式首选 JSON-LD。Google 能读 head 或 body 里的 JSON-LD，也能读 JS 动态插入的 JSON-LD（[结构化数据简介](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)）。Product 标记例外：Google 建议放进初始 HTML，JS 生成会让购物抓取更少、更不可靠（[用 JS 生成结构化数据](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript)）。
+- **标记必须与页面可见内容一致**：不标记用户看不到的内容，不写误导性内容（[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。
+- 只标记页面的主要内容。
+- **没有真实评分，不写 `aggregateRating` 或 `review`。** 评分必须在页面上可见。实体自己控制的评价（直接写或用第三方小组件嵌入）让 LocalBusiness/Organization 页面失去评分星级资格；不得汇总其他网站的评价（[评价摘要](https://developers.google.com/search/docs/appearance/structured-data/review-snippet)）。
+- 词汇合法、符合 Google 富结果资格、真的展示富结果是三件事。Google 不保证展示（通用指南原话）。
+- 违规的后果是富结果资格：结构化数据人工处置只让页面失去富结果资格，不影响网页排名（通用指南，核对 2026-10-18）。
+- Google 没有 AI 专用的 schema：在 AI 功能中出现，不需要特殊的 schema.org 标记（[AI 功能](https://developers.google.com/search/docs/appearance/ai-features)、[生成式 AI 优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)）。
+- 必填和推荐属性以 Google [类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)里对应文档为准，每次动手前现查。
 
 ## 二、常用类型何时用
 
-| 类型 | 放在哪里 | 何时用 | 注意 |
+状态列以 Google 类型库为准（页面最后更新 2026-10-16，核对 2026-10-18）。
+
+| 类型 | 放在哪里 | Google 要求（核对 2026-10-18） | 注意 |
 |---|---|---|---|
-| Organization | 首页或「关于我们」页，一处即可 | 说明品牌或公司的名称、官网、logo、官方资料页 | `sameAs` 只放你控制或官方认证的资料页（见 [Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)） |
-| WebSite | 首页 | 声明站点名称（见[站点名称](https://developers.google.com/search/docs/appearance/site-names)） | 不要为站内搜索框富结果添加 SearchAction，Google 已[停止展示该功能](https://developers.google.com/search/blog/2024/10/sitelinks-search-box) |
-| Article / BlogPosting / NewsArticle | 文章页 | 新闻、博客、指南 | 作者、发布时间、更新时间与页面显示一致；内容实质更新时才改 `dateModified`（见 [Article](https://developers.google.com/search/docs/appearance/structured-data/article)） |
-| Product + Offer | 商品详情页 | 单个可购买的商品 | 价格、币种、库存与页面一致并同步更新；分类列表页不要标成单个 Product（见 [Product](https://developers.google.com/search/docs/appearance/structured-data/product)） |
-| BreadcrumbList | 显示了面包屑的页面 | 面包屑可见时 | 与可见面包屑逐级一致（见 [Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)） |
-| SoftwareApplication | 软件或 App 介绍页 | 描述软件名称、运行平台、价格 | 按 Google 当前的[软件应用](https://developers.google.com/search/docs/appearance/structured-data/software-app)文档，该富结果要求有评分或评价；没有真实评分时可以只作词汇描述，不会获得该富结果，绝不编造 |
-| LocalBusiness 及其子类型 | 门店页，一店一页 | 有实体门店或服务区域 | 名称、地址、电话、营业时间与页面及其他官方资料一致（见 [本地商家](https://developers.google.com/search/docs/appearance/structured-data/local-business)）；能用更具体的子类型就用子类型 |
-| FAQPage | 页面上真实存在的问答区 | 只描述真实问答 | FAQ 富结果已停止展示，不把它当作获得富结果或 AI 优先引用的手段 |
-| HowTo | — | — | HowTo 富结果 Google 已不再展示；步骤用清楚的有序列表写好即可 |
+| Organization | 首页或「关于我们」等一个介绍页 | 无必填属性；`logo` 至少 112×112px；`name`/`alternateName` 与站点名称一致 | Google 建议放首页或单个介绍页，**不需要每页都放**（[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)）。`sameAs`：Google 定义为其他网站上介绍本组织的页面，例如社媒主页或点评页；本套件口径：只放能证明是同一实体的资料页 |
+| WebSite | 首页 | 用于站点名称（[站点名称](https://developers.google.com/search/docs/appearance/site-names)） | 站点链接搜索框 2024-11-21 起停展（[公告](https://developers.google.com/search/blog/2024/10/sitelinks-search-box)），不再为它加 SearchAction |
+| Article / BlogPosting / NewsArticle | 文章页 | 无必填属性；推荐 `author`（含 `name`、`url`）、`datePublished`、`dateModified`、`headline`、`image` | 日期用 ISO 8601 并带时区；图片建议多张，宽×高 ≥ 5 万像素，比例 16:9、4:3、1:1（[Article](https://developers.google.com/search/docs/appearance/structured-data/article)）。本套件口径：内容实质更新才改 `dateModified` |
+| Product + Offer | 商品详情页 | 商品摘要：`name` + `review`/`aggregateRating`/`offers` 三选一；商家信息：`name`、`image`、`offers`（必须是 Offer，`price` > 0、`priceCurrency`） | Google 建议标在商品页，不标在列表页或分类页（[商品摘要](https://developers.google.com/search/docs/appearance/structured-data/product-snippet)、[商家信息](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing)） |
+| BreadcrumbList | 显示了面包屑的页面 | 至少 2 个 ListItem；每项 `name`、`position`、`item`（最后一项可省 `item`） | 2025-01-22 起只在桌面结果显示；Google 建议写典型用户路径，不必照搬 URL 层级（[Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)） |
+| SoftwareApplication | 软件或 App 介绍页 | `name`、`offers.price`（免费写 0）、`aggregateRating` 或 `review` 二选一 | 没有真实评分就拿不到该富结果；可以只作词汇描述，绝不编造（[软件应用](https://developers.google.com/search/docs/appearance/structured-data/software-app)） |
+| LocalBusiness 及其子类型 | 门店页，一店一页 | `name`、`address` | 可影响知识面板里的营业时间等信息和商家轮播；用最具体的子类型（[本地商家](https://developers.google.com/search/docs/appearance/structured-data/local-business)） |
+| FAQPage | 页面上真实存在的问答区 | 富结果 2026-05-07 起停展，文档 2026-06-15 删除（[更新记录](https://developers.google.com/search/updates)） | 不当作获得富结果或 AI 引用的手段；用户提交问答的页面用 QAPage |
+| HowTo | — | 2023-09-13 起桌面也停展（[公告](https://developers.google.com/search/blog/2023/08/howto-faq-changes)） | 步骤用有序列表写清楚 |
 
 ## 三、最小示例（自写）
 
@@ -64,11 +67,15 @@
     "name": "张三",
     "url": "https://example.com/authors/zhang-san"
   },
-  "image": "https://example.com/images/robots-check.png"
+  "image": [
+    "https://example.com/images/robots-check-1x1.png",
+    "https://example.com/images/robots-check-4x3.png",
+    "https://example.com/images/robots-check-16x9.png"
+  ]
 }
 ```
 
-商品页的 Product（页面上没有展示评价，所以不写评分）：
+商品页的 Product（页面上没有评价，所以不写评分；满足商家信息的必填项）：
 
 ```json
 {
@@ -90,66 +97,72 @@
 
 ## 四、实施与交付
 
-- 可见内容和 JSON-LD 从同一份数据生成，避免两边内容漂移。
+- 可见内容和 JSON-LD 从同一份数据生成，避免漂移。
 - 按模板实施、按模板检查：同一模板的页面一起抽查。
 - 交付时给出：每种页面类型用哪些 schema 类型、字段映射表（schema 字段 ← 页面数据来源）、示例 JSON-LD、验证记录。
 
-## 五、大规模验证方法论（分层采样 + CI 门禁 + 部署后漂移对比）
+## 五、大规模验证（分层采样 + CI 门禁 + 部署后漂移对比）
 
-单页用 Rich Results Test 点验只适合个位数页面；千页以上的站按**模板**验证——页面是模板产的，错误也是模板产的。规模基线：Digital Applied 2026-04 对 5,000 站审计，**71% 部署了 ≥1 种 schema 类型，但仅 22% 能干净通过 Rich Results Test**——"部署了"与"验证通过"是两件事，站越多越是方法论问题而非单页问题（测量日期 2026-04，引用时保留两个数字的对照）。
+单页用 Rich Results Test 点验只适合少量页面。千页以上的站按**模板**验证：页面由模板生成，错误也由模板生成。第三方研究：Digital Applied 2026-04 对 5,000 个站做分层抽样审计，71% 部署了至少一种 schema 类型，只有 22% 所有类型都能干净通过 Rich Results Test（[原文](https://www.digitalapplied.com/blog/schema-markup-adoption-5k-site-audit-2026)，核对 2026-10-18）。「部署了」和「验证通过」是两件事。
 
-三步闭环：
+三步闭环（本套件口径）：
 
-1. **模板分层采样**：按模板分组（文章/商品/分类/门店…），每模板抽 N 页（N=10 或该模板页数的 5%，取大者；首轮或大改后可全量）。采样页通过 ≈ 模板通过——验证成本从"页数级"降到"模板数级"。
-2. **schema_lint 进 CI**：`schema_lint.py URL` 按 URL 单页跑、退出码非 0 即 fail（覆盖 @id 悬空、占位符黑名单、同名实体分裂、aggregateRating 越界、JSON 解析失败）。CI 对采样清单循环调用，任一页 CRITICAL 即红灯，把 22%/71% 的缺口挡在部署前。套件先例：monitor 告警已有 `--ci-format json|junit` 的 CI 消费格式，schema 校验沿用同一接法（单页退出码 + 汇总）。
-3. **部署后漂移对比**：部署前后各抓一轮同采样页，对比 JSON-LD 指纹（@type 集合 + 必填字段值）。模板级字段消失或类型漂移 = 回归信号：先查模板的字段映射表（第四节交付物），再查是否渲染层/边缘注入改的（[edge-seo.md](edge-seo.md) 第四节注入残留检查项）。漂移对比与 monitor 的页面字段 diff 思路同构，但落在 JSON-LD 层。
+1. **按模板分层采样**：`python3 scripts/monitor.py sample-keypages --per-group 10`（读 sitemap 或 `--urls 清单文件`，按 URL 模板分组，每组随机抽 N 个；`--seed` 固定可复现；默认只打印，`--write` 才写入配置）。首轮或大改后可全量；首页和带来收入的模板直接全量。
+2. **schema_lint 进 CI**：对抽样清单逐个跑 `python3 scripts/schema_lint.py URL`。它检查 @id 绝对性、引用悬空、同名实体分裂、占位符黑名单、aggregateRating 范围、FAQPage 空答案、JSON 解析失败。退出码：0 = 无 CRITICAL；1 = 有 CRITICAL 或页面没有 JSON-LD；2 = URL 非法。任一页非 0 即红灯。监控侧的 CI 输出用 `python3 scripts/monitor.py diff --ci --ci-format json|junit`（任一阈值失败退出码 10）。
+3. **部署后漂移对比**：部署前后各抓一轮同一批采样页，对比 JSON-LD 指纹（@type 集合 + 必填字段值）。模板级字段消失或类型漂移就是回归：先查字段映射表（第四节），再查渲染层或边缘注入（[edge-seo.md](edge-seo.md) 第四节）。
 
-方法边界：采样验证给的是"模板级置信"，不是全页保证；高价值模板（首页、货币化页）不采样，直接全量。
+方法边界：采样给的是模板级置信，不是全页保证。
 
 ## 常见误区
 
 - 为了拿富结果，标记页面上看不到的内容。
-- 编造或复制别处的评分。
+- 编造评分，或汇总其他网站的评分。
 - 把分类列表页标成单个 Product。
-- 每个页面都重复声明一整份 Organization，而不是用 `@id` 引用（见 [schema-examples.md](schema-examples.md)）。
+- 每个组件都输出一份 Organization，而不是用 `@id` 引用（见 [schema-examples.md](schema-examples.md)）。
 - 以为加了 schema，AI 就会更多地引用本站。
 
-## 完全装载:14 个稀有 JSON-LD 字段清单+选型矩阵+转义规则(百仓深扫)
+## 完全装载：稀有类型的 Google 必填属性与安全序列化
 
-**稀有类型必填字段**(next-seo 组件库精读):ClaimReview(claimReviewed ≤140 字符+reviewRating+url)/Dataset(name+description)/DiscussionForumPosting(**author+datePublished**)/EmployerAggregateRating(itemReviewed+ratingValue,ratingCount 与 reviewCount 至少一)/ImageObject(**contentUrl+creator/creditText/copyrightNotice/license 至少其一**;多图用 @graph)/JobPosting(title/description/datePosted/hiringOrganization)/MerchantReturnPolicy(**独立顶层类型**;分场景运费三组 customerRemorse/itemDefect/seasonalOverride)/ProfilePage(mainEntity,含 **agentInteractionStatistic**——AEO 新字段)/Quiz(hasPart=Question[]{eduQuestionType:"Flashcard",text,acceptedAnswer})/VacationRental(**containsPlace+image 最低 8 张+经纬度**)/Carousel(ItemList,contentType∈Course|Movie|Recipe|Restaurant)。
-**JSON-LD 转义五字符**(防 `</script>` 逃逸,next-forge):`<`→\u003c、`>`→\u003e、`&`→\u0026、\u2028/\u2029——任何自建模板必带;Publii 补:`JSON.stringify().replace(/</g,'\u003c')`。
-**schema 选型矩阵**(maestro):Product(name/image/description/offers)/Article(headline/datePublished/author)/FAQPage(mainEntity)/Organization(name/url)/LocalBusiness(name/address/telephone)/Event(name/startDate/location);**meta keywords 2009 年起被忽略**——报告它=反模式。
-**实体放置规则**(kostja94):Organization schema 最优放根布局组件每页输出(**不要只放 About 页**);@id 用稳定 URL(/#organization);首页 Organization↔WebSite 互链。
+**稀有类型速查**（逐个核对 Google 文档，2026-10-18）。「状态」指 Google 搜索是否还用它产生展示。
 
-## 字段级细节:15 个稀有类型的必填/嵌套/默认值(next-seo 源码深读,2026-10-09)
+| 类型 | 状态 | Google 必填属性 | 易错点 |
+|---|---|---|---|
+| ClaimReview | Google 搜索逐步停用（2025-06-12 公告）；Fact Check Explorer 仍支持 | `claimReviewed`、`reviewRating`、`url` | `claimReviewed` 建议少于 75 个字符（[Fact check](https://developers.google.com/search/docs/appearance/structured-data/factcheck)）；旧版本文写的「≤140 字符」没有出处 |
+| Dataset | 只用于 Dataset Search，不用于 Google 搜索（2025-11-05） | `name`、`description` | 文本属性只用前 5,000 字符（[Dataset](https://developers.google.com/search/docs/appearance/structured-data/dataset)） |
+| DiscussionForumPosting | 支持 | `author`、`author.name`、`datePublished`，以及 `text`/`image`/`video` 三选一 | 只写 author + datePublished 不够（[Discussion forum](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum)）；2026-03-24 新增评论线程属性 |
+| EmployerAggregateRating | 支持（招聘体验） | `itemReviewed`（Organization）、`ratingValue`、`ratingCount` 或 `reviewCount` 至少一个 | （[Employer rating](https://developers.google.com/search/docs/appearance/structured-data/employer-rating)） |
+| ImageObject（图片元数据） | 支持（Google 图片） | `contentUrl`，加 `creator`/`creditText`/`copyrightNotice`/`license` 四选一 | （[图片元数据](https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata)） |
+| JobPosting | 支持 | `datePosted`、`description`、`hiringOrganization`、`jobLocation`、`title` | 漏写 `jobLocation` 很常见；纯远程岗位用 `jobLocationType: "TELECOMMUTE"` + `applicantLocationRequirements`（[Job posting](https://developers.google.com/search/docs/appearance/structured-data/job-posting)） |
+| MerchantReturnPolicy | 支持 | 方案 A：`applicableCountry` + `returnPolicyCategory`（有限期限再加 `merchantReturnDays`）；方案 B：`merchantReturnLink` | 店铺统一政策挂在 Organization 的 `hasMerchantReturnPolicy` 下；单品覆盖写在 Offer 下（[退货政策](https://developers.google.com/search/docs/appearance/structured-data/return-policy)）。它在 schema.org 是独立类型，但 Google 要求嵌套 |
+| ProfilePage | 支持 | `mainEntity`（Person 或 Organization） | `agentInteractionStatistic` 是推荐属性，表示该实体自己的行为计数（如发帖数、关注数），不是什么 AEO 新字段（[Profile page](https://developers.google.com/search/docs/appearance/structured-data/profile-page)） |
+| Quiz（教育问答） | 支持 | `hasPart`（每张闪卡一个 Question） | 每个 Question 的 `eduQuestionType` 必须是 `Flashcard`（[Education Q&A](https://developers.google.com/search/docs/appearance/structured-data/education-qa)）；Quiz 在 schema.org pending 区 |
+| VacationRental | 支持，但需要先接入 Hotel Center / 技术客户经理 | `containsPlace`（含 `occupancy`）、`identifier`、`image`（至少 8 张）、`latitude`/`longitude`（至少 5 位小数）等 | （[Vacation rental](https://developers.google.com/search/docs/appearance/structured-data/vacation-rental)） |
+| ItemList 轮播 | 支持 | `itemListElement`；必须配 Course list、Movie、Recipe、Restaurant 之一 | 两种页型：摘要页 + 详情页，或单页全量（[Carousel](https://developers.google.com/search/docs/appearance/structured-data/carousel)） |
+| Course（课程列表） | 支持（英文） | 每门课 `name`、`description`；至少标 3 门课 | 单课详情（Course info）2025-09-09 已删除文档（[Course list](https://developers.google.com/search/docs/appearance/structured-data/course)） |
+| Event | 支持 | `name`、`startDate`、`location`（含 `address`） | 只收公众可预订、在实体场地举办的活动；线上活动属性 2025-06-05 已移除（[Event](https://developers.google.com/search/docs/appearance/structured-data/event)） |
 
-读 garmeeh/next-seo 的 `src/components/*.tsx`(27 个组件)+ `src/types/*.types.ts` + `src/utils/processors.ts`,补上节摘要缺的字段级事实。**组件属性名即 schema 字段名**——用 React 组件库实现时 props 与 JSON-LD 一一对应,不用手拼 JSON。
+**JSON-LD 安全序列化**：
 
-**必填与运行时校验(组件里硬编码的行为)**:
-- **ClaimReview**:必填 `claimReviewed`/`reviewRating`/`url`;`reviewRating` 是**扩展 Rating,必带 `alternateName`**(区别于普通 Rating);可选 `author`、`itemReviewed`(Claim 类型,内含 `firstAppearance`/`appearance`——字符串 URL 或 CreativeWork 对象,`firstAppearance` 单值、`appearance` 可数组)。
-- **EmployerAggregateRating**:`ratingCount` 与 `reviewCount` **至少一个,否则组件直接 throw**(运行时异常,非静默);`itemReviewed` 必填且类型为 Organization(可传字符串自动包 `{@type:Organization,name}`;嵌套可带 logo/address/contactPoint/numberOfEmployees);`bestRating`/`worstRating` 可选。
-- **ImageJsonLd(ImageObject)**:`contentUrl` + (creator|creditText|copyrightNotice|license)四选一,缺失时**仅 console.warn 不阻断**(与上节摘要一致的软校验);可选 `acquireLicensePage`;多图走 `images: []` → 输出 `@graph` 数组,单图平铺——两种输出结构不同,消费端解析要兼容。
-- **ProfilePage**:`mainEntity` 必填(Person/Organization,字符串自动包 Person);`interactionStatistic` 与 **`agentInteractionStatistic`** 都会被规整为 InteractionCounter(后者是单值非数组);可选 `dateCreated`/`dateModified`。
-- **Quiz**:三种子问题输入格式归一化为 `hasPart: Question[]`——纯字符串(问题即答案)、`{question,answer}` 对、`{text,acceptedAnswer}` 完整式;每个 Question 固定 `eduQuestionType:"Flashcard"`;可选 `about`(Thing)与 `educationalAlignment`(AlignmentObject:`alignmentType` ∈ educationalSubject|educationalLevel → `targetName`)。
-- **VacationRental**:必填 `containsPlace`(Accommodation:bed/occupancy/amenityFeature/floorSize 嵌套 QuantitativeValue)、`image`(**数组处理,组件注释明示最低 8 张**)、`latitude`/`longitude`(或用 `geo:{latitude,longitude}`,两者取 geo 优先);可选 additionalType/address/aggregateRating/brand/checkinTime/checkoutTime/description/knowsLanguage(可数组)/review。
-- **MerchantReturnPolicy**:两种模式互斥——**Option A 详细属性**(applicableCountry 数组化/returnPolicyCategory/merchantReturnDays/returnMethod 数组化/refundType 数组化/itemCondition 数组化/returnFees/returnShippingFeesAmount(MonetaryAmount)/restockingFee(number 或 MonetaryAmount)/returnLabelSource + customerRemorse 三件套 + itemDefect 三件套 + returnPolicySeasonalOverride 数组(startDate/endDate/returnPolicyCategory/merchantReturnDays))或 **Option B 仅 `merchantReturnLink`**(指向政策页链接)。
-- **JobPosting**:必填 title/description/datePosted/hiringOrganization;**`jobLocationType` 类型系统只允许字面量 `"TELECOMMUTE"`**;`applicantLocationRequirements`(远程岗位用,可数组)、`baseSalary`(MonetaryAmount)、`directApply`(布尔)、`experienceInPlaceOfEducation`(布尔)、educationRequirements/experienceRequirements 可数组。
-- **Course**:组件三态——单课(无 type 或 `type:"single"`,直接输出 Course:name+description 必填、url/provider 可选)或 `type:"list"`:urls 摘要页模式(ListItem 只含 position+url)或 courses 全量模式(ListItem.item 内嵌完整 Course)。
-- **Carousel(ItemList)**:`urls`(摘要页,ListItem 只 position+url)或 `contentType`+`items`(全量页,content Type ∈ Course|Movie|Recipe|Restaurant);**Course/Movie 全量必填 name(+Movie 还必填 image)**;Restaurant 必填 name+address;position 默认 index+1 自动编号。
-- **MovieCarousel**:同 Carousel 的两种模式,专用于 Movie(name+image 必填)。
-- **Dataset**:必填仅 name+description;推荐 url/identifier/keywords/license/isAccessibleForFree/creator/funder/includedInDataCatalog(DataCatalog)/distribution(DataDownload)/temporalCoverage/spatialCoverage/measurementTechnique/variableMeasured/version/citation/alternateName/sameAs/hasPart/isPartOf。
-- **DiscussionForumPosting**:`type` prop 默认 "DiscussionForumPosting"(可传 SocialMediaPosting 等父类);必填 **author + datePublished**;comment 数组逐条规整(Comment:author/text/datePublished);可选 creativeWorkStatus/interactionStatistic(InteractionCounter)/isPartOf/sharedContent。
-- **CreativeWorkJsonLd(一族多型)**:`type` 可传 CreativeWork/Article/NewsArticle/BlogPosting/Comment/Course/Review;**headline 与 name 互斥(headline 优先)**;Article 系**缺 dateModified 时自动回落 datePublished**;Comment 专属 `text`、Course 专属 `provider`、Review 专属 `itemReviewed`+`reviewRating`(按 type 条件输出)。
+- 标准依据：W3C JSON-LD 1.1 第 7.2 节（非规范性）要求作者避免在 HTML 内嵌脚本里出现可能被当成 comment-open（`<!--`）、script-open（`<script`）、comment-close（`-->`）、script-close（`</script`）的字符序列（[W3C](https://www.w3.org/TR/json-ld11/#restrictions-for-contents-of-json-ld-script-elements)，核对 2026-10-18）。
+- 最简做法（本套件口径）：序列化后把 JSON 字符串里的每个 `<` 写成 `<`。`<` 在 JSON 里就是 `<`，解析结果不变；四种序列都以 `<` 开头或依赖前面的 `<!--`，因此全部被避开。
+- 第三方实现对照：next-seo 的 `stringify` 只替换 `</script>`、`<!--`、`-->` 三种，并刻意不转义 `&`、`<`、`>`、引号，同时剔除 null 值（[源码](https://github.com/garmeeh/next-seo/blob/main/src/utils/stringify.ts)，MIT）；next-forge 把 `<`、`>`、`&` 和 U+2028/U+2029 全部转义。两种都安全。
+- 反例信号：页面 JSON-LD 里出现未转义的 `</script>`：脚本被提前截断，后半段 JSON 解析失败，也有注入风险。
 
-**JSON-LD 安全序列化(纠正上节转义口径)**:next-seo 的 `utils/stringify.ts`(借自 google/react-schemaorg)按 W3C JSON-LD 11 规范只转义三种序列:`</script>`(不区分大小写)→`\u003C/script>`、`<!--`→`\u003C!--`、`-->`→`--\u003E`;**刻意不转义 `&`/`<`/`>`/引号**——它们在 script 内容里合法,且全量转义会破坏带查询参数的 URL;同时 replacer 会剔除 null 值。这与 next-forge 的"五字符全转义"是两种工程取舍:写自研模板时按 W3C 规范走三序列即可,`&`→`\u0026` 属于过度但无害。
+## 检查清单
 
-**组件工程约定**:`scriptId`(script 标签 id)默认取 `scriptKey`(如 `"claimreview-jsonld"`);`nonce` 透传 CSP nonce;`data-testid` 同 id——测试与 DOM 定位都靠它。
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 必填属性 | Rich Results Test 逐模板测代表页；对照本文第二节和「完全装载」表 | 无「严重」错误 → 通过；缺必填 → 失败 |
+| 可见一致 | 对照页面可见文本逐项核对 name、价格、评分、日期 | 全部能在页面上看到 → 通过 |
+| 实体规则 | `python3 scripts/schema_lint.py URL` | 退出码 0 → 通过；1 或 2 → 失败 |
+| Product 位置 | `curl -s URL \| grep -c 'application/ld+json'` 与渲染后对比 | Product 标记在初始 HTML → 通过；只在渲染后出现 → 记风险 |
+| 已停用类型 | 对照 [deprecated-signals.md](deprecated-signals.md) | 存量标记记 Info，不当作错误；不为它们新增标记 |
+| 漂移 | 部署前后对同一批 `monitor.py sample-keypages` 采样页对比 @type 集合与必填字段 | 无字段消失 → 通过 |
 
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · build/schema-markup-generator/references/schema-templates.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/build/schema-markup-generator/references/schema-templates.md)（Apache-2.0）
-- 源码精读:garmeeh/next-seo `src/components/`(ClaimReview/Quiz/MerchantReturnPolicy/VacationRental/DiscussionForumPosting/Dataset/CreativeWork/Image/ProfilePage/Carousel/MovieCarousel/EmployerAggregateRating/Course/JobPosting 等 27 组件)、`src/types/common.types.ts`、`src/utils/processors.ts`、`src/utils/stringify.ts`、`src/core/JsonLdScript.tsx`(2026-10-09,MIT)
-- 一手资料：[结构化数据简介](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)、[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[结构化数据类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)、[schema.org](https://schema.org/)；各类型的 Google 文档见第二节表格中的链接。
-- 规模基线：[Digital Applied 5,000 站 schema 审计](https://www.digitalapplied.com/blog/schema-markup-adoption-5k-site-audit-2026)（2026-04：71% 部署 ≥1 类型，22% 干净通过 Rich Results Test；2026-10-12 复核）。
+- 一手资料（核对 2026-10-18）：[结构化数据简介](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)、[通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)、[文档更新记录](https://developers.google.com/search/updates)、[schema.org 发布说明](https://schema.org/docs/releases.html)、[W3C JSON-LD 1.1](https://www.w3.org/TR/json-ld11/)；各类型 Google 文档见表内链接。
+- 第三方：[Digital Applied 5,000 站审计](https://www.digitalapplied.com/blog/schema-markup-adoption-5k-site-audit-2026)（2026-04）；[garmeeh/next-seo](https://github.com/garmeeh/next-seo)（MIT）。

@@ -1,40 +1,66 @@
 # AI 爬虫政策参考（robots.txt 决策）
 
-> 建立于 2026-10-09。bot 分类与频率参考 [Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`（27 bot 表）与 [jianruntech/geo-score](https://github.com/jianruntech/geo-score)。按本套件证据约束改写。
-> 用途：回答"我该在 robots.txt 里允许/禁止哪些 AI 爬虫"这个具体问题。
+> 用途：回答「robots.txt 里该放行或禁止哪些 AI 爬虫」。
+> 口径：bot 名、用途、是否遵守 robots.txt、IP 表，一律以运营方官方页为准。2026-10-18 逐个打开核对。没有官方页的 bot 标「第三方观察」。「决策」类内容是本套件口径。
+> 分工：agent 协议（Content Signals、ARD、WebMCP、Web Bot Auth 等）的规范出处与状态见 [agent-protocols.md](agent-protocols.md)；Lighthouse 与站点准备见 [agent-readiness.md](agent-readiness.md)；Naver 细则见 [naver-searchadvisor.md](naver-searchadvisor.md)。
 
-## 一、先分清两类 bot（最常见错误在这里）
+## 一、先分清三类 bot（最常见错误在这里）
 
-**引用型（影响搜索/答案系统）**：
+三类：**训练**（内容可能进模型训练）、**搜索/索引**（决定能否出现在 AI 答案里）、**用户触发**（用户在对话里让 AI 去取某个页面）。同一家公司的三类 bot 用不同 token，规则互相独立。
 
-| Bot | 归属 | 用途 | 频率 |
-|---|---|---|---|
-| `OAI-SearchBot` | OpenAI | ChatGPT 搜索索引 | 日频 |
-| `OAI-AdsBot` | OpenAI | **ChatGPT 广告落地页安全验证**(提交广告时访问落地页核政策合规+判定相关性;非索引/非训练,2026-10-11 官方 bots 页确认新增) | 按需 |
-| `ChatGPT-User` | OpenAI | 按用户请求抓取 | 按需 |
-| `Claude-SearchBot` | Anthropic | Claude 搜索索引 | 按需 |
-| `Claude-User` | Anthropic | 按用户请求抓取 | 按需 |
-| `PerplexityBot` | Perplexity | 搜索/链接（不训练） | 每周数次 |
-| `Perplexity-User` | Perplexity | 按用户请求 | 按需 |
-| `Googlebot` | Google | 通用收录+AIO | 高频 |
-| `Applebot` | Apple | Siri/Spotlight | 日频 |
+| token | 运营方（官方页） | 类别 | 官方用途要点 | 遵守 robots.txt | 官方 IP 表 / 验证 |
+|---|---|---|---|---|---|
+| `OAI-SearchBot` | [OpenAI](https://developers.openai.com/api/docs/bots) | 搜索 | ChatGPT 搜索结果；禁止后不出现在 ChatGPT 搜索答案，但仍可能作为导航链接出现 | 是 | `openai.com/searchbot.json` |
+| `GPTBot` | OpenAI | 训练 | 抓取可能用于训练基础模型的内容 | 是 | `openai.com/gptbot.json` |
+| `ChatGPT-User` | OpenAI | 用户触发 | 不做自动抓取；不决定搜索收录 | 官方：robots 规则「may not apply」 | `openai.com/chatgpt-user.json` |
+| `OAI-AdsBot` | OpenAI | 广告审核 | 只访问作为 ChatGPT 广告提交的落地页；数据不用于训练 | 官方未说明 | `openai.com/adsbot.json` |
+| `ClaudeBot` | [Anthropic](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler) | 训练 | 收集可能用于训练的内容 | 是；支持 Crawl-delay | `claude.com/crawling/bots.json` |
+| `Claude-SearchBot` | Anthropic | 搜索 | 为搜索结果建索引 | 是 | 同上 |
+| `Claude-User` | Anthropic | 用户触发 | 禁止后，Claude 不再按用户请求取回该站内容 | 是 | 同上 |
+| `PerplexityBot` | [Perplexity](https://docs.perplexity.ai/guides/bots) | 搜索 | 在搜索结果中展示和链接网站；不用于训练基础模型 | 是 | `perplexity.com/perplexitybot.json` |
+| `Perplexity-User` | Perplexity | 用户触发 | 用户提问时访问页面 | 官方：「generally ignores robots.txt」 | `perplexity.com/perplexity-user.json` |
+| `Googlebot` | [Google](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers) | 搜索 | Google 搜索，含 Discover 和全部搜索功能（AI Overviews、AI Mode 在内） | 自动抓取时总遵守 | `common-crawlers.json`；反向 DNS `*.googlebot.com` |
+| `Google-Extended` | Google | 控制 token | 不单独抓取。控制 Gemini 模型训练，以及 Gemini Apps 与 Vertex AI「Grounding with Google Search」的 grounding；不影响搜索收录与排名 | 只作 robots token | — |
+| `Google-CloudVertexBot` | Google | 站长委托 | 站点所有者为建 Vertex AI Agents 请求的抓取；不影响 Google 搜索 | 是 | `common-crawlers.json` |
+| `Google-Agent` | [Google](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers) | 用户触发 | Google 基础设施上的 agent 按用户请求浏览网页、执行操作 | 用户触发类「generally ignore robots.txt」 | `user-triggered-agents.json`；部分请求带 Web Bot Auth 签名（实验，身份 `https://agent.bot.goog`，[Google](https://developers.google.com/crawling/docs/crawlers-fetchers/web-bot-auth)） |
+| `Applebot` | [Apple](https://support.apple.com/en-us/119829) | 搜索 | Spotlight、Siri、Safari 搜索；数据也可能用于训练和生成 AI 回答 | 是；没有 Applebot 组时跟随 Googlebot 组；不支持 crawl-delay | `applebot.json`；反向 DNS `*.applebot.apple.com` |
+| `Applebot-Extended` | Apple | 控制 token | 不抓取；只决定 Applebot 抓到的数据能否用于训练 | 只作 robots token | — |
+| `Bingbot` | [Microsoft](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a) | 搜索 | Bing 与 Copilot 共用同一套抓取、索引、排名基础 | 是 | `bing.com/toolbox/bingbot.json`（实测可取） |
+| `CCBot` | [Common Crawl](https://commoncrawl.org/ccbot) | 开放语料 | 建公开网页数据集；第三方研究称它是生成式 AI 最重要的训练数据源之一（[Mozilla 2024-02](https://www.mozillafoundation.org/en/research/library/generative-ai-training-data/common-crawl/)） | 是；支持 Crawl-delay | `index.commoncrawl.org/ccbot.json`；反向 DNS `*.crawl.commoncrawl.org` |
+| `meta-externalagent` | [Meta](https://developers.facebook.com/docs/sharing/webmasters/web-crawlers) | 训练/产品 | 训练基础模型，或直接索引内容改进产品 | 按 robots.txt（官方给出写法） | 官方页 |
+| `meta-webindexer` | Meta | 搜索 | 提升 Meta AI 搜索质量；放行有助于在 Meta AI 回答中被引用和链接 | 按 robots.txt | 官方页 |
+| `meta-externalfetcher` | Meta | 用户触发 | 按用户请求取单个链接 | 官方：可能绕过 | 官方页 |
+| `facebookexternalhit` | Meta | 链接预览 | 抓取分享链接的标题、描述、缩略图 | 做安全检查时可能绕过 | 官方页 |
+| `Amazonbot` | [Amazon](https://developer.amazon.com/amazonbot) | 训练/产品 | 改进产品与服务，可能用于训练 Amazon AI 模型 | 是；robots 缓存最长 30 天；不支持 crawl-delay | `developer.amazon.com/amazonbot/ip-addresses/` |
+| `Amzn-SearchBot` | Amazon | 搜索 | Alexa 等搜索体验；不用于训练 | 是；没有专属组时跟随其他搜索 bot 的规则 | `…/amazonbot/searchbot-ip-addresses/` |
+| `Amzn-User` | Amazon | 用户触发 | 例如为 Alexa 实时取信息 | 官方：「may not follow all robots.txt directives」 | `…/amazonbot/live-ip-addresses/` |
+| `DuckAssistBot` | [DuckDuckGo](https://duckduckgo.com/duckduckgo-help-pages/results/duckassistbot) | 搜索 | 为 AI 辅助答案实时抓取；不用于训练 | 是；禁止后 72 小时生效 | `duckduckgo.com/duckassistbot.json` |
+| `MistralAI-User` | [Mistral](https://docs.mistral.ai/robots) | 用户触发 | Vibe 回答用户问题时访问页面 | 用 robots 控制用户请求能访问哪些站 | `mistral.ai/mistralai-user-ips.json` |
+| `MistralAI-Index` | Mistral | 搜索 | 为 Mistral 搜索建索引；不用于训练 | 按 robots.txt | `mistral.ai/mistralai-index-ips.json` |
+| `MistralAI-Training` | Mistral | 训练 | 构建训练数据集 | 可 Disallow | 官方未给 |
+| `YandexAdditional` | [Yandex](https://yandex.com/support/webmaster/en/robot-workings/check-yandex-robots) | 控制 token | 处理 robots.txt，阻止内容出现在 Search with Yandex AI 回答中；不发索引请求 | 不认 `User-agent: *` 通用规则，必须点名 | 反向 DNS `yandex.ru/.net/.com` |
+| `PetalBot` | [Huawei](https://aspiegel.com/petalbot) | 搜索 | Petal 搜索索引，以及 Huawei Assistant、AI Search | 是 | 反向 DNS |
+| `AI2Bot` | [Allen AI](https://allenai.org/crawler) | 训练 | 抓取内容训练开放语言模型 | 官方页未说明 | — |
+| `Bytespider` | 字节跳动（无官方页） | 第三方观察 | 第三方称用于训练与搜索 | 第三方观察称常不遵守 | — |
 
-**训练型（基础模型训练，不影响搜索答案）**：`GPTBot`、`ClaudeBot`、`CCBot`（Common Crawl）。
-
-**关键事实**：**禁 `GPTBot` 不阻止 ChatGPT 引用你**——引用走 `OAI-SearchBot`。大量站点把两者搞混，想保留引用却把训练 bot 的规则套在搜索 bot 上，或反之。Copilot 无独立 bot，读 Bing 索引。
-
-> [2026-10-17 P2] **OpenAI bots 页 UA 版本与 robots.txt 标记**([官方 bots 页](https://developers.openai.com/api/docs/bots),2026-10-17 读取):OAI-SearchBot 示例 UA 为 `OAI-SearchBot/1.4`、GPTBot 为 `GPTBot/1.4`(官方注明版本号会变);两者抓 robots.txt 时可能在 UA 里加一个 `robots.txt;` 标记,方便在不记路径的日志里区分 robots 请求。**日志识别规则按 bot 名子串匹配,不要写死版本号**;IP 校验分别对 `searchbot.json` / `gptbot.json` / `chatgpt-user.json` / `adsbot.json`。官方提供页面更新 RSS(`/api/docs/bots/rss.xml`),已加进 intel_check 信源。Anthropic 爬虫页同期复核:仍为三类 bot + Crawl-delay 支持 + `claude.com/crawling/bots.json` IP 表,无实质变更。
+**关键事实**（官方，核对 2026-10-18）：
+1. **禁 `GPTBot` 不影响 ChatGPT 搜索。** OpenAI 写明各 token 设置互相独立；引用走 `OAI-SearchBot`。
+2. **Copilot 没有单独的 bot。** Bing Webmaster Guidelines 写明 Bing 与 Copilot 共用抓取和索引。控制 Copilot 用页面 meta：`NOARCHIVE` 让内容不进 Copilot 回答和 grounding；`NOCACHE` 只允许用 URL、标题、摘要（[Bing 文档](https://www.bing.com/webmasters/help/robots-meta-tags-and-attributes-that-bing-supports-5198d240)）。
+3. **`Google-Extended` 不是 AI Overviews 开关。** 它不影响搜索收录。退出 AI Overviews/AI Mode 的做法见第二节第 3 条。
+4. **用户触发类 bot 的 robots 行为各家不同。** OpenAI（may not apply）、Perplexity（generally ignores）、Google（generally ignore）、Meta（may bypass）、Amazon（may not follow all）声明可能不遵守；Anthropic 声明 `Claude-User` 遵守。
+5. **日志按 token 子串匹配，不写死版本号。** OpenAI 示例 UA 为 `OAI-SearchBot/1.4`、`GPTBot/1.4`，官方注明版本会变；抓 robots.txt 时 UA 可能多一个 `robots.txt;` 标记。Google 的 `Chrome/W.X.Y.Z` 也会变。
+6. **robots 改动的生效时间各家不同。** OpenAI 搜索约 24 小时；Perplexity 最多 24 小时；Meta 最多缓存 24 小时；Google 一般缓存不超过 24 小时；DuckAssistBot 72 小时；Amazon 可能用最近 30 天内的缓存。RFC 9309 规定缓存一般不超过 24 小时（[RFC 9309 §2.4](https://www.rfc-editor.org/rfc/rfc9309)）。
 
 ## 二、四种典型诉求的配置
 
-### 1. 全开放（默认推荐）
+### 1. 全开放（本套件默认推荐）
 
 ```
 User-agent: *
 Allow: /
 ```
 
-不写任何 AI 专属规则。想保留训练型抓取也开放。
+不写任何 AI 专属规则。
 
 ### 2. 保留 AI 搜索引用、退出模型训练
 
@@ -47,99 +73,125 @@ Disallow: /
 
 User-agent: CCBot
 Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: MistralAI-Training
+Disallow: /
 ```
 
-引用型 bot 不动。注意 `ChatGPT-User` / `Perplexity-User` 官方声明"可能无视 robots"——按请求抓取类的 bot 多数厂商声明不受 robots 约束，这是行业现状而非配置错误。
+- 搜索类和用户触发类 bot 不动。
+- `Google-Extended` 要单独决定。禁它会同时停止 Gemini Apps 和 Vertex AI grounding 使用你的内容（官方），不只是训练。想保留 Gemini App 里的引用，就不要禁。
+- `Amazonbot`、`meta-externalagent` 的官方用途是「训练或改进产品」。禁它们不只影响训练，按业务决定（本套件口径）。
 
-### 3. 退出特定引擎的搜索答案
+### 3. 退出特定引擎的 AI 答案
 
-- **ChatGPT**：禁 `OAI-SearchBot`（官方：禁它 = 从搜索答案消失）
-- **Google AIO**：用 Search Console → 设置 → Search generative AI 开关（**`Google-Extended` 不控制 AIO**，只管 Gemini 训练——第二个高频错误）
-- **Perplexity**：禁 `PerplexityBot`
+| 引擎 | 做法 | 官方说明（核对 2026-10-18） |
+|---|---|---|
+| ChatGPT 搜索 | `Disallow` `OAI-SearchBot` | 不出现在搜索答案；仍可能作为导航链接；约 24 小时生效 |
+| Google AI Overviews / AI Mode / Discover 生成式功能 | Search Console → 设置 → Search generative AI，选 Exclude；或页面级 `nosnippet`、`data-nosnippet`、`max-snippet` | 2026-08-31 起对所有网站开放；一般 1–2 天生效；不影响训练（训练用 `Google-Extended`）；不作为其他搜索排名信号（[帮助页](https://support.google.com/webmasters/answer/16908024)、[AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)） |
+| Perplexity | `Disallow` `PerplexityBot` | `Perplexity-User` 仍可能按用户请求抓取 |
+| Claude | `Disallow` `Claude-SearchBot`（索引）与 `Claude-User`（用户触发） | 两者都声明遵守 robots.txt |
+| Copilot | 页面 meta `NOARCHIVE`（或 `NOCACHE`，只给 URL/标题/摘要） | robots.txt 只管抓取，不管索引 |
+| Apple Siri / 搜索的 AI 回答 | 页面 `nosnippet`；付费墙页标 `isAccessibleForFree: false` | 训练另用 `Applebot-Extended` |
+| DuckDuckGo AI 辅助答案 | `Disallow` `DuckAssistBot` | 72 小时生效；不影响自然排名 |
+| Yandex AI 回答 | `User-agent: YandexAdditional` + `Disallow: /` | 必须点名，`*` 规则管不到它 |
+| Mistral Vibe | `Disallow` `MistralAI-Index` 与 `MistralAI-User` | — |
 
 ### 4. 完全退出所有 AI
 
-逐家做 2+3；并接受 `*-User` 类 bot 可能继续按单用户请求访问。**没有一键全退**。
+逐家做第 2、3 条。没有一键全退（本套件口径）。用户触发类 bot 多数声明可能不遵守 robots.txt；要彻底挡住，只能靠 WAF 或登录墙（本套件口径）。Anthropic 提醒：只按 IP 封禁，会让它读不到 robots.txt，不能保证持续退出（官方）。
 
-## 三、市场差异:区域引擎的爬虫与收录
+## 三、市场差异：区域引擎的爬虫与收录
 
-Google/OpenAI/Anthropic/Perplexity 之外,多个市场有独立的收录与 AI 答案通道:
-
-| 市场 | Bot / 机制 | 行为(来源类型) | 决策 |
+| 市场 | Bot / 机制 | 事实（来源，核对 2026-10-18） | 决策（本套件口径） |
 |---|---|---|---|
-| 俄语区 | **`YandexAdditional`** | 供 Yandex 生成式答案(Нейро/Alice AI)取内容;是**唯一文档化的退出控制**——`User-agent: YandexAdditional / Disallow: /` 即退出;Forbes RU 等媒体已用此退出(Yandex 官方;案例 SEONews) | 想进俄语 AI 答案池=显式允许;与 GPTBot 等政策**分开决策** |
-| 俄语区 | Yandex 主爬虫 | 经典收录走 YandexBot;**IndexNow**(Yandex 参与协议)可加速抓取(官方) | 俄语区把 IndexNow 纳入新鲜度策略 |
-| **土耳其** | Yandex 系(同俄语区) | **Yandex 在土份额 ~26%(2026-09 StatCounter;3 月 ~13%,大反弹)**,YandexGPT SERP 答案同样存在 | 土耳其=第二个 Yandex 市场:Webmaster 注册与 YandexAdditional 决策同俄语区逻辑,且需 Google+Yandex 双引擎 |
-| 韩语区 | Naver robot 收录 | 外部站需在 Search Advisor 发起 robots 收录请求;外部博客仅经收录后才出现在 Blog 标签(Naver 官方 Help) | 韩语流量前提是"被 Naver 收",不是"被爬" |
-| 日语区 | bingbot | Bing 在日份额 28–33%(StatCounter),喂 Copilot 检索 | 日语区 Bing WMT 验证与可爬探测为必做项(多数市场可选项) |
-| 越南 | Coc Cốc | 本地引擎 ~6% 份额,浏览器自带 AI 聊天机器人(官方 Play 页) | 越南向流量单独提交 Coc Cốc 收录 |
-| 中文 | `Baiduspider` / `Bytespider` | 见中文 AI 搜索指南 | 中文站确认未被禁 |
-| 法语区 | **MistralAI 三爬虫** | `MistralAI-User`(实时检索)/`MistralAI-Index`(索引)须放行;`MistralAI-Training` 仅训练、可封(Mistral 官方文档) | Vibe 引用面=GEO 目标;训练/检索分工模式的官方范例 |
-| (全) | 过时 token | `anthropic-ai`、`Claude-Web`、`ChatGPT-Plugins` 已失效勿写;`Google-Extended` 不影响搜索排名(官方) | robots 审计先查死 token;**User/Index/Training 三分工**正在成为各家标配 |
+| 俄语区 | `YandexAdditional` | 见第一节；作用于主爬虫已收录的页面，本身不发索引请求（Yandex 官方） | 想进 Yandex AI 回答就不写 Disallow；与 GPTBot 等分开决策 |
+| 俄语区 | YandexBot + IndexNow | Yandex 是 IndexNow 参与方（[indexnow.org](https://www.indexnow.org/)） | 新鲜度策略纳入 IndexNow |
+| 土耳其 | Yandex 系 | StatCounter 全平台：Yandex 2026-01 为 42.5%、2026-03 为 13.4%、2026-09 为 25.5%，月度波动大（[StatCounter](https://gs.statcounter.com/search-engine-market-share/all/turkey)，第三方） | 按 Google+Yandex 双引擎做；YandexAdditional 决策同俄语区 |
+| 韩语区 | Naver `Yeti` | robots 要点见下；收录与报表见 [naver-searchadvisor.md](naver-searchadvisor.md) | 韩语流量的前提是被 Naver 收录 |
+| 日语区 | `Bingbot` | StatCounter 全平台：Bing 2026-01 至 2026-09 月度 24.3%–36.4%，2026-09 为 31.6%（第三方）；Bing 索引同时服务 Copilot（官方） | Bing Webmaster Tools 验证列为必做项 |
+| 越南 | Cốc Cốc | StatCounter：2026-09 为 5.96%（第三方）；2023-05-29 推出 AI Chat 与 AI Search（[官方新闻稿](https://press.coccoc.com/bai-viet/coc-coc-chinh-thuc-ra-mat-ai-chat-va-ai-search-toi-uu-hoa-cho-nguoi-viet/)） | 越南向站点把 Cốc Cốc 纳入可达性抽查 |
+| 中文 | `Baiduspider` / `Bytespider` | `Bytespider` 没有官方文档（第三方观察）；中文引擎细则见 [chinese-ai-search-guide.md](../content/chinese-ai-search-guide.md) | 中文站先确认 `Baiduspider` 没被禁 |
+| 全局 | Mistral 三个爬虫 | User / Index / Training 三分工（Mistral 官方） | 放行 User 与 Index；Training 按战略定 |
+| 全局 | 过时 token | Anthropic 官方页只列三个 bot，OpenAI 只列四个；`anthropic-ai`、`Claude-Web`、`ChatGPT-Plugins` 不在官方页 | 审计先查死 token（`robots_posture.py` 的 `deprecated_tokens` 字段） |
 
-**llms.txt 在区域市场的证据状态**:Yandex 无消费证据(俄社区视为仅策展);日本企业采用 6.4–6.8%(2026-09 测)但 John Mueller 明示无 AI 系统当前使用——**一切市场都只作低成本对冲,不承诺引用**。
+**Yeti（Naver）的 robots.txt 要点**（[Naver 官方](https://searchadvisor.naver.com/guide/seo-basic-robots)，核对 2026-10-18）：
+1. 返回 2xx 但内容是 HTML：可能按「没有 robots.txt、全部允许」处理。文件要用 `text/plain`。
+2. 3xx 最多跟 5 次，超过按全部允许；HTML/JS 跳转不解释。
+3. 4xx 按全部允许。5xx 按全部不允许；之前成功抓到的规则可能临时沿用。对照：RFC 9309 规定 5xx 必须视为完全禁止；Google 前 12 小时停抓，之后 30 天用最后一份可用副本，没有副本则按无限制处理（[Google robots 规范](https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec)）。所以 robots.txt 返回 5xx 一律按阻断项处理。
+4. 规则只对同一 host、协议、端口生效。`www.example.com/robots.txt` 管不到 `example.com`。
+5. 只放行 Yeti 的写法：`User-agent: *` + `Disallow: /`，再写 `User-agent: Yeti` + `Allow: /`（官方示例）。
+6. `User-agent : Yeti`（冒号前有空格）符合 RFC 9309 语法（`*WS ":"`）。只用 `grep 'User-agent: Yeti'` 会漏检（本套件口径）。
 
-**Yeti(Naver 爬虫)的 robots.txt 语义陷阱**(官方文档级,2026-10 深化)——四条与 Google 不同:
-1. robots.txt 返回 **5xx → 全站封禁**(Google 用缓存兜底);返回 HTML → 可能被当作"无规则";
-2. 规则按 **host/协议/端口隔离**——www 的规则救不了 apex 域;
-3. `User-agent : Yeti`(冒号前空格)RFC 9309 合法,但 grep 检查会漏;
-4. Yeti-only 白名单:`User-agent: * Disallow: /` + `User-agent: Yeti Allow: /`。
-另:**`nosourceinfo` meta(全球唯一)**——Naver 独有的 robots meta 值,把页面排除出 AI 출처설명(AI 来源说明):有 AI 引用暴露策略(如隐藏 R&D 页)时的官方开关。og:image 三条件:>150×150、≥5,000B、长宽比≤3:1、每页唯一。IndexNow(Naver 端点)批量上限 10,000 URL;JobPosting/VideoObject **仅标记不收录,须제휴(合作)+Push 收集**。
+`nosourceinfo` 是 Naver 的 robots meta 值。官方定义：使用后，Naver 不为该站提供 AI 自动生成的출처설명（出处说明）（[markup-structure](https://searchadvisor.naver.com/guide/markup-structure)，核对 2026-10-18）。
 
-**英文协议层(agent-readiness,2026-10 新增,语言中立)**:
-- **ARD**(Agentic Resource Discovery,Google+Linux Foundation 2026-05):robots `Agentmap:` → `<link rel="ai-catalog">` → `/.well-known/ai-catalog.json` 三级发现链;Lighthouse 13.5+ `AGENTIC_BROWSING` 类别可校验。
-- **WebMCP**(W3C WebML CG 草案,Chrome M149–156 origin trial):`document.modelContext.registerTool()` 页面级工具;目前仅 ChatGPT 桌面浏览器实证调用(单一消费者,标注)。
-- **Web Bot Auth**:`draft-ietf-webbotauth-httpsig-protocol-00`(2026-09),`Signature-Agent` 字典——ChatGPT-User 以此签名。
-- **Cloudflare 托管 robots.txt 坑**:Cloudflare 在响应端注入托管 Disallow(GPTBot/ClaudeBot 等),只存在于线上响应——**审计必须抓线上响应,不能只看源文件**。
-- **Google 官方口径(2026-05-15)**:llms.txt/AI 专用标记/分块不被 Google 特殊对待;**`nosnippet` 一举把内容排除出 AIO/AI Mode 输入**(对照 `Google-Extended` 只管 Gemini 训练)。
+**llms.txt 的证据状态**：Google 官方指南写明 Google 搜索不使用 llms.txt 这类「AI 文本文件」（[指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)，页面更新 2026-07-10）。其他引擎未见公开承诺消费 llms.txt。本套件口径：只作低成本对冲，不承诺引用。写法见 [llms-txt-guide.md](../content/llms-txt-guide.md)。
 
 ## 四、暗坑清单
 
-1. **WAF/CDN 拦截**：robots 宽松但 Cloudflare 等按 UA 挑战 AI bot——活体探测（发真实 bot UA）才能发现。robots.txt 只说"允不允许"，不说"到没到得了"。
-2. **`Google-Extended` 误解**：它不是 AIO 开关。
-3. **`GPTBot` 误解**：它不是 ChatGPT 引用开关。
-4. **ai.txt / GEO link tags**：尚无引擎公开承诺遵守；有则加分，无则不扣。
-5. **robots 与 llms.txt 矛盾**：llms.txt 列出的页对 AI 爬虫禁抓——白做一半。
+1. **WAF/CDN 拦截**：robots.txt 只表达意愿。CDN 的 WAF 或「你是人吗」验证页可能先拦下真 bot。Google 建议：临时拦截返回 503 或 429；对爬虫的验证页也改回 503；不要返回带 200 的错误页；网络超时会让 URL 被移出索引（[Google 2024-12-24](https://developers.google.com/search/blog/2024/12/crawling-december-cdns)）。
+2. **Cloudflare 托管 robots.txt**：开启后，Cloudflare 在源站 robots.txt 前面插入托管段（`# BEGIN Cloudflare Managed content`），内含 `Content-signal` 行和对 GPTBot、ClaudeBot、CCBot、Google-Extended、Amazonbot 等的 Disallow；源站没有 robots.txt 时由 Cloudflare 生成（[官方](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/)）。这段只在线上响应里。审计必须抓线上响应，不能只看源文件。
+3. **把 `Google-Extended` 当 AIO 开关，把 `GPTBot` 当 ChatGPT 引用开关**：两者都错，见第一节。
+4. **只按 IP 封 bot 来退出**：Anthropic 称这会妨碍它读 robots.txt，不能保证退出（官方）。
+5. **ai.txt 等非标准文件**：未见引擎公开承诺遵守（本套件口径）。有则无害，无则不扣分。
+6. **robots 与 llms.txt 矛盾**：llms.txt 列出的页对搜索类 bot 禁抓，等于白做（本套件口径）。
+7. **改完马上验收**：各家缓存时长不同（第一节第 6 条）。没等够时间就判「没生效」是误判。
 
-## 五、探测方法
+## 五、探测方法（检查清单）
 
-对每个引用型 bot：用其真实 UA string `curl -A` 访问首页与一个深页，记录状态码。200 = 可达；403/429/5xx/挑战页重定向 = 被拦。对照 robots 声明，标注"声明允许但实际被拦"的项——这类项修复收益最高（WAF 白名单一行的事）。
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| robots.txt 姿态 | `python3 scripts/robots_posture.py https://example.com/robots.txt --json`，看 `visibility_failures`、`bots_blocked`、`cloudflare_injected`、`deprecated_tokens` | `visibility_failures` 为空，或每一项都是有意为之 → 通过。脚本名单与官方有偏差，见第七节 |
+| 线上 robots.txt 与源文件一致 | `curl -s https://example.com/robots.txt -o live.txt && diff live.txt <仓库里的 robots.txt>` | 没有意外的托管段或注入行 → 通过 |
+| robots.txt 状态码与类型 | `curl -sI https://example.com/robots.txt` | 200 且 `content-type: text/plain` → 通过；5xx → 失败（阻断项）；返回 HTML → 失败 |
+| UA 活体探测 | `curl -s -o /dev/null -w '%{http_code}\n' -A '<第一节官方页上的完整 UA>' https://example.com/<深层页>`；每个搜索类 bot 测首页和一个深层页 | 200 → 通过；403、429、5xx 或验证页 → 失败。局限：请求来自你的 IP，只能测按 UA 的规则；按 IP 或签名放行的规则看下一项 |
+| 日志核真 bot | `python3 scripts/ai_referral_log.py access.log --bot-ua --classify` 看 bot × 状态码矩阵；可疑 IP 用下面的命令比对官方 IP 表；Google、Apple、Common Crawl、Yandex 可用 `host <IP>` 做反向 DNS，再正向复核 | 真 bot（IP 在官方表内）拿到 200 → 通过；真 bot 被 403/429 → 失败；自称 bot 但 IP 不在官方表 → 记为伪装流量 |
+| Google 侧 | Search Console 网址检查看渲染截图；设置 → Search generative AI 看当前选项 | 截图是页面而不是验证页，选项与决策一致 → 通过 |
+| Copilot / Bing 侧 | 跑下方第一段命令，看 meta robots / bingbot 与 `X-Robots-Tag` | 想被 Copilot 引用的页没有 `noarchive`、`nocache` → 通过 |
 
-## 协商与放行的服务端实现(nuxt-ai-ready 源码深读,2026-10-09)
+```bash
+# Copilot / Bing 侧：查页面 meta 与响应头
+curl -s https://example.com/page | grep -ioE '<meta[^>]*name="(robots|bingbot)"[^>]*>'
+curl -sI https://example.com/page | grep -i '^x-robots-tag'
 
-读 harlan-zw/nuxt-ai-ready `src/runtime/server/utils/`(markdown-request/negotiation-decision/negotiation-response/content-negotiation/link-header)+ `src/runtime/cache-control.ts` + skills/nuxt-ai-ready/SKILL.md + nuxt-seo docs llms-txt 篇。agent-readiness.md"完全装载"节已有决策摘要,这里补**可直接照抄的协议行为**。
+# 官方 IP 表比对（OpenAI、Anthropic、Perplexity、Google、Bing 的 JSON 都是
+# {"prefixes":[{"ipv4Prefix"/"ipv6Prefix"}]} 结构，2026-10-18 实测）
+curl -s https://openai.com/gptbot.json -o gptbot.json
+python3 -c 'import json,ipaddress,sys; n=[ipaddress.ip_network(p.get("ipv4Prefix") or p.get("ipv6Prefix")) for p in json.load(open(sys.argv[1]))["prefixes"]]; print(any(ipaddress.ip_address(sys.argv[2]) in x for x in n))' gptbot.json <日志里的 IP>
+```
 
-**Content-Signal 的 robots.txt 实际格式**(SKILL.md 官方示例):`aiReady: { contentSignal: { search: true } }` 输出 `Content-Signal: ai-train=no, search=yes, ai-input=no`——**字段未配置即渲染为 no**(显式 opt-in 语义,与 robots Allow/Disallow 的默认开放相反,写政策时别搞反默认值)。
+输出 `True` 表示 IP 在官方段内。
 
-**协商失败的正确响应**:Accept 无法匹配时返回 **406 + `statusMessage: 'Not Acceptable'` + body 提示 `Supported types: text/html, text/markdown, text/plain`**,并 `appendHeader vary` + 设不可缓存头。协商成功的 HTML 直通响应也会 `Vary: Accept`(botNegotiation 开启时扩为 `Accept, Sec-Fetch-Dest, User-Agent`——**Sec-Fetch-Dest=document 视为浏览器导航,绕过 bot 启发式**)。
+## 六、三态商业决策：封 / 放 / 收费（Cloudflare AI Crawl Control）
 
-**缓存头的 Cloudflare 特化**(`cache-control.ts` 注释原文):"Freshness 只进 max-age——**Cloudflare 在有 s-maxage 时禁用 stale serving**,stale-while-revalidate 在边缘永不生效",故模板固定 `public, max-age=N, stale-while-revalidate=M` 不写 s-maxage。`mergeVaryHeader` 去重合并 Vary token,**遇 `*` 直接整体降级为 `*`**。markdown 响应的隐私防线:cookie/authorization/set-cookie 任一存在、或 cache-control 族头含 private|no-store|no-cache → 强制 `private, no-store` + `cdn-cache-control: no-store`(**表示切换不得把私有内容变公开**——缓存个性化检查的供给侧实现,呼应 seo-ops C10)。
+robots.txt 只有封和放两态。Cloudflare AI Crawl Control（原名 AI Audit，所有套餐可用）可以按爬虫设置放行或拦截，并提供第三态「收费」（Pay Per Crawl，私测阶段）（[官方](https://developers.cloudflare.com/ai-crawl-control/)，核对 2026-10-18）。决策单位是每个爬虫，不是整站一刀切。
 
-**llms.txt 与双文档的工程参数**(nuxt-seo docs):`/llms.txt` 控制在 **~5K tokens**(结构化索引,先读这个);`/llms-full.txt` 是全量 markdown(**仅预渲染页进静态文件**,运行时访问不索引任何东西——`nuxi generate` 或 `nitro.prerender.routes` 是收录前提);Cursor/Windsurf 用 `@https://site/llms.txt` 引用(**@ 必须手敲,粘贴破坏上下文识别**)。`.md` 双胞胎映射:`/about`→`/about.md`、`/`→`/index.md`;**`/api` 与 `/_` 前缀路径不生成**。每个生成页尾部自动带 `## Sitemap` 段+独立 `/sitemap.md`(关闭项 `sitemapMd: false`)。**Nuxt Content v3 站点 `.md` 路由直接回源 markdown 源文件而非转换 HTML**(`contentSource: false` 才转)——CMS 站做双胞胎时先确认语义。**Agent Skills 发布面**:`skills/<name>/SKILL.md` 发布到 `/.well-known/agent-skills/` + `/skills/<name>/SKILL.md` + llms.txt 内,单 skill 站点额外挂 `/SKILL.md`;这些路径被协商器视为 artifact **原样应答、永不渲染**。**MCP 工具面**:`list_pages`/`search_pages`/`get_page_markdown` 三工具挂 `/mcp`(需运行中的服务器,静态导出无法承载);运行时索引带 **contentHash 变更检测**(hash 不变则跳过重索引)与 TTL。
-
-## 六、三态商业决策:封/放/收费(Cloudflare AI Crawl Control,2026)
-
-robots.txt 只有封/放两态;Cloudflare **AI Crawl Control** 对其验证过的爬虫提供第三态:**收费**(Pay Per Crawl)。决策单位是"每爬虫",不是整站一刀切(developers.cloudflare.com 一手口径,2026-10-12 复核)。
-
-**三态×爬虫类型矩阵**(默认值供起步,最终归业务定):
+**三态 × 爬虫类型矩阵**（本套件口径，起步默认值，最终归业务定）：
 
 | 爬虫类型 | 默认态 | 理由 |
 |---|---|---|
-| 引用型(OAI-SearchBot/Claude-SearchBot/PerplexityBot 等,第一节) | **放** | 直接影响 AI 答案可见性;对它们收费/封=自绝于引用面 |
-| 训练型(GPTBot/ClaudeBot/CCBot) | **按战略** | 放=让模型"认识"你的内容(品牌暴露);封/收费=内容变现或防白嫖——取决于内容是否有许可市场 |
-| 数据吸血型(未验证抓取、无视 robots 的 scraper) | **收费或封** | 无可见性回报,纯成本;先靠 CF 的爬虫识别/机器人得分定位,再处置 |
+| 搜索类（OAI-SearchBot、Claude-SearchBot、PerplexityBot 等，见第一节） | **放** | 直接影响 AI 答案可见性；对它们收费或封禁等于退出引用面 |
+| 训练类（GPTBot、ClaudeBot、CCBot 等） | **按战略** | 放：模型「认识」你的内容。封或收费：内容变现或防白用。取决于内容有没有许可市场 |
+| 未验证抓取、无视 robots 的 scraper | **收费或封** | 没有可见性回报，只有成本；先用 CDN 的爬虫识别定位，再处置 |
 
-**Pay Per Crawl(HTTP 402)**:开启后请求到达但返回 **402 Payment Required** 带价格,爬虫付费才拿到内容。2026-06 起(pay-per-crawl 高级配置文档):
-- **按 URI 收费/免费**:用 Configuration Rules 按 URI 模式关闭 PPC——引用路径(文章页)免费、语料路径(全量数据页)收费,同一站两套策略;
-- **源站动态定价**:origin 返回 `crawler-price` 响应头,CF 只在客户端被要求付费时把它转发给爬虫——价格决策收回源站,不必在面板静态配置。
+**Pay Per Crawl**（官方，核对 2026-10-18）：
+- 机制：爬虫在请求头里表示付款意向才拿到 200；否则收到 `402 Payment Required` 和价格。Cloudflare 是记录商户（Merchant of Record）。默认按 zone 统一定价（[说明](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/what-is-pay-per-crawl/)）。
+- 按 URI 免费：Rules → Configuration Rules，对 URI 模式设「Disable Pay Per Crawl」。`/robots.txt`、`/sitemap.xml`、`/security.txt`、`/.well-known/security.txt`、`/crawlers.json` 永远免费（[changelog](https://developers.cloudflare.com/ai-crawl-control/changelog/) 2025-12-10）。
+- 动态定价：开启 Enable dynamic pricing 后，源站响应头 `crawler-price: USD 3.14` 覆盖 zone 默认价；Cloudflare 给回源请求加 `cf-pay-per-crawl` 头，告诉源站当前计价模式（[高级配置](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/use-pay-per-crawl-as-site-owner/advanced-configuration/)，changelog 2026-06-16）。
 
-**Redirects for AI Training(2026-04-17)**:把站点**已有的 `<link rel="canonical">`** 对已验证训练爬虫强制成 **301**——重复页/转载页被训练爬虫抓取时直接 301 到 canonical 指向的权威页,训练语料归一。**审计要认得日志里这个 301 形态**:已验证训练爬虫(GPTBot/ClaudeBot 系)请求 dup 页 → 301 → Location 恰为该页声明的 canonical。这不是重定向配置错误,别当 redirect 链问题去"修";反过来,没开此功能的站出现同形态 301,要查是谁在 CDN/边缘层做的(见 [edge-seo.md](edge-seo.md) 第三节决策表)。CF 日志(Logpush/Edge Log)是验证三态与 301 是否生效的数据面。
+**Redirects for AI Training**（[官方](https://developers.cloudflare.com/ai-crawl-control/reference/redirects-for-ai-training/)，changelog 2026-04-17）：
+- 作用：对 Cloudflare 归为「AI Crawler」类别的已验证 bot，把页面已有的 `<link rel="canonical">` 强制成 301。只在 canonical 同源、且与当前 URL 不同时触发。浏览器、搜索引擎、AI Assistant / AI Search 类 bot 照常拿到原页。
+- 条件：Pro、Business、Enterprise 套餐；只处理 `text/html` 响应；canonical 必须在解压后 HTML 的前 256 KB 内；Single/Bulk Redirects 先于它执行。
+- 审计：日志里「AI Crawler 类 bot 请求重复页 → 301 → Location 等于该页 canonical」是这个功能的正常形态，不要当重定向链错误去修。日志字段 `redirects_for_ai_training_target` 记录跳转目标（GraphQL Analytics API 或 Logpush）。没开这个功能却出现同样的 301，要查边缘层是谁做的（见 [edge-seo.md](edge-seo.md) 第三节决策表）。
 
-**与证据银行口径的衔接(必须一起读)**:本套件证据口径是**训练 bot 不影响搜索可见性**(第一节关键事实:禁 GPTBot 不阻止 ChatGPT 引用,引用走 OAI-SearchBot)——所以三态决策是**商业决策**(内容许可收入 vs 训练暴露),不是 SEO 手段。封/收费训练爬虫既不提升也不损害搜索排名与 AI 引用;审计报告里不得把"封 GPTBot"写成 SEO 建议,也不得把"放行训练爬虫"写成 GEO 优化——引用面由引用型 bot 决定,训练面是钱的事。证据分级与观察协议见 [geo-evidence.md](../content/geo-evidence.md)。
+**与证据口径的衔接**：禁训练类 bot 不影响 ChatGPT、Claude、Perplexity 的搜索引用，因为引用走搜索类 bot（第一节，官方）。所以三态决策是商业决策（内容许可收入 vs 训练曝光），不是 SEO 手段。例外：`Google-Extended` 还管 Gemini Apps 的 grounding，禁它会影响 Gemini App 里的引用（官方）。审计报告不把「封 GPTBot」写成 SEO 建议，也不把「放行训练 bot」写成 GEO 优化。证据分级见 [geo-evidence.md](../content/geo-evidence.md)。
 
-## 七、来源
+## 七、来源与已知偏差
 
-- 27 bot 引用/训练分类+频率：[Auriti-Labs/geo-optimizer-skill](https://github.com/Auriti-Labs/geo-optimizer-skill) `docs/ai-bots-reference.md`
-- 厂商官方行为声明（OAI-SearchBot/SearchBot/User 系）：[jianruntech/geo-score](https://github.com/jianruntech/geo-score) `reference/platform-source-selection.md`（2026-10-04 复核一手文档）
-- 区域补充：Yandex Webmaster 官方文档（YandexAdditional）；SEONews（俄媒体退出案例）；Naver 官方 Help（robots 收录）；StatCounter（Bing 日本份额）；PR Times（llms.txt 日企采用率）
-- 三态商业决策：Cloudflare [AI Crawl Control 文档](https://developers.cloudflare.com/ai-crawl-control/)与 [Pay Per Crawl 高级配置](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/use-pay-per-crawl-as-site-owner/advanced-configuration/)（URI 级 Configuration Rules+origin `crawler-price` 头）、[Redirects for AI Training](https://developers.cloudflare.com/ai-crawl-control/reference/redirects-for-ai-training/)（changelog 2026-04-17;canonical 强制为 301）——均 2026-10-12 复核
+**官方来源**：第一节表格的「运营方」列和各节正文里的链接，全部 2026-10-18 打开核对。另读了 [Google 验证请求文档](https://developers.google.com/crawling/docs/crawlers-fetchers/verify-google-requests)、[Common Crawl FAQ](https://commoncrawl.org/faq)、OpenAI bots 更新 RSS（`/api/docs/bots/rss.xml`，当日没有条目）。
+
+**第三方**：StatCounter 搜索引擎份额（全平台月度 CSV，2026-01 至 2026-09）；[Mozilla Foundation 2024-02](https://www.mozillafoundation.org/en/research/library/generative-ai-training-data/common-crawl/)（Common Crawl 与生成式 AI 训练数据）。
+
+**已知偏差**：`scripts/robots_posture.py` 的 27 bot 名单与官方页有出入。它把 `Amazonbot` 记为搜索类（官方是训练/产品，搜索类是 `Amzn-SearchBot`），把 `PetalBot` 记为训练类（官方是搜索），把 `Google-CloudVertexBot` 记为训练类（官方是站长委托的 Vertex AI Agents 抓取）；`Google-Extended`、`Applebot-Extended` 只是控制 token，日志里不会出现。名单缺 `Amzn-SearchBot`、`Amzn-User`、`meta-webindexer`、`MistralAI-User`、`MistralAI-Index`、`MistralAI-Training`、`Google-Agent`、`OAI-AdsBot`、`YandexAdditional`。名单里的 `cohere-ai`、`YouBot`、`xAI-Bot`、`AI2Bot-Dolma` 截至 2026-10-18 未找到可读的运营方官方文档，只有第三方目录。读脚本结果时以第一节为准。

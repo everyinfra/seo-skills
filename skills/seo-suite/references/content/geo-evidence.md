@@ -1,187 +1,130 @@
 # GEO 的证据基础与实施边界
 
-> 建立于 2026-08-29；一手来源复核于 **2026-09-04**。
-> 目标是提高真实内容的可发现性、可理解性和可验证性，不把 HTML 形状、Schema、
-> 域名后缀或自发转载次数包装成已知的 AI 排名公式。
-> 本文件的证据约束优先于本包其他参考文件中的数字和字数建议。
-> 可引用的案例数字、行业研究与论文清单见 [geo-evidence-bank.md](geo-evidence-bank.md)（awesome-generative-engine-optimization 仓库吸收，2026-10-09）。
+> 建立于 2026-08-29；一手来源全量复核于 **2026-10-18**。
+> 本文件是本套件 GEO 结论的**仲裁**：其他参考文件里的数字、阈值或「AI 偏好」说法与本文件冲突时，以本文件为准。
+> 目标是让真实内容更容易被发现、理解和核实；不把 HTML 形状、Schema、域名后缀或自发转载包装成 AI 排名公式。
+> 数字、论文与第三方研究的样本和局限见 [geo-evidence-bank.md](geo-evidence-bank.md)。
 
 ## 一、先区分证据范围
 
-- **产品官方说明**：可支持该产品的公开规则，不外推为所有 AI 搜索引擎的内部算法。
-- **论文/可复现实验**：必须保留模型、任务、数据、时间、指标与对照条件；不能直接承诺某个站点的收益。
-- **观察/相关性**：引用频率、爬虫访问、域名类别占比不等于因果加权。
-- **营销转述**：找不到一手实验和方法时标「未证实」，不写进实施验收或预算收益。
+| 证据类型 | 能支持什么 | 不能支持什么 |
+|---|---|---|
+| 产品官方说明 | 该产品的公开规则 | 其他引擎的内部算法 |
+| 论文/可复现实验 | 实验设定内的结论；要写明模型、任务、数据、时间、指标、对照 | 某个站点的收益承诺 |
+| 观察/相关研究 | 现象和方向 | 因果权重 |
+| 厂商/营销转述 | 「有人报告了这个结果」 | 实施验收和预算收益 |
 
-Google 的[AI 功能技术说明](https://developers.google.com/search/docs/appearance/ai-features)
-表示没有特殊的 AI Schema 要求。其[生成式搜索指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
-进一步说明：无需为 AI 强行切碎内容、追逐不真实提及或专门改写；正常 SEO 与有价值的内容仍是基础。
-**证据：一手产品文档；后者更新 2026-07-10，2026-09-04 读取；仅直接约束 Google Search。**
+### 官方事实（核对 2026-10-18）
+
+- **Google AI 功能**（[AI features](https://developers.google.com/search/docs/appearance/ai-features)）：页面要作为 AI Overviews / AI Mode 的链接出现，只需已被索引、且可以带摘要展示；没有额外技术要求。控制入口是 Googlebot 的 robots.txt，以及 `nosnippet`、`data-nosnippet`、`max-snippet`、`noindex`。这些流量计入 Search Console 效果报告的「网页」类型。
+- **Google 生成式 AI 优化指南**（[ai-optimization-guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)，2026-05-15 发布，2026-07-10 更新）：Google Search 不使用 llms.txt、AI 文本文件或特殊标记；不要求切块；没有理想页长；不需要为 AI 改写；追逐不真实的提及作用有限；结构化数据不是必需项，也没有专用 schema。为每个 fan-out 变体批量建页、以操纵排名或 AI 回答，违反规模化内容滥用政策。站点还必须在 Search Console 中处于「纳入生成式 AI 功能」状态。
+- **Google 政策**：2026-05-15 起，垃圾内容政策明确适用于生成式 AI 回答；2026-06-15 起，指南补充 llms.txt 不会正面或负面影响 Google 可见性（[文档更新记录](https://developers.google.com/search/updates)）。
+- **Search Console**：[Search generative AI 控制](https://support.google.com/webmasters/answer/16908024)（2026-08-31 全球上线，路径「设置 → Search generative AI」）可纳入或排除 AI Overviews、AI Mode 和 Discover 的生成式功能。排除通常 1–2 天生效。它不管训练；训练控制用 Google-Extended。[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)只有展示次数，维度是页面、国家、日期、设备。
+- **Bing / Copilot**（[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)）：Bing 与 Copilot 共用抓取、索引、排名基础。指南原话：GEO「does not guarantee grounding or citations」。`NOARCHIVE` 让内容不进 Copilot 回答和 grounding；`NOCACHE` 只允许使用网址、标题和摘要。结构化数据不保证可见性。面向语言模型的 prompt injection 会被降权或移除。
+- **第三方工具**（[Google 指南](https://developers.google.com/search/docs/fundamentals/third-party-seo)，2026-06-05）：第三方工具拿不到 Google 内部排名数据；Google 不评估第三方服务；用工具不保证排名。本套件的评分器一律标注为「启发式」。
+- **内容自查**：Google [有用内容指南](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) 用「Who / How / Why」自查：署名能否链到作者背景；AI 辅助过程是否该披露；内容是否为人而写。指南明确：Google 没有偏好的字数；只改日期装新鲜是负面信号。
+
+**用法**：官方说明只约束该产品。Google 的结论不外推到 ChatGPT、Perplexity 或中文引擎。
 
 ## 二、四条流行建议的取舍
 
 ### 1. 每段必须变成问题—答案并用 section/div 包裹？
 
-**采用可读性，不采用强制格式或优先抽取保证。** 用户确实在问「怎么设置」「这个值是什么意思」时，
-用清楚的问题标题、紧邻答案、稳定锚点和合理语义容器。说明须交代对象、适用范围、条件与例外；
-定义列表、步骤、代码和真实比较表各有用途，不把每个段落都塞进 FAQ。
+**采用可读性，不采用强制格式或优先抽取保证。** 用户真在问「怎么设置」「这个值是什么意思」时，用清楚的问题标题、紧邻答案、稳定锚点。说明要交代对象、适用范围、条件与例外。定义列表、步骤、代码和真实比较表各有用途，不把每段都塞进 FAQ。
 
-Google 上述指南明确不要求 chunking，建议语义 HTML 的理由包括帮助读者和辅助技术。
-RAG 是检索增强生成方法，不自带「遇到 section/div 问答就优先引用」的统一排序规则。
-**证据：Google 官方指导 + 工程判断；引用提升需另测，不能从 DOM 结构推断。**
+Google 指南不要求切块；它建议语义 HTML 的理由是帮助读者和读屏器。Bing 指南要求事实和定义写明、关键陈述不依赖隐含内容、关键信息靠前。这是 Bing/Copilot 的官方写法依据，不是排名公式。
+**证据：两家官方指导 + 工程判断；引用是否提升要另测。**
 
 ### 2. FAQ Schema 铺满页面、放 head 就会优先引用？
 
-**不采用。** 有真实 FAQ 时可保留与可见正文一致的一份语义声明，但不扩成隐藏答案库，
-不把全部参数、促销语或段落标成 Question。schema.org 词汇存在与搜索产品支持是两件事。
+**不采用。** 有真实 FAQ 时，可保留一份与可见正文一致的声明。不扩成隐藏答案库，不把参数、促销语或段落标成 Question。schema.org 词汇存在，不等于搜索产品支持。
 
-- Google [2026-05-08 更新记录](https://developers.google.com/search/updates#faq-deprecation)：
-  FAQ 富媒体结果自 **2026-05-07** 起停止展示；旧「仅医疗/政府站可展示」不再是当前规则。
-- [FAQPage 词汇](https://schema.org/FAQPage)仍用于描述真实常见问答；不因此获得 AI 优先读取资格。
-- [JSON-LD 说明](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)允许
-  head 或 body 内的 script；位置不是权重开关。遵循框架当前实现与安全序列化规则。
-- 验收：实际渲染的问答与 JSON-LD 逐条对应；无重复、虚构评分、不可见独家答案；
-  用 Schema Markup Validator 查词汇合法性，用当前搜索文档查支持，不能把解析成功当作富结果资格。
-- 生产引用研究（2026-10-17 补）三条设计不同、结论同向：按域名控制后 Schema 无显著独立效应，可见 FAQ 段只有 β=+0.07
-  （arXiv 2609.35077，约 200 万条引用，B2B SaaS，四引擎）；1,885 个新加 JSON-LD 的页面对比匹配对照页，
-  AI Mode 与 ChatGPT 引用无显著变化、AIO −4.6%（Ahrefs 2026-05 双重差分）；按查询聚类后 Schema 有无不显著，
-  唯一例外是填了价格、规格、评分的 Product/Review Schema（SSRN 6284518，小样本）。明细与局限见
-  [geo-evidence-bank.md](geo-evidence-bank.md) 第七节第 1 条与第八节。
+- FAQ 富结果自 **2026-05-07** 起不再展示（[2026-05-08 更新记录](https://developers.google.com/search/updates#faq-deprecation)）；2026-06-15 文档下线。旧的「仅医疗/政府站可展示」已不是现行规则。
+- [FAQPage 词汇](https://schema.org/FAQPage)仍可描述真实问答；它不带来 AI 优先读取资格。
+- [JSON-LD 说明](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)：script 可放 head 或 body；Google 也能读 JS 注入的 JSON-LD。不渲染 JS 的爬虫只读初始 HTML。位置不是权重开关。
+- 生产引用研究三条，设计不同，结论同向（明细见 [geo-evidence-bank.md](geo-evidence-bank.md) 第七节第 1 条与第八节）：
+  - arXiv 2609.35077：约 200 万条引用、B2B SaaS、四引擎、观察性。按域名控制后，Schema 无显著独立效应；可见 FAQ 段 β=+0.07，作者称效应很小。
+  - Ahrefs（2026-05）：1,885 个新加 JSON-LD 的页面对比约 4,000 个对照页，双重差分。AI Mode +2.4%、ChatGPT +2.2%，都不显著；AIO −4.6%，两组加标记前已同步下滑。
+  - SSRN 6284518：按查询聚类后，Schema 有无不显著；唯一例外是填了价格、评分、规格的 Product/Review Schema（小样本）。
+- 实时抓取阶段：searchVIU 2025-10-30 测试 5 个 AI 系统，没有一个读出只存在于 JSON-LD 里的价格。关键事实必须写在可见正文里。
+- 验收：渲染出的问答与 JSON-LD 逐条对应；无重复、无虚构评分、无不可见的独家答案。用 Schema Markup Validator 查词汇合法性，用当前搜索文档查支持范围；解析成功不等于有富结果资格。
 
-**证据：一手产品文档/词汇规范，2026-09-04 读取；生产引用研究 2026-10-17 一手核读。** 不沿用「Schema 抽取 16%→54%」这类数字作为通用实证：
-能找到的只有二手转述，没有足够的一手实验方法。
+**证据：一手产品文档 + 三条生产研究，2026-10-18 复核。** 「Schema 抽取 16%→54%」之类数字只有二手转述，没有一手方法，不作通用实证。
 
 ### 3. .edu/.org 高 30%，.co/.io/.tech/.expert 更受 AI 青睐？
 
-**不作为选域或迁站依据。** 这组固定增益缺少可核对的一手实验、引擎、样本与对照；
-某类站点常被引用，不能排除内容、机构信誉与历史积累等混杂因素。
+**不作为选域或迁站依据。** 这组固定增益找不到一手实验、引擎、样本与对照。某类站点常被引用，不能排除内容、机构信誉与历史积累等混杂因素。
 
-Google [关于新顶级域名的说明](https://developers.google.com/search/blog/2015/07/googles-handling-of-new-top-level)
-指出新通用 TLD 与 .com/.org 同类处理，后缀中的关键词不带来排名优势。
-这是一份 **2015 年的 Google 声明**，不是所有 AI 引擎或 .edu 的完整因果研究。
-国家/地区域名的地域信号与「权威加权」也不能混为一谈。
-**证据：范围明确的官方说明 + 数字未证实。** 保持现有品牌域名；迁站必须另有业务理由，并由站点负责人决定。
+Google [关于新顶级域名的说明](https://developers.google.com/search/blog/2015/07/googles-handling-of-new-top-level)（2015-07-21）：新通用 TLD 与 .com/.org 同样处理，后缀里的关键词不带来优势。这是 2015 年的 Google 声明，不覆盖所有 AI 引擎。国家/地区域名的地理定位信号与「权威加权」不是一回事。
+**证据：范围明确的官方说明 + 数字无出处。** 保持现有品牌域名；迁站要有别的业务理由，由站点负责人决定。
 
 ### 4. 同一信息在三个独立域名出现，引用权重翻倍？
 
-**不采用固定阈值，也不把自发转载当独立验证。** 官网、品牌自己的 LinkedIn/Medium 文章即使域名不同，
-仍可能是同一个发布者、同一个事实来源。真实的用户案例、独立测试和行业报道才增加不同的证据。
+**不采用固定阈值，不把自发转载当独立验证。** 官网、品牌自己的 LinkedIn/Medium 文章即使域名不同，仍是同一发布者、同一事实来源。真实用户案例、独立测试和行业报道才是不同的证据。
 
-跨渠道发布应服务各自读者，标明作者、时间、原始来源、关联关系，增补该渠道需要的上下文；
-错误事实要同步纠正，不能靠重复制造可信度。Google 上述指南明确反对追逐不真实 mentions。
-**证据：Google 官方风险指导 + 来源独立性的工程判断；没有确认到「三域名翻倍」的通用规则。**
-对外发布前由站点负责人确认；内容准备好不等于可以发布。
+跨渠道发布要服务各自读者，标明作者、时间、原始来源和关联关系；错误事实要同步纠正。Google 指南明确：追逐不真实的提及作用有限。
+**证据：Google 官方指导 + 来源独立性的工程判断；「三域名翻倍」无出处。** 对外发布前由站点负责人确认。
 
 ## 三、论文能说明什么，不能说明什么
 
-[C-SEO Bench](https://arxiv.org/abs/2506.11097)（Puerto 等，v3 2025-10-20；
-NeurIPS Datasets & Benchmarks 2025；有公开代码/数据）考察问答与商品推荐、每类三个领域，
-并比较不同采纳率。在其设置中，多数受测内容优化方法无明显好处或出现负作用，
-候选源在上下文中的排序更有效，采纳者增加时总体收益下降。
+- **GEO 原始论文**（[arXiv 2311.09735](https://arxiv.org/abs/2311.09735)，Aggarwal 等，KDD 2024）：GEO-bench 有 1 万条查询。生成引擎是 gpt-3.5-turbo，输入固定为 Google 前 5 条结果。指标是回答内的可见度（位置加权词数、主观印象），不是检索、排名或流量。最佳方法相对基线分别 +41%、+28%；「引用来源 / 加引语 / 加统计」三种方法在位置加权词数上 +30–40%。原排第 5 的来源用「引用来源」后 +115.1%，排第 1 的来源平均 −30.3%。关键词堆砌几乎无效。在 Perplexity.ai 上复测，「加引语」+22%。
+- **C-SEO Bench**（[arXiv 2506.11097](https://arxiv.org/abs/2506.11097)，Puerto 等，NeurIPS 2025 Datasets & Benchmarks，代码和数据公开）：两类任务（问答、商品推荐）各三个领域，并比较不同采纳率。多数受测内容优化方法基本无效，常常压低排名；提高来源在上下文中排序的传统 SEO 更有效；采纳者越多，总收益越低。
+- **批判综述**（[arXiv 2607.14035](https://arxiv.org/abs/2607.14035)，2026-07，单作者预印本，45 篇研究）：原始论文的增益在其设定内成立，但前提是来源已在固定上下文里；它不证明自然可发现性，也不证明持续流量。最可复现的杠杆是主题相关性与上下文位置。已被检索的内容可以因果地改变自己被引用的方式，但没有一项技术显示稳定、纵向、跨平台的因果效应。
 
-这是对泛化增益承诺的警示，**不是「所有 GEO 无效」「所有技巧收益必然归零」或「一手事实永远非零和」的证明**。
-论文与其他实验结果不同时，先比较检索/生成阶段、模型、指标、基线和多参与者设置。
-写得更清楚可以改善用户理解，但不要把这一工程价值冒充论文证明的排名提升。
-**证据：一手同行评议研究；本轮核对摘要与版本，不宣称复现了作者实验。**
+这些结果是对泛化增益承诺的警示，**不是「所有 GEO 无效」的证明**。论文结论冲突时，先比较检索/生成阶段、模型、指标、基线和多参与者设置。写清楚能改善读者理解；不要把这一工程价值说成论文证明的排名提升。
 
-## 四、API 文档与多产品参考页的实施要求
+## 四、API 文档与多产品参考页的实施要求（本套件口径）
 
-逐产品、逐接口读取实际契约，不批量替换产品名来生成业务解释。公共渲染器与自动检查可以复用，
-**产品事实与术语审查不能用模板代替**。每个展示的参数至少核：
+逐产品、逐接口读取实际契约，不批量替换产品名来生成解释。渲染器与自动检查可以复用；**产品事实与术语审查不能用模板代替**。每个展示的参数至少核：
 
 1. 名称、必填/可选、具体对象；不同接口里同名的 keyword / id / url / sort 不假定同义。
-2. 输入格式、对应产品的原生术语及对应关系；账号名、内部 ID、商品编号、地点标识等要分清。
-3. 适用的接口或模式，默认值、单位、范围、允许值和兼容旧值；自由文本不得捏造枚举。
-4. 参数影响什么、未开放什么；文档声明和实际行为冲突时先登记，不编造可用性。
-5. 示例绑定具体产品和接口，格式示例标明不是成功样本；响应与统计不能伪造。
-6. 返回字段的含义及空值/不完整边界，不能只解释通用参数、遗漏独有能力。
+2. 输入格式与原生术语；账号名、内部 ID、商品编号、地点标识要分清。
+3. 适用接口、默认值、单位、范围、允许值；自由文本不捏造枚举。
+4. 参数影响什么、未开放什么；文档与实际行为冲突时先登记。
+5. 示例绑定具体产品和接口；格式示例标明不是成功样本；不伪造响应。
+6. 返回字段含义及空值边界；不遗漏产品独有能力。
 
-页面使用 heading + 紧邻说明、dt/dd、稳定的能力/参数锚点；从能力清单链接到准确参数，
-同页不同接口的同名参数不得串链。FAQ 如保留，从同一份内容生成可见问答与 JSON-LD。
-新增主题页必须有独立用户价值，不按关键词排列组合铺薄页；低重复率也不是 Google 垃圾内容政策的安全线。
-
-验收分开记录：源码已核 → 生成物同步 → 实际 SSR/浏览器可读 → 在允许的测试环境中实际调用验证 → 上线后复核。
-多语言版本逐语言由母语审校，不能把一种语言的数据就绪当作其他语言已完成。
+页面用 heading + 紧邻说明、dt/dd、稳定锚点；同页不同接口的同名参数不串链。FAQ 如保留，可见问答与 JSON-LD 从同一份内容生成。新增主题页必须有独立用户价值；低重复率不是垃圾内容政策的安全线。验收分开记录：源码已核 → 生成物同步 → SSR/浏览器可读 → 允许环境中实测 → 上线复核。多语言版本逐语言审校。
 
 ## 五、发现与衡量
 
 - 先核访问、索引指令、canonical、内链、正文与字段事实，再讨论 AI 引用。
-- llms.txt 可服务确实消费它的开发者/工具；Google 上述指南明确 Search 不使用它。
-  不为「AI 加权」默认增加 .well-known/ai.txt 或另一份 FAQ JSON，避免多份事实漂移。
-- 搜索型、训练型、用户发起抓取型爬虫分开核策略；不为 SEO 擅自放开所有爬虫。
-- 引用监测记录查询、语言/地域、产品/模型、时间、是否检索、引用 URL 与原始结果。
-  回答提到品牌不等于引用来源；多条搜索链重合不等于多份独立证据。
-- 固定问题集与取样协议，区分抓取、索引、展示、引用、点击和转化；使用重复观测、
-  对照/分批发布减少混杂。改完本地 HTML 只能称工程验收，不能称排名或引用已提升。
-- 外部监测失败、缺链、旧快照单独标明；不要把一次缺失解释为长期不可见。
+- llms.txt 可服务确实读它的工具（多为编码 agent）；Google Search 不使用它。不为「AI 加权」默认增加 `.well-known/ai.txt` 或另一份 FAQ JSON，避免多份事实漂移。见 [llms-txt-guide.md](llms-txt-guide.md)。
+- 搜索型、训练型、用户触发型爬虫分开定策略（见 [geo-platform-differences.md](geo-platform-differences.md) 第三节）；不为 SEO 擅自放开所有爬虫。
+- 官方测量面：Google「生成式 AI 效果报告」（只有展示）；Bing Webmaster Tools「AI Performance」（引用数、被引页面、grounding queries，2026-02 公测）；Yandex Webmaster「Видимость сайта в Алисе AI」（SoV）；Naver「AI 브리핑 인용수」。各家口径不同，不合并。
+- 自己的抽样记录查询、语言/地域、产品/模型、时间、是否联网、引用 URL 与原始回答。提到品牌不等于引用；多条搜索链重合不等于多份独立证据。
+- 固定问题集与取样协议；区分抓取、索引、展示、引用、点击、转化。用重复观测和对照/分批发布减少混杂。改完本地 HTML 只能叫工程验收。
+- 外部监测失败、缺链、旧快照单独标明；一次缺失不等于长期不可见。
 
 ## 六、维护规则
 
-每条新增断言登记原始链接、日期、产品范围、证据类型及局限；无方法的百分比不进入实施要求。
-官方文档过期时就地纠正旧建议，不能在尾部追加与前文冲突的规则。
-吸收可核实的方法；不要把某个项目的运行快照（数据、截图、内部结论）复制进共享 Skill。
+每条新增断言登记原始链接、日期、产品范围、证据类型及局限；无方法的百分比不进入实施要求。官方文档变了就地改旧建议，不在尾部追加冲突规则。吸收可核实的方法；不把某个项目的运行快照（数据、截图、内部结论）复制进共享 Skill。
 
-## 证据保鲜机制(qiaomu-seo 基建,百仓扫描批 4;解决"官方事实何时过期")
+## 七、GEO 检查清单
 
-- **source-registry**:官方源 allowlist,每源标 `stability`(stable/mutable)与 `review_after_days`(365 或更短)——引用官方事实时先查登记;
-- **知识四分类**:stable principle(稳定原理)/ current platform rule(现行平台规则,必须带源+复核日期)/ observed market state(观察到的市场态)/ hypothesis(假设)——套件所有断言按此四分归档;
-- **覆盖台账八态**:discovered/selected/fetched/rendered/data-backed/failed/excluded/not checked——审计输出如实记态,不许"没查=通过";
-- **Google 2026 指引事实**(双源核对):llms.txt 对 Google 排名既不帮助也不损害;无 AI 专用 schema;无理想 AI 页长;**规模化操纵 AI 回答违反 spam 政策**(2026-05-15 起 spam 政策适用于生成式 AI 回答);
-- **算法更新台账**:`google-updates.json` 双区结构——`updates[]`(source 必须是 Google 自有域名)+ `unverified[]` 隔离区(第三方追踪器说法+primary_source_check;审计脚本不得编码未验证声明)+ last_verified。
+阈值未注明出处的，都是本套件口径。
 
-## 完全装载:审计输出 schema/预注册标定/文件治理(百仓深扫)
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 检索型爬虫能进站 | `python3 scripts/robots_posture.py https://站点/robots.txt --json`；再用真实 UA 抽测 3 个重点页的状态码 | 通过：search/user 层无 Disallow，`citation_bots_ok` 为真，抽测都是 200。失败：任一检索型爬虫被禁或被 WAF 拦 |
+| 2 | Google 资格 | Search Console → 网址检查，看「已编入索引」和抓取到的 HTML | 通过：已索引，关键段落无 `nosnippet`/`data-nosnippet`。失败：未索引或关键段落被屏蔽 |
+| 3 | 生成式 AI 控制是有意设置的 | Search Console → 设置 → Search generative AI | 通过：状态与业务决定一致。失败：没人知道当前是纳入还是排除 |
+| 4 | Copilot 可用全文 | `curl -sI URL` 与页面 `<meta name="robots">`，查 `noarchive`、`nocache` | 通过：要给 Copilot 用的页面没有这两个指令。失败：有 |
+| 5 | 关键事实在初始 HTML 的可见正文里 | `curl -s URL` 后搜价格、规格、定义原句；`python3 scripts/ai_views.py --url URL --json` 看去噪后正文 | 通过：事实出现在可见文本。失败：只在 JSON-LD、图片或 JS 渲染后才出现 |
+| 6 | 结构化数据与正文一致 | `python3 scripts/schema_lint.py URL` | 通过：无报错，FAQPage 只标真实问答。失败：悬空 @id、占位符、空答案、为 AI 新增的 FAQPage |
+| 7 | llms.txt 不被当成杠杆 | `python3 scripts/llmstxt.py check https://站点` | 通过：没有文件，或文件有效（H1 + 链接）且方案里不写「提升引用」。失败：把它写进 GEO 收益 |
+| 8 | 引用基线可复现 | `python3 scripts/citation_panel.py init --brand X --prompts-file 问题库.md --domain 站点`；每个引擎 `record`；`report` | 通过：≥10 个 prompt，每个 prompt ≥3 次采样，报告带 Wilson 区间并标出 unstable。失败：单次采样就下结论 |
+| 9 | 真实引荐的下界 | `python3 scripts/ai_referral_log.py access.log --bot-ua --classify` | 通过：检索型爬虫抓取成功率高，AI 引荐按引擎分列。失败：把 App 内无 referrer 的访问算成 0 |
+| 10 | 改动效果有对照 | `python3 scripts/split_test.py plan / assign / analyze`；参考 Ahrefs 设计（5–10 个处理页 + 5–10 个对照页，观察 ≥30 天） | 通过：效应 95% CI 不含 0 才说有效；否则报告「未检出」。失败：只有改前改后对比 |
+| 11 | 官方测量面已接通 | GSC 生成式 AI 效果报告；Bing Webmaster Tools → AI Performance；Yandex / Naver 对应报告（有该市场时） | 通过：每月记一次，按平台分列。失败：跨平台相加成一个「AI 可见度」 |
 
-**审计 JSON Schema**(qiaomu):顶层必填 7 项(schema_version/generated_at/scope/coverage/findings/action_plan/missing_evidence);scope.mode 7 枚举(advisory/page/template_sample/site_inventory/incident/migration/ai_search_extension);evidence_ref.kind 14 枚举(url/file/http/rendered_dom/search_console/server_log/crawl/serp/web_vitals_field/official_doc…)+observed_at;**finding 三轴:impact(5 档)/confidence(3 档)/effort(xs-xl)分立**;evidence_level=observed/inferred/missing 三分;**action 必须挂 finding_ids 且自带 verification**;source_review 必填 overdue_sources——过期来源显式暴露。
-**预注册标定纪律**(respectaso):评分曲线必须实测拟合而非手调——327 官方值+90 负样本、30% holdout(按 crc32 哈希切分防泄漏)、Spearman/Pearson/MAE 三指标;**预注册闸门**(见数前固定:held-out Spearman≥0.25 且超旧模型);三版本号独立 bump 才触发历史重算;"NEVER hand-tune these: refit under pre-registered gates"。任何套件评分器的维护纪律。
-**文件治理三法**(boraoztunc):①拒绝留痕——上游技能审计后拒绝理由全部写入 NOTICE("共享同一模板、描述不可区分→降低路由质量");②**一 trigger 一技能**(两个近同技能竞争同一 trigger 会降低路由);③采纳时纠错留痕(补 -webkit- 前缀/对齐参数,写明)。
+## 八、证据保鲜机制与证据治理（本套件口径）
 
-预注册标定的完整展开(官方数据锚点法/crc32 按 term 切分/保序回归 PAV/三版本号重算/twin-row 一致性/新评分器上线十项清单):见 [scoring-calibration.md](../research/scoring-calibration.md)。
+方法来源：[joeseesun/qiaomu-seo](https://github.com/joeseesun/qiaomu-seo) 的 ai-search、knowledge-freshness、performance-measurement 等参考文件，按本套件口径改写。
 
-## 官方指引与内容政策增量(claude-seo 深读,2026-10-09)
-
-来源:[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-geo/references/google-ai-optimization-guide.md`、`skills/seo-agentic/references/vendor-matrix.md`(该仓自标"一手来源综合,2026-09-23 复核")。
-
-1. **Google AI 优化指南五条"不需要做"**(2026-05-15 Search Central 博客公布,文档更新 2026-07-10):不需要创建 llms.txt 或 AI 专用标记文件;不需要为 AI 把内容切块(chunking);不需要用特定措辞/长尾变体改写;不需要追逐博客/论坛/视频里的不真实提及;不需要为 AI 功能过度投资结构化数据。Google 的定位原话:"优化生成式 AI 搜索就是优化搜索体验,因而**仍是 SEO**"——AEO/GEO 被视为同一工作的别名。与本文第二节四条取舍一致,可作官方出处引用。
-2. **Google"第三方 SEO 工具"文档**(2026-06-05):任何工具都不能保证排名;第三方工具**无法访问 Google 内部排名数据**;Google 不背书厂商;Search Console 是权威一手源。套件评分器输出报告时照此声明"启发式,非引擎内部信号"。
-3. **Who/How/Why 测试**(Google E-E-A-T 指南配套):Who——读者期望处有署名,YMYL 主题必须有作者背景页;How——尤其 AI 辅助内容,读者会问就披露过程;Why——为帮助人而非吸引点击。**YMYL 2025-09 QRG 扩展到政治/社会议题**。自警四信号:按目标字数写作(没有这种字数)、无专业知识只为流量进入领域、伪造发布日期新鲜度、为"新鲜度"批量翻新内容。
-4. **Merchant Center 两条可执行 AI 内容要求**(有具体执法面):AI 生成产品图必须带 IPTC `DigitalSourceType: TrainedAlgorithmicMedia` 元数据;AI 生成的产品标题与描述须在 feed 中单独指定并标注为 AI 生成。QRG §4.6.5(规模化内容滥用)/§4.6.6(低努力主内容)是对应罚则面。
-5. **厂商数字红旗**(vendor-matrix 明令不引用):Cloudflare 的 markdown token 削减数字为厂商来源;WebMCP"token 效率"百分比只追溯到营销帖、无可复核基准;WebArena 等 agent 基准测的是**模型**不是站点质量;无受控公开研究把 accessibility-tree 质量或 WebMCP 与 agent 任务成功率挂钩——全部按假设处理。
-6. **agent 客户端事实的保鲜纪律**(可借鉴的方法):该仓 vendor-matrix 每行带来源分级 P(一手)/S(二手)/C(冲突),60 天以上行引用前必须重查;`CHECKED_ON` 常量与文档同次提交更新——快变事实"只在带日期的表里活,不散落正文"。
-
-## 证据阶梯、测量纪律与知识治理执行面(qiaomu-seo 深读 2026-10-09b)
-
-来源:[joeseesun/qiaomu-seo](https://github.com/joeseesun/qiaomu-seo) `references/{ai-search,performance-measurement,execution-sampling,knowledge-freshness}.md` + `scripts/validate_{audit,knowledge}.py`。
-
-### AI 搜索证据六级阶梯(ai-search.md;替代笼统的"AI 可见性")
-
-`eligible`(按平台文档条件可访问)→ `retrieved`(系统确实使用/呈现了来源)→ `cited`(显式引用带链接)→ `mentioned`(实体/品牌被点名)→ `recommended`(进入优选短名单)→ `converted`(可测的下游用户行为)。**任何阶段不得坍缩成"AI 可见性提升"一句话**——mention≠推荐、一次引用测试≠未来答案、检索爬虫≠引用爬虫。观察协议必记:查询集及选择理由、provider+产品 surface、日期/市场/语言/设备/登录态、答案+引用+被引 URL+提及措辞+推荐态;结论重要时重复观测或独立复核。手工 prompt 检查按"抽样观察"归档,不按"排名报告"归档。OpenAI 三 bot 显名分立:`OAI-SearchBot`(自动搜索发现)/`GPTBot`(训练)/`ChatGPT-User`(用户触发,不一定遵守同套 robots);Perplexity 以 `PerplexityBot` 为搜索爬虫,bot 身份影响结论时核已公布 IP 段。
-
-### 知识分类修正:实为五类(knowledge-freshness.md)
-
-前批记"四分类",实际该仓是五行表:stable principle / current platform rule / observed market state / **estimate(第三方指标:关键词量、流量、外链、难度——必须带具名 provider+方法+日期,永不作为 ground truth 呈现)** / hypothesis。套件引用任何工具数字时按 estimate 类处理。
-
-### 官方文档冲突处理四则 + 特性生命周期
-
-冲突时:①对具名 surface 取"更新且更具体"的产品文档;②两个都可能是真的时不抹掉更宽的旧陈述(例:生成式 AI 专属报告与"生成式 AI 流量计入 Web 总报告"可并存,先核当前 property 再断言);③显式写出 rollout/账号可用性/地区/报告范围的不确定性;④不把产品公告直接转成普适实施要求。生命周期六态:`experimental/limited/supported/unsupported/deprecated/removed`;**分层命名**——某搜索特性废弃后 Schema.org 类型可能仍合法、SC 维度可能过渡期仍在,声明时指明是哪一层变了。
-
-### validate_knowledge.py 的执行面(比前批概念记录更硬)
-
-- stability 实为三档:stable/**mutable/volatile**(volatile 是最快过期档);每源必填 `reviewed_at`+`review_after_days`(正整数),逾期默认 warning,**`--strict-stale` 才 fail**——CI 可分档执法;
-- URL 强制**绝对 HTTPS**且域名必须在 `allowed_official_domains` 内;source id 与 URL 双重去重;
-- **`deprecated_claim_patterns` 禁用词机制**:把"已知过期说法"写成字符串模式,对 SKILL.md + references/*.md 做 casefold 子串扫描,命中即 fail——过期知识的淘汰从"靠自觉"变成"可执行词表";
-- 脚本自我声明边界:不抓网、不证明源内容未变,只查结构/域名政策/重复/逾期——validator 也诚实标注自己的证明力。
-
-### validate_audit.py 的执行面(schema 之外的硬约束)
-
-- `missing evidence` 级 finding 的 status 只能是 `warning/not_checked`,**不得是 pass 或 fail**——"没查"永远不能伪装成结论;
-- `observed/inferred` 级 finding 必须附 `evidence_refs`(kind+ref),空引用即 fail;
-- `template_sample` 模式缺 coverage.limitations → 警告;**六类 mutable 类目**(structured_data/commerce/image_search/video_search/ai_search/policy)存在 finding 而 `source_review` 缺失 → 警告——把"平台规则易变"编码进执法;
-- action 悬空引用(指向不存在的 finding id)、重复 finding/action id、非 advisory 模式空 targets,全部 fail。
-
-### 测量与取证的证据纪律(performance-measurement.md + execution-sampling.md)
-
-- **CWV**:field 数据定级、lab 数据诊断,两套不可互证;Lighthouse 分数不证明 field CWV、排名或业务影响;当前阈值(LCP 2.5/4.0s、INP 200/500ms、CLS 0.1/0.25,P75)在长期标准里使用前须重开官方源;CrUX/SC/RUM/PSI/Lighthouse 覆盖的 URL、人群、时段、设备可能全不同。
-- **Search Console 数据边界**(引用 SC 数字前的自查单):匿名查询进总量不进表;加维度会掉数据;API 返回的是内部限额下的 top 行而非穷举;页/媒体级聚合口径不同;average position 是聚合诊断量不是固定排名;**禁止用总量减过滤表,把差集当"完整隐藏关键词集"**。
-- **采集五层,用最轻够用层**:repo/config(路由/元数据/sitemap 逻辑)→ HTTP 静态响应 → 渲染后 DOM → 一方工具(SC/日志/CrUX)→ 当前 SERP 观察;静态与渲染证据是**不同工件**,finding 必须注明由哪层支撑。重跑清单记日期时区/市场/语言/设备/登录态/工具版本/失败与限流/输出校验和;**不存凭据、原始 cookie、私有查询串**。
-- **变更验证四里程碑**:`implemented`(源码改+测试过)→ `deployed and observable`(线上 HTTP/渲染输出已变)→ `processed by search platform`(抓取/索引/canonical/增强证据已反映)→ `outcome observed`(合格窗口后的效果数据)。**只有第四里程碑支持效果声明**;部署或重抓成功不是排名/流量/转化成功——本地改完 HTML 只能称工程验收。
-- **SEO 实验七要素**(可逆且多页面可比时):一个可证伪假设+机制、防交叉污染的处理单元(页/模板组)、看结果前定好人群/排除/分配/基线窗、主指标+护栏+最小实用效应+观测窗+停止规则、避免模板/内链/内容/埋点同时改(除非整包即处理)、监控实现均等与重抓进度、**正/负/零/不定结果全部报告,不把噪声改成胜利**;无可信对照的 before/after 只是观察性证据,迁移/事故类用变点证据+竞争解释并降置信度。
+- **证据阶梯六级**：`eligible`（按平台文档可访问）→ `retrieved`（确实被检索或呈现）→ `cited`（带链接引用）→ `mentioned`（被点名）→ `recommended`（进入推荐短名单）→ `converted`（可测的下游行为）。任何一级都不坍缩成「AI 可见性提升」。
+- **知识五类**：稳定原理 / 现行平台规则（必须带来源和复核日期）/ 观察到的市场状态 / 估算值（第三方工具的搜索量、流量、外链、难度，必须带厂商、方法、日期）/ 假设。
+- **保鲜**：现行平台规则与市场数字每条带 `review_after_days`；快变事实（AI 产品行为、厂商数字）60 天内重查；过期来源在报告里显式列出。
+- **变更验证四里程碑**：已实现（源码与测试）→ 已部署可观测（线上 HTML 已变）→ 平台已处理（抓取、索引、canonical 已反映）→ 结果已观测（合格窗口后的数据）。只有第四步支持效果声明。
+- **SEO 实验七要素**：可证伪假设；防交叉污染的处理单元；看结果前定好人群、分配和基线窗；主指标 + 护栏 + 最小实用效应 + 观测窗 + 停止规则；不同时改模板、内链、内容、埋点；监控实现与重抓进度；正、负、零、不定结果都报告。
+- 评分器的标定方法（预注册、留出集、重算规则）见 [scoring-calibration.md](../research/scoring-calibration.md)。

@@ -1,166 +1,216 @@
 # Google Discover 与新闻 SEO
 
-> 建立于 2026-10-09。来源:Google Search Central 官方文档为基准;Chartbeat/Press Gazette 为行业数据;市场锚:印度中型出版商 Discover 已超 Google Search(dpublish 2026)、日本新闻域名 2026-09 跌出 AI 引用总榜 Top10。
+> 建立于 2026-10-09；2026-10-18 逐条核对一手来源（证据账本 C3）。规则以 Google Search Central 文档、Search Status Dashboard 和 Publisher Center 帮助为准。第三方数字标「第三方」，并写样本和时间。「本套件口径」是本套件的做法约定，不是 Google 规则。GEO 证据的仲裁见 [geo-evidence.md](geo-evidence.md)。
 
-## 一、Discover 机制(官方口径)
+## 一、Discover 机制（官方口径）
 
-- 资格=**已索引+符合 Discover 内容政策**,无特殊标签/schema;排名复用 Search 信号;
-- 官方明确定位:Discover 流量 "less predictable"——**视为搜索的补充渠道,不作为业务基线**;波动源于用户兴趣/内容配比/Search 更新,与质量或频率无关;
-- **2026-02 首个 Discover 专属核心更新**:①更多展示**用户所在国家网站的本地区内容**;②**打击标题党/煽情**——对跨境 Discover 流量的国际出版商冲击明显(官方博客,细节经转述);
-- **Follow/关注——已死(2026-10-09 更新核实)**:2025-08 随 Follow 按钮上线、54 家出版商受邀控制增强版档案(Search Engine Land/PPC Land);**2025-11 Google 从 Discover 文档移除 Follow 指引,官方口径 "The Follow feature is no longer shown in Google Discover"**(Search Engine Roundtable+Google 官方 changelog)——纯 UI 退役,无理由说明;**采用数据:档案控制与 Discover 流量无可测相关性**(PPC Land 对试点组的观察);Chrome 浏览器侧 Follow 功能仍存活(文档仍链接);2026-03 有新的"关注出版商/话题 widget"实验(Delante,实验级)。**教训:不要把渠道策略押在 Google 的社交化实验功能上,Feed/RSS 基建仍值得维护(Crawler 层依赖),但"半持久受众层"叙事已失效。**
-- **Discover 流量占比(2026 实测,行业)**:①Chartbeat 网络(2,500+ 站,2026-02):Discover 占全球 pageviews **~14.9%**,Google Search 已跌至 **5.8%**(2024-07 Search 还占 ~9%)——**Discover 已是出版商最大的单一 Google 入口,约为 Search 的 2.6 倍**(SEJ/PPC Land 转述 Chartbeat);②出版商的 Google 引荐流量中 **~68–70% 来自 Discover 而非 Search**(Chartbeat 数据,Press Gazette/David Buttle 2025-08 转述);③新闻站口径:Google Search 占比从 **51% 跌至 27%**,Discover 全面反超(Stan Ventures 转述);④Chartbeat 2,500+ 站 Discover 流量 2025 同比 **−16%**(INMA:2024-12→2025-12 Search pageviews −34%、Discover −16%——**Discover 也在跌,只是跌得慢**);⑤印度地方语言站 Discover 可达 80–90% sessions(单一博客口径,未升级为共识);⑥小出版商 Search 流量最多损失 **60%**(PPC Land/Chartbeat)。
+- **资格**：内容被 Google 索引，并且符合 Discover 内容政策，就自动有资格。不需要特殊标签或结构化数据。有资格不等于一定出现。来源：[Get on Discover](https://developers.google.com/search/docs/appearance/google-discover)，核对 2026-10-18。
+- **排序**：Discover 复用 Search 的许多信号和系统。旧内容只要对用户有帮助、与兴趣相关，也可能出现。
+- **流量定位**：官方原话是 "less predictable or dependable"，并建议把 Discover 视为关键词搜索流量的补充。官方列出三类波动原因：用户兴趣变化、Discover 调整内容类型、Search 更新。官方没有说波动「与质量或发文频率无关」。
+- **2026-02 Discover 核心更新**：
+  - Status Dashboard 事件名 "February 2026 Discover update"，起止 2026-02-05 09:00 至 2026-02-27 02:00（US/Pacific）。来源：[事件页](https://status.search.google.com/incidents/mYbNTqV1ytDc2fA8hUz4)。
+  - 博客标题 "Google's February 2026 Discover Core Update"，正文称 "February 2026 Discover core update"。来源：[Search Central 博客 2026-02-05](https://developers.google.com/search/blog/2026/02/discover-core-update)。
+  - 三项目标：多展示用户所在国家网站的本地相关内容；减少煽情内容和标题党；多展示有专长网站的深度、原创、及时内容。
+  - 专长按话题逐个判断。综合站与垂直站有同等机会。例如本地新闻站的园艺版块可以在园艺话题上有专长。
+  - 先对美国英语用户发布，"in the months ahead" 扩展到所有国家和语言。扩展进度以 Status Dashboard 为准。
+  - Search Engine Roundtable 称它是首个只针对 Discover 的核心更新（第三方）。
+- **关注层（订阅）现状**：
+  - 2025-09-17：用户可以在 Discover 里关注出版商和创作者。Discover 开始混入 X、Instagram 帖子和 YouTube Shorts。来源：[blog.google](https://blog.google/products-and-platforms/products/search/discover-updates-september-2025/)。
+  - 2025-11-19：Google 从 Discover 文档删除旧版 Follow 功能（基于 feed 的 Chrome 实验）的指引，原因是 "The Follow feature is no longer shown in Google Discover"。来源：[文档更新日志](https://developers.google.com/search/updates)。
+  - 2026-09-16：Search profile 文档上线。读者关注你的 Search profile 后，你在 Instagram、TikTok、YouTube、X、Facebook 和网站上的内容更可能出现在 Discover。主页地址格式 `https://profile.google.com/@handle`。来源：[Search profile 徽章文档](https://developers.google.com/search/docs/appearance/search-profiles)。
+  - 2026-08-20：Google 宣布用户可在 Discover 卡片的三点菜单里用自己的话调整想看和不想看的内容。来源：[blog.google](https://blog.google/products-and-platforms/products/search/personalize-search-discover-news/)。
+  - 结论：旧版 Follow 已退役，但「关注」以 Search profile 和 Preferred Sources 的形式继续存在。
+- **Discover 里的 AI 摘要**：2025-07 Google 在美国 Discover 推出热门话题 AI 摘要（[TechCrunch 2025-07-15](https://techcrunch.com/2025/07/15/google-discover-adds-ai-summaries-threatening-publishers-with-further-traffic-declines/)，第三方）。2026-06 英国出现把多家出版商归组在 AI 摘要下的形态；Google 回应称用户可点开归组看到全部链接（[Press Gazette 2026-06-29](https://pressgazette.co.uk/platforms/google-ai-changes-could-deal-further-blow-to-publisher-discover-traffic/)，第三方）。同文引 NewzDash 数据：社交帖约占 Discover 信息流的四分之一。
+- **行业流量数据（第三方，样本偏新闻站）**：
+  - Chartbeat 数据（[Axios 2026-03-17](https://www.axios.com/2026/03/17/chartbeat-search-traffic-ai-chatbots)）：Google Search 占全球 pageviews 的周份额在 2024-11 达峰 10.6%，2026-02-02 降到 5.84%；同期 Discover 在 13.13% 至 17.04% 之间，始终高于 Search。2024-12 至 2025-12，Search 带来的 pageviews 降 34%，Discover 降 15%。两年内小出版商（日 PV 1,000 至 10,000）的搜索引荐降 60%，中型降 47%，大型降 22%。
+  - Chartbeat《2026 Publisher Playbook》（[SEJ 2026-09-24](https://www.searchenginejournal.com/google-search-decline-publishers-chartbeat/590681/)）：2025-07 至 2026-07，Google Search 同比降 40.2%，Discover 同比降 34.3%。Search 占全网 pageviews 从 2024-07 的约 9% 降到 2026-07 的约 5%。报告未给站点数。
+  - 本套件口径：Discover 目前是新闻站最大的 Google 入口之一，但它也在下滑。不要把它当业务基线。
 
-**Discover 生态补充(2026-10)**:①**社交内容混流仍在**:Discover 信息流继续混入 X/Instagram/YouTube Shorts 帖子(2025-09 起的形态,Follow 退役后未撤)——出版商在争的不是"新闻位"而是整个注意力流;②**Chrome 侧入口**:桌面 Chrome 新标签页的 Discover 卡片同样依赖 `max-image-preview:large` 与 feed 可抓取——被低估的桌面流量入口;③**多语言 feed 匹配**:Discover 按用户系统语言+兴趣双轴配流,`news:publication` 的 language 字段写错会让对应语言流"看不到你";④**本地实体信号**:官方否认 Discover 有独立质量分,但 2026-02 更新后"本地区内容优先"实质给了本地实体信号(地址/本地作者/About 页/国别域名)可操作权重——与 Search 的 E-E-A-T 实操殊途同归;⑤**流量结构变化**:Chartbeat"The Audience Trends in the Age of AI"结论——流量没有消失而是在**再分配**(direct/dark social/站内再循环上升),Discover 是 Google 侧最后的大入口但波动性设计如此,任何月的 −50% 都可能是正常的(官方 troubleshooting 口径)。
+## 二、Discover 优化要素（官方）
 
-## 二、Discover 优化要素
-
-| 要素 | 规则(官方) |
+| 要素 | 官方规则（[Get on Discover](https://developers.google.com/search/docs/appearance/google-discover)） |
 |---|---|
-| 大图 | **≥1200px 宽、>300,000 总像素(如 1280×720)、16:9**;必须 `max-image-preview:large` robots meta;schema.org/og:image 指定;避免 logo/文字密集图 |
-| 标题红线 | 禁误导/夸张预览、禁隐瞒关键信息制造好奇缺口、禁煽情主义;违规可触发 GSC 人工处置 |
-| 时效 vs 常青 | 偏好 timely,但匹配兴趣的旧文仍可浮现 |
-| 地区 | 2026-02 后**国家属地相关性权重上升**——本地域名/本地存在感>语言本身 |
-| 被过滤 | 求职/请愿/表单/代码仓库/无上下文讽刺/超 SafeSearch |
+| 大图 | 宽度至少 1200px；总像素超过 300,000（例：1280×720）；16:9；用 `max-image-preview:large` 或 AMP 启用 |
+| 首选图 | 用 schema.org 标记或 `og:image` 指定有代表性的大图。2026-03-02 起文档写明 Google 两种来源都用。不要用站点 logo；避免文字很多的图 |
+| 标题与预览 | 不用误导或夸张的预览（标题、摘要、图片）制造点击；不隐瞒理解内容所需的关键信息；不用煽情手法；标题要概括内容本质 |
+| 内容 | 契合当下兴趣、讲好故事或提供独特见解 |
+| 页面体验 | 整体页面体验良好 |
+| 会被过滤 | 求职申请、请愿、表单、代码仓库、无上下文的讽刺内容；SafeSearch 之外还会过滤令人震惊的内容 |
 
-**大图实证(官方案例+行业)**:Google 官方 Large Images 案例研究:启用大图(`max-image-preview:large`+≥1200px)后 Discover CTR **提升 ~50%(1.4x 量级)**、访问量同步上升(developers.google.com/search/case-studies/large-images-case-study,官方);SEL 案例"An Image Could Be Worth 1,000 Clicks":正确用图的出版商单图可带来千级点击(2020 案例但机制仍现行);Bring 案例研究:SEO+结构化数据整改后做到 **月 100 万+ Discover 展示**;wpspeedopt 案例:核心更新掉量后靠 **CWV 修复恢复 1k+/日 Discover 点击**——技术健康度是 Discover 恢复的现实路径;Adsterra 变现案例:Discover 流量周入 $1,000 级(流量质量=低 RPM 高量,广告模式依赖者的真实图景)。**原图摄影/定制题图持续跑赢图库图(多案例共识)。**
+- **大图官方案例**（[Large Images 案例 2021-08-11](https://developers.google.com/search/case-studies/large-images-case-study)）：Kirbie's Cravings 启用 `max-image-preview:large` 后 Discover CTR 升 79%；Istoé CTR 升 30%，6 个月点击升 332%。这是两家出版商的自报结果，不是对照实验。
+- **违规后果**：人工处置报告里有 "News and Discover policy violations" 一类。其中 "Misleading content (News and Discover)" 指用内容里没有的细节诱导点击。申请复审时要提供编辑流程已改正的证据。来源：[人工处置报告帮助](https://support.google.com/webmasters/answer/9044175)。
+- **标题自查（本套件口径，对应官方红线）**：
+  1. 只看标题，能说清发生了什么、涉及谁、结果是什么。必须点进去才知道核心事实，就是隐瞒关键信息。
+  2. 去掉夸张情绪词（「震惊」「你绝对想不到」类）。
+  3. 标题里的每个数字和引语，正文都能找到出处。
+  4. 题图与正文主题一致，不用无关的刺激性图片。
 
-**标题党自查实操(对应官方红线,可执行版)**:①**信息完整性测试**——只看标题能否回答"发生了什么/谁/结果",需要点进去才能知道核心事实=踩线;②**情绪词扫描**——shocking/unbelievable/你绝对想不到/"惊呆了"类词出现即重写;③**数字与事实核对**——标题里的每个数字/引语必须正文可溯源;④**A/B 边界**——可以优化好奇心(留悬念在次要细节),不可隐瞒核心结论;⑤**GSC 处置信号**——Discover 手动处置(Manual Actions)会在 GSC 出现 "Discouraged features" 通知,月度检查一次;⑥**2026-02 更新后加严**:煽情主义打击是本轮核心,跨境出版商受损最重——面向他国用户的标题夸张度需要按目标市场文化重新校准(官方博客,细节经转述)。
+## 三、新闻 SEO 基础层
 
-**2026-02 Discover 专属核心更新的两层影响(细化)**:①**本地内容优先**=用户所在国的网站内容权重上升——对国际出版商意味着:即使语言匹配(英语),美国用户流会优先给美国域名;对策=目标市场本地化站点/本地合作发布/国别 TLD,而非只翻译内容;②**标题党/煽情打击**=CTR 导向的题文不符策略从"灰帽"变"明确负向"——Discover 的推荐系统对 clickbait 的识别在向 YouTube 的 Gemini 标题-内容一致性检测看齐(行业推断,标注)。
+- **Publisher Center 已无申请入口**：2024-04-25 起不能在 Publisher Center 新建 Google News publication。2025-03 下旬起，所有 publication 页面改为自动生成；Google News 不再使用 Publisher Center 提交的 RSS 或网址；logo 取站点 favicon，名称取 site name。符合内容政策的内容自动有资格。来源：[Publisher Center 公告](https://support.google.com/news/publisher-center/announcements/10146168)、[自动生成页面说明](https://support.google.com/news/publisher-center/answer/15898024)。
+- **Google News 排名因素**：内容相关性、显著性（Prominence）、权威性、时效、可用性、地点与语言。来源：[Ranking within Google News](https://support.google.com/news/publisher-center/answer/9606702)。这是 Google News 的因素清单，不是「Top Stories 五要素」。
+- **原创报道**：Google 有原创内容系统，让原创报道排在只引用它的内容前面。来源：[排名系统指南](https://developers.google.com/search/docs/appearance/ranking-systems-guide)。
+- **Article 结构化数据**：没有必填属性。推荐 `author`、`datePublished`、`dateModified`、`headline`、`image`。图片建议给多张高分辨率图（宽×高至少 50K 像素），比例 16:9、4:3、1:1。`Article`、`NewsArticle`、`BlogPosting` 都受支持；现行文档没有 110 字符标题上限。来源：[Article 文档](https://developers.google.com/search/docs/appearance/structured-data/article)。
+- **付费墙**：官方建议用 Flexible Sampling（metering 计量或 lead-in 导语试读）。付费内容用 `isAccessibleForFree: false` 加 `hasPart`（`WebPageElement` + `cssSelector`）标出，帮 Google 区分付费墙和 cloaking。来源：[Flexible Sampling](https://developers.google.com/search/docs/appearance/flexible-sampling)、[付费内容结构化数据](https://developers.google.com/search/docs/appearance/structured-data/paywalled-content)。
+- **AMP 现状**：2026-07-01 起，Google Search 直接把用户带到出版商自己托管的 AMP 页面，不再经 AMP viewer、AMP Cache 或 signed exchange。AMP 内容像其他网页一样参与排名。来源：[文档更新日志 2026-07-01](https://developers.google.com/search/updates)。
+- **Preferred Sources（偏好来源）**：
+  - 时间线：2025-08-12 美国和印度上线（[blog.google](https://blog.google/products-and-platforms/products/search/preferred-sources/)）；2025-12-10 开始向全球英语用户推出（[blog.google](https://blog.google/products-and-platforms/products/search/tools-partnerships-web-ecosystem/)）；2026-04-30 覆盖所有 Google Search 支持的语言（[blog.google](https://blog.google/products-and-platforms/products/search/preferred-sources-language-expansion/)）；2026-05-27 文档加入 AI Overviews 与 AI Mode；2026-08-20 推出可嵌入的交互按钮。
+  - 官方采用数据：约 9 万个不同来源被选（2025-12）；超过 20 万（2026-04-30）；超过 60 万（2026-08-20）。用户把站点设为偏好来源后，点击该站的概率约为两倍。
+  - 资格：只有域名级和子域名级站点能出现在[来源偏好工具](https://www.google.com/preferences/source)里，子目录不行。要在 AI Mode 和 AI Overviews 里显示偏好标记，站点必须在 Search Console 里纳入 Search 生成式 AI 功能。来源：[Preferred sources 文档](https://developers.google.com/search/docs/appearance/preferred-sources)。
+  - 接入方式：标准 JavaScript 按钮（推荐）、带自定义素材的高级 JavaScript、深链 `https://www.google.com/preferences/source?q=example.com`。
 
-**Discover 选题工程(兴趣维度,官方机制的运营化)**:Discover 不按查询匹配而按**用户兴趣画像**推送,因此选题层的可操作面在"实体覆盖度"而非"关键词":①**题材簇连贯性**——算法给站点建兴趣画像,题材跳变(今天财经明天娱乐)会稀释画像纯度,垂直站天然占优;②**实体热度窗口**——突发实体(人物/事件)在热度期进 Discover 概率最高,发布时机=实体热度前 1/3 窗口(行业经验,标注);③**常青兴趣复活**——官方确认匹配兴趣的旧文仍可浮现:维护"可复推库存"(教程/解读类),dateModified 更新即有再分发机会;④**兴趣≠搜索量**——Discover 选题看的是"人群日常关心什么"(健康/理财/体育/本地),不是搜索框里的 query;用搜索词研究指导 Discover 选题是常见错配;⑤**频次无关**——官方明确发文频率不影响 Discover 表现,产能波动期不必恐慌性补稿。
+### News sitemap 规范（官方）
 
-## 三、新闻 SEO 基础层(2026)
+来源：[Create a News Sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap)，核对 2026-10-18。
 
-- **Publisher Center 已关闭新增(2024-04 停,2025-03 全量)**——新闻收录完全算法化,无申请入口;
-- **News sitemap**:仅含**近 48 小时**文章、≤1,000 URL、必填 `news:publication`(名+语言)/`publication_date`/`title`;
+- 只放最近两天内创建的文章。文章超过两天后，删掉该 URL，或删掉它的 `<news:news>` 标签。sitemap 因此变空时，Search Console 会给 Empty Sitemap 警告；官方说这不会造成问题。
+- 每个 news sitemap 最多 1,000 个 `<news:news>`。超过就拆成多个 sitemap。
+- 必填标签：`<news:news>`、`<news:publication>`（含 `<news:name>`、`<news:language>`）、`<news:publication_date>`、`<news:title>`。
+- `<news:name>` 必须与文章在 news.google.com 上显示的名称完全一致（去掉括号内容）。Google News 现在用 site name 作 publication 名称。
+- `<news:language>` 用 ISO 639 代码；简体中文写 `zh-cn`，繁体写 `zh-tw`。
+- `<news:publication_date>` 用 W3C 格式。只写日期（`YYYY-MM-DD`）或写到时分秒带时区都可以。填文章首次发布时间，不填加入 sitemap 的时间。
+- 更新现有 sitemap，不要每次新建。Google News 抓 news sitemap 的频率与抓站点其他部分相同。
+- 通用 sitemap 规则同样适用：用绝对 URL；单文件不超过 50MB（未压缩）或 50,000 个 URL。来源：[Sitemaps 报告帮助](https://support.google.com/webmasters/answer/7451001)。
+- 新闻站还需要常规 sitemap：news sitemap 只装两天内的文章，旧文靠常规 sitemap 被发现（本套件口径）。
 
-**News sitemap 实操常见错误清单(Yoast/AIOSEO/Google 支持论坛汇总,2026-10 核实)**:
+**常见错误对照**：
 
-1. **塞入 >48h 旧文**——最常见错误:旧文导致 sitemap 校验失败,Yoast 排障文档明确"must have been published within the past 48 hours";窗口滚动必须自动化(见第六节插件),手工维护必出错;
-2. **noindex 页面混入**(含被 robots 屏蔽的分类/标签页)——GSC 报 "Submitted URL marked noindex";
-3. **sitemap URL 自身重定向**(http→https 或加尾斜杠)——读取失败 "Sitemap could not be read",直接 200 返回 XML;
-4. **把 news URL 写成相对路径**——`<loc>` 必须绝对 URL 含协议;
-5. **`news:publication_date` 用日期而非完整时间戳**——新闻场景建议精确到秒(ISO 8601,含时区),Google 排序依赖;
-6. **publication name 与 Google News 中站点展示名不一致**(历史遗留,Publisher Center 关停后靠算法识别,名称漂移会削弱关联);
-7. **超 1,000 URL 不拆分**——单个 news sitemap 硬上限 50,000 URL/50MB(通用限制),但**新闻最佳实践按 48h 窗口自然远小于此**,异常大=窗口逻辑坏了;
-8. **提交后 24–48h 内反复重新提交**——Google 重读周期 24–48h,"Last read" 未更新≠异常,先等再排查;
-9. **新闻站只提交 news sitemap 不提交常规 sitemap**——两者互补,常规 sitemap 负责常青内容的索引面。
+| 错误 | 官方依据 | 怎么查 |
+|---|---|---|
+| 放入超过两天的旧文 | 只放最近两天的文章 | 脚本 `[curl1]` 列出超龄条目 |
+| 混入 noindex 页面 | 页面索引报告原因 "URL marked 'noindex'"（[帮助](https://support.google.com/webmasters/answer/7440203)） | 脚本 `--sample N` 抽查 |
+| 相对 URL | Sitemaps 报告提示改用绝对 URL | 脚本检查 `<loc>` |
+| `news:name` 与 Google News 显示名不一致 | 必须完全一致 | 脚本 `--pub-name` 比对 |
+| 超过 1,000 条不拆分 | 上限 1,000 个 `<news:news>` | 脚本 `[curl2]` |
+| sitemap 读取失败 | Sitemaps 报告状态 "Couldn't fetch"，详情页 "Sitemap could not be read" | GSC「Sitemaps」报告 |
 
-**News sitemap 验收命令(直接可用)**:
+### News sitemap 验收命令
+
+首选套件脚本（stdlib，零依赖）：
 
 ```bash
-# 1) 窗口合规:输出的最大发布时间距今应 <48h
-curl -s https://example.com/news-sitemap.xml | grep -o '<news:publication_date>[^<]*' | sort | tail -1
-# 2) 条数上限
-curl -s https://example.com/news-sitemap.xml | grep -c '<url>'
-# 3) 必填三件套抽查(任一 URL 应同时命中三项)
-curl -s https://example.com/news-sitemap.xml | grep -c -e 'news:publication' -e 'news:publication_date' -e 'news:title'
-# 4) sitemap 本身 200 直返、无重定向
-curl -sI https://example.com/news-sitemap.xml | head -1
-# 5) 引用页未被 noindex(抽查)
-curl -s https://example.com/news/article | grep -i 'noindex' || echo OK
+python3 scripts/news_sitemap_check.py --url https://example.com/news-sitemap.xml \
+  --pub-name "Example Times" --sample 3 --json
+# 退出码 0=无 FAIL，1=有 FAIL，2=sitemap 不可达或不可解析（要传具体文件，不传 index）
 ```
 
-**Fact Check 标签实操(ClaimReview,口径更新 2026-10-10)**:
+无法跑脚本时，用五条 curl 手查：
 
-> ⚠️ **富结果已退役**:ClaimReview 的 Google Search **Fact Check 富结果 2025-06-12 起全站退役**(Rich Results Test/GSC 2025-09-09 起亦不再报告该类型,见 technical/deprecated-signals.md)。**不再建议为 SERP 富结果目的新增 ClaimReview**;但 ClaimReview 标记本身仍有两个存续价值:① Google News 识别事实核查文章的结构化信号;② Fact Check Tools API/ClaimReview Project 生态消费。下述实操按此定位执行——为生态而非富结果。
+```bash
+SM=https://example.com/news-sitemap.xml
+# 1) 两天窗口：最新与最旧的发布时间都应在两天内
+curl -s $SM | grep -o '<news:publication_date>[^<]*' | sort | sed -n '1p;$p'
+# 2) 条数上限：<news:news> 应 ≤1000
+curl -s $SM | grep -o '<news:news>' | wc -l
+# 3) 必填项：三个数字应相等（每条都有 publication_date、title、name）
+for t in news:publication_date news:title news:name; do curl -s $SM | grep -o "<$t>" | wc -l; done
+# 4) sitemap 本身直接返回 200（本套件口径：不经重定向）
+curl -s -o /dev/null -w '%{http_code}\n' $SM
+# 5) 抽查文章页没有 noindex（meta 和 X-Robots-Tag 都看）
+curl -sI https://example.com/news/article | grep -i 'x-robots-tag'; curl -s https://example.com/news/article | grep -io '<meta[^>]*noindex[^>]*>' || echo OK
+```
 
-- 触发机制(退役前):页面上的 schema.org **ClaimReview** JSON-LD → Google Search 显示 Fact Check 富结果、Google News 识别事实核查文章(官方文档+Google 官方博客);
-- **两条实现路径**:①手写 JSON-LD(按官方 factcheck 文档,必填:被核查的声明 `claimReviewed`、结论 `reviewRating`、核查文 URL `url`);②**Fact Check Markup Tool**(toolbox.google.com/factcheck/markuptool)——表单式生成,**门槛=Search Console 验证站点所有权**,单个声明标记耗时 <30 秒(ClaimReview Project 用户指南口径);
-- **批量/程序化路径:Fact Check Tools API**(Read/Write)可编程增删改 ClaimReview 标记——适合核查量大的新闻室;
-- 最佳实践:**一页一 ClaimReview** 为主;一页多声明可用 `ItemList` 包多个 ClaimReview(官方支持);只核查可验证的具体声明(非观点);rating 建议用文字结论(如 "False")而非裸数字;
-- 红线:ClaimReview 挂在**第三方声明**上(自己核查别人说的话),给自己的内容打核查标签=滥用。
+### Fact Check（ClaimReview）现状
 
-**ClaimReview JSON-LD 最小可用示例(按官方 factcheck 文档)**:
+- 2025-06-12，Google 宣布在搜索结果里逐步停止支持 ClaimReview 等七类结构化数据（[博客](https://developers.google.com/search/blog/2025/06/simplifying-search-results)）。2025-09-09 起，这些类型从 Search Console 增强报告、Rich Results Test 和搜索外观筛选器中移除；Search Console API 支持到 2025-12。
+- 文档横幅原话："We're phasing out support for ClaimReview markup in Google Search. However, this markup remains supported by the Factcheck Explorer Tool."（[Fact check 文档](https://developers.google.com/search/docs/appearance/structured-data/factcheck)，2026-09-08 更新）
+- 本套件口径：不要为了 Google 搜索展示去写 ClaimReview。事实核查机构如需被 Fact Check Explorer 收录，按文档规范写：
+  - 只核查他人提出的、可追溯来源的具体声明；不给自己的内容打核查标签。
+  - 一页只放一个 `ClaimReview`；同一核查只放在一个页面。
+  - 页面要有更正政策或报错渠道；政党、竞选团队、民选官员的网站不适用。
+  - `claimReviewed` 尽量少于 75 个字符；`reviewRating` 的文字结论（`alternateName`）是展示用的值；数字评分要配文字对照表。
+  - 工具：Fact Check Markup Tool 和 ClaimReview Read/Write API 可以增改删标记，要求操作者是该站 Search Console 的受限或完整用户；Claim Search API 查询与 Fact Check Explorer 相同的结果集（[Fact Check Tools API](https://developers.google.com/fact-check/tools/api)）。
+  - 误用会触发人工处置，例如 "ClaimReview lacks reference, or reference does not match verdict"。
+  - 官方说这次精简不影响网页排名。存量标记可以保留（套件看门表口径见 [deprecated-signals.md](../technical/deprecated-signals.md)）。
 
 ```json
 {
   "@context": "https://schema.org",
   "@type": "ClaimReview",
-  "url": "https://example.com/factcheck/claim-123",      // 核查文自身 URL
-  "claimReviewed": "某官员称该法案将提高税收 20%",          // 被核查的声明(具体、可验证)
+  "url": "https://example.com/factcheck/claim-123",
+  "claimReviewed": "某官员称该法案将把税收提高 20%",
+  "itemReviewed": {
+    "@type": "Claim",
+    "author": { "@type": "Person", "name": "某官员" },
+    "datePublished": "2026-10-01"
+  },
+  "author": { "@type": "Organization", "name": "Example Fact Check", "url": "https://example.com" },
   "reviewRating": {
     "@type": "Rating",
-    "ratingValue": "1",                                    // 1=False 尺度需在 ratingExplanation 说明
-    "bestRating": "5",
-    "worstRating": "1",
-    "alternateName": "False",                              // 富结果里显示的文字结论
-    "ratingExplanation": "官方预算办公室数据为 3%,非 20%"
-  },
-  "author": { "@type": "Organization", "url": "https://example.com" }
+    "ratingValue": 1, "bestRating": 5, "worstRating": 1,
+    "alternateName": "False"
+  }
 }
 ```
 
-**Preferred Sources 现状(2026-10-09 更新)**:2025-08 美/印上线→2025 末日本→**2026-04-30 全球全语言上线**(Google 官方博客)→**2026-05-27 扩展进 AI Overviews 与 AI Mode**(官方博客"original, quality content"篇);用户在 google.com/preferences/source 管理;采用数据:2026-05 末 **~25.5 万**次来源选择,2026-08-20 增至 **60 万+**(PPC Land),并发布**可嵌入出版商站点的 Preferred Sources 按钮**;行业争议:Preferred Sources+算法推荐叠加会强化头部出版商的过滤器气泡(SEJ)。**对新闻站的含义:品牌词心智>纯内容匹配——用户"选你"是新的排名层。**
-- NewsArticle schema 推荐非必须(改善标题/图理解);Top Stories 五要素=相关性/prominence/权威/时效/可用性+原创报道优先系统;**Preferred Sources 已在美国/印度上线**(用户可选偏好源);
+## 四、新闻站 GEO 与 AI 摘要的影响
 
-**Top Stories 五要素的实操映射(官方要素→可执行信号)**:
+**AI 摘要与零点击（第三方研究，引用时带样本）**：
 
-| 要素 | 可执行信号 |
-|---|---|
-| 相关性 | 标题/正文/H1 与事件实体对齐;NewsArticle `headline` 与 `articleSection` 一致 |
-| Prominence(显著性) | 原创报道/一手信源/署名记者(profile 页+`author` schema);转载与通稿难进 |
-| 权威 | 站点级 E-E-A-T:About/编辑部页/作者实体在 Knowledge Graph 可识别 |
-| 时效 | `datePublished` 精确到分钟;news sitemap 48h 窗口;突发事件的**首发速度**直接换 prominence |
-| 可用性 | CWV(尤其 LCP——大图与速度的矛盾用 AVIF/WebP+响应式解决)、移动友好 |
+- Ahrefs（[2026-02-04](https://ahrefs.com/blog/ai-overviews-reduce-clicks-update/)）：30 万关键词，GSC 汇总的桌面 CTR，2023-12 对比 2025-12。有 AI Overview 时，第一名页面的 CTR 低约 58%。2025-04 同方法测得 34.5%。
+- SparkToro（[SEL 2026-06-09 转述](https://searchengineland.com/google-zero-click-searches-2026-study-479717)）：Similarweb 美国面板，2026-01 至 2026-04，68.01% 的 Google 搜索没有点击；AI Overviews 出现在 20% 以上的搜索中。不同年份数据源不同，不宜直接比较。
+- Define Media Group（[SEL 2026-03-12 转述](https://searchengineland.com/google-ai-overviews-cut-search-clicks-report-471497)）：64 个站的 GSC 数据。到 2025-Q4，自然搜索点击比 AI Overviews 上线前的基线低 42%；同期突发新闻流量升 103%，Discover 升 30%。报告引 Ahrefs 数据：AI Overviews 只出现在约 15% 的新闻查询上。
+- Press Gazette（[2026-08-21](https://pressgazette.co.uk/media-audience-and-business-data/media_metrics/traffic-to-10-biggest-us-news-websites-down-a-third-in-two-years/)）：美国前十新闻站两年流量降约三分之一；CNN 来自自然搜索的月访问从 1.244 亿降到 4,840 万（降 61%，2024-07 至 2026-07）。
+- Piano（[基准更新 2026-04](https://www.piano.io/resources/benchmark-update-what-happened-to-search-traffic-in-2025)）：数百个出版商站，2025 年搜索流量降 36%，收入降 16%，总受众降 9%。
+- Nieman Lab（[2026-07-22](https://www.niemanlab.org/2026/07/search-traffic-has-declined-so-much-that-some-publishers-are-considering-opting-out-of-google-entirely/)）：据 Semrush 数据，部分刊物 2025-06 至 2026-06 流量降 40% 以上；有出版商在评估完全退出 Google。
+- 日本（[Web担当者Forum 2026-10-08](https://webtan.impress.co.jp/n/2026/10/08/53402)，Ahrefs 品牌雷达，2026-09-29 至 30 采样）：AI 引用总榜前十中有 3 个辞书或百科域名（Wikipedia 日语版第 1、weblio 第 9、コトバンク第 10）。
 
-**NewsArticle schema 字段要点(2026-10 现行)**:`headline`(≤110 字符,超长截断)、`image`(数组给多比例:1:1/4:3/16:9——覆盖 Discover/Top Stories/News tab 三种版位)、`datePublished`/`dateModified` 分开维护(改稿必须更新 dateModified)、`author.person` 带同作者页 URL;`isAccessibleForFree`+`hasPart` 处理付费墙(见第四节);**不要用 BlogPosting 冒充 NewsArticle**(类型错配削弱 News 流关联,行业共识)。
-- AMP 已死(Cache 2024 底退役):现行技术要求=可抓取+移动友好+CWV;
-- 标签:原创报道(原创优先于转载)、Fact Check(ClaimReview)。
+**AI 爬虫与授权**：
 
-## 四、新闻站 GEO(时效内容的 AI 引用)
+- BuzzStream（[研究](https://www.buzzstream.com/blog/publishers-block-ai-study/)，美英各 50 家头部新闻站）：79% 至少屏蔽一个训练爬虫；71% 至少屏蔽一个检索爬虫。
+- Cloudflare：2025-07-01 推出一键屏蔽 AI 爬虫和 Pay Per Crawl（私测）（[博客](https://blog.cloudflare.com/introducing-pay-per-crawl/)）。2026-07-01 改为按 Search、Agent、Training 三类管理；2026-09-15 起新接入域名在有广告的页面默认屏蔽 Training 和 Agent，Search 默认放行（[博客](https://blog.cloudflare.com/content-independence-day-ai-options)）。
+- Google 2025-12-10 宣布与多家新闻出版商试点新的商业合作，在 Google News 测试 AI 文章概览（[blog.google](https://blog.google/products-and-platforms/products/search/tools-partnerships-web-ecosystem/)）。
+- 各 AI 爬虫的放行决策见 [ai-crawler-policy.md](../technical/ai-crawler-policy.md)。
 
-- **日本对照(锚)**:2026-04 日本 AI 引用榜 news.yahoo.co.jp 总榜第 4(第一新闻源);**2026-09 总榜 Top10 已无任何新闻域名**(Wikipedia 日语/note/知恵袋/PR TIMES 占据)——**辞书/百科类正在压制新闻源**(Ahrefs Brand Radar,二手转述);
-- 全球:AI 最常引 Reuters/AP/FT/BBC/Yahoo News/Forbes;仅 11% 域名同时被 ChatGPT 与 Perplexity 引用——分引擎监测;
+**本套件口径（不是因果结论）**：
 
-**新闻内容提高 AI 引用面的实操(与上互补,2026-10)**:①**事实密度前置**——导语即给数字/结论/时间(AIO 摘要从首段抽取的权重最高,行业观察);②**原创数据是唯一护城河**——自有调查/独家信源类内容被 AI 引用且难以被摘要替代(SEL:突发+103% 的另一面);③**多引擎分别监测**——ChatGPT/Perplexity/Gemini 引用偏好不同(11% 重叠率意味着在一个引擎可见≠另一个也可见);④**结构化时间线**——事件长报道内嵌 timeline(更新流)让 AI 反复回访;⑤**署名实体化**——作者实体被 KG 识别的新闻室在 prominence 维度持续占优(Top Stories 要素同理);
-- **付费墙与 AI 的杠杆反转**:First Click Free 已废→Flexible Sampling;`isAccessibleForFree`/`hasPart` schema;**Cloudflare 2025-07 起默认封 AI 训练爬虫并推 Pay-Per-Crawl→2026 Pay-Per-Use**;~79% 大型新闻站屏蔽 AI 训练爬虫;授权分成试点并行——新闻内容的 AI 可见性正在从"开放索引"转向"商业授权"。
-
-**AI 摘要对新闻点击的侵蚀(2026 量化,引用需注明样本)**:
-
-- **Ahrefs(2026-02)**:AIO 出现时首位页面 CTR **降 ~58%**(2025-04 同方法测得 34.5%——一年恶化近一倍;TNW/ppc.land 转述);
-- **零点击**:Google 零点击率 **68%**(SparkToro 口径,测量于 2026 年初、研究 2026-06 发布,来源:sparktoro.com;qz.com 2026-10-08 转述);AIO 已覆盖 **39.4% 美国桌面查询**(2026-06,同比 +13pp;qz.com 转述 Comscore 类数据);
-- **Search Engine Land 报告口径**:AIO 使整体搜索点击 **−42%**,但**突发新闻(breaking news)流量 +103%、Discover 点击上升**——AI 摘要吃掉的是"可摘要的常识查询",时效性/独家内容反而有窗口;
-- **Press Gazette(头部站口径)**:美国 Top10 新闻站两年流量 **−1/3**;CNN 自然搜索访问 **−61%**(月 124.4M→48.4M);
-- **Piano.io 基准(数百出版商站)**:搜索流量 **−36%** 但收入仅 **−16%**——**留下来的读者更忠诚更值钱**(订阅/直接转化占比上升);
-- **Nieman Lab(2026-07)**:部分出版物 2025-06→2026 年中流量 **−40%+**,已有出版商认真评估**彻底退出 Google 索引**;
-- **Discover 自身也在被侵蚀**:Google 开始在 Discover 内用 **AI 撰写的摘要替代出版商链接**(Press Gazette 2026 报道)——"Discover 是避风港"的假设有保质期;
-- **策略含义(综合)**:①突发/独家>常青百科式内容(AIO 无法摘要"现在");②直接流量/newsletter/App 的单位价值上升;③评估"退出 Google"不再是边缘选项而是董事会级议题(Nieman)。
+1. 先定立场：开放索引和引用，还是走授权。两条路不要混用。
+2. 原创报道、独家数据、可核对的时间线，比可被摘要的常识内容更难被 AI 摘要替代（依据：上文 DMG 突发新闻数据与 Google 原创内容系统）。
+3. 分引擎监测引用，不用一个引擎的结果代表全部（采样纪律见 [ai-citation-patterns.md](ai-citation-patterns.md)）。
+4. 新闻站同时盯「收入/流量比」：Piano 数据显示收入降幅小于流量降幅。
 
 ## 五、监测
 
-GSC Discover 报告:只有展示/点击/CTR、16 个月、含 Chrome 流量;**看不到查询词维度(设计如此)、排名位置、16 个月前数据**。对策=官方定位"补充渠道"→多元化(newsletter/App/直接流量;dark/direct 流量正在上升——Press Gazette)。
+- **GSC Discover 效果报告**（[帮助](https://support.google.com/webmasters/answer/9216516)）：指标只有展示、点击、CTR；可按页面、国家、Discover 外观、日期分组；没有查询词和排名位置。数据覆盖近 16 个月；达到最低展示量才显示报告；包含 Chrome 上的 Discover 流量。表格最多 1,000 行；日期按太平洋时间；数据一般延迟 2 至 3 天；指标记在 canonical URL 上。
+- **API**：Search Analytics API 的 `type` 参数支持 `discover` 和 `googleNews`（news.google.com 与 Google News App）；`news` 指 Search 的「新闻」标签。`discover` 和 `googleNews` 不支持 `aggregationType=byProperty`。来源：[searchanalytics.query](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)。套件的 `gsc_api.py query` 目前没有 `--type` 参数，Discover 数据要直接调 API 或在 GSC 导出：
 
-**监测实操补充(2026-10)**:
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  "https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Aexample.com/searchAnalytics/query" \
+  -d '{"startDate":"2026-07-01","endDate":"2026-09-30","type":"discover","dimensions":["page","date"],"rowLimit":25000}'
+```
 
-- **GSC Discover 报告的三个隐藏用法**:①按页面维度排序找"意外爆款"——Discover 的选题风向标(无查询词,页面即最小分析单元);②「Appearance」确认大图资格——展示量高但 CTR 异常低的页面,九成是题图问题;③导出 16 个月历史做基线,**单日/单周波动不判死刑,月度滚动均值才作数**(与官方"不可预测"口径一致);
-- **Discover 数据不在 GSC API 里**(官方确认 API 不返回 Discover 报告)——自动化监测只能手工导出或用 Chartbeat 类分析工具;
-- **GA4 侧配 UTM 不可行**(Discover 引荐不带自定义参数),用 landing page+referrer 组合估算;dark social(WhatsApp/消息类分享)用短链+参数兜底;
-- **头部参照系**:Chartbeat 网络基准(2026-02:Discover 14.9% pageviews、Search 5.8%)可作自家占比的健康对照——**显著高于 15% 即高依赖,提前触发第六节第 7 条动作**;
-- **Nieman/Piano 口径补充**:监测"收入/流量比"而非只看流量(Piano:流量 −36% 收入仅 −16%)——订阅转化率、直接流量占比、newsletter 打开率是 AI 时代比 sessions 更早的预警指标。
+- **GA4**：GA4 没有单独的 Discover 渠道。Discover 的点击和展示以 GSC 为准（本套件口径）。
+- **依赖度**：Discover 点击占全站自然流量超过 40% 就触发多渠道动作（本套件口径阈值）。
 
-## 六、实操清单(合并,含验收动作)
+## 六、检查清单
 
-1. 大图规范(1280×720/16:9/max-image-preview:large)进 CMS 模板;**验收:随机抽 20 篇新文,`curl -s URL | grep max-image-preview` 全部命中 `large`,且题图 ≥1200px 宽**;
-2. 标题过"标题党红线"自查(不隐瞒关键信息/不夸张);**验收:抽样标题去标题/留事实,信息损失<20% 即合格**;
-3. News sitemap 自动滚动 48h 窗口(WP 插件 10up/simple-google-news-itemap);**验收:`curl -s sitemap.xml | grep -c "<url>"` ≤1000 且抽查首条文章发布时间 <48h;GSC「Sitemaps」Last read 24–48h 内有更新**;
-4. 原创报道信号(署名/独家标记)+ ClaimReview(如有事实核查);**验收:Rich Results Test 对核查文显示 Fact Check 卡片;Fact Check Markup Tool 用 GSC 验证账号登录可用**;
-5. 地区属性强化(2026-02 更新后):本地作者/本地实体/国别域名;
-6. RSS/Atom feed 有效(Follow 已死但抓取层仍依赖 feed 发现——维护成本极低,保留);
-7. Discover 依赖度审计:单一渠道占比>40% 即触发多元化动作;**验收:GA/Chartbeat 里 Discover/总流量比月度环比监控,>40% 告警**;
-8. 新闻 GEO 立场决策:开放(索引+引用)vs Cloudflare 付费墙(商业授权)——按商业模式二选一,不骑墙;
-9. **Preferred Sources 按钮嵌入**(2026-08 起可用):官网引导读者把自己设为偏好源,争夺"被选择"层(PPC Land);
-10. **Follow 功能相关投入清零**(2025-11 已退役)——存量教程/插件如仍在配置 Following tab 属无效功。
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 文章模板有大图授权 | 随机抽 20 篇新文：`curl -s URL \| grep -io 'max-image-preview:[a-z]*'` | 20 篇都输出 `max-image-preview:large` 为通过；任一缺失为失败 |
+| 首选图规格 | `curl -s URL \| grep -o 'og:image" content="[^"]*'` 取图，再用 `sips -g pixelWidth -g pixelHeight 图片`（macOS）或 ImageMagick `identify` 量尺寸 | 宽 ≥1200px 且宽×高 >300,000 为通过；用 logo 或文字图为失败 |
+| og:image 是绝对 URL | `python3 scripts/head_check.py URL` 第 4 项 | 输出 ok 为通过；warn 为失败 |
+| 标题不越红线 | 按第二节「标题自查」4 条逐篇过 | 4 条全过为通过 |
+| News sitemap 合规 | `python3 scripts/news_sitemap_check.py --url SITEMAP --pub-name "站名" --sample 3` | 退出码 0 为通过；1 或 2 为失败 |
+| Sitemap 读取正常 | GSC「Sitemaps」报告 | 状态 Success 为通过；"Couldn't fetch" 为失败 |
+| 新闻 URL 未被 noindex | GSC「网页」索引报告筛 news 目录 | 无 "URL marked 'noindex'" 为通过 |
+| 无 News/Discover 人工处置 | GSC「人工处置」报告 | 显示无问题为通过；出现 "News and Discover policy violations" 为失败 |
+| Discover 依赖度 | GSC Discover 报告与 Search 报告点击对比（或上面 API 命令） | Discover 占比 ≤40% 为通过（本套件口径） |
+| 偏好来源入口 | 在[来源偏好工具](https://www.google.com/preferences/source)搜自己的域名；页面上有按钮或深链 | 能搜到且站内有入口为通过 |
+| 付费墙标记 | `curl -s URL \| grep -o '"isAccessibleForFree":[^,}]*'` | 付费文章输出 `false` 且有 `hasPart` 为通过 |
+| AI 爬虫立场与 robots 一致 | `python3 scripts/robots_posture.py https://example.com/robots.txt --json` | 实际放行或屏蔽与第四节所定立场一致为通过 |
 
-## 七、Discover 掉量故障排查(决策树,综合官方 troubleshooting+行业案例)
+## 七、Discover 掉量排查
 
-1. **全站掉(基线级,持续 >2 周)** → 按序查:①GSC Manual Actions("Discouraged features"/标题党处置);②core update 时间线对照(AlgoTracking/SERP Metrics,同期全行业掉=环境);③技术回归——CMS 改版后 `max-image-preview:large` 丢失是最常见静默杀手(模板 diff 必查);④比例检查:如果 Search 同步在掉而 Discover 跟跌,是站点级质量信号问题;只有 Discover 掉而 Search 稳,多与兴趣配比/内容类型漂移有关(官方口径:波动≠惩罚);
-2. **单类内容掉、其他稳** → 内容配比问题:近期选题密度变化(官方明确"内容类型变化会引起 Discover 流量变化,与质量无关")——恢复原有内容配比并观察 2-4 周;
-3. **新站/新文完全无 Discover** → 正常:Discover 无提交通道、完全靠索引+兴趣匹配,新站冷启动 4-12 周常见;先确认 Search 索引正常(GSC Coverage)+大图合规;
-4. **掉量后恢复案例参照**:wpspeedopt 案例——CWV(LCP/INP)修复后恢复 1k+/日;Bring 案例——结构化数据+SEO 整改后 100 万+月展示;共同点:**恢复路径都是技术债清理,不是"发更多"**;
-5. **不要做的事**:为 Discover 改发稿频率(官方明确频率与 Discover 表现无关);删旧文"净化"(旧文仍可被兴趣匹配召回);把 Discover 数据当 KPI 承诺给客户(官方"less predictable"口径是免责条款也是真相)。
+1. **先看是不是更新**：在 [Status Dashboard 排名历史](https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history) 找同期的 Discover 更新或核心更新。官方说更新期间流量可能波动；核心更新的通用建议见 [core updates 文档](https://developers.google.com/search/docs/appearance/core-updates)。
+2. **再看人工处置**：GSC「人工处置」里有没有 "News and Discover policy violations"。
+3. **查模板回归**：改版后 `max-image-preview:large` 或 `og:image` 丢失，会让大图资格消失（用第六节前三条命令查）。
+4. **对比 Search 与 Discover**：两者同跌，先按站点质量排查；只有 Discover 跌，先看兴趣变化和内容类型调整，这两项都是官方列出的波动原因。
+5. **新站或新文完全不出现**：Discover 没有提交入口。先确认页面已被索引、图片合规。
+6. **不要做的事（本套件口径）**：不为 Discover 删旧文（旧内容仍可被推荐）；不向客户承诺 Discover 流量（官方定位是补充渠道）。
 
 ## 来源
 
-官方:Google Discover 文档/2026-02 更新博客/news sitemap/ranking systems/troubleshooting;Large Images 官方案例(developers.google.com/search/case-study/large-images-case-study);Fact Check(ClaimReview)文档+Fact Check Markup Tool+Fact Check Tools API+Google 官方博客(Labeling fact-check articles);Preferred Sources 全球化公告(blog.google,2026-04-30)与 AIO/AI Mode 扩展(2026-05-27);Google 官方 changelog(Follow 移除)。行业:Press Gazette(Top10 新闻站/CNN −61%/Discover AI 摘要)+Chartbeat(SEJ 转述:Search −40.2% YoY、Discover 14.9% pageviews、小出版商 −60%;Buttle:Google 引荐 68–70% 来自 Discover)、INMA(Search −34%/Discover −16%)、Stan Ventures(51%→27%)、Ahrefs 2026-02(CTR −58%)、Piano.io(−36%/−16%)、Nieman Lab 2026-07、qz.com(零点击 68%/AIO 39.4%)、SEL(AIO 点击 −42%/突发 +103%)。Follow 退役:Search Engine Roundtable+PPC Land(54 家试点/无相关性)+Delante(2026-03 widget 实验)。sitemap 错误:Yoast/AIOSEO/Google 支持论坛。案例:SEL/Bring/wpspeedopt/Adsterra。市场:dpublish.in(印度)、Web担当者Forum(日本榜,二手)。付费墙:Cloudflare Pay-Per-Crawl/Use。GitHub:10up news sitemap(15★)/php-sitemap(1,342★ 含 news 格式)——**Discover 优化专用库近乎空白**。未证实项:2026-02 Discover 更新完整正文未直读;Chartbeat/Raptive 口径不一;印度 80-90% 为单一博客;Bring/wpspeedopt/Adsterra 案例为服务商自述无第三方审计;Discover 内 AI 摘要替代链接的覆盖面无量化数据。
+- 官方：[Get on Discover](https://developers.google.com/search/docs/appearance/google-discover)；[2026-02 Discover 核心更新博客](https://developers.google.com/search/blog/2026/02/discover-core-update)；[Status Dashboard 事件](https://status.search.google.com/incidents/mYbNTqV1ytDc2fA8hUz4)；[文档更新日志](https://developers.google.com/search/updates)；[Search profile 文档](https://developers.google.com/search/docs/appearance/search-profiles)；[Preferred sources 文档](https://developers.google.com/search/docs/appearance/preferred-sources)；[Large Images 案例](https://developers.google.com/search/case-studies/large-images-case-study)；[robots meta 规范](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)；[News sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap)；[Article](https://developers.google.com/search/docs/appearance/structured-data/article)；[Fact check](https://developers.google.com/search/docs/appearance/structured-data/factcheck)；[简化搜索结果博客](https://developers.google.com/search/blog/2025/06/simplifying-search-results)；[Flexible Sampling](https://developers.google.com/search/docs/appearance/flexible-sampling)；[付费内容](https://developers.google.com/search/docs/appearance/structured-data/paywalled-content)；[排名系统指南](https://developers.google.com/search/docs/appearance/ranking-systems-guide)；[Ranking within Google News](https://support.google.com/news/publisher-center/answer/9606702)；[Publisher Center 公告](https://support.google.com/news/publisher-center/announcements/10146168)；[Discover 效果报告](https://support.google.com/webmasters/answer/9216516)；[人工处置报告](https://support.google.com/webmasters/answer/9044175)；[searchanalytics.query](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)；blog.google（Discover 2025-09、Preferred Sources 三篇、个性化 2026-08-20）。
+- 第三方：Axios/Chartbeat、SEJ/Chartbeat Playbook、Ahrefs、SparkToro（SEL）、Define Media Group（SEL）、Press Gazette、Piano、Nieman Lab、BuzzStream、Cloudflare、TechCrunch、Web担当者Forum/Ahrefs（链接见正文）。WordPress 插件参考：[10up Simple Google News Sitemap](https://github.com/10up/simple-google-news-sitemap)（只生成两天内文章）。
+- 2026-10-18 删除的旧说法（无一手来源或与来源不符）见证据账本 C3：Discover 流量占比 68–70%、51%→27%、印度 80–90%、Follow 试点 54 家、Bring/wpspeedopt/Adsterra 服务商案例、「发文频率不影响 Discover」「GSC API 不返回 Discover」「Top Stories 五要素」等。

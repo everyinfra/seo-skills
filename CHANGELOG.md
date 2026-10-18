@@ -5,6 +5,9 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+- **深挖第二批(部分,2026-10-18)**:technical(robots、HTTP 状态码、重定向与 canonical、渲染、移动、日志、hreflang、head、Schema、LCP/CWV、实体与知识图谱、内链与导航、AI 爬虫政策、agent 协议、edge、Naver、pSEO、审计规则目录)、content(GEO 证据与证据银行、平台差异、打分、可引性、AI 写作识别、品牌档案、衰退与刷新、深度研究、Discover、UGC、社区)和 markets(ru、zh)共 42 个文件,已按一手来源改过一部分并补检查清单;这批的核查因额度中止,未全部完成,剩余条目和其余参考文件下一轮继续。自检全绿。
+  Deep-review batch 2 (partial): 42 reference files partly rechecked against primary sources with checklists added; review paused for usage limits and continues next round.
+
 - **深挖第一批(2026-10-18)**:每条结论逐条核一手来源(Google Search Central、Bing、schema.org、规范原文、论文),错的改、没依据的删,概念段改成「检查什么→怎么查→通过/失败」的检查清单。本批提交:title-formulas、meta-tag-formulas、content-structure-templates、content-patterns(核 176 条:核实 75、改正 13、删除 37);其余参考文件分批提交。
 - **新增方向文件**:`references/content/question-alignment.md`(提问对齐:title、H1、首段用买家原词,首段第一句直接回答;取词来源、选页规则、判据与测量)、`references/content/asd-ste100-web-writing.md`(ASD-STE100 Issue 9 网页借用:程序句 ≤20 词、描述句 ≤25 词、一句一指令、主动语态、术语一致;写明 STE 没有排名或 AI 引用实证)。
 - **新增脚本**:`question_align.py`(提问对齐候选页:展示多点击 0、匿名查询占比、title/H1/首段覆盖与缺词、本站分段 CTR 期望点击)、`ste_lint.py`(ASD-STE100 近似检查,不出合规结论)。

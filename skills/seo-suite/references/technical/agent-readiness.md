@@ -1,141 +1,141 @@
 # Agent-Readiness 操作层(协议时代的站点准备)
 
-> 建立于 2026-10-08。来源:英文区第一波深挖——[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-agentic/`(webmcp/lighthouse-agentic/vendor-matrix/access-policy/agent-friendly-pages 五件)、[jdevalk/specification.website](https://github.com/jdevalk/specification.website)(20+ 页 agent-readiness 规范,每页带出处)、[agenticresourcediscovery.org](https://agenticresourcediscovery.org)(ARD 官方)。证据约束:本层所有协议**均无 AI 引擎宣布消费**(ARD/OKF 属早期注册型投入)——定位是"低成本期权",不是已验证的引用杠杆;与 [AI 爬虫政策](ai-crawler-policy.md) 的 robots.txt 层互为补充。
-> **分叉决策(本套件立场)**:英文目标站全开本层;其他语区只保留 llms.txt 类等价物(百度系/元宝/豆包不消费这些协议),分叉逻辑见 [多语言工作流](../overview/multilingual-workflow.md)。
-> **协议速查**:14 个 agent 协议一页卡(用途/规范位置/规则数字/验证命令/常见错误/状态,含 AGENTS.md 否决记录)见 [agent-protocols.md](agent-protocols.md)(2026-10-09,源自 specification.website 22 页全文)。
+> 用途:让站点能被 agent 发现、读懂、调用和识别。协议本体以 [agent-protocols.md](agent-protocols.md) 为准(下文「第 N 卡」);本文只写部署决策和验收。UA 表见 [AI 爬虫政策](ai-crawler-policy.md)。事实核对 2026-10-18。本层是低成本期权,不是已验证的引用杠杆(本套件口径,证据见第七节)。
+> **分叉决策(本套件口径)**:英文目标站全开本层;其他语区只保留 llms.txt 类等价物(未见百度、元宝、豆包官方支持这些协议),见 [多语言工作流](../overview/multilingual-workflow.md)。
 
-## 一、三级发现链(ARD,Agentic Resource Discovery)
+## 一、ARD 发现链(Agentic Resource Discovery)
 
-Google+Linux Foundation 工作组,2026-05 公布。三级递进,做到第二级即覆盖主流:
-
-1. **robots.txt `Agentmap:` 指令**——声明 agent 目录位置:
-   ```
-   Agentmap: https://example.com/ai-catalog.json
-   ```
-2. **`<link rel="ai-catalog">` HTML 标签**——页面级指向目录;
-3. **`/.well-known/ai-catalog.json`**——机器可读目录本体(工具清单/能力声明)。
-
-**验证**:Lighthouse 13.5+ 新增 `AGENTIC_BROWSING` 类别(PSI API v5 可调 `category=AGENTIC_BROWSING`),其中 `ard-schema` 审计校验 ai-catalog.json 结构(warning 级,0.9 分)。
+- Google 于 2026-06-17 [宣布](https://developers.googleblog.com/announcing-the-agentic-resource-discovery-specification/),Microsoft、Hugging Face 等参与;数据模型沿用 Linux Foundation 下 AI Catalog 工作组。规范 [v0.91](https://agenticresourcediscovery.org/spec/)(2026-08-26,Proposal)。
+- 发现机制(§5.1):`/.well-known/ard.json` 和 `<link rel="ard">`(消费方 MUST 处理);robots.txt `Agentmap: <URL>`;页内 JSON-LD;DNS。
+- `/.well-known/ai-catalog.json`、`rel="ai-catalog"` 是前身名字,消费方只是 MAY 查;只放旧路径可能不被发现。Lighthouse 13.5.0 等实现仍读旧路径,两条路径发同一份文件(本套件口径)。条目字段见第 2 卡。
 
 ## 二、WebMCP(页面级工具注册)
 
-W3C WebML CG 草案(编辑来自 Microsoft/Google),Chrome M149–M156 origin trial:
+- W3C WebML CG 草案([规范](https://webmachinelearning.github.io/webmcp/));Chrome origin trial M149–M156([chromestatus](https://chromestatus.com/feature/5117755740913664));WebKit oppose([#670](https://github.com/WebKit/standards-positions/issues/670)),Mozilla neutral([#1412](https://github.com/mozilla/standards-positions/issues/1412))。
+- 命令式 `document.modelContext.registerTool()`;声明式 `<form toolname tooldescription>`,agent 提交时 `SubmitEvent.agentInvoked` 为 true([Chrome 文档](https://developer.chrome.com/docs/ai/webmcp/declarative-api))。细节见第 5 卡。
+- 权限:`tools` Permissions Policy,默认 `self`;跨源 iframe 加 `allow="tools"`;全站禁用发 `Permissions-Policy: tools=()`。
+- 消费者:有官方文档的只核到 ChatGPT 桌面应用内置浏览器 [Site tools](https://learn.chatgpt.com/docs/webmcp)。它只认顶层页面的命令式工具,不认声明式表单和 iframe;用户可关闭。关键操作用命令式注册。「token 效率」类营销数字没有可追溯基准,不引用(本套件口径)。
 
-- 入口:`document.modelContext`(旧 `navigator.modelContext`),`registerTool()` 注册页面级工具(如"查库存""算报价");
-- 表单声明式写法:`<form toolname="...">` + `SubmitEvent.agentInvoked` 区分 agent 提交与人类提交;
-- 权限控制:`Permissions-Policy: tools=()`;
-- **消费者现状:仅 ChatGPT 桌面版内置浏览器实证调用**(默认开启、仅顶层文档);WebKit 反对、Mozilla 中立——单一消费者,标注。
+## 三、身份与授权(Web Bot Auth 与 UA 行为)
 
-**"token 效率"类营销数字无可追溯基准,勿引用。**
+- [draft-ietf-webbotauth-httpsig-protocol-00](https://datatracker.ietf.org/doc/draft-ietf-webbotauth-httpsig-protocol/)(2026-09-01):签名方 MUST 发字典形式 `Signature-Agent`,旧字符串形式验签方 MAY 接受。细节见第 14 卡。
+- 已核签名方:ChatGPT Work 的 Cloud browser(原 ChatGPT agent),发旧字符串形式 `Signature-Agent: "https://chatgpt.com"`([OpenAI](https://help.openai.com/en/articles/11845367-chatgpt-agent-allowlisting));OpenAI 没说 ChatGPT-User 签名。
 
-## 三、身份与授权(Web Bot Auth)
-
-- `draft-ietf-webbotauth-httpsig-protocol-00`(2026-09-01):`Signature-Agent` 字典形式——**ChatGPT-User 以此签名**,服务器可据此区分"真 bot"与伪装 UA;
-- UA 行为表(决策用):`Google-Agent`(用户触发,通常无视 robots.txt)/`ClaudeBot`·`Claude-SearchBot`(遵守 robots)/`ChatGPT-User`(Web Bot Auth 签名);
-- Content-Signal(IETF aipref WG 草案活跃:vocab rev 08 / attach 重发 rev 05,2026-09;部署写法 `ai-train`/`ai-input` 而非草案标签——详见 [agent-protocols.md](agent-protocols.md) 第 1 卡)、MCP Server Card(SEP-2127 未合并)——状态不稳,写事实库前复核。
-
-## 四、Lighthouse AGENTIC_BROWSING 七审计(2026-09 上线)
-
-首个把 agent 可读性纳入免费标准化工具链(PSI 免费可调):
-
-| 审计 | 检查 | 备注 |
+| UA | 用途 | robots.txt |
 |---|---|---|
-| agent-accessibility-tree | 33 条 axe 规则子集 | **与人类可访问性类别不同**(不含对比度/标题顺序) |
-| webmcp-form-coverage | 表单可被 agent 识别的比例 | |
-| webmcp-registered-tools | registerTool 覆盖 | |
-| webmcp-schema-validity | 工具 schema 合法性 | |
-| CLS | 布局稳定 | agent 抓取同样受害 |
-| llms-txt | H1+至少一个 MD 链接+50 字符 | 与 [llms.txt 指南](../content/llms-txt-guide.md) 的规范一致 |
-| ard-schema | ai-catalog.json 结构 | warning 0.9 |
+| `Google-Agent` | Google 托管的 agent 代用户浏览、操作 | 用户触发抓取器 "generally ignore robots.txt rules"([Google](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers)) |
+| `ChatGPT-User` | 用户提问时取页 | "robots.txt rules may not apply"([OpenAI](https://platform.openai.com/docs/bots)) |
+| `ClaudeBot`/`Claude-SearchBot`/`Claude-User` | 训练/搜索索引/用户触发 | 三者都遵守([Anthropic](https://support.claude.com/en/articles/8896518)) |
+
+- Content Signals 见第 1 卡。MCP Server Card:[SEP-2127](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2127) 已于 2026-10-06 合入(Extensions Track,Final)。
+
+## 四、Lighthouse Agentic Browsing 类别(7 项审计)
+
+- 版本([releases](https://github.com/GoogleChrome/lighthouse/releases)):13.2.0(2026-05-01)建类别,13.4.1(2026-07-20)经 PSI API 提供,13.5.0(2026-09-18)加 `ard-schema`。
+- 类别 id `agentic-browsing`,只显示通过比例,不出 0–100 分([文档](https://developer.chrome.com/docs/lighthouse/agentic-browsing/scoring))。PSI API 文档只列 4 个旧类别,viewer 源码发 `category=agentic-browsing`,未实测。
+
+| 审计 id | 判什么(据源码) | 计分 |
+|---|---|---|
+| `agent-accessibility-tree` | 33 条 axe 规则:可访问名称、表单标签、ARIA 良构等;不含对比度、标题顺序 | 任一失败 = 0 |
+| `webmcp-form-coverage` | 列出没有 `toolname`/`tooldescription` 的表单 | 信息型 |
+| `webmcp-registered-tools` | 列出已注册工具;超过 40 个警告 | 信息型 |
+| `webmcp-schema-validity` | 缺工具名、描述或必填参数名 = 错误;参数缺说明 = 警告 | 错误 0;只有警告 0.5 |
+| `cumulative-layout-shift` | 元素位移会让 agent 点错 | 同性能类 |
+| `llms-txt` | 有 H1、至少 1 个 Markdown 链接、≥50 字符 | 4xx = n/a;5xx/429 = 0 |
+| `ard-schema` | 按 ARD 官方一致性逻辑校验目录 | 有错误 0;只有警告或只在旧路径 0.9 |
+
+- 浏览器不支持 WebMCP 时三项 WebMCP 审计为 n/a,不等于通过。13.5.0 校验 `ai-catalog.json`;main 分支 2026-10-09 起先找 `ard.json`(#17259,未发版)。
 
 ## 五、语言中立层的多语言部署
 
-协议层与语言无关——多语言站的正确做法:**每 locale 各发一份目录,bundle 内交叉链接按语言分目录**(ARD/OKF 均语言中立)。OKF(Open Knowledge Format,Google Cloud 2026-06):YAML frontmatter 交叉链接 markdown 概念包,`application/okf-bundle+gzip` 媒体类型提案中;当前唯一落地是付费企业 Knowledge Catalog——早期注册型投入,量力而行。
+协议层与语言无关。每个 locale 各发一份目录,包内交叉链接按语言分目录(本套件口径)。OKF 打包见第 4 卡。
 
-## 六、就绪决策表
+## 六、就绪决策表(本套件口径)
 
 | 站点情形 | 建议 |
 |---|---|
-| 英文 SaaS/文档站(客群重度用 ChatGPT/Claude) | 全开:ARD 二级+llms.txt+WebMCP 关键表单+Web Bot Auth 日志 |
-| 其他语区站点 | llms.txt+robots 引用型 bot 放行即可;协议层等该语区引擎出现消费者再上 |
-| 技术博客/文档 | markdown 双胞胎(dualmark 模式:每页配 .md 镜像)性价比高于全套协议 |
-| 电商 | 优先 product schema/库存可见性,WebMCP 工具(查价/查库存)是唯一对 agent 有交互意义的层 |
+| 英文 SaaS/文档站(客群重度用 ChatGPT/Claude) | 全开:`ard.json` + `rel="ard"`、llms.txt、关键操作的命令式 WebMCP 工具、Web Bot Auth 日志 |
+| 其他语区站点 | llms.txt + robots 放行引用型 bot;协议层等该语区出现消费者再上 |
+| 技术博客/文档 | 每页配 `.md` 双胞胎(第 10 卡),性价比高于全套 |
+| 电商 | 先做 Product 结构化数据与价格、库存一致,再加查价工具 |
 
 ## 七、未证实项
 
-ARD/OKF 无任何 AI 引擎宣布消费;WebMCP 单一消费者(ChatGPT 桌面浏览器);无对照研究链接 accessibility-tree 质量×agent 任务成功率;MCP Server Card 与 Content-Signal 状态可能已变化。
+- ARD/OKF 未查到 AI 搜索或助手宣布消费;Google 称其企业级 Agent Platform 数月内原生支持 ARD。WebMCP 只核到一个有文档的消费者(第二节)。
+- 未找到对照研究把可访问性树质量和 agent 任务成功率联系起来。
 
-## 完全装载:内容协商实现/端点家族/三层 AI 索引(百仓深扫)
+## 检查清单(在 skill 根目录运行,`site` 换成目标域名)
 
-**Markdown 内容协商**(nuxt-ai-ready 源码级):默认只看 Accept;开 botNegotiation 后 **botInfo.category==='ai' 才返回 markdown**(getBotInfo 按 headers 判);**启发式不得覆盖显式拒绝**——Accept 匹配组全部 q===0 则维持原偏好;显式 .md 请求在 early 段 defer(避开站点 auth);API/JSON 请求排除;缓存规则="Freshness 只进 max-age"(**Cloudflare 在有 s-maxage 时禁用 stale serving**)→`public, max-age=N, stale-while-revalidate=M`;Cloudflare 静态头规则上限 **100** 条。
-**端点家族**(docs.page):`/{owner}/{repo}/llms.txt|llms-full.txt|mcp|robots.txt|sitemap.xml|search.json`+`.well-known/*`;单页加 .md 后缀取 raw;边缘缓存 ~5 分钟;大仓截断响应头 x-tree-truncated:1。
-**三层 AI 索引**(beihaili):manifest(机器可读能力声明)→content-index(内容索引,双语按课显式 availability 字段)→llms.txt(发现入口);本地免费 MCP 政策字段化(free/readOnly/paymentEnforcement:false);x402 延后付费($0.25 检查类)标 future-hosted 不执行;`ai:index/ai:publish/ai:verify` 进 CI。
-**llms.txt 消费端安全**(mcpdoc):远程 llms.txt 自动只放行其所在域;本地文件必须显式 --allowed-domains;**meta-refresh 重定向目标域也须过白名单**;官方两跳协议=list_doc_sources→fetch llms.txt→反思其中 URL→fetch 相关页。
-**单一事实源+CI 漂移门**(sceneview):llms.txt 为唯一源,MCP/派生知识全由它生成;CI `--check` 比对派生物,漂移即 fail build;部署时 rm 旧副本防影射——"published surface cannot drift by construction"。
-**电商 agent 接口**(aimeos):店铺自带 MCP 端点(搜索/增删产品/订单,OAuth)——AI 电商的 agent-readiness 实例。
+| 检查什么 | 怎么查 | 通过/失败 |
+|---|---|---|
+| 引用型 bot 放行 | `python3 scripts/robots_posture.py https://site/robots.txt --json` | 通过:`citation.ok` 为 true 且 `visibility_failures` 为空;封训练层不算失败(本套件口径) |
+| llms.txt | `python3 scripts/llmstxt.py check https://site`;下载后 `python3 scripts/llmstxt.py validate llms.txt` | 通过:`/llms.txt` 行为 `200 [PASS]`,validate 退出码 0;失败:`[FAIL] llms.txt is HTML not markdown` |
+| ARD 目录 | `curl -s https://site/.well-known/ard.json \| jq '.entries \| length'`;`curl -s https://site/robots.txt \| grep -i '^Agentmap:'`;官方工具 `conformance-test publisher site`(ard-spec 仓) | 通过:200、entries ≥1、工具无 error;失败:只在 `ai-catalog.json` |
+| Agentic Browsing 与 ARIA | `lighthouse https://site --only-categories=agentic-browsing --output=json --output-path=./lh.json`(Node 22+,13.5.0+) | 通过:无 0 分审计(`agent-accessibility-tree` 的 33 条规则全过);记下通过比例 |
+| WebMCP 工具 | 开 `chrome://flags/#enable-webmcp-testing` 后,控制台跑 `typeof document.modelContext?.registerTool` | 通过:返回 `function`,关键操作有命令式工具,schema 无错误 |
+| Markdown 协商 | `curl -sI -H 'Accept: text/markdown' https://site/page/` | 通过:Markdown 或 307 到 `.md`,带 `Vary: Accept`,不同时发 `s-maxage` 和 `stale-while-revalidate` |
+| Link 头 | `curl -sI https://site/ \| grep -i '^link:'` | 通过:只用注册 rel(第 9 卡),非 ASCII 路径已编码 |
+| 签名 bot 流量 | 日志按 `Signature-Agent` 统计;看 CDN 已验证 bot 报表 | 通过:签名能验;未签名流量不默认拦截 |
+| 生成式 AI 控制 | Search Console > 设置 > Search generative AI | 通过:取值等于客户书面决定(默认包含) |
+| 价格一致 | Merchant Center 商品「需要处理」筛 "Mismatched product price" | 通过:无此问题 |
 
-## 协商决策状态机与 Link 头(nuxt-ai-ready 源码深读,2026-10-09)
+## 完全装载:自研 Markdown 协商的实现要点(第三方源码笔记)
 
-补上节"完全装载"的实现层:`src/runtime/server/utils/negotiation-decision.ts` + `negotiation-response.ts` + `link-header.ts` + `markdown-request.ts`(协议行为细节见 [ai-crawler-policy.md](ai-crawler-policy.md) 同日节)。
+协议见第 10 卡。1–6 条据 [nuxt-ai-ready](https://github.com/harlan-zw/nuxt-ai-ready) 源码。
 
-**决策状态机五出口**(`resolveNegotiationDecision`,纯函数):`skip`(reason ∈ well-known/internal/artifact/not-a-page/deferred)/`not-acceptable`/`html`/`redirect`/`render`。入口短路序:`/.well-known/` 前缀→artifact 路径(agent skill 原样应答)→**内部头 `x-ai-ready-internal`**(模块自取 HTML 时绕过协商)→renderInfo 为 null(not-a-page:`.md` 以外的扩展名、JSON/event-stream Accept 的 API 请求、保留路径)。**两阶段执行**:`early`(在 Nitro 静态资源处理器之前)+`middleware`——**显式 `.md` 在 early 段必然 defer**(等静态预渲染文件先应答,且渲染要排在站点自注册的 auth 中间件之后,避免鉴权旁路);隐式 markdown 协商命中则 **307 重定向到 `.md` 双胞胎**——注释明示动机:"HTML 与 markdown 各占独立缓存键,对**忽略 Vary 的 CDN** 这才是安全的"。not-a-page 判定:Accept 含 `application/json` 或 `text/event-stream` 且不含 html/markdown/plain/`*/*` 的请求直接排除(不打扰 API)。
-
-**决策缓存与去重**:同一请求的决策挂在 `event.context[Symbol('nuxt-ai-ready:negotiation')]`,键含 owner/path/policy/botNegotiation,**early 与 middleware 双跑只算一次**;协商头应用有 `APPLIED_KEY` 布尔守卫,防 `Vary` 被二次 append。
-
-**Link 头模板**(`link-header.ts`):HTML 响应带 `<{path}.md>; rel="alternate"; type="text/markdown"`;markdown 响应带 `<{path}>; rel="alternate"; type="text/html"` + `<{path}>; rel="canonical"`(**md 的 canonical 指回 HTML 版**);两者都带 `<{llms.txt}>; rel="describedby"`(可关)。**RFC 9110 §5.5 头值 ASCII 限制**:非拉丁字符路径(中文/西里尔)必须 `encodeURI` 后进头,否则 Cloudflare 拒收整个响应——**中文站自研协商时的高频坑**。i18n 站点用 status-aware 变体(错误响应带精简 Link 集)。
-
-**bot 启发式的三条护栏**(`markdown-request.ts`):预渲染(`x-nitro-prerender` 或 import.meta.prerender)一律 html;`sec-fetch-dest: document` 的浏览器导航跳过 bot 判定;Accept 中 text/markdown|text/*|*/* 匹配组全部 q=0 时维持原偏好(启发式不得覆盖显式拒绝)。
-
-**路由规则互斥**(`content-negotiation.ts`):路由规则带 `isr` 或 `cache` 且 cache.varies 不含全部协商 Vary 维度时,协商自动 disabled(source: 'isr'|'route-cache')——**ISR/整页缓存与按 Accept 分表示天生冲突**,自研时同样要在 CDN 层禁或配 varies。
+1. 默认只按 `Accept` 协商。可选的 UA 启发式(AI bot 给 Markdown)有三条护栏:预渲染给 HTML;`Sec-Fetch-Dest: document` 不判 bot;`text/markdown`、`text/*`、`*/*` 最先匹配的一组全为 q=0 时尊重拒绝。
+2. 不协商:`/.well-known/`、内部取 HTML 的请求、只接受 JSON 或 `text/event-stream` 的 API 请求。
+3. 隐式命中 Markdown 时 307 到 `.md` 双胞胎,两种表示各占缓存键,忽略 `Vary` 的 CDN 也不串。`Vary` 默认 `Accept`,开启发式时加 `Sec-Fetch-Dest, User-Agent`,只追加一次。
+4. 显式 `.md` 排在站点鉴权中间件之后渲染,防绕过鉴权。
+5. ISR 或整页缓存不按全部协商头分变体时,协商自动关闭;自研时关协商,或把协商头加进缓存变体。
+6. Link 头:HTML 带 `rel="alternate"; type="text/markdown"`;Markdown 带 `type="text/html"` 的 alternate 和指回 HTML 的 `rel="canonical"`;两者带 llms.txt 的 `rel="describedby"`。非 ASCII 路径先 `encodeURI`:RFC 8288 §3 要 URI-Reference,RFC 9110 §5.5 要新字段限于 US-ASCII;源码注释称 Cloudflare 拒收非 ASCII 头,未在其文档核到。
+7. 新鲜度只放 `max-age` 加 `stale-while-revalidate`;`s-maxage` 会禁用 stale-while-revalidate([Cloudflare](https://developers.cloudflare.com/cache/concepts/cache-control/))。Cloudflare Pages/Workers 的 `_headers` 最多 100 条规则,每行 ≤2,000 字符([文档](https://developers.cloudflare.com/pages/configuration/headers/))。
 
 ## 官方口径校准与 AI 可见性技术层(digital-marketing-pro 深读 2026-10-09b)
 
-来源:indranilbanerjee/digital-marketing-pro(164 技能)的 aeo-geo / aeo-audit / geo-monitor / gsc-ai-performance / entity-audit / technical-seo / page-seo-analysis / local-seo / programmatic-seo / seo-implement / redirect-manager 精读。协议行为增量并入本层,测量/审计增量并入 [intake-checklists](../overview/intake-checklists.md) 同日节。
+来源:第三方仓库 [digital-marketing-pro](https://github.com/indranilbanerjee/digital-marketing-pro)。测量与审计见 [intake-checklists](../overview/intake-checklists.md) 同日节。
 
-### 1. llms.txt 层的对冲事实(Google AI Optimization Guide,2026-05-15 更新)
+### 1. llms.txt 层的对冲事实(Google 生成式 AI 优化指南)
 
-Google 官方三连:**不需要 llms.txt**("You don't need to create new machine readable files, AI text files, markup, or Markdown to appear in generative AI search")、**无 AI 专用 schema**("no special schema.org markup you need to add")、**无独立 AI 资格门槛**(classic Search 有 snippet 资格的页面即有 AI Features 资格)。Anthropic/OpenAI/Perplexity 公开口径同样不要求 llms.txt。→ 与本文件 llms.txt/ARD 层的关系:**协议层继续按"低成本期权"对待,但客户施压上 llms.txt 时应记为无 measurable upside 的低优先级交付物**;真正驱动 AI 引用的是实体一致性+可引用片段+Knowledge Graph 对齐,而非任何新文件。不要围绕虚构 ranking factor 制造工作。
+- [指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide) 2026-05-15 新增,2026-06-15 补 llms.txt 说明([更新日志](https://developers.google.com/search/updates))。原文:"You don't need to create new machine readable files, AI text files, markup, or Markdown to appear in Google Search (including its generative AI capabilities), as Google Search itself doesn't use them";"there's no special schema.org markup you need to add"。资格:页面可索引、可显示摘要,且站点在 Search Console 生成式 AI 控制里保持「包含」(默认)。
+- OpenAI、Anthropic、Perplexity 的爬虫文档只讲 robots.txt,不要求 llms.txt。
+- 结论(本套件口径):llms.txt 和本文协议层按低成本期权对待,客户坚持要时记为低优先级交付物。驱动 AI 引用的是实体一致性、可引用片段和知识图谱对齐。
 
 ### 2. AI 退出/训练控制三层(互不可替代)
 
-- **Search 内 AI(AI Overviews+AI Mode)**:沿用既有 snippet 指令——`nosnippet`/`data-nosnippet`/`max-snippet`/`noindex`;robots.txt 管 Googlebot。**不存在 AI 专用 robots/meta 指令**;
-- **Google 其他 AI 系统(Gemini app 训练、Search 外 Vertex grounding)**:robots.txt **`Google-Extended`** UA——与 Googlebot 是两套控制;
-- **GSC 属性级退出开关**(2026-06-03 上线):一键把站点排除出 AI Overviews/AI Mode grounding,不用动 robots.txt。决策触发条件:YMYL 且 E-E-A-T 未审计干净/paywall 登录内容(部分内容被 AI 呈现伤漏斗)/活跃声誉管理期/编辑部要求先经自有渠道发更正。
+- Search 内的 AI 功能:robots.txt 管 Googlebot;`nosnippet`、`data-nosnippet`、`max-snippet`、`noindex` 限制展示([文档](https://developers.google.com/search/docs/appearance/ai-features))。没有 AI 专用 robots 或 meta 指令。
+- `Google-Extended`(robots.txt 产品 token):管 Gemini 模型训练,以及 Gemini Apps 和 Vertex AI「Grounding with Google Search」的 grounding;不影响 Search 收录和排名([文档](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers))。
+- Search Console「Search generative AI」控制:2026-06-03 [宣布](https://blog.google/products-and-platforms/products/search/new-controls-website-owners/)并在英国测试,2026-08-31 起全球开放([帮助](https://support.google.com/webmasters/answer/16908024))。覆盖 AI Overviews、AI Mode、Discover 的生成式 AI 功能;排除后不出链接、不作 grounding 输入;不影响训练;约 1–2 天生效;子属性默认继承父属性。何时考虑排除(本套件口径):AI 呈现直接伤漏斗的内容(付费墙摘要、进行中的声誉事件);先用 GSC 生成式 AI 报告估算会丢的展示。
 
-### 3. 六规范表面与探针计分标准(该仓库的 canonical rubric,可复用)
+### 3. 六规范表面与探针计分(本套件口径,取自第三方仓库)
 
-- **6 表面**:Google AI Mode、AI Overviews、ChatGPT、Perplexity、Gemini、Copilot(I/O 2026 起 AI Mode 为默认搜索体验、~1B MAU、Gemini 3.5 Flash 底座)。**AI Mode≠AI Overviews,同查询引用源发散率约 40-60%(内部观察,需按自有探针集复核),必须分开探、分开记,禁止合并成"Google AI"再取均值**;
-- **探针计分**:cited-with-link 10 / mentioned 7 / concept-only 3 / absent 0 / misrepresented **-5**;逐表面出分,**禁止跨平台平均**(Perplexity 9/10 + ChatGPT 2/10 的均值毫无意义);单次 10-25 条查询(超 25 条成本/限速主导);引用准确性逐条事实核查是最常被跳过的一步——AI 会自信地幻觉品牌事实;
-- **I/O 2026 后续**:AI Overview→AI Mode 追问流全球上线(首引即多轮引文的入口,按"基础性引用"而非"短片段"优化)。
-- **AI Mode info monitoring 全量(2026-09-28 向全员开放;入库 2026-10-12)**:I/O 2026-05 以"information agents"亮相→2026-06-12 先开 AI Ultra/Pro 订阅户→**2026-09-28 起 Robby Stein(Google Search 产品 VP)确认全球全量、免费**(渐进推送);AI Mode 月活已过 10 亿。**监控面(官方口径)**:站点(博客/新闻)、论坛与社媒帖、实时数据源(财经行情等)、**Shopping Graph(60B+ 商品,其中 20 亿 listing 每小时更新)**;用户一句"keep me updated on / alert me when"即建常驻监控,提醒经 Google app 推送,Search 还会**主动建议**监控任务。探针表由此更新四条:
-  - **新触发型验收面**:价格下降/补货/本地新开类"变化"本身成为提醒触发器——**本地与购物场景的新鲜度从加分项变硬门槛**:GBP 时段/帖/照片、带日期的活动与菜单页、社媒公告、评价时效须保持"变化即可被抓到"的状态(本地 AI 推荐使用率一年 6%→45%,BrightLocal,行业口径);
-  - **结构化 feed 一致性入探针**:GMC feed 价=页面 DOM 价=Product/Offer schema 价(不一致不只丢引用,还触发 GMC disapprovals);补 Event/LocalBusiness schema 承载可触发事件;
-  - **测量口径**:info monitoring 提醒**暂无 referrer 数据**——用 GSC 生成式 AI 报告(只有 impressions)+对照价格/公告变更日期做前后对比,与套件既有 AI 流量三源下界口径一致;
-  - **探针集新增一类"常驻查询"(standing queries)**:把用户监控任务的措辞("alert me when 降价/补货")纳入固定问题集——监控任务是持续运行的品牌接触面,一次入选即长期在跑。
-  - 来源:Robby Stein 口径经 SEJ/savvydealer 转述(2026-09-29);监控面与 60B+/20 亿每小时经 crossglobemarketing(2026-09-30)与 Google 官方演示核对;"实时数据源"为 Google 原文 real-time data sources,财经为其举例场景之一。
+- 6 表面:Google AI Mode、AI Overviews、ChatGPT、Perplexity、Gemini、Copilot。AI Mode 和 AI Overviews 分开探、分开记(Google:两者 "may use different models and techniques")。
+- 计分:cited-with-link 10 / mentioned 7 / concept-only 3 / absent 0 / misrepresented −5;逐表面出分,不跨平台平均;单次 10–25 条查询;逐条核对 AI 说的品牌事实。
+- 官方背景:[I/O 2026](https://blog.google/products-and-platforms/products/search/search-io-2026/)(2026-05-19):AI Mode 月用户超 10 亿,Gemini 3.5 Flash 为其全球默认模型,AI Overview 可直接追问进入 AI Mode;information agents 后台监控网页、社媒和实时数据,先给 AI Pro/Ultra 订阅户。Shopping Graph 超过 600 亿条商品,每小时更新 20 亿条。第三方转述:2026-09-28 Robby Stein 在 X 称它已对所有用户免费开放。
+- 对探针的含义:①价格、库存、营业时间的变化会触发提醒,本地和购物页保持数据新鲜;②Merchant Center、落地页初始 HTML、结构化数据三处价格一致,否则商品可能被拒([帮助](https://support.google.com/merchants/answer/12159029));③提醒带来的访问没有 referrer,用 GSC 生成式 AI 报告对照变更日期;④探针集加「降价时提醒我」类常驻查询。第三方研究:BrightLocal [2026 调查](https://www.brightlocal.com/research/lcrs-ai-trust/)(1,002 名美国成年人)称,用 AI 找本地商家的比例从 6% 升到 45%。
 
-### 4. 实体一致性层("单一最高杠杆 AEO 投资",高于任何 schema 微调)
+### 4. 实体一致性层(本套件口径:杠杆高于 schema 微调)
 
-- **Wikidata 属性核对表**:官网 P856 / Twitter P2002 / Instagram P2003 / Facebook P2013 / LinkedIn P4264 / 创立日 P571 / 总部 P159 / 行业 P452 / CEO P169 / 创始人 P112 / instance-of P31;逐属性记 match/mismatch/outdated/missing;
-- **修复优先级**:Wikidata 属性纠正(直连知识图谱)> Knowledge Panel 认领与更正 > Wikipedia 准确性 > 目录 NAP 一致性;
-- 通用词品牌名(如 Apple/Slack/Monday)必须做实体消歧:结构化数据用完整官方名+品类限定词;YMYL 行业阈值更高(可验证作者资质+一手研究引用+评审披露)。
+- Wikidata 属性核对表:官网 P856 / X P2002 / Instagram P2003 / Facebook P2013 / LinkedIn 公司 ID P4264 / 创立 P571 / 总部 P159 / 行业 P452 / CEO P169 / 创始人 P112 / instance of P31。逐属性记 match/mismatch/outdated/missing。
+- 修复优先级:Wikidata > Knowledge Panel 认领与更正 > Wikipedia > 目录 NAP 一致性。
+- 通用词品牌名(如 Apple、Slack)做实体消歧:结构化数据写完整官方名加品类限定词。
 
-### 5. Schema 2026 增量两点(停用清单见 [schema-examples](schema-examples.md),勿重复)
+### 5. Schema 2026 增量两点(停用清单见 [schema-examples](schema-examples.md))
 
-- `VideoObject` 新增 `creator` 属性(2026-09-24,Google docs changelog);
-- review snippets 新指南:禁止虚假与未披露的激励评论(2026-07-24)——评论类 schema 审计加一条合规检查。
+据 Google [文档更新日志](https://developers.google.com/search/updates):2026-09-24 `VideoObject` 加 `creator` 属性(也支持 `author`);2026-07-24 review snippet 新增指南,针对虚假和未披露的激励评论,评论类 schema 审计加合规检查。
 
-### 6. Agentic Booking 栈(I/O 2026,本地服务四垂直)
+### 6. Agentic Booking(I/O 2026,本地服务)
 
-清洁/水电工等 local services、home repair、美容、宠物护理进入 Google agentic booking;接入三条件:**(a) GBP 接受预订**(Booksy/Vagaro/Square Appointments/Resy/Tock 等排期商直连或 Reserve with Google);**(b) 提供 `AvailabilityFeed` 结构化数据**(LocalBusiness+Reservation+AvailabilityFeed 配对,让 agent 不打电话即可推理空档)——本套件 agent-readiness 清单的本地服务条目新增项;**(c) Service catalog 价格透明**(agent 跳过不透明定价)。
+I/O 2026 博客:AI Mode 代订扩展到本地体验和服务,直链到服务商预订;家装维修、美容、宠物护理可让 Google 代打电话;美国夏季上线。接入面是 Actions Center 数据 feed,不是页面 schema。Services feed 必填价格和时长,`bookability_info`、`policy_info` 标为 agentic booking 必需([文档](https://developers.google.com/actions-center/verticals/appointments/redirect/reference/feeds/services-feed))。schema.org 没有 `AvailabilityFeed` 类型。
 
-### 7. Agent 执行门纪律(seo-implement/redirect-manager 的强制模式,可移植)
+### 7. Agent 执行门纪律(本套件口径,取自第三方技能)
 
-CMS 写操作的硬门槛:**执行摘要(全量 before/after diff+影响面)→ 用户显式 `yes`,任何含糊/暗示/缺省输入即取消 → 绝不自动重试失败执行(失败必人工复审)→ 执行前 create-approval、平台确认后 mark-executed(审批留痕)**。风险分级:单页/单条 medium,>5-10 条批量、redirect 创建、canonical 变更、删除既有规则一律 high。改动前快照+rollback 数据必存;部署后逐条 HTTP 验证(redirect 验状态码+最终目的地+跳数)。
+CMS 写操作先出全量 before/after diff;用户明确回 `yes` 才执行,含糊即取消;失败不自动重试;先存回滚数据。批量 >5 条、建 redirect、改 canonical、删规则按高风险处理;部署后逐条 HTTP 验证。
 
-### 8. 规模化内容与寄生 SEO 的政策执行细节(programmatic-seo 技能卡)
+### 8. 规模化内容与寄生 SEO 的政策执行细节
 
-- **Scaled Content Abuse 执行时间线**:2024-03 立规 → 2025-06 AI 生成内容批量手动处罚波 → 2025-08 SpamBrain 升级模式识别(官方称低质非原创结果 -45%);
-- **硬门槛**:同组模板页唯一内容 <30% = 硬停(scaled content abuse 风险);30-40% 标记薄内容;单页 <300 词待审;>500 页无理由即需显式用户批准+薄内容审计;
-- **渐进发布**:50-100 页/批,监控 2-4 周再扩;**standalone value test**:"即使没有同类页,这一页也值得发布吗?"。安全规模化:带真实 setup 文档的集成页/可下载模板页/200+ 词带例证 glossary/唯一规格产品页;高危:仅换城市名的 location 页、无行业专属价值的"best X for Y"、>60% 模板 boilerplate;
-- **Site reputation abuse 2026-08-30 起 EEA 分叉**:EEA 外=手动动作降权受影响板块;EEA 内=板块分离、独立排序——第三方/寄生板块的审计结论**必须分区域表述**。
+- **时间线(官方)**:2024-03-05 Google 同批推出 expired domain abuse、scaled content abuse、site reputation abuse 三条垃圾政策,site reputation 2024-05-05 生效([博客](https://developers.google.com/search/blog/2024/03/core-update-spam-policies))。2024-04-26 Google 称 3 月核心更新完成后,低质非原创结果减少 45%(预期 40%)([博客](https://blog.google/products-and-platforms/products/search/google-search-update-march-2024/))。2025-08-26 至 2025-09-22 August 2025 spam update,全球全语言,官方没说明打击点([Status Dashboard](https://status.search.google.com/incidents/a7Aainy6E9rZsmfq82xt))。
+- **执行形态**:手动处罚落在 Manual Actions 报告「Major spam problems」,官方示例含 scaled content abuse([帮助](https://support.google.com/webmasters/answer/9044175))。2025 年针对 AI 批量内容的手动处罚只见第三方报道。
+- **政策要点**:为操纵排名批量生成、对用户无价值的页面都算,不管用 AI、人工还是混合([政策](https://developers.google.com/search/docs/essentials/spam-policies#scaled-content))。生成式 AI 优化指南明说:为每个 fan-out 查询变体单独建页违反此政策。
+- **闸门(本套件口径)**:批次唯一内容 <30% 硬停、30–40% 标记薄内容;standalone value test:「即使没有同类页,这一页也值得发布吗?」;渐进发布 50–100 页/批、观察 2–4 周;500+ 未审页不一次发布。数字真源、页型字数地板和高危页型见 [programmatic-seo-gates](programmatic-seo-gates.md),用 `python3 scripts/pseo_batch_gate.py --records batch.jsonl` 执行。
+- **Site reputation 2026-08-30 起按搜索用户所在地分叉**([博客 2026-08-28](https://developers.google.com/search/blog/2026/08/update-site-reputation-policy)):EEA 外,手动处罚只影响受影响板块;EEA 内,手动处罚不生效,受影响板块可能被分离并随时间独立排序。站长仍收到 Search Console 通知。第三方或寄生板块的审计结论按 EEA 内外分开写。

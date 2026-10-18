@@ -1,156 +1,201 @@
-# 服务器日志分析(SEO/GEO 的真实测量层)
+# 服务器日志分析（爬虫行为的实测层）
 
-> 建立于 2026-10-09。日志是爬虫行为的唯一真实记录(非模拟);GA4 等 JS 分析**看不见不执行 JS 的 AI 爬虫**——日志是 AI 到访的唯一可靠测量层。
+> 2026-10-18 按 Google、Bing、Yandex、OpenAI、Anthropic、Perplexity 的官方文档和 nginx、Apache、Cloudflare 文档核对。日志记录真实请求，不是模拟。Google 自己也说客户端分析工具不能完整反映 Googlebot 和渲染服务的访问（[修复 JS 搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)）；不执行 JS 的爬虫在 GA4 里根本看不到，所以 AI 爬虫到访只能靠日志或 CDN 日志测量。
 
 ## 一、日志能回答的问题
 
-- **真实 bot 频率/分布**:每 UA 每日请求数、按目录/深度分布、最常与从未被抓的 URL。
-- **抓取预算浪费**:参数化/重复 URL、重定向链、被 robots 屏蔽仍被请求的路径、低价值页占比。
-- **AI 爬虫实际来访**:哪些 AI UA 真的来了(与 robots.txt 声明对照)。
-- **5xx/429 影响**:官方明确会使爬虫临时降速,持续则停止抓取与掉收录。
-- **发现延迟**:发布时间戳→首次抓取时间差,可直接从日志算。
+- **真实爬虫频率与分布**：每个爬虫每天的请求数，按目录、深度的分布，最常被抓和从未被抓的 URL。
+- **抓取浪费**：参数化或重复 URL、重定向链、被 robots.txt 屏蔽仍被请求的路径、低价值页占比。
+- **AI 爬虫实际来访**：哪些 AI 爬虫真的来了，与 robots.txt 的决定对照。
+- **5xx / 429 的影响**：Google 遇到 5xx 和 429 会暂时降低抓取速度；持续返回 5xx 的已收录 URL 最终移出索引；robots.txt 本身返回 5xx 时，前 12 小时停止抓取全站（见 [http-status-codes.md](http-status-codes.md)、[robots-txt-reference.md](robots-txt-reference.md)）。
+- **发现延迟**：发布时间到首次被抓的时间差，可以直接从日志算。
+
+抓取预算问题主要出现在大站：Google 的抓取预算指南面向 100 万以上页面且每周更新、或 1 万以上页面且每天更新的站点（[抓取预算](https://developers.google.com/crawling/docs/crawl-budget)）。小站先看 sitemap 和网页索引编制报告即可。
 
 ## 二、方法
 
-1. **字段最低集**:timestamp、client IP、method、完整 URL(含 query)、status、user-agent;建议加 referer/bytes/response_time。Nginx 默认 `combined` 缺 response time——SEO 用途应自定义 log_format。
-2. **bot 验证(关键)**:UA 单独不可信。Google 官方=**反向+正向 DNS 双重验证**(`host <IP>` 必须属于 googlebot.com/google.com,再正向解析回指原 IP);Yandex 同法;Bing 提供已验证 IP 列表。
-3. **聚合维度**:URL 目录层级 × 状态码 × UA × 日;衍生:日均请求、抓取深度、状态码占比、唯一 URL 数、每目录预算占比。
-4. **日志源**:Apache/Nginx 原始日志;Cloudflare 走 Logpush/GraphQL 导出。
+1. **字段最低集**：时间、客户端 IP、方法、完整 URL（含查询串）、状态码、User-Agent；建议再加 referer、字节数、响应耗时。nginx 默认的 `combined` 格式不含响应耗时，SEO 用途要自定义 `log_format`（见二B）。
+2. **先验证爬虫身份，再聚合**：User-Agent 可以伪造。验证方法见二C。
+3. **聚合维度**：URL 目录层级 × 状态码 × 爬虫 × 日期；衍生指标见二D。
+4. **日志源**：Apache / nginx 原始日志；用了 Cloudflare 的站点，用 Logpush 导出边缘日志。
 
-## 二B、三源日志的解析正则(Nginx / Apache / Cloudflare,2026-10-09 二波深化)
+## 二B、日志格式与解析
 
-**Nginx combined(Apache combined 同格式,正则通用)**:
+**nginx `combined`**（nginx 官方定义；Apache 的 combined 同构）：
+
+```nginx
+log_format combined '$remote_addr - $remote_user [$time_local] '
+                    '"$request" $status $body_bytes_sent '
+                    '"$http_referer" "$http_user_agent"';
 ```
+
+- 按空白切分时 `$9` 是状态码、`$7` 是路径；但 User-Agent 含空格，按空白切分取不到它。稳妥做法是按双引号切分：`-F'"'` 后 `$2` 是请求行，`$3` 开头是状态码，`$6` 是 User-Agent。自定义格式要按自己的格式写解析。
+- 解析正则（combined）：
+
+```text
 ^(\S+) (\S+) (\S+) \[([^\]]+)\] "(\S+) (\S+)(?: (\S+))?" (\d{3}) (\S+) "([^"]*)" "([^"]*)"
-  1=IP 2=ident 3=user 4=时间         5=方法 6=URL  7=协议   8=状态  9=字节 10=referer 11=UA
+  1=IP 2=ident 3=user 4=时间 5=方法 6=URL 7=协议 8=状态码 9=字节 10=referer 11=UA
 ```
-最小可用聚合(状态码分布,combined 格式下 $9 恰为状态码):
-```bash
-grep -i googlebot access.log | awk '{print $9}' | sort | uniq -c | sort -rn
-```
-注意:UA 含空格,awk 按空白切列在自定义格式下会错位——**只有 combined 恰好第 9 列是状态码**;自定义格式必须走正则解析(Python re / goaccess)。SEO 用途建议的 nginx log_format(补响应耗时):
+
+- SEO 用的 nginx 格式（加响应耗时）：`$request_time` 是请求处理时间（秒，毫秒精度，从读到客户端第一个字节算起）；`$upstream_response_time` 是从上游收到响应的耗时（秒，毫秒精度，多个上游用逗号分隔）。
+
 ```nginx
 log_format seo '$remote_addr [$time_local] "$request" $status $body_bytes_sent '
                '"$http_referer" "$http_user_agent" $request_time $upstream_response_time';
 ```
-Apache:combined + `%D`(微秒)加耗时(mod_log_config);Cloudflare 若回源,`CF-Connecting-IP` 头才真实来源,`$remote_addr` 是 CF 边缘 IP——nginx 需 `set_real_ip_from` + `real_ip_header` 还原,否则按 IP 的 bot 验证全错。
 
-**Cloudflare Logpush(JSON 行,用 jq 不用正则)**:
+- Apache：`mod_log_config` 的 `%D` 是服务请求的耗时（微秒），`%T` 是秒。
+- **Cloudflare 回源**：源站日志里的 `$remote_addr` 是 Cloudflare 边缘 IP。Cloudflare 用 `CF-Connecting-IP` 请求头把访客 IP 传给源站；nginx 要用 realip 模块（`set_real_ip_from` 填 Cloudflare 的 IP 段，`real_ip_header CF-Connecting-IP`）还原，否则所有按 IP 的爬虫验证都会错。
+- **Cloudflare Logpush**（JSON 行，用 jq）：`http_requests` 数据集的字段包括 `ClientIP`、`ClientRequestUserAgent`、`ClientRequestURI`、`EdgeResponseStatus`（Cloudflare 返回给客户端的状态码）、`OriginResponseStatus`（源站状态码）、`EdgeStartTimestamp`、`VerifiedBotCategory`、`BotScore`。Logpush 任务可以设 `sample_rate`（0–1，默认 1 = 不采样）。
+
 ```bash
-jq -r 'select(.ClientRequestUserAgent|test("GPTBot|ClaudeBot|Bytespider";"i"))
-       | (.EdgeResponseStatus|tostring) + " " + .ClientRequestURI' logs.jsonl | sort | uniq -c | sort -rn
+# AI 爬虫请求：边缘状态码、源站状态码、路径
+jq -r 'select(.ClientRequestUserAgent|test("GPTBot|OAI-SearchBot|ClaudeBot|Claude-SearchBot|PerplexityBot";"i"))
+       | "\(.EdgeResponseStatus) \(.OriginResponseStatus) \(.ClientRequestURI)"' logs.jsonl | sort | uniq -c | sort -rn
 ```
-字段名:`ClientRequestUserAgent`/`EdgeResponseStatus`/`ClientRequestURI`;GraphQL API 可按时间窗拉状态码分布(Cloudflare 官方 Logpush/GraphQL 文档)。
 
-## 二C、机器人验证脚本逻辑(双重 DNS,2026-10-09 二波深化)
+## 二C、爬虫身份验证
 
-UA 单独不可信(伪装 Googlebot 大量存在)。官方算法=反向+正向两步:
-1. 取日志行 client IP;
-2. `host <IP>` 反解得主机名,必须落在 `*.googlebot.com` 或 `*.google.com`;
-3. 该主机名再正向解析,**必须回到原 IP**——防 DNS 命名抢注(官方 verifying-googlebot 文档)。
+User-Agent 单独不可信。各家官方给的验证方法（核对 2026-10-18；IP 列表格式都是 `{"prefixes":[{"ipv4Prefix"|"ipv6Prefix": CIDR}]}`，2026-10-18 实测可下载）：
+
+| 运营方 | 方法 | 反向 DNS 应落在 | 官方 IP 列表 |
+|---|---|---|---|
+| Google | 反向 + 正向 DNS，或匹配 IP 列表（[官方文档](https://developers.google.com/crawling/docs/crawlers-fetchers/verify-google-requests)） | 常见爬虫（含 Googlebot）：`googlebot.com`；特殊爬虫（如 AdsBot）：`google.com`；用户触发的抓取器：`googleusercontent.com` 或 `google.com` | [common-crawlers.json](https://developers.google.com/static/crawling/ipranges/common-crawlers.json)、[special-crawlers.json](https://developers.google.com/static/crawling/ipranges/special-crawlers.json)、[user-triggered-fetchers.json](https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers.json)、[user-triggered-fetchers-google.json](https://developers.google.com/static/crawling/ipranges/user-triggered-fetchers-google.json) |
+| Bing | 反向 + 正向 DNS；或匹配 IP 列表，列表要每天刷新（[官方文档](https://www.bing.com/webmasters/help/how-to-verify-bingbot-3905dc26)） | `search.msn.com` | [bingbot.json](https://www.bing.com/toolbox/bingbot.json) |
+| Yandex | 反向 + 正向 DNS；IP 列表不公开（[官方文档](https://yandex.com/support/webmaster/en/robot-workings/check-yandex-robots)） | `yandex.ru`、`yandex.net`、`yandex.com` | 无 |
+| OpenAI | 匹配 IP 列表（[官方文档](https://platform.openai.com/docs/bots)） | — | [gptbot.json](https://openai.com/gptbot.json)、[searchbot.json](https://openai.com/searchbot.json)、[chatgpt-user.json](https://openai.com/chatgpt-user.json) |
+| Anthropic | 匹配 IP 列表（三个爬虫共用；[官方说明](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler)） | — | [bots.json](https://claude.com/crawling/bots.json) |
+| Perplexity | 匹配 IP 列表（[官方文档](https://docs.perplexity.ai/guides/bots)） | — | [perplexitybot.json](https://www.perplexity.com/perplexitybot.json)、[perplexity-user.json](https://www.perplexity.com/perplexity-user.json) |
+
+判定规则（本套件口径）：UA 名称与官方验证同时成立才算真；UA 对、验证不过 = 伪装，按 IP 封。Google 的旧列表地址 `/static/search/apis/ipranges/googlebot.json` 2026-10-18 仍可访问且内容与 `common-crawlers.json` 相同，新脚本用新地址。
+
 ```bash
-ip=66.249.66.1
-hn=$(host $ip | awk '{print $NF}' | sed 's/\.$//')
-if [[ $hn == *googlebot.com || $hn == *google.com ]] && host "$hn" | grep -q "$ip"; then echo verified; fi
+# 方法一：反向 + 正向 DNS（bash / zsh 通用；后缀前加点，正向解析要精确等于原 IP）
+verify_rdns() {  # 用法：verify_rdns <IP> <允许的域名后缀...>
+  ip=$1; shift
+  name=$(host "$ip" | awk '/domain name pointer/ {print $NF}' | sed 's/\.$//' | head -1)
+  [ -z "$name" ] && { echo "$ip FAIL 无反向解析记录"; return; }
+  ok=no
+  for d in "$@"; do case "$name" in *."$d") ok=yes ;; esac; done
+  [ "$ok" = no ] && { echo "$ip FAIL $name 不在允许的域名内"; return; }
+  if host "$name" | awk '/has (IPv6 )?address/ {print $NF}' | grep -qxF "$ip"; then
+    echo "$ip VERIFIED $name"
+  else
+    echo "$ip FAIL $name 正向解析不回到原 IP"
+  fi
+}
+verify_rdns 66.249.66.1 googlebot.com      # Googlebot
+verify_rdns 157.55.39.1 search.msn.com     # bingbot
+
+# 方法二：匹配官方 IP 列表（先下载需要的 JSON；日志 IP 一行一个从 stdin 读入）
+curl -sO https://developers.google.com/static/crawling/ipranges/common-crawlers.json
+curl -sO https://openai.com/gptbot.json
+awk -F'"' '$6 ~ /Googlebot|GPTBot/ {split($1,f," "); print f[1]}' access.log | sort -u | python3 -I -c '
+import ipaddress, json, sys
+nets = [(ipaddress.ip_network(p.get("ipv4Prefix") or p.get("ipv6Prefix")), f)
+        for f in ("common-crawlers.json", "gptbot.json") for p in json.load(open(f))["prefixes"]]
+for ip in (l.strip() for l in sys.stdin if l.strip()):
+    a = ipaddress.ip_address(ip)
+    hit = next((f for n, f in nets if a.version == n.version and a in n), "")
+    print(ip, "VERIFIED" if hit else "NOT-IN-LIST", hit)'
 ```
-Yandex 同法(yandex.com/yandex.ru);Bing 用官方已验证 IP 列表(必应官方 bot 文档)。AI 爬虫:OpenAI 公布 GPTBot/OAI-SearchBot 的 CIDR 段(openai.com/gptbot-ranges.txt);Anthropic、Perplexity 各自公布——验证逻辑=**UA token 与 IP 段同时命中**;只中 UA 不中 IP=伪装(见实战案例 B)。
 
-## 二D、聚合指标速查(公式与判读,2026-10-09 二波深化)
+## 二D、聚合指标速查
 
-| 指标 | 公式(验证后 bot 行) | 判读 |
+| 指标 | 公式（只用已验证的爬虫请求） | 判读 |
 |---|---|---|
-| 日均请求数 | 总请求数 ÷ 天数 | 站点抓取预算实测(案例 C) |
-| 每日唯一 URL 数 | nunique(URL) | 有效抓取面;与总请求的差=重复抓 |
-| 重复抓取率 | 总请求 ÷ 唯一 URL | 高频无变化重抓=lastmod/ETag 失效信号 |
-| 5xx 占比 | count(status≥500) ÷ 总数 | 持续抬升触发官方降速机制(案例 A);无官方阈值,行业以 1–2% 为关注线 |
-| 3xx 占比 | count(3xx) ÷ 总数 | 预算烧在跳转链;与 redirects-canonical 审计联动 |
-| 目录预算占比 | groupby(一级目录) 求和 | 核心目录 vs 长尾/参数目录的分配实况 |
-| 抓取深度分布 | URL path 段数分桶 | 深层占比高=导航或 sitemap 层级问题 |
-| 发现延迟 | first_seen(URL) − 发布时间戳 | 需与 CMS/内容库 join,衡量新页可达性 |
+| 日均请求数 | 总请求数 ÷ 天数 | 实测抓取量（案例 C） |
+| 每日唯一 URL 数 | 去重 URL 数 | 有效抓取面；与总请求的差 = 重复抓取 |
+| 重复抓取率 | 总请求 ÷ 唯一 URL | 无变化页面被高频重抓：检查 lastmod 和 304 支持 |
+| 5xx 占比 | 5xx 请求 ÷ 总数 | Google 没有给出阈值；持续上升就查（案例 A） |
+| 3xx 占比 | 3xx 请求 ÷ 总数 | 抓取花在跳转上；本套件口径：持续 >10% 进清理清单（见 [redirects-canonical](redirects-canonical.md) 6.1） |
+| 目录占比 | 按一级目录求和 | 核心目录与参数、长尾目录的分配 |
+| 抓取深度分布 | 按 URL 路径段数分桶 | 深层占比高：导航或 sitemap 层级有问题 |
+| 发现延迟 | 首次被抓时间 − 发布时间 | 要与 CMS 发布时间关联 |
 
-**跨源合并的五个坑**:
-1. **时区**:nginx `time_local` 默认服务器本地时区,Apache/Cloudflare 各异——合并前统一 UTC,否则"按日"聚合错位。
-2. **CDN 边界**:命中边缘缓存的请求不回源,origin 日志**低估**热门页到访量;算 bot 到访以边缘日志为准,算源站压力以 origin 为准——两套口径别混用。
-3. **采样**:Cloudflare Logpush 可配采样率,低采样下小流量目录全失真——先看采样字段再下结论。
-4. **WAF 质询**:边缘质询页对 bot 返回 403/503,不是源站错误——Cloudflare 区分 `EdgeResponseStatus` 与 `OriginResponseStatus`,5xx 诊断(案例 A)必须用 Origin 值。
-5. **轮转与缺口**:按天 gzip 的历史文件先 `zcat` 合并;日志缺天时段要在报告里显式标注,否则趋势误读。
+**跨源合并的五个坑**（本套件口径）：
+1. **时区**：nginx `$time_local` 用服务器本地时区，Cloudflare 时间戳是 UTC；合并前统一，否则按日聚合会错位。
+2. **CDN 边界**：命中边缘缓存的请求不回源，源站日志会低估热门页的到访；算爬虫到访用边缘日志，算源站压力用源站日志。
+3. **采样**：Logpush 设了 `sample_rate` 时，小流量目录会失真；先看采样设置再下结论。
+4. **WAF 质询**：边缘对爬虫返回 403/503 不是源站错误；排查 5xx 用 `OriginResponseStatus`，不要用 `EdgeResponseStatus`。
+5. **轮转与缺口**：按天压缩的历史日志先 `zcat` 合并；缺天的时段在报告里写明，否则趋势会误读。
 
-## 三、AI 时代新价值(GEO 基线)
+## 三、AI 爬虫
 
-- 按 UA token(GPTBot/OAI-SearchBot/PerplexityBot/ClaudeBot/Bytespider)过滤+对照运营商公布 IP 段;grep/awk 即可入门。
-- 行业基线(口径不一,仅参照):Cloudflare Radar 2026-05 GPTBot 占 AI bot 请求 11.48%、ClaudeBot 9.73%;HAProxy 实测其 AI 爬虫流量近 **90% 是 Bytespider**。
-- **Bytespider 特例**:无视 robots.txt 且会伪装移动 UA(看 UA 尾部 token),只能靠 UA/IP 在边缘封锁——日志是验证封锁生效的证据。
-- GEO 用法:按 AI UA 建"到访量×状态码×目录"时间序列,作为内容被 AI 系统纳入的先决信号基线;**到访≠引用**,与品牌提及监测互补。
+- 按 UA 名称过滤（如 GPTBot、OAI-SearchBot、ChatGPT-User、ClaudeBot、Claude-SearchBot、Claude-User、PerplexityBot、Perplexity-User），再用二C 的官方 IP 列表验证。各名称的用途与 robots.txt 规则见 [robots-txt-reference.md](robots-txt-reference.md) 第五节。
+- 套件脚本：`python3 scripts/ai_referral_log.py access.log --bot-ua --classify` 输出 AI 爬虫分类、各爬虫的状态码矩阵和失败率。
+- **Bytespider**：多份社区报告说它不遵守 robots.txt（例如 [F5 DevCentral 2024-02-01](https://community.f5.com/t/bytespider-webcrawler-unintentional-dos/73929)）；没有找到运营方公开的爬虫说明或 IP 列表。要拦就在 CDN/WAF 边缘按 UA 拦，再用日志确认拦截生效（第三方报告，未经官方证实）。
+- 本套件口径：按 AI 爬虫建「到访量 × 状态码 × 目录」时间序列，作为内容被 AI 系统获取的前提信号；**到访不等于被引用**，要与品牌提及、引用监测一起看。
 
-## 实战三案例(2026-10-09 二波深化)
+## 实战三案例（本套件口径）
 
-**案例 A:诊断 5xx 引起的抓取降频**
-信号链:日志中 Googlebot 命中 5xx 的占比逐周抬升 → 官方机制:持续 5xx/429 会使 Googlebot **临时降速**,极端时停抓(官方 crawl-budget 文档)。步骤:(1) 按日×状态码透视,先分清 5xx 是全流量还是**只出现在 bot 流量**——"只给爬虫返回 5xx"对用户和 JS 分析完全不可见,日志是唯一证据(Digital Applied 2026-05 日志指南);(2) 关联 `$upstream_response_time` 定位慢端点(反代到哪层开始慢);(3) 修复后 14 天曲线回看——**抓取率恢复滞后于服务器恢复**,别在 2-3 天内下结论。预防基线:官方建议平均响应时间压在 300-400ms 以下、支持 304(Not Modified)缓存(官方 crawl-budget 文档)。
+**案例 A：5xx 导致抓取降频。** 信号：已验证的 Googlebot 请求里 5xx 占比逐周上升。Google 的机制：5xx 和 429 让抓取暂时降速，降幅与报错 URL 数成正比；恢复 2xx 后逐步回升。步骤：(1) 按日 × 状态码透视，先分清 5xx 是全流量都有，还是只出现在爬虫流量——只返回给爬虫的 5xx，用户和 JS 分析都看不到，日志是唯一证据；(2) 结合 `$upstream_response_time` 找慢端点；(3) 修好后按周看抓取曲线，抓取回升晚于服务器恢复，不要两三天就下结论。预防：优化服务器响应时间，支持 304（`If-Modified-Since` / `If-None-Match`）（Google 抓取预算与排查抓取错误文档）。
 
-**案例 B:发现 AI 爬虫封锁失效**
-场景:已在 Cloudflare/WAF 封了 Bytespider/GPTBot,日志仍见其 UA。两类根因(社区实录):(1) 规则用 UA "equals" 精确匹配,真实 UA 是带附加 token 的长串——改 "contains" 即命中(Cloudflare 社区 2024-08 实帖);(2) **伪装 UA**:UA 显示 GPTBot 但 IP 不在 OpenAI 公布段(Cloudflare 社区 2024-01 实帖:origin 日志见 GPTBot 但 CF 明明已封)。验证法:UA token 命中+IP 段命中=真封锁失效(查规则顺序/绕过);UA 命中但 IP 不命中=伪装,按 IP 段封。Bytespider 无视 robots.txt 且伪装移动 UA,只能边缘封——封锁是否生效,只有日志能证明(见本文件三节)。
+**案例 B：AI 爬虫封锁失效。** 已在 CDN/WAF 封了某个 AI 爬虫，日志里仍有它的 UA。两类根因：(1) 规则写成 UA「完全等于」，真实 UA 是带其他字段的长串——改成「包含」；(2) 伪装 UA：UA 写着 GPTBot，IP 却不在 OpenAI 公布的列表里。判定：UA 命中且 IP 在官方列表 = 规则真的没生效（查规则顺序和绕过）；UA 命中但 IP 不在列表 = 伪装，按 IP 封。
 
-**案例 C:算真实抓取预算,并用日志驱动 sitemap 优先级**
-公式:`日均已验证 Googlebot 请求数` = 站点抓取预算实测;再拆**每日唯一 URL 数**与**每目录预算占比**。行业实录:索引膨胀拖慢新页收录,清掉 72% 低价值索引后会话反涨(bigseo 案例)——预算此前被浪费在低价值 URL。日志→sitemap 闭环:
-- 从未被抓的高价值 URL → 移入独立 sitemap、真实更新 lastmod;
-- 高频重抓且无变化的稳定 URL → 停止"每次全量刷 lastmod"——**假 lastmod 会让 Google 对整个 sitemap 失去信任**(官方 sitemap 文档口径:用 lastmod 主要因它影响抓取);
-- 浪费大头(参数化/重复 URL)→ robots.txt/参数处理收口,省出的预算是否回灌核心目录,回到日志按目录占比验证(改后 14 天重测)。
+**案例 C：算实测抓取量，用日志驱动 sitemap。** 每日已验证 Googlebot 请求数 = 实测抓取量；再拆每日唯一 URL 数和各目录占比。闭环：
+- 从没被抓的高价值 URL → 放进单独的 sitemap，写真实的 lastmod。
+- 高频重抓但没变化的稳定 URL → 停止「每次构建都刷新 lastmod」。Google 只在 lastmod 一贯可核实地准确时才使用它（[构建 sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)）。
+- 浪费大头（参数化、重复 URL）→ 用 robots.txt 或参数处理收口；14 天后按目录占比复测，看省下的抓取有没有回到核心目录。
 
-**案例复盘的共性**:三个案例的第一步都是同一件事——**先验证 bot 身份再聚合**(二C),否则伪装 UA 的噪音流量足以让 5xx 占比与预算测算全部失真;第二步都是按日透视而非总量汇总,趋势拐点(降速起点、封锁失效日、预算回灌日)只在时间序列里可见。
+三个案例的第一步都一样：先验证爬虫身份，再聚合；第二步都是按日看趋势，不只看总量。
 
-**快速起步三命令**(拿到 access.log 当天可出基线):
-```bash
-# 1. Googlebot 状态码分布(先粗看,验证后再精算)
-grep -i 'googlebot' access.log | awk '{print $9}' | sort | uniq -c | sort -rn
-# 2. 每日请求量趋势(抓取预算曲线)
-grep -i 'googlebot' access.log | awk '{print substr($4,2,11)}' | sort | uniq -c
-# 3. 最常被抓的目录前 20(预算流向)
-grep -i 'googlebot' access.log | awk -F'"' '{print $2}' | awk '{split($2,a,"/"); print a[2]}' | sort | uniq -c | sort -rn | head -20
-```
-
-
-
-## 四、a11y × SEO(三分法,与 [agent-readiness](agent-readiness.md) 呼应)
-
-官方口径:Google 用 evergreen Chromium 渲染,**a11y 不是直接排名因素**(Mueller 2022 明确)。
+## 四、a11y 与 SEO 的重叠（本套件口径）
 
 | 类别 | 项目 | 归宿 |
 |---|---|---|
-| **a11y∩SEO**(机器可读性同源) | 语义化标题层级、有意义 alt、描述性链接文本(锚文本)、title/label 关联、文字转录、lang 属性 | 技术审计 |
-| **纯人类项**(无排名影响) | 对比度、键盘焦点顺序、ARIA live、skip links、触控目标 | 合规 |
-| **agent 项**(新维度) | agent-accessibility-tree 所依赖的按钮/链接名称、表单标签、ARIA 良构;CLS(元素位移致 agent 误点) | agent-readiness 层 |
-
-**"SEO 无关"的 a11y 项并非无价值**——Lighthouse 13.5 Agentic Browsing 的 33 条 axe 规则子集说明 agent 像屏幕阅读器用户一样依赖可访问性树(官方 Chrome 文档)。
+| 与 SEO 重叠（机器可读性同源） | 语义化标题、有意义的 alt、描述性链接文本、表单 label 关联、文字转录、`lang` 属性 | 技术审计 |
+| 主要服务人类 | 对比度、键盘焦点顺序、ARIA live、跳转链接、触控目标 | 合规审计 |
+| 服务 AI 代理 | 按钮和链接的可访问名称、表单标签、ARIA 结构正确；布局位移导致误点 | 见 [agent-readiness.md](agent-readiness.md) |
 
 ## 五、工具
 
-- [goaccess](https://github.com/allinurl/goaccess)(21k★,C 实时终端分析)、rhit(1,008★,Rust nginx 切片)、kataribe(364★,按响应时间聚合)、tango(113★,SEO 工程师写的 CLI)
-- [awslabs/Log-Analyzer-with-MCP](https://github.com/awslabs/Log-Analyzer-with-MCP)(169★):MCP 服务器让 LLM 查日志——agent 化方向
-- Screaming Frog Log File Analyser(免费版含 bot 自动验证)
-
-**选型对照(2026-10-09 二波深化)**:
-
-| 场景 | 首选 | 理由 |
+| 场景 | 工具 | 说明 |
 |---|---|---|
-| 一次性体检、临时 SSH 进机器 | goaccess / rhit | 零配置读 nginx 格式,秒级出图 |
-| 按响应时间找慢端点(案例 A) | kataribe | 专为 upstream 耗时聚合设计 |
-| SEO 维度(目录×UA×状态码透视) | tango / Screaming Frog LFA | 面向爬虫分析预设维度;LFA 免费版自带验证 |
-| 持续监测、并入 agent 工作流 | Logpush→S3+jq 脚本,或 MCP | 可回放、可自动化;MCP 让 LLM 直接查询 |
-| 每月例行报告 | 任一 + 固定脚本 | 口径可比性比工具本身重要 |
+| 临时体检 | [goaccess](https://github.com/allinurl/goaccess)、[rhit](https://github.com/Canop/rhit) | 终端里直接读 nginx 日志 |
+| 找慢端点（案例 A） | [kataribe](https://github.com/matsuu/kataribe) | 按响应时间聚合（仓库最后更新 2022） |
+| SEO 维度透视 | Screaming Frog Log File Analyser | 自动验证搜索引擎与 AI 爬虫；免费版限 1,000 行日志、1 个项目（[官方页面](https://www.screamingfrog.co.uk/log-file-analyser/)） |
+| Googlebot 会话与陷阱 | `python3 scripts/log_session.py --log access.log --window 30m --json` | 按 IP + UA 拼会话，标出参数循环、过深抓取、超量会话 |
+| AI 爬虫与 AI 引荐 | `python3 scripts/ai_referral_log.py access.log --bot-ua --classify` | 见第三节 |
+| 持续监测 | Logpush → 对象存储 + jq 脚本 | 可回放、可自动化；口径可比性比工具本身重要 |
 
-**采集落地清单(没有日志源时从零开始)**:
-1. 定 log_format(含 `$request_time`/`$upstream_response_time`,见二B)——改格式会断历史可比性,改天生效后才开始积累;
-2. 留存 ≥90 天(gzip 归档即可)——发现延迟与季节性对比需要长窗;
-3. Cloudflare 站:Logpush 全量推 S3,注意采样字段;
-4. 记录时区与轮转策略到审计报告(二D 的坑 1/5);
-5. 首次分析前先跑一天 bot 验证抽样(二C),确认 IP 还原正确(CF 站尤其)。
+**从零开始采集**（本套件口径）：
+1. 定 `log_format`（含 `$request_time`、`$upstream_response_time`）；改格式会打断历史可比性，从生效日开始积累。
+2. 留存至少 90 天（压缩归档即可），发现延迟和季节对比需要长窗口。
+3. Cloudflare 站点：Logpush 不采样全量推送，并记录采样设置。
+4. 把时区和轮转策略写进审计报告（二D 坑 1、5）。
+5. 首次分析前先抽样跑一天爬虫验证（二C），确认 IP 已正确还原（Cloudflare 站点尤其要查）。
 
-## 完全装载:邮件认证信任信号/CrUX 双 origin/AI 爬虫先行指标(百仓深扫)
+## 检查清单
 
-**邮件认证=域名信任上游信号**(quien,SPF RFC 7208):SPF 查询预算 10 次(include 树展开)/void 2 次/深度 10;DKIM 15 个常用 selector 探测(default/google/selector1-2/k1/mandrill/s1-s2/sig1…);DMARC=\_dmarc. TXT;BIMI=default.\_bimi.(含 VMC 证书链)——AI 引用倾向的上游信任层。
-**CrUX 双 origin 回退**:先试重定向后最终 origin,再试输入域名("CrUX may index data under either");五指标阈值 LCP 2500/4000、INP 200/500、CLS 0.1/0.25、FCP 1800/3000、TTFB 800/1800;history 取 p75 时序画趋势。
-**AI 爬虫访问量=引用先行指标**(leopard):`grep -iE 'GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|PerplexityBot' access.log | awk '{print $1}' | wc -l`;无日志用 Cloudflare/Vercel 机器人分类;改后 14 天重测,比较时**剔除最近 2-3 天聚合延迟**;"旧数据能通过一切下限——监控值的日期而非值"。
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 日志字段够用 | 看一行日志是否含 IP、时间、请求行、状态码、UA、耗时 | 失败：缺 UA 或缺查询串；没有耗时字段时只能做状态码分析 |
+| 2 | 客户端 IP 是真实访客 IP | 抽查日志 IP 是否落在 Cloudflare 等 CDN 的 IP 段 | 失败：大量 CDN 边缘 IP（未配置 realip） |
+| 3 | 爬虫身份已验证 | 对日志里自称 Googlebot/bingbot/GPTBot 等的 IP 跑二C 的两种方法 | 报告里写明验证通过率；伪装占比高时，后续指标只用已验证的请求 |
+| 4 | 状态码分布 | 命令 1 | 关注：5xx 持续上升；3xx 占比持续高 |
+| 5 | 每日抓取量趋势 | 命令 2 | 关注：突降（对照服务器事故、robots 改动、上线）或突增（分面、日历类 URL 陷阱） |
+| 6 | 抓取流向 | 命令 3 | 关注：参数目录、搜索结果页占比高；核心目录占比低 |
+| 7 | AI 爬虫到访与状态 | 命令 4，或 `ai_referral_log.py --bot-ua --classify` | 失败：用户决定放行的爬虫大量收到 403/5xx；决定封锁的爬虫仍拿到 200 |
+| 8 | 与 Google 侧对照 | Search Console 抓取统计（按响应、按 Googlebot 类型） | 失败：日志与抓取统计的状态码结构差异大（多半是 CDN/WAF 按 UA 分叉） |
+
+```bash
+# 命令 1：Googlebot 状态码分布（combined；先粗看，验证身份后再精算）
+awk -F'"' '$6 ~ /Googlebot/ {split($3, s, " "); print s[1]}' access.log | sort | uniq -c | sort -rn
+# 命令 2：每日请求量
+awk -F'"' '$6 ~ /Googlebot/ {split($1, f, " "); print substr(f[4], 2, 11)}' access.log | sort | uniq -c
+# 命令 3：被抓最多的一级目录（去掉查询串）
+awk -F'"' '$6 ~ /Googlebot/ {split($2, r, " "); split(r[2], q, "?"); split(q[1], a, "/"); print "/" a[2]}' access.log \
+  | sort | uniq -c | sort -rn | head -20
+# 命令 4：AI 爬虫的 IP 与状态码（再用二C 验证 IP）
+awk -F'"' '$6 ~ /GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-SearchBot|Claude-User|PerplexityBot|Perplexity-User/ \
+  {split($1, f, " "); split($3, s, " "); print f[1], s[1]}' access.log | sort | uniq -c | sort -rn | head -30
+```
 
 ## 来源
 
-官方:Google 状态码对爬虫影响/反向 DNS 验证/Bing IP 列表/evergreen Googlebot/Chrome agentic-browsing 文档;[Google 抓取预算管理文档](https://developers.google.com/crawling/docs/crawl-budget)(300-400ms 响应时间/304 缓存/5xx 降速机制)。行业:Digital Applied 2026、Screaming Frog 22 法、Cloudflare Radar、HAProxy(Bytespider 90%)、F5(Bytespider 边缘封锁案例)、usegeon 实操。二波深化新增:Cloudflare 社区实录两帖([Bytespider 绕过封锁 2024-08](https://community.cloudflare.com/t/bytespider-bot-bypassing-cf-despite-blocking-rule/697576)、[伪装 GPTBot 2024-01](https://community.cloudflare.com/t/efficient-way-of-handling-fake-gptbot-requests/604235));[bigseo 清理 72% 索引实录](https://www.reddit.com/r/bigseo/comments/dqkwkj/case_study_how_we_optimized_our_crawl_budget_by/);Cloudflare Logpush/GraphQL 字段口径(官方文档);nginx combined 正则为通用工程事实(easyengine 日志解析教程)。未证实项:"GPTBot/ClaudeBot 消费 sitemaps"仅 Reddit 单源;各 AI 流量份额口径互相矛盾只作粗基线;a11y 经 CWV 间接影响排名是假说无官方确认。
+- 爬虫验证：[Google](https://developers.google.com/crawling/docs/crawlers-fetchers/verify-google-requests)、[Bing](https://www.bing.com/webmasters/help/how-to-verify-bingbot-3905dc26)、[Yandex](https://yandex.com/support/webmaster/en/robot-workings/check-yandex-robots)、[OpenAI](https://platform.openai.com/docs/bots)、[Anthropic](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler)、[Perplexity](https://docs.perplexity.ai/guides/bots)
+- Google 抓取行为：[HTTP 状态码对抓取的影响](https://developers.google.com/crawling/docs/troubleshooting/http-status-codes)、[抓取预算](https://developers.google.com/crawling/docs/crawl-budget)、[排查抓取错误（304 与条件请求）](https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors)、[构建 sitemap（lastmod）](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)、[抓取统计报告](https://support.google.com/webmasters/answer/9679690)
+- 日志格式：[nginx log 模块](https://nginx.org/en/docs/http/ngx_http_log_module.html)、[nginx core 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)、[nginx upstream 变量](https://nginx.org/en/docs/http/ngx_http_upstream_module.html)、[nginx realip](https://nginx.org/en/docs/http/ngx_http_realip_module.html)、[Apache mod_log_config](https://httpd.apache.org/docs/current/mod/mod_log_config.html)、[Cloudflare HTTP 请求头](https://developers.cloudflare.com/fundamentals/reference/http-headers/)、[Cloudflare http_requests 字段](https://developers.cloudflare.com/logs/logpush/logpush-job/datasets/zone/http_requests/)、[Logpush 采样](https://developers.cloudflare.com/logs/logpush/logpush-job/api-configuration/)
+- 第三方：[F5 DevCentral 社区帖（Bytespider，2024-02-01）](https://community.f5.com/t/bytespider-webcrawler-unintentional-dos/73929)
+- 命令与脚本均在样例日志上实测（2026-10-18）。

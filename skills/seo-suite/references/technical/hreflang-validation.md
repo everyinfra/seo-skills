@@ -1,156 +1,154 @@
 # hreflang / 国际化校验（八检框架）
 
-> 建立于 2026-10-09。校验规则参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）`skills/seo-hreflang/SKILL.md`，按本套件证据约束改写。
-> 适用场景：多语言/多区域站。本套件自身即双语（EN/中文），此文件同时服务内部。
+> 2026-10-18 按 Google [本地化版本文档](https://developers.google.com/search/docs/specialty/international/localized-versions)（2026-09-21 更新）和 Yandex [本地化页面文档](https://yandex.com/support/webmaster/en/yandex-indexing/locale-pages) 逐条核对。框架思路参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）`skills/seo-hreflang/SKILL.md`。适用：多语言 / 多区域站。
 
-## 一、八项校验（每项是真规则，不是清单口号）
+## 一、八项校验
 
-| # | 检查 | 规则 | 违例严重度 |
+| # | 检查 | 规则（Google 原文口径） | 违例严重度（本套件口径） |
 |---|---|---|---|
-| 1 | 自引用 | 每个语言版必须含指向自身的 hreflang，且与该页 canonical URL **全等**（含尾斜杠） | Critical——缺失则 Google 可能**忽略整组** |
-| 2 | 双向返回 | A→B 则必须 B→A；全网格互指 | Critical |
-| 3 | x-default | 仅当回退页真实存在；每组**至多一个** | High |
-| 4 | 语言码 | ISO 639-1（`en`/`zh`/`ja`）；拒 `eng`/`jp`。文字用 ISO 15924：`zh-Hant`、`zh-Hans-US` 合法 | High |
-| 5 | 区域码 | ISO 3166-1 Alpha-2 **大写**；拒 `en-uk`（应为 `en-GB`）、`EU`/`UN`（非国家）、`es-LA`（非单一国家）；`es-419`：**口径冲突待复核**——Google 官方文档列为支持值（UN M.49 例外），但有西语从业者报告解析器不认（2026-10）；稳妥写法=`es` 兜底 + `es-419` + 国码全簇双向回链（两说兼容）；**仅国家码无效**（`-US` 必须配语言） | High |
-| 6 | 位置 | hreflang 仅在 canonical URL 上有效；与 canonical 精确匹配（含尾斜杠） | High |
-| 7 | 协议 | 组内 https/http 一致 | Medium |
-| 8 | 跨域 | 允许，但**两个域都要有返回标签** | High |
+| 1 | 自引用 | 每个语言版必须列出自己**和**所有其他语言版；每个版本上的整组链接相同 | High |
+| 2 | 双向返回 | A 指向 B，B 也要指回 A。两页没有互相指向时，这一对标注被忽略。只影响没互指的那一对，其余互指的照常处理 | Critical（对该对） |
+| 3 | x-default | 推荐，不强制；为语言选择页设计，也可用于任何页。回退页本身的语言无关紧要。每组只写一个（本套件口径，官方未写数量） | High |
+| 4 | 语言码 | ISO 639-1（`en`、`zh`、`ja`）；拒 `eng`、`jp`。文字可用 ISO 15924：`zh-Hant`、`zh-Hans`、`zh-Hans-US` 合法；`zh-TW` 这类按地区推导文字；`zh-CN` 合法 | High |
+| 5 | 区域码 | ISO 3166-1 Alpha-2。只写区域码无效（`-US` 必须配语言）。`UK`、`EU`、`UN` 在 Google 搜索里无效果（英国写 `en-GB`）。不在这两个标准里的码不受支持，**`es-419` 明确不受支持**。`es-LA` 的 `LA` 是老挝，不是拉丁美洲 | High |
+| 6 | 与 canonical 的关系 | 用 hreflang 时，canonical 要指向同语言页（没有同语言页时指向最接近的替代语言）。本套件要求：簇内每页自引用 canonical，hreflang 指向的 URL 返回 200 | High |
+| 7 | URL 写法 | 必须是含协议的完整 URL（`https://example.com/foo`，不是 `//example.com/foo` 或 `/foo`）；不要在 hreflang 里写 HTTP 版本 | Medium |
+| 8 | 跨域 | 允许，两边都要有返回链接 | High |
 
-## 二、实现载体选择:HTML / HTTP Link / XML sitemap(2026-10-09 二波深化)
+补充规则：
 
-官方口径:三种载体**完全等价**,选一种用到底——同时用多种"没有额外好处,且比只用一种更难维护"(Google localized-versions 官方文档)。
+- 大小写不敏感：`en-gb` 与 `en-GB` 都被接受；区域码大写只是 ISO 惯例。
+- Google 不用 hreflang 或 `<html lang>` 判断页面语言，语言由算法识别。
+- 一个 `<link>` 标签只表达一种替代关系：不要把 `hreflang` 和 `media` 等属性合在同一个标签里。
+- 同语言多地区时，加一个不带地区的兜底版本（如 `en`），它可以就是某个地区版。
+- 只翻译模板、主体内容没翻译的页面，会被当作重复页；hreflang 帮 Google 理解它们是同一内容的本地化变体。
 
-| 载体 | 适用 | 优势 | 代价/陷阱 |
-|---|---|---|---|
-| HTML `<link rel="alternate">` | <50 个语言变体的小站 | 每页可见、调试直观;GSC 国际定位报告直接对应 | 模板改动即全站生效——主题升级/改版常无声丢组;HTML 头体积随语言数线性膨胀 |
-| HTTP `Link` 头 | 非 HTML 资源(PDF/XLS 等) | 不动文档本身 | CDN/缓存层可能剥头;浏览器 devtools 不显眼,只有 curl 能看见 |
-| XML sitemap `xhtml:link` | 50+ 变体、跨域、大站 | 集中生成与 QA,不污染页面;**xhtml:link 子元素不计入 sitemap 的 URL 数上限**(官方明文) | 页面翻页/下线时组内半边失效;sitemap 只能含自身目录下 URL |
+## 二、实现载体：HTML / HTTP Link / XML sitemap
 
-载体选择的真实判据是 **QA 与维护成本**:on-page 代码可能在 SEO 不知情时被改掉,sitemap 集中一处更易审计(BrightEdge);大站普遍认为 sitemap "最易实现、测试与监控"(Bounteous 2021;Seer 2023 同口径)。行业统计:hreflang 实现 **约 75% 含错误**(缺 return tags、断链为主)——载体不是主因,组内不对称才是(Digital Applied 2026-01)。
+Google 口径：三种载体等价，可以同时用，但在搜索中没有额外收益，同时维护三套更难。实际选一种用到底。
 
-混合警告:同一 URL 组在 HTML 与 sitemap 各写一份且值不一致时,冲突信号比只写一处更糟(GSC 帮助论坛多起案例);确需并存(迁移期)必须逐值全等。
+| 载体 | 适用 | 注意 |
+|---|---|---|
+| HTML `<link rel="alternate">` | 大多数站点；**Yandex 只认这一种** | 必须在格式正确的 `<head>` 里；模板改版容易无声丢组 |
+| HTTP `Link` 头 | PDF 等非 HTML 文件 | CDN 可能剥头；只有 `curl -I` 看得到；Yandex 文档未提此载体 |
+| XML sitemap `xhtml:link` | 变体多、跨域的大站 | 子元素不计入 sitemap 的 URL 数上限；sitemap 只能列它所在目录下的 URL（经 Search Console 提交或跨站提交时另算）；**Yandex 已不再支持用 sitemap 标注语言版本** |
 
-## 三、x-default 的六种正确用法(2026-10-09 二波深化)
+- 选型判据（本套件口径）：QA 与维护成本。页面代码可能被不知情的人改掉，sitemap 集中生成更容易审计；面向 Yandex 的站点必须用 HTML。
+- 迁移期确需两种载体并存时，两处的值必须逐个相同；值不同比只写一处更糟（本套件口径）。
 
-官方定义:保留值,用于**用户语言/区域不匹配任何已声明版本时**的回退;回退页的语言本身无关紧要;**推荐而非强制**,每组至多一个(localized-versions 官方文档)。
+## 三、x-default 的用法
 
-1. **语言/国家选择器页**——官方点名的最佳宿主:选择器无需先猜语言,x-default 直接指向它。
-2. **自动重定向型首页**:example.com 按浏览器 Accept-Language 跳 /en/、/de/——x-default 发布时的官方原案例(2013-04 官方博客)。首页若不标 x-default,爬虫无法把根 URL 收进组,根域权重传递断裂。
-3. **复用某个语言版作回退**:x-default 与 hreflang="en" 指向同一 URL 合法(该页既是英语版又是兜底);SEMrush 等工具对此报"冲突"属误报(webmasters.SE 2019 讨论)。
-4. **不定向任何区域的全球页**:如 /worldwide/ 落地页,组内其余语言均不匹配时退到这里;页面内容需真实中立,不能是某一语的硬翻。
-5. **sitemap 载体下同样可写**:`<xhtml:link rel="alternate" hreflang="x-default" href="…"/>` 与其他行并列,规则与 HTML 载体一致(官方 sitemap 示例)。
-6. **不写也是合法选择**:没有真实回退页(如单区域多语言 B2B 站)时宁缺毋滥——指向 404 或不相干页会拖累整组可信度。
+Google 定义：保留值，用户的语言 / 地区设置不匹配任何声明版本时使用；推荐写，不强制。Yandex 同样支持 `x-default`，用于按 IP 或 `Accept-Language` 自动判断语言的页面。
 
-## 四、常见 CMS 实现陷阱:WordPress / Shopify / Next.js(2026-10-09 二波深化)
+1. **语言 / 国家选择页**：Google 说 x-default 为它设计，效果最好。
+2. **自动重定向或按语言改内容的首页**：2013-04 Google 发布 x-default 时的原例（[博客](https://developers.google.com/search/blog/2013/04/x-default-hreflang-for-international-pages)）。
+3. **复用某个语言版作回退**：x-default 可以和某个语言版指向同一 URL。
+4. **不针对任何地区的全球页**：内容要真正中立，不能是某一语言的硬翻。
+5. **sitemap 载体同样可写**：`<xhtml:link rel="alternate" hreflang="x-default" href="…"/>`，与其他行并列。
+6. **不写也合法**：没有真实回退页时宁缺毋滥；指向 404 或不相关页会误导用户（本套件口径）。
+
+## 四、常见 CMS 与框架的实现陷阱
 
 **WordPress**
-- WPML:hreflang 组**按"当前已发布翻译"动态生成**——新增语言或某译稿转草稿后组内成员变化,出现 `en-EU` 缺失/错配 `en-NL` 这类不完整组(WPML 论坛 2025-02 实例);排查=逐 URL 对拍组内成员列表。
-- Polylang:原生输出 hreflang,但与 SEO 插件(Yoast/Rank Math)**双写**时同页出现两组值打架——只允许一个发射源。
-- 通用陷阱:两个 SEO 插件并存各写一份;tag/作者归档页未翻译却混入组;缓存插件把不同 query 参数的语言变体缓存成同一份 HTML(组在缓存命中时消失)。
+- Polylang 会自动输出 hreflang（[Polylang 官方说明](https://polylang.pro/hreflang-tag-attributes-and-polylang-everything-you-need-to-know/)）。WPML 等多语言插件同样会生成。
+- 本套件口径：多语言插件与 SEO 插件（Yoast、Rank Math）只允许一个输出 hreflang；两个都输出时同页出现两组值。未翻译的标签页、作者归档混进组，以及缓存插件把不同语言变体缓存成同一份 HTML，都是常见事故。
 
-**Shopify**
-- Markets 自动生成 hreflang+canonical,但**主市场不能在主域名上用子目录**(官方社区:subfolder 仅对非主市场可用)——主市场想要 /us/ 得用第三方 app 或独立域,app 与 Markets 并存时 hreflang 双写是高频事故。
-- 多域(每 market 绑独立域)时 hreflang 跨域自动输出,但**旧的手动 canonical 仍指主域**会与 Markets 新输出冲突——迁到 Markets 前清一遍 legacy 设置(Shopify 官方 Markets SEO 文档;社区 2026-02 案例)。
-- 市场码大小写不稳(`en-uk`):需人工核对 ISO 3166-1 Alpha-2 大写(八检第 5 条)。
+**Shopify**（[Markets SEO 帮助](https://help.shopify.com/en/manual/markets/seo)）
+- Markets 默认自动生成 hreflang，带一个指向主域名的 `x-default`；每个市场版本自引用 canonical。
+- 只有拥有独立域名、子域或子目录的市场才会生成 hreflang。
+- 用主题或 app 自己输出 hreflang 时，在 Online Store > Preferences 关掉「Automatic hreflang tags」，避免重复。
+- 市场码要人工核对：英国写 `en-GB`（大小写都行，但 `UK` 无效）。
 
 **Next.js**
-- 框架**不自动输出** alternate links(vercel RFC #17078 明确拒绝自动生成)——必须 App Router 用 `metadata.alternates.languages` 手写,Pages Router 用 `next/head`。
-- 陷阱一(渲染时机):alternate links 写进 Client Component 时,SSR 首屏 HTML 没有、水合后才补——不渲染的爬虫(多数 AI 爬虫不渲染 JS)完全看不见,Google 也有计入延迟。`<link>` 必须走服务端 metadata API。
-- 陷阱二:`trailingSlash` 配置与 hreflang 值不一致(/en/ vs /en)导致与 canonical 不全等,整组作废——八检第 6 条在 Next 下最易踩。
-- 陷阱三:next-intl 等库的 alternateLanguages 输出**不含 x-default**,需在 metadata 手动补(Weglot 2026-06 Next.js hreflang 实操)。
+- 框架不会凭空生成 hreflang。App Router 在 `metadata.alternates.languages` 里写，输出 `<link rel="alternate" hreflang>`；配合 `metadataBase` 得到完整 URL（[Next.js generateMetadata 文档](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)）。用这个方法时，`x-default` 要自己加进 `languages`。
+- next-intl 的中间件默认在响应头 `Link` 里输出各语言 alternate，并包含 `x-default`；基于域名的路由不输出 `x-default`；`localePrefix` 设为 `never` 时整个功能关闭（[next-intl 路由配置](https://next-intl.dev/docs/routing/configuration)）。
+- 本套件口径：alternate 链接要走服务端 metadata，不要写在 Client Component 里；`trailingSlash` 配置要与 hreflang、canonical 的写法一致（`/en/` 与 `/en` 不能混用）。
 
-**CMS 无关的第四个陷阱:GTM 注入**。hreflang 用 Google Tag Manager 等 JS 方式注入的,不在服务端 HTML 里——Google 需渲染才可见,不渲染的爬虫(AI 爬虫多不渲染)完全看不见,且渲染失败/标记未发布时**无任何报错**。hreflang 必须由服务端模板/sitemap 输出;审计时先 `curl` 确认(见六),curl 看不到而浏览器看得到的即此类问题。
+**CMS 无关：用 GTM 或其他 JS 注入**（本套件口径）。Google 会渲染 JS，但不渲染的爬虫看不到；渲染失败或标记未发布时没有任何报错。hreflang 由服务端模板或 sitemap 输出。审计时先 `curl`（见第六节）：curl 看不到、浏览器看得到的，就是这类问题。
 
-## 五、rel="alternate" media 属性:移动分离 URL 注解(2026-10-09 二波深化)
+## 五、`rel="alternate" media`：移动分离 URL 注解
 
-与 hreflang 同元素不同义:`hreflang` 注语言变体,`media` 注**设备变体**,服务于 m.example.com 式分离移动站。
+与 hreflang 同元素不同义：`hreflang` 注语言变体，`media` 注**设备变体**，用于 m. 子域式的分离移动站（[移动优先索引文档](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)）。
 
-- 桌面页:`<link rel="alternate" media="only screen and (max-width: 640px)" href="https://m.example.com/page">`;移动页用 `rel="canonical"` 回指桌面版(Google 2011-12 smartphone Googlebot 发布文,官方 separate-urls 文档沿用)。
-- sitemap 载体同样可注 media 变体:`<xhtml:link rel="alternate" media="only screen and (max-width: 640px)"/>`(官方 separate-urls 文档示例)——与 hreflang 的 sitemap 写法同构。
-- 服务器侧配套:按 UA 分发不同 HTML 时必须带 `Vary: User-Agent` 响应头(官方文档要求),否则中间缓存可能把桌面版发给移动爬虫。
-- **现状(2026)**:功能机 Googlebot 已退役(2016-11 官方公告);响应式设计为官方首选,分离 URL 仅存量站维护。**新站不做移动分离**;审计存量站时八检不适用于此组,查的是 canonical 回指方向与 media 断点一致性。
-- 常见残留错误:桌面页漏写 media 注解;m. 站 canonical 自指(应指桌面版);640px 断点声明与实际 CSS 断点不符。
+- 桌面页：自引用 canonical，加 `<link rel="alternate" media="only screen and (max-width: 640px)" href="https://m.example.com/page">`；移动页：canonical 指回桌面版。桌面 URL 永远是 canonical。
+- 分离 URL 站点的 hreflang：移动版 hreflang 指向移动 URL，桌面版指向桌面 URL，分开写。
+- 同一 URL 按 UA 输出不同 HTML（动态服务）时，响应带 `Vary: User-Agent`。
+- Google 推荐响应式设计；分离 URL 只在存量站维护。审计存量站时，查 canonical 方向和 media 断点是否与实际 CSS 一致。
+- 常见残留错误：桌面页漏写 media 注解；m. 站 canonical 自指（应指桌面版）；把 hreflang 和 media 写在同一个 `<link>` 里。
 
-## 六、检测工具与命令行(2026-10-09 二波深化)
+## 六、检测工具与命令行
 
-HTML 载体(看服务端输出,不执行 JS):
 ```bash
-curl -s https://example.com/en/page | grep -o '<link rel="alternate"[^>]*>'
+# HTML 载体（看服务端输出，不执行 JS）
+curl -s https://example.com/en/page | grep -oiE '<link[^>]+hreflang[^>]*>'
+
+# HTTP Link 头载体（单头多值：按逗号拆开再取值）
+curl -sI https://example.com/en/page | grep -i '^link:' | tr ',' '\n' | grep -oE 'hreflang="[^"]*"'
+
+# sitemap 载体：xhtml:link 行数应 = 语言版本数 × 簇内 URL 数
+curl -s https://example.com/sitemap.xml | grep -c 'xhtml:link'
+
+# 套件脚本：传入簇内全部语言版本，输出互指矩阵
+python3 scripts/hreflang_cluster.py https://example.com/en/page https://example.com/de/seite
 ```
 
-HTTP Link 头载体(devtools 看不见,只有 curl 可见):
-```bash
-curl -sI https://example.com/en/page | grep -i '^link:'
-# 单头多值解析:按逗号拆开后逐段取 hreflang 值
-curl -sI https://example.com/en/page | grep -i '^link:' | tr ',' '\n' | grep -o 'hreflang="[^"]*"'
-```
+Google 文档「调试」节列出两个第三方工具（Google 不维护）：Aleyda Solis 的 hreflang 生成器、Merkle 的 hreflang 测试器。Search Console 的「国际定位」报告已弃用（2022-09 移除，[帮助中心说明](https://support.google.com/webmasters/answer/12474899)），不能再用它查返回链接错误。
 
-sitemap 载体组成员数核对:
-```bash
-curl -s https://example.com/sitemap.xml | grep -c 'xhtml:link'   # 应 = 语言数 × URL 数
-```
+## 七、批量审计流程与失效信号
 
-浏览器侧工具:Google 官方"调试"节列出 Aleyda Solis hreflang 生成器与 Merkle hreflang 测试器(第三方,官方不维护);GSC 国际定位报告逐页暴露缺回链错误。
+1. **抽样**：每语言 × 每模板（首页 / 类目 / 详情 / 博客）抽 5–10 个 URL；翻译不全的站，「只有部分语言存在」的页单独成层抽样——它们最容易缺返回链接（本套件口径）。
+2. **抓取**：按载体分别抓——HTML 用 curl，Link 头用 `curl -sI`，sitemap 按 XML 逐个 `<url>` 解析。SPA 站的 hreflang 若在水合后才注入，先记为渲染时机问题（见 [semantic-html.md](semantic-html.md)）。
+3. **建组**：按 hreflang 值建成员映射，跑第 1、2、4、5 检。没互指的那一对标为失效，其余互指的照常计入。
+4. **对照 canonical**：组内每个成员的 canonical 指向自己（第 6 检），否则该成员视为重复页。
 
-## 七、批量审计流程与失效信号(2026-10-09 二波深化)
+失效的外部信号（Search Console）：
+- 网页索引编制报告出现「重复网页，Google 选择的规范网页与用户指定的不同」，且被选中的是别的语言版。
+- 效果报告按国家筛选时，某国家的展示落到了错误的语言版 URL 上。
+- 网址检查：某语言版的「Google 选择的规范网址」是另一个语言版。
 
-全站审计流水线(三载体通用):
-1. **抽样**:每语言×每模板类型抽 5–10 URL(首页/类目/详情/博客),翻译未全的站另抽"仅部分语言存在"的页。
-2. **抓取**:按载体分别抓——HTML 用 curl grep(见六);Link 头用 `curl -sI`;sitemap 用 XML 解析。**注意抓服务端输出**:SPA 站 hreflang 在水合后注入的,先记为渲染时机问题(与 [semantic-html.md](semantic-html.md) 的 React/Vue 陷阱同根)。
-3. **建组**:URL 组内成员按 hreflang 值建映射,跑八检 1/2/4/5(自引用、双向、码合法性)——组不完整即 Critical,其余检查在完整组上才有意义。
-4. **对照 canonical**:组内每个成员的 canonical 必须指向自身(六检),否则该成员整行无效。
-
-三载体各自的审计入口:
-
-| 载体 | 抓取方式 | 组建来源 |
-|---|---|---|
-| HTML | `curl -s <url>` grep link 标签 | 每个成员页的头部 |
-| Link 头 | `curl -sI <url>` | 同上 |
-| sitemap | XML 解析逐 `<url>` 块 | 块内全部 `xhtml:link` 行天然成组 |
-
-抽样规模:每语言×每模板 5–10 URL;翻译不全的站,「部分语言存在」的页单独成层抽样——它们最容易缺回链。
-
-**组已失效的外部信号**(GSC 国际定位报告):
-- "返回标签缺失/错误"按页列出——修复顺序按目录聚合,不按单页;一个模板的 bug 影响整目录。
-- 错误语言版流量骤降但站点整体正常——常是某语言组整组被忽略(检查 1/2 违例的典型症状)。
-- "未知错误"多为非法语言码(四检)或 x-default 多于一个(三检)。
-
-**修复回归**:改动后 7–14 天复查 GSC 报错曲线;hreflang 信号被重新采纳有明显滞后,当天清零不代表生效。
+修复回归（本套件口径）：改动后 7–14 天复查上述信号；hreflang 被重新采纳有滞后，当天正常不代表已生效。
 
 ## 八、标签之外（常被漏掉的国际化实质）
 
-1. **内容平价字数比**：德语版通常比英语**长 25–35%**、日语**短 10–25%**——大幅偏离提示某语言版是截断/机器直译，不是对等翻译。
-2. **本地格式**：`1,000.00` 在 de-DE 应为 `1.000,00`；日期、地址、电话同理；法语 `:;!?` 前有不换行空格。
-3. **过期翻译**：EN 改版后其他语言未跟——检测各语言版 dateModified 差距。
-4. **未复核机翻**：整站机翻无人工审校标记为 scaled-content-abuse 风险（Google 政策名目）。
-5. **文化适配**（软项）：各语言版的示例、案例、货币、合规表述是否本地化，而非字面翻译。
-6. **RTL 审计项（阿拉伯语版必检,2026-10 二波深化）**：`<html dir="rtl">` 全链、双向文本隔离（`<bdi>` 或 U+2066–2069,禁裸 RLM/LRM 补丁——W3C string-meta TR）；`<input dir="rtl">` 按类型自动方向,电话/验证码/卡号字段显式 `dir="ltr"`；数字：阿拉伯-印度数字(٠-٩) vs 欧洲数字全站统一,货币顺序按本地习惯；**镜像例外**：播放/进度/时钟图标与 logo 不镜像；字体：**preload 会绕过 unicode-range→只 preload 阿语子集单文件**（Tajawal 阿语子集仅 8.7KB）,用 size-adjust 回退字体控 CLS（阿语字形度量致 CLS 高于拉丁）；遗留 left/right 用 `[dir="rtl"]` 覆盖表——hreflang `ar` 正确但页面仍是 LTR 布局是高频假国际化。
-7. **常见市场码组合**（2026-10-08 并入）：`es-ES`+`es-419`(+国码同 URL 可选)；`pt-BR`/`pt-PT` 分开（内容差异实质存在）；`ar`+`ar-EG`/`ar-SA`/`ar-AE`（或单一 `ar`）；`fr-FR`/`fr-CA`/`fr-BE` 分开；`de-DE`/`de-AT`/`de-CH` 分开（Sie/du 与词汇差异）；`id`（印尼通常单码即够）；`hi-IN`/`en-IN` 并存时必须两版都真实；`it-IT`/`it-CH` 分开（复制会被归并信号）；`nl-NL`/`nl-BE` 分开（弗拉芒词汇不同；比利时另有 `fr-BE`/`de-BE`）；`tr-TR`/`vi-VN`/`th-TH`/`pl-PL` 通常单国单码。
+1. **内容平价**：各语言版主体内容要等价；某语言版字数明显偏少，常是截断或漏翻。长度比的合理区间因语言而异，套件没有可靠出处的统一数字，按市场文件和人工抽查判断。
+2. **本地格式**：按 CLDR 本地化数字、日期、地址、电话。例：`1000` 加两位小数，在 `de-DE` 写作 `1.000,00`，`fr-FR` 写作 `1 000,00`（Node/ICU 实测）。法语通常在 `: ; ! ?` 前加不换行空格（排版惯例，未核一手）。
+3. **过期翻译**：源语言改版后其他语言没跟上——对比各语言版的 `dateModified` 或最后修改时间。
+4. **未复核机翻**：大量机翻页面、没有人工审校，落入 Google「规模化内容滥用」政策的范围；Google 2025-06 删除了「用 robots.txt 屏蔽自动翻译页」的旧建议，理由是与该政策对齐（[文档更新记录](https://developers.google.com/search/updates)）。
+5. **文化适配**（软项）：示例、案例、货币、合规表述是否本地化，而不是字面翻译。
+6. **RTL（阿拉伯语、希伯来语版必检）**：`<html dir="rtl">`；行内反向短语用带 `dir` 的标记包紧，方向未知时用 `dir="auto"` 或 `<bdi>`；`&rlm;`/`&lrm;` 只作旧浏览器兜底（[W3C 行内双向文本](https://www.w3.org/International/articles/inline-bidi-markup/)）。电话、验证码、卡号等字段显式 `dir="ltr"`。数字体系按市场定、全站统一：CLDR 默认 `ar-EG` 用阿拉伯-印度数字，`ar-AE` 用欧洲数字。播放、进度、时钟图标与 logo 不镜像。hreflang 写了 `ar`、页面仍是 LTR 布局，是高频的假国际化。
+7. **常见市场码组合**：拉美西语用 `es` 兜底，需要时加国家码（`es-MX`、`es-AR` 等），不用 `es-419`；`pt-BR` / `pt-PT` 分开；`ar` 或 `ar-EG` / `ar-SA` / `ar-AE`；`fr-FR` / `fr-CA` / `fr-BE`；`de-DE` / `de-AT` / `de-CH`；`nl-NL` / `nl-BE`；`it-IT` / `it-CH`；`hi-IN` 与 `en-IN` 并存时两版都要真实存在；`id`、`tr`、`vi`、`th`、`pl` 通常单码即够。
 
 ## 九、审计输出格式
 
-每项检查输出：页面 URL 对 / 检查项 / 违例描述 / 严重度 / 修复建议（含正确的标签写法）。整组失效（检查 1/2 违例）时优先提示——单项修好也没用。
-示例行：`/de/preise ↔ /en/pricing | #2 双向返回 | DE 版缺 en 回链,Critical | 在 /de/preise head 补 <link rel="alternate" hreflang="en" href="https://example.com/en/pricing">`。
-输出按目录聚合修复批次(一个模板 bug=一批),不按单页零散报。
+每项检查输出：页面 URL 对 / 检查项 / 违例描述 / 严重度 / 修复建议（含正确的标签写法）。按目录聚合修复批次（一个模板的问题 = 一批），不按单页零散报。
 
-## 九bis、chatbot 弱信号边界(2026-10-11 联动补)
+示例行：`/de/preise ↔ /en/pricing | #2 双向返回 | DE 版缺 en 回链，这一对被忽略 | Critical | 在 /de/preise 的 head 补 <link rel="alternate" hreflang="en" href="https://example.com/en/pricing">`。
 
-- **hreflang 八检合格 ≠ chatbot 语言路由生效**【调研 2026-10】:hreflang 服务经典爬虫(Google/Bing)的版本互认;ChatGPT/Perplexity 类生成引擎的引用决策主要看该语言 URL 自身的独立证据(该语言专属外链、被引历史、内容量、语言-查询匹配度)——"hreflang 打通 = chatbot 会对 {语言} 用户引 {语言} 版"的假设不成立(结论与检查顺序见 [multilingual-workflow.md](../overview/multilingual-workflow.md) 五 2bis/九坑 5)。
-- **每语言 URL 自持权威的检查项**(多语言站审计必列):①该语言专属反链是否存在(以目标语言书写/发布于本地站的外链);②该语言 citation_panel 基线是否独立建档(不与英文版合并);③llms.txt 语言版与本地平台占位(各市场杠杆位见 multilingual-workflow.md 十节)。
-- hreflang 照常做——对经典搜索有效且不伤;但**不作为 chatbot 语言路由的依据**,审计报告里"经典互认"与"chatbot 引用"两类结论分开写;引擎若开始消费 hreflang 进引用决策,本节降级(半衰期 6–12 个月复审)。
+## 九bis、AI 聊天产品的边界（本套件口径）
+
+- hreflang 服务经典搜索引擎的版本互认。没有证据表明 ChatGPT、Perplexity 这类生成式引擎会按 hreflang 给某语言用户引用对应语言版；它们看的是该语言 URL 自身的证据（该语言的外链、被引用历史、内容量、语言与查询的匹配度）。结论与检查顺序见 [multilingual-workflow.md](../overview/multilingual-workflow.md)。
+- 多语言站审计要单列「每语言 URL 自有权威」：该语言的专属外链；该语言单独建立的 citation_panel 基线；llms.txt 语言版与本地平台占位。
+- hreflang 照常做；报告里「经典搜索互认」与「AI 引用」分开写。引擎若开始在引用决策中使用 hreflang，本节降级（6–12 个月复审）。
+
+## 检查清单
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 互指与自引用 | `python3 scripts/hreflang_cluster.py <簇内全部 URL>` | 失败：任何一对没有互指；任何成员缺自引用 |
+| 2 | 码合法 | 第六节命令取出全部值，逐个对照 ISO 639-1 / ISO 3166-1 Alpha-2 | 失败：`es-419`、`en-UK`、`EU`、`jp`、只有区域码、下划线（`en_US`） |
+| 3 | URL 完整且返回 200 | 对每个 hreflang 目标跑 `curl -s -o /dev/null -w '%{http_code}\n' <URL>` | 失败：相对 URL、HTTP 版本、3xx/4xx/5xx |
+| 4 | canonical 同语言且自引用 | 每个成员抓 `<link rel="canonical">`（命令见 [redirects-canonical.md](redirects-canonical.md) 6.2） | 失败：canonical 指向其他语言版 |
+| 5 | 只有一个输出源 | 对比 HTML、`Link` 头、sitemap 三处是否都出现，值是否相同 | 失败：两处都有且值不同；同页两组 hreflang |
+| 6 | x-default 合理 | 查 `x-default` 目标页 | 失败：多个 `x-default`；目标 404 或与站点无关 |
+| 7 | Yandex 市场用 HTML 载体 | 目标含俄语区时检查是否只用了 sitemap | 失败：只靠 sitemap 标注语言版本 |
+| 8 | 不依赖 JS 注入 | `curl` 抓服务端 HTML，与浏览器渲染后对比 | 失败：hreflang 只在渲染后出现 |
+| 9 | Google 侧采纳 | 网址检查各语言版的「Google 选择的规范网址」 | 失败：选中的是其他语言版 |
 
 ## 十、来源
 
-- 八检规则与正反例、严重度表：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-hreflang/SKILL.md`
-- 字数比/本地格式/机翻风险：同上 SKILL.md 的内容平价段
-- 三载体等价与"勿混用"、x-default 定义与选择器页推荐、sitemap 子元素不计上限、es-419 口径:[Google: Localized versions of your pages](https://developers.google.com/search/docs/specialty/international/localized-versions)
-- x-default 自动重定向首页原案例:[Google 2013-04 x-default 发布博客](https://developers.google.com/search/blog/2013/04/x-default-hreflang-for-international-pages)
-- en 与 x-default 同页合法(SEMrush 误报):[webmasters.SE 2019](https://webmasters.stackexchange.com/questions/126514/)
-- sitemap 载体 QA/维护优势:[BrightEdge](https://amp.brightedge.com/blog/hreflang-xml-sitemaps-and-html-link-elements-and-international-site-management)、[Bounteous 2021](https://www.bounteous.com/insights/2021/15/10/hreflang-beginners-harnessing-global-seo/)、[Seer 2023](https://www.seerinteractive.com/insights/international-seo-hreflang-guide)
-- 75% 实现含错误统计:[Digital Applied 2026-01](https://www.digitalapplied.com/blog/international-seo-hreflang-multilingual-guide)
-- WPML 组动态生成错配:[WPML 论坛 2025-02](https://wpml.org/forums/topic/issue-with-hreflangs/);Polylang 原生 hreflang:[wpmarmite 2026-09](https://wpmarmite.com/en/compare/best-wordpress-multilingual-plugins/polylang/)
-- Shopify Markets 规则与限制:[官方 SEO 文档](https://help.shopify.com/en/manual/markets/seo)、[社区 2026-02 案例](https://community.shopify.com/t/are-my-hreflang-tags-set-up-correctly-duplicate-content-issues/588258)
-- Next.js 不自动生成 alternate links:[vercel RFC #17078](https://github.com/vercel/next.js/discussions/17078);App Router hreflang 实操:[Weglot 2026-06](https://www.weglot.com/blog/nextjs-internationalization)
-- rel=alternate media 与 640px 断点:[Google 2011-12 博客](https://developers.google.com/search/blog/2011/12/introducing-smartphone-googlebot-mobile);功能机 Googlebot 退役:[2016-11 公告](https://developers.google.com/search/blog/2016/11/an-update-on-googles-feature-phone)
-- 官方调试工具清单(Aleyda/Merkle):localized-versions 文档"调试"节
-- GTM 注入 hreflang 的不可靠性:服务端输出原则由本文"可抓取性"基线推出(与 Google JavaScript SEO 基础一致)
+- Google：[本地化版本](https://developers.google.com/search/docs/specialty/international/localized-versions)（三载体等价、自引用、返回链接、码规则、es-419 不支持、大小写不敏感、x-default、调试工具）、[规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)（canonical 指向同语言页、不在 hreflang 里写 HTTP 版本）、[移动优先索引](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)（media 注解、分离 URL 的 hreflang、Vary）、[x-default 发布博客（2013-04-10）](https://developers.google.com/search/blog/2013/04/x-default-hreflang-for-international-pages)、[国际定位报告弃用](https://support.google.com/webmasters/answer/12474899)、[文档更新记录](https://developers.google.com/search/updates)
+- Yandex：[本地化页面](https://yandex.com/support/webmaster/en/yandex-indexing/locale-pages)（不再支持 sitemap 标注；ISO 639-1 + ISO 3166-1 Alpha-2 或 ISO 3166-2:RU；支持 x-default；支持的语言列表）
+- 平台：[Shopify Markets SEO](https://help.shopify.com/en/manual/markets/seo)、[Next.js generateMetadata](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)、[next-intl 路由配置](https://next-intl.dev/docs/routing/configuration)、[Polylang](https://polylang.pro/hreflang-tag-attributes-and-polylang-everything-you-need-to-know/)
+- 标准：[W3C 行内双向文本](https://www.w3.org/International/articles/inline-bidi-markup/)；Unicode 隔离符 U+2066–U+2069（LRI/RLI/FSI/PDI）
+- Bing：现行 [Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a) 未提 hreflang；第三方常说 Bing 主要看 `content-language`，未找到一手原文（未核），不要据此下结论。
+- 框架思路：[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-hreflang/SKILL.md`

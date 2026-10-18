@@ -1,10 +1,15 @@
 # AI 回答五维可见性打分卡(geo-scoring-rubric)
 
-> 建立于 2026-10-10。骨架取自 oneglanse 441 行打分协议的 agent 版精简(见
-> [borrow-specs.md B4](../research/borrow-specs.md));锚点措辞与执行纪律按本套件
-> [geo-evidence.md](geo-evidence.md) 的证据约束改写;权重与档位数值为[推断]自定。
-> 本卡打的是**单条 AI 回答文本里品牌的呈现质量**,是描述性测量——不是引擎内部信号,
-> 更不是流量/转化承诺(第十二节)。
+> 建立于 2026-10-10;2026-10-18 对照来源复核。**全部权重、锚点和 cap 都是本套件口径,没有实证依据**。
+> 来源:[oneglanse](https://github.com/oneglanse/oneglanse)(MIT)的 `packages/services/src/analysis/analysisPrompt.ts`
+> (441 行)。照搬的部分:五维权重 25/25/20/15/15;三条 cap(只有 1 次提及 ≤50、对比性负面 ≤35、
+> 只在问句里 ≤10);拒答/回声先过闸;全文绝对排名;「pretty good 不是 80+、平均列名不是 70+」。
+> 本套件改动的部分:原文各维是区间锚点,本卡改成单点分值;B 维改用排名映射 #1→100/#2→85/#3→70/
+> #4→55/#5→40/#6+→30(原文排名分量是 100/80/65/50/40/30);原文总分还平均情感和推荐两项,本卡的
+> geo_score 只算五维可见度。相关方法另见 [borrow-specs.md B4](../research/borrow-specs.md)。
+> 本卡打的是**单条 AI 回答里品牌的呈现质量**,是描述性测量——不是引擎内部信号,
+> 不预测引用、流量或转化(第十二节)。改数值要同时改 `scripts/citation_panel.py` 里的
+> `GEO_RUBRIC_DIGEST` 与 cap 常量,两处必须一致。
 
 ## 一、适用场景与执行方式
 
@@ -181,10 +186,22 @@ coverage/share 口径不受影响):
 - **描述性测量,非因果承诺**:geo_score 衡量"这条回答如何呈现品牌",不预测也不
   承诺引用、流量或转化;高分不写入实施验收或预算收益(geo-evidence 营销转述纪律)。
 - 证据阶梯不坍缩:retrieved→cited→mentioned→recommended→converted 是不同层级
-  (geo-evidence 六级阶梯);本卡的 recommendation 字段只覆盖 mentioned→recommended,
-  不得把"被提及"说成"被推荐",更不得合并成一句"AI 可见性提升"。
-- **采样 3 次取多数**:与 citation_panel"同一 prompt ≥3 次采样才报"同口径;单次打分
-  =掷硬币,prompt 级结论取 3 次采样 geo_score 的多数档,分歧大 → 标 unstable。
+  ([geo-evidence.md](geo-evidence.md) 第八节六级阶梯);本卡的 recommendation 字段只覆盖
+  mentioned→recommended,不把"被提及"说成"被推荐",更不合并成一句"AI 可见性提升"。
+- **采样 3 次取多数**:与 citation_panel"同一 prompt ≥3 次采样才报"同口径。单次回答会随
+  运行变化([arXiv 2604.07585](https://arxiv.org/abs/2604.07585) 主张把可见度当分布测),
+  prompt 级结论取 3 次采样 geo_score 的多数档,分歧大 → 标 unstable。
 - **failed 不入分母**:采集失败的 cell 不打分、不进任何聚合,与面板口径一致。
-- 权重与锚点为[推断](oneglanse 骨架 + 本套件自定);调整须留档并重打历史样本对比
-  分布,不允许为让某次结果好看而单点改锚。
+- 判分指令本身会改变同一回答的得分([arXiv 2609.06811](https://arxiv.org/abs/2609.06811))。
+  本卡固定措辞与锚点;调整须留档、重打历史样本对比分布,不为让某次结果好看而单点改锚。
+
+## 十三、检查清单
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 打分口径与脚本一致 | `python3 scripts/citation_panel.py score --rubric` 打印代码内要点,与本卡第三至七节逐条比对 | 通过:权重、cap、映射一致。失败:任一数值不同(两处要同批改) |
+| 2 | 只给有原文的 cell 打分 | 每条打分附回答原文与引用列表的留档位置 | 通过:每个维度分都能指到原文引句。失败:凭记忆补打 |
+| 3 | 硬规则不违例 | `python3 scripts/citation_panel.py score --last --scores scores.json` | 通过:无硬违例(有违例时脚本整批拒绝,不落盘)。失败:脚本报错 |
+| 4 | 不通胀 | `python3 scripts/citation_panel.py report` 看 GEO 打分聚合节 | 通过:分数分布没有挤在 70+;均值高于 75 时回锚点重校。失败:一批回答大多 70+ 而原文没有最高级措辞 |
+| 5 | 稳定性 | 同一 prompt × 引擎至少 3 次采样 | 通过:多数档一致,否则标 unstable。失败:单次打分就写结论 |
+| 6 | 报告措辞 | 读报告文本 | 通过:写「描述性测量」,按引擎分列。失败:写成「AI 可见性提升 X%」或跨引擎平均 |

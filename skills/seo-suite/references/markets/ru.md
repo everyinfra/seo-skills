@@ -1,225 +1,142 @@
-# 俄语市场专项(Yandex 生态为主战场)
+# 俄语市场专项(ru)
 
-> 建立于 2026-10-09(增量研究轮:Yandex 官方文档 / RG / Коммерсантъ / CNews / vc.ru / Habr)。断言半衰期 6-12 个月,随复审更新。
-> 配套文件:`overview/multilingual-workflow.md` 俄语区段(全球主干)、`scripts/markets.json` ru 键(结构化数据、lint 规则)。
-> 来源标注约定:【官】=Яндекс 官方;【媒】=一手媒体(RG/Коммерсантъ/CNews);【圈】=从业者共识(vc.ru/Habr/searchengines.guru)。
+> 定位:俄语市场的增量层,主战场是 Yandex。数值规则在 `scripts/markets.json` 的 `markets.ru`;全球流程见 [multilingual-workflow.md](../overview/multilingual-workflow.md)。
+> 2026-10-18 全文复核:Yandex 帮助中心、Yandex 财报与新闻稿、consultant.ru 法条原文、StatCounter CSV 导出。标注:【官】=Yandex 官方或法条原文;【三方】=第三方研究(写机构、样本、时间);【本套件口径】=本套件自定约定。断言半衰期 6–12 个月。
+> 第九节是「俄语版上线检查清单」,给已有英文/中文/西语版的 SaaS 或 API 文档站直接用。
 
-## 一、引擎格局
+## 一、引擎格局:三套口径并列
 
-| 引擎 | 份额/规模(2026-10) | SEO 含义 |
+| 口径 | 读数 | 来源 |
 |---|---|---|
-| Yandex Поиск | ~70-73%(StatCounter) | 主战场;ПФ(行为因素)+КФ(商业因素)双一线因子 |
-| Нейро(нейропоиск) | **42% 查询获得神经答案**【官,2026 报告】 | 答案型 SERP 成主流;Q2 环比 +7 п.п. |
-| Алиса AI(语音/助手) | ~4,900 万 MAU | 官方 SoV 报告已进 Webmaster(见第六节) |
-| Google | ~25-28% | 不可弃;Нейро 同时取 Google 与 Yandex 的 top【圈,Tier1】 |
-| Дзен / VK | 内容与社交流量补充 | 群组讨论帖可进 organic(见第二节) |
+| StatCounter(页面浏览样本) | 2026-09:Yandex 70.35%、Google 28.10%;近 12 个月 Yandex 在 70.3–73.7% 之间;移动 Yandex 68.90%,桌面 71.55% | [StatCounter 俄罗斯](https://gs.statcounter.com/search-engine-market-share/all/russian-federation),CSV 导出,取数 2026-10-18 |
+| Яндекс Радар(Metrica 聚合) | 2026 Q1:Yandex 份额 69.8% | 【官】[Yandex 2026 Q1 财报](https://yandex.ru/company/news/28-04-2026) 脚注 8「по данным … Яндекс Радар」 |
+| LiveInternet(ru 统计组「переходы из поисковых систем」) | 2026-09:Google 55.8%、Яндекс 44.0% | [LiveInternet](https://www.liveinternet.ru/stat/ru/searches.html),取数 2026-10-18 |
 
-- AI 答案用户数 4.95 亿、按质量自评已超 Google(RG 2026-07-29)【媒】。
-- **Алиса AI 已覆盖 ~15% 商品(商业)查询**,且神经块常置于普通 organic 之上(CNews 2026-10-06)【媒】——商业词的 AI 占位是独立审计面。
-- 官方 AI 使用统计看板:ya.ru/ai/stat【官】。
-- 2026-10-05 Яндекс为媒体方上线"进入神经网络答案"官方课程(RG)【媒】——官方亲自定义 GEO 规则,审计口径跟进官方而非二手解读。
+- 三套口径的样本不同。StatCounter 数页面浏览;Радар 数 Metrica 站点;LiveInternet 数装其计数器站点的搜索来路。三者方向冲突时,用自己站点的 Metrica 来源报表和 GSC 实测来路比例定预算。
+- 俄语用户不只在俄罗斯。StatCounter 2026-09:哈萨克斯坦 Google 68.13%、Yandex 29.73%;白俄罗斯 Google 58.96%、Yandex 38.57%。俄语版要同时做 Google 与 Yandex。
+- **Алиса AI 已进入搜索结果页**【官】:2026 Q2 有 42% 的查询出现 Алиса AI 回答,环比 +7 个百分点;搜索框下回答的月受众 4,950 万。来源:[Yandex 2026 Q2 财报](https://yandex.ru/company/news/29-07-2026)。2025-05-22 起 Алиса 接替 Нейро 进入搜索(官方原话「унаследует и расширит возможности Нейро」,[新闻稿](https://yandex.ru/company/news/01-22-05-2025))。
+- Yandex 自测:盲测中其回答对 Google AI Overviews 胜 56.7%(Yandex 自己的 side-by-side,非独立评测)。来源:[RG 2026-07-29](https://rg.ru/2026/07/29/ii-otvety-v-poiske-iandeksa-oboshli-google-po-kachestvu-i-nabrali-495-mln-polzovatelej.html)。
+- 【三方】Ашманов и партнёры:2025-08 至 2026-01,Алиса 回答引用的非 top-10 站点占比从 40% 降到 10%;约第 5 位之后入选概率下降。Yandex 方面回应:回答平均基于约 10 个来源,入选看内容的专业性和充实度。来源:[Коммерсантъ 2026-06-10](https://www.kommersant.ru/doc/8728568)。
+- 【三方】同一机构的电商查询样本:2026-04 只有千分之一出现 Алиса 快速回答,2026-07 约 15%,且常位于全部结果之上。来源:[CNews 2026-10-06](https://www.cnews.ru/news/line/2026-10-06_alisa_ai_aktivno_vstraivaetsya)。
+- 官方统计页「Нейростат」([ya.ru/ai/stat](https://ya.ru/ai/stat))发布生成式 AI 的认知与使用数据。
+- Google AI Overviews 在俄罗斯和俄语可用(Google 帮助中心可用国家与语言清单,[核对 2026-10-18](https://support.google.com/websearch/answer/14901683?hl=en))。
 
-## 二、独家渠道(俄语区外不存在)
+## 二、Yandex Webmaster 技术要点(逐条官方)
 
-### Telegram 公开镜像 SEO 全流程(t.me/s/)
-1. **前提**:频道必须公开(t.me/название 可直达);私密/关闭频道不进索引【圈,DTF 实测】。
-2. **抓取机制**:YandexBot 抓网页镜像 t.me/s/**,且只见最近 ~20 条帖子**——更早的帖子无法翻页、不索引【圈,vc.ru 实测】。
-3. **标题** = 频道名 = 关键词 + 品牌;**帖子前 150 字符即摘要**——关键词前置到首句。
-4. **节奏杠杆**:~20 帖滚动窗口 ⇒ 稳定高频发帖(关键词帖)才能维持索引存在感;断更=镜像内容整体蒸发。
-5. **量级参考**:vc.ru 估算 t.me 镜像可从 Yandex+Google 拿 ~1.5 亿访问(从业者估算,未官方证实,并记两说)。
-6. TGStat 做频道统计、目录占位与竞频道监测;频道官方链接进站点 sameAs/实体层。
-7. 帖内链接可导流+作为品牌提及信号;关键词帖≠广告(无需 erid,自然内容)。
+| 项 | Yandex 规则 | 和 Google 的差别 | 来源 |
+|---|---|---|---|
+| hreflang | `<head>` 内 `<link rel="alternate" hreflang="…">`;每个版本列出全部版本;语言用 ISO 639-1,地区用 ISO 3166-1 Alpha-2 或 ISO 3166-2:RU;支持 `x-default` | **Yandex 不再支持 Sitemap 里的语言版本标注**,要用 HTML。Google 认 HTML、HTTP 头、Sitemap 三种 | 【官】[Индексирование локализованных страниц](https://yandex.ru/support/webmaster/ru/yandex-indexing/locale-pages) |
+| hreflang 语言清单 | 官方清单含 ru、en、es 等;清单里没有 zh | 中文版对 Yandex 无 hreflang 效果,Google 照常 | 同上 |
+| canonical | 只是建议。指向别的域名或子域、多个 canonical、canonical 链、目标被禁或跳转时忽略;自指合法 | 跨域 canonical Google 可用,Yandex 不认 | 【官】[Канонический адрес](https://yandex.ru/support/webmaster/ru/robot-workings/canonical) |
+| robots.txt | 指令只有 User-agent、Disallow、Allow、Sitemap、Clean-param;文件 ≤500 KB;须返回 200,否则视为全开放;禁止西里尔字符(用 Punycode 或百分号编码);有 `User-agent: Yandex` 组时忽略 `*` 组 | 被 Disallow 的页仍可能出现在 Yandex 结果里,要下线用 noindex | 【官】[robots.txt](https://yandex.ru/support/webmaster/ru/controlling-robot/robots-txt)、[User-agent](https://yandex.ru/support/webmaster/ru/robot-workings/user-agent) |
+| Clean-param | `Clean-param: p0[&p1…] [path]`;单条 ≤500 字符;区分大小写;可写在任意位置;Disallow 优先;utm_*、ysclid、yrclid 等会自动忽略 | Google 无此指令 | 【官】[Clean-param](https://yandex.ru/support/webmaster/ru/robot-workings/clean-param) |
+| Sitemap | XML 或 TXT;≤50,000 URL、未压缩 ≤50 MB;UTF-8;同域;返回 200;在 robots.txt 或「Индексирование → Файлы Sitemap」提交;一般两周内处理 | 规格同协议 | 【官】[Sitemap](https://yandex.ru/support/webmaster/ru/controlling-robot/sitemap) |
+| IndexNow | 单条 `GET https://yandex.com/indexnow`,多条 POST;根目录放 key 文件;只报新增、修改、删除的页;不保证收录 | Google 不支持 IndexNow | 【官】[IndexNow](https://yandex.ru/support/webmaster/ru/indexing-options/index-now) |
+| 重新抓取 | 「Индексирование → Переобход страниц」;每日限额;排队 ≤3 天;数据两周内更新;robots.txt 几小时内自动重抓 | — | 【官】[Переобход страниц](https://yandex.ru/support/webmaster/ru/robot-workings/site-reindex) |
+| 地区 | 「Представление в поиске → Региональность」;通常一个站一个地区;只影响地域相关查询;通用主题站可选「Нет региона」;人工审核数天到数周 | Google 无对应设置 | 【官】[Региональность](https://yandex.ru/support/webmaster/ru/site-geography/site-region) |
+| 按 IP 切语言 | 机器人从单一地区 IP 抓取;按 IP 跳转会让部分版本不被收录;官方建议用语言切换器,各版本都返回 200 | — | 【官】[Обработка редиректов](https://yandex.ru/support/webmaster/ru/robot-workings/managing-redirects) |
+| JS 渲染 | 「Индексирование → Рендеринг страниц JavaScript」(β);默认由机器人决定;已做 SSR 或预渲染时官方建议关闭 | — | 【官】[Рендеринг](https://yandex.ru/support/webmaster/ru/yandex-indexing/rendering) |
+| title / description | 不设字符上限,长度受设备屏宽限制;品牌放 title 开头或结尾;description 每页唯一;「Заголовки и описания」报表查重 | markets.json 的 55/160 是本套件 lint 阈值,不是 Yandex 规定 | 【官】[title](https://yandex.ru/support/webmaster/ru/search-results/title)、[description](https://yandex.ru/support/webmaster/ru/indexing-options/description) |
+| 验证 | HTML 文件(推荐)、`<meta name="yandex-verification">`、DNS TXT、YTM/GTM;www 与非 www 算两个站;核验最长 24 小时 | — | 【官】[Подтверждение прав](https://yandex.ru/support/webmaster/ru/service/rights) |
+| 机器人真伪 | 反查 DNS 以 yandex.ru / yandex.net / yandex.com 结尾,再正查回同一 IP;AS13238、AS208722、AS212066 | — | 【官】[Проверка робота](https://yandex.ru/support/webmaster/ru/robot-workings/check-yandex-robots) |
+| Турбо-страницы | 已停止支持,Webmaster 板块关闭 | — | 【官】[Webmaster 博客 2025-02-07](https://webmaster.yandex.ru/blog/yandex-stops-supporting-turbo-technology) |
+| ИКС | Yandex 对站点「有用和便利」的评估;依据受众规模、用户满意度、信任等;定期重算;违规或操纵时可清零;新站进入搜索后一个月内算出 | 无 Google 对应物 | 【官】[ИКС](https://yandex.ru/support/webmaster/ru/site-quality-index) |
 
-### 其他独家渠道
-- **Дзен(dzen.ru)**:entity_sources 级平台;内容分发+品牌词占位+AI 引用源之一。
-- **VK 群组讨论帖**:群内讨论页可如内页一样参与 organic 排名——运营 VK 群=生产可排名页。
-- **Яндекс Бизнес 卡片**:区域主信号;**审核可能要求拍楼体视频**证明实体存在【圈】。
-- 目录层=Бизнес/2ГИС/Zoon/Flamp/Отзовик——并非"каталоги 已死",是迁移到了 Бизнес 卡片形态【圈】。
-- **Habr 长文杠杆(2026-10-11)**:Habr 是俄语技术圈内容底物(searchengines.guru/habr/vc.ru 圈内源)【圈】——技术类受众市场把 Habr 深度长文当**外域权威半边**,与 Telegram 镜像、Dzen 并列为俄区三外域面,进 Yandex/AI 引用底物;每季复核,本地竞争者填满即失效(主入口索引见 [multilingual-workflow.md](../overview/multilingual-workflow.md) 十节杠杆位表)。
+## 三、Алиса AI 可见度(GEO)
 
-## 三、语言机制
+- **怎么生成**【官】:先拆分查询、补充子问题,再用改写后的查询调用搜索,依靠排名靠前的来源成文;来源链接不排序;同一查询的回答随日期和个性化变化。来源:[Как формируются ответы Алисы AI](https://yandex.ru/support/webmaster/ru/alice)。
+- **选源标准**【官】:ЭПОС 四方面:Экспертность、Полезность、Оригинальность、Содержательность。官方原话:生成式回答建立在搜索结果之上,所以「принципиально новых требований не возникает」。来源:[ЭПОС](https://yandex.ru/support/webmaster/ru/epos)。
+- **计量**【官】:Webmaster「Видимость сайта в Алисе AI」(2026-04-07 上线,[新闻稿](https://yandex.ru/company/news/07-04-2026-01))。SoV = 出现 Алиса 回答且提到本站的查询数 ÷ 出现 Алиса 回答的查询数;只统计本站已排名靠前的查询;数据覆盖近 3 个月,每周更新;不提供点击和展示;须先验证站点。来源:[Видимость сайта в Алисе AI](https://yandex.ru/support/webmaster/ru/service/alice-answers)。
+- **退出**【官】:robots.txt 对 `YandexAdditional` 或 `YandexAdditionalBot` 写 Disallow,2–14 天生效。该 token 不发起抓取,只作用于主机器人已收录的页面。来源:[Запрет показа в ответах Алисы AI](https://yandex.ru/support/webmaster/ru/adding-site/indexing-prohibition)。
+- **检查**:每月记 SoV;看「Примеры → Запросы и страницы」里竞争者被引的页;没有数据时,先查自然排名(官方列出的原因包括排名低、正文文本少)。
+- 媒体与品牌可参考 Yandex 与 Синхронизация 的免费课程「Писать для людей в эпоху ИИ」([RG 2026-10-05](https://rg.ru/2026/10/05/iandeks-zapustil-kurs-dlia-media-o-popadanii-v-otvety-nejrosetej.html))。
+- 详细爬虫分策见 [ai-crawler-policy.md](../technical/ai-crawler-policy.md);证据等级以 [geo-evidence.md](../content/geo-evidence.md) 为准。
 
-- **原生西里尔 + 7 号(+7)电话 + 企业域名邮箱** = Vega 算法专家性信号【圈】。
-- 拉丁转写查询(拉丁化俄语)是真实细分,量级未证实——小规模验证后决定是否建轨【圈】。
-- **ё/е 变体归组**做语义研究;排名层信任 Yandex 自身归组,不重复扣分。
-- **вы 敬称全站统一小写**;ты 仅限非正式社媒语境。
-- 广告法禁无证据最高级:лучший/самый/№1 类须可举证,否则重写(markets.json marketing_words 联动)。
-- **Wordstat 算子**(语义核精度来源):
-  - `"точная фраза"` —— 精确短语(词序锁定);
-  - `!слово` —— 锁定词形(俄语屈折重灾区);
-  - `+слово` —— 强制包含停用词(и/в/на);
-  - `-слово` —— 排除;
-  - 组合使用 + 分区域 + 季节曲线;注意 Wordstat 预测的是**曝光量**非搜索量。
-- **区域码 lr 显式传**:莫斯科 213 ≠ 莫斯科州 1,全俄 225;区域间位差可达 40 位【圈】。MCP 接 Yandex Cloud(API Key+Folder ID+search-api.webSearch.user 角色;401=Key 坏/403=计费或角色/429=配额)。
-- 格式:数字 `1 234,56`(空格千分位+逗号小数);日期 `09.10.2026`;title ~55 字符;desc ~160(Yandex 比 Google 宽)。
+## 四、语言与文案
 
-## 四、商业因素(КФ)6 块清单——76 条(adblogger 口径;IndexLift 审计中为独立 findings 组)
+| 项 | 规则 | 来源 |
+|---|---|---|
+| 复数 | 四类:one(1、21、101…)、few(2–4、22–24…)、many(0、5–20、25–30…)、other(小数,如 1,5)。例:1 запрос、2 запроса、5 запросов、11 запросов、21 запрос | [Unicode CLDR 48 plurals](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-core/supplemental/plurals.json) |
+| 引号 | 外层 «…»,内层 „…“ | [CLDR ru delimiters](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-misc-full/main/ru/delimiters.json) |
+| 数字与货币 | 小数点用逗号;千分位用不换行空格 U+00A0:1 234,56;货币 1 234,56 ₽ | [CLDR ru numbers](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-numbers-full/main/ru/numbers.json) |
+| 日期 | 短格式 09.10.2026;长格式 9 октября 2026 г. | [CLDR ru gregorian](https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-dates-full/main/ru/ca-gregorian.json) |
+| вы / Вы | 对单个具体的人(信件、公文)写 Вы;对多人或不定多数写 вы;Лопатин 手册另允许问卷、广告等反复使用的文本写 Вы。本套件口径:网站 UI 用小写 вы,全站一致 | [Грамота.ру](https://gramota.ru/biblioteka/spravochniki/pismovnik/kak-pisat-vy-i-vash-s-propisnoy-ili-so-strochnoy-bukvy) |
+| 最高级 | 广告里用 лучший、первый、номер один,必须写明比较标准并有客观依据,否则属不实广告(38-ФЗ 第 5 条第 3 款第 1 项) | [ВАС 全会决议 2012 第 58 号第 29 条](https://arbitr.ru/materials/68264?path=%2Farxiv%2Fpost_plenum%2F) |
+| ё / е | 关键词研究把两种写法归一组 | 本套件口径;`keyword_variants.py` 规则 `ru-ё→е` |
 
-> КФ 自 2011 年引入,用于链接与优化水平相近站点的分层;链接因子弱化后 КФ 权重上升(seonews)【圈】,可强于链接。
-> 交付口径:**法定透明层(реквизиты/оферта类)缺失即 WARN→FAIL**;全清单按 6 块过站,逐项标 有/无/不适用。
+- **Wordstat 算子**【官】:`-` 排除;`!` 锁词形;`+` 锁停用词;`" "` 锁词数(不锁词序);`[]` 锁词序;`()` 加 `|` 分组。默认数字是「包含该短语的查询总数」,含全部词形。要窄口径就组合 `" "` 与 `!`。来源:[Операторы](https://yandex.ru/support2/wordstat/ru/content/operators)、[Вордстат](https://yandex.ru/support2/wordstat/ru/interface/new)。
+- **地区码**【官】:225=俄罗斯,1=莫斯科与莫斯科州,213=莫斯科市([Yandex Search API 地区树](https://aistudio.yandex.ru/en/docs/search-api/operations/wordstat-getregiontree))。走 API 要 folder ID、带 `search-api.webSearch.user` 角色的服务账号、带 `yc.search-api.execute` 权限的 API key([Search API 文档](https://aistudio.yandex.ru/en/docs/search-api/operations/web-search))。
+- 标题与首段直接回答俄语用户的原话提问,方法见 [question-alignment.md](../content/question-alignment.md);句子写法见 [asd-ste100-web-writing.md](../content/asd-ste100-web-writing.md)。
 
-### 块 1|全站与商品企划(25 条)
-- [ ] 品类/服务宽度(ассортимент)
-- [ ] 价格有竞争力(显著高于竞品=掉分)
-- [ ] промокоды/скидки/акции/распродажа
-- [ ] 买家综合评分(聚合自 отзовики——须主动经营 Отзовик/IRecommend)
-- [ ] 2GIS/Zoon 等目录卡在场
-- [ ] 支付方式多样(наличные/карта/онлайн)
-- [ ] 银行卡支付(Яндекс.Справочник 内标注)
-- [ ] 忠诚度计划(карта постоянного клиента/бонусы)
-- [ ] 真实办公室/仓库照片
-- [ ] 站内有视频(公司介绍/生产/评价)
-- [ ] Яндекс.Справочник(Бизнес)已注册
-- [ ] HTTPS
-- [ ] 回电按钮(CallBack)
-- [ ] 在线客服且工作时间在线(非摆设)
-- [ ] 无第三方广告位
-- [ ] вакансии 栏且信息新鲜
-- [ ] 新闻栏定期更新
-- [ ] 全站信息不过期(5 年前的 прайс=负分)
-- [ ] 实用文章/选购建议栏
-- [ ] 行业权威站外链
-- [ ] 站内搜索功能
-- [ ] 微标记(микроразметка)+面包屑
-- [ ] 用户协议+隐私政策
-- [ ] 移动 App 下载链接(如有)
-- [ ] 移动端可用性(隐含基线)
+## 五、法规(写清适用范围;本节是 SEO 交付检查,不是法律意见)
 
-### 块 2|«О компании» 公司层(9 条)
-- [ ] 公司历史与成就(可简)
-- [ ] 使命陈述(如有)
-- [ ] **有效**许可证扫描件(过期扫描件比没有更糟)
-- [ ] 奖项/证书
-- [ ] 办公/生产/仓库照片
-- [ ] 关键员工 ФИО+职务+联系(大公司/控股)
-- [ ] «СМИ о нас» 媒体报道页
-- [ ] 伙伴/大客户清单(银行/供应商/知名品牌)
-- [ ] вакансии 独立菜单栏
+**个人数据(152-ФЗ)**
+- 适用范围:Роскомнадзор 2016 年评注(自述无约束力)列出的「面向俄罗斯」迹象:与俄罗斯相关的域名(.ru/.рф/.su)和/或站方自建的俄语版;合同可在俄境履行(含数字内容)。机器翻译插件不算。来源:[RKN 评注](https://rppa.pro/npa/rkn_09.11.2016)(原件 pd.rkn.gov.ru)。
+- 第 18 条第 5 款(23-ФЗ,2025-07-01 起):收集俄罗斯公民个人数据时,禁止用境外数据库做记录、整理、累积、存储、更新、提取(有例外)。来源:[consultant.ru 第 18 条](https://www.consultant.ru/document/cons_doc_LAW_61801/cbf4e15b7c330f9372e876cdf2bc928bad7950ef/)。
+- 统计工具:RKN 2024-06-26 第 08-242780 号函:能识别唯一访客并记录其偏好和行为的统计程序,属于处理个人数据,须告知、取得同意、写入内部规定;用 Google Analytics 属于跨境传输,须向 RKN 提交跨境传输通知(第 12 条第 3 款)。来源:[garant.ru](https://www.garant.ru/products/ipo/prime/doc/409415443/)。
+- 同意:须具体、知情、明确,且与其他文件分开(第 9 条第 1 款,156-ФЗ 2025 修订)。来源:[第 9 条](https://www.consultant.ru/document/cons_doc_LAW_61801/6c94959bc017ac80140621762d2ac59f6006b08c/)。
+- 政策页:在线收集数据的运营者,须在收集数据的页面上公布处理政策(第 18.1 条第 2 款)。来源:[第 18.1 条](https://www.consultant.ru/document/cons_doc_LAW_61801/eeeebe22bf738fd65bb66b95cc278911ae2525ee/)。
+- 罚则(КоАП 第 13.11 条,法人):未做本地化 100–600 万卢布,再犯 600–1,800 万;未公布政策 3–6 万;未提交处理通知 10–30 万。来源:[consultant.ru 第 13.11 条](https://www.consultant.ru/document/cons_doc_LAW_34661/1f421640c6775ff67079ebde06a7d2f6d17b96db/)。
 
-### 块 3|服务页(8 条)
-- [ ] 真实竞争优势块(非"低价优质"套话)
-- [ ] 多 тариф/服务打包可选
-- [ ] **页上有价格**(缺=重创;客户拒绝时给区间或历史项目价)
-- [ ] 费用计算器(建筑/金融/汽车/开发类强相关)
-- [ ] портфолио 实拍作品
-- [ ] 保证条款(гарантии)
-- [ ] 在线预约/下单( замерщик 出诊/沙龙预约等)
-- [ ] 真实客户评价(公函扫描件/视频 > 纯文本)
+**广告标识(erid)**
+- 网络广告须带「реклама」字样、广告主信息,并有广告数据运营商分配的识别码(38-ФЗ 第 18.1 条第 16–17 款)。来源:[第 18.1 条](https://www.consultant.ru/document/cons_doc_LAW_58968/2c4537e4796f6ff8b2736ed1b0d4fef08e14458e/)。
+- 无识别码投放:法人罚 20–50 万卢布(КоАП 第 14.3 条第 16 款)。来源:[第 14.3 条](https://www.consultant.ru/document/cons_doc_LAW_34661/2d50fc1c4013ea9ab20b8b2666c1650b1dc4c982/)。
+- 不算广告的情形:FAS 2025-04-09 第 АК/32908/25 号函:企业在自有官网、自有社媒页介绍自家商品和服务,属信息性内容,不是广告。每页都固定出现的推广横幅、推介第三方公司的内容,可能被认定为广告。来源:[consultant.ru](https://www.consultant.ru/document/cons_doc_LAW_503349/)。所以:自有站点的 SEO 内容不需要 erid;Yandex Direct、博主付费帖、第三方站付费文章需要。
 
-### 块 4|联系页法定层(13 条)——合规与 КФ 交集
-- [ ] 多联系通道(电话/邮箱/мессенджеры)
-- [ ] 营业时间+节日安排
-- [ ] 实体地址(多点全列)
-- [ ] 每分店/自提点独立页(描述+路线+时间)
-- [ ] **реквизиты 或可下载公司卡(电商强制)**
-- [ ] **城市固话号码**(手机+直线接入亦可)
-- [ ] 企业域名邮箱(禁免费邮箱充当公务)
-- [ ] 多区域经营给 8-800 免费号
-- [ ] 社媒群组链接且群活跃
-- [ ] 各部门分列联系方式(销售/采购/客诉)
-- [ ] 路线示意图
-- [ ] 文字版乘车指引(车/公交/地铁步行)
-- [ ] 楼宇实拍照片(到地可寻)
+## 六、红旗
 
-### 块 5|电商目录与商品卡(16 条)
-- [ ] 类目内 SKU 数充足
-- [ ] 按价格/库存/参数排序
-- [ ] 商品对比功能
-- [ ] 默认排序=有货优先+低价在前
-- [ ] 多品牌在售
-- [ ] 配件在售
-- [ ] 商品 4-5 图+放大细节
-- [ ] 详细规格+комплектация
-- [ ] 库存量级显示(多/少/具体件数)
-- [ ] 线下门店存货指示
-- [ ] 商品视频
-- [ ] 3D 模型
-- [ ] 买家评价
-- [ ] 星级评分展示
-- [ ] 关联商品/配件交叉链
-- [ ] 促销标注+1-click 下单
+- **Имитация действий пользователей(刷行为因素)**【官】:Yandex 列为搜索垃圾。限制可作用于全站或部分栏目;违规消除且算法确认不再重复后解除。提交复查后 30 天内出结果;未解除须等 30 天才能再交。来源:[官方说明](https://yandex.ru/support/webmaster/ru/threat/user-actions-imitation)、[Безопасность и нарушения](https://yandex.ru/support/webmaster/ru/service/security-threats)(官方共列 9 类违规,含 SEO 文本、隐藏跳转、模仿他站、伪装、低价值内容)。不做、不推荐、不代运营。
+- 把 `/ru/` 页的 canonical 指向英文页:Yandex 会把俄语页当非规范页剔除。
+- 按 IP 或 Accept-Language 自动跳语言版本:见第二节。
+- 只在 robots.txt 里 Disallow 想下线的页:Yandex 仍可能展示,改用 noindex。
+- 只接 GA、不做同意与跨境通知:见第五节。
+- 引用「Yandex 76 条商业因子」:该清单出自第三方博客,不是 Yandex 发布;Yandex 公开的是 ЭПОС 与透明度建议(真实地址、реквизиты、联系方式,见 [ЭПОС](https://yandex.ru/support/webmaster/ru/epos) 的 Экспертность 一节)。
 
-### 块 6|订单支付配送(10 条)
-- [ ] 在线支付可用
-- [ ] 多支付方式
-- [ ] 银行卡支付
-- [ ] 下单时即显示运费
-- [ ] 配送地理覆盖广(含地区)
-- [ ] 免费配送选项
-- [ ] 快递配送
-- [ ] 自提点网络(ПВЗ)
-- [ ] «Гарантии и возврат» 页
-- [ ] Яндекс.Маркет 高评分
-
-**最高权重 16 条速查(优先补)**:价格在场/保证/视频/促销/固话/支付多样/CallBack/实用文章/商品对比/参数筛选/多图/详细规格/真实评价/快递/自提/退换保证。
-
-## 五、合规
-
-- **152-ФЗ**:俄公民个人数据须存储于俄境 → GA 实际不可用,**Metrica 为合规默认**;隐私政策与数据驻留表述对应。
-- **erid 标记**:付费广告(Yandex Direct 及一切付费位)必须标 erid,未标最高 50 万 ₽ 罚;**自然 SEO 内容不算广告**——付费投放先解决 erid 再谈量。
-- 法定透明层:оферта/реквизиты/политика конфиденциальности/пользовательское соглашение 等六类页面(块 4 承载,块 1 交叉)。
-- 广告法:无证据最高级禁用(见第三节);医疗/金融类目另有行业标记要求。
-
-## 六、AI-GEO(Алиса/Нейро)
-
-- **SoV 取代位置**:Webmaster → «Эффективность» → **«Видимость сайта в Алиса AI»**【官】:官方 SoV(Share of Voice)报告,度量网站在 Алиса AI 答案中的被引份额,需站点所有权验证;这是俄区独有的官方免费 GEO 计量。
-- **经典 top-10 即引用前提——已收紧**:非 top-10 站点在 Алиса AI 答案源中占比从 40% 降至 **10%**(Коммерсантъ)【媒】——先进普通 top,再谈 GEO;平庸站做"AI 优化"无意义。
-- **Нейро 取源 = Yandex 与 Google 双 top**(Tier1)【圈】——Google 侧排名同样是 Нейро 可见性输入,双引擎不是二选一。
-- **ИКС**:Yandex 站点质量分(Webmaster 内可见);健康双指标=SoV(引用份额)+ИКС(站点质量)。
-- robots 对 `YandexAdditional` 显式决策:允许=进入 Нейро/Алиса 引用池(详见 technical/ai-crawler-policy.md)。
-- 测量纪律:AI 直接流量极小(Алиса ~0.02%/ChatGPT ~0.25%)——**损失发生在搜索内部**(神经块占位挤占点击),用 SoV+搜索内占位率度量,勿用 referral。
-- 官方媒体课程(RG 2026-10-05)跟进:进入神经答案的官方建议以课程口径为准绳。
-
-## 七、红旗(罚则与从业者陷阱)
-
-- **накрутка ПФ(行为因素操纵)**:2025-2026 算法检出显著收紧(MosSEO/Ozhgibesov/Blagoit)【圈】;罚则=пессимизация(逐出 top-10)、自然流量掉数十百分点、滤镜期 **6-12 个月**,重度需换策略甚至换域名——红线,一律不做、不推荐、不代运营。
-- 交付纪律三"不得"(yadryshko 口径,全区交付纪律):
-  1. 不得虚构 Wordstat 频次;
-  2. 不得隐瞒 SERP 数据未经验证;
-  3. 未接 GSC+Яндекс Вебмастер 不得宣称 production-ready。
-- 误区清单:
-  - 用 GA4 替代 Metrica(152-ФЗ 姿态错误);
-  - "каталоги 死了"⇒不做本地目录(实际迁移到 Бизнес 卡片);
-  - 不知道 ПФ 是一线因子(把 Yandex 当 Google 做);
-  - 只测 Google 可见性——Алиса/Нейро 盲区(本区主战场)。
-- 站长情绪已转向"进 Нейро 答案+买量"【圈】——审计时把 AI 占位列为常规交付而非附加项。
-
-## 八、工具链
+## 七、工具
 
 | 工具 | 用途 | 备注 |
 |---|---|---|
-| Топвизор | 排名追踪(历史曲线+竞品动态) | КФ 对比工作台;俄语区标配 |
-| Keys.so | 竞品语义核/链接反查 | 与 Топвизор 互补 |
-| Yandex Metrica Вебвизор | 免费会话回放+点击图/滚动图/表单图 | 三图=ПФ 优化闭环,本区独有粒度 |
-| Yandex Webmaster | ИКС+«Видимость в Алиса AI» SoV+索引诊断 | 就绪闸门:必须已验证 |
+| Yandex Webmaster | 验证、Sitemap、重抓、地区、SoV、ИКС、违规 | 【官】上线前必须验证 |
+| Wordstat(wordstat.yandex.ru) | 查询量、地区分布(含亲和指数)、趋势;可下载 CSV;数据最早到 2018-01 | 【官】见第四节算子 |
+| Yandex Metrica | 来源报表;Вебвизор、点击图、滚动图、表单分析(「Настройки → Счетчик」开启) | 【官】[点击图说明](https://yandex.ru/support/metrica/ru/behavior/click-map);开 Вебвизор 属处理个人数据,先取同意 |
+| Топвизор、Keys.so、Букварикс、arsenkin、TGStat | 排名、竞品语义、扩词、Telegram 统计 | 第三方工具,本套件未逐一核验 |
+| 本套件脚本 | 见第九节 | `robots_posture.py` 的 27 个机器人里没有 Yandex,YandexAdditional 要手查 |
 
-> [待核 2026-10-14] Yandex Webmaster new-features 页已更新(intel_check 检出;新条目为 JS 渲染未提取到)——引用该页功能清单前人工核对新特性。
+其他渠道(本套件口径,无官方排名效果声明):Дзен、Habr、VK 用作分发与品牌提及;Telegram 频道须公开,`t.me/s/<频道>` 预览页每页 20 条,带 `rel="prev"` 与 `?before=` 翻页链接(2026-10-18 实测),t.me/robots.txt 返回 404。有线下门店的企业用 Яндекс Бизнес;审核可能要求拍摄入口视频(【官】[Подтвердить компанию](https://yandex.ru/support/business-priority/ru/moderation/moderation-address))。
 
-| Wordstat(MCP→Yandex Cloud) | 语义核(算子+lr 区域码) | 401/403/429 三态分诊 |
-| TGStat | Telegram 频道统计/目录/监测 | 镜像 SEO 配套 |
-| Букварикс/arsenkin 类 | 俄语语义扩展与快检 | 从业者圈常用 |
+## 八、本地实测(2026-10-09,本套件记录)
 
-**信息源**:searchengines.guru(最大论坛)、habr、vc.ru、SEONews、RG/Коммерсантъ/CNews(官方动向一手)。
+- 跑了 yandex.ru 与 habr.com × `site_audit --market ru` / `llmstxt check` / `head_check`。
+- yandex.ru 当日 302 到 dzen.ru,工具跟随跳转,审计落在 JS 空壳上:title/desc/H1「缺失」是伪影。审计门户域前先 `curl -I` 看落点。
+- yandex.ru 的 robots.txt 对 OAI-SearchBot 只写 `Disallow: /?`(禁带查询串的 URL)。stdlib robotparser 把它当整站禁止(`can_fetch('/')=False`),四条 AI 检索爬虫 CRITICAL 均为误报。ru 市场的 AI 爬虫结论必须复核 robots 原文。
+- habr.com:缺 meta description、og:image 用相对 URL、alt 缺 40/41;charset 声明位于第 1,074 字节(超过 1,024);AI 检索爬虫放行。
+- 两站 `/llms.txt` 等 4 个路径均 404。
+- 工具盲区:不报告「审计的是跳转目标」;`Disallow: /?` 误判;复数变格、引号、вы 一致性等 ru 专属检查要人工做。
 
-## 九、本地实测(2026-10-09)
+## 九、俄语版上线检查清单(SaaS / API 文档站)
 
-**跑了什么**:yandex.ru + habr.com × `site_audit --market ru` / `llmstxt check` / `head_check`(site_audit v1.1)。
+前提:站点已有 en/zh/es 版,新增 `/ru/`。每项写「检查什么 → 怎么查 → 通过判据」。
 
-**输出摘要**:
-
-- **yandex.ru**:**302 → dzen.ru(?yredirect=true,门户已让渡给 Дзен),工具静默跟随重定向,审计落在 JS 空壳上**——title/desc/H1 全"缺失"、词数 0,全是重定向伪影而非站方问题;55/160 chars 阈值虽已接线但测不到真实值。**四条 AI 检索爬虫 CRITICAL 均为误报**:robots.txt 的 OAI-SearchBot 段只有 `Disallow: /?`(禁查询串)+错误页/服务路径,stdlib robotparser 把 `Disallow: /?` 归一化成 `Disallow: /` 判整站禁(实测 can_fetch('/')=False);真实语义=**首页可抓、带查询参数的 URL 禁抓**。俄语门户审计靶站应改用 ya.ru(搜索)/dzen.ru。
-- **habr.com**:desc 缺失 CRITICAL、og:image 相对 URL、alt 缺 40/41、262 链接;**AI 检索爬虫真实放行**;head_check ERROR:charset 声明落在第 1,074 字节(>1024 上限)、twitter:* 三项、fb:app_id、apple-mobile-web-app-capable;西里尔词数统计正常(v1.1 已修——旧版把西里尔整段记 0 词)。
-- `llmstxt check`:两站 4 路径全 404(判无,准确)。
-
-**工具盲区(实测确认)**:
-
-1. **重定向透明**:302 后不报告"审计的是重定向目标",空壳页全套 CRITICAL 会误导——门户域审计前先 curl -I 看落点;
-2. **`Disallow: /?` 解析缺陷**:Yandex 系 robots 惯用查询串禁令,robotparser 一律误判整站禁——ru 市场 ai-bots 结论必须人工复核 robots 原文;
-3. **无西里尔占比/语言构成检查**:ё/е 归组、Вы 敬称、法定透明层(оферта/реквизиты)等 ru 专属检查全不在工具里,special_checks 是人肉清单;
-4. Wordstat/Metrica 侧(三态分诊、Вебвизор)均超出本地工具能力,维持 MCP/手工口径。
+| # | 检查什么 | 怎么查 | 通过判据 |
+|---|---|---|---|
+| 1 | URL 结构 | 本套件口径:用现有域名的 `/ru/` 子目录;不按 IP 或 Accept-Language 自动跳转 | 每个俄语页有固定 URL;`curl -sI -H "Accept-Language: ru" https://site/en/x` 不跳转;俄语页返回 200 |
+| 2 | hreflang 簇 | `python3 scripts/hreflang_cluster.py https://site/en/x https://site/ru/x https://site/es/x https://site/zh/x`;再 `curl -s https://site/ru/x \| grep -i hreflang` | 矩阵全部互指;每页含自身与 `x-default`;代码用 `ru`(服务多国俄语用户时不加地区);**HTML `<link>` 在场**(Yandex 不读 Sitemap 标注) |
+| 3 | canonical | `python3 scripts/site_audit.py https://site/ru/x --market ru --json`;Webmaster「Индексирование → Страницы в поиске → Исключённые」 | 俄语页 canonical 指向自身;没有俄语页被标为非规范页 |
+| 4 | robots.txt | `curl -sI https://site/robots.txt`;Webmaster「Анализ robots.txt」;`grep -i yandex robots.txt` | 返回 200;≤500 KB;无西里尔字符;若有 `User-agent: Yandex` 组,规则写全;跟踪参数用 Clean-param;有 `Sitemap:` 行 |
+| 5 | Алиса AI 准入 | `grep -iA3 "YandexAdditional" robots.txt` | 想进回答:无针对 `YandexAdditional(Bot)` 的 Disallow;不想进:写明并记录决定 |
+| 6 | Webmaster 验证 | 添加与线上完全一致的 host(协议、www);用 HTML 文件或 meta 或 DNS TXT | 显示已验证;子域单独验证 |
+| 7 | Sitemap | `python3 scripts/sitemap_audit.py https://site --must-include https://site/ru/`;Webmaster「Файлы Sitemap」提交 | 含全部俄语 URL;≤50,000 条、≤50 MB;状态「Обработан」;「Анализ файлов Sitemap」无错误 |
+| 8 | IndexNow | `python3 scripts/indexnow.py key --out DIR`,key 文件放根目录;`python3 scripts/indexnow.py submit --host site --key K --urls ru_urls.txt --endpoint yandex` | 返回 200 或 202;只提交新增和修改的 URL |
+| 9 | 首批重抓 | Webmaster「Переобход страниц」提交核心俄语页(每日限额内) | 3 天内状态变为「Заявка обработана」;「Проверка страницы」显示已抓 |
+| 10 | 地区 | Webmaster「Региональность」 | API 文档查询通常不分地域(本套件口径):选「Нет региона」或保持未指定;只有站上有覆盖俄罗斯的联系和服务信息时才选「Россия」 |
+| 11 | 渲染 | `curl -s https://site/ru/x` 看正文是否在初始 HTML;Webmaster「Рендеринг страниц JavaScript」 | 正文在初始 HTML;已做 SSR 时按官方建议关闭渲染 |
+| 12 | 文案机检 | `python3 scripts/market_lint.py --market ru page.html --report` | CRITICAL 0;拉丁混排只剩品牌和代码;日期 `09.10.2026`;货币 ₽ |
+| 13 | 复数与格式 | i18n 用 ICU MessageFormat 的 one/few/many/other;单测数值 0、1、2、5、11、12、14、21、22、25、101、111、1,5 | 13 个数值的词形全部正确;数字千分位为 U+00A0;无 ASCII 直引号(`grep -n '"' ru.json` 只命中代码) |
+| 14 | 法律页 | 人工核对第五节;`market_lint --report` 的法定透明层项 | 数据处理政策页 200,且每个表单旁有链接;同意单独勾选;用 Metrica 或 GA 前有同意;跨境与处理通知已评估并记录;付费推广有 erid |
+| 15 | 计量 | Webmaster「Статистика поисковых запросов」与「Видимость сайта в Алисе AI」;GSC 网址检查 | 上线 4 周后记下首个基线;GSC 选用的 canonical 等于俄语页自身 |
 
 ## 维护
 
 - 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.ru.review_cycle` 保持一致,以 json 为准。
-- 触发即复审的信号:Yandex Webmaster 博客(算法/Алиса/Нейро 官方公告)、Яндекс 财报与 SoV-отчёт 口径、searchengines.guru/habr/vc.ru 圈内风向、152-ФЗ/Metrica 政策、yandex.ru→dzen 门户结构变化。
-- 断言半衰期 6–12 个月;robotparser 误报类结论(reviewer 必读九节盲区 2)在工具修复前随复审重申。
+- 触发即复审:Yandex Webmaster 帮助中心与博客(hreflang、Алиса AI、robots)、Yandex 季度财报(份额、Алиса AI 覆盖率)、152-ФЗ 与 38-ФЗ 修订、RKN 与 FAS 新函、yandex.ru→dzen 门户结构变化。
+- `Disallow: /?` 误报类结论在工具修复前随复审重申。

@@ -1,18 +1,35 @@
 # 编辑质量检查：空话、套话与机械写法
 
+> 复核于 2026-10-18：Google 官方立场逐条核对；AI 检测器的准确率只保留有原始研究的数字。
+
 ## 用途与何时读
 
 内容发布前做编辑审稿，或者改一篇「读起来很顺但什么都没说」的稿子时读。
 
-这份清单**不是用来判断作者是人还是 AI**。下面这些毛病，人和模型都会写出来；靠几个词判定作者身份既不可靠，也不是 SEO 要解决的问题。要解决的是：这段文字有没有给读者提供信息。
+这份清单**不是用来判断作者是人还是 AI**。下面这些毛病，人和模型都会写出来；靠几个词判定作者身份既不可靠，也不是 SEO 要解决的问题。要解决的是：这段文字有没有给读者提供信息。写法规则（句长、语态、术语）见 [asd-ste100-web-writing.md](asd-ste100-web-writing.md)。
 
-## Google 看的是内容是否有用
+## Google 的立场：看质量，不看生产方式
 
-- Google 关于 AI 生成内容的说明：重点在内容质量，而不是生产方式；合理使用 AI 或自动化并不违反其政策。
-- 但为操纵排名而大量生成低价值页面，无论用什么方式生产，都属于垃圾内容政策里的「大规模滥用内容」。
-- Google 的有用内容指南建议站在读者角度考虑「谁写的、怎么做出来的、为什么写」；读者可能会想知道内容是怎么生产的时，如实说明。
+核对 2026-10-18：
+
+- **重点是质量。** Google 关注内容质量，而不是内容怎么生产；合理使用 AI 或自动化不违反其指南（[Search Central 博客 2023-02-08](https://developers.google.com/search/blog/2023/02/google-search-and-ai-content)）。
+- **红线是操纵排名。** 用自动化（包括 AI）生成内容，主要目的是操纵排名，违反垃圾内容政策；SpamBrain 等系统按模式和信号识别垃圾内容，不论它怎么生产（同上）。
+- **大规模滥用内容。** 为操纵排名、而不是帮助用户，大量生成页面，属于「大规模滥用内容」；例子之一是用生成式 AI 工具生成大量页面却不给用户增加价值（[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies#scaled-content)）。
+- **发布前人工核对。** 生成式模型会出错，发布前要人工核对全部 AI 生成内容的准确性，包括 `<title>`、meta description、结构化数据和图片替代文字（[生成式 AI 内容指南](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content)，2026-10-01 更新）。Merchant Center 另有规定：AI 生成的商品标题和描述要单独标注（同上）。
+- **Who、How、Why。** 读者可能想问「这是怎么做出来的」时，说明自动化或 AI 怎么参与；不要编造作者资料，例如 AI 生成的头像、假名字、假资历。质量评估员的「投入」一项把「用生成式 AI 产出大量文本、没有人工把关」视为几乎没有投入（[有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)）。
+- 把 AI 列为署名作者，「大概不是」说明 AI 参与方式的好办法（博客 FAQ）。
 
 所以编辑检查的目标是信息密度、准确和可信，而不是「去 AI 味」本身。
+
+## 检测器分数不是 Google 的判定
+
+- Google 的公开文档说的是按质量判断、按垃圾内容模式识别，没有说用第三方 AI 检测器的分数判定内容。第三方检测器给出的「AI 概率」不代表 Google 的判定，本套件不把它当发布门槛。
+- 已发表的评估显示检测器不可靠（都是原始研究；检测器版本之后有更新，数字只代表当时）：
+  - OpenAI 自己的分类器：在英文挑战集上只认出 26% 的 AI 文本，把 9% 的人写文本误判为 AI；2023-07-20 因准确率低下线（[OpenAI](https://openai.com/index/new-ai-classifier-for-indicating-ai-written-text/)）。
+  - Liang 等（Patterns，2023）：7 个检测器测 91 篇非英语母语者写的 TOEFL 作文，平均误报率 61.22%；18 篇（19.78%）被 7 个检测器一致判为 AI；美国八年级学生作文几乎全部判对（[arXiv 2304.02819](https://arxiv.org/abs/2304.02819)）。
+  - Weber-Wulff 等（2023）：12 个公开工具和 2 个商业系统，结论是既不准确也不可靠，倾向于把 AI 文本判成人写；改写混淆后表现更差（[arXiv 2306.15666](https://arxiv.org/abs/2306.15666)）。
+  - RAID 基准（Dugan 等，ACL 2024）：600 多万条生成文本、12 个检测器；对抗攻击、采样方式、重复惩罚和没见过的模型都能让检测器失效；许多检测器自称 99% 以上准确率，却很少在共享基准上评估（[arXiv 2405.07940](https://arxiv.org/abs/2405.07940)）。
+- 词频研究只能说明总体趋势。Kobak 等分析 1,500 多万篇 PubMed 摘要，发现 2024 年 delves、underscores、showcasing 等词的使用突然增多，推算至少 13.5% 的 2024 年摘要经过大模型处理；作者明确说这个方法不能识别单篇摘要（[arXiv 2406.07016](https://arxiv.org/abs/2406.07016)）。所以词表只能提示「这里可能写空了」，不能证明作者是谁。
 
 ## 检查项
 
@@ -44,6 +61,15 @@
 4. 圈出所有数字和「研究表明」：逐条补来源，补不了就删。
 5. 问自己：这段话能不能原样搬到竞品的网站上？能，就说明它还缺少你自己的信息。
 
+## 检查清单
+
+1. **事实已人工核对** → 逐条核对正文、title、meta description、结构化数据、图片替代文字里的事实 → 通过：每个事实有来源或实测记录；失败：有 AI 生成而未核对的事实（Google 生成式 AI 内容指南的要求）。
+2. **空话和营销词** → `python3 scripts/text_metrics.py --market zh < page.txt`（英文用 `--market en`）：报中英 slop 词、无指涉声明、破折号 ≥3 次；`python3 scripts/market_lint.py --market zh page.txt`：`markets.json` 营销词 >3 处告警 → 通过：每个命中都换成事实或删除；失败：保留无法核对的夸张说法。
+3. **句长节奏** → `text_metrics.py` 在句长标准差小于均值 25% 时报 metronomic；`market_lint.py` 的「句长 CV」一项同口径（本套件口径）→ 通过：没有告警，或告警句已改；失败：整篇句长一样且内容空。节奏只是提示，不是判定作者的依据。
+4. **来源完整** → 五步自查第 4 步 → 通过：没有「研究表明」类无主语句；失败：有。
+5. **AI 参与的说明** → 对照 Who、How、Why → 通过：读者会问「怎么做出来的」的页面有说明，作者信息真实；失败：编造作者，或把 AI 写成署名作者。
+6. **不用检测器分数** → 审稿记录 → 通过：交付物里没有「AI 概率」；失败：用检测器分数决定能否发布。
+
 ## 交付时给出
 
 一份修改清单，每条包括：原句位置、问题类型（对应上表）、建议改法；需要作者补充的一手信息单独列出。不给「AI 概率」之类的分数。
@@ -54,38 +80,33 @@
 - 只做同义词替换，信息量没有变化。
 - 为了「像人写的」故意加口语和错别字。
 - 把所有长句都拆碎，导致论证断裂。
+- 把零宽字符当成 AI 生成的证据。
 
-## 市场差异:各语言的 AI 味标记表(2026-10-09 三波整合)
+## 各语言的标记表
 
-**原理(日语区最完整实现,hana652 六法则)**:AI 文的问题不是"误用"而是**密度**——正确技法以人类上限 3–8 倍的频率出现。每语种建自己的标记表,检测"密度"而非"误用":
+原理（本套件口径）：问题通常不在某个词用错，而在**同一种写法反复出现**。所以按密度检查，不按单个词定罪。日语写作规范仓库 hana652/tech-writing-pack 从 5 篇样本里归纳了这一点；样本太少，它给出的倍数本文不采用。
 
-| 语言 | 标记/触发词(示例) | 检测要点 | 来源 |
-|---|---|---|---|
-| 日语 | 転用動詞 28 语(落ちる/壊れる/設計/本質)+構文 14 种(対比構文/三连反复/文体混在) | レジスター(register)别阈值;writing-lint 机器判定+before/after 对照 | hana652/tech-writing-pack(一手) |
-| 葡语(巴西) | gerúndio 链("…garantindo mais eficiência")、逃 ser 动词("configura-se como")、mulecas("Vale destacar que"/"Nos dias de hoje") | 发布前 35 型审查+Unicode 水印清理 | pedrenrick/web-search(一手翻译层) |
-| 印尼语 | **"hiruk pikuk"(第一标记,绝对禁用)**、负平行结构、Title Case 标题、em-dash 风格化 | L1–L10 十条硬禁令 | alvinindra/bahasa-skills(一手) |
-| 波兰语 | (humanizer-pl 8★ 专门去 AI 味)+sierotki 孤字排版规则 | 波兰排版规则单独检查 | humanizer-pl/Zuczkowski(一手) |
-| 荷兰语 | 连字符作风格标点、"AI"小写 | 写规明令 | GianlucaNaarden 库写规 |
-| 越南语 | 句长方差检测(反均匀句长) | mona-seo-check-vi 的量化法 | 一手 |
-| 中文 | 营销词>3/页(创新领先/卓越/极致类)、标题党(暴涨/封神/必看) | 已有 CJK 阈值见中文指南 | 套件自有 |
-| 英文 | hype 词(revolutionary/game-changing)克制 | 已有 | 套件自有 |
+每个语种的表要由母语者维护，并写上日期。下表的出处是第三方写作规范仓库，不是研究，命中只作提示：
 
-**跨语言通用信号**:句长方差过低(均匀句长=AI 味)、段落结构过度平行、每段都以总起句开头。检测思路可迁移(日语六法则→各语建"人类上限频率"基线);**每语种表的建立需要母语者标注触发词**——表会过时,带日期维护。
+| 语言 | 示例标记 | 出处 |
+|---|---|---|
+| 中文 | 营销词（创新领先、卓越、极致类）、标题党（暴涨、封神、必看） | 本套件 `scripts/markets.json` 的 zh 营销词表，`market_lint.py` 执行 |
+| 英文 | 自动三连排比、每句 12–18 词的匀速节奏、总结式破折号从句、段落长度一样、空洞强化词、没有指代的「行业领先」 | [Yuzzyuk/marketing-os slop-patterns](https://github.com/Yuzzyuk/marketing-os/blob/main/skills/marketing-os/references/slop-patterns.md)（MIT）；本套件词表在 `text_metrics.py` 的 `EN_SLOP` |
+| 印尼语 | 「hiruk pikuk」：该仓库列为最高优先级的禁用词，称经母语者验证 | [alvinindra/bahasa-skills · frasa-terlarang](https://github.com/alvinindra/bahasa-skills/blob/main/skills/bahasa-inti/references/frasa-terlarang.md) |
+| 日语 | 对比句式「AではなくB」等技法的出现密度 | [hana652/tech-writing-pack · 07-ai-buntai-laws](https://github.com/hana652/tech-writing-pack/blob/main/guides/07-ai-buntai-laws.md) |
 
-## Unicode 水印字符清单(seomachine content_scrubber,百仓扫描批 1)
+marketing-os 的判据可以借用：正式语域本身不是问题，问题是空；好文案至少有一个能被核对、也可能被证伪的事实（本套件转述）。旧版表中的葡萄牙语、波兰语、荷兰语、越南语行没能核到出处中的对应内容，已删除。
 
-AI 生成文本常携带零宽/不可见字符(既泄密又是水印):U+200B(ZWSP)/U+FEFF(BOM)/U+200C-U+200D(ZWNJ/ZWJ)/U+2060-U+2064(word joiner 等)/U+180E(Mongolian vowel sep)/U+202F(narrow nbsp)+ em-dash 置换——发布前 scrubber 扫描并清除(套件八语标记表的机械层)。
+## 不可见字符
 
-## 英文 slop tell 全量(Yuzzyuk/marketing-os 精读,百仓深扫;补强八语表的英文行)
-
-**结构类 7 tell**:①"Not just X, but Y"构式;②reflexive tricolon 三连排比;③**metronomic sentence length——每句 12-18 词,人类节奏剧变**;④总结性 em-dash 从句(一篇一次是风格,三次是签名);⑤**symmetrical paragraphs 段长均一**;⑥question-then-answer 开头;⑦reassuring close("and that's what makes all the difference"式收尾)。
-**词表 10 类**:empty intensifiers(truly/genuinely)/frictionless(seamless/effortless)/transformation(revolutionise/supercharge)/journey(landscape/tapestry)/abstract plurals(solutions/capabilities)/corporate hedges(leverage/holistic/bespoke)/time filler(in today's fast-paced)/discourse glue(moreover/furthermore)/false humility(it's important to note)/vague scale(countless/myriad/a plethora of);重灾区:delve/navigate/foster/underscore/harness/pivotal。
-**语义类**:无指涉声明(industry-leading);该平却叠 hedge("can help potentially reduce up to 30%" vs "Cuts cost 31% at [customer]"——**every hedge is a small confession**);无机制收益;人口统计受众 vs 状态受众;**perfectly balanced both-sidesing(营销要站队)**;emoji as structure。
-**判据与测试**:"Register is not slop——test is emptiness, not formality"(合规正式语域 OK);over-correcting toward punchy is its own tell;read-aloud test+bar test;好文案="contains at least one fact that could be checked and disproved"。
+- `python3 scripts/text_metrics.py --scrub < page.txt > clean.txt` 扫描并删除这些字符：U+200B、U+FEFF、U+200C、U+200D、U+2060–U+2064、U+180E、U+202F。它们会引起渲染和复制问题，发布前值得清理。
+- 不要把它们当成 AI 生成的证据。本组没有找到模型厂商说明自己用这些字符做文本水印的一手声明（2026-10-18）。
+- **法语页不要删 U+202F。** 法语排版在 `: ; ! ?` 前要求窄不换行空格，`market_lint.py --market fr` 会检查 U+202F 或 U+00A0 是否在场；`--scrub` 会把 U+202F 一起删掉。
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-18。
 
 - 思路参考：[coreyhaines31/marketingskills · skills/seo-audit/references/ai-writing-detection.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/seo-audit/references/ai-writing-detection.md)（MIT）
-- 一手资料：[Google 关于 AI 生成内容](https://developers.google.com/search/blog/2023/02/google-search-and-ai-content)、[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)
+- Google 一手资料：[Google 关于 AI 生成内容（2023-02-08）](https://developers.google.com/search/blog/2023/02/google-search-and-ai-content)、[生成式 AI 内容指南](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content)、[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)
+- 检测器研究：[OpenAI 分类器公告与下线说明](https://openai.com/index/new-ai-classifier-for-indicating-ai-written-text/)、[Liang 等 2023](https://arxiv.org/abs/2304.02819)、[Weber-Wulff 等 2023](https://arxiv.org/abs/2306.15666)、[Dugan 等 2024（RAID）](https://arxiv.org/abs/2405.07940)、[Kobak 等（Science Advances 2025）](https://arxiv.org/abs/2406.07016)
