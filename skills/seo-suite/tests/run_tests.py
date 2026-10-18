@@ -109,14 +109,18 @@ class GscMiningTests(unittest.TestCase):
                "page2 term,2,80,1%,18.0\n"          # 命中
                "low impr,0,10,0%,8.0\n"             # 曝光<20 排除
                "too far,1,60,0.5%,22.0\n"           # pos>20 排除
-               "quick win,0,100,0%,12.0\n"          # 命中 SD;CTR 差 1pp<2pp 不进低CTR
-               "neg ctr,0,100,-10%,11.0\n")         # 命中 SD;CTR 差>2pp 进低CTR
+               "quick win,0,100,0%,12.0\n"          # 命中 SD;第二页不进低CTR
+               "page two zero,0,100,0%,11.0\n"      # 命中 SD;第二页不进低CTR(期望只有 1%)
+               "top3 no click,0,100,0%,3.0\n")      # pos<5 不进 SD;排名 1-10 且差>2pp 进低CTR
+        # 2026-10-18 修正:旧版低 CTR 只看排名 11-20,期望 CTR 恒 1%,差值到不了 2pp,
+        # 旧测试只能靠负 CTR(-10%)触发;现在覆盖排名 1-10(见 tests/test_gsc_mining_fixes.py)
         p = tmp_file(csv)
         r = run_script("gsc_mining.py", [p])
         self.assertIn("striking distance(pos5-20, 曝光≥20): 4 词", r.stdout)
         self.assertIn("cheap flights", r.stdout)
         self.assertNotIn("head term", r.stdout)
-        self.assertIn("低CTR机会(期望-实际>2pp): 1 词", r.stdout)
+        self.assertIn("低CTR机会(排名1-10, 期望-实际>2pp): 1 词", r.stdout)
+        self.assertIn("top3 no click", r.stdout)
         os.unlink(p)
 
 

@@ -2,9 +2,12 @@
 
 > 先读 [geo-evidence.md](geo-evidence.md)。下面的模式帮助读者快速找到答案，也让搜索和 AI 产品更容易准确理解页面；
 > 它们不保证获得精选摘要、AI 引用或排名。按真实用户问题选用，不要每页套全。
+> 标题和首段用买家原词，见 [question-alignment.md](question-alignment.md)。
 > UGC 内容 SEO 与站内搜索优化（双模块）另见 [ugc-site-search.md](ugc-site-search.md)。
 
 ## 选哪个块
+
+本套件口径：
 
 | 用户在问 | 用的块 | 写法要点 |
 |---|---|---|
@@ -18,23 +21,23 @@
 
 ## 通用写法
 
-- 标题用用户的问法，答案紧跟标题，不绕弯。
-- 自足回答：一个段落回答一个问题，单独摘出去仍然准确，示例见 [quotable-content-examples.md](quotable-content-examples.md)。
+- 标题用用户的问法，答案紧跟标题，不绕弯。问法的来源见 question-alignment.md 第二节。
+- 自足回答：一个段落回答一个问题，单独摘出去仍然准确。示例见 [quotable-content-examples.md](quotable-content-examples.md)。
 - 统计数字：写来源、时间、样本和口径；过期数据更新或标注。
-- 专家引语：写清姓名、身份和出处，不编造。
+- 专家引语：写清姓名、身份和出处，不编造。Google 把编造作者资料（AI 生成的头像、虚构的姓名、虚假的资历）列为欺骗（[有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)，核对 2026-10-18）。
 - 权威主张：优先引用一手来源（标准、官方文档、论文），不引用转述的转述。
-- 结构化数据只描述页面上可见的内容。FAQ 富结果的现状见 geo-evidence.md，不要为占位堆 FAQPage 标记。
+- 结构化数据只描述页面上可见的内容（[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。FAQ 富结果的现状见 geo-evidence.md 与 [deprecated-signals.md](../technical/deprecated-signals.md)，不要为占位堆 FAQPage 标记。
 
 ## 高风险领域的额外要求
 
-- **健康、金融、法律**：由有资质的人审阅并署名；写明更新时间；给一手来源；说明内容的适用边界，不做夸大承诺。
-- **技术文档**：写清版本号和运行环境；代码示例可运行；标注已知限制。
-- **商业与营销**：数据写口径；案例写清背景、时间和前提条件。
+- **健康、金融、法律**：由有资质的人审阅并署名；写明更新时间；给一手来源；说明内容的适用边界，不做夸大承诺。依据：对可能显著影响健康、财务稳定或安全的主题（YMYL），Google 的系统更看重体现强 E-E-A-T 的内容；这类内容必须高度准确，并与公认的专家共识一致（[有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)，核对 2026-10-18）。
+- **技术文档**（本套件口径）：写清版本号和运行环境；代码示例可运行；标注已知限制。
+- **商业与营销**（本套件口径）：数据写口径；案例写清背景、时间和前提条件。
 
 ## 语音与对话式查询
 
-- 语音助手和对话式搜索的答案仍然来自可抓取、可索引的页面。用自然问句做标题、答案先给一句话结论，就已覆盖大部分需求。
-- 不需要为语音单独做一套页面；个别面向特定发布者的专用标记，以 Google 当前文档为准。
+- Google 没有单独的「语音 SEO」规范。专用的只有 speakable 结构化数据：它是 Beta，只用于新闻内容，只面向美国、设备语言为英语的 Google Home 用户和英文发布者（[speakable](https://developers.google.com/search/docs/appearance/structured-data/speakable)，核对 2026-10-18）。
+- 其他场景按普通页面做：用自然问句做标题，首句给一句话结论（本套件口径）。不为语音单独建页。
 
 ## 常见误区
 
@@ -44,29 +47,43 @@
 - 「最佳 N 个」清单只推自家产品，或排序理由不公开。
 - 同一事实在正文、表格、结构化数据里说法不一致。
 
-## 市场差异:结构惯例(拉平轮)
+## 市场差异：结构惯例
 
-- **日本**:同主题先攒 20–30 篇再谈支柱(記事数惯例);見出し字数 H1≈32/H2≈25/H3≈20 字;一套事实三种变体(权威页/社交版/社区版)的渠道映射见 multilingual-workflow 第六节(已含各市场去处)。
-- **中文**:一套事实三变体(官网/公众号/社区)+营销词 ≤3;详见中文指南。
-- **韩/越南**:疑问式 H2 ≥50%(对 SEO/GEO 双高价值,t0mmy 规则)。
-- **俄**:商业页 6 块法定透明层(оферта/реквизиты 等)是内容结构的一部分。
-- **阿拉伯**:MSA 骨架+方言层的正文分层;免责声明即内容(医疗/金融)。
+- 各市场的结构惯例写在 [multilingual-workflow.md](../overview/multilingual-workflow.md) 和 `references/markets/<市场代码>.md`。例如：日语的見出し字数、越南的提问式 H2 规则（t0mmy 规则集，是业内规则，不是官方算法）、俄语商业页的法定信息页、阿拉伯语的标准语与方言分层。这些数字由对应文件核实，本文件不重复。
+- 中文（本套件口径）：一套事实分三种写法（官网、公众号、社区）；营销词每页不超过 3 个，`market_lint.py --market zh FILE` 会检查。
+
+## SXO：页型匹配与读者画像
+
+本节是本套件口径，方法来自 claude-seo 的 SXO 模块（第三方工具），数字是该方法的约定，不是研究结论。
+
+- **页型先于内容**：先把 SERP 前 10 的每条结果按页型分类，再谈页面本身。
+- **8 类页型**，信号重叠时按顺序取：工具 / 交互 → 本地（地址 + 地图）→ 对比（vs + 矩阵表）→ 商品（价格 + 购买按钮）→ 落地页（CTA 重、导航精简）→ 服务页（流程 + 案例）→ 混合（教育 + CTA）→ 博客（默认）。
+- **失配严重度**：博客打商品词 = CRITICAL（建商品页）；博客打对比词 = HIGH（改成对比矩阵）；商品页打信息词 = HIGH（加教育内容）；落地页打工具词 = HIGH（做交互组件）；服务页打本地结果 = MEDIUM（补本地信号和 schema）。
+- **共识度**：某页型占比 > 60% 为强共识；40–60% 为混合；< 40% 为碎片化。碎片化是差异化机会，注明即可。
+- **从 SERP 信号推导读者需要，不凭空编**：「其他人还问了」= 知识缺口；广告文案 = 商业触发点和顾虑；相关搜索 = 搜索路径（加限定词 = 收窄，alternatives = 不满意现有方案，vs = 正在比较，reviews = 先要信任）；精选摘要的格式 = 期望的答案结构（段落 = 定义，列表 = 步骤，表格 = 对比数据，视频 = 演示）。
+- **故事模板**：As a [画像] / I want [目标] / because [动机] / but blocked by [障碍]。障碍分六类：信息缺口、信任缺口、比较疲劳、价格敏感、技术困惑、时间压力。
+- **画像评分**：4–7 个画像，每个都要追溯到上面的信号。四维各 25 分：Relevance（解决这个画像的需求）、Clarity（10 秒内找到答案）、Trust（这个画像需要的信任信号）、Action（下一步匹配所处阶段）。总分分四档：80+、60–79、40–59、0–39；0–39 为严重失配，重构或另起页面。按估算搜索量加权，先修「最弱画像 × 最高权重」。
+- **SXO 缺口分和 SEO 健康分分开报**：7 维，页型、内容深度、UX 信号、schema、媒体丰富度、权威信号各 15 分，新鲜度 10 分。
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 块与问题匹配 | 对照「选哪个块」 | 通过：每个块回答一个真实问题。失败：每段都改成问答 |
+| 标题用用户问法 | 对照查询、工单原话（question-alignment.md 第二节） | 通过：用原词。失败：内部术语 |
+| 答案自足 | 把段落单独摘出来读 | 通过：单独读仍准确。失败：依赖上下文 |
+| 统计数字 | 逐个查来源、时间、样本、口径 | 通过：四项齐。失败：缺任何一项或已过期未标注 |
+| 引语 | 查姓名、身份、出处 | 通过：可查证。失败：查不到 |
+| 事实一致 | 对照正文、表格和结构化数据；`python3 scripts/schema_lint.py URL` | 通过：三处说法一致。失败：不一致 |
+| FAQ 问题来源 | 对照工单、搜索词、社区记录 | 通过：每个问题有来源。失败：编造 |
+| H2 问句占比与营销词 | `python3 scripts/market_lint.py --market XX FILE --report` | 按该市场 markets 文件的口径判 |
+| YMYL 内容 | 看署名、审阅者资质、更新时间 | 通过：三项齐。失败：缺 |
+| 页型 | SXO 节的 8 类页型分类 SERP 前 10 | 通过：与主流页型一致或写明理由。失败：错页型 |
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。一手资料均于 2026-10-18 打开核对。
 
 - 思路参考：[coreyhaines31/marketingskills · skills/ai-seo/references/content-patterns.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/ai-seo/references/content-patterns.md)（MIT）
-- 一手资料：[Google：精选摘要](https://developers.google.com/search/docs/appearance/featured-snippets)、[Google：有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[Google：结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)
-
-## SXO:页型匹配与画像评分(claude-seo 深读 2026-10-09b)
-
-- **核心洞察**:页型错位先于一切内容优化——SERP 前 10 若有 8 个商品页+2 个对比页,博客文写得再好也进不去;先做 SERP 反推(把每条结果按 8 类页型分类),再谈页面本身。
-- **8 类页型与判定优先级**(信号重叠时按序取强):工具/交互 → 本地(地址+地图) → 对比(vs+矩阵表) → 商品(价格+购买钮) → 落地页(CTA 重+精简导航) → 服务页(流程+案例) → 混合(教育+CTA) → 博客(默认兜底)。
-- **失配严重度矩阵**:博客打商品词=CRITICAL(建商品页);博客打对比词=HIGH(重构成对比矩阵);商品页打信息词=HIGH(加教育内容层);落地页打工具词=HIGH(做交互组件);服务页打本地结果=MEDIUM(补本地信号+schema);类型对齐=拼深度与 UX。
-- **共识度判定**:某页型占比 >60%=强共识;40-60%=混合;<40%=碎片化(碎片化=差异化机会,注明即可)。
-- **用户故事从 SERP 信号推导(不许凭空编)**:PAA=知识缺口(定义型=认知阶段/评估型=考虑/对比型=决策);广告文案=商业触发与异议处理(无广告≈信息型词);相关搜索=搜索旅程(+限定词=收窄、去掉限定词=转向、"alternatives"=不满、"vs"=比价中、"reviews"=信任前置);精选摘要格式=期望答案结构(段落=定义/列表=步骤/表格=对比数据/视频=演示);AI Overview=Google 认可的权威综合(未被引用=内容不匹配其综合模型)。
-- **故事模板**:`As a [画像] / I want [目标] / because [情绪驱动] / but blocked by [障碍]`;情绪映射:"is X safe/scam"=怀疑、大量 vs 查询=选择过载、"not working"=对现方案不满、高广告密度+购物结果=准备购买;障碍类型对应页面必须解决的点:信息缺口/信任缺口/比较疲劳/价格敏感/技术困惑/时间压力。
-- **画像评分(4-7 个,每个必须追溯到信号簇)**:四维各 25 分——**Relevance**(是否解决该画像特定需求)/**Clarity**(**10 秒内能否找到答案**——首屏或首滚可见)/**Trust**(该画像所需的信任信号:同类客户证言/资质/担保)/**Action**(下一步是否匹配旅程阶段:认知期"learn more"、决策期"buy now");总分档 80+/60-79/40-59/0-39(0-39=Critical Mismatch,重构或另起页面);按估算搜索量份额加权(信息主导加权信息画像);优先修"最弱画像×最高量权"。
-- **SXO Gap 分独立于 SEO 健康分**:7 维=页型/内容深度/UX 信号/schema/媒体丰富度/权威信号各 15 分+新鲜度 10 分;"95 SEO+30 SXO=技术上完美但战略错位",两个分一起报。
-- **IST/SOLL 线框纪律**:占位符必须超具体——不是"加 CTA"而是"hero 下加 'Start Free Trial' 绿钮(#2d6a4f)链 /signup";移动 375px 优先设计,首屏 ~600px 内放该页型最关键元素;H2 章节应逐一对应 PAA 簇,FAQ 收录剩余 PAA 问题。
+- 一手资料：[Google：精选摘要](https://developers.google.com/search/docs/appearance/featured-snippets)、[Google：有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[Google：结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[Google：speakable](https://developers.google.com/search/docs/appearance/structured-data/speakable)
+- 方法来源（第三方工具）：claude-seo 的 SXO 模块（页型、画像评分）

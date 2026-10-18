@@ -1,6 +1,6 @@
 # Capability Matrix(能力矩阵)
 
-机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**123 条 = 85 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
+机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**125 条 = 87 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
 
 治理出处:[references/research/niubigeo-deep-read.md](references/research/niubigeo-deep-read.md) N10(CAPABILITY_MATRIX 治理格式)。借用其核心思想「**能力=完成**三条件」并按本套件改写:
 
@@ -14,8 +14,8 @@
 
 | status | 判据 | 当前数 |
 |---|---|---|
-| **stable** | 有测试守护(专属测试文件或 run_tests.py 内联用例),或本身即守护工具(self_check/link_check)被检查链每次消费 | 71(34 脚本+24 模板+13 主干) |
-| **beta** | 已实装且已入 data-source-contract,但暂无测试守护 | 51(全部为脚本) |
+| **stable** | 有测试守护(专属测试文件或 run_tests.py 内联用例),或本身即守护工具(self_check/link_check)被检查链每次消费 | 74(37 脚本+24 模板+13 主干) |
+| **beta** | 已实装且已入 data-source-contract,但暂无测试守护 | 50(全部为脚本) |
 | **draft** | 新增未对勘 | 1(templates/content/trend-jack-playbook.md,规格已定待实装) |
 
 升级路径:新脚本入矩阵默认 **draft** → 合同对勘补行后升 **beta** → 补测试守护(golden 用例)后升 **stable**。
@@ -54,18 +54,19 @@
 | 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
 |---|---|---|---|---|---|---|
 | sitemap_audit.py | URL --check-limit(可选) | markdown | sitemap URL 实时抓取(sitemapindex 递归 1 层;逐 loc 抽查状态码/标签) | ③+② | — | beta |
-| hreflang_cluster.py | URL...(多个) --max-extra(可选) | markdown | 多个 URL 实时抓取(HTML link 标签+HTTP Link 头+sitemap XML 三载体) | ② | — | beta |
+| hreflang_cluster.py | URL...(多个) --max-extra(可选) | markdown | 多个 URL 实时抓取(HTML link 标签+HTTP Link 头+sitemap XML 三载体) | ② | test_hreflang_cluster.py | stable |
 | redirect_chain.py | URL | markdown | URL 实时逐跳 GET(手动跟随不自动重定向) | ③ | — | beta |
 | robots_posture.py | URL --fix-robots(可选) | json | robots.txt 实时抓取;27 bot 三层名单+RFC 9309 解析器内置本地 | ③ | test_robots_posture.py | stable |
 | llmstxt.py | validate FILE\|check URL\|generate --sitemap | markdown | validate=本地文件;check=线上 /llms.txt 等 4 路径探测;generate=--sitemap 实时抓取 | ③ | run_tests.py(内联) | stable |
 | schema_lint.py | URL | markdown | URL 实时抓取(提取全部 ld+json 块) | ③ | — | beta |
 | head_check.py | URL\|FILE --market(可选,zh 门控) | markdown | URL 实时抓取或本地 HTML 文件;--market zh 门控中文项 | ③+④ | run_tests.py(内联) | stable |
 
-## 三、关键词与 SERP(7)
+## 三、关键词与 SERP(8)
 
 | 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
 |---|---|---|---|---|---|---|
-| gsc_mining.py | 导出.csv --mode matrix(可选) --decay cur prev(可选) | markdown | GSC 导出 CSV(Query,Clicks,Impressions,CTR,Position;matrix 模式加 Page) | ③+① | run_tests.py(内联) | stable |
+| gsc_mining.py | 导出.csv --mode matrix(可选) --decay cur prev(可选) --brand RE(可选) | markdown | GSC 导出 CSV(Query 或 Top queries,Clicks,Impressions,CTR,Position;matrix 模式加 Page) | ③+① | run_tests.py(内联)+test_gsc_mining_fixes.py | stable |
+| question_align.py | --gsc 查询×页面 CSV --pages 页面级 CSV(建议) --fetch 或 --html-dir(可选) --page URL(单页导出) | json | GSC 导出 CSV(gsc_api 规范化输出或网页导出);--fetch 实时抓取 title/H1/首段 | ② | test_question_align.py | stable |
 | serp_overlap.py | 输入.csv(keyword,top10 URL 分号分隔) | markdown | 输入 CSV(keyword,top10 URL 分号分隔)——SERP 数据须用户提供 | ③ | run_tests.py(内联) | stable |
 | keyword_variants.py | stdin 每行一词 | markdown | stdin 每行一词(无输入纯本地归一) | ④ | run_tests.py(内联) | stable |
 | payment_intent.py | stdin 每行一个关键词 | markdown | stdin 关键词 + markets.json payment_words 词表(本地) | ④ | run_tests.py(内联) | stable |
@@ -73,12 +74,13 @@
 | serp_occupancy.py | --market XX 域名列表(argv/stdin) | markdown | --market + 域名列表(argv/stdin);对照 markets.json 内置占位表(tr/th/in/kr/jp/vn/ru) | ③ | — | beta |
 | grid_rank.py | rank_data.csv(keyword,grid_point,rank) | json | rank_data.csv(keyword,grid_point,rank)——本地网格排名采集结果 | ② | — | beta |
 
-## 四、多语言实装(7)
+## 四、多语言实装(8)
 
 | 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
 |---|---|---|---|---|---|---|
 | market_lint.py | --market XX FILE | markdown | --market + 本地文本文件;64 条规则读 markets.json(本地) | ③ | run_tests.py(内联) | stable |
 | local_format.py | --market de\|fr\|ar\|zh 采样文本(argv/stdin) | markdown | --market + 采样文本(argv/stdin);惯例表读 markets.json | ③ | run_tests.py(内联) | stable |
+| ste_lint.py | FILE(文本/Markdown/HTML) --lang 市场码 --glossary 术语表 CSV(可选) | json | 本地文件或 stdin;阈值读 markets.json(sentence_ideal、marketing_words) | ② | test_ste_lint.py | stable |
 | text_metrics.py | stdin 文本 --market/--scrub(可选) | markdown | stdin 文本(本地) | ④ | run_tests.py(内联) | stable |
 | text_units.py | <market>(en\|zh\|ja\|th\|ko\|ru\|id) stdin 文本 | markdown | <market> + stdin 文本(本地;en/zh/ja/th/ko/ru/id) | ③ | — | beta |
 | parity_check.py | --source --target 双语页 | json | 双语对照 QA(长度平价带 markets.json/结构对照/JSON-LD 一致) | ②+③ | test_parity_check.py | beta |

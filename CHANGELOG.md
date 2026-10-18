@@ -5,6 +5,12 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+- **深挖第一批(2026-10-18)**:每条结论逐条核一手来源(Google Search Central、Bing、schema.org、规范原文、论文),错的改、没依据的删,概念段改成「检查什么→怎么查→通过/失败」的检查清单。本批提交:title-formulas、meta-tag-formulas、content-structure-templates、content-patterns(核 176 条:核实 75、改正 13、删除 37);其余参考文件分批提交。
+- **新增方向文件**:`references/content/question-alignment.md`(提问对齐:title、H1、首段用买家原词,首段第一句直接回答;取词来源、选页规则、判据与测量)、`references/content/asd-ste100-web-writing.md`(ASD-STE100 Issue 9 网页借用:程序句 ≤20 词、描述句 ≤25 词、一句一指令、主动语态、术语一致;写明 STE 没有排名或 AI 引用实证)。
+- **新增脚本**:`question_align.py`(提问对齐候选页:展示多点击 0、匿名查询占比、title/H1/首段覆盖与缺词、本站分段 CTR 期望点击)、`ste_lint.py`(ASD-STE100 近似检查,不出合规结论)。
+- **真实站点实测修的 bug**:`gsc_mining.py` 两期对比遇新查询崩溃、消失的查询不报、低 CTR 规则从不触发(只看排名 11–20)、"0.5%" 被读成 50%、不认 `Top queries` 列,并加 `--brand`;`hreflang_cluster.py` 把 zh-Hans 判非法、放行 es-419(Google 原文写明不支持)、把单条回链缺失说成整簇作废、把多载体同时声明当冲突。均补修前红、修后绿的回归测试。
+  Deep-review batch 1: claims checked against primary sources; question-alignment and ASD-STE100 references added; question_align.py and ste_lint.py added; gsc_mining and hreflang_cluster bugs found on a real site fixed with regression tests.
+
 - **intel-update 工单修复**:workflow 此前在生成工单时再跑一次 intel_check,第二次比对的是第一次刚存下的基线,工单头部写"有变更"、正文恒为"无变更"(10-13/10-14/10-15 复现)。现在只跑一次,报告直接写进 `intel-update-pending` issue(新开或追加评论),不再提交仓根 `.intel-update-task.md`;无变更时不再自动关单;异常退出(无 `[CHANGED]` 行)单独记 error,不开 issue。
 - **运行态文件移出仓库**:`findings.json`、`crawl.json`、`briefs/`、`.intel-update-task.md` 加入 .gitignore 并从仓库删除;`tests/test_fix_oracle.py` 改为把 findings 写进临时目录(此前每跑一次测试都在 CWD 落一份 findings.json);trend-watch 的 `.github/state/trend/briefs/` 不再被 `briefs/` 规则误吞。
 - **自更新协议改写**:`self-update-protocol.md` 按现行方式改为「云端检测 + issue 工单 + 本地处理」,触发模板路径改占位符,提交改精确路径(不用 `git add -A`)。

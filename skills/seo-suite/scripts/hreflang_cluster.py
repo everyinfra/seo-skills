@@ -13,10 +13,15 @@
   * 未作为入参提供的 alternate 页面会自动补抓 (--max-extra 控制上限) 以验证回报
   * 检查列 (行=URL):
       条目数 / 自引用 / 语言码合法 / URL 绝对 / HTTP 200 / 双向回报 (return tag)
-      语言码: 须为 ISO 639-1 双小写字母; 拒绝 eng / jp / en-uk / en_GB (下划线);
-      区域码须大写 (en-GB), es-419 之类 3 位数字 UN 码放行; x-default 放行
-  * 关键规则: 任何单条 return tag 缺失/断裂, Google 会忽略整个互指簇 (全簇不生效)
-  * 三载体冲突: 同一 (hreflang, href) 同时出现在多个载体 -> 警告只应保留一种声明方式
+      语言码: ISO 639-1(拒绝 eng / jp / en_GB 下划线);可选 ISO 15924 文字码(zh-Hans、zh-Hant)
+      和 ISO 3166-1 Alpha-2 区域码(en-GB、zh-Hans-US);x-default 放行。
+      Google 不支持 3 位数字 UN 区域码(原文举例 es-419);EU / UN / UK 不起作用。
+      值不区分大小写(区域码大写只是惯例,小写不判错)。
+  * 回链: A 指向 B 而 B 不指回 A, Google 忽略这一对注解;其余互指的照常处理(不是整簇作废)。
+  * 多载体: 同一 (hreflang, href) 同时出现在 HTML / HTTP 头 / sitemap —— 三者等价,同时用没有收益、
+    更难维护,只作维护提示,不判错。
+  出处: https://developers.google.com/search/docs/specialty/international/localized-versions
+       (2026-09-21 更新,2026-10-18 核对)
 
 退出码: 存在硬失败 (语言码非法 / 非绝对 URL / 非 200 / 回报缺失) -> 1, 否则 0.
 """
@@ -34,7 +39,7 @@ from html.parser import HTMLParser
 UA = "Mozilla/5.0 (compatible; SEOSkill-HreflangCluster/1.0)"
 CARRIERS = ("html-head", "http-link", "sitemap")
 LINK_ITEM_RE = re.compile(r"<(?P<url>[^>]+)>(?P<params>[^<]*)")
-LANG_RE = re.compile(r"^[a-z]{2}(?:-[A-Z]{2}|\-\d{3})?$")
+RESERVED_REGIONS = frozenset({"EU", "UN", "UK", "EZ"})   # Google: EU、UN、UK 不起作用(UK 不是 ISO 3166-1 码,应为 GB)
 
 # ISO 639-1 全集: 结构合法但不是语言码的常见错误 (jp/kr/cn/sc/ge...) 靠它拒绝
 ISO639_1 = frozenset("""
@@ -144,39 +149,38 @@ def norm_url(u, base=None):
 
 
 def check_lang(code):
-    """返回该 hreflang 值的问题列表; 空列表 = 合法."""
+    """返回该 hreflang 值的问题列表; 空列表 = 合法(大小写不敏感)."""
     problems = []
     c = (code or "").strip()
-    if c == "x-default":
+    if c.lower() == "x-default":
         return []
     if not c:
         return ["空语言码"]
     if "_" in c:
         problems.append("使用下划线 (应为连字符, 如 en_GB -> en-GB)")
         c = c.replace("_", "-")
-    if LANG_RE.match(c):
-        lang = c.split("-")[0]
-        if lang not in ISO639_1:
-            hint = LANG_FIX.get(lang, "")
-            problems.append("语言码 '{0}' 不是 ISO 639-1 代码{1}".format(
-                lang, " (正确写法: {0})".format(hint) if hint else ""))
-        return problems
     parts = c.split("-")
-    lang = parts[0]
-    region = parts[1] if len(parts) > 1 else ""
-    if re.fullmatch(r"[A-Z]{2}", c):
-        problems.append("语言码大写 (应为小写, 如 EN -> en)")
+    lang = parts[0].lower()
     if not re.fullmatch(r"[a-z]{2}", lang):
-        problems.append("语言码 '{0}' 非 ISO 639-1 双小写字母 (eng/jp 之类非法)".format(lang))
+        problems.append("语言码 '{0}' 非 ISO 639-1 双字母 (eng/jp 之类非法)".format(parts[0]))
     elif lang not in ISO639_1:
         hint = LANG_FIX.get(lang, "")
         problems.append("语言码 '{0}' 不是 ISO 639-1 代码{1}".format(
             lang, " (正确写法: {0})".format(hint) if hint else ""))
-    if region:
-        if re.fullmatch(r"[a-z]{2}", region):
-            problems.append("区域码 '{0}' 未大写 (en-uk 应为 en-GB; UK 并非合法 ISO 3166 码, 应用 GB)".format(region))
-        elif not re.fullmatch(r"[A-Z]{2}|\d{3}", region):
-            problems.append("区域码 '{0}' 非法 (须为 2 位大写 ISO 3166 或 3 位数字 UN 码, 如 es-419)".format(region))
+    rest = parts[1:]
+    if rest and re.fullmatch(r"[A-Za-z]{4}", rest[0]):      # ISO 15924 文字码:zh-Hans、sr-Latn
+        rest = rest[1:]
+    if rest:
+        region = rest[0]
+        if re.fullmatch(r"\d{3}", region):
+            problems.append("区域码 '{0}' 是 UN M.49 数字码, Google 不支持 (原文: such as es-419, aren't supported); "
+                            "改用语言码兜底 (es) 加需要的国家码 (es-MX)".format(region))
+        elif not re.fullmatch(r"[A-Za-z]{2}", region):
+            problems.append("区域码 '{0}' 非法 (须为 ISO 3166-1 Alpha-2 两字母国家码)".format(region))
+        elif region.upper() in RESERVED_REGIONS:
+            problems.append("区域码 '{0}' 是保留码, 在 Google 搜索里不起作用 (英国用 GB)".format(region))
+        if len(rest) > 1:
+            problems.append("区域码之后还有多余子标签 '{0}'".format("-".join(rest[1:])))
     return problems
 
 
@@ -376,7 +380,7 @@ def main(argv=None):
                 continue
             back = any(hn2 == page_norm for (_l2, hn2) in entries[hn].keys())
             if not back:
-                ret_missing.append("{0} -> {1}: 对方未回报本页 (return tag 缺失)".format(lang, hn))
+                ret_missing.append("{0} -> {1}: 对方未回指本页 —— Google 忽略这一对注解 (只影响这一对, 其余互指照常)".format(lang, hn))
         ret_ok = not ret_missing
 
         row_hard_fail = bool(lang_bad or abs_bad or alt_bad or ret_missing or not page_ok)
@@ -418,7 +422,7 @@ def main(argv=None):
             for s in alt_bad[:10]:
                 print("     - {0}".format(s))
         if ret_missing:
-            print("   * 双向回报 (return tag) 断裂:")
+            print("   * 回链缺失 (只影响这一对):")
             for s in ret_missing[:10]:
                 print("     - {0}".format(s))
         if not any((norm_url(h) == norm_url(page)) for (_l, h) in d.keys()) and d:
@@ -434,13 +438,13 @@ def main(argv=None):
                 conflicts.append("{0}: ({1}) 声明于 {2}".format(
                     page, _lang, "+".join(sorted(item["carriers"]))))
     if conflicts:
-        print("\n---- 三载体冲突 (Google 只应用一种, 应只保留一种声明方式) ----")
+        print("\n---- 多载体重复声明 (三种载体等价, 同时用没有收益、更难维护; 维护提示, 不判错) ----")
         for c in conflicts[:15]:
             print("   * {0}".format(c))
         if len(conflicts) > 15:
             print("   ... 共 {0} 处".format(len(conflicts)))
 
-    print("\n!! 关键规则: 簇内任何单条 return tag 缺失/断裂 -> Google 会忽略整个互指簇 (全簇 hreflang 不生效).")
+    print("\n说明: 两页没有互相指向时, Google 忽略这一对注解; 其余互指的注解照常处理 (Google localized-versions 文档).")
     print("==== 结论: {0} ====".format("存在硬失败 (退出码 1)" if hard_fail else "簇校验通过"))
     return 1 if hard_fail else 0
 

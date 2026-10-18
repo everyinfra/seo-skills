@@ -37,7 +37,7 @@ metadata:
 **新站开局协议(用户给出新域名的默认动作序列)**:
 intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want seo-audit,rank,backlinks,cwv`(探测已配源)→ `project.py init <域名>` + `project.py run triage`(全站发现→体检→优先级→封套→"站型+该做三件事")→ 按 [strategy-fit](references/overview/strategy-fit.md) 与对应站型卡的开局命令链推进 → CRITICAL 未清零前不做内容量产(原则 0)。
 
-### 3. 可执行层(85 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
+### 3. 可执行层(87 个实装脚本,AI 直接调用;全部 stdlib 零依赖)
 规则已变代码——**对应任务先跑脚本拿事实,再按能力文件解读**。markets.json 是 18 市场规则数据层(多语言脚本共读)。新增脚本必须登记 `data/capability-matrix.json`(`tests/test_capability_matrix.py` 五检守护,self_check 消费其中①②),人读版 CAPABILITY_MATRIX.md 与合同表同步:
 
 **审计与页面质量**
@@ -69,7 +69,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 
 **技术 SEO**
 - `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
-- `hreflang_cluster.py URL...`:簇矩阵(es-419 放行/jp 拒绝/单断全废提示)
+- `hreflang_cluster.py URL...`:簇矩阵(ISO 639-1 + 可选 ISO 15924 文字码 + ISO 3166-1 区域码;es-419 这类数字区域码 Google 不支持;回链缺失只影响那一对,不是整簇作废;多载体同时声明只作维护提示)
 - `redirect_chain.py URL`:逐跳链/循环/301 检查
 - `robots_posture.py URL`:AI 爬虫矩阵——**27 bot 三层名单**(training/search/user)+CITATION_BOTS 5 个**两级评分**(通配符 Allow 只拿部分分,专属规则才满分)+RFC 9309 四态判定+Cloudflare 注入检测+Content-Signal;--fix-robots 打印可追加的修复块
 - `llmstxt.py validate|check|generate`:v2 校验/线上探测/生成
@@ -77,7 +77,8 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 - `head_check.py URL|FILE`:head 元素检查——元素顺序/charset 位置(>1024B)/弃用 meta 堆叠(twitter:* 全套/x-ua-compatible/fb:app_id)/og:image 绝对 URL;`--market zh` 门控微信/QQ itemprop 中文场景检查
 
 **关键词与 SERP**
-- `gsc_mining.py 导出.csv [--mode matrix] [--decay cur prev]`:striking distance/低 CTR(期望曲线)/蚕食/衰退
+- `gsc_mining.py 导出.csv [--mode matrix] [--decay cur prev] [--brand RE]`:striking distance/低 CTR(排名 1–10,期望曲线是本套件口径)/蚕食/衰退(本期消失的查询按 0 计);接受网页导出的 `Top queries` 列
+- `question_align.py --gsc qp.csv --pages pages.csv [--brand RE] [--fetch|--html-dir D] [--page URL]`:提问对齐候选页(展示多、点击 0)——title/H1/首段对查询词的覆盖与缺词、匿名查询占比、按本站分段 CTR 算的期望点击;方法见 [question-alignment.md](references/content/question-alignment.md)
 - `serp_overlap.py 输入.csv`:四档聚类判据(7-10/4-6/2-3/0-1)
 - `keyword_variants.py`:跨语言变体归组(阿正书/越声调/全半角/土 İ/俄 ё)
 - `payment_intent.py`:支付即意图标注(OXXO/cuotas/Pix/COD…)
@@ -88,6 +89,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 **多语言实装(markets.json 数据层)**
 - `market_lint.py --market XX FILE`:v3 检查注册表 64 条——special_checks 动态机检 52 条映射(全角可见长度(日 32)/泰文字素/句长/营销词 18 语/格式/敬语混用/简繁混检+ko nosourceinfo/ja 星5つ/en 可引性四要素/pt CNPIX骗局/de Werbung 双披露/id baku-gaul/EYD/th 佛历/pl 变音/sierotki/nl je-u·KvK 等)+ v3 常开机检 12 项(营销词密度/句长CV/FAQ问句密度/有源数字密度/H2 疑问式占比/列表密度/标题关键词位次/日期格式/电话前缀/货币符号/母语字符占比/noai·noimageai·nosnippet AI 退出 meta);--report 尾部打印该市场 AUTO 比例
 - `local_format.py --market de|fr|ar|zh`:数字/标点空格/RTL 数字/日期/电话
+- `ste_lint.py FILE [--lang en] [--glossary terms.csv] [--json]`:ASD-STE100 近似检查(程序句 ≤20 词、描述句 ≤25 词、段落 ≤6 句、一句一指令、被动、缩写、分号、术语一致);口径见 [asd-ste100-web-writing.md](references/content/asd-ste100-web-writing.md),不出「合规」结论
 - `text_metrics.py`:CJK 词数/metronomic 句长 AI 签名/slop/Unicode 水印(--scrub 清除)
 - `text_units.py`:按市场计量单位统计
 
@@ -135,6 +137,8 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 | 「流量/排名下滑了，帮我查根因」 | monitoring + research + technical:monitor diff → sensor_volatility --context → changelog(下跌日页面变更)→ gsc_mining --decay;完整链见 [capability-map.md](references/overview/capability-map.md) 任务链#9 |
 | 「掉量是不是算法更新造成的」 | monitoring:Google Search Status Dashboard 官方时间戳对齐 + sensor_volatility z30 异常日佐证;只按 Dashboard 所列确认事件归因 |
 | 「写一篇能排名的文章」 | content |
+| 「展示多、点击 0,改标题和首段」「对齐买家提问」 | content:[question-alignment.md](references/content/question-alignment.md) + `question_align.py` |
+| 「英文文案按 ASD-STE100 检查」 | content:[asd-ste100-web-writing.md](references/content/asd-ste100-web-writing.md) + `ste_lint.py` |
 | 「优化这篇文章让 AI 更容易准确引用」 | content |
 | 「做 competitor alternative / vs 页面规划」 | research + content + technical |
 | 「做 content pillars / topic clusters」 | research + content |
@@ -247,6 +251,8 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
   它按产品范围区分官方规则、实验、相关性与营销转述；不把 C-SEO Bench 的有限实验外推为「所有 GEO 无效」或「收益必然归零」。
   按其记录（2026-09-04 核对 Google 文档），FAQ 富结果已停止展示，也没有专门的 AI Schema；强制问答切块、TLD 固定加权、「多域名转载引用翻倍」都不能当作实施依据。
   其他参考文件与它冲突时，以它为准。
+- [references/content/question-alignment.md](references/content/question-alignment.md)：title、H1、首段和 description 用买家提问的原词，首段第一句直接回答。改标题、改 meta、写 brief、做 refresh 前先读；候选页用 `question_align.py` 找。
+- [references/content/asd-ste100-web-writing.md](references/content/asd-ste100-web-writing.md)：短句、一句一事、主动语态、术语一致（ASD-STE100 Issue 9 借用原则）；英文用 `ste_lint.py` 做近似检查。STE 没有排名或 AI 引用的实证，价值在读者理解。
 - `references/content/title-formulas.md`
 - `references/content/content-structure-templates.md`
 - `references/content/content-patterns.md`
