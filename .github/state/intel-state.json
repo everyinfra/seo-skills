@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-18T05:51:39.213880+00:00",
+ "checked_at": "2026-10-19T06:09:50.190435+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "c91662d959ad110ac351b917d1d73bc4",
-   "ts": "2026-10-18T05:51:25.912975+00:00"
+   "hash": "4f529a772b7c4dde921ec9d05c518701",
+   "ts": "2026-10-19T06:09:35.377027+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -99,14 +99,12 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "88b4349e9d861acb18ead3279f359cdb",
-   "ts": "2026-10-18T05:51:36.840418+00:00",
-   "unstable_streak": 2
+   "hash": "a584630bd1e2595219138adb02bcb796",
+   "ts": "2026-10-19T06:09:48.060117+00:00"
   },
   "statcounter-ai": {
-   "hash": "f0f163599d8305c51238215b2c0ff9dd",
-   "ts": "2026-10-18T05:51:37.534418+00:00",
-   "unstable_streak": 1
+   "hash": "2eef874bec8c608554030abc012bf791",
+   "ts": "2026-10-19T06:09:48.533129+00:00"
   },
   "semrush-sensor": {
    "hash": "3e84638e76730e3cbc89569d59f815d0",
