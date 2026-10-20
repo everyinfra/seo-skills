@@ -56,15 +56,32 @@ BLUF_RE = re.compile(r"in short|tl;dr|summary|key takeaways|bottom line|the answ
 STAGING = ("test.", "staging.", "dev.", "preview.", "beta.", "uat.")
 # fetch 质量守卫:被挑战页/WAF 拦截时拒绝审计(输出 [SKIP],不算 CRITICAL)
 MIN_BODY_BYTES = 200
-CHALLENGE_MARKERS = ("just a moment", "attention required", "cf-chl", "cf-browser-verification",
-                     "challenge-platform", "checking your browser", "verify you are human",
-                     "unusual traffic", "access denied", "captcha", "ddos-guard", "perimeterx", "px-captcha")
+# S2a B11(2026-10-21):只认**结构特征**,不按正文关键词拒审——页面谈论 CAPTCHA/"access denied"
+# 的正常页(验证码产品页等)必须照常审计。三类结构特征:
+# ① 拦截页专用 <title>(Cloudflare 整页挑战 "Just a moment..." 等);
+# ② 拦截页专用元素属性(challenge-form / cf-browser-verification / _cf_chl_opt / px-captcha 等);
+# ③ 正文极短(可见文本 < CHALLENGE_MAX_TEXT 字)且含拦截措辞或 /cdn-cgi/challenge-platform/ 脚本。
+# 注意:Cloudflare JavaScript Detections 会在**每个** HTML 页注入 /cdn-cgi/challenge-platform/ 脚本
+# (developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/,核对 2026-10-21),
+# 所以该脚本单独出现不算挑战页,只在正文极短时作佐证。
+CHALLENGE_TITLES = ("just a moment", "attention required! | cloudflare", "checking your browser",
+                    "ddos-guard", "please wait while we verify", "verifying you are human")
+CHALLENGE_ATTRS = re.compile(r"""(?:id|class|action|name)\s*=\s*["'][^"']*(?:challenge-form|"""
+                             r"""cf-browser-verification|cf-challenge-running|__cf_chl|cf_chl_|px-captcha|ddos-guard)""",
+                             re.I)
+CHALLENGE_JS = re.compile(r"_cf_chl_opt|/cdn-cgi/challenge-platform/h/[^\s\"']*/orchestrate/", re.I)
+CHALLENGE_PHRASES = ("verify you are human", "checking your browser", "unusual traffic",
+                     "access denied", "captcha", "enable javascript and cookies to continue",
+                     "challenge-platform", "you don't have permission to access")
+CHALLENGE_MAX_TEXT = 600          # 可见文本 <600 字视为"正文极短"(本套件口径)
 
 USAGE = """usage: site_audit.py URL [URL...] [--market XX] [--json] [--export-dir DIR]
 单页全项审计:title/desc 限值(市场单位)/H1/词数/链接/alt/canonical/robots/og/JSON-LD/
 llms.txt/sitemap/AI 爬虫放行/staging 子域。
   --market XX      markets.json 18 市场阈值(chars/fullwidth/grapheme)
-  --json           结构化输出(findings+meta+verdict+ai_search_health,供 agent 消费)
+  --json           结构化输出(findings+meta+verdict+ai_search_health,供 agent 消费):
+                   stdout 只有一个 JSON 对象(可直接 jq / json.loads),人读行改写到 stderr;
+                   顶层含 market 与 limits(本次 title/description 区间,单位随市场)
   --export-dir DIR 具名 bulk export(SF/Sitebulb 口径):按 rule 生成受影响 URL 清单
                    {area}-{规则简名}.txt(如 canonical-missing.txt/title-too-long.txt;
                    area+message 首词生成稳定 slug,同一 slug 冲突时合并),每文件一行一
@@ -88,11 +105,33 @@ rendering 5 检查(geo-aeo-tracker 源码口径,WARN/INFO 级不产生 CRITICAL)
 判定:CRITICAL 存在则退出码 1;fetch 守卫触发输出 [SKIP] fetch guard: response too small /
 likely challenge page 并拒绝审计结论(该 URL 不计失败,退出码不受影响;拒审页不计入
 coverage 分母与 summary.audited)。robots.txt 404=全放行(RFC 9309),不产 finding。
-退出码 2(stderr 提示):--market/--export-dir 缺值,或 --market 未知市场。"""
+退出码 2(stderr 提示):--market/--export-dir 缺值,或 --market 未知市场。
+严重度口径(S2a 2026-10-21,依据 Google 文档原文):description 缺失、无 H1、canonical 相对路径
+记 WARN(描述可选、标题层级不影响排名、相对 canonical 支持但不建议);>100 链接记 INFO
+(工具约定,现行 Google 文档无此数);description 下限=markets.json desc_min(默认上限一半);
+zh 标题按显示宽度(fullwidth 单位);已检测到服务端内容时 JS 重量只 INFO 提示体积、不报无 noscript;
+挑战页只按结构特征(拦截页标题/拦截元素/正文极短+拦截措辞)拒审,正文谈论 CAPTCHA 不拒审。"""
+
+def visible_text(html):
+    """去 script/style/noscript/注释与标签后的可见文本(空白折叠)。"""
+    body = re.sub(r"<script[^>]*>.*?</script>|<style[^>]*>.*?</style>|<noscript[^>]*>.*?</noscript>"
+                  r"|<!--.*?-->", " ", html, flags=re.S | re.I)
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body)).strip()
 
 def looks_like_challenge(html):
-    head = html[:4000].lower()
-    return any(m in head for m in CHALLENGE_MARKERS)
+    """挑战页/拦截页判定(S2a B11:结构特征,见 CHALLENGE_* 常量注释)。"""
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+    title = re.sub(r"\s+", " ", m.group(1)).strip().lower() if m else ""
+    if title.startswith(CHALLENGE_TITLES):
+        return True
+    if CHALLENGE_ATTRS.search(html) or CHALLENGE_JS.search(html):
+        return True
+    text = visible_text(html)
+    if len(text) < CHALLENGE_MAX_TEXT:
+        low = (title + " " + text).lower()
+        if any(p in low for p in CHALLENGE_PHRASES) or "/cdn-cgi/challenge-platform/" in html.lower():
+            return True
+    return False
 
 def load_market(market):
     """markets.json 市场规则(与 market_lint.py 同源);未知市场 stderr+exit 2(S5 修复⑧)。"""
@@ -102,6 +141,28 @@ def load_market(market):
         sys.stderr.write("未知市场 %s;可用: %s\n" % (market, ", ".join(ms)))
         sys.exit(2)
     return ms[market]
+
+TITLE_MIN = 20   # title 过短下限(市场单位;本套件口径,Google 无字数下限)
+
+def desc_bounds(mk):
+    """description 长度区间 (下限, 上限),同 desc_limit 单位(S2a B13)。
+    下限取 markets.json desc_min;缺省为上限的一半;强制 0 < 下限 < 上限
+    (旧版下限 80 写死:zh 上限 78 时任何长度都过不了)。本套件口径——Google 对描述无长度要求。"""
+    hi = mk["desc_limit"]["value"]
+    lo = mk.get("desc_min")
+    if not isinstance(lo, int) or isinstance(lo, bool) or not 0 < lo < hi:
+        lo = max(1, hi // 2)
+    return lo, hi
+
+def text_limits(market, mk=None):
+    """--json 顶层 limits 节:本次审计实际用的 title/description 区间(prioritize/envelope
+    据此写修复文案,不再各写一套 50-60/~155)。"""
+    mk = mk or load_market(market)
+    tl = mk["title_limit"]
+    lo, hi = desc_bounds(mk)
+    return {"title": {"unit": tl["unit"], "min": TITLE_MIN, "max": tl["value"],
+                      "ideal_min": tl.get("ideal_min")},
+            "description": {"unit": mk["desc_limit"]["unit"], "min": lo, "max": hi}}
 
 def unit_len(s, unit):
     """按市场单位计长:chars=len()/fullwidth=EAW W/F 计 1 其余 0.5 向上取整/
@@ -360,7 +421,8 @@ RULE_SLUGS = [
     ("title", "<20", "title-too-short"),
     ("description", "缺失", "description-missing"),
     ("description", "超上限", "description-too-long"),
-    ("description", "<80", "description-too-short"),
+    ("description", "低于下限", "description-too-short"),
+    ("description", "<80", "description-too-short"),          # 旧版消息(读旧审计文件时同一 slug)
     ("h1", "无 H1", "h1-missing"),
     ("h1", "个 H1", "h1-multiple"),
     ("headings", "跳级", "headings-skip-level"),
@@ -509,21 +571,26 @@ def audit(url, market="en"):
     t = re.sub(r"\s+", " ", (p.title[0] if p.title else "")).strip()
     tn = unit_len(t, tl["unit"])
     if not t: F.append(("CRITICAL", "title", "缺失"))
-    elif tn < 20: F.append(("WARN", "title", f"{tn} {tl['unit']} <20"))
+    elif tn < TITLE_MIN: F.append(("WARN", "title", f"{tn} {tl['unit']} <{TITLE_MIN}"))
     elif tn > tl["value"]:
         F.append(("WARN", "title", f"{tn} {tl['unit']} 超上限 {tl['value']}({tl.get('note', '')})"))
     dn = unit_len(p.desc or "", dl["unit"])
-    if p.desc is None: F.append(("CRITICAL", "description", "缺失"))
-    elif dn < 80: F.append(("WARN", "description", f"{dn} {dl['unit']} <80"))
-    elif dn > dl["value"]:
-        F.append(("WARN", "description", f"{dn} {dl['unit']} 超上限 {dl['value']}"))
-    if p.h1 == 0: F.append(("CRITICAL", "h1", "无 H1"))
+    d_lo, d_hi = desc_bounds(mk)
+    # S2a B15:描述可选——Google 主要从正文生成摘要(snippet 文档),缺失记 WARN 不记 CRITICAL
+    if p.desc is None: F.append(("WARN", "description", "缺失"))
+    elif dn < d_lo: F.append(("WARN", "description", f"{dn} {dl['unit']} 低于下限 {d_lo}(本套件口径)"))
+    elif dn > d_hi:
+        F.append(("WARN", "description", f"{dn} {dl['unit']} 超上限 {d_hi}"))
+    # S2a B38:SEO 起始指南——标题数量与顺序对 Google 搜索无影响;缺 H1 记 WARN
+    if p.h1 == 0: F.append(("WARN", "h1", "无 H1"))
     elif p.h1 > 1: F.append(("WARN", "h1", f"{p.h1} 个 H1"))
     for i, h in enumerate(p.headings[1:], 1):
         if p.headings[i-1] and h - p.headings[i-1] > 1:
             F.append(("WARN", "headings", f"跳级 h{p.headings[i-1]}→h{h}")); break
     if p.canonical:
-        if not p.canonical.startswith(("http", "/")): F.append(("CRITICAL", "canonical", "相对 URL"))
+        # S2a B38:相对路径 Google 支持但不建议(文档 Bad example 即 /dresses/…)——WARN 并提示改绝对
+        if not urlparse(p.canonical.strip()).scheme:
+            F.append(("WARN", "canonical", "相对 URL(Google 支持但建议改绝对 URL)"))
         c = urljoin(url, p.canonical)
         if urlparse(c).netloc and norm_host(c) != norm_host(url):   # S5 修复⑥:小写+去默认端口后再比
             F.append(("INFO", "canonical", "指向外域(联合发布?让渡权重)"))
@@ -539,7 +606,8 @@ def audit(url, market="en"):
     text = re.sub(r"<[^>]+>", " ", body)
     W = wc(text)
     if W < 200: F.append(("WARN", "content", f"词数 {W} <200(soft-thin)"))
-    if p.links > 100: F.append(("WARN", "links", f"{p.links} 链接 >100"))
+    if p.links > 100:   # S2a B14:现行 Google 文档无链接数上限;100 是工具约定,只提示
+        F.append(("INFO", "links", f"{p.links} 链接 >100(工具约定,非 Google 要求)"))
     if p.imgs and p.img_noalt / p.imgs > 0.2: F.append(("WARN", "images", f"alt 缺失 {p.img_noalt}/{p.imgs}"))
     if p.jsonld == 0: F.append(("WARN", "schema", "无 JSON-LD"))
     # ---- rendering 5 检查(geo-aeo-tracker 源码口径;全部 WARN/INFO 级,不产生 CRITICAL) ----
@@ -551,13 +619,18 @@ def audit(url, market="en"):
                   f"CSR 疑似:空挂载点 {csr['mounts']} 且纯文本 {csr['text_chars']} 字/"
                   f"text-HTML 比 {csr['ratio']}(阈值:文本<200 字或比值<0.02)——AI 爬虫多不执行 JS"))
     nos = re.sub(r"\s+", " ", "".join(p.noscript_text)).strip()
-    if len(nos) <= 20:
+    # S2a B3:已检测到服务端内容 → 无 JS 客户端拿到的不是空页;JS 只提示体积,不给改渲染建议
+    server_content = len(plain) > 500 and any(p.sem_counts.get(t) for t in ("article", "main", "section"))
+    if len(nos) <= 20 and not server_content:
         F.append(("INFO", "rendering", "无 noscript 回退(或去标签文本≤20 字)——无 JS 客户端拿到空页"))
     if p.ext_scripts > 15 or p.inline_js_bytes > 100 * 1024:
-        F.append(("WARN", "rendering",
-                  f"JS 重量:外部 script {p.ext_scripts} 个(>15)/内联 JS {p.inline_js_bytes // 1024}KB(>100KB)"
-                  "——易超 AI 爬虫抓取预算"))
-    if not (len(plain) > 500 and any(p.sem_counts.get(t) for t in ("article", "main", "section"))):
+        js = f"JS 重量:外部 script {p.ext_scripts} 个(>15)/内联 JS {p.inline_js_bytes // 1024}KB(>100KB)"
+        if server_content:
+            F.append(("INFO", "rendering",
+                      js + f"——已检测到服务端内容(纯文本 {len(plain)} 字),只提示体积,无需改渲染方式"))
+        else:
+            F.append(("WARN", "rendering", js + "——易超 AI 爬虫抓取预算"))
+    if not server_content:
         F.append(("INFO", "rendering",
                   f"服务端内容弱:纯文本 {len(plain)} 字(需>500)或无 article/main/section"))
     if h2n < 2:  # 检查项为 H1==1 且 H2>=2;H1 问题上方既有检查已按自身级别报告,此处只补 H2 缺口
@@ -689,17 +762,22 @@ def main():
     crit = 0
     results = {}
     by_url = {}   # S4:URL → findings 原始元组(供规则聚合/bulk export)
+    # S2a B4:--json 时 stdout 只出 JSON(jq/json.loads 整体可解析),人读行改走 stderr
+    human = sys.stderr if as_json else sys.stdout
+
+    def say(*a):
+        print(*a, file=human)
     for url in urls:
         F, meta, ai_h = audit(url, market)
         by_url[url] = F
-        print(f"\n== {url} ==")
+        say(f"\n== {url} ==")
         for sev, area, msg in F:
-            print(f"[{sev}] {area}: {msg}")
+            say(f"[{sev}] {area}: {msg}")
             crit += sev == "CRITICAL"
-        if meta: print("meta:", json.dumps(meta, ensure_ascii=False))
+        if meta: say("meta:", json.dumps(meta, ensure_ascii=False))
         if ai_h:  # AI Search Health 子分:与主审计结果并列展示
             parts = ", ".join(f"{c['id']}:{'✓' if c['pass'] else '✗'}" for c in ai_h["checks"])
-            print(f"ai_search_health: {ai_h['score']}/100 [{parts}]")
+            say(f"ai_search_health: {ai_h['score']}/100 [{parts}]")
         if as_json:
             results[url] = {
                 "verdict": "refused" if any(s == "SKIP" for s, _, _ in F)
@@ -712,15 +790,17 @@ def main():
     # S5 修复⑤:coverage 分母与 summary.audited 用已审计页数——拒审([SKIP])页未被审计,剔除
     total = sum(1 for F in by_url.values() if not any(s == "SKIP" for s, _, _ in F))
     if rules:
-        print("\n" + render_findings_markdown(rules, total))
+        say("\n" + render_findings_markdown(rules, total))
     else:
-        print(f"\n## findings 汇总:0 规则命中(受影响面分母=已审计 {total} 页,拒审剔除)")
+        say(f"\n## findings 汇总:0 规则命中(受影响面分母=已审计 {total} 页,拒审剔除)")
     export_files = []
     if export_dir is not None:
         export_files = write_exports(export_dir, rules, total)
-        print(f"bulk export: {len(rules)} 个规则清单 + summary.json → {export_dir}")
+        say(f"bulk export: {len(rules)} 个规则清单 + summary.json → {export_dir}")
     if as_json:
-        payload = {"schema_version": SCHEMA_VERSION,
+        # market/limits 为追加键(向后兼容,不改既有键):下游按本次市场阈值写修复文案(S2a B2)
+        payload = {"schema_version": SCHEMA_VERSION, "market": market,
+                   "limits": text_limits(market),
                    "audited": len(urls), "critical": crit, "results": results}
         if export_dir is not None:   # 仅 --export-dir 时新增 exports 节(向后兼容)
             payload["exports"] = {"dir": export_dir, "files": export_files}

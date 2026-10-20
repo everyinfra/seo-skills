@@ -21,7 +21,8 @@ seo_vs_ads),消灭 4 形态手工导出(R2-2 落地层的前置件)。
   subject 仅 Workspace 域级委派场景需要(GSC 一般直接授权 SA 邮箱,subject 留空)。
 
 规范化 CSV 契约(与现有消费方逐列对齐,列头大小写不敏感方均可读):
-  列: [Date]*,Query,Page,Clicks,Impressions,CTR,Position(*仅 --dimensions 含 date 时)
+  列: [Date]*,Query,Page,[Country,CountryCode,Device,SearchAppearance,Hour]*,Clicks,Impressions,
+      CTR,Position(*仅 --dimensions 含对应维度时;country 维:Country=英文国名、CountryCode=ISO alpha-3)
   - Query/Page 恒在场(维度未请求时留空)——page 单维拉取可直接喂 traffic_funnel
     (Page/Impressions/Clicks)与 monitor gsc.csv;query 维喂 gsc_mining --mode query;
     query+page 喂 gsc_mining --mode matrix;date,query 喂 sensor_volatility(Date/Query/Position);
@@ -68,8 +69,39 @@ ROW_LIMIT_MAX = 25000            # searchanalytics.query 单页硬上限
 TOKEN_CACHE_TTL = 50 * 60        # token 内存缓存 50 分钟(官方有效期 3600s,留 10min 余量)
 FETCH_LIMIT = 4_000_000          # 响应体读取上限(与 field_data 同量级)
 TOKEN_TTL_JWT = 3600             # JWT exp-iat(官方建议 ≤3600)
-ALLOWED_DIMENSIONS = ("date", "query", "page")
+# Search Analytics: query 参考页(2026-08-11 版):dimensions 可用 filters[].dimension 的全部名字
+# (country / device / page / query / searchAppearance)外加 date、hour。小写输入 → API 原名。
+API_DIMENSIONS = {"date": "date", "hour": "hour", "query": "query", "page": "page",
+                  "country": "country", "device": "device", "searchappearance": "searchAppearance"}
+ALLOWED_DIMENSIONS = tuple(API_DIMENSIONS.values())
 CSV_BASE_COLUMNS = ["Query", "Page", "Clicks", "Impressions", "CTR", "Position"]
+# 可选维度列:只在请求了该维度时出现,插在 Page 之后、Clicks 之前(query/page 老输出逐字节不变)
+EXTRA_DIM_COLUMNS = (("country", "Country"), ("country", "CountryCode"), ("device", "Device"),
+                     ("searchAppearance", "SearchAppearance"), ("hour", "Hour"))
+# API 的 country 值是 ISO 3166-1 alpha-3(小写);market_fit --gsc-country 按 GSC 网页导出的
+# 英文国名映射市场 → Country 列给英文国名(表外的回落为大写 alpha-3),CountryCode 列给原码。
+ISO3_COUNTRY_NAME = {
+    "dza": "Algeria", "ago": "Angola", "arg": "Argentina", "aus": "Australia", "aut": "Austria",
+    "bhr": "Bahrain", "blr": "Belarus", "bel": "Belgium", "btn": "Bhutan", "bol": "Bolivia",
+    "bra": "Brazil", "can": "Canada", "chl": "Chile", "chn": "China", "col": "Colombia",
+    "cri": "Costa Rica", "cub": "Cuba", "dom": "Dominican Republic", "ecu": "Ecuador",
+    "egy": "Egypt", "slv": "El Salvador", "fra": "France", "deu": "Germany", "gtm": "Guatemala",
+    "hnd": "Honduras", "hkg": "Hong Kong", "ind": "India", "idn": "Indonesia", "irq": "Iraq",
+    "irl": "Ireland", "ita": "Italy", "jpn": "Japan", "jor": "Jordan", "kaz": "Kazakhstan",
+    "kor": "South Korea", "kwt": "Kuwait", "kgz": "Kyrgyzstan", "lbn": "Lebanon", "lby": "Libya",
+    "lie": "Liechtenstein", "lux": "Luxembourg", "mac": "Macau", "mex": "Mexico", "mco": "Monaco",
+    "mar": "Morocco", "moz": "Mozambique", "npl": "Nepal", "nld": "Netherlands",
+    "nzl": "New Zealand", "nic": "Nicaragua", "omn": "Oman", "pan": "Panama", "pry": "Paraguay",
+    "per": "Peru", "pol": "Poland", "prt": "Portugal", "pri": "Puerto Rico", "qat": "Qatar",
+    "rus": "Russia", "smr": "San Marino", "sau": "Saudi Arabia", "zaf": "South Africa",
+    "esp": "Spain", "sdn": "Sudan", "che": "Switzerland", "twn": "Taiwan", "tha": "Thailand",
+    "tun": "Tunisia", "tur": "Turkey", "are": "United Arab Emirates", "gbr": "United Kingdom",
+    "usa": "United States", "ury": "Uruguay", "uzb": "Uzbekistan", "vat": "Vatican City",
+    "ven": "Venezuela", "vnm": "Vietnam", "yem": "Yemen", "sgp": "Singapore", "mys": "Malaysia",
+    "phl": "Philippines", "ukr": "Ukraine", "swe": "Sweden", "nor": "Norway", "dnk": "Denmark",
+    "fin": "Finland", "grc": "Greece", "cze": "Czechia", "hun": "Hungary", "rou": "Romania",
+    "isr": "Israel", "pak": "Pakistan", "bgd": "Bangladesh", "nga": "Nigeria", "ken": "Kenya",
+}
 
 # SHA-256 的 DigestInfo DER 前缀(RFC 8017 §9.2 note 1):SEQUENCE{SEQUERCE{OID 2.16.840.1.101.3.4.2.1,
 # NULL}, OCTET STRING} 头 —— 拼接 32 字节摘要即完整 DigestInfo。
@@ -80,7 +112,8 @@ _RSA_OID = bytes.fromhex("2a864886f70d010101")
 USAGE_EPILOG = """
 凭证寻径: --sa PATH > --key PATH > $GSC_SA_FILE > ~/.config/seo-suite/gsc.json
   (接受 Google Cloud 原生 service_account.json 或套件 {"credentials":{...}} 包装)
-规范化 CSV 列: [Date]*,Query,Page,Clicks,Impressions,CTR,Position(*仅维度含 date)
+规范化 CSV 列: [Date]*,Query,Page,[Country,CountryCode,Device,SearchAppearance,Hour]*,
+  Clicks,Impressions,CTR,Position(*仅维度含对应项;country 单维 CSV 可喂 market_fit --gsc-country)
   可直接喂 gsc_mining / traffic_funnel --gsc / monitor(.seo-monitor/gsc.csv) /
   sensor_volatility --gsc / did_attribution;CTR 为小数(0.0317)非百分比串。
 诚实边界: 无 refresh 场景(SA token 自含);token 只进内存(50 分钟缓存,不落盘);
@@ -317,6 +350,8 @@ def searchanalytics_query(sa, site, start, end, dimensions, rows_cap=ROW_LIMIT_M
         want = min(ROW_LIMIT_MAX, rows_cap - offset)
         body = {"startDate": start, "endDate": end, "dimensions": list(dimensions),
                 "rowLimit": want, "startRow": offset}
+        if "hour" in dimensions:       # 参考页:按 HOUR 分组时用 dataState=hourly_all
+            body["dataState"] = "hourly_all"
         data = _http_json(url, data=json.dumps(body).encode("utf-8"),
                           headers=_auth_headers(token), timeout=timeout)
         got = data.get("rows") or []
@@ -339,7 +374,7 @@ def normalize_rows(rows, dimensions):
     for r in rows:
         keys = r.get("keys") or []
         dmap = dict(zip(dimensions, keys))
-        out.append({
+        rec = {
             "Date": dmap.get("date", ""),
             "Query": dmap.get("query", ""),
             "Page": dmap.get("page", ""),
@@ -347,12 +382,25 @@ def normalize_rows(rows, dimensions):
             "Impressions": int(round(float(r.get("impressions") or 0))),
             "CTR": round(float(r.get("ctr") or 0.0), 6),
             "Position": round(float(r.get("position") or 0.0), 2),
-        })
+        }
+        if "country" in dimensions:
+            code = (dmap.get("country") or "").strip()
+            rec["CountryCode"] = code.upper()
+            rec["Country"] = ISO3_COUNTRY_NAME.get(code.lower(), code.upper())
+        if "device" in dimensions:
+            rec["Device"] = dmap.get("device", "")
+        if "searchAppearance" in dimensions:
+            rec["SearchAppearance"] = dmap.get("searchAppearance", "")
+        if "hour" in dimensions:
+            rec["Hour"] = dmap.get("hour", "")
+        out.append(rec)
     return out
 
 
 def csv_header(dimensions):
-    return (["Date"] if "date" in dimensions else []) + CSV_BASE_COLUMNS
+    extra = [col for dim, col in EXTRA_DIM_COLUMNS if dim in dimensions]
+    return ((["Date"] if "date" in dimensions else []) + CSV_BASE_COLUMNS[:2] + extra
+            + CSV_BASE_COLUMNS[2:])
 
 
 def csv_field(col, rec):
@@ -457,13 +505,14 @@ def resolve_sa_path(args):
 # ---------- CLI 子命令 ----------
 
 def parse_dimensions(spec):
-    dims = [d.strip().lower() for d in (spec or "").split(",") if d.strip()]
-    if not dims:
+    raw = [d.strip().lower() for d in (spec or "").split(",") if d.strip()]
+    if not raw:
         raise UsageError("--dimensions 不能为空(可选:%s)" % "/".join(ALLOWED_DIMENSIONS))
-    bad = [d for d in dims if d not in ALLOWED_DIMENSIONS]
+    bad = [d for d in raw if d not in API_DIMENSIONS]
     if bad:
-        raise UsageError("不支持的维度 %s(本工具规范化 CSV 只认 %s;device/country 等维度"
-                         "不在 6 脚本契约内,不产出)" % (bad, "/".join(ALLOWED_DIMENSIONS)))
+        raise UsageError("不支持的维度 %s(Search Analytics API 只有 %s)"
+                         % (bad, "/".join(ALLOWED_DIMENSIONS)))
+    dims = [API_DIMENSIONS[d] for d in raw]
     seen, uniq = set(), []
     for d in dims:                        # 去重保序
         if d not in seen:
@@ -597,8 +646,9 @@ def build_parser():
     pq.add_argument("--start", required=True, help="起始日 YYYY-MM-DD")
     pq.add_argument("--end", required=True, help="截止日 YYYY-MM-DD")
     pq.add_argument("--dimensions", default="query,page",
-                    help="逗号分隔,可选 date/query/page(默认 query,page;加 date 喂 "
-                         "sensor_volatility)")
+                    help="逗号分隔,可选 date/hour/query/page/country/device/searchAppearance"
+                         "(默认 query,page;加 date 喂 sensor_volatility;country 单维喂 "
+                         "market_fit --gsc-country;hour 自动带 dataState=hourly_all)")
     pq.add_argument("--rows", type=int, default=ROW_LIMIT_MAX,
                     help="总行数上限(默认 25000;单页 25000,startRow 分页)")
     pq.add_argument("--out", help="CSV 落盘路径(缺省 CSV 走 stdout)")

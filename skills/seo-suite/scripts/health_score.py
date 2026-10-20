@@ -43,7 +43,8 @@ SEVS = ("CRITICAL", "WARN", "INFO")
 TREE = {
     "availability": ["server_errors"],
     "indexability": ["non_indexable", "canonicalization", "mobile_indexability"],
-    "uniqueness": ["duplicate_title", "duplicate_description", "duplicate_body"],
+    # duplicate_description 已删(B37):site_audit --json 的 meta 只有 desc_len,没有描述原文,无从判重
+    "uniqueness": ["duplicate_title", "duplicate_body"],
     "discoverability": ["crawl_budget", "internal_linking", "redirection",
                         "sitemaps", "internationalization"],
     "rankability": ["page_content", "structured_data", "social_tags"],
@@ -57,7 +58,7 @@ TREE = {
 #   llms.txt → sitemaps(AI 发现层,归站点级发现文件组);
 #   a11y(html 无 lang)→ internationalization(lang 是 i18n 基础标记);
 #   images(alt)→ page_content(替代文本属内容质量)。
-# 未出现在表中的子组(mobile_indexability/duplicate_description/duplicate_body/
+# 未出现在表中的子组(mobile_indexability/duplicate_body/
 # crawl_budget/redirection/page_speed/security/external_links)= site_audit 无该数据源
 # → N/A(data_source_missing)。
 MAPPING = {

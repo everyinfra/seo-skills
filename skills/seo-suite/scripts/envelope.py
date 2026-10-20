@@ -93,15 +93,16 @@ RECOS = {
     "robots": "检查 noindex/nosnippet 是否误设;按页面意图决定保留或移除",
     "ai-bots": "robots.txt 放行 8 个 AI 检索 bot(Semrush 名单)",
     "canonical": "canonical 改绝对 URL 并自指(指他页需先对比权重)",
-    "title": "补/改 title:每页唯一,50-60 字符",
-    "description": "补/改 description:~155 字符,含利益点与 CTA",
+    # title/description 文案按审计市场阈值生成(market_reco),这里只是读不到阈值时的兜底
+    "title": "补/改 title:每页唯一,长度按 site_audit 报告的市场上限",
+    "description": "补/改 description:长度按 site_audit 报告的市场区间,含利益点与 CTA",
     "h1": "每页唯一 H1(与 title 呼应但不重复)",
     "headings": "消除标题跳级(h1→h2→h3 逐级)",
     "content": "词数<200 增补实质内容;>15000 拆分长文",
     "images": "补 img alt(覆盖到 80% 以上)",
     "schema": "补 JSON-LD(按页型选 Organization/Article/Breadcrumb 等)",
     "og": "补 og:title/og:description/og:image(image 用绝对 URL)",
-    "links": "页内链接>100 时精简导航或分页",
+    "links": "页内链接>100(工具约定,非 Google 要求):只在导航确实冗余时精简",
     "sitemap": "补 /sitemap.xml 并在 robots.txt 声明",
     "llms.txt": "补 /llms.txt(AI 发现层)",
     "a11y": "html 标签补 lang 属性",
@@ -270,9 +271,69 @@ def index_priority(priority, known_areas):
     return by_area
 
 
-def build_finding(area, agg, total, prio_items):
+MARKET_NOTE = "(%s 市场阈值,本套件口径;Google 对 title/description 无字数要求)"
+
+
+def market_limits(market):
+    """markets.json → title/description 区间(与 site_audit.text_limits 同口径);读不到 → None。"""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "markets.json"),
+                  encoding="utf-8") as f:
+            mk = json.load(f)["markets"][market]
+        tl, dl = mk["title_limit"], mk["desc_limit"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    hi, lo = dl["value"], mk.get("desc_min")
+    if not isinstance(lo, int) or isinstance(lo, bool) or not 0 < lo < hi:
+        lo = max(1, hi // 2)
+    return {"title": {"unit": tl["unit"], "min": 20, "max": tl["value"]},
+            "description": {"unit": dl["unit"], "min": lo, "max": hi}}
+
+
+def audit_limits(audit):
+    """(market, limits):审计文件顶层 limits(site_audit 本次实际区间)> market > en(S2a B2)。"""
+    m = audit.get("market") if isinstance(audit.get("market"), str) else None
+    lim = audit.get("limits")
+    try:
+        if all(isinstance(lim[k][f], (int, float)) for k in ("title", "description")
+               for f in ("min", "max")):
+            return m or "?", lim
+    except (KeyError, TypeError):
+        pass
+    return (m or "en"), market_limits(m or "en")
+
+
+def local_reco(area, agg, market, limits):
+    """本地兜底文案:title/description 按市场阈值;rendering 按实际表现拼装
+    (S2a B3:有服务端内容时不建议改渲染方式)。其余取 RECOS。"""
+    msgs = list(agg.get("msgs") or {})
+    if area in ("title", "description") and limits:
+        lim = limits[area]
+        if area == "title":
+            return "补/改 title:每页唯一,%s-%s %s%s" % (
+                lim["min"], lim["max"], lim["unit"], MARKET_NOTE % market)
+        return "补/改 description:%s-%s %s,含利益点与 CTA%s" % (
+            lim["min"], lim["max"], lim["unit"], MARKET_NOTE % market)
+    if area == "rendering" and msgs:
+        parts = []
+        if any("CSR" in m for m in msgs):
+            parts.append("关键内容服务端渲染或预渲染(检测到 CSR 空挂载点)")
+        if any("服务端内容弱" in m for m in msgs):
+            parts.append("正文放进 main/article/section 并在服务端输出")
+        js = [m for m in msgs if "JS 重量" in m]
+        if js:
+            parts.append("压缩/拆分 JS(已有服务端内容,只需控制体积,无需改渲染方式)"
+                         if all("服务端内容" in m for m in js) else "压缩/拆分 JS")
+        if any("noscript" in m for m in msgs):
+            parts.append("补 noscript 回退")
+        if parts:
+            return ";".join(parts)
+    return RECOS.get(area, "参照 site_audit.py 报告中 %s 检查的说明修复" % area)
+
+
+def build_finding(area, agg, total, prio_items, market="en", limits=None):
     """一个 area 聚合为一条 envelope finding;修复文案 priority 命中(impact 最高者)
-    > 本地 RECO 兜底。"""
+    > 本地兜底(local_reco,按市场阈值与实际表现)。"""
     sev = min(agg["sevs"], key=lambda s: SEV_ORDER[s])
     affected = len(agg["urls"])
     # 最常见表现:频次最高;并列取首见(dict 保插入序,max 先遇到者胜)
@@ -283,7 +344,7 @@ def build_finding(area, agg, total, prio_items):
     if prio_items:
         reco = max(prio_items, key=lambda it: (it.get("impact") or 0)).get("fix_instruction")
     if not reco:
-        reco = RECOS.get(area, "参照 site_audit.py 报告中 %s 检查的说明修复" % area)
+        reco = local_reco(area, agg, market, limits)
     return {"rule_id": area, "title": TITLES.get(area, area), "severity": sev,
             "description": description, "recommendation": reco,
             "affected_urls": agg["urls"][:URL_CAP], "affected": affected}
@@ -405,6 +466,7 @@ def build_envelope(audit, health, priority, out_dir, resume, persist):
     resume=True 时已有 findings/*.md 的类别跳过重建(自落盘文件回读)。"""
     source_urls, scored, rules = aggregate(audit)
     total = len(scored)
+    market, limits = audit_limits(audit)
     prio_by_area = index_priority(priority, set(rules)) if priority else {}
     sev_of = {a: min(d["sevs"], key=lambda s: SEV_ORDER[s]) for a, d in rules.items()}
     # 当前输入将产出的类别集合(--resume 只认交集:旧 run 遗留的过期文件不混入)
@@ -428,7 +490,8 @@ def build_envelope(audit, health, priority, out_dir, resume, persist):
             # 重建:类别内规则按 严重度 > 受影响数 > rule_id 排序(确定性输出)
             areas = sorted(present[cat],
                            key=lambda a: (SEV_ORDER[sev_of[a]], -len(rules[a]["urls"]), a))
-            findings = [build_finding(a, rules[a], total, prio_by_area.get(a)) for a in areas]
+            findings = [build_finding(a, rules[a], total, prio_by_area.get(a), market, limits)
+                        for a in areas]
             payload = {"name": cat, "findings": findings}
             if persist:
                 # 部分落盘契约核心:此类别一聚合完立即写盘——本类别之后的流程被

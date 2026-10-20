@@ -11,7 +11,7 @@ import subprocess
 import sys
 import os
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
 
@@ -168,17 +168,18 @@ class StubbedAudit(unittest.TestCase):
             "/robots.txt": (200, {}, "User-agent: *\nAllow: /\n"),
             "/sitemap.xml": (200, {}, "<urlset/>"),
             "/llms.txt": (200, {}, "# llms\n")})
-        buf = io.StringIO()
+        buf, ebuf = io.StringIO(), io.StringIO()
         try:
-            with redirect_stdout(buf):
+            with redirect_stdout(buf), redirect_stderr(ebuf):
                 with self.assertRaises(SystemExit) as cm:
                     sa.main()
         finally:
             sys.argv, sa.fetch = argv_orig, fetch_orig
         self.assertEqual(cm.exception.code, 0)
         out = buf.getvalue()
-        self.assertIn("ai_search_health: 100/100", out)          # 文本报告与主审计并列
-        payload = json.loads(out[out.rindex("\n{"):])
+        # S2a B4 改:--json 时文本报告走 stderr,stdout 只有 JSON(整体可解析)
+        self.assertIn("ai_search_health: 100/100", ebuf.getvalue())   # 文本报告与主审计并列
+        payload = json.loads(out)
         r = payload["results"]["https://example.com/"]
         # 旧字段不删不改;新增 ai_search_health 节
         for legacy in ("verdict", "findings", "meta"):

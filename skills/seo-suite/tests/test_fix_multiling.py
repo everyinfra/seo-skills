@@ -205,7 +205,8 @@ class MarketLintThaiTests(unittest.TestCase):
         p = tmp_file('<html><head><title>ทดสอบ</title></head>'
                      '<body><p>%s</p></body></html>' % body)
         r = run_script("market_lint.py", ["--market", "th", p])
-        m = re.search(r"正文 (\d+) words\(th 字素/4 近似\[推断\]\) < 支柱建议 1500", r.stdout)
+        # 2026-10-21:措辞「支柱建议」改为「本套件口径参考…(不是排名要求)」——Google 有用内容文档原文说没有偏好字数(B34)
+        m = re.search(r"正文 (\d+) words\(th 字素/4 近似\[推断\]\) < 本套件口径参考 1500", r.stdout)
         self.assertIsNotNone(m)                                 # 修复前输出 "正文 1 words"
         self.assertGreaterEqual(int(m.group(1)), 2)             # 字素/4≈5,不再是 1
         os.unlink(p)

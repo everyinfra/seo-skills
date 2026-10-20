@@ -24,8 +24,19 @@
   * 规模提示: 单文件 > 50,000 URL 或 > 50MB 超出 Google 单 sitemap 上限, 建议拆分
   * --check-limit N 限制逐条抓取检查的 loc 数 (默认 50, 0=全部);
     参数重复与 lastmod 统计始终基于全量 loc
+  * --hreflang: 全部 loc 的 hreflang 互指检查(口径: Google localized-versions 文档)。
+    数据源: sitemap 的 <xhtml:link rel="alternate" hreflang> 优先; sitemap 没有注解时
+    改读各 loc 页面 <head> 的 <link rel="alternate" hreflang>(受 --hreflang-limit 限制)。
+      [hreflang 语言码非法]  语言码校验复用 hreflang_cluster.check_lang(es-419 等不支持)
+      [hreflang 非完整 URL]  href 须含 https:// 的完整 URL
+      [hreflang 缺自引用]    每个版本须列出自身
+      [hreflang 互指缺失]    A 指 B、B 有注解却没指回 A——只有这一对被忽略
+      [hreflang 同码多址]    同一页同一语言码指向不同 URL
+      [hreflang 目标不在 sitemap] 无法用 sitemap 核对回指(提示, 不计入退出码)
+      [hreflang 缺 x-default] 可选的兜底版本(提示, 不计入退出码)
+    前五项任一非空 -> 退出码 1
 
-退出码: 六坏桶任一非空或 --must-include 有缺失 -> 1; sitemap 不可达/不可解析 -> 2; 正常 0.
+退出码: 六坏桶任一非空、--must-include 有缺失或 --hreflang 硬问题非空 -> 1; sitemap 不可达/不可解析 -> 2; 正常 0.
 """
 from __future__ import annotations
 
@@ -40,6 +51,8 @@ import xml.etree.ElementTree as ET
 from collections import Counter
 from datetime import datetime, timezone
 from html.parser import HTMLParser
+
+from hreflang_cluster import check_lang  # 语言码校验唯一实现(Google localized-versions 口径)
 
 UA = "Mozilla/5.0 (compatible; SEOSkill-SitemapAudit/1.0)"
 FIFTY_MB = 50 * 1024 * 1024
@@ -106,6 +119,7 @@ class HeadParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.meta_robots = []
         self.canonical = None
+        self.alternates = []       # [(hreflang, href)]:<link rel=alternate hreflang>
 
     def handle_starttag(self, tag, attrs):
         try:
@@ -115,6 +129,9 @@ class HeadParser(HTMLParser):
             elif tag == "link" and "canonical" in a.get("rel", "").lower().split():
                 if a.get("href") and not self.canonical:
                     self.canonical = a["href"]
+            elif (tag == "link" and "alternate" in a.get("rel", "").lower().split()
+                  and a.get("hreflang")):
+                self.alternates.append((a["hreflang"].strip(), a.get("href", "").strip()))
         except Exception:
             pass
 
@@ -194,13 +211,16 @@ def parse_sitemap_bytes(blob):
     for node in root.iter():
         t = ln(node.tag)
         if t == "url":
-            entry = {"loc": "", "lastmod": "", "src": kind}
+            entry = {"loc": "", "lastmod": "", "src": kind, "alts": []}
             for c in node:
                 ct = ln(c.tag)
                 if ct == "loc" and c.text:
                     entry["loc"] = c.text.strip()
                 elif ct == "lastmod" and c.text:
                     entry["lastmod"] = c.text.strip()
+                elif (ct == "link" and "alternate" in (c.get("rel") or "").lower().split()
+                      and c.get("hreflang")):
+                    entry["alts"].append((c.get("hreflang").strip(), (c.get("href") or "").strip()))
             if entry["loc"]:
                 urls.append(entry)
         elif t == "sitemap":
@@ -219,6 +239,58 @@ def fetch_sitemap(url, timeout):
         body = gzip.decompress(body)
     kind, urls, children = parse_sitemap_bytes(body)
     return kind, urls, children, len(body)
+
+
+def hreflang_audit(alts_by_loc, sitemap_norms):
+    """全站 hreflang 互指检查。alts_by_loc: {loc 原文: [(hreflang, href)]}(只含有注解的页)。
+    返回 {标签: [行]};口径见模块 docstring 的 --hreflang 段。"""
+    out = {k: [] for k in ("语言码非法", "非完整 URL", "缺自引用", "互指缺失", "同码多址",
+                           "目标不在 sitemap", "缺 x-default")}
+    targets = {}                       # norm(loc) → {norm(href)}
+    locs_by_norm = {}
+    for loc, alts in alts_by_loc.items():
+        n = norm_url(loc)
+        locs_by_norm[n] = loc
+        tset, by_code, has_xd = set(), {}, False
+        for code, href in alts:
+            probs = check_lang(code)
+            if probs:
+                out["语言码非法"].append("{0}  hreflang=\"{1}\": {2}".format(loc, code, "; ".join(probs)))
+            if code.strip().lower() == "x-default":
+                has_xd = True
+            sp = urllib.parse.urlsplit(href)
+            if sp.scheme.lower() not in ("http", "https") or not sp.netloc:
+                out["非完整 URL"].append("{0}  hreflang={1} href=\"{2}\"".format(loc, code, href))
+                continue
+            hn = norm_url(href)
+            tset.add(hn)
+            prev = by_code.setdefault(code.lower(), hn)
+            if prev != hn:
+                out["同码多址"].append("{0}  hreflang={1}: {2} / {3}".format(loc, code, prev, hn))
+        targets[n] = tset
+        if n not in tset:
+            out["缺自引用"].append(loc)
+        if not has_xd:
+            out["缺 x-default"].append(loc)
+    missing_targets = set()
+    for n, tset in targets.items():
+        for t in sorted(tset):
+            if t == n:
+                continue
+            if t in targets:
+                if n not in targets[t]:
+                    out["互指缺失"].append("{0} -> {1}: 后者没有指回前者(只有这一对被 Google 忽略)".format(
+                        locs_by_norm[n], locs_by_norm.get(t, t)))
+            elif t not in missing_targets:
+                missing_targets.add(t)
+                out["目标不在 sitemap"].append("{0}  (被 {1} 引用;{2})".format(
+                    t, locs_by_norm[n],
+                    "在 sitemap 里但没有注解" if t in sitemap_norms else "无法用 sitemap 核对回指"))
+    return out
+
+
+HREFLANG_HARD = ("语言码非法", "非完整 URL", "缺自引用", "互指缺失", "同码多址")
+HREFLANG_SOFT = ("目标不在 sitemap", "缺 x-default")
 
 
 def print_bucket(no, name, items):
@@ -241,6 +313,12 @@ def main(argv=None):
                     help="sitemapindex 展开的子 sitemap 上限 (默认 100)")
     ap.add_argument("--must-include", action="append", default=[], metavar="URL",
                     help="必须出现在 sitemap 中的 URL, 可重复传入")
+    ap.add_argument("--hreflang", action="store_true",
+                    help="对全部 loc 做 hreflang 互指检查: 自引用/互指/x-default/目标是否在 sitemap/"
+                         "语言码合法(复用 hreflang_cluster.check_lang)/完整 URL; 数据源优先 sitemap "
+                         "xhtml:link, 没有则读页面 <head>")
+    ap.add_argument("--hreflang-limit", type=int, default=0, metavar="N",
+                    help="sitemap 无 hreflang 注解、改读页面时最多抓取的 loc 数 (默认 0=全部)")
     args = ap.parse_args(argv)
 
     target = args.url.strip()
@@ -352,6 +430,7 @@ def main(argv=None):
 
     limit = args.check_limit if args.check_limit > 0 else total
     checked = 0
+    page_alts = {}                      # 六坏桶抓过的页:loc → <head> hreflang(--hreflang 复用)
     for e in locs[:limit]:
         u = e["loc"]
         try:
@@ -385,6 +464,7 @@ def main(argv=None):
         except Exception as err:
             notes.append("HTML 解析失败 {0}: {1}".format(u, err))
             continue
+        page_alts[u] = hp.alternates
         xr = []
         try:
             xr = headers.get_all("X-Robots-Tag") or [] if headers else []
@@ -437,6 +517,50 @@ def main(argv=None):
             if not ok:
                 missing.append(m)
 
+    # ---------- hreflang 全站互指 ----------
+    hl_hard = 0
+    if args.hreflang:
+        sm_alts = {e["loc"]: e["alts"] for e in locs if e.get("alts")}
+        if sm_alts:
+            src, alts_by_loc = "sitemap xhtml:link", sm_alts
+        else:
+            src = "页面 <head> link rel=alternate"
+            alts_by_loc = {}
+            cap = args.hreflang_limit if args.hreflang_limit > 0 else total
+            for e in locs[:cap]:
+                u = e["loc"]
+                if u not in page_alts:
+                    try:
+                        status, headers, body = fetch(u, timeout=args.timeout)
+                    except Exception as err:
+                        notes.append("hreflang 抓取失败 {0}: {1}".format(u, type(err).__name__))
+                        continue
+                    if status != 200:
+                        continue
+                    hp = HeadParser()
+                    try:
+                        hp.feed(decode(body, headers)[:200000])
+                    except Exception:
+                        continue
+                    page_alts[u] = hp.alternates
+                if page_alts.get(u):
+                    alts_by_loc[u] = page_alts[u]
+            if cap < total:
+                notes.append("hreflang 只读了前 {0}/{1} 个 loc 的页面 (--hreflang-limit)".format(cap, total))
+        hres = hreflang_audit(alts_by_loc, set(e["norm"] for e in locs))
+        print("\n---- hreflang 全站互指 (数据源: {0}; 有注解的 loc {1}/{2}) ----".format(
+            src, len(alts_by_loc), total))
+        for label in HREFLANG_HARD + HREFLANG_SOFT:
+            items = hres[label]
+            tag = "" if label in HREFLANG_HARD else " (提示, 不计入退出码)"
+            print("\n[hreflang {0}] 命中 {1}{2}".format(label, len(items), tag))
+            for line in items[:10]:
+                print("   - {0}".format(line))
+            if len(items) > 10:
+                print("   ... 共 {0} 条, 仅示前 10".format(len(items)))
+        hl_hard = sum(len(hres[k]) for k in HREFLANG_HARD)
+        print("")
+
     if notes:
         print("\n---- 过程备注 ----")
         for n in notes[:20]:
@@ -445,9 +569,12 @@ def main(argv=None):
             print("   ... 共 {0} 条".format(len(notes)))
 
     bad_total = sum(len(x) for x in (b_non200, b_redir, b_noindex, b_canonical, b_robots, b_dup))
-    print("\n==== 结论: 坏桶命中 {0} 条, must-include 缺失 {1} 个 => {2} ====".format(
-        bad_total, len(missing), "FAIL (退出码 1)" if (bad_total or missing) else "PASS"))
-    return 1 if (bad_total or missing) else 0
+    fail = bool(bad_total or missing or hl_hard)
+    print("\n==== 结论: 坏桶命中 {0} 条, must-include 缺失 {1} 个{2} => {3} ====".format(
+        bad_total, len(missing),
+        ", hreflang 硬问题 {0} 条".format(hl_hard) if args.hreflang else "",
+        "FAIL (退出码 1)" if fail else "PASS"))
+    return 1 if fail else 0
 
 
 if __name__ == "__main__":

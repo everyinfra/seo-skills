@@ -12,6 +12,7 @@ Bing WMT JSON/REST API(官方 learn.microsoft.com/en-us/bingwebmaster;SOAP/POX �
                                                #   + GetUrlSubmissionQuota 提交配额
   submit    --site HOST (--url U ... | --urls F)  # SubmitUrl(单)/SubmitUrlBatch(批,≤500/调用)
   stats     --site HOST [--url U] [--out F]     # GetQueryStats → CSV(+--url 时附 GetUrlInfo)
+  pagequery --site HOST --page U [--out F]      # GetPageQueryStats → 单页的查询 CSV(同 stats 列)
 
 凭证寻径:--key > env BING_WMT_KEY(doctor.py T4 键,免费)。无 key 不猜——doctor 式指路。
 
@@ -250,6 +251,19 @@ def get_query_stats(key, site, timeout=DEFAULT_TIMEOUT):
     return d
 
 
+def get_page_query_stats(key, site, page, timeout=DEFAULT_TIMEOUT):
+    """GetPageQueryStats(siteUrl, page)→ 该页的 QueryStats 行(learn.microsoft.com
+    IWebmasterApi.GetPageQueryStats;官方 JSON 样例里 page 值是带引号的 JSON 字符串)。
+    官方备注「The data will be updated every week」;空列表=还没有数据。"""
+    d = api_call("GetPageQueryStats", key,
+                 params={"siteUrl": site, "page": json.dumps(page)}, timeout=timeout)
+    if d is None:
+        return []
+    if not isinstance(d, list):
+        raise ApiError("GetPageQueryStats 响应形态异常: %s" % json.dumps(d)[:200])
+    return d
+
+
 def querystats_rows_to_csv_rows(rows):
     """QueryStats 行 → 契约行 [{Date,Query,Clicks,Impressions,CTR,Position}]:
     CTR 小数、Position=AvgImpressionPosition 2 位小数(-1/缺席哨兵值不留进 Position,
@@ -458,6 +472,34 @@ def cmd_stats(args):
     return 0
 
 
+def cmd_pagequery(args):
+    key = resolve_key(args)
+    site = normalize_site(args.site)
+    page = (args.page or "").strip()
+    if not page:
+        raise UsageError("--page 必填(完整页面 URL)")
+    rows = get_page_query_stats(key, site, page, timeout=args.timeout)
+    csv_rows = querystats_rows_to_csv_rows(rows)
+    note = ("GetPageQueryStats 空列表=该页还没有数据(Bing 每周更新;流量小的页常为空),"
+            "不是 0 也不是错" if not rows else None)
+    if args.json:
+        print(json.dumps({
+            "schema_version": SCHEMA_VERSION, "site": site, "page": page,
+            "query_stats_rows": len(rows), "csv_columns": CSV_COLUMNS,
+            "rows": csv_rows, "note_empty": note,
+        }, ensure_ascii=False, indent=1))
+        return 0
+    if note:
+        sys.stderr.write("注: %s;CSV 仍输出表头\n" % note)
+    if args.out:
+        write_csv(csv_rows, out=args.out)
+        print("已写 %d 行 × %d 列(%s)→ %s" % (len(csv_rows), len(CSV_COLUMNS),
+                                              ",".join(CSV_COLUMNS), args.out))
+        return 0
+    sys.stdout.write(write_csv(csv_rows))
+    return 0
+
+
 def build_parser():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--key", help="Bing WMT API key(优先级 --key > env %s)" % ENV_KEY)
@@ -477,7 +519,7 @@ def build_parser():
                "诚实边界: 流量数据验证后数天起量、历史不回填(空列表≠0≠错);\n"
                "  GetUrlSubmissionStatus 已于 2026-08-31 裁撤,urlstatus 走 GetUrlInfo+配额端点\n"
                "退出码: 0 正常 / 1 运行错(网络/HTTP/API/凭证缺失) / 2 用法错(参数/SSRF 拒)")
-    sub = p.add_subparsers(dest="cmd", metavar="{urlstatus,submit,stats}")
+    sub = p.add_subparsers(dest="cmd", metavar="{urlstatus,submit,stats,pagequery}")
 
     pu = sub.add_parser("urlstatus", parents=[common],
                         help="查 URL 提交/收录状态(GetUrlInfo+GetUrlSubmissionQuota)")
@@ -496,6 +538,12 @@ def build_parser():
     pt.add_argument("--site", required=True, help="站点(裸域名或与 WMT 验证形式一致的 URL)")
     pt.add_argument("--url", help="附带查单个 URL 的 GetUrlInfo 状态")
     pt.add_argument("--out", metavar="F", help="CSV 落盘路径(缺省 CSV 走 stdout,可管道)")
+
+    pp = sub.add_parser("pagequery", parents=[common],
+                        help="GetPageQueryStats → 单页的查询 CSV(列同 stats;GSC 匿名查询多时的补充来源)")
+    pp.add_argument("--site", required=True, help="站点(裸域名或与 WMT 验证形式一致的 URL)")
+    pp.add_argument("--page", required=True, help="页面完整 URL")
+    pp.add_argument("--out", metavar="F", help="CSV 落盘路径(缺省 CSV 走 stdout,可管道)")
     return p
 
 
@@ -504,7 +552,8 @@ def main(argv=None):
     if not args.cmd:
         build_parser().print_help(sys.stderr)
         return 2
-    handlers = {"urlstatus": cmd_urlstatus, "submit": cmd_submit, "stats": cmd_stats}
+    handlers = {"urlstatus": cmd_urlstatus, "submit": cmd_submit, "stats": cmd_stats,
+                "pagequery": cmd_pagequery}
     try:
         return handlers[args.cmd](args)
     except UsageError as e:

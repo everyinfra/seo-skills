@@ -74,17 +74,25 @@ def sig_inlinks(rec, url):
 
 
 def sig_title_len(rec, url):
+    """S2a B2:先取 site_audit meta.title_len("N 单位/上限",已按市场单位计长),
+    缺失再退回 len(title)——zh/ja/ko 的全角口径不能用码点数代替。"""
+    n = _num(_pick(rec, "title_len"))
+    if n is not None:
+        return n
     t = _pick(rec, "title")
     if isinstance(t, str) and t.strip():
         return float(len(t))
-    return _num(_pick(rec, "title_len"))
+    return None
 
 
 def sig_desc_len(rec, url):
+    n = _num(_pick(rec, "desc_len"))
+    if n is not None:
+        return n
     d = _pick(rec, "description", "desc")
     if isinstance(d, str) and d.strip():
         return float(len(d))
-    return _num(_pick(rec, "desc_len"))
+    return None
 
 
 def sig_words(rec, url):
@@ -196,34 +204,111 @@ SIGNALS = {
 }
 
 
+# ---------------------------------------------------------------- 市场阈值(S2a B2)
+MARKET_NOTE = "(%s 市场阈值,本套件口径;Google 对 title/description 无字数要求,按设备宽度截断)"
+TITLE_MIN = 20          # 与 site_audit.TITLE_MIN 同值
+
+
+def market_limits(market):
+    """markets.json → {title:{unit,min,max,ideal_min}, description:{unit,min,max}}
+    (与 site_audit.text_limits 同口径;未知市场退出码 2)。"""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "markets.json"),
+                  encoding="utf-8") as f:
+            ms = json.load(f)["markets"]
+    except (OSError, ValueError, KeyError) as e:
+        die("读不了 markets.json: %s" % e)
+    if market not in ms:
+        die("未知市场 %s;可用: %s" % (market, ", ".join(ms)))
+    mk = ms[market]
+    tl, dl = mk["title_limit"], mk["desc_limit"]
+    hi = dl["value"]
+    lo = mk.get("desc_min")
+    if not isinstance(lo, int) or isinstance(lo, bool) or not 0 < lo < hi:
+        lo = max(1, hi // 2)
+    return {"title": {"unit": tl["unit"], "min": TITLE_MIN, "max": tl["value"],
+                      "ideal_min": tl.get("ideal_min")},
+            "description": {"unit": dl["unit"], "min": lo, "max": hi}}
+
+
+def _valid_limits(lim):
+    try:
+        return all(isinstance(lim[k][f], (int, float)) and not isinstance(lim[k][f], bool)
+                   for k in ("title", "description") for f in ("min", "max")) and \
+            all(isinstance(lim[k]["unit"], str) for k in ("title", "description"))
+    except (KeyError, TypeError):
+        return False
+
+
+def resolve_limits(data, market_flag):
+    """阈值来源优先级:--market 显式 > 审计文件顶层 limits(site_audit 本次实际用的区间)
+    > 审计文件顶层 market > en。返回 (market, limits)。"""
+    if market_flag:
+        return market_flag, market_limits(market_flag)
+    m = data.get("market") if isinstance(data.get("market"), str) else None
+    if _valid_limits(data.get("limits")):
+        return m or "?", data["limits"]
+    if m:
+        return m, market_limits(m)
+    return "en", market_limits("en")
+
+
+def market_rules(rules, market, lim):
+    """title/description 长度规则按市场阈值改写(阈值与文案);只改内置规则,
+    --rules-json 自定义覆盖在其后合并,仍以用户为准。"""
+    t, d = lim["title"], lim["description"]
+    t_lo = t.get("ideal_min") or max(1, round(t["max"] * 5 / 6))   # en 60→50,保持旧区间
+    if t_lo >= t["max"]:
+        t_lo = max(1, t["max"] - 1)
+    note = MARKET_NOTE % market
+    out = []
+    for r in rules:
+        r = dict(r)
+        if r["id"] == "title_short":
+            r["thresholds"] = {"gt": 0, "lt": t_lo}
+            r["fix"] = "title<%s %s:扩到 %s-%s %s(保留主关键词,自然语句)%s" % (
+                t_lo, t["unit"], t_lo, t["max"], t["unit"], note)
+        elif r["id"] == "desc_short":
+            r["thresholds"] = {"gt": 0, "lt": d["min"]}
+            r["fix"] = "description<%s %s:扩到 %s-%s %s(补齐利益点+CTA)%s" % (
+                d["min"], d["unit"], d["min"], d["max"], d["unit"], note)
+        elif r["id"] == "title_missing":
+            r["fix"] = "补 title(缺失)——每页唯一,%s-%s %s%s" % (t["min"], t["max"], t["unit"], note)
+        elif r["id"] == "desc_missing":
+            r["fix"] = "补 meta description(%s-%s %s)%s" % (d["min"], d["max"], d["unit"], note)
+        out.append(r)
+    return out
+
+
 # ---------------------------------------------------------------- 声明式规则库
-# 内置 18 条;阈值注明【Botify 官方】的为官方口径,其余为映射自 site_audit findings
-# 的等价规则。conditional_mode 三种:intent_hint(永远不直接 critical)/
+# 内置 18 条;数值阈值都是本套件口径(参照 Botify 等 SEO 工具的常见阈值,不是 Google
+# 规定,也不写成任何「官方阈值」——S2a B2);title/desc 长度规则按 --market 阈值改写
+# (见 market_rules);其余为映射自 site_audit findings 的等价规则。conditional_mode 三种:intent_hint(永远不直接 critical)/
 # pagerank_compare(有数据自动判,缺数据需人工)/ gsc_traffic(GSC 三档分流)。
 RULES = [
     {"id": "depth_deep", "category": "information_architecture", "severity": "WARN",
      "detect": "depth", "thresholds": {"gte": 6},
      "conditional": "是否上移取决于页面价值:重要页(转化/收入路径)优先上移,低价值深层页可留原位",
-     "fix": "上移:距首页点击深度≥6 的页压缩到≤5(导航/面包屑/相关内链)【Botify 官方阈值】"},
+     "fix": "上移:距首页点击深度≥6 的页压缩到≤5(导航/面包屑/相关内链)【本套件口径,参照 SEO 工具常见阈值;非 Google 规定】"},
     {"id": "inlinks_low", "category": "internal_linking", "severity": "WARN",
      "detect": "inlinks", "thresholds": {"lt": 4},
-     "fix": "入链<4:增至≥5 条内链(从相关主题页/枢纽页补链)【Botify 官方阈值】"},
+     "fix": "入链<4:增至≥5 条内链(从相关主题页/枢纽页补链)【本套件口径,参照 SEO 工具常见阈值;非 Google 规定】"},
     {"id": "title_short", "category": "meta_tags", "severity": "WARN",
      "detect": "title_len", "thresholds": {"gt": 0, "lt": 50},
-     "fix": "title<50 字符:扩到 50-60(保留主关键词,自然语句)【Botify 官方阈值】"},
+     "fix": "title<50 chars:扩到 50-60 chars(保留主关键词,自然语句)" + MARKET_NOTE % "en"},
     {"id": "desc_short", "category": "meta_tags", "severity": "WARN",
-     "detect": "desc_len", "thresholds": {"gt": 0, "lt": 100},
-     "fix": "description<100 字符:扩到 ~155(补齐利益点+CTA)【Botify 官方阈值】"},
+     "detect": "desc_len", "thresholds": {"gt": 0, "lt": 77},
+     "fix": "description<77 chars:扩到 77-155 chars(补齐利益点+CTA)" + MARKET_NOTE % "en"},
     {"id": "thin_content", "category": "content", "severity": "WARN",
      "detect": "words", "thresholds": {"lt": 100},
      "conditional": "模板页(联系/法务/登录)词数低是合理的——命中后先分型再修",
-     "fix": "thin content<100 词:增补实质内容(模板页除外)【Botify 官方阈值】"},
+     "fix": "thin content<100 词:增补实质内容(模板页除外)【本套件口径,参照 SEO 工具常见阈值;非 Google 规定】"},
     {"id": "duplicate_body", "category": "duplication", "severity": "WARN",
      "detect": "similarity", "thresholds": {"gte": 90},
-     "fix": "批内相似度≥90%:合并成一篇或差异化改写+canonical 收敛【Botify 官方阈值】"},
+     "fix": "批内相似度≥90%:合并成一篇或差异化改写+canonical 收敛【本套件口径,参照 SEO 工具常见阈值;非 Google 规定】"},
     {"id": "canonical_mismatch", "category": "canonicalization", "severity": "WARN",
      "detect": "canonical_similarity", "thresholds": {"lt": 75},
-     "fix": "canonical 配对相似度<75%:canonical 不成立,移除【Botify 官方阈值】"},
+     "fix": "canonical 配对相似度<75%:canonical 不成立,移除【本套件口径,参照 SEO 工具常见阈值;非 Google 规定】"},
     {"id": "noindex_intent", "category": "indexability", "severity": "WARN",
      "detect": "noindex", "thresholds": {"truthy": True},
      "conditional_mode": "intent_hint",
@@ -245,12 +330,14 @@ RULES = [
      "fix": "恢复索引:有历史流量的页优先(检查 noindex/robots 屏蔽/canonical 让渡)"},
     {"id": "title_missing", "category": "meta_tags", "severity": "CRITICAL",
      "detect": "finding", "thresholds": {"area": "title", "severity": "CRITICAL"},
-     "fix": "补 title(缺失)——每页唯一,50-60 字符"},
-    {"id": "desc_missing", "category": "meta_tags", "severity": "CRITICAL",
-     "detect": "finding", "thresholds": {"area": "description", "severity": "CRITICAL"},
-     "fix": "补 meta description(~155 字符)"},
-    {"id": "h1_missing", "category": "content", "severity": "CRITICAL",
-     "detect": "finding", "thresholds": {"area": "h1", "severity": "CRITICAL"},
+     "fix": "补 title(缺失)——每页唯一,20-60 chars" + MARKET_NOTE % "en"},
+    # S2a B15/B38:site_audit 把 description 缺失、无 H1、相对 canonical 降为 WARN(Google:描述可选、
+    # 标题层级不影响排名、相对 canonical 支持但不建议)——按 message 匹配,新旧审计文件都命中
+    {"id": "desc_missing", "category": "meta_tags", "severity": "WARN",
+     "detect": "finding", "thresholds": {"area": "description", "message_contains": "缺失"},
+     "fix": "补 meta description(77-155 chars)" + MARKET_NOTE % "en"},
+    {"id": "h1_missing", "category": "content", "severity": "WARN",
+     "detect": "finding", "thresholds": {"area": "h1", "message_contains": "无 H1"},
      "fix": "补唯一 H1(与 title 呼应但不重复)"},
     {"id": "fetch_error", "category": "crawlability", "severity": "CRITICAL",
      "detect": "finding", "thresholds": {"area": "fetch", "severity": "CRITICAL"},
@@ -258,9 +345,9 @@ RULES = [
     {"id": "staging_exposed", "category": "crawlability", "severity": "CRITICAL",
      "detect": "finding", "thresholds": {"area": "staging", "severity": "CRITICAL"},
      "fix": "staging 子域加鉴权或整站屏蔽(防重复内容/内部泄漏)"},
-    {"id": "canonical_invalid", "category": "canonicalization", "severity": "CRITICAL",
-     "detect": "finding", "thresholds": {"area": "canonical", "severity": "CRITICAL"},
-     "fix": "修 canonical:相对 URL → 绝对 URL"},
+    {"id": "canonical_invalid", "category": "canonicalization", "severity": "WARN",
+     "detect": "finding", "thresholds": {"area": "canonical", "message_contains": "相对"},
+     "fix": "修 canonical:相对 URL → 绝对 URL(Google 支持相对路径但不建议)"},
     {"id": "url_long", "category": "opportunity", "severity": "INFO",
      "detect": "url_len", "thresholds": {"gt": 115},
      "fix": "URL>115 字符:缩短层级/参数(SF 官方定级 Opportunity——不扣分,值得探索)"},
@@ -274,7 +361,8 @@ AREA_RULE = {"title": "title_missing", "description": "desc_missing", "h1": "h1_
 # robots/canonical 在摘要输入下按条件依赖型处理:降为 WARN + 需人工判定,不直接 critical
 AREA_CONDITIONAL = {"robots": "noindex_intent", "canonical": "canonical_pagerank"}
 
-USAGE = """usage: prioritize.py --audit audit.json [--segment regex] [--rules-json custom.json] [--json]
+USAGE = """usage: prioritize.py --audit audit.json [--segment regex] [--rules-json custom.json]
+                     [--market XX] [--json]
 条件优先级引擎(Botify ActionBoard 口径):
   impact = 命中 URL 占比 × 严重度权重(CRITICAL=3/WARN=2/INFO=1)× 放大器
   放大器【Botify 官方】:问题页被内链指向>10 次 → 该规则 impact×1.5
@@ -290,6 +378,9 @@ USAGE = """usage: prioritize.py --audit audit.json [--segment regex] [--rules-js
   --segment regex       URL 正则(如 "/pricing|/docs")——切换 segment 重算优先级【Botify 官方行为】
   --rules-json custom   自定义规则 {"rules":[{id,category,detect,thresholds,severity,
                         conditional,conditional_mode,fix}]};按 id 覆盖内置,新 id 追加
+  --market XX           title/description 长度规则按该市场阈值(markets.json);缺省取审计文件
+                        顶层 limits/market(site_audit --json 自带),都没有则 en。数值阈值均为
+                        本套件口径,Google 对 title/description 无字数要求
   --json                结构化输出 {schema_version,input_format,segment,urls_total,
                         context,fix_now[],explore[],no_hit_rules[],degraded_rules[],
                         degradation_notes[],coverage_note};每条含 impact/amplifier/
@@ -662,7 +753,7 @@ def main():
     if any(a in ("-h", "--help") for a in argv):
         print(USAGE)
         return
-    audit_path, seg_re, rules_path, as_json = None, None, None, False
+    audit_path, seg_re, rules_path, as_json, market_flag = None, None, None, False, None
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -678,6 +769,8 @@ def main():
             rules_path = argv[i + 1]; i += 2
         elif a == "--json":
             as_json = True; i += 1
+        elif a == "--market" and i + 1 < len(argv) and not argv[i + 1].startswith("-"):
+            market_flag = argv[i + 1]; i += 2
         else:
             sys.stderr.write(USAGE + "\n")
             sys.exit(2)
@@ -686,9 +779,12 @@ def main():
         sys.exit(2)
     data = load_json_blob(audit_path)
     fmt = detect_format(data)
-    rules = load_custom_rules(rules_path, RULES) if rules_path else [dict(r) for r in RULES]
+    market, limits = resolve_limits(data, market_flag)
+    base_rules = market_rules(RULES, market, limits)
+    rules = load_custom_rules(rules_path, base_rules) if rules_path else base_rules
     rep = {"schema_version": SCHEMA_VERSION, "input_format": fmt, "segment":
-           (seg_re.pattern if seg_re else None), "coverage_note": COVERAGE_NOTE}
+           (seg_re.pattern if seg_re else None), "coverage_note": COVERAGE_NOTE,
+           "market": market, "limits": limits}
     if fmt == "health_score":
         rep["urls_refused"] = data.get("urls_refused", 0)
         rep["urls_matched_segment"] = data.get("urls_total", 0)

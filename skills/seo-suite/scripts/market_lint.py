@@ -183,7 +183,7 @@ AUTO_RULES = [
     ("th_polite", "th", r"ครับ"),
     ("th_grapheme", "th", r"字素计数"),
     ("es_h2q", "es", r"倒问号"),
-    ("es_419", "es", r"唯一 UN 区域码"),
+    ("es_419", "es", r"唯一 UN 区域码|es-419.*hreflang|hreflang.*es-419"),
     # ---------- v3 第二批映射(2026-10-09):special_checks 中可机检项 ----------
     ("ko_nosourceinfo", "ko", r"nosourceinfo"),
     ("ko_grid", "ko", r"标签-值网格"),
@@ -238,13 +238,16 @@ def r_zh_script(ctx):
     elif body:
         issues.append("正文无汉字(疑似语言/市场错配)")
     if is_html:
+        # zh-CN(ISO 639-1 + ISO 3166-1 Alpha-2)合法,zh-Hans/zh-Hant 文字码只是可选写法
+        # (Google localized-versions 文档);语言码合法性复用 hreflang_cluster.check_lang,不另写一套
+        from hreflang_cluster import check_lang
         vals = hreflangs(raw)
-        bad = sorted({v for v in vals if re.fullmatch(r"(?i)zh-(CN|TW|HK|SG|MO)", v)})
-        zhv = sorted({v for v in vals if v.lower().startswith("zh-")})
+        zhv = sorted({v for v in vals if v.lower() == "zh" or v.lower().startswith("zh-")})
+        bad = ["%s(%s)" % (v, ";".join(check_lang(v))) for v in zhv if check_lang(v)]
         if bad:
-            issues.append("hreflang 裸区域码 %s——应用 zh-Hans/zh-Hant 文字码" % bad)
+            issues.append("hreflang 语言码不合法: %s" % " | ".join(bad))
         elif zhv:
-            notes.append("hreflang %s" % zhv)
+            notes.append("hreflang %s 合法(zh-CN 这类国家码与 zh-Hans/zh-Hant 文字码都可用)" % zhv)
         else:
             notes.append("未见 zh* hreflang(站点级核验)")
     else:
@@ -473,14 +476,18 @@ def r_es_h2q(ctx):
     return "OK", "¿ 疑问式 H2 %d/%d" % (len(qs), len(h2s))
 
 def r_es_419(ctx):
+    """Google 只支持 ISO 639-1 + ISO 3166-1 Alpha-2:「such as es-419, aren't supported」
+    (localized-versions 文档,2026-09-21 更新)。拉美西语用 es 兜底,需要时加 es-MX 等国家码。"""
     if not ctx["is_html"]:
         return "MANUAL", "机检需 HTML 输入"
     vals = hreflangs(ctx["raw"])
-    if "es-419" in vals:
-        return "OK", "es-419 在场(唯一 UN 区域码)"
-    es = sorted({v for v in vals if v.lower().startswith("es-")})
+    un = sorted({v for v in vals if re.fullmatch(r"(?i)es-\d{3}", v)})
+    if un:
+        return "FAIL", ("hreflang %s 是 UN M.49 区域码,Google 不支持——拉美用 es 兜底,"
+                        "需要时加 es-MX/es-AR 等国家码(es-419 只作内容层的拉美西语写法)" % un)
+    es = sorted({v for v in vals if v.lower() == "es" or v.lower().startswith("es-")})
     if es:
-        return "FAIL", "有 %s 而无 es-419" % es
+        return "OK", "es hreflang %s(无 Google 不支持的 UN 区域码)" % es
     return "MANUAL", "未见 hreflang,须站点级核验"
 
 # ---------- v3 runner:⑨ special_checks 第二批 ----------
@@ -890,10 +897,13 @@ def g_currency(ctx):
     fset = set(found)
     foreign = sorted(fset - set(local))
     if foreign:
+        # 语言 ≠ 市场 ≠ 币种:全球统一美元定价是正当做法 → INFO,不计 WARN/FAIL
         present = sorted(fset & set(local))
         if not present:
-            return "FAIL", "货币符号 %s 非本市场(期望 %s)——价格未本地化" % (foreign, "/".join(local))
-        return "FAIL", "货币混用:本地 %s+外币 %s——多币种页须显式标注币种" % (present, foreign)
+            return "INFO", ("货币符号 %s 不是本市场常用币种(%s)——确认定价币种是有意的"
+                            "(全球统一美元定价是正当做法);面向本地付款时写明币种代码" % (foreign, "/".join(local)))
+        return "INFO", ("本地 %s 与外币 %s 并存——确认定价币种是有意的;多币种页写明币种代码(USD/CNY)"
+                        % (present, foreign))
     return "OK", "货币符号本地化一致(%s)" % sorted(fset)
 
 def g_script_ratio(ctx):
@@ -1189,7 +1199,7 @@ def _lint():
         print("AUTO 比例: %d/%d = %.0f%%" % (auto, len(checks), auto * 100.0 / max(len(checks), 1)))
 
     # ⑩ v3 常开机检(内容/结构/格式/语言/robots 五类注册表,全市场)
-    v3_ok = v3_fail = v3_man = 0
+    v3_ok = v3_fail = v3_man = v3_info = 0
     print("\n⑩ v3 常开机检(内容/结构/格式/语言/robots,%d 项)" % len(V3_CHECKS))
     for cid, title_, fn in V3_CHECKS:
         state, detail = fn(ctx)
@@ -1200,10 +1210,13 @@ def _lint():
         elif state == "MANUAL":
             v3_man += 1
             print("[v3-MANUAL] %s —— %s" % (title_, detail))
+        elif state == "INFO":  # 提示项:不计 WARN、不影响退出码
+            v3_info += 1
+            print("[v3-INFO] %s —— %s" % (title_, detail))
         else:
             v3_ok += 1
             print("[v3-OK] %s —— %s" % (title_, detail))
-    print("v3 常开机检: OK %d / FAIL %d / MANUAL %d(共 %d)" % (v3_ok, v3_fail, v3_man, len(V3_CHECKS)))
+    print("v3 常开机检: OK %d / FAIL %d / MANUAL %d / INFO %d(共 %d)" % (v3_ok, v3_fail, v3_man, v3_info, len(V3_CHECKS)))
 
     # 支柱页长度(体裁提示)
     pm, pu = cfg.get("pillar_min"), cfg.get("pillar_unit", "words")
@@ -1218,7 +1231,7 @@ def _lint():
             n, approx = len(body.split()), ""
         if n < pm:
             note = ";%s" % cfg["pillar_note"] if cfg.get("pillar_note") else ""
-            print("[INFO] 正文 %d %s%s < 支柱建议 %d %s%s" % (n, pu, approx, pm, pu, note))
+            print("[INFO] 正文 %d %s%s < 本套件口径参考 %d %s%s(不是排名要求)" % (n, pu, approx, pm, pu, note))
 
     print("\n市场 %s:CRITICAL %d / WARN %d" % (market, crit, warn))
     print("引擎必查: %s" % ", ".join(cfg["engines"]))

@@ -5,6 +5,7 @@
 site_crawl.py 产孤儿清单,本工具把"孤儿 × 同主题候选源页"配成可执行的加链清单,
 作为 hub-spoke 内链规划的直接输入。
 
+被重定向的 URL(final_url≠url 或 3xx)不算孤儿,不给它们出加链建议。
 候选源页规则(目录前缀聚类):
   取与孤儿 URL 路径首段相同(如 /blog/deep → "blog")的已链出活页
   (out_internal≥1、2xx/3xx、非孤儿自身),按入链数降序(平局按出链数/URL)
@@ -97,11 +98,21 @@ def is_live(page):
     return s is not None and s < 400
 
 
+def is_redirected(page):
+    """被重定向的 URL(如 www./api. 子域 301 到主站)不是孤儿:内链该指向目标页,不给它加链。"""
+    s = page.get("status")
+    if s is not None and 300 <= s < 400:
+        return True
+    fu = page.get("final_url")
+    return bool(fu) and fu != page.get("url")
+
+
 def build_plan(report, max_orphans=DEFAULT_MAX):
     """孤儿清单 → 加链计划:每孤儿 ≤MAX_CANDIDATES 个同目录候选源页(入链降序)。"""
     pages = report["pages"]
-    orphans = report.get("orphans") or []
     by = {p.get("url"): p for p in pages if p.get("url")}
+    # 旧版 site_crawl 会把重定向页写进 orphans:这里再剔一次
+    orphans = [u for u in (report.get("orphans") or []) if not is_redirected(by.get(u) or {})]
     orphan_set = set(orphans)
     # 预聚类:路径首段 → 已链出活页(非孤儿)
     clusters = defaultdict(list)

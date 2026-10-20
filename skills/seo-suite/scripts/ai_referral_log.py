@@ -14,7 +14,8 @@
   - --classify:bot 四桶分类(Profound/Otterly/Peec 三家口径合并)——
     on_demand_fetcher / search_index / training / agent_visits(宽匹配)/
     unclassified(未知 UA 单列);KPI 扩展:failure_rate(4xx+5xx 占比,按 bot 与
-    按桶两级)+ 每桶访问数 Top URL + bot×status 矩阵 + llms.txt 双基线
+    按桶两级;先剔除漏洞扫描探测路径 /.env、/.git/、id_rsa、../ 等——冒充 AI UA 的
+    扫描器 404 不算可见性失败;UA 未验证,按官方 IP 段/反查核实)+ 每桶访问数 Top URL + bot×status 矩阵 + llms.txt 双基线
     (Otterly 90 天实验参考值)+ retrieval vs training 分层结论
   - --attribution:归因工具箱输出——GA4 custom channel 正则(锚定官方域名)+
     三条纪律注记 + "自报归因"问卷模板两问
@@ -39,6 +40,7 @@
   python3 ai_referral_log.py --self-test
 """
 import argparse
+import ipaddress
 import json
 import re
 import sys
@@ -99,6 +101,24 @@ _BOT_TOKEN_RE = re.compile("|".join(re.escape(b) for b in
                                     sorted(_BOT_TIER_OF, key=len, reverse=True)))
 _AGENT_UA_RE = re.compile("|".join(re.escape(a) for a in
                                    sorted(AGENT_UA_TOKENS, key=len, reverse=True)))
+
+
+# ---- 漏洞扫描探测路径(B26):扫描器常冒充 AI 爬虫 UA,这些请求 404 不代表可见性被封 ----
+PROBE_PATH_RE = re.compile(
+    r"(?:^|/)\.env(?:[./_?-]|$)|/\.git(?:/|$)|/\.svn(?:/|$)|/\.hg(?:/|$)|/\.aws/|/\.ssh/"
+    r"|id_[rd]sa|/proc/self/|/etc/passwd|\.\./|%2e%2e|docker-compose\.ya?ml|wp-config"
+    r"|/\.DS_Store|/\.htpasswd|phpinfo\.php", re.I)
+
+
+def is_probe_path(path):
+    return bool(PROBE_PATH_RE.search(path or ""))
+
+
+def _is_public_ip(ip):
+    try:
+        return ipaddress.ip_address((ip or "").strip("[]")).is_global
+    except ValueError:
+        return False
 
 
 def classify_ua(ua):
@@ -259,6 +279,8 @@ def analyze(lines, with_bots=False):
     bot_rows = {}                      # token → 桶级行(hits/fail/statuses 矩阵)
     llms = {"hits": 0, "bot_hits": 0}  # /llms.txt 请求(总/AI bot)
     ai_bot_total = 0
+    probes = {"total": 0, "bot": 0, "paths": Counter()}   # 剔除的漏洞扫描探测请求
+    bot_ips = set()                      # AI bot UA 请求的客户端 IP(判断能否验证 UA)
     log_dates = set()                    # R6: 可解析的日志日期(面板导入 date 用)
     for line in lines:
         line = (line or "").rstrip("\n")
@@ -283,6 +305,14 @@ def analyze(lines, with_bots=False):
         token, tier = classify_ua(rec["ua"])
         code = rec["status"]
         is_fail = code[:1] in ("4", "5")
+        if is_probe_path(rec["path"]):     # 扫描器探测:不进 bot 桶、不进失败率
+            probes["total"] += 1
+            probes["paths"][rec["path"]] += 1
+            if tier != "unclassified":
+                probes["bot"] += 1
+            continue
+        if tier != "unclassified":
+            bot_ips.add(rec["ip"])
         tiers[tier]["hits"] += 1
         tiers[tier]["paths"][rec["path"]] += 1
         if is_fail:
@@ -313,6 +343,7 @@ def analyze(lines, with_bots=False):
             "ai_total": sum(s["hits"] for s in stats.values()),
             "tiers": tiers, "bot_rows": bot_rows, "llms": llms,
             "ai_bot_total": ai_bot_total, "log_dates": log_dates,
+            "probes": probes, "bot_ips": bot_ips,
             "site_avg_per_page": (parsed / len(all_paths)) if all_paths else 0.0}
 
 
@@ -384,12 +415,28 @@ def render_policy(res):
          "  [!] on_demand_fetcher + search_index 桶(AI 答案/引用直接取材源): "
          "封=可见性失败 WARN",
          "  [i] 封 GPTBot ≠ 封 ChatGPT 引用——引用走 OAI-SearchBot"]
+    pr = res.get("probes") or {"total": 0, "bot": 0, "paths": Counter()}
+    if pr["total"]:
+        L.append("  [i] 已剔除漏洞扫描探测请求 %d 条(其中冒充 AI bot UA %d 条;如 %s)——"
+                 "不计入失败率" % (pr["total"], pr["bot"],
+                                  ", ".join(p for p, _ in pr["paths"].most_common(3))))
     if ret_fail:
         L.append("  [!] WARN 实测: retrieval 层(on_demand+search)failure rate "
-                 "%.1f%%(%d/%d)= 事实上的可见性被封;排查 WAF/robots"
-                 % (_rate(ret_fail, ret_hits), ret_fail, ret_hits))
+                 "%.1f%%(%d/%d,已剔除探测路径)——UA 未验证:先确认这些请求来自真 bot,"
+                 "再排查 WAF/robots 是否误拦" % (_rate(ret_fail, ret_hits), ret_fail, ret_hits))
     else:
-        L.append("  [i] retrieval 层 bot 当前干净(未观测到 4xx/5xx)")
+        L.append("  [i] retrieval 层 bot 当前干净(剔除探测路径后未观测到 4xx/5xx)")
+    ips = res.get("bot_ips") or set()
+    public = sorted(ip for ip in ips if _is_public_ip(ip))
+    if public:
+        L.append("  [i] UA 未验证:日志含 %d 个公网客户端 IP——按各家公布的官方 IP 段"
+                 "(如 OpenAI 的 gptbot.json/searchbot.json/chatgpt-user.json)或反向 DNS 核实后再下结论"
+                 % len(public))
+    elif ips:
+        L.append("  [i] UA 未验证且无法验证:bot 请求的 IP 只有 %s(环回/内网/缺失)——"
+                 "源站在 CDN/隧道后时让边缘回传真实客户端 IP(如 CF-Connecting-IP)再核"
+                 % ", ".join(sorted(ips)[:3]))
+    L.append("  [i] 源站在 CDN 后时,边缘缓存命中的请求不进源站日志——bot 量以 CDN 的 bot 分析为准")
     return L
 
 
@@ -519,7 +566,7 @@ def _self_test():
     out2 = render(res2, classify=True)
     for frag in ("bot 四桶", "50.0%", "33.3%", "bot×status 矩阵", "84 vs 265",
                  "0.1%", "llms.txt 是编程 agent 基础设施非可见性杠杆",
-                 "授权决策", "可见性失败", "WARN 实测"):
+                 "授权决策", "可见性失败", "WARN 实测", "UA 未验证", "CDN"):
         assert frag in out2, frag
     att = "\n".join(render_attribution())
     assert "chat\\.openai\\.com" in att and "i\\.meta\\.ai" in att

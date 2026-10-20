@@ -111,9 +111,9 @@ Open Graph 的补充（Facebook [分享指南](https://developers.facebook.com/d
 |---|---|---|
 | `title-missing` | CRITICAL | Google：每页都要有 title |
 | `title-too-short`（< 20 单位）、`title-too-long`（超市场上限） | WARN | 本套件口径。Google 无长度上限；Bing 指出过短的 title 可能有害 |
-| `description-missing` | CRITICAL | 本套件口径，严于 Google（Google 建议至少给首页和热门页写）；Bing 指出缺失可能有害 |
-| `description-too-short`（< 80 单位）、`description-too-long` | WARN | 本套件口径 |
-| `h1-missing` | CRITICAL | 本套件口径。Google 要求主标题清楚，没有规定必须有 h1 |
+| `description-missing` | WARN | 本套件口径（Google 建议至少给首页和热门页写；缺失时 Google 从正文取摘要）；Bing 指出缺失可能有害 |
+| `description-too-short`（< 市场 `desc_min`，默认上限的一半）、`description-too-long` | WARN | 本套件口径 |
+| `h1-missing` | WARN | 本套件口径。Google 要求主标题清楚，没有规定必须有 h1 |
 | `h1-multiple`、`headings-skip-level` | WARN | 本套件口径。Google：标题的数量和顺序对搜索没有影响；Bing 指南要求逻辑的标题层级 |
 | `canonical-relative` | CRITICAL | 本套件口径，严于 Google（相对路径受支持，但不推荐） |
 | `canonical-missing` | WARN | 本套件口径。Google：canonical 不是必需的 |
@@ -153,7 +153,7 @@ Open Graph 的补充（Facebook [分享指南](https://developers.facebook.com/d
 
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
-| title、description、canonical、og 齐全 | `python3 scripts/site_audit.py URL --market XX --json` | 通过：无 CRITICAL。失败：有 `title-missing`、`description-missing`、`canonical-relative`、`robots-noindex` 等 |
+| title、description、canonical、og 齐全 | `python3 scripts/site_audit.py URL --market XX --json` | 通过：无 CRITICAL。失败：有 `title-missing`、`robots-noindex` 等 CRITICAL；`description-missing`、`h1-missing`、相对 canonical 只记 WARN，逐条确认 |
 | head 元素合规 | `python3 scripts/head_check.py URL --market XX` | 通过：退出码 0。失败：退出码 1（有严重违规） |
 | description 每页唯一 | 抽样：`while read u; do curl -s "$u" \| grep -io '<meta name="description"[^>]*>'; done < urls.txt \| sort \| uniq -d`（只看静态 HTML；本套件暂无专用脚本） | 通过：无输出。失败：有重复行 |
 | description 含买家原词并概括答案 | `question_align.py` 的 `cov_lead`；人工读 | 通过：主查询核心词在，且能读出答案。失败：缺词、口号式描述 |

@@ -60,7 +60,8 @@ def item(rep, rule_id, column="fix_now"):
 
 
 class PrioritizeThresholdTests(unittest.TestCase):
-    """Botify 官方阈值:命中边界两侧各一 URL,只命中越界侧"""
+    """阈值边界(本套件口径,参照 SEO 工具常见阈值;S2a B2:不再称「Botify 官方阈值」):
+    命中边界两侧各一 URL,只命中越界侧"""
 
     def test_depth_and_inlinks_official_thresholds(self):
         rep = pri({"https://s.com/a": [], "https://s.com/b": []},
@@ -72,10 +73,12 @@ class PrioritizeThresholdTests(unittest.TestCase):
 
     def test_title_desc_short_thresholds(self):
         rep = pri({"https://s.com/a": [], "https://s.com/b": []},
-                  metas={"https://s.com/a": {"title": "a" * 40, "desc_len": "80 chars/160"},
+                  metas={"https://s.com/a": {"title": "a" * 40, "desc_len": "60 chars/160"},
                          "https://s.com/b": {"title": "b" * 55, "desc_len": "120 chars/160"}})
-        self.assertEqual(item(rep, "title_short")["hit_urls"], 1)     # <50 命中;55 不
-        self.assertEqual(item(rep, "desc_short")["hit_urls"], 1)      # <100 命中;120 不
+        self.assertEqual(item(rep, "title_short")["hit_urls"], 1)     # en <50 命中;55 不
+        # S2a B2/B13 改:desc_short 下限改用 markets.json desc_min(en 77,与 site_audit 同一下限,
+        # 不再各说各话);旧值 80 落在 77 之上,改用 60
+        self.assertEqual(item(rep, "desc_short")["hit_urls"], 1)      # <77 命中;120 不
 
     def test_thin_content_threshold_and_template_note(self):
         rep = pri({"https://s.com/a": [], "https://s.com/b": []},
@@ -217,7 +220,9 @@ class PrioritizeColumnsTests(unittest.TestCase):
 
     def test_two_columns_sorted_and_opportunity_in_explore(self):
         long_url = "https://s.com/" + "x" * 130
-        rep = pri({"https://s.com/deep": [], "https://s.com/h1": [("CRITICAL", "h1", "无 H1")],
+        # S2a B38 改:无 H1 已降 WARN(Google 起始指南:标题数量/顺序不影响搜索);
+        # 用仍为 CRITICAL 的 title 缺失验证「CRITICAL 权重排前」
+        rep = pri({"https://s.com/deep": [], "https://s.com/h1": [("CRITICAL", "title", "缺失")],
                    long_url: []},
                   metas={"https://s.com/deep": {"depth": 7},
                          "https://s.com/h1": {}, long_url: {"depth": 1}})
@@ -225,9 +230,9 @@ class PrioritizeColumnsTests(unittest.TestCase):
         impacts = [d["impact"] for d in rep["fix_now"]]
         self.assertEqual(impacts, sorted(impacts, reverse=True))
         self.assertTrue(all(d["impact"] > 0 for d in rep["fix_now"]))
-        # h1_missing CRITICAL(权重3)排在 depth WARN(权重2)前
+        # title_missing CRITICAL(权重3)排在 depth WARN(权重2)前
         rules = [d["rule"] for d in rep["fix_now"]]
-        self.assertLess(rules.index("h1_missing"), rules.index("depth_deep"))
+        self.assertLess(rules.index("title_missing"), rules.index("depth_deep"))
         # opportunity 类(url>115,SF 官方 Opportunity 定级)只进 explore
         self.assertIsNone(item(rep, "url_long"))
         opp = item(rep, "url_long", column="explore")

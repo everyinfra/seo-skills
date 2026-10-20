@@ -5,6 +5,14 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+- **脚本 bug 第二批(2026-10-21,真实站点实测发现)**:每条先写修前红的回归测试(`tests/test_s2a_*.py`、`tests/test_s2c_*.py`、`tests/test_content_queue_help.py`)。
+  - `site_audit.py`:只在结构性挑战页特征时拒审(页面谈论 captcha 不再被跳过);`--json` 的 stdout 只出 JSON(人读文字走 stderr,顶层加 `market`、`limits`);缺 description、缺 H1、相对 canonical 降为 WARN;>100 链接降 INFO(工具约定);有服务端内容时不报「无 JS 空页」;去掉「Botify 官方阈值」说法。
+  - `markets.json`:18 个市场加 `desc_min`(上限的一半,修中文下限 > 上限);中文标题和描述按显示宽度计(全角 1、半角 0.5);es 删 es-419(Google 不支持);zh-CN 与 zh-Hans 都合法;支柱字数改标「本套件口径,不是排名要求」(Google 原文:没有偏好字数)。
+  - `project.py`/`prioritize.py`/`envelope.py`:API/开发者站不再被认成电商,自报站型优先;建议按 `--market` 阈值。
+  - `head_check.py`:不发 Accept-Language,被重定向时打印最终 URL;与 OG 重复的 twitter:* 只记 INFO(不是弃用);geo.* 不报缺失;显式 `--market` 优先;元素顺序降 INFO(charset 前 1024 字节仍 ERROR)。
+  - `gsc_api.py`:`--dimensions` 支持 country、device、hour、searchAppearance。`market_lint.py`:zh-CN 合法、es-419 判不支持、外币标价改 INFO。`ai_referral_log.py`:失败率先剔除漏洞扫描探测路径,标「UA 未验证」。`site_crawl.py`/`orphan_fix.py`:内链外链分开计数,被重定向的页不算孤儿。`sitemap_audit.py --hreflang`:全站互指检查。`bing_wmt.py pagequery`:按页面看查询。`above_fold.py`:首屏取样跳过导航和 Cookie 横幅。`trust_signals.py`:认「失败不扣费/按成功计费/退款」,不再建议写不真实的承诺。`did_attribution.py`:断代期结束日改为 2026-04-27(GSC 数据异常页)。`health_score.py`:删掉未实现的 duplicate_description。`content_queue.py`:子命令 `--help` 列出该子命令参数。
+  Script bug batch 2: 27 bugs found on a real site fixed with red-before/green-after regression tests (site_audit severity and JSON output, market thresholds, head_check, gsc_api dimensions, hreflang site-wide check, log probe filtering, and more).
+
 - **深挖第二批(部分,2026-10-18)**:technical(robots、HTTP 状态码、重定向与 canonical、渲染、移动、日志、hreflang、head、Schema、LCP/CWV、实体与知识图谱、内链与导航、AI 爬虫政策、agent 协议、edge、Naver、pSEO、审计规则目录)、content(GEO 证据与证据银行、平台差异、打分、可引性、AI 写作识别、品牌档案、衰退与刷新、深度研究、Discover、UGC、社区)和 markets(ru、zh)共 42 个文件,已按一手来源改过一部分并补检查清单;这批的核查因额度中止,未全部完成,剩余条目和其余参考文件下一轮继续。自检全绿。
   Deep-review batch 2 (partial): 42 reference files partly rechecked against primary sources with checklists added; review paused for usage limits and continues next round.
 

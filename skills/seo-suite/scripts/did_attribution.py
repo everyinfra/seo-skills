@@ -11,7 +11,7 @@
 闸门:控制页≥3 / 控制页 pre 点击≥5(不满足自动回退 site 级并注明);
       treated pre 点击≥5(不满足直接判数据不足)。
 注意:server-side A/B 是唯一真因果检验,DiD 只是观测估计。
-GSC 断代:窗口若与 2025-05-13 ~ 2026-04-30 重叠 → impressions 不可靠。
+GSC 断代:窗口若与 2025-05-13 ~ 2026-04-27 重叠 → impressions 不可靠。
 用法:
     python3 did_attribution.py --treated-page https://s.com/guides/ \
         --control-page https://s.com/blog/ --pre pre.csv --post post.csv \
@@ -26,7 +26,9 @@ import re
 import sys
 from datetime import date, timedelta
 
-EPOCH_START, EPOCH_END = date(2025, 5, 13), date(2026, 4, 30)  # GSC 数据断代
+# GSC 数据断代:impressions(及 CTR/平均排名)记录错误「from May 13, 2025 until April 27, 2026」
+# (support.google.com/webmasters/answer/6211453「Data anomalies in Search Console」,2026-10-21 核对)
+EPOCH_START, EPOCH_END = date(2025, 5, 13), date(2026, 4, 27)
 GATE_MIN_CTRL_PAGES = 3
 GATE_MIN_CLICKS = 5
 Z = 1.96

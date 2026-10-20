@@ -643,7 +643,8 @@ class CliAndGuardTests(GscApiCase):
             (["query", "--sa", p, "--site", "s", "--start", "2026-9-1",
               "--end", "2026-09-30"], "YYYY-MM-DD"),                       # 坏日期
             (["query", "--sa", p, "--site", "s", "--start", "2026-09-01",
-              "--end", "2026-09-30", "--dimensions", "device"], "不支持的维度"),  # 契约外维度
+              "--end", "2026-09-30", "--dimensions", "browser"], "不支持的维度"),  # API 没有的维度
+            # B10(2026-10-21 改):旧用例拿 device 当契约外维度;device/country 是 API 文档列出的维度,已支持
             (["query", "--sa", p, "--site", "s", "--start", "2026-09-01",
               "--end", "2026-09-30", "--rows", "0"], "≥1"),                # rows 非法
         ]

@@ -263,7 +263,9 @@ class MarketLintV3Tests(unittest.TestCase):
 
     def test_v3_currency_not_localized(self):
         out = self._lint("de", "Produktvergleich\nPreise\nDas Produkt kostet $ 199 laut Hersteller.")
-        self.assertIn("[v3-FAIL] 货币符号", out)               # de 期望 €
+        # B33(2026-10-21 改):旧断言要求 FAIL;语言≠市场≠币种,全球统一美元定价正当 → 只 INFO
+        self.assertIn("[v3-INFO] 货币符号", out)
+        self.assertNotIn("[v3-FAIL] 货币符号", out)
         out_ok = self._lint("de", "Produktvergleich\nPreise\nDas Produkt kostet 199 € laut Hersteller.")
         self.assertIn("货币符号本地化一致", out_ok)
 

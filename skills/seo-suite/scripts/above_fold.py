@@ -15,11 +15,15 @@
   cta        权重 0.25 : 前 300 字符出现动作动词 (start|get|try|begin|download|book|
                           schedule|开始|免费) 得满; 其次早期链接锚文本含动作动词;
                           再次仅存在早期链接给部分分
-  trust      权重 0.15 : 出现 免费试用/无需信用卡/随时取消/保证/free trial/
-                          no credit card/cancel anytime/guarantee 中 >= 1 个
+  trust      权重 0.15 : 出现 免费试用/免费额度/无需信用卡/随时取消/保证/失败不扣费/
+                          按成功计费/退款/free trial/no credit card/cancel anytime/
+                          guarantee/refund/not charged for failed 中 >= 1 个
 
 说明: "首屏文本" = 页面可见文本(跳过 script/style 等)按文档顺序的前 N 字符,
-      是对真实渲染首屏的近似 (无布局引擎时的保守做法).
+      是对真实渲染首屏的近似 (无布局引擎时的保守做法). 取样跳过站点外壳:
+      nav、role=navigation/menu/menubar、aria-hidden=true 或 hidden 的下拉、
+      Cookie/同意横幅(id/class/aria-label 含 cookie/consent/gdpr/onetrust 等),
+      以及 main/article 之外不含 h1 的 <header>(站点页眉菜单).
 
 退出码: >=70 -> 0; <70 -> 1; 抓取失败 -> 2.
 """
@@ -44,14 +48,35 @@ SPEC_NUM_RE = re.compile(
     r"\d[\d,.\uFF0C]*\s*(?:%|万|亿|[kKmM]\b|\+|x|X|倍|元|块|\$|€|£|USD|EUR|RMB|天|小时|分钟|秒|人|家|国|城|次|words|users|customers|clients|teams)"
     r"|\d{2,}")
 TRUST_RE = re.compile(
-    r"免费试用|无需信用卡|随时取消|保证|free trial|no credit card|cancel anytime|guarantee", re.I)
+    r"免费试用|免费额度|无需信用卡|随时取消|保证|失败不(?:扣费|收费|计费)|按成功(?:计费|收费)|退款|"
+    r"free trial|free tier|no credit card|cancel anytime|guarantee|refund|"
+    r"not (?:be )?charged for (?:failed|unsuccessful)|pay only for success", re.I)
 BLOCK_TAGS = {"p", "div", "br", "li", "tr", "section", "article", "header", "footer",
               "nav", "main", "aside", "table", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6",
               "blockquote", "figure"}
 
 
+CHROME_ROLES = {"navigation", "menu", "menubar", "menuitem", "alertdialog"}
+CONSENT_RE = re.compile(r"cookie|consent|gdpr|onetrust|cookiebot|\bcmp\b|cmp[-_]|cc[-_]banner|privacy[-_]banner", re.I)
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+             "source", "track", "wbr", "param"}
+
+
+def is_chrome(tag, attrs):
+    """站点外壳(菜单/隐藏下拉/同意横幅)—— 首屏取样整段跳过."""
+    d = {k.lower(): (v or "") for k, v in attrs}
+    if tag == "nav":
+        return True
+    if d.get("role", "").strip().lower() in CHROME_ROLES:
+        return True
+    if d.get("aria-hidden", "").strip().lower() == "true" or "hidden" in d:
+        return True
+    ident = " ".join(d.get(k, "") for k in ("id", "class", "aria-label", "data-testid"))
+    return bool(CONSENT_RE.search(ident))
+
+
 class FoldParser(HTMLParser):
-    """按文档顺序收集可见文本 / 链接锚文本 / 标题."""
+    """按文档顺序收集可见文本 / 链接锚文本 / 标题(跳过站点外壳,见 is_chrome)."""
 
     SKIP = {"script", "style", "noscript", "template", "svg", "title"}
 
@@ -63,6 +88,24 @@ class FoldParser(HTMLParser):
         self._skip_depth = 0
         self._link_buf = None
         self._heading_buf = None
+        self._chrome = None          # [tag, 同名嵌套深度]:外壳区内一律不收
+        self._content_depth = 0      # main/article 嵌套深度(其外的 <header> 视为站点页眉)
+        self._header = None          # [深度, 缓冲 text, 缓冲 links, 缓冲 headings]
+        self._main = None            # 进入页眉缓冲时暂存主列表
+
+    def _enter_header(self):
+        self._main = (self.text_parts, self.links, self.headings)
+        self.text_parts, self.links, self.headings = [], [], []
+        self._header = [1]
+
+    def _leave_header(self):
+        text, links, heads = self.text_parts, self.links, self.headings
+        self.text_parts, self.links, self.headings = self._main
+        self._header = self._main = None
+        if any(t == "h1" for t, _ in heads):     # 页眉里放了 h1 = 首屏 hero,保留
+            self.text_parts.extend(text)
+            self.links.extend(links)
+            self.headings.extend(heads)
 
     def handle_starttag(self, tag, attrs):
         if tag in self.SKIP:
@@ -70,6 +113,20 @@ class FoldParser(HTMLParser):
             return
         if self._skip_depth:
             return
+        if self._chrome is not None:
+            if tag == self._chrome[0]:
+                self._chrome[1] += 1
+            return
+        if tag not in VOID_TAGS and is_chrome(tag, attrs):
+            self._chrome = [tag, 1]
+            return
+        if tag in ("main", "article"):
+            self._content_depth += 1
+        if tag == "header":
+            if self._header is not None:
+                self._header[0] += 1
+            elif self._content_depth == 0:
+                self._enter_header()
         if tag == "a":
             self._link_buf = []
         elif tag in ("h1", "h2", "h3", "h4"):
@@ -80,6 +137,21 @@ class FoldParser(HTMLParser):
     def handle_endtag(self, tag):
         if tag in self.SKIP:
             self._skip_depth = max(0, self._skip_depth - 1)
+            return
+        if self._skip_depth:
+            return
+        if self._chrome is not None:
+            if tag == self._chrome[0]:
+                self._chrome[1] -= 1
+                if self._chrome[1] <= 0:
+                    self._chrome = None
+            return
+        if tag in ("main", "article"):
+            self._content_depth = max(0, self._content_depth - 1)
+        if tag == "header" and self._header is not None:
+            self._header[0] -= 1
+            if self._header[0] <= 0:
+                self._leave_header()
             return
         if tag == "a" and self._link_buf is not None:
             txt = re.sub(r"\s+", " ", "".join(self._link_buf)).strip()
@@ -92,8 +164,18 @@ class FoldParser(HTMLParser):
                 self.headings.append((self._heading_buf[0], txt))
             self._heading_buf = None
 
+    def flush(self):
+        """文档结束时 <header> 仍未闭合(畸形 HTML):缓冲内容原样并回,不丢正文."""
+        if self._header is not None:
+            text, links, heads = self.text_parts, self.links, self.headings
+            self.text_parts, self.links, self.headings = self._main
+            self._header = self._main = None
+            self.text_parts.extend(text)
+            self.links.extend(links)
+            self.headings.extend(heads)
+
     def handle_data(self, data):
-        if self._skip_depth:
+        if self._skip_depth or self._chrome is not None:
             return
         self.text_parts.append(data)
         if self._link_buf is not None:
@@ -207,6 +289,7 @@ def main(argv=None):
         parser.feed(decode(body)[:500000])
     except Exception as e:
         print("[WARN] HTML 解析异常(继续用已解析部分): {0}".format(e), file=sys.stderr)
+    parser.flush()
 
     fold = re.sub(r"\s+", " ", "".join(parser.text_parts)).strip()
     window = fold[:args.chars]
@@ -241,7 +324,8 @@ def main(argv=None):
     if scores["cta"] < 80:
         tips.append("cta: 在前 300 字符或首个链接里放动作动词 (开始/免费试用/Get started/Book...)")
     if scores["trust"] == 0:
-        tips.append("trust: 首屏补一条风险反转语 (免费试用/无需信用卡/随时取消/保证)")
+        tips.append("trust: 首屏写一条你真实提供的风险反转 (如免费额度/试用、失败不扣费、按成功计费、退款规则);"
+                    "做不到的承诺不要写")
     if tips:
         print("\n建议:")
         for t in tips:

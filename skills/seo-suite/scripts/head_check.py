@@ -3,28 +3,27 @@
 """head_check.py — HTML <head> 元素检查器(仅标准库).
 
 执行 references/technical/head-elements.md(2026 口径,主体吸收自 joshbuchea/HEAD):
-  1. charset: meta 声明须在文档前 1024 字节内;HTTP 头已声明则 meta 可省
+  1. charset: 声明须完整落在文档前 1024 字节内(WHATWG 硬约束);HTTP 头已声明则 meta 可省
   2. title: 必须存在且非空;报告位置
-  3. 推荐顺序: charset → viewport → title → 其余 meta;其余 meta 出现在
-     <title> 之前 = 警告;charset/viewport 落在 title 之后也告警
+  3. 推荐顺序(charset → viewport → title → 其余 meta)只是风格建议,无 SEO 依据 → 最多 INFO
   4. og:image: 须存在且为绝对 URL(https://…)
-  5. geo 四件套: ICBM / geo.position / geo.region / geo.placename
-  6. 中文浏览器 meta: 微信/QQ 分享不消费 OG,读 itemprop 微数据三件套
-     (itemprop name / image / description)——仅 zh 市场或检出中文内容时报,
-     日文(假名)/韩文(谚文)/无汉字页跳过,消除跨市场噪音
-  7. 弃用清单(HEAD DEPRECATED.md,17 项): x-ua-compatible / skype_toolbar /
-     msapplication-config / mask-icon / apple-mobile-web-app-capable /
-     prerender / x-dns-prefetch-control / amphtml / EditURI / pingback /
-     archives / index / alexaVerifyID / twitter:* 全套 / twitter:dnt /
-     fb:app_id / Window-Target —— 命中即严重违规(退出码 1),附替代方案
-  8. link rel=prerender → 建议改用 Speculation Rules API
+  5. geo meta(ICBM / geo.*): Google 支持的 meta 列表里没有,Google 忽略 → 只记 INFO,缺失不告警
+  6. 中文浏览器 meta: itemprop 三件套(name / image / description)——显式 --market 优先;
+     未传 --market 时按 lang/内容识别中文;日文(假名)/韩文(谚文)/无汉字页跳过
+  7. twitter:*: X 先读 twitter:*,缺失时回落 og:title/og:description/og:image(X Cards
+     markup 文档)——不是弃用;有 OG 时只记 INFO「可省略」
+  8. 可删旧标签(x-ua-compatible / skype_toolbar / msapplication-config / mask-icon /
+     apple-mobile-web-app-capable / prerender / x-dns-prefetch-control / EditURI /
+     pingback / archives / index / alexaVerifyID / twitter:dnt / Window-Target)只记 INFO;
+     fb:app_id、amphtml 不是弃用(见 head-elements.md 第十三节)
+  抓取不带 Accept-Language(与 Googlebot 一致);被重定向时报告最终 URL。
 
 用法:
   python3 head_check.py https://example.com [--market zh]
   python3 head_check.py ./page.html        # 本地文件
   python3 head_check.py - < page.html      # stdin
 
-退出码: 0 无严重违规; 1 存在严重违规(charset/title/弃用命中); 2 致命错误。
+退出码: 0 无严重违规; 1 存在严重违规(charset 缺失或超出前 1024 字节 / title 缺失); 2 致命错误。
 """
 from __future__ import annotations
 
@@ -53,12 +52,17 @@ DEPRECATED_META = {
     ("http_equiv", "x-ua-compatible"): ("IE 已于 2022-06-15 退役", "无需替代"),
     ("http_equiv", "x-dns-prefetch-control"): ("Firefox/IE 时代扩展,Chromium 从未实现", '<link rel="dns-prefetch">'),
     ("http_equiv", "window-target"): ("IE 时代非标准,现代浏览器不支持", "无"),
-    ("property", "fb:app_id"): ("Facebook 分享不再需要,多数 OG 解析器忽略", "OG 标签本身"),
+}
+# twitter:* → X 回落读取的 OG 属性(X Cards markup「Tag Reference」表)
+TWITTER_OG_FALLBACK = {
+    "twitter:title": "og:title",
+    "twitter:description": "og:description",
+    "twitter:image": "og:image",
+    "twitter:image:alt": "og:image:alt",
 }
 DEPRECATED_REL = {
     "mask-icon": ("Safari 17(2023)移除 Pinned Tabs", '标准 <link rel="icon">'),
     "prerender": ("Chrome 已移除 prerender", 'Speculation Rules API(<script type="speculationrules"> 的 prerender/prefetch 规则)'),
-    "amphtml": ("Google 2021 年移除 Top Stories AMP 要求,AMP 项目停滞", "无"),
     "edituri": ("XML-RPC 编辑器消亡", "无"),
     "pingback": ("pingback 因 DDoS 放大被默认禁用", "Webmention"),
     "archives": ("已从 HTML Living Standard 与 IANA 注册表移除", "无"),
@@ -72,24 +76,24 @@ def fatal(msg):
 
 
 def fetch(src, timeout, max_bytes):
-    """返回 (raw_bytes, http_content_type, 来源标签)。支持 http(s)/本地文件/stdin。"""
+    """返回 (raw_bytes, http_content_type, 来源标签, 最终 URL)。支持 http(s)/本地文件/stdin。
+    不发 Accept-Language:Googlebot 一般不带这个头;带上会被按语言跳转的站带到别的 URL。"""
     if src == "-":
-        return sys.stdin.buffer.read(max_bytes), "", "stdin"
+        return sys.stdin.buffer.read(max_bytes), "", "stdin", None
     if "://" not in src:
         p = Path(src)
         if p.is_file():
-            return p.read_bytes()[:max_bytes], "", str(p)
+            return p.read_bytes()[:max_bytes], "", str(p), None
         fatal(f"本地文件不存在: {p}")
     if not src.lower().startswith(("http://", "https://")):
         fatal(f"不支持的 URL 协议: {src}")
     req = urllib_request.Request(src, headers={
         "User-Agent": UA,
         "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
-        "Accept-Language": "en,zh;q=0.8",
     })
     try:
         with urllib_request.urlopen(req, timeout=timeout) as r:
-            return r.read(max_bytes), r.headers.get("Content-Type", ""), src
+            return r.read(max_bytes), r.headers.get("Content-Type", ""), src, r.geturl()
     except (urlerror.URLError, urlerror.HTTPError, OSError, ValueError) as e:
         fatal(f"抓取失败: {e}")
 
@@ -179,11 +183,11 @@ def byte_offset(text, char_pos, enc):
 
 
 def chinese_share_scope(text, market=None):
-    """微信/QQ itemprop 检查是否适用:--market zh 显式指定,或 lang=zh,
-    或文档检出足量汉字且无假名(日文)/谚文(韩文)——日文页满篇汉字属 kanji,
-    不是中文内容,不得触发。"""
-    if market == "zh":
-        return True
+    """微信/QQ itemprop 检查是否适用:显式 --market 优先(zh/zh-* → 适用,其他 → 不适用);
+    未传 --market 时 lang=zh,或文档检出足量汉字且无假名(日文)/谚文(韩文)——日文页满篇
+    汉字属 kanji,不是中文内容,不得触发。"""
+    if market:
+        return market.strip().lower().split("-")[0].split("_")[0] == "zh"
     m = re.search(r"""<html[^>]*\blang\s*=\s*["']?([\w-]+)""", text, re.I)
     if m:
         tag = m.group(1).lower()
@@ -259,14 +263,14 @@ def check(raw, text, enc, ctype, out, market=None):
         if vp_late:
             late.append("viewport")
         if late:
-            out("warn", f"推荐顺序违规: {'/'.join(late)} 声明在 <title> 之后 "
-                        f"→ 建议: charset → viewport → title → 其余 meta")
+            out("info", f"推荐顺序(风格建议,无 SEO 影响): {'/'.join(late)} 声明在 <title> 之后 "
+                        f"→ 可选: charset → viewport → title → 其余 meta")
         early = [describe_meta(m) for m in metas
                  if m["name"] not in ("charset", "viewport") and not m["charset"]
                  and m["http_equiv"] != "content-type" and m["pos"] < title_pos]
         if early:
-            out("warn", f'推荐顺序违规: {", ".join(dict.fromkeys(early))} 出现在 <title> 之前 '
-                        f"→ 建议: charset → viewport → title → 其余 meta(OG/description 等)")
+            out("info", f'推荐顺序(风格建议,无 SEO 影响): {", ".join(dict.fromkeys(early))} 出现在 <title> 之前 '
+                        f"→ 可选: charset → viewport → title → 其余 meta(OG/description 等)")
     if not any(m["name"] == "viewport" for m in metas):
         out("warn", 'viewport 缺失 → 建议: <meta name="viewport" content="width=device-width, initial-scale=1">')
 
@@ -279,14 +283,12 @@ def check(raw, text, enc, ctype, out, market=None):
     else:
         out("warn", f'og:image 非绝对 URL: "{ogs[0][:80]}" → 建议: 改为 https:// 绝对地址(部分抓取器不解析相对路径)')
 
-    # --- 5. geo 四件套 ---
+    # --- 5. geo meta:不在 Google 支持的 meta 列表里(special-tags 文档),Google 忽略 → 只记 INFO ---
     names = {m["name"] for m in metas if m["name"]}
-    geo_missing = [g for g in GEO_META if g.lower() not in names]
-    if not geo_missing:
-        out("ok", "geo 四件套齐全(ICBM / geo.position / geo.region / geo.placename)")
-    else:
-        out("warn", f"geo meta 缺失: {', '.join(geo_missing)} → 面向搜索/位置服务表达地理相关性;"
-                    f"本地商家优先 LocalBusiness schema,geo meta 作辅助")
+    geo_present = [g for g in GEO_META if g.lower() in names]
+    if geo_present:
+        out("info", f"geo meta 存在: {', '.join(geo_present)}——Google 不使用(不在其支持的 meta 列表),"
+                    f"不影响搜索;本地业务用 LocalBusiness 结构化数据表达位置")
 
     # --- 6. 微信/QQ itemprop 三件套(仅中文场景:zh 市场或检出中文内容)---
     # S2 修复:此前对所有站点无条件 WARN——日/英/阿文站全成跨市场噪音。
@@ -304,7 +306,21 @@ def check(raw, text, enc, ctype, out, market=None):
     else:
         out("info", "itemprop 三件套跳过——非中文页面/市场(微信/QQ 分享场景不适用)")
 
-    # --- 7/8. 弃用清单 + prerender 建议 ---
+    # --- 7. twitter:*:X 先读 twitter:*,缺失时回落 OG(X Cards markup 文档)——不是弃用 ---
+    og_props = {m["property"] for m in metas if m["property"].startswith("og:") and m["content"].strip()}
+    og_props |= {m["name"] for m in metas if m["name"].startswith("og:") and m["content"].strip()}
+    redundant = []
+    for m in metas:
+        tw = m["name"] if m["name"].startswith("twitter:") else (
+            m["property"] if m["property"].startswith("twitter:") else "")
+        og = TWITTER_OG_FALLBACK.get(tw)
+        if og and og in og_props and tw not in redundant:
+            redundant.append(tw)
+    if redundant:
+        out("info", f"twitter:* 与 OG 重复: {', '.join(redundant)}——X 缺失时会回落到对应 og:*,"
+                    f"可省略(不是弃用;内容不同时保留)")
+
+    # --- 8. 可删旧标签:只记 INFO(head-elements.md 第十三节),不影响退出码 ---
     seen_hits = set()
     for m in metas:
         for attr in ("name", "property", "http_equiv"):
@@ -312,20 +328,11 @@ def check(raw, text, enc, ctype, out, market=None):
             if key in DEPRECATED_META and key not in seen_hits:
                 seen_hits.add(key)
                 why, alt = DEPRECATED_META[key]
-                out("error", f'弃用元素: <{describe_meta(m)}> — {why} → 替代: {alt}')
-        tw = m["name"] if m["name"].startswith("twitter:") else (
-            m["property"] if m["property"].startswith("twitter:") else "")
-        exact_listed = any(key[1] == tw for key in DEPRECATED_META)
-        if tw and tw != "twitter:card" and not exact_listed and ("twitter", tw) not in seen_hits:
-            seen_hits.add(("twitter", tw))
-            out("error", f'弃用元素: <meta name="{tw}"> — twitter:* 卡片全套冗余(X 缺失时回落 OG;'
-                         f'Validator 已退役) → 替代: Open Graph(仅卡片类型有差异时保留 twitter:card)')
-        if tw == "twitter:card":
-            out("info", 'twitter:card 保留可接受(仅卡片类型有差异时才写,其余 twitter:* 已弃用)')
+                out("info", f'可删旧标签: <{describe_meta(m)}> — {why} → 替代: {alt}')
     for lk in links:
         for tok in sorted(lk["rel"] & set(DEPRECATED_REL)):
             why, alt = DEPRECATED_REL[tok]
-            out("error", f'<link rel="{tok}"> 已弃用 — {why} → 替代: {alt}')
+            out("info", f'可删旧标签: <link rel="{tok}"> — {why} → 替代: {alt}')
 
     # --- 附加: meta keywords ---
     if any(m["name"] == "keywords" for m in metas):
@@ -339,12 +346,13 @@ def main():
         description="HTML <head> 元素检查器(口径: technical/head-elements.md;严重违规退出码 1)")
     ap.add_argument("url", help="页面 URL(http/https;亦支持本地文件路径或 - 读 stdin)")
     ap.add_argument("--market", default=None,
-                    help="目标市场码(如 zh);itemprop 中文分享检查按市场判定,缺省按内容自动识别")
+                    help="目标市场码(如 zh/en/es);显式指定时优先,itemprop 中文分享检查只在 zh 市场报;"
+                         "缺省按 lang/内容自动识别")
     ap.add_argument("--timeout", type=float, default=15.0, help="抓取超时秒数,默认 15")
     ap.add_argument("--max-bytes", type=int, default=2_000_000, help="最多读取字节数,默认 2MB")
     a = ap.parse_args()
 
-    raw, ctype, label = fetch(a.url, a.timeout, a.max_bytes)
+    raw, ctype, label, final_url = fetch(a.url, a.timeout, a.max_bytes)
     if not raw.strip():
         fatal("文档为空")
     enc = detect_encoding(raw, ctype)
@@ -364,6 +372,9 @@ def main():
     W = 76
     print("=" * W)
     print(f"head 元素检查 — {label}")
+    if final_url and final_url != label:
+        print(f"[!] 请求 URL 被重定向:最终 URL = {final_url}——以下结果是最终 URL 的 head,"
+              f"不是 {label} 本身(按语言/地区跳转的站尤其注意)")
     print(f"文档 {len(raw)} 字节 | 解码 {enc} | head 元素: meta {len(metas)} / link {len(links)} / "
           f"title {'有' if any(f[0]=='ok' and f[1].startswith('title') for f in findings) else '无'}")
     print("=" * W)

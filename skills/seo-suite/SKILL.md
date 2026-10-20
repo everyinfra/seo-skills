@@ -74,7 +74,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 - `robots_posture.py URL`:AI 爬虫矩阵——**27 bot 三层名单**(training/search/user)+CITATION_BOTS 5 个**两级评分**(通配符 Allow 只拿部分分,专属规则才满分)+RFC 9309 四态判定+Cloudflare 注入检测+Content-Signal;--fix-robots 打印可追加的修复块
 - `llmstxt.py validate|check|generate`:v2 校验/线上探测/生成
 - `schema_lint.py URL`:@id/悬空引用/自评评分/占位符黑名单
-- `head_check.py URL|FILE`:head 元素检查——元素顺序/charset 位置(>1024B)/弃用 meta 堆叠(twitter:* 全套/x-ua-compatible/fb:app_id)/og:image 绝对 URL;`--market zh` 门控微信/QQ itemprop 中文场景检查
+- `head_check.py URL|FILE`:head 元素检查——charset 须在前 1024 字节(ERROR)/og:image 绝对 URL;与 OG 重复的 twitter:*、可删旧标签(x-ua-compatible 等)、元素顺序只记 INFO;不发 Accept-Language,被重定向时打印最终 URL;显式 `--market zh` 才查微信/QQ itemprop
 
 **关键词与 SERP**
 - `gsc_mining.py 导出.csv [--mode matrix] [--decay cur prev] [--brand RE]`:striking distance/低 CTR(排名 1–10,期望曲线是本套件口径)/蚕食/衰退(本期消失的查询按 0 计);接受网页导出的 `Top queries` 列

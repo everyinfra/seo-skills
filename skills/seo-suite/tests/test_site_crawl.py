@@ -605,8 +605,10 @@ class OutputContractTests(unittest.TestCase):
         self.assertEqual(list(rep["pages"][0].keys())[:9],
                          ["url", "status", "title", "canonical", "depth", "inlinks",
                           "out_internal", "out_external", "source"])
+        # B27/B28(2026-10-21 加键):内链/外链出链分列、重定向页计数(不计孤儿);原键语义不变
         self.assertEqual(set(rep["stats"].keys()),
-                         {"pages", "total_inlinks", "total_outlinks", "errors",
+                         {"pages", "total_inlinks", "total_outlinks", "total_out_internal",
+                          "total_out_external", "redirected_pages", "errors",
                           "redirects", "duration_s"})
         self.assertTrue(out.lstrip().startswith("{"))                    # --json → stdout
         with open(upath, encoding="utf-8") as f:

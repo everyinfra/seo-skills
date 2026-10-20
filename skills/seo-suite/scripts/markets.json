@@ -6,7 +6,8 @@
       "chars": "len() 码点计数",
       "fullwidth": "全角字数:EAW W/F=1,A 与半角=0.5,总和向上取整(ja/ko 全角口径)",
       "grapheme": "字素计数:unicodedata.combining(c)==0 且非 Mn/Cf 的字符数(th 口径)",
-      "words": "空白分词(泰文为空格短语近似,精确分词须 Intl.Segmenter('th'))"
+      "words": "空白分词(泰文为空格短语近似,精确分词须 Intl.Segmenter('th'))",
+      "desc_min": "desc_min:description 长度下限,与 desc_limit 同单位;默认取 desc_limit 的一半(向下取整),必须小于上限。本套件口径——Google 对描述无长度要求(snippet 文档「There's no limit on how long a meta description can be」)"
     },
     "sections": {
       "markets": "18 个语言市场规则(market_lint.py / local_format.py);special_checks=逐语区独有检查项标记(2026-10-09 R5 深度吸收轮,源自 multilingual-workflow.md 十一B)",
@@ -19,14 +20,15 @@
     "zh": {
       "title_limit": {
         "value": 30,
-        "unit": "chars",
-        "note": "百度 PC ~30 字截断;Google 中文 ~30 字符"
+        "unit": "fullwidth",
+        "note": "按显示宽度计:全角 1、半角 0.5(等价于全角 2/半角 1 的宽度 60);中英混排时拉丁字母不再按 1 个汉字算。Google 标题无字符上限,按设备宽度截断(developers.google.com/search/docs/appearance/title-link,核对 2026-10-21);30 全角为本套件口径"
       },
       "desc_limit": {
         "value": 78,
-        "unit": "chars",
-        "note": "百度摘要 ~76-78 字"
+        "unit": "fullwidth",
+        "note": "按显示宽度计:全角 1、半角 0.5(与标题同口径,拉丁字母不再按 1 个汉字算)。Google 对描述无长度上限,摘要按宽度截断(developers.google.com/search/docs/appearance/snippet);78 全角为本套件口径(参考百度摘要约 76-78 字)"
       },
+      "desc_min": 39,
       "sentence_ideal": {
         "min": 15,
         "max": 25,
@@ -35,7 +37,7 @@
       "sentence_split": "cjk",
       "pillar_min": 1500,
       "pillar_unit": "chars",
-      "pillar_note": "中文支柱 ≥1,500 字(头四分位 1,943)",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数;原注:中文支柱 ≥1,500 字(头四分位 1,943)",
       "marketing_words": [
         "创新领先",
         "卓越",
@@ -79,10 +81,10 @@
         "zh-Hant-TW",
         "zh-Hant-HK"
       ],
-      "notes": "hreflang 用 ISO 15924 文字码(zh-Hans/zh-Hant),不用 zh-CN 裸码;百科/百家号/知道三件套是引用前提;中文比英文短 20-40%,大幅偏离提示未本地化",
+      "notes": "hreflang 写 zh-CN/zh-TW(ISO 639-1+ISO 3166-1 国家码)或 zh-Hans/zh-Hant(ISO 15924 文字码)都合法,按站点结构选一种并保持一致(Google localized-versions,核对 2026-10-21);百科/百家号/知道三件套是引用前提;中文比英文短 20-40%,大幅偏离提示未本地化",
       "special_checks": [
         "百科/百家号/知道+公众号占位三件套(引用前提,缺即 FAIL)",
-        "简繁不混检+zh-Hans/zh-Hant 文字码 hreflang",
+        "简繁不混检;hreflang 用 zh-CN/zh-TW 国家码或 zh-Hans/zh-Hant 文字码均合法",
         "营销词(创新领先/极致类)≤3/页",
         "证据阶梯六级分开记(eligible→retrieved→cited→mentioned→recommended→converted),禁合并成'AI 可见性提升'",
         "robots 对 Baiduspider/Bytespider 显式决策(勿套英文站语义)",
@@ -115,6 +117,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -123,7 +126,7 @@
       "sentence_split": "latin",
       "pillar_min": 2000,
       "pillar_unit": "words",
-      "pillar_note": "英文支柱 2,000-2,900 词",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数;原注:英文支柱 2,000-2,900 词",
       "marketing_words": [
         "revolutionary",
         "cutting-edge",
@@ -199,6 +202,7 @@
         "unit": "chars",
         "note": "Yandex 摘要比 Google 宽"
       },
+      "desc_min": 80,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -207,6 +211,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "инновационный",
         "лидирующий",
@@ -276,6 +281,7 @@
         "unit": "fullwidth",
         "note": "Naver description ≤80 전각"
       },
+      "desc_min": 40,
       "sentence_ideal": {
         "min": 15,
         "max": 25,
@@ -284,6 +290,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "최고의",
         "혁신적"
@@ -350,6 +357,7 @@
         "unit": "fullwidth",
         "note": "kseo 全角阈值:desc 120"
       },
+      "desc_min": 60,
       "sentence_ideal": {
         "min": 25,
         "max": 60,
@@ -358,7 +366,7 @@
       "sentence_split": "cjk",
       "pillar_min": 7000,
       "pillar_unit": "chars",
-      "pillar_note": "按体裁分层:MEO/本地 500-1,200 / 一般 1,500-3,500 / 支柱 7,000-12,000 字",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数;原注:按体裁分层:MEO/本地 500-1,200 / 一般 1,500-3,500 / 支柱 7,000-12,000 字",
       "marketing_words": [
         "究極",
         "圧倒的",
@@ -422,6 +430,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -430,6 +439,7 @@
       "sentence_split": "latin",
       "pillar_min": 1800,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "revolucionario",
         "revolucionaria",
@@ -457,12 +467,11 @@
         "es",
         "es-ES",
         "es-MX",
-        "es-AR",
-        "es-419"
+        "es-AR"
       ],
-      "notes": "es-419 是 Google 接受的唯一 UN 区域码;西语查询 83-84% 引西语源;半岛偏置要对抗;es-ES 与 es-419 词汇分流(coche/carro/auto);es-US 集体代搜(81% 受托)",
+      "notes": "Google hreflang 不支持 es-419(只认 ISO 639-1 语言码+ISO 3166-1 Alpha-2 区域码,原文「such as es-419, aren't supported」,localized-versions 核对 2026-10-21):拉美用 es 兜底,需要时加 es-MX/es-AR 等国家码,es-419 只作内容层的拉美西语写法;西语查询 83-84% 引西语源;半岛偏置要对抗;es-ES 与 es-419 词汇分流(coche/carro/auto);es-US 集体代搜(81% 受托)",
       "special_checks": [
-        "es-419 唯一 UN 区域码 hreflang 检查",
+        "es-419 hreflang 检查(Google 不支持 es-419:改用 es 兜底+es-MX/es-AR 等国家码)",
         "coche/carro/auto 词汇分流按变体组",
         "¿...? 倒问号疑问式 H2 在场",
         "支付词层 OXXO/cuotas/contra entrega 进意图分类",
@@ -497,6 +506,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -505,6 +515,7 @@
       "sentence_split": "latin",
       "pillar_min": 1800,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "revolucionário",
         "revolucionária",
@@ -568,6 +579,7 @@
         "unit": "chars",
         "note": "同膨胀 ~20% 预留"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -576,6 +588,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "رائد",
         "مبتكر"
@@ -638,6 +651,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -646,6 +660,7 @@
       "sentence_split": "latin",
       "pillar_min": 1800,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "révolutionnaire",
         "le meilleur"
@@ -712,6 +727,7 @@
         "value": 150,
         "unit": "chars"
       },
+      "desc_min": 75,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -720,7 +736,7 @@
       "sentence_split": "latin",
       "pillar_min": 2000,
       "pillar_unit": "words",
-      "pillar_note": "德语版比英语长 25-35%——大幅偏离提示截断/未本地化",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数;原注:德语版比英语长 25-35%——大幅偏离提示截断/未本地化",
       "marketing_words": [
         "revolutionär",
         "führend",
@@ -786,6 +802,7 @@
         "safe_zone": 120,
         "note": "meta 前 120 字符安全区,关键信息前置"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -794,6 +811,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "terbaik",
         "revolusioner",
@@ -854,6 +872,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -862,6 +881,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "सर्वश्रेष्ठ",
         "अद्भुत"
@@ -919,6 +939,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -927,6 +948,7 @@
       "sentence_split": "latin",
       "pillar_min": 1800,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "rivoluzionario",
         "il migliore"
@@ -983,6 +1005,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -991,6 +1014,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "en yenilikçi",
         "devrim niteliğinde",
@@ -1052,6 +1076,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -1060,6 +1085,7 @@
       "sentence_split": "latin",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "tốt nhất",
         "tuyệt vời"
@@ -1112,6 +1138,7 @@
         "value": 155,
         "unit": "grapheme"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 10,
         "max": 25,
@@ -1120,6 +1147,7 @@
       "sentence_split": "newline",
       "pillar_min": 1500,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "ดีที่สุด",
         "ยอดเยี่ยม"
@@ -1170,6 +1198,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -1178,6 +1207,7 @@
       "sentence_split": "latin",
       "pillar_min": 1800,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "rewolucyjny",
         "najlepszy"
@@ -1229,6 +1259,7 @@
         "value": 155,
         "unit": "chars"
       },
+      "desc_min": 77,
       "sentence_ideal": {
         "min": 15,
         "max": 20,
@@ -1237,6 +1268,7 @@
       "sentence_split": "latin",
       "pillar_min": 1800,
       "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
       "marketing_words": [
         "revolutionair",
         "het beste"

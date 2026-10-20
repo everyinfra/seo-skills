@@ -135,8 +135,8 @@ def run_site_audit(pages, extra=None):
     pages: {url: (status, headers, body)} 要**作为 URL 审计**的页面;
     extra: 同型 dict,只作为根文件被抓取(robots.txt/sitemap.xml/llms.txt),不进审计列表。
     未登记的 URL(如 /llms.txt)抛 OSError,与真实 urllib 行为同向(根文件不可达 →
-    INFO finding)。返回完整 stdout 原文(逐 URL 文本行 + 末尾 JSON blob,
-    即其他消费者约定要容忍的工件形态)。"""
+    INFO finding)。返回完整 stdout 原文(S2a B4 起 --json 时只有 JSON 对象,人读行在 stderr;
+    消费者的「前部文本行」容错仍保留,用于旧审计文件)。"""
     import site_audit as sa
     responses = dict(pages)
     if extra:
@@ -411,25 +411,26 @@ class TestStage1SiteAuditContract(unittest.TestCase):
         cls.art = chain_artifacts()
 
     def test_raw_stdout_shape_and_exit_code(self):
-        """原始 stdout = 逐 URL 文本行 + 末尾 JSON blob;有 CRITICAL → 退出码 1。"""
+        """S2a B4 改:--json 时原始 stdout 只有一个 JSON 对象(--help「供 agent 消费」;
+        jq 可直接解析),人读行走 stderr;有 CRITICAL(noindex)→ 退出码 1。"""
         with open(self.art["audit_before_raw"], encoding="utf-8") as f:
             raw = f.read()
         self.assertEqual(self.art["audit_rc_before"], 1)
-        self.assertIn("== %s ==" % URL_PROBLEM, raw)          # 逐 URL 文本行(容错契约的来源)
-        self.assertIn("[CRITICAL] description: 缺失", raw)
+        self.assertNotIn("== %s ==" % URL_PROBLEM, raw)       # 人读行不再混进 stdout
+        self.assertEqual(json.loads(raw), self.art["blob_before"])
         blob = self.art["blob_before"]
         self.assertEqual(blob["schema_version"], 1)
         self.assertEqual(blob["audited"], 2)
-        self.assertGreaterEqual(blob["critical"], 2)
+        self.assertEqual(blob["critical"], 1)                 # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15):只剩 noindex
         self.assertIsInstance(blob["results"], dict)
 
     def test_problem_page_schema_contract(self):
         """问题页:verdict/findings{severity,area,message}/meta{title,words,h1,jsonld}/
         ai_search_health{score,checks} —— 下一步逐字段的互操作契约。"""
         r = self.art["blob_before"]["results"][URL_PROBLEM]
-        self.assertEqual(r["verdict"], "fail")
+        self.assertEqual(r["verdict"], "pass")                # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15),本页无 CRITICAL
         finds = {(f["severity"], f["area"]) for f in r["findings"]}
-        self.assertIn(("CRITICAL", "description"), finds)     # 缺 description
+        self.assertIn(("WARN", "description"), finds)         # 缺 description
         self.assertIn(("WARN", "h1"), finds)                  # 多 H1
         self.assertEqual(r["meta"]["h1"], 2)
         self.assertLess(r["meta"]["words"], 200)              # soft-thin
@@ -473,13 +474,13 @@ class TestStage2HealthScoreEatsAudit(unittest.TestCase):
         cls.art = chain_artifacts()
 
     def test_scores_and_exit_code(self):
-        """2 URL 全有 CRITICAL → 主分 0.0/Weak → 退出码 1(Weak 档约定)。"""
+        """S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15):只有 noindex 页带 CRITICAL → 主分 50.0/Fair。"""
         h = self.art["health"]
         self.assertEqual(self.art["audit_rc_before"], 1)
-        self.assertEqual(h["main_score"], 0.0)
-        self.assertEqual(h["band"], "Weak")
+        self.assertEqual(h["main_score"], 50.0)
+        self.assertEqual(h["band"], "Fair")
         self.assertEqual(h["urls_total"], 2)
-        self.assertEqual(h["urls_clean"], 0)
+        self.assertEqual(h["urls_clean"], 1)
         self.assertEqual(h["urls_refused"], 0)
         self.assertIn("coverage_note", h)
 
@@ -487,7 +488,7 @@ class TestStage2HealthScoreEatsAudit(unittest.TestCase):
         """impacts(Ryte 口径)按规则输出且可被 prioritize 摘要路径吃(rule/severity/hit_urls)。"""
         h = self.art["health"]
         top = h["impacts"][0]
-        self.assertEqual(top["rule"], "description")          # 1/2 命中 × CRITICAL²=4.5,并列按名序
+        self.assertEqual(top["rule"], "robots")               # 1/2 命中 × CRITICAL²=4.5(S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15))
         self.assertEqual(top["impact"], 4.5)
         for d in h["impacts"]:
             for key in ("rule", "severity", "hit_urls", "total_urls", "impact"):
@@ -525,7 +526,7 @@ class TestStage3Prioritize(unittest.TestCase):
         by_rule = {d["rule"]: d for d in p["fix_now"]}
         self.assertIn("desc_missing", by_rule)                # health area description → 内置规则
         self.assertEqual(by_rule["desc_missing"]["source_rule"], "description")
-        self.assertEqual(by_rule["desc_missing"]["impact"], 1.5)
+        self.assertEqual(by_rule["desc_missing"]["impact"], 1.0)   # 1/2 × WARN 权重 2(S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15))
 
 
 # ---------------------------------------------------------------- 环 4:envelope
@@ -559,11 +560,14 @@ class TestStage4EnvelopeThreeSources(unittest.TestCase):
         # 修复文案来自 prioritize(desc_missing.fix,经 RULE_TO_AREA 桥接)——三源互操作核心断言
         desc = [f for c in env["categories"] for f in c["findings"]
                 if f["rule_id"] == "description"][0]
-        self.assertEqual(desc["recommendation"], "补 meta description(~155 字符)")
-        # 行动计划分派:CRITICAL → 立即(本周)
+        # S2a B2 改:修复文案按审计市场阈值(en:desc_min 77–上限 155),不再写死 ~155
+        self.assertTrue(desc["recommendation"].startswith("补 meta description(77-155 chars)"),
+                        desc["recommendation"])
+        # 行动计划分派:CRITICAL → 立即(本周);S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15) → description 进短期(月内)
         phase0 = env["action_plan"]["phases"][0]
         self.assertEqual(phase0["name"], "立即(本周)")
-        self.assertIn("description", {i["rule_id"] for i in phase0["items"]})
+        self.assertEqual({i["rule_id"] for i in phase0["items"]}, {"robots"})
+        self.assertIn("description", {i["rule_id"] for i in env["action_plan"]["phases"][1]["items"]})
         self.assertLessEqual(len(env["summary"]["quick_wins"]), 3)
         self.assertIn("description", {q["rule_id"] for q in env["summary"]["quick_wins"]})
 
@@ -593,24 +597,24 @@ class TestStage5AuditCompare(unittest.TestCase):
         for pair in expected:
             self.assertIn(pair, fixed, "修复后清单缺少: %s" % (pair,))
         self.assertEqual(rep["new_issues"], [])                # 修复不得引入新问题
-        self.assertEqual(rep["delta"]["main_score"], 100.0)    # 0.0 → 100.0
+        self.assertEqual(rep["delta"]["main_score"], 50.0)     # 50.0 → 100.0(S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15))
         self.assertEqual(rep["delta"]["ai_search_health_mean"], 7.5)
         self.assertEqual(rep["delta"]["coverage_ratio"], 1.0)
 
     def test_verdict_page_and_ai_changes(self):
         rep = self.art["compare"]
         vc = {v["url"]: (v["old"], v["new"]) for v in rep["verdict_changes"]}
-        self.assertEqual(vc, {URL_PROBLEM: ("fail", "pass"), URL_NOINDEX: ("fail", "pass")})
+        self.assertEqual(vc, {URL_NOINDEX: ("fail", "pass")})   # 问题页修复前已是 pass(S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15))
         ai = {a["url"]: a for a in rep["ai_health_changes"]}
         self.assertEqual(ai[URL_PROBLEM]["delta"], 15)         # semantic_html 修复 +15
         pc = {p["url"]: {c["field"] for c in p["changes"]} for p in rep["pages_changed"]}
         self.assertTrue({"word_count", "h1"} <= pc[URL_PROBLEM])  # meta.words/meta.h1 被吃
 
     def test_baseline_gate_trips_on_regression(self):
-        """反向对比(跌 100 分)> 阈值 5 → tripped + 退出码 1(Lumar Protect 语义)。"""
+        """反向对比(跌 50 分)> 阈值 5 → tripped + 退出码 1(Lumar Protect 语义)。"""
         gate = self.art["compare_gate"]["baseline_gate"]
         self.assertTrue(gate["tripped"])
-        self.assertEqual(gate["drop"], 100.0)
+        self.assertEqual(gate["drop"], 50.0)                   # 100 → 50(S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15))
 
 
 # ---------------------------------------------------------------- 环 6:ci_format
@@ -626,7 +630,8 @@ class TestStage6CiFormat(unittest.TestCase):
         self.assertEqual(s["version"], "2.1.0")
         run = s["runs"][0]
         self.assertTrue(run["tool"]["driver"]["rules"])        # rules 与 results 对齐登记
-        self.assertEqual(len(run["results"]), 17)              # 13(问题页)+4(noindex 页)条非 SKIP finding
+        # S2a B3 改:noindex 页有服务端内容,不再报「无 noscript 回退」→ 13+3
+        self.assertEqual(len(run["results"]), 16)              # 13(问题页)+3(noindex 页)条非 SKIP finding
         self.assertEqual({r["level"] for r in run["results"]},
                          {"error", "warning", "note"})         # CRITICAL/WARN/INFO 三档映射
         for r in run["results"]:
@@ -634,7 +639,7 @@ class TestStage6CiFormat(unittest.TestCase):
             self.assertTrue(uri.startswith(HOST))              # uri=被审计 URL
         self.assertIn("description", {r["ruleId"] for r in run["results"]})
         props = run["invocations"][0]["properties"]
-        self.assertEqual(props["main_score"], 0.0)
+        self.assertEqual(props["main_score"], 50.0)            # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15)
         self.assertEqual(props["ai_search_health"], 77.5)
 
     def test_junit_structure(self):
@@ -648,13 +653,14 @@ class TestStage6CiFormat(unittest.TestCase):
         self.assertIn("a11y", failing)                         # a11y 命中 2/2 URL → 类目得分 0<50
         props = {p.attrib["name"]: p.attrib["value"]
                  for p in root.findall("properties/property")}
-        self.assertEqual(props["audit.score"], "0.0")
+        self.assertEqual(props["audit.score"], "50.0")          # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15)
         self.assertEqual(props["ai_search_health"], "77.5")
 
     def test_github_annotations(self):
         lines = self.art["github"].splitlines()
         self.assertTrue(lines[0].startswith("::notice title=SEO::"))
-        self.assertIn("::error title=SEO::[description]", self.art["github"])
+        self.assertIn("::warning title=SEO::[description]", self.art["github"])   # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15)
+        self.assertIn("::error title=SEO::[robots]", self.art["github"])
 
     def test_sarif_eats_audit_compare_diff(self):
         """audit_compare --json 的 diff 输出(new_issues)→ ci_format 归一化路径。"""
@@ -674,7 +680,7 @@ class TestStage7FixPlan(unittest.TestCase):
 
     def test_fix_items_contract(self):
         fp = self.art["fixplan"]
-        self.assertEqual(fp["verdict"], "fail")
+        self.assertEqual(fp["verdict"], "pass")                # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15):问题页无 CRITICAL
         fixes = fp["fixes"]
         self.assertEqual({f["category"] for f in fixes},
                          {"llms", "schema", "meta", "content"})   # robots 放行无失败 → 不产
@@ -758,10 +764,10 @@ class TestBenchmarkChain(unittest.TestCase):
         b = self.art["bench"]
         self.assertEqual(b["n_sites"], 6)
         self.assertEqual(b["by_source"], {"audits": 2, "monitor_db": 0, "scores": 4})
-        # 主分样本 = {0.0(修复前), 100.0(修复后), 55, 62, 71, 88}
+        # 主分样本 = {50.0(修复前,S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15)), 100.0(修复后), 55, 62, 71, 88}
         self.assertEqual(b["main"]["p50"], 66.5)
-        self.assertEqual(b["main"]["mean"], 62.7)
-        self.assertEqual(b["main"]["min"], 0.0)
+        self.assertEqual(b["main"]["mean"], 71.0)
+        self.assertEqual(b["main"]["min"], 50.0)
         self.assertEqual(b["main"]["max"], 100.0)
         # 失败规则按"命中站数"聚合,规则 id 即 site_audit area
         rules = {r["rule"]: r["sites"] for r in b["top_failed_rules"]}
@@ -791,14 +797,14 @@ class TestFullChainSmoke(unittest.TestCase):
         with self.subTest(stage="1 site_audit --json(修复前 fail/修复后 pass)"):
             self.assertEqual(art["audit_rc_before"], 1)
             self.assertEqual(art["audit_rc_after"], 0)
-        with self.subTest(stage="2 health_score 吃 raw 审计 → Weak/0.0"):
-            self.assertEqual((art["health"]["main_score"], art["health"]["band"]), (0.0, "Weak"))
+        with self.subTest(stage="2 health_score 吃 raw 审计 → Fair/50.0"):   # S2a 2026-10-21:description 缺失按 Google 文档降 WARN(B15)
+            self.assertEqual((art["health"]["main_score"], art["health"]["band"]), (50.0, "Fair"))
         with self.subTest(stage="3 prioritize 吃审计 → desc_missing/noindex_intent"):
             rules = {d["rule"] for d in art["priority"]["fix_now"]}
             self.assertTrue({"desc_missing", "noindex_intent"} <= rules)
         with self.subTest(stage="4 envelope 三源 → audit-data.json"):
             self.assertEqual(art["envelope"]["inputs"]["health"], "ok")
-            self.assertEqual(art["envelope"]["summary"]["main_score"], 0.0)
+            self.assertEqual(art["envelope"]["summary"]["main_score"], 50.0)
         with self.subTest(stage="5 audit_compare → fixed 含 description/robots"):
             fixed = {(f["url"], f["rule"]) for f in art["compare"]["fixed_issues"]}
             self.assertIn((URL_PROBLEM, "description"), fixed)

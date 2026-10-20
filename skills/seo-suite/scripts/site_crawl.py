@@ -854,8 +854,14 @@ class Crawler:
             rec["inlinks"] = inlinks.get(url, 0)
             rec["depth"] = depths.get(url)
             pages.append(rec)
-        orphans = [u for u in self.order if inlinks.get(u, 0) == 0 and u != self.seed]
-        total_out = sum(p["out_internal"] + p["out_external"] for p in pages)
+        # 被重定向的 URL(含 www./api. 子域 301 到主站)不算孤儿:内链该指向重定向目标
+        redirected = {u for u in self.order
+                      if self.pages[u].get("final_url") and self.pages[u]["final_url"] != u}
+        orphans = [u for u in self.order
+                   if inlinks.get(u, 0) == 0 and u != self.seed and u not in redirected]
+        out_int = sum(p["out_internal"] for p in pages)
+        out_ext = sum(p["out_external"] for p in pages)
+        total_out = out_int + out_ext
         edges_out = []
         for s, d in sorted(self.edges):
             e = {"src": s, "dst": d}
@@ -875,7 +881,10 @@ class Crawler:
             "stats": {
                 "pages": len(pages),
                 "total_inlinks": sum(inlinks.get(u, 0) for u in self.order),
-                "total_outlinks": total_out,
+                "total_outlinks": total_out,          # 总出链 = 内链出链 + 外链出链
+                "total_out_internal": out_int,
+                "total_out_external": out_ext,
+                "redirected_pages": len(redirected),  # 不计入孤儿
                 "errors": self.errors,
                 "redirects": self.redirects,
                 "duration_s": round(duration_s, 2),
@@ -931,15 +940,22 @@ def render_markdown(report):
     subs = report["subdomains"]
     L.append("- 子域 %d 个: %s" % (len(subs), ", ".join(subs) if subs else "-"))
     err_rate = (st["errors"] / st["pages"]) if st["pages"] else 0.0
-    L.append("- 页面 %d:错误 %d(错误率 %.1f%%),重定向 %d,内链 %d,外链 %d,耗时 %.1fs"
-             % (st["pages"], st["errors"], err_rate * 100, st["redirects"],
-                st["total_inlinks"], st["total_outlinks"], st["duration_s"]))
+    out_int = st.get("total_out_internal")
+    out_ext = st.get("total_out_external")
+    if out_int is None or out_ext is None:      # 旧版 crawl.json 只有总出链
+        links = "总出链 %d(旧版报告未分内外链)" % st["total_outlinks"]
+    else:
+        links = "出链:内链 %d,外链 %d,总出链 %d" % (out_int, out_ext, st["total_outlinks"])
+    L.append("- 页面 %d:错误 %d(错误率 %.1f%%),重定向 %d,%s;已抓页面收到的入链 %d,耗时 %.1fs"
+             % (st["pages"], st["errors"], err_rate * 100, st["redirects"], links,
+                st["total_inlinks"], st["duration_s"]))
     top = list(report["external_domains"].items())[:10]
     if top:
         L.append("- Top 外链域: " + ", ".join("%s×%d" % (d, n) for d, n in top))
     orphans = report["orphans"]
-    L.append("- 孤儿页 %d(0 入链且非首页):%s" % (len(orphans),
-             ", ".join(orphans[:10]) if orphans else "无"))
+    L.append("- 孤儿页 %d(0 入链、非首页、未被重定向;重定向页 %d 个不计):%s"
+             % (len(orphans), st.get("redirected_pages", 0),
+                ", ".join(orphans[:10]) if orphans else "无"))
     for w in report.get("warnings", []):
         L.append("- ⚠ %s" % w)
     if report.get("external_check"):

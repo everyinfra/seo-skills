@@ -268,7 +268,9 @@ class EnvelopeDegradationTests(EnvelopeCase):
         item = flat_items(env)[0]
         self.assertEqual((item["rule_id"], item["impact"], item["impact_source"]),
                          ("title", 2.0, "estimated"))
-        self.assertIn("50-60", item["action"])
+        # S2a B2 改:本地兜底文案按审计市场阈值(无 market 键 → en:title 20-60 chars),
+        # 不再写死 50-60
+        self.assertIn("20-60 chars", item["action"])
 
     def test_priority_present_but_rule_uncovered_stays_estimated(self):
         # priority 在场但只覆盖 og:headings 无命中规则 → 估算,og → priority 口径

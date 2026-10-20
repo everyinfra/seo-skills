@@ -82,15 +82,24 @@ SCATTERED_STATE = (
     ("seo-fixes/", "fix_plan.py --apply 隔离目录"),
 )
 
-# 站型建议信号(R1-4 URL 型谱的简化版:路径子串命中计数;模糊列前二请用户确认)
+# 站型建议信号(R1-4 URL 型谱的简化版,口径见 site-type-playbooks.md 各卡「识别信号」)。
+# S2a B1(2026-10-21):按**路径段**精确匹配(不再子串:"/production" 不算 "/product");
+# 段内以 "-" 分词的 token 也参与(如 "tiktok-api" 含 api);开发者站另认标题里的 API/SDK 词。
+# 电商须有交易佐证(cart/checkout/basket 或 PLP 段 collections/category/c)才计 PDP 段——
+# 判型规则原文「PLP 与 PDP 并存,cart/checkout 路径存在」;只有 /products/ 的 API/SaaS 站不算电商。
 SITE_TYPE_SIGNALS = (
-    ("电商(DTC)", ("/product", "/products", "/shop", "/cart", "/collections")),
-    ("文档 / 开发者站", ("/docs", "/api/", "/reference", "/guide", "/documentation")),
-    ("媒体 / 新闻 / 内容站", ("/blog", "/news", "/article", "/post", "/category")),
-    ("SaaS / 软件营销站", ("/pricing", "/features", "/demo", "/signup", "/trial")),
-    ("本地服务", ("/location", "/near-me", "/contact-us")),
-    ("Marketplace / 平台型", ("/listings", "/sell", "/users/")),
+    ("电商(DTC)", ("products", "product", "p", "shop", "cart", "checkout", "collections", "c", "basket")),
+    ("文档 / 开发者站", ("docs", "doc", "api", "apis", "reference", "guide", "guides", "documentation",
+                     "changelog", "sdk", "sdks", "v1", "v2", "v3", "openapi", "quickstart")),
+    ("媒体 / 新闻 / 内容站", ("blog", "news", "article", "articles", "post", "posts", "category")),
+    ("SaaS / 软件营销站", ("pricing", "features", "demo", "signup", "trial", "solutions", "compare",
+                        "vs", "alternatives", "integrations", "templates", "customers")),
+    ("本地服务", ("location", "locations", "near-me", "contact-us")),
+    ("Marketplace / 平台型", ("listings", "sell", "users")),
 )
+ECOM_PROOF = ("cart", "checkout", "basket", "collections", "c", "category")
+TOKEN_SIGNALS = {"文档 / 开发者站": ("api", "sdk", "docs")}   # 段内 "-" 分词 token
+TITLE_SIGNALS = {"文档 / 开发者站": re.compile(r"\b(?:API|SDK|API key|API reference)\b")}
 SITE_TYPE_AMBIGUOUS = 0.30   # 首位占比低于此 → 模糊,列前二(R1-4"模糊列前二确认"口径)
 
 STAGES = ("体检", "优先级", "修复", "验证", "监控")   # 五阶段状态机
@@ -380,18 +389,51 @@ def pick_audit_urls(crawl_json, site, n=TRIAGE_AUDIT_URLS):
     return [site]
 
 
+def _segments(url):
+    path = urllib.parse.urlparse(url).path if "://" in url else url.split("?")[0]
+    return [seg.lower() for seg in path.split("/") if seg]
+
+
+def _page_hits(name, sigs, segs, title, ecom_ok):
+    if name == "电商(DTC)" and not ecom_ok:
+        return False
+    if any(seg in sigs for seg in segs):
+        return True
+    toks = TOKEN_SIGNALS.get(name)
+    if toks and any(t in toks for seg in segs for t in seg.split("-")):
+        return True
+    rx = TITLE_SIGNALS.get(name)
+    return bool(rx and title and rx.search(title))
+
+
 def suggest_site_type(crawl, declared=None):
-    """站型建议(URL 型谱简化版):路径子串命中计数 → 首位占比;占比低于阈值或
-    无信号 → 模糊/未识别,列前二请用户确认(R1-4:模糊列前二)。"""
-    pages = (crawl or {}).get("pages") or []
-    paths = [str(p.get("url") or "") for p in pages if isinstance(p, dict)]
-    total = len(paths) or 1
+    """站型建议(URL 型谱简化版):路径段命中计数 → 首位占比;占比低于阈值或
+    无信号 → 模糊/未识别,列前二请用户确认(R1-4:模糊列前二)。
+    S2a B1:自报站型优先——有自报时 suggested=自报值,URL 型谱只作参考信号写进 note,
+    不给出与自报相反的建议。"""
+    pages = [p for p in ((crawl or {}).get("pages") or []) if isinstance(p, dict)]
+    rows = [(_segments(str(p.get("url") or "")), str(p.get("title") or "")) for p in pages]
+    total = len(rows) or 1
+    all_segs = {seg for segs, _ in rows for seg in segs}
+    ecom_ok = bool(all_segs & set(ECOM_PROOF))
     scores = []
     for name, sigs in SITE_TYPE_SIGNALS:
-        n = sum(1 for u in paths if any(s in u for s in sigs))
+        n = sum(1 for segs, title in rows if _page_hits(name, sigs, segs, title, ecom_ok))
         if n:
             scores.append((n, name))
     scores.sort(key=lambda t: (-t[0], t[1]))
+    if declared:
+        cands = [declared]
+        if scores:
+            share = scores[0][0] / total
+            sig = "URL 型谱首位 %s 占比 %.0f%%(%d/%d 页,仅作参考)" % (
+                scores[0][1], share * 100, scores[0][0], total)
+            if scores[0][1] != declared:
+                cands.append(scores[0][1])
+        else:
+            share, sig = 0.0, "URL 型谱无命中"
+        return {"suggested": declared, "share": round(share, 3), "candidates": cands,
+                "note": "自报站型: %s(以自报为准);%s" % (declared, sig)}
     if not scores:
         return {"suggested": None, "share": 0.0, "candidates": [],
                 "note": "URL 型谱无命中——请 init --type 自报站型(8 张站型卡见 site-type-playbooks.md)"}
@@ -403,8 +445,6 @@ def suggest_site_type(crawl, declared=None):
             cands.append(scores[1][1])
         note = "模糊(首位占比 %.0f%% < %.0f%%),列前二请确认;信号: %s" % (
             share * 100, SITE_TYPE_AMBIGUOUS * 100, note)
-    if declared:
-        note += ";自报站型: %s(以自报为准)" % declared
     return {"suggested": cands[0], "share": round(share, 3), "candidates": cands, "note": note}
 
 

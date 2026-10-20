@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
@@ -52,8 +52,11 @@ ROOT_FILES = {  # 根文件全放行,压缩无关 INFO 噪音
 
 
 def page_html(canonical=True, desc=True, h1=True):
-    """合成页:默认仅触发 INFO rendering-no-noscript;canonical=False 加 WARN
-    canonical 缺失;desc=False 加 CRITICAL description 缺失;h1=False 加 CRITICAL 无 H1。"""
+    """合成页:默认仅触发 INFO links-too-many(101 个链接)与 semantic-html-low(链接压低比值);canonical=False 加 WARN
+    canonical 缺失;desc=False 加 WARN description 缺失;h1=False 加 WARN 无 H1。
+    S2a 2026-10-21 改:旧版默认 INFO 是 rendering-no-noscript——页面有 main/article 且正文>500 字
+    (服务端内容)时 site_audit 不再报「无 JS 空页」(B3);description/H1 缺失按 Google 文档降 WARN
+    (B15/B38);默认 INFO 规则改由 >100 链接(B14 已降 INFO)提供。"""
     head = ['<title>Example Article Page Title Long Enough</title>']
     if desc:
         head.append('<meta name="description" content="A sufficiently long description '
@@ -67,7 +70,8 @@ def page_html(canonical=True, desc=True, h1=True):
             '<header><nav>nav links here</nav></header><main><article>'
             + ("<h1>Main Heading of the Page</h1>" if h1 else "")
             + '<p>In short, here is the direct answer with facts. ' + "filler content word " * 120
-            + '</p><h2>Section One</h2><ul><li>alpha</li><li>beta</li><li>gamma</li><li>delta</li></ul>'
+            + '</p>' + "".join('<a href="/l%d">l</a>' % i for i in range(101))
+            + '<h2>Section One</h2><ul><li>alpha</li><li>beta</li><li>gamma</li><li>delta</li></ul>'
               '<h2>Section Two</h2><p>more body content for the test page</p>'
               '</article></main><footer>footer text</footer></body></html>')
 
@@ -77,22 +81,27 @@ def run_main(argv, pages, root="https://example.com"):
     orig_fetch, orig_argv = sa.fetch, sys.argv
     sa.fetch = stub_fetch(pages, root)
     sys.argv = ["site_audit.py", *argv]
-    buf = io.StringIO()
+    buf, ebuf = io.StringIO(), io.StringIO()
     rc = 0
     try:
-        with redirect_stdout(buf):
+        with redirect_stdout(buf), redirect_stderr(ebuf):
             try:
                 sa.main()
             except SystemExit as e:
                 rc = e.code or 0
     finally:
         sa.fetch, sys.argv = orig_fetch, orig_argv
+    LAST_STDERR[0] = ebuf.getvalue()
     return buf.getvalue(), rc
 
 
+LAST_STDERR = [""]   # S2a B4:--json 时人读行(含 markdown 汇总)改走 stderr
+
+
 def json_blob_of(stdout):
-    """与下游消费者同款提取:取末位 '{' 起点的 JSON blob。"""
-    return json.loads(stdout[stdout.rindex("\n{"):])
+    """S2a B4 改:--json 时 stdout 只有一个 JSON 对象(--help 契约「供 agent 消费」),整体解析。
+    旧版从末位 '\n{' 截取,是在迁就 stdout 混排 markdown 的旧缺陷。"""
+    return json.loads(stdout)
 
 
 # ---------------------------------------------------------------- 纯函数层
@@ -205,18 +214,19 @@ class ExportDirIntegrationTests(unittest.TestCase):
         self.assertNotIn("https://example.com/c", lines)            # 未命中页不进清单
         with open(path, encoding="utf-8") as f:
             self.assertTrue(f.read().endswith("\n"))                # 行结尾换行
-        # INFO 级规则同样导出:无 noscript 回退 3/3 页全命中
-        with open(os.path.join(export_dir, "rendering-no-noscript.txt"), encoding="utf-8") as f:
+        # INFO 级规则同样导出:>100 链接(工具约定)3/3 页全命中
+        with open(os.path.join(export_dir, "links-too-many.txt"), encoding="utf-8") as f:
             self.assertEqual(len(f.read().splitlines()), 3)
         # stdout:markdown 受影响面列(分母注明)+ 导出摘要行
         self.assertIn("| canonical-missing | WARN | 2/3 页(66.7%) |", out)
         self.assertIn("分母=本次已审计 3 页", out)
-        self.assertIn("bulk export: 2 个规则清单 + summary.json", out)
+        # S2a:默认 INFO 改由 101 个链接提供,链接标签同时把语义 HTML 比值压到 <10% → 3 个规则
+        self.assertIn("bulk export: 3 个规则清单 + summary.json", out)
 
     def test_summary_json_coverage_math_and_rule_fields(self):
         export_dir = os.path.join(self.tmp, "exp")
         pages = dict(ROOT_FILES)
-        pages.update({"/p1": (200, {}, page_html(desc=False)),       # 3 页缺 description(CRITICAL)
+        pages.update({"/p1": (200, {}, page_html(desc=False)),       # 3 页缺 description(WARN,S2a B15)
                       "/p2": (200, {}, page_html(desc=False)),
                       "/p3": (200, {}, page_html(desc=False)),
                       "/ok1": (200, {}, page_html()),
@@ -224,8 +234,8 @@ class ExportDirIntegrationTests(unittest.TestCase):
         out, rc = run_main(["https://example.com/p1", "https://example.com/p2", "https://example.com/p3",
                             "https://example.com/ok1", "https://example.com/ok2",
                             "--export-dir", export_dir], pages)
-        self.assertEqual(rc, 1)                                     # CRITICAL 存在 → 退出码 1 不动
-        self.assertIn("| description-missing | CRITICAL | 3/5 页(60%) |", out)
+        self.assertEqual(rc, 0)                                     # S2a B15:描述缺失降 WARN,无 CRITICAL
+        self.assertIn("| description-missing | WARN | 3/5 页(60%) |", out)
         with open(os.path.join(export_dir, "summary.json"), encoding="utf-8") as f:
             summary = json.load(f)
         self.assertEqual(summary["audited"], 5)
@@ -235,7 +245,7 @@ class ExportDirIntegrationTests(unittest.TestCase):
         self.assertEqual(d["affected"], 3)
         self.assertAlmostEqual(d["coverage"], 0.6)
         self.assertEqual(d["coverage_pct"], "60%")
-        self.assertEqual(d["severity"], "CRITICAL")
+        self.assertEqual(d["severity"], "WARN")
         self.assertEqual(d["file"], "description-missing.txt")
         # 排序:severity 降序在前
         self.assertEqual(summary["rules"][0]["slug"], "description-missing")
@@ -279,7 +289,9 @@ class ExportDirIntegrationTests(unittest.TestCase):
         out2, rc2 = run_main(["https://example.com/a", "--json"], pages)
         payload2 = json_blob_of(out2)
         self.assertNotIn("exports", payload2)
-        self.assertEqual(set(payload2), {"schema_version", "audited", "critical", "results"})
+        # S2a B2:追加 market/limits 两个顶层键(本次市场阈值,供 prioritize/envelope 写建议)
+        self.assertEqual(set(payload2), {"schema_version", "market", "limits", "audited",
+                                         "critical", "results"})
         self.assertEqual(rc2, 0)
 
     def test_skip_refusal_in_denominator_not_in_rules(self):
@@ -291,7 +303,7 @@ class ExportDirIntegrationTests(unittest.TestCase):
         out, rc = run_main(["https://example.com/tiny", "https://example.com/b",
                             "--json", "--export-dir", export_dir], pages)
         self.assertEqual(rc, 0)                                     # SKIP 不算失败,退出码不受影响
-        self.assertIn("| canonical-missing | WARN | 1/1 页(100%) |", out)   # R5 修复:拒审页不进分母(已审计 1 页)
+        self.assertIn("| canonical-missing | WARN | 1/1 页(100%) |", LAST_STDERR[0])   # R5 修复:拒审页不进分母;--json 时 markdown 在 stderr(S2a B4)
         with open(os.path.join(export_dir, "summary.json"), encoding="utf-8") as f:
             summary = json.load(f)
         slugs = {r["slug"] for r in summary["rules"]}

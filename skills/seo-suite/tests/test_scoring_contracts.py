@@ -27,7 +27,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
@@ -187,7 +187,7 @@ def site_audit_json_payload():
     sa.fetch, sys.argv = fake_fetch, ["site_audit.py", "https://contract.test/", "--json"]
     buf = io.StringIO()
     try:
-        with redirect_stdout(buf):
+        with redirect_stdout(buf), redirect_stderr(io.StringIO()):
             try:
                 sa.main()
             except SystemExit:
@@ -195,7 +195,7 @@ def site_audit_json_payload():
     finally:
         sa.fetch, sys.argv = old_fetch, old_argv
     out = buf.getvalue()
-    return json.loads(out[out.rindex("\n{"):])
+    return json.loads(out)   # S2a B4:--json 时 stdout 只有 JSON(人读行在 stderr),整体解析
 
 
 FIXTURE_CONTRACT_RULE = "改口径必须 bump schema_version 并重生成 fixture"

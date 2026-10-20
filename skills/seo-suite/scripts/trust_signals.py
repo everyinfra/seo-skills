@@ -11,9 +11,10 @@
                           其中含数字 且 有署名/头衔 -> 再 +10
   社会证明 social     <=30: 客户/用户数、trusted by/服务过、结果类数字、百分比成果,
                           命中 3 类 -> 30, 2 类 -> 20, 1 类 -> 10
-  风险反转 risk       <=25: 4 类 (free trial / no credit card / cancel anytime /
-                          guarantee 及中文对应) 中 >=3 类即 strong 拿满 25;
-                          2 类 15, 1 类 8
+  风险反转 risk       <=25: 6 类 (free trial / no credit card / cancel anytime /
+                          guarantee / 按成功计费·失败不扣费 / refund 及中文对应) 中
+                          >=3 类即 strong 拿满 25; 2 类 15, 1 类 8。
+                          建议只提示「写出你真实提供的风险反转」, 不列做不到也照写的承诺。
   权威 authority      <=10: 资质认证 / 奖项 / 媒体提及 / 案例品牌, 命中 >=2 类 10 分, 1 类 5 分
 
 评级: >=75 强 / 50-74 中等 / <50 弱.
@@ -40,6 +41,13 @@ RISK_PATTERNS = [
     ("no credit card", re.compile(r"no credit card(?: required)?|without credit card|无需信用卡|不用信用卡|免信用卡", re.I)),
     ("cancel anytime", re.compile(r"cancel (?:anytime|at any time)|随时取消|随时退订|随时停用", re.I)),
     ("guarantee", re.compile(r"guarantee[ds]?|money[- ]back|退款保证|保证退款|无条件退款|\d+\s*天无理由|担保", re.I)),
+    # 按量计费/API 产品真实的风险反转:失败不收钱、只为成功付费
+    ("pay for success", re.compile(
+        r"(?:not|never|won't be|aren't|are not|isn't|is not)\s+(?:be\s+)?(?:charged|billed)\s+for\s+(?:any\s+)?(?:failed|unsuccessful|errored)"
+        r"|no charge for (?:failed|unsuccessful)|failed (?:calls|requests|tasks|jobs) (?:are|is) (?:free|not (?:charged|billed))"
+        r"|(?:pay|charged|billed) only (?:for|on) success|only pay for success|pay per success"
+        r"|失败不(?:扣费|收费|计费|扣款)|按成功(?:计费|收费|扣费)|成功才(?:计费|收费|扣费)|只为成功.{0,6}付费", re.I)),
+    ("refund", re.compile(r"refund(?:s|ed|able)?|退款|退费|可退回|原路退回", re.I)),
 ]
 
 SOCIAL_PATTERNS = [
@@ -176,8 +184,8 @@ def score_risk(visible_text):
         score, tag = 8, "弱"
     else:
         score, tag = 0, "无"
-    return score, "命中 {0}/4 类: {1} -> {2} 分 ({3})".format(
-        n, ", ".join(hits) if hits else "无", score, tag), hits
+    return score, "命中 {0}/{1} 类: {2} -> {3} 分 ({4})".format(
+        n, len(RISK_PATTERNS), ", ".join(hits) if hits else "无", score, tag), hits
 
 
 def score_authority(visible_text):
@@ -242,9 +250,10 @@ def main(argv=None):
     if s_score < 30:
         tips.append("社会证明: 加客户/用户规模数字、结果百分比或 trusted by 说法")
     if r_score < 25:
-        missing = [n for n, _rx in RISK_PATTERNS if n not in risk_hits]
-        tips.append("风险反转: 4 类中拿 3 类即满 (free trial/no credit card/cancel anytime/guarantee); 缺: {0}".format(
-            ", ".join(missing) if missing else "无"))
+        # 不列「缺什么」:无需信用卡/随时取消/保证这类承诺做不到就不能写
+        tips.append("风险反转: 写出你真实提供的风险反转(例如免费额度或试用、失败不扣费、按成功计费、"
+                    "退款规则),写在价格附近;做不到的承诺不要写。已识别: {0}".format(
+                        ", ".join(risk_hits) if risk_hits else "无"))
     if a_score < 10:
         tips.append("权威: 补资质认证/奖项/媒体提及/客户案例任两类")
     if tips:

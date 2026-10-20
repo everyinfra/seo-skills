@@ -232,7 +232,7 @@ def language_factor(market, cfg, source_lang):
         assumptions.append("RTL 全链(dir/逻辑 CSS/镜像布局)")
     tl, dl = cfg.get("title_limit", {}), cfg.get("desc_limit", {})
     if "fullwidth" in (tl.get("unit"), dl.get("unit")):
-        assumptions.append("全角阈值规范(ja/ko 口径)")
+        assumptions.append("全角阈值规范(ja/ko 全角口径;zh 标题按显示宽度)")
     if "grapheme" in (tl.get("unit"), dl.get("unit")):
         assumptions.append("字素计数(th 无词间空格)")
     if cfg.get("sentence_split") == "newline":
