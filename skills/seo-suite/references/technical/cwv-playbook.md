@@ -1,8 +1,8 @@
 # Core Web Vitals 优化手册（2026-10 口径）
 
-> 建立于 2026-10-09，2026-10-18 逐条核对 web.dev、Chrome 文档、CrUX 发布说明和 Google Search Central。本手册是 CWV 总纲：四指标全景、INP/CLS/TTFB 深度、第三方脚本治理、优化优先级。LCP 的四段拆解与诊断顺序见 [LCP.md](LCP.md)；JS 渲染策略见 [rendering-seo.md](rendering-seo.md)；审计扣分规则见 [audit-rule-catalog.md](audit-rule-catalog.md)。
+> 建立于 2026-10-09，2026-10-18 与 2026-10-21 两次逐条核对 web.dev、Chrome 文档、CrUX 发布说明和 Google Search Central。本手册是 CWV 总纲：四指标全景、INP/CLS/TTFB 深度、第三方脚本治理、优化优先级。LCP 的四段拆解与诊断顺序见 [LCP.md](LCP.md)；JS 渲染策略见 [rendering-seo.md](rendering-seo.md)；审计扣分规则见 [audit-rule-catalog.md](audit-rule-catalog.md)。
 
-> **CrUX 软导航（实验性）**：2026-10-13 发布的 CrUX 2026-09 数据集新增 LCP/INP/CLS 的软导航实验变体（SPA 路由切换），BigQuery 和 CrUX API 都可查；API 指标名为 `experimental_largest_contentful_paint_with_softnavs` 等（[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)、[CrUX API](https://developer.chrome.com/docs/crux/api)，核对 2026-10-18）。同期全量统计：18,376,044 个 origin；LCP 良好 68.3%、CLS 81.7%、INP 85.4%、三项全过 55.9%；计入软导航后分别为 72.1%、85.1%、87.4%、59.5%。做竞品基准时注明「含/不含软导航」，两种口径不混用。2026-09-08 的发布说明提到 INP 持续回退，官方没有给出原因。引用软导航指标时标 [experimental]。
+> **CrUX 软导航（实验性）**：2026-10-13 发布的 CrUX 2026-09 数据集新增 LCP/INP/CLS 的软导航实验变体（SPA 路由切换），BigQuery 和 CrUX API 都可查；API 指标名为 `experimental_largest_contentful_paint_with_softnavs` 等（[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)、[CrUX API](https://developer.chrome.com/docs/crux/api)，核对 2026-10-21）。同期全量统计：18,376,044 个 origin；LCP 良好 68.3%、CLS 81.7%、INP 85.4%、三项全过 55.9%；计入软导航后分别为 72.1%、85.1%、87.4%、59.5%。做竞品基准时注明「含/不含软导航」，两种口径不混用。2026-09-08 的发布说明提到 INP 持续回退，官方没有给出原因。引用软导航指标时标 [experimental]。
 
 ## 一、四指标全景
 
@@ -13,10 +13,10 @@
 | CLS | 最大一次布局偏移突发（视觉稳定性） | ≤0.1 | 0.1–0.25 | >0.25 |
 | TTFB | 首字节（诊断指标，不是 Core Web Vital） | ≤0.8s | 0.8–1.8s | >1.8s |
 
-阈值依据：[web.dev LCP](https://web.dev/articles/lcp)、[INP](https://web.dev/articles/inp)、[CLS](https://web.dev/articles/cls)、[TTFB](https://web.dev/articles/ttfb)（核对 2026-10-18）。INP 于 2024-03-12 取代 FID 成为 Core Web Vital（[web.dev 公告](https://web.dev/blog/inp-cwv-march-12)）；FID 2024-09 从 CrUX 移除。
+阈值依据：[web.dev LCP](https://web.dev/articles/lcp)、[INP](https://web.dev/articles/inp)、[CLS](https://web.dev/articles/cls)、[TTFB](https://web.dev/articles/ttfb)；「差」的界线（LCP >4000 ms、INP >500 ms、CLS >0.25）见[阈值方法说明](https://web.dev/articles/defining-core-web-vitals-thresholds)的表格（核对 2026-10-21）。INP 于 2024-03-12 取代 FID 成为 Core Web Vital（[web.dev 公告](https://web.dev/blog/inp-cwv-march-12)）；FID 从 CrUX API 移除、BigQuery 的 2024-08 数据集是最后一份含 FID 的数据（[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)，2024-09-10 公告）。
 
 - **评估口径**：真实用户第 75 百分位，移动端和桌面端分开（[web.dev Web Vitals](https://web.dev/articles/vitals)）。web.dev：三项都达到良好才算页面通过。
-- **Search Console 分组规则**：一个 URL 组的状态取三项里最差的那一项（例如 CLS 差、INP 良好 → 整组为「差」）；LCP 和 CLS 都有足够数据的组才会出现在报告里；数值是最近 28 天的 p75（[Search Console 帮助](https://support.google.com/webmasters/answer/9205520)，核对 2026-10-18）。因此只修最差的一项，组的状态就能上升一级；三项都良好才全绿。
+- **Search Console 分组规则**：一个 URL 组的状态取三项里最差的那一项（例如 CLS 差、INP 良好 → 整组为「差」）；LCP 和 CLS 都有足够数据的组才会出现在报告里；数值是最近 28 天的 p75（[Search Console 帮助](https://support.google.com/webmasters/answer/9205520)，核对 2026-10-21）。因此只修最差的一项，组的状态就能上升一级；三项都良好才全绿。
 - **现场与实验室**：CrUX、Search Console 报告是现场数据（field），反映真实分布但不能归因；Lighthouse、DevTools 是实验室数据（lab），可复现可归因，但受模拟节流影响。顺序：现场定位「哪类页面、哪个指标差」，实验室复现并归因，改完回看现场。
 - **CrUX 覆盖范围**：只收桌面版 Chrome（Windows、macOS、ChromeOS、Linux）和 Android 版 Chrome 的数据，且用户要开启使用情况统计和历史同步；iOS 版 Chrome、Android WebView、Edge 等其他 Chromium 浏览器不提供数据；页面和 origin 还要公开可发现、访问量足够（[CrUX 方法论](https://developer.chrome.com/docs/crux/methodology)）。低流量站可能查不到数据，用 web-vitals 自建 RUM 补盲。现场数据与 RUM 矛盾时以 RUM 为准（本套件口径：RUM 覆盖你自己的全部用户）。
 - **CrUX 里的 TTFB**：BigQuery 自 2019-06 数据集起有 `experimental.time_to_first_byte`；CrUX API 自 2022-05 起提供 `experimental_time_to_first_byte`，名称至今带 experimental 前缀（[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)、[CrUX API](https://developer.chrome.com/docs/crux/api)）。
@@ -27,13 +27,13 @@
 |---|---|---|---|
 | Search Console CWV 报告 | 现场（CrUX） | URL 组级，无归因 | 定位哪类页面、哪个指标差 |
 | CrUX API / BigQuery | 现场 | origin/URL 级；API 是 28 天滚动、每天约 04:00 UTC 更新；BigQuery 按月 | 竞品对比、改动前后验证 |
-| PageSpeed Insights | 现场 + 实验室 | 单 URL | 单页快速诊断 |
+| PageSpeed Insights | 实验室（Lighthouse）；页面界面仍显示现场数据，但 PSI API 计划停止返回 CrUX 数据（[PSI API 文档](https://developers.google.com/speed/docs/insights/v5/get-started)） | 单 URL | 单页快速诊断；现场数据改走 CrUX API |
 | web-vitals 自建 RUM | 现场（自采） | URL、元素、交互级归因 | 决定修什么、验证修没修好 |
 | Lighthouse / DevTools | 实验室 | 单次模拟 | 本地复现与 CI 回归 |
 
 ## 二、INP 深度
 
-定义要点（[web.dev INP](https://web.dev/articles/inp)，核对 2026-10-18）：
+定义要点（[web.dev INP](https://web.dev/articles/inp)，核对 2026-10-21）：
 
 - INP 观察整个访问期间所有点击、触摸和按键交互；每次交互的耗时 = 输入延迟 + 处理时长 + 呈现延迟，一直算到下一帧绘制。
 - 取值：报告最长的一次交互，但每 50 次交互忽略最高的一次（交互很多的页面不会被单次异常拖累）；多数页面交互不到 50 次，所以通常报告的就是最差那一次。
@@ -51,7 +51,7 @@
 **1）拆分长任务**
 
 - 主线程上超过 50ms 的任务就是长任务（[web.dev 优化长任务](https://web.dev/articles/optimize-long-tasks)）。
-- `scheduler.yield()`：Chrome 129+、Firefox 142+ 支持；Safari 不支持（[MDN 兼容数据](https://github.com/mdn/browser-compat-data) v8.1.6、[Chrome 博客](https://developer.chrome.com/blog/use-scheduler-yield)，核对 2026-10-18）。必须带兜底：
+- `scheduler.yield()`：Chrome 129+、Firefox 142+ 支持；Safari 不支持（[MDN 兼容数据](https://github.com/mdn/browser-compat-data) v8.1.6、[Chrome 博客](https://developer.chrome.com/blog/use-scheduler-yield)，核对 2026-10-21）。必须带兜底：
 
 ```js
 const yieldToMain = ('scheduler' in window && 'yield' in scheduler)
@@ -107,7 +107,7 @@ onINP(({ value, rating, attribution: a }) => {
 
 ## 三、CLS 深度
 
-口径（[web.dev CLS](https://web.dev/articles/cls)，核对 2026-10-18）：
+口径（[web.dev CLS](https://web.dev/articles/cls)，核对 2026-10-21）：
 
 - 布局偏移按「突发」（session window）累计：相邻两次偏移间隔小于 1 秒，整个窗口最长 5 秒；CLS 取得分最高的那个窗口。
 - 只有视口内可见元素改变起始位置才算偏移。新内容追加在下方、不推挤已有内容，不产生偏移。
@@ -132,7 +132,7 @@ onINP(({ value, rating, attribution: a }) => {
 body { font-family: 'BrandFont', 'Adjusted Fallback', sans-serif; }
 ```
 
-度量值用工具按实际字体计算，不要手猜。`font-display: optional` 只在首次布局时字体已就绪才使用 Web 字体，可以避免重排。
+度量值用工具按实际字体计算，不要手猜。浏览器支持（[MDN 兼容数据](https://github.com/mdn/browser-compat-data)，核对 2026-10-21）：`size-adjust` Chrome 92+、Firefox 92+、Safari 17+；三个 `*-override` 描述符 Chrome 87+、Firefox 89+，Safari 仍是预览版。Safari 上这几项不一定生效，按渐进增强处理。`font-display: optional` 只在首次布局时字体已就绪才使用 Web 字体，可以避免重排。
 
 **3）动态插入内容**：横幅、提示条插在已有内容上方必然偏移。新内容放在视口下方，或用 `position: fixed` 覆盖层，或用 `transform` 位移；列表懒加载用等高骨架屏占位。
 
@@ -183,9 +183,9 @@ Link: </img/hero.webp>; rel=preload; as=image; fetchpriority=high
 四段拆解、诊断顺序、`fetchpriority` 示例见 [LCP.md](LCP.md)，以下只补增量。
 
 - **fetchpriority 已在主流浏览器支持**：Chrome 101+、Safari 17.2+、Firefox 132+（MDN 兼容数据 v8.1.6），可以直接使用。
-- **Speculation Rules 预取/预渲染**：预渲染的下一页在导航时几乎已渲染完成，对下一页 LCP 改善很大（[Chrome 文档](https://developer.chrome.com/docs/web-platform/prerender-pages)，核对 2026-10-18）。
+- **Speculation Rules 预取/预渲染**：预渲染的下一页在导航时几乎已渲染完成，对下一页 LCP 改善很大（[Chrome 文档](https://developer.chrome.com/docs/web-platform/prerender-pages)，核对 2026-10-21）。
   - 支持：Chrome 109+；Safari 26.2 需开实验开关；Firefox 只在预览版部分支持（MDN 兼容数据）。按渐进增强接入。
-  - 默认触发时机：document 规则默认 `conservative`（指针或触摸按下时）；list 规则默认 `immediate`。`moderate` = 悬停 200ms 或按下时触发。
+  - 默认触发时机：document 规则默认 `conservative`（指针或触摸按下时）；list 规则默认 `immediate`。桌面端 `moderate` = 悬停 200ms 或按下时触发；移动端没有悬停，Chrome 自 2025-08 起改用视口启发式（停止滚动 500ms 后，对靠近上次按下位置的较大链接触发）。`eager` 自 Chrome 143 起不再等同 `immediate`：桌面端悬停 10ms 触发，移动端自 2026-01 起用简单视口启发式（链接进入视口 50ms 后）。
   - Chrome 上限：`immediate` 最多 50 个预取、10 个预渲染；`eager`/`moderate`/`conservative` 各最多 2 个，先进先出。document 规则配 `immediate` 才会大量过取，慎用。
   - 预渲染只对开启「预加载网页」设置的用户生效；内存不足、省流量或节能模式下会关闭。
 
@@ -219,10 +219,10 @@ Link: </img/hero.webp>; rel=preload; as=image; fetchpriority=high
 
 ## 七、CWV 与 SEO 的真实关系
 
-- **官方口径**（[Google 页面体验](https://developers.google.com/search/docs/appearance/page-experience)，2026-09-22 更新，核对 2026-10-18）：Core Web Vitals 被 Google 的排名系统使用；Search Console 或第三方工具里的好成绩不保证排在前面；为了 SEO 追求满分不一定值得。Google 总是优先展示最相关的内容，即使页面体验欠佳；但很多查询有大量有用内容，这时好的页面体验有助于成功。**CWV 不是主排名杠杆，是同等相关时的加分项和负资产防线。**
-- 页面体验自 2021-06 中旬起逐步纳入排名系统（[Google 2021-04 博客](https://developers.google.com/search/blog/2021/04/more-details-page-experience)）。
-- 报告侧：Search Console 的「页面体验」报告于 2024-11-18 移除；它只是 CWV 和 HTTPS 两个报告的汇总页，这两个报告照常保留（[Google Search Central 官方 LinkedIn 帖](https://www.linkedin.com/posts/googlesearchcentral_were-removing-the-page-experience-report-activity-7264284084145713152-rWCg)）。
-- 速度与营收（第三方研究）：Deloitte 受 Google 委托的《Milliseconds Make Millions》（2020）分析欧美零售、旅游、奢侈品、线索类品牌 4 周的移动端数据：4 项速度指标都提升 0.1 秒后，零售转化率 +8.4%、客单价 +9.2%（[Deloitte](https://www.deloitte.com/ie/en/services/consulting/research/milliseconds-make-millions.html)、[web.dev 摘要](https://web.dev/case-studies/milliseconds-make-millions)）。这是相关性观察，不是因果实验；所用指标（如 First Meaningful Paint）已过时。
+- **官方口径**（[Google 页面体验](https://developers.google.com/search/docs/appearance/page-experience)，2026-09-22 更新，核对 2026-10-21）：Core Web Vitals 被 Google 的排名系统使用；Search Console 或第三方工具里的好成绩不保证排在前面；为了 SEO 追求满分不一定值得。Google 总是优先展示最相关的内容，即使页面体验欠佳；但很多查询有大量有用内容，这时好的页面体验有助于成功。**CWV 不是主排名杠杆，是同等相关时的加分项和负资产防线。**
+- 页面体验自 2021-06 中旬起逐步纳入排名系统（[Google 2021-04 博客](https://developers.google.com/search/blog/2021/04/more-details-page-experience)，原文 Gradual rollout starting in mid-June）。
+- 报告侧：Search Console 的「页面体验」报告 2024-11 中旬移除；它只是 CWV 和 HTTPS 两个报告的汇总页，这两个报告照常保留。官方说法见 Google Search Central 的 LinkedIn 帖（[原帖](https://www.linkedin.com/posts/googlesearchcentral_were-removing-the-page-experience-report-activity-7264284084145713152-rWCg)需登录，2026-10-21 未能直接读取；全文由 [Search Engine Roundtable 2024-11-19 报道](https://www.seroundtable.com/google-search-console-page-experience-report-gone-38436.html)引用）。
+- 速度与营收（第三方研究）：Deloitte 受 Google 委托的《Milliseconds Make Millions》（2020）分析欧美零售、旅游、奢侈品、线索类品牌 4 周的移动端数据（核对 2026-10-21，数字与 [Deloitte 页面](https://www2.deloitte.com/ie/en/pages/consulting/articles/milliseconds-make-millions.html)一致）：4 项速度指标都提升 0.1 秒后，零售转化率 +8.4%、客单价 +9.2%（[Deloitte](https://www.deloitte.com/ie/en/services/consulting/research/milliseconds-make-millions.html)、[web.dev 摘要](https://web.dev/case-studies/milliseconds-make-millions)）。这是相关性观察，不是因果实验；所用指标（如 First Meaningful Paint）已过时。
 - 结论：向业务要预算时用转化和体验论证；CWV 的 SEO 价值是防御性的。
 
 ## 八、优化优先级决策树
@@ -267,10 +267,11 @@ Link: </img/hero.webp>; rel=preload; as=image; fetchpriority=high
 | CLS 来源 | DevTools Rendering → Layout Shift Regions；RUM 里 `largestShiftTarget` | 能定位偏移元素 → 可修 |
 | TTFB | DevTools Network 看文档请求 Waiting；CrUX `experimental_time_to_first_byte` | ≤0.8s 良好；用了 103 时另看 `finalResponseHeadersStart` |
 | 第三方占比 | Lighthouse「3rd parties」洞察 + Performance 面板按域名看主线程时间 | 记录每个第三方的主线程毫秒数，按第六节分级处置 |
+| Speculation Rules 生效 | Chrome DevTools 的推测加载调试功能（步骤见 Chrome 文档「Debug speculation rules」，面板路径以当前 Chrome 版本为准）；页面里 `document.prerendering` 在预渲染期间为 `true` | 目标链接显示 prerender/prefetch 成功 → 通过；因「Preload pages」关闭、省电或内存限制被取消属正常，不算失败 |
 
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。官方口径优先，第三方数字均已标注。
 
-- 一手（核对 2026-10-18）：web.dev [Web Vitals](https://web.dev/articles/vitals)、[LCP](https://web.dev/articles/lcp)、[INP](https://web.dev/articles/inp)、[优化 INP](https://web.dev/articles/optimize-inp)、[CLS](https://web.dev/articles/cls)、[优化 CLS](https://web.dev/articles/optimize-cls)、[TTFB](https://web.dev/articles/ttfb)、[优化长任务](https://web.dev/articles/optimize-long-tasks)、[INP 公告](https://web.dev/blog/inp-cwv-march-12)；Chrome [CrUX 方法论](https://developer.chrome.com/docs/crux/methodology)、[CrUX API](https://developer.chrome.com/docs/crux/api)、[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)、[scheduler.yield](https://developer.chrome.com/blog/use-scheduler-yield)、[预渲染与 Speculation Rules](https://developer.chrome.com/docs/web-platform/prerender-pages)、[Early Hints](https://developer.chrome.com/docs/web-platform/early-hints)、[跨文档 View Transitions](https://developer.chrome.com/docs/web-platform/view-transitions/cross-document)；Google Search Central [页面体验](https://developers.google.com/search/docs/appearance/page-experience)、[Search Console CWV 报告帮助](https://support.google.com/webmasters/answer/9205520)；[web-vitals README](https://github.com/GoogleChrome/web-vitals)；[MDN browser-compat-data](https://github.com/mdn/browser-compat-data) v8.1.6。
+- 一手（核对 2026-10-21）：web.dev [Web Vitals](https://web.dev/articles/vitals)、[LCP](https://web.dev/articles/lcp)、[INP](https://web.dev/articles/inp)、[优化 INP](https://web.dev/articles/optimize-inp)、[CLS](https://web.dev/articles/cls)、[优化 CLS](https://web.dev/articles/optimize-cls)、[TTFB](https://web.dev/articles/ttfb)、[优化长任务](https://web.dev/articles/optimize-long-tasks)、[INP 公告](https://web.dev/blog/inp-cwv-march-12)；Chrome [CrUX 方法论](https://developer.chrome.com/docs/crux/methodology)、[CrUX API](https://developer.chrome.com/docs/crux/api)、[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)、[scheduler.yield](https://developer.chrome.com/blog/use-scheduler-yield)、[预渲染与 Speculation Rules](https://developer.chrome.com/docs/web-platform/prerender-pages)、[Early Hints](https://developer.chrome.com/docs/web-platform/early-hints)、[跨文档 View Transitions](https://developer.chrome.com/docs/web-platform/view-transitions/cross-document)；Google Search Central [页面体验](https://developers.google.com/search/docs/appearance/page-experience)、[Search Console CWV 报告帮助](https://support.google.com/webmasters/answer/9205520)；[web-vitals README](https://github.com/GoogleChrome/web-vitals)；[MDN browser-compat-data](https://github.com/mdn/browser-compat-data) v8.1.6。
 - 第三方：[Deloitte《Milliseconds Make Millions》](https://www.deloitte.com/ie/en/services/consulting/research/milliseconds-make-millions.html)（2020）；[Cloudflare Early Hints 文档](https://developers.cloudflare.com/cache/advanced-configuration/early-hints/)。

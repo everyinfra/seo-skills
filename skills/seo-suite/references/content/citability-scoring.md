@@ -1,6 +1,6 @@
 # 可引用性打分（内容能否被 AI 引用）
 
-> 建立于 2026-10-09；2026-10-18 对照各来源仓库原文复核。
+> 建立于 2026-10-09；2026-10-21 对照各来源仓库原文再次复核（权重、veto 项、抽样规则逐项读到原文）。
 > 打分衡量内容的**形状**是否便于摘取和核实，不衡量引用结果——好分数不保证被引。
 > **本文所有权重、档位和阈值都是第三方作者的判断或本套件口径，没有一项经过受控实验验证。** Google 明确说第三方工具拿不到其内部排名数据（[third-party-seo](https://developers.google.com/search/docs/fundamentals/third-party-seo)）。分数只用来排整改顺序。
 > 证据仲裁见 [geo-evidence.md](geo-evidence.md)：按域名控制后，通用 Schema、CWV 对 AI 引用没有独立效应，FAQ 段只有很小的正值；提示-内容对齐和域名级权威是主导变量（[geo-evidence-bank.md](geo-evidence-bank.md) 第七节第 1 条、第八节）。
@@ -14,7 +14,7 @@
 | 域名评级 | CITE 40 项（4 维 × 10 项） | `python3 scripts/cite_domain.py --input answers.json --json out.json`（`--template` 打印输入模板） | 同仓 `references/cite-domain-rating.md` |
 
 - 三套可叠：域名 CITE → 站点 AIV → 单页 CORE-EEAT。
-- CORE-EEAT 的 veto 项是 T04（未披露利益关系）、C01（标题承诺与内容不符）、R10（页面数据自相矛盾）；CITE 的 veto 项是 T03、T05、T09。源仓库 `auditor-runbook.md` §2 规定：一项 veto 失败，维度分与总分封顶 **60**；两项以上标 BLOCKED，不出分。本套件 `core_eeat.py` 现按 59 封顶，与源仓库不一致。
+- CORE-EEAT 的 veto 项是 T04（未披露利益关系）、C01（标题承诺与内容不符）、R10（页面数据自相矛盾）；CITE 的 veto 项是 T03、T05、T09。源仓库 `auditor-runbook.md` §2 规定：一项 veto 失败，维度分与总分封顶 **60**；两项以上标 BLOCKED，不出分。本套件 `core_eeat.py` 已按此对齐（2026-10-21）。
 
 ## 一、块级五维打分（第三方设计，权重是作者判断）
 
@@ -28,7 +28,7 @@
 | 统计密度 | 15% | 有来源的数字有多密 | 有冲突：GEO 论文在固定上下文里「加统计」等方法 +30–40%；C-SEO Bench 发现多数此类改写无效 |
 | 独特与原始数据 | 10% | 自有一手数据、图表、表格 | 方向一致：Google 指南强调「非同质化」内容 |
 
-- 该仓写的「134–167 词是最优被引段落长度」引自它称为「Bortolato 2025」的分析，本组没找到原始研究，**不作为阈值使用**。段落长短按读者和题目定；Google 写明没有理想页长。
+- 该仓写的「134–167 词是最优被引段落长度」引自它称为「Bortolato 2025」的分析，2026-10-21 再搜仍只找到转引文章、没有原始研究，**不作为阈值使用**。同一文件还写「GEO 优化内容可见性提升 30–115%」，这是把 GEO 论文的 +30–40%（三种方法，位置加权词数）和 +115.1%（原排第 5 的来源用「引用来源」那一格）连成一个区间，论文没有这个结论（[arXiv 2311.09735](https://arxiv.org/abs/2311.09735) Table 2）。段落长短按读者和题目定；Google 写明没有理想页长。
 - **整页覆盖度**（本套件口径）：整页分 = 得分 >70 的块的占比。单块高分不够，要看全页能被摘取的密度。
 - **FAQ 是条件件不是标配**：只在页面命中问句式搜索、用户有真实疑问、能写出正文没答的问题时才加。2609.35077 里可见 FAQ 段 β=+0.07，作者称效应很小；SE Ranking 的合并数据里带 FAQ Schema 的页面平均引用反而更少（3.6 vs 4.2）。
 - JS 注入的 Schema：Google 能读；不执行 JS 的爬虫只读初始 HTML。给 AI 爬虫看的事实与标记要在初始 HTML 里（本套件口径）。
@@ -48,14 +48,14 @@
 作者自己公布的证据强度（[evidence-v1.1.md](https://github.com/jianruntech/geo-score/blob/main/rubric/evidence-v1.1.md)，引用时照抄限定）：
 
 - 最重的「自含答案段」（9 分）只有两篇预印本支持，Google 又说不必为 AI 切块；25–120 词窗口来自作者的校准审计。
-- 「标题匹配问法」（7 分）没找到一手支持；一篇观察性预印本发现问答格式页面平均影响力低 5.7%（[arXiv 2604.25707](https://arxiv.org/abs/2604.25707)），作者说这不证明格式有害。
+- 「标题匹配问法」（7 分）没找到一手支持；一篇观察性预印本（3 位独立研究者，602 个提示、21,143 条检索层引用）发现问答格式页面平均影响力 0.0947 对 0.1005，低 5.74%（[arXiv 2604.25707](https://arxiv.org/abs/2604.25707)），作者说问答格式本身作用弱，不证明格式有害。
 - 「有源统计」（7 分）是外部证据最强也最有争议的一项：GEO 论文 +30–40%，C-SEO Bench 发现多数改写方法无效。
 - llms.txt（5 分）奖励的是采用一个约定，不是可证明的效果；Google Search 不使用它。
 - 「知识图谱实体是最强单信号」没有出处。
 - ai.txt 是两个不相关提案共用的名字，没有答案引擎声明读取。
 - speakable 是 Google 的 Beta 功能，只用于美国、英文、Google Home 设备上的新闻类回答（[Google 文档](https://developers.google.com/search/docs/appearance/structured-data/speakable)）。
 
-分档稳定性（[bands-analysis.md](https://github.com/jianruntech/geo-score/blob/main/rubric/bands-analysis.md)，317 站）：Leading 只有 32 站（10.1%）达到；重测测量误差 3.09 分，单次分数 95% 区间约 ±6.1 分；168 站（53%）落在切线 ±6.1 以内；同一版本两次运行有 7.9% 的站换档。**相邻两档的差别经常在噪声以内**，报告要写区间，不只写档位。
+分档稳定性（[bands-analysis.md](https://github.com/jianruntech/geo-score/blob/main/rubric/bands-analysis.md)）：2026-09-27 的 317 站旧跑里，Leading 只有 32 站（10.1%）达到；当时重测的测量误差 3.09 分，单次分数 95% 区间约 ±6.1 分；168 站（53%）落在切线 ±6.1 以内；同一版本两次运行有 7.9% 的站换档。作者随后用 geo-score 1.8.0 在 2026-10-12 做同日重测，测量误差降到 1.41 分；324 站里 98 站落在切线 2.8 分以内，Leading 只有 21 站（6%）。**相邻两档的差别仍可能在噪声以内**，报告要写区间，不只写档位。
 
 ## 三、方法纪律（本套件强制）
 
@@ -87,7 +87,7 @@ Google 用「Who / How / Why」自查（[有用内容指南](https://developers.
 | 评分器 | 结构 | 来源 |
 |---|---|---|
 | geo-seo-claude 站点评分 | 六类：Citability 25 / Brand 20 / E-E-A-T 20 / Technical 15 / Schema 10 / Platform 10；分档 90/75/60/40；文档自带三条声明：确定性、权重是观点、诊断不是保证 | [docs/scoring-methodology.md](https://github.com/zubair-trabzada/geo-seo-claude) |
-| Auriti geo-optimizer | 八类：robots 18 / llms 18 / schema 16 / meta 14 / content 12 / brand_entity 10 / signals 6 / ai_discovery 6；分档 86/68/36（源码注释记有下调历史） | [models/config.py](https://github.com/Auriti-Labs/geo-optimizer-skill) |
+| Auriti geo-optimizer | 默认 rubric v2（v4.19，对齐 Google AI 文档）：google_ai 20 / robots 14 / schema 14 / content 14 / brand_entity 12 / meta 11 / llms 6 / signals 6 / ai_discovery 3；v1 仍可用 `--score-version 1`（robots 18 / llms 18 / schema 16 / meta 14 / content 12 / brand_entity 10 / signals 6 / ai_discovery 6）；分档 86/68/36（源码注释记有下调历史） | [models/config.py](https://github.com/Auriti-Labs/geo-optimizer-skill/blob/main/src/geo_optimizer/models/config.py) |
 
 - 这些评分器给 Schema、llms.txt 的分值是机器可读性卫生分，**不是被引概率**。用它们排整改顺序时，Schema 与 llms.txt 排在提示-内容对齐和站外权威之后；产品页把价格、规格写进 Product/Offer 字段除外。
 - 有的仓库把 GPTBot、ClaudeBot 等训练型爬虫算进「关键爬虫」扣分，与厂商文档矛盾；爬虫分层以 [geo-platform-differences.md](geo-platform-differences.md) 第三节为准。

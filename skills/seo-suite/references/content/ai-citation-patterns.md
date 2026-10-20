@@ -2,7 +2,7 @@
 
 > 先读 [geo-evidence.md](geo-evidence.md)。本文是**描述性**的：说明 AI 搜索产品通常怎样找到、选用和展示来源，
 > 以及哪些写法能让内容更容易被准确摘取。它不是「照做就会被引用」的因果清单，也不承诺引用率、排名或流量。
-> 2026-10-18 复核：每条「模式」都标明证据类型——官方说明、因果实验、描述性观察，或本套件口径。
+> 2026-10-21 复核（上一轮 2026-10-18）：每条「模式」都标明证据类型——官方说明、因果实验、描述性观察，或本套件口径。
 
 ## 1. 先分清三层
 
@@ -14,7 +14,7 @@
 
 诊断时从上往下查。前两层有问题时，讨论「AI 偏好」没有意义。
 
-## 2. 一手文档能支持的事实（核对 2026-10-18）
+## 2. 一手文档能支持的事实（核对 2026-10-21）
 
 - **Google AI Overviews / AI Mode**：沿用 Google 搜索的基础要求——可抓取、已索引、可带摘要展示；重要内容以文本存在；内链可发现；结构化数据与可见文本一致。没有专门的 AI Schema，不需要为 AI 改写或切块。这些流量计入 Search Console「网页」类型（[AI features](https://developers.google.com/search/docs/appearance/ai-features)、[生成式 AI 优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)）。
 - **Bing / Copilot**：指南要求事实和定义写明、关键陈述不依赖隐含内容、关键信息放在页面前部、每个网址聚焦一个主题、实体命名一致（[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a) 第 15–18 条）。这是官方写法要求，不是排名公式。
@@ -25,7 +25,7 @@
 
 | 模式 | 证据类型 | 依据与限定 |
 |---|---|---|
-| 引用集中在页面前部 | 描述性观察 | Kevin Indig：44.2% 的 ChatGPT 引用来自页面前 30%（120 万条回答）；2609.35077：作者算出的最佳匹配段中位深度 0.36。都不是「引擎读到某处就停」的测量 |
+| 引用集中在页面前部 | 描述性观察 | Kevin Indig（SEL 二手转述，原文付费未核）：44.2% 的 ChatGPT 引用来自页面前 30%；2609.35077：作者算出的最佳匹配段中位深度 0.36。都不是「引擎读到某处就停」的测量 |
 | 被引段落多用定义句、实体密、语气像分析师 | 描述性观察 | Kevin Indig：被引段落用「X 是」类定义的比例约为两倍，专有名词占比平均 20.6%（一般英文 5%–8%）（[SEL 报道](https://searchengineland.com/chatgpt-citations-content-study-469483)） |
 | 新内容更常被引 | 描述性观察，两家结论不一致 | Ahrefs：ChatGPT 最偏好新内容；Seer：AIO 引用 85% 发布于 2023–2025。见 [geo-platform-differences.md](geo-platform-differences.md) 第二节 |
 | 加统计、引语、来源能提高回答内可见度 | 因果实验，但条件窄且有反例 | GEO 论文在固定前 5 条结果的设定里 +30–40%；C-SEO Bench 发现多数此类改写无效（[geo-evidence.md](geo-evidence.md) 第三节） |
@@ -74,7 +74,7 @@
 | 3 | 每次记录完整 | `record --engine chatgpt --file run.csv`（列：prompt,mentioned,cited,cited_urls[,state][,rank]）；有回答原文时加 `--answer-file` | 通过：失败采集记 failed，不当成缺席。失败：只记「有/没有」 |
 | 4 | 三件事分开 | `python3 scripts/citation_panel.py report` 分列提及率与引用份额；`ai_referral_log.py` 看点击 | 通过：提及、引用、点击分别报告。失败：合成一个「可见度」 |
 | 5 | 重复取样看趋势 | 同一 prompt ≥3 次；改动前后用 `citation_panel.py diff RUN1 RUN2`；尽量设对照页面 | 通过：只报配对样本的变化，并带区间。失败：单次缺失就下结论 |
-| 6 | 辅助数据 | GSC 生成式 AI 效果报告（只有展示）；Bing AI Performance；分析工具里的 AI 引荐（会漏掉不带 referrer 的访问） | 通过：标明是下界。失败：把引荐当全量 |
+| 6 | 辅助数据 | GSC 生成式 AI 效果报告（2026-06-03 起，只有展示；AI 功能的点击仍拆不出，包含在总体「网页」数据里）；Bing AI Performance；分析工具里的 AI 引荐（会漏掉不带 referrer 的访问） | 通过：标明是下界。失败：把引荐当全量 |
 
 这些都是自己观测的抽样指标，不是平台官方数据；报告里写明取样方法。
 
@@ -89,8 +89,8 @@
 
 只列已核到原文的条目，均为第三方观察：
 
-- **土耳其**：seobaz 2026-08 研究，AIO 引用的来源 75.3% 与同一搜索的自然前 10 结果为同一页面；排第 1 的页面 53.4% 被引（[seobaz](https://seobaz.com/blog/turkiye-ai-overview-arastirmasi-2026-google-hangi-sayfalari-kaynak-gosteriyor)）。作者对比的美国研究约 37%。土耳其的 AI 可见度与传统 SEO 绑定更紧，美国的结论不能直接平移。
-- **日本**：用日语提问时 26% 的被引来源在 .jp 域，用英语约 1%（Weglot，2026-09）；30 个领域 1,459 个日语查询中 76.9% 出现 AIO（PR TIMES 调查，2026-07）。
+- **土耳其**：seobaz 2026-08 研究（8,282 个土耳其语移动端 Google 搜索，2026-08-16 采集，7,696 条 AIO 来源链接），AIO 引用的来源 75.3% 与同一搜索的自然前 10 结果为同一页面；有 AIO 的搜索里排第 1 的页面 53.4% 被引（[seobaz](https://seobaz.com/blog/turkiye-ai-overview-arastirmasi-2026-google-hangi-sayfalari-kaynak-gosteriyor)）。作者对比的两项美国研究约 37%（Ahrefs 37.1%、TripleDart 37.0%）。土耳其的 AI 可见度与传统 SEO 绑定更紧，美国的结论不能直接平移。
+- **日本**：用日语提问时 26% 的被引来源在 .jp 域，用英语约 1%（Weglot，2026-09）；30 个领域 1,459 个日语查询中 76.9% 出现 AIO（Itera 自测，PR TIMES 新闻稿 2026-08-05，报告期 2026-07）。
 - **韩国**：Naver 表示 AI 브리핑 被引内容约 70% 是其自有 UGC（博客、카페 等）（[Nasmedia 报道](https://blog.nasmedia.co.kr/entry/2606naspick)，2026-06）。
 - **共同纪律**（本套件口径）：引用偏好的结论按引擎分列，不合并；6–12 个月内重测，过期的结论不沿用。
 

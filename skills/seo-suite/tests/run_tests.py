@@ -421,7 +421,9 @@ class SiteAuditTests(unittest.TestCase):
     def test_wc_thai_grapheme(self):
         import site_audit as sa
         t = "สวัสดีครับ"                       # 10 码点,3 个组合标记(Mn)
-        self.assertEqual(sa.wc(t), 7)            # 字素近似:泰文不再计 0/不按码点高估
+        # 2026-10-21 改(B47):wc 是词数,旧断言把泰文字素数 7 当词数。泰文无空格,stdlib 无词典分词,
+        # 现按空格短语近似计 1 并标 approx;字素口径仍由 unit_len(grapheme) 承担
+        self.assertEqual(sa.wc_info(t), (1, True))
         self.assertEqual(sa.unit_len(t, "grapheme"), 7)
         self.assertEqual(len(t), 10)             # 旧口径(码点)确实高估 30%+
 

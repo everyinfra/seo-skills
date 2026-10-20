@@ -16,7 +16,9 @@ CORE(C/O/R/E)管内容体 = GEO 分;EEAT(Exp/Ept/A/T)管作者组织站 = SEO �
   Ept 专业: 作者行 / bio
   A 权威: 奖项/featured/媒体名
   T 信任: 隐私条款链接 / 全 HTTPS / 联系信息
-  VETO(3 项,任一命中总分封顶 59):
+  VETO(3 项;口径按来源仓 auditor-runbook.md §2,Runbook 1.2,2026-10-21 核对):
+    1 项命中 → 总分 min(raw, 60)(上限不是下限);≥2 项命中 → status BLOCKED,不出最终分,
+    raw 保留备查、须人工复核。修前按 59 封顶且多 veto 照样出分,与来源仓不一致。
     V1 利益冲突标记(赞助/sponsored/affiliate…)
     V2 标题承诺与首段断裂(标题含承诺词但首段几乎无重叠)
     V3 内部矛盾数字(同一上下文同一指标出现不同数值)
@@ -394,6 +396,9 @@ def analyze(doc):
             "title": title}
 
 
+VETO_CAP = 60   # 来源仓 auditor-runbook.md §2「cap … at 60/100」
+
+
 def score(result):
     groups = {}
     for g in ("C", "O", "R", "E", "Exp", "Ept", "A", "T"):
@@ -408,10 +413,14 @@ def score(result):
     seo = sum(seo_groups) / len(seo_groups) if seo_groups else None
     parts = [x for x in (geo, seo) if x is not None]
     total = sum(parts) / len(parts) if parts else None
-    capped = False
-    if result["vetoes"] and total is not None and total > 59:
-        total, capped = 59.0, True
+    raw_total, capped, status = total, False, "DONE"
+    n_veto = len(result["vetoes"])
+    if n_veto >= 2:                       # Runbook §2:2+ veto → BLOCKED,final 省略
+        total, status = None, "BLOCKED"
+    elif n_veto == 1 and total is not None and total > VETO_CAP:
+        total, capped = float(VETO_CAP), True
     return {"groups": groups, "geo": geo, "seo": seo, "total": total,
+            "raw_total": raw_total, "status": status,
             "capped": capped,
             "band": None if total is None else
             "A(优)" if total >= 80 else "B(良)" if total >= 60 else
@@ -443,11 +452,17 @@ def render(result, sc):
             L.append("  [X] %s" % v)
     else:
         L.append("VETO: 无(利益冲突/标题断裂/内部矛盾均未命中)")
-    if sc["total"] is None:
+    if sc.get("status") == "BLOCKED":
+        L.append("总分 = BLOCKED(%d 项 veto 命中,不出最终分;原始分 %s 仅备查,须人工复核)"
+                 % (len(result["vetoes"]),
+                    "N/A" if sc["raw_total"] is None else "%.1f" % sc["raw_total"]))
+    elif sc["total"] is None:
         L.append("总分 = N/A(无任何可机判项)")
     else:
         L.append("总分 = %.1f → band %s%s"
-                 % (sc["total"], sc["band"], "(veto 命中,封顶 59)" if sc["capped"] else ""))
+                 % (sc["total"], sc["band"],
+                    "(veto 命中,封顶 %d;原始分 %.1f)" % (VETO_CAP, sc["raw_total"])
+                    if sc["capped"] else ""))
     return "\n".join(L)
 
 
@@ -520,12 +535,12 @@ def _self_test():
     bsc = score(bad)
     codes = {v[:2] for v in bad["vetoes"]}
     assert codes == {"V1", "V2", "V3"}, bad["vetoes"]   # 赞助 + 标题断裂 + 320/280 矛盾
-    assert bsc["total"] <= 59, bsc                       # veto 之下总分不得高于 59
+    assert bsc["status"] == "BLOCKED" and bsc["total"] is None, bsc   # ≥2 veto 不出分
 
-    # 好文档 + 单一 veto → 高分被封顶到 59
+    # 好文档 + 单一 veto → 高分被封顶到 60(来源仓 Runbook §2)
     hybrid = analyze(load_document_from_string(GOOD_DOC + "\n本内容由 Acme 赞助。\n"))
     hsc = score(hybrid)
-    assert len(hybrid["vetoes"]) == 1 and hsc["total"] == 59.0 and hsc["capped"], hsc
+    assert len(hybrid["vetoes"]) == 1 and hsc["total"] == 60.0 and hsc["capped"], hsc
 
     # HTML 输入路径
     html = ("<html><body><h1>Only One</h1><p>Answer: 42% of users. Three sentences here. "
@@ -536,7 +551,7 @@ def _self_test():
     assert hdoc["h1"] == 1 and hdoc["tables"] == 1 and hdoc["images"] == 1
     hv = {i["code"]: i["verdict"] for i in hres["items"]}
     assert hv["O1"] == "pass" and hv["O2"] == "pass"
-    print("[self-test] PASS core_eeat(好文档全绿 band A;坏文档 3 veto;高分+单 veto 封顶 59;"
+    print("[self-test] PASS core_eeat(好文档全绿 band A;坏文档 3 veto→BLOCKED;高分+单 veto 封顶 60;"
           "markdown 与 HTML 双路径)")
 
 

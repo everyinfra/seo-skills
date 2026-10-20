@@ -1,5 +1,7 @@
 # 全仓新鲜度扫描与修正日志(2026-10-11)
 
+> 用途:2026-10-11 一次新鲜度扫描的修正日志。**历史记录,不作现行依据**:里面的脚本数、测试数、文件行号都是当时的值,现行数字以 `data/capability-matrix.json` 和 `scripts/freshness.py` 的实时输出为准。
+
 > 建于 2026-10-11。范围:references/ 全量(禁改文件除外)。方法:`python3 scripts/freshness.py references` 基线 → 数字一致性 grep → 关键数字日期口径抽查 → 过时信号口径复查 → 裸路径检查。本日志只记录事实与处理,不承载新口径;口径权威仍为 [deprecated-signals.md](../technical/deprecated-signals.md) 与 [data-source-contract.md](data-source-contract.md)。
 
 ## 一、基线与终态

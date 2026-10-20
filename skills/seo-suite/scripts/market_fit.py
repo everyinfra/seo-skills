@@ -28,7 +28,7 @@
      本脚本只持模式(数据与逻辑分离:markets.json 删掉某合规事实,罚分自动消失)。
 
 输出:优先级矩阵(推荐进入 Top3 + 暂缓及理由)+ 因子证据 + 机会注(小语种唯一源红利,
-引 references/research/multilingual-geo-evidence.md U5)。
+引 references/research/multilingual-geo-evidence.md U5——该条是假设，未证实,输出带标注)。
 
 用法: python3 market_fit.py [--gsc-country gsc.csv] [--markets ja,ko,de] [--source-lang en] [--json]
 退出码: 0 正常(决策支持,非闸门;暂缓不是失败) / 2 输入或用法错。"""
@@ -114,6 +114,9 @@ COMPLIANCE_PATTERNS = [
     (r"CONAR|publieditorial", "CONAR 软文披露", 0.10),
 ]
 U5_REF = "references/research/multilingual-geo-evidence.md U5"
+# U5 在证据文件里是「假设」(2026-10-21 复核:无来源,降级为假设);引用时必须带此标注,
+# 不当收益承诺(multilingual-geo-evidence.md 第 13、145 行)。
+U5_STATUS = "假设，未证实"
 
 
 class UsageError(Exception):
@@ -294,13 +297,13 @@ def opportunity_notes(rows, has_gsc):
     if has_gsc:
         zero = [r["market"] for r in rows if r["demand"].get("no_evidence")]
         for m in zero:
-            notes.append("%s 国别无流量记录——零足迹≠零机会:小语种引用池小而浅,原创数据/深度页"
-                         "可成整池唯一可用源(唯一源红利>堆反链,%s)" % (m, U5_REF))
+            notes.append("%s 国别无流量记录——零足迹≠零机会。待验证:小语种引用池小而浅,原创数据/深度页"
+                         "可能成为整池唯一可用源(唯一源红利>堆反链;%s,%s)" % (m, U5_STATUS, U5_REF))
         if not zero:
-            notes.append("全部候选均有国别足迹;新市场进入仍适用唯一源红利选题法(%s)" % U5_REF)
+            notes.append("全部候选均有国别足迹;新市场进入可试唯一源红利选题法(%s,%s)" % (U5_STATUS, U5_REF))
     else:
-        notes.append("无 GSC 国别数据,零足迹市场不可判;补 --gsc-country 后小语种候选适用"
-                     "唯一源红利选题法(%s)" % U5_REF)
+        notes.append("无 GSC 国别数据,零足迹市场不可判;补 --gsc-country 后小语种候选可试"
+                     "唯一源红利选题法(%s,%s)" % (U5_STATUS, U5_REF))
     return notes
 
 

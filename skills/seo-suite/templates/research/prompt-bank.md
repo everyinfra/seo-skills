@@ -1,7 +1,7 @@
 # GEO 采样 prompt 库(prompt-bank)
 
 > **模板性质**:常驻输入件库,不是一次性报告模板——表格行实例化后喂给 `citation_panel.py` 建立/扩充采样面板;结论产在第 7 节指向的周报/月报,本文件不产出任何数字。
-> **数据来源**:Scrunch(stage 框架+初始集配方)/ Peec(品牌词独立分组警告、GSC top 词转问句公式)/ Otterly(fanout 六类型、引擎展开量基准、Citation Synthesis 第 5 步)三家**官方口径**;施工图见 [references/research/borrow-specs.md](../../references/research/borrow-specs.md) B3 节(来源清单在其文末)。标注纪律与全库一致:【官方】=一手口径,[推断]=本库自定并注明。
+> **数据来源与核对状态**(2026-10-21):①Scrunch 监测指南写明「每个主题簇 12–15 个问题」(`簇数 × 12–15 = 要追踪的 prompt 数`,[Scrunch](https://scrunch.com/guides/ai-search-guide/monitoring/),已核);②Peec 2026-09-29 的研究写明品牌词 prompt 的答案几乎每次都提到该品牌,非品牌 prompt 才不确定,建议分开看,并建议多加 prompt 而不是多跑几次([Peec](https://peec.ai/blog/the-key-to-prompt-tracking),已核);③fanout 六类型的名字见第三方转述(omnius.so),Otterly 原页打不开(403),**未核**,各引擎展开子查询数的具体数字找不到一手来源,已删;④5+3+2 起步集、persona 前缀与固定后缀、source-seeking 后缀三变体、GSC 词转问句公式、扩量节奏,均未找到厂商一手文档,一律按**本套件口径**使用。施工图见 [references/research/borrow-specs.md](../../references/research/borrow-specs.md) B3 节。[推断]=本库自定。
 
 _For: {执行人} · Version: {YYYY-MM-DD 建库/复核日} · Scope: {brand}={品牌名}, {category}={品类}, 竞品集={competitor 候选清单} · Engines: {采样引擎清单}_
 
@@ -49,9 +49,9 @@ _For: {执行人} · Version: {YYYY-MM-DD 建库/复核日} · Scope: {brand}={�
 
 ## 3. Persona fan-out 前缀表
 
-用法:前缀 + 空格 + 任一基础模板(主矩阵或 R 组)= 一条新 prompt,固定后缀照抄官方原文追加在句尾。前缀措辞[推断自定:persona 角色词必须出现,其余可改];后缀为官方逐字。
+用法:前缀 + 空格 + 任一基础模板(主矩阵或 R 组)= 一条新 prompt,固定后缀原样追加在句尾。前缀措辞和后缀都是本套件口径[推断自定:persona 角色词必须出现,其余可改];persona 变换思路借鉴 Scrunch,未核厂商文档。
 
-| Persona | 前缀[推断] | 固定后缀(官方原文) |
+| Persona | 前缀[推断] | 固定后缀(本套件口径) |
 |---|---|---|
 | CMO | As a CMO evaluating this quarter's tech spend, | Respond with sources and direct claims first. |
 | Founder | As a founder scaling a small team, | Respond with sources and direct claims first. |
@@ -60,15 +60,15 @@ _For: {执行人} · Version: {YYYY-MM-DD 建库/复核日} · Scope: {brand}={�
 
 **限额提醒(硬规则)**:persona fan-out 后执行数 = 基础 prompt 数 × persona 数(4)翻倍计入采样限额——主矩阵 20 条 × 4 = 80 次/轮,再乘引擎数与采样次数;预算紧张时只对比较段(C 组)做 fan-out,认知/决策段保持基础形态。
 
-## 4. Stage 配方(Scrunch 官方)
+## 4. Stage 配方(本套件口径 + 已核的两条外部依据)
 
-- stage 框架【官方】:awareness / consideration / conversion / loyalty;本库映射:认知=A、比较=C、决策=D(loyalty 暂留空,待扩)。
-- **初始集配方【官方】**:5 awareness + 3 consideration + 2 decision,共 10 条起步——恰好满足 citation_panel.py 的 prompts≥10 下限;示例选法:A1/A3/A5/A7 + C2/C4/C5 + D1/D2(可替换同漏斗其他条)。
-- **每 cluster 12-15 问【官方】**:一个 topic 组(簇)内问句数落在 12-15,不足先补簇内问法,不急着开新簇。
-- **品牌词 prompt 必须独立分组【Peec 官方警告】**:句面含 {brand} 字面的 prompt,Visibility 恒 100%(答案必然提到被问的品牌),混入非品牌 prompt 会污染指标——品牌词组、R 组、persona 变体组各自单独统计、单独汇报。
-- 扩量节奏【Peec 官方】:起步集稳定后,10-20 条 awareness + 20-30 条 consideration 连续跑 30 天再扩。
+- stage 框架(本套件口径):awareness / consideration / conversion / loyalty 四段;本库映射:认知=A、比较=C、决策=D(loyalty 暂留空,待扩)。Scrunch 指南里的 funnel stage 示例分组是 Awareness、Advice、Evaluation、Comparison,与上面四段不同,各家分法不统一,本库只借「按漏斗分组」的思路。
+- **起步集配方(本套件口径)**:5 awareness + 3 consideration + 2 decision,共 10 条起步——恰好满足 citation_panel.py 的 prompts≥10 下限(`citation_panel.py init --stage-mix` 会打印同一配方);示例选法:A1/A3/A5/A7 + C2/C4/C5 + D1/D2(可替换同漏斗其他条)。
+- **每个主题簇 12–15 问**(Scrunch 指南的估算起点:簇数 × 12–15 = 追踪 prompt 数,指南说是起点而不是硬规则):簇内问句不足先补簇内问法,不急着开新簇。
+- **品牌词 prompt 独立分组**:Peec 的研究说,品牌词 prompt(句面点名公司)里引擎几乎每次都会提到该公司,可见度很少变化;非品牌 prompt 才是优化影响最大、也最不确定的地方,所以两类要分开看。混入非品牌 prompt 会让总分失去信息量——品牌词组、R 组、persona 变体组各自单独统计、单独汇报(分组做法为本套件口径)。
+- 扩量节奏(本套件口径,未找到厂商一手依据):起步集稳定后再扩;Peec 的结论是多加 prompt 比同一 prompt 多跑几次更能提高分数的准确度,时间越长越能确认可见度真的变了。
 
-## 5. Fanout 六类型(Otterly 官方)
+## 5. Fanout 六类型(第三方转述,未核 Otterly 原页)
 
 引擎不会只检索你问的原句——先展开成子查询群。写 prompt 与做内容都要按展开后的语义对齐:
 
@@ -81,32 +81,44 @@ _For: {执行人} · Version: {YYYY-MM-DD 建库/复核日} · Scope: {brand}={�
 | entity expansion | 简称/实体被展开为完整实体+属性再检索 | "Acme" → Acme(AI CRM 厂商)的公司实体卡片与 sameAs 属性 |
 | personalized | 同一 prompt 按用户画像/会话历史被改写 | 同一问法,初创创始人视角与企业 CMO 视角得到不同展开 |
 
-- **引擎展开量基准【官方】**(单条 prompt 平均展开子查询数):Perplexity 12-15 · ChatGPT 6-10 · AI Mode 8-12 · AIO 4-8。
-- **注记**:选源发生在第 5 步 Citation Synthesis——内容优化对象是展开后子查询能命中的语义覆盖,不是原始 prompt 的字面词匹配;展开行为分析走 `scripts/fanout_analysis.py`。
+- **研究证据**:SSRN 预印本(Lee,2026-04-15;540 个母查询、1,323 条子查询、ChatGPT/Gemini/Perplexity)发现,子查询的字符串每次不同(同一提示重复采样的 Jaccard 相似度很低),但子查询的**类型**比较稳定(55–65% 的最常见类型一致),所以优化对象是类型层,不是某条具体子查询;意图对子查询构成有显著影响([SSRN 6652059](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6652059),核对 2026-10-21)。各引擎平均展开几条子查询,找不到一手数字,不写。
+- **注记**:内容要覆盖的是展开后子查询能命中的语义,不是原始 prompt 的字面词匹配;展开行为分析走 `python3 scripts/fanout_analysis.py 文件.csv`(CSV 两列 `prompt,web_query`,`--top N` 控制每桶条数)。
 
 ## 6. 统计纪律
 
 1. **单 prompt 单次不可靠**:LLM 非确定性,同一问法两次回答可不同——任何单点数字不下结论(n<3 = 掷硬币,与 citation_panel.py 同口径)。
 2. **按 topic 分组 + 周聚合**:先 cluster 级周聚合,再下钻 prompt 级;不逐 prompt 逐日比较。
-3. **比较类 prompt(C 组)10 次采样即可估 visibility**;非比较类同样攒到 n≥10 再看趋势。
-4. **3 次采样取多数**(majority 状态)并**标方差**;n≥3 才进报告(citation_panel.py 稳定判据:Wilson 95% CI 跨 0.5 = unstable)。
+3. **攒够样本再看趋势**:非品牌 prompt 在 n≥10 之前只当方向(本套件口径;「比较类 10 次即可」无出处,已删)。
+4. **3 次采样取多数**(majority 状态)并**标方差**;n≥3 才进报告(citation_panel.py 稳定判据:Wilson 95% CI 跨 0.5 = unstable;Wilson 区间是标准统计方法,阈值是本套件口径)。
 
 ## 7. 使用说明(接线)
 
-- **喂给面板**:`python3 scripts/citation_panel.py init --brand X --prompts-file 本文件`——脚本直接解析第 1/2 节表格的"模板"列(占位符须先实例化);旧版本无该参数时,把模板列实例化后另存单列 CSV(表头 `prompt`)走 `--prompts`。
-- **GSC top 词 → 问句转换公式【Peec 官方】**:"What are the best [category] for [persona]?"——GSC 有展现/点击的 top 非品牌词逐条套此公式生成新 awareness prompt;品牌词路由到第 4 节独立组。
+- **喂给面板**:先把要用的行**复制到单独文件**(第 1/2 节表格的「模板」列,占位符实例化后),再 `python3 scripts/citation_panel.py init --brand X --prompts-file 你的文件.md --domain 站点`。也可以直接喂整份模板:解析器只收带「模板」列那张表的单元格(2026-10-21 起,整份模板得 22 条),但占位符要先实例化。或者另存单列 CSV(表头 `prompt`)走 `--prompts`。
+- **GSC top 词 → 问句**(本套件口径):用 "What are the best [category] for [persona]?" 句式,GSC 有展现/点击的 top 非品牌词逐条套用,生成新 awareness prompt;更好的做法是直接用买家原话([question-alignment.md](../../references/content/question-alignment.md));品牌词路由到第 4 节独立组。
 - **结果消费**:周报 [../monitor/ai-visibility-weekly.md](../monitor/ai-visibility-weekly.md)、月报 ai-visibility-monthly.md;引擎行为差异见 [references/content/geo-platform-differences.md](../../references/content/geo-platform-differences.md)。
+
+## 检查清单(建库与复核时逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 入面板的 prompt 是实例化后的整句 | `rg -n '\{(brand|category|competitor|use_case|pain_point|segment)\}' 你的文件.md` | 通过:零命中。失败:残留花括号 |
+| 2 | 起步集 ≥10 条 | `python3 scripts/citation_panel.py init --brand X --prompts-file 你的文件.md --panel panel.json` 后看输出的 `prompts=N` | 通过:N ≥10 且等于你预期的条数。失败:N 与预期不符或 <10 |
+| 3 | 品牌词、R 组、persona 变体单独统计 | `python3 scripts/citation_panel.py report --panel panel.json`,看「指标切片: prompt_targeting」里 `branded_or_direct` 与 `organic_unbranded` 分开 | 通过:两类分列。失败:混在一个分数里 |
+| 4 | 每簇问题数 | 数每个 topic 的 prompt 数 | 通过:12–15(估算起点)。失败:差距大 → 补问法或合并簇 |
+| 5 | 每个 prompt ≥3 次采样 | `report` 的「每 prompt 稳定性」节 | 通过:要下结论的 prompt 都有 ≥3 次有效采样。失败:不足不下结论 |
+| 6 | 年份词不过期 | `rg -n '20[0-9]{2}' 你的文件.md` | 通过:年份为当前年。失败:过期年份词 → 测到的是旧索引行为 |
+| 7 | 换过措辞的条目视为新 prompt | 对比版本记录 | 通过:新旧数据不连用。失败:跨版本连用 |
 
 ## What could change this conclusion
 
 - {时效:句内年份词("in 2026")每年需滚动更新,过期年份词测到的是引擎旧索引行为而非当前可见性}
-- {口径漂移:引擎展开量基准为 Otterly 2026 口径,随引擎版本漂移,建议季度复核一次}
-- {自定项:persona 前缀措辞、R 组第四后缀变体、A2/C7 补位条目为[推断]自定,非官方逐字——换措辞即换自变量}
+- {口径漂移:引擎的子查询行为随模型版本变;SSRN 研究里 ChatGPT 不同模型档的联网搜索触发率差别很大,换模型或档位要重新采样}
+- {自定项:persona 前缀与后缀、source-seeking 后缀、R 组第四后缀变体、A2/C7 补位条目都是[推断]自定,没有厂商逐字依据——换措辞即换自变量}
 - {措辞即自变量:source-seeking 后缀变体本身影响引用率,跨变体的历史数据不可直接对比}
 
 ## Method Notes
 
-- 数据源与口径:Scrunch(stage 框架、5+3+2 初始集、每 cluster 12-15 问)/ Peec(品牌词独立分组警告、GSC 转问句公式、扩量节奏)/ Otterly(fanout 六类型、引擎展开量基准、Citation Synthesis 第 5 步)均为官方口径,施工图与全部来源见 [references/research/borrow-specs.md](../../references/research/borrow-specs.md) B3 节。
+- 数据源与口径:已核=Scrunch 的 12–15 问/簇、Peec 的品牌词与非品牌词差异、SSRN 6652059 的子查询研究;未核或无出处=其余(见文件头)。施工图与来源清单见 [references/research/borrow-specs.md](../../references/research/borrow-specs.md) B3 节。
 - 占位符:{brand}/{category}/{competitor}/{use_case}/{pain_point}/{segment};实例化后不得残留花括号进面板。
 - 后缀体系:三变体 Include sources / According to experts / Cite your sources 可组合互换;风险组第四变体 According to reviews;D1 的 "based on trusted sources" 为竞品原文内嵌形式,视作等价变体。
-- 禁编造:未见于官方文档的数字与"官方原文"不得标注【官方】;本库自定项一律标[推断]。数字缺失写 [要追加: 数据源]。
+- 禁编造:没有一手来源的数字不得写成官方口径;本库自定项一律标[推断]。数字缺失写 [要追加: 数据源]。

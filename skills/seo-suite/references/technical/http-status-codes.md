@@ -2,7 +2,7 @@
 
 ## 用途
 
-技术审计、网站迁移、排查「页面不被编入索引 / 从结果里消失」时读。判断以 Google 的 [HTTP 状态码对抓取的影响](https://developers.google.com/crawling/docs/troubleshooting/http-status-codes)、[网络与 DNS 错误](https://developers.google.com/crawling/docs/troubleshooting/dns-network-errors) 和 [重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects) 文档为准（2025-12 起前两份迁到 developers.google.com/crawling）。其他搜索引擎的处理可能不同。核对 2026-10-18。
+技术审计、网站迁移、排查「页面不被编入索引 / 从结果里消失」时读。判断以 Google 的 [HTTP 状态码对抓取的影响](https://developers.google.com/crawling/docs/troubleshooting/http-status-codes)、[网络与 DNS 错误](https://developers.google.com/crawling/docs/troubleshooting/dns-network-errors) 和 [重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects) 文档为准（前两份于 2025-12-18 迁到 developers.google.com/crawling）。其他搜索引擎的处理可能不同。核对 2026-10-21。
 
 > 本文管状态码语义与排查；重定向的全类型用法、canonical 场景、分页 / 分面治理与审计操作见 [redirects-canonical](redirects-canonical.md)。
 
@@ -24,7 +24,7 @@
 补充：
 
 - Google 爬虫默认最多跟随 10 跳重定向；超过、循环、目标 URL 超长或为空，网页索引编制报告记为「重定向错误」。
-- Search Console 帮助说网址检查的实时测试会先跟随重定向，再测试终点，且不显示终点 URL。所以查跳转链用 `curl`，不要用网址检查。
+- 状态码文档写 Google 检查工具不跟随重定向；网址检查帮助写实时测试会先跟随重定向、再测终点，且不显示终点 URL。两处说法不同，所以查跳转链用 `curl`，不要用网址检查。
 - Googlebot 不带凭据访问。对它返回 403，页面不会被编入索引（网页索引编制报告说明）。
 
 ## 二、soft 404
@@ -60,8 +60,8 @@
 
 ## 五、维护与限流
 
-- 紧急降速（几小时到 1–2 天）：返回 500、503 或 429，可以带 `Retry-After`（秒数或绝对时间）。Google 会降低整个主机名的抓取速度，错误减少后自动回升（[降低抓取速度](https://developers.google.com/crawling/docs/crawlers-fetchers/reduce-crawl-rate)）。
-- 不要用 401、403、404 限速：这些 4xx 会让 URL 被当作不存在并移出索引。
+- 紧急降速（几小时到 1–2 天）：返回 500、503 或 429；503 和 429 可以带 `Retry-After`（秒数或绝对 UTC 时间）。Google 会降低整个主机名的抓取速度，错误减少后自动回升（[降低抓取速度](https://developers.google.com/crawling/docs/crawlers-fetchers/reduce-crawl-rate)）。
+- 不要用 401、403、404 限速：除 429 外的 4xx 对抓取速度没有影响，反而会让 URL 被当作不存在并移出索引。
 - 不能返回错误码时，用 Search Console 的特殊请求表单报告抓取过高；只能申请降低，不能申请提高。
 - CDN 或 WAF 误拦 Googlebot 是常见事故。拦截前先核实爬虫真伪（反向 DNS 或官方 IP 列表，见 [log-analysis.md](log-analysis.md) 二C），不要按 User-Agent 字符串一刀切；防火墙要放行 Google 的 IP 和 DNS 查询（UDP 与 TCP）。
 
@@ -83,7 +83,8 @@
 | 4 | 爬虫与浏览器结果一致 | 命令 3：用浏览器 UA 和 Googlebot UA 各请求一次 | 失败：两者状态码不同（多半是 CDN/WAF 规则）。注意：伪造 UA 不能复现按 IP 判定的规则，最终以网址检查为准 |
 | 5 | 维护期状态码正确 | 维护窗口内请求任意页面 | 通过：503（或 429）且带 `Retry-After`，持续不超过 1–2 天。失败：200 维护页、404、403 |
 | 6 | Google 侧没有成片错误 | Search Console → 网页索引编制报告的服务器错误、重定向错误、soft 404；抓取统计 → 按响应分组 | 失败：重要模板出现成片 5xx、soft 404 或重定向错误 |
-| 7 | 日志里 Googlebot 的状态码分布 | 命令 4（combined 格式；先按 [log-analysis.md](log-analysis.md) 验证爬虫身份） | 关注：5xx 占比持续上升、3xx 占比高（抓取花在跳转上） |
+| 7 | DNS、连接与超时错误 | Search Console → 设置 → 抓取统计 → 主机状态（robots.txt 可用性、DNS 解析、服务器连接） | 通过：三项均为绿色。失败：红色：DNS 或连接错误会立即降低抓取速度，不可达的已编入 URL 几天内移出索引 |
+| 8 | 日志里 Googlebot 的状态码分布 | 命令 4（combined 格式；先按 [log-analysis.md](log-analysis.md) 验证爬虫身份） | 关注：5xx 占比持续上升、3xx 占比高（抓取花在跳转上） |
 
 ```bash
 # 命令 1：逐跳列出状态码和跳转目标（行数减 1 = 跳数）
@@ -111,7 +112,7 @@ awk -F'"' '$6 ~ /Googlebot/ {split($3, s, " "); print s[1]}' access.log | sort |
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-18。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-21。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/technical-seo-checker/references/http-status-codes.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/technical-seo-checker/references/http-status-codes.md)（Apache-2.0）
 - 一手资料：[HTTP 状态码对 Google 抓取的影响](https://developers.google.com/crawling/docs/troubleshooting/http-status-codes)、[网络与 DNS 错误](https://developers.google.com/crawling/docs/troubleshooting/dns-network-errors)、[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)、[排查抓取错误（soft 404）](https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors)、[网站迁移](https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes)、[降低抓取速度](https://developers.google.com/crawling/docs/crawlers-fetchers/reduce-crawl-rate)、[抓取预算](https://developers.google.com/crawling/docs/crawl-budget)、[分面导航](https://developers.google.com/crawling/docs/faceted-navigation)、[网页索引编制报告](https://support.google.com/webmasters/answer/7440203)、[网址检查](https://support.google.com/webmasters/answer/9012289)、[抓取统计报告](https://support.google.com/webmasters/answer/9679690)、[MDN HTTP 状态码](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)

@@ -75,17 +75,24 @@ def fetch(url):
 
 def validate(path):
     t = open(path, encoding="utf-8").read()
+    # llmstxt.org v2 Format:文件以「可选 BOM」开头,随后才是 H1。开头 BOM 合法,先剥掉再查,
+    # 不判缺 H1、也不算水印字符(修前 BOM 文件同时报「H1 ✓」和「缺 H1」)。
+    if t.startswith("\ufeff"):
+        t = t[1:]
     issues = []
-    if not re.match(r"^# ", t): issues.append("缺 H1(唯一必需元素)")
+    has_h1 = bool(re.match(r"^# ", t))
+    if not has_h1: issues.append("缺 H1(唯一必需元素)")
     if len(re.findall(r"^# ", t, re.M)) > 1: issues.append("多个 H1")
     if not re.search(r"^>", t, re.M): issues.append("缺 blockquote 摘要")
     links = re.findall(r"^- \[([^\]]+)\]\(([^)]+)\)(.*)$", t, re.M)
     if len(links) < 3: issues.append(f"链接仅 {len(links)} 条(<3,指南建议 10-30)")
-    bad = [l for _, u, l in [(0, ln[1], ln[2]) for ln in links] if not u.startswith(("http", "/", "#"))]
+    # 只认 http(s):// 绝对 URL(llms-txt-guide.md「链接用绝对 URL」;规范示例全是绝对 URL)。
+    # 修前 startswith(("http","/","#")) 放过 /docs、#anchor,打印的还是描述而不是 URL。
+    bad = [u for _, u, _ in links if not re.match(r"^https?://", u.strip(), re.I)]
     if bad: issues.append(f"非绝对 URL: {bad[:3]}")
     if re.search(r"[\u200b\ufeff]", t): issues.append("含 Unicode 水印字符")
     sections = re.findall(r"^## (.+)$", t, re.M)
-    print(f"H1 ✓  链接 {len(links)}  节 {sections}")
+    print(f"H1 {'✓' if has_h1 else '✗'}  链接 {len(links)}  节 {sections}")
     for i in issues: print("[问题]", i)
     sys.exit(1 if issues else 0)
 

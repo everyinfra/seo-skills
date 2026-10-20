@@ -1,10 +1,13 @@
 # Skill 自更新协议(信源变更→直接更新 skill)
 
-> 建立于 2026-10-10;2026-10-15 按实际运行方式改写为「云端检测 + issue 工单 + 本地处理」。配合 intel_check.py 使用:当信源变更被检测到,本协议规定 agent 如何**直接更新 skill 文件**(不只是知识文档——规则/阈值/脚本/清单都改)。
+> 建立于 2026-10-10;2026-10-15 改写为「云端检测 + issue 工单 + 本地处理」;2026-10-21 按 `.github/workflows/intel-update.yml` 和 `scripts/intel_check.py` 的当前内容重核。配合 intel_check.py 使用:当信源变更被检测到,本协议规定 agent 如何**直接更新 skill 文件**(不只是知识文档——规则/阈值/脚本/清单都改)。
 
 ## 两端分工
 
-- **云端检测(自动)**:`.github/workflows/intel-update.yml` 每天 UTC 01:11 跑一次 intel_check;有变更就把本轮报告写进 label=`intel-update-pending` 的 issue(没有 open issue 就新开,已有就追加一条评论)。云端不改 skill 文件,也不自动关单。
+- **云端检测(自动)**:`.github/workflows/intel-update.yml` 每天 UTC 01:11 跑一次 `intel_check.py check`(20 个注册源)。有变更就把本轮报告写进 label=`intel-update-pending` 的 issue(没有 open issue 就新开,已有就追加一条评论)。云端不改 skill 文件,也不自动关单。
+- **云端只提交基线**:每轮 check 后,workflow 把 `skills/seo-suite/.intel-state.json` 复制到 `.github/state/intel-state.json` 并提交(提交信息 `chore(intel): state update [skip ci]`)。原因:脚本的状态路径写死、且在 `.gitignore` 里;只靠 Actions cache 时,缓存 7 天没被访问就会被驱逐([GitHub 文档](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching),核对 2026-10-21),基线会静默重置。所以本地改文件前先 `git pull --rebase`,避免和这个每日提交冲突。
+- **云端附带两项守卫**(job `capability-drift`):`tests/test_capability_matrix.py`(矩阵与磁盘漂移)和 `freshness.py --fail-stale`(references 里 >90 天的证据)。任一失败 → job 变红并上传说明 artifact。它们不开 issue,红了要人去看。
+- **定时器会被停**:公开仓库 60 天没有任何仓库活动,GitHub 会自动停用定时工作流([GitHub 文档](https://docs.github.com/actions/managing-workflow-runs/disabling-and-enabling-a-workflow),核对 2026-10-21)。长期没提交的 fork 要在 Actions 页手动重新启用。
 - **本地处理(定时任务或人工)**:按下面的触发指令读工单、改文件、自检、提交、关单。频率自定(见文末「频率建议」);工单 open 超过 72 小时,云端会在 Actions 日志里报 warning。
 
 ## 触发指令模板(定时任务发这个)
@@ -32,7 +35,7 @@
 可选附加(按需写进同一个定时任务):
 
 - **每周一**:有 citation 面板就跑 `python3 skills/seo-suite/scripts/citation_panel.py decay-summary --panel <panel.json> --json`,报告重写队列;`gh run list -R <OWNER/REPO> --limit 5` 看云端 workflow 是否全绿,红了只报告、不改 workflow。
-- **每月 1 日**:数字巡检。实测脚本数(`ls skills/seo-suite/scripts/*.py | wc -l`)、测试数(`python3 skills/seo-suite/tests/run_tests.py` 的 `Ran` 行)、模板数(`find skills/seo-suite/templates -name '*.md' | wc -l`),对齐 README.md、README.en.md、manifest.json、`.claude-plugin/` 里的版本号与数字以及 CHANGELOG 最新版本;跑 `python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references` 列出过期断言(只报告,修复走正常工单)。
+- **每月 1 日**:数字巡检。实测脚本数(`ls skills/seo-suite/scripts/*.py | wc -l`)、测试数(`python3 skills/seo-suite/tests/run_tests.py` 的 `Ran` 行)、模板数(`find skills/seo-suite/templates -name '*.md' | wc -l`);三个数字要等于 `data/capability-matrix.json` 的 `summary`(脚本 / 模板),再对齐 README.md、README.en.md、manifest.json、`.claude-plugin/` 里的版本号与数字以及 CHANGELOG 最新版本;跑 `python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references` 列出过期断言(只报告,修复走正常工单)。
 
 ## 更新流程(收到变更报告后)
 
@@ -55,20 +58,22 @@ intel_check.py 输出 `[CHANGED] <源名>: <详情>` + `→ 应更新: <文件�
 
 ### 第二步:按映射表更新文件
 
-| 源 | 更新什么(不只加知识——改实际规则) |
+| 注册名(`intel_check.py`) | 更新什么(不只加知识——改实际规则) |
 |---|---|
-| google-blog / google-updates | **改 validation-guide 的检查规则**/改 schema-examples 的状态表/改 llms-txt-guide 的规范描述 |
+| google-blog | **改 geo-evidence.md 的证据分级**/改 validation-guide 的检查规则/改 llms-txt-guide 的规范描述 |
+| google-updates、google-docs-rss | **改 validation-guide 的检查规则**/改 audit-rule-catalog |
 | gsc-announce | **改 intake-checklists 的闸门问题**/改 kpi-definitions 的口径 |
-| status-dashboard | **改 seo-drift-monitoring 的归因规则**(新增事故加入时间线) |
-| lighthouse | **改 agent-readiness 的 AGENTIC_BROWSING 审计解读**/改 agent-protocols 的卡片 |
-| openai-bots / anthropic-crawl | **改 ai-crawler-policy 的 bot 表**(UA/robots 行为变了→规则改) |
-| ard-spec / WebMCP | **改 agent-protocols 的速查卡+验证命令** |
-| schema.org | **改 schema-templates 的字段清单**/改 audit-rule-catalog |
+| status-dashboard、semrush-sensor | **改 seo-drift-monitoring 的归因规则**(新增事故加入时间线) |
+| lighthouse、ard-spec | **改 agent-readiness 的 AGENTIC_BROWSING 审计解读**/改 agent-protocols 的卡片和验证命令 |
+| openai-bots、openai-bots-rss、anthropic-crawl | **改 ai-crawler-policy 的 bot 表**(UA/robots 行为变了→规则改) |
+| schema-org | **改 schema-templates / schema-examples 的字段清单** |
 | crux | **改 cwv-playbook 的阈值表** |
-| yandex-wm / naver-wm / baidu | **改对应市场门户页+markets.json 的引擎格局数字** |
-| statcounter | **改 multilingual-workflow 的市场总表+对应门户页份额** |
-| semrush-sensor / seroundtable | **改 seo-drift 的算法时间线**/改 penalty-recovery 的案例库 |
-| bing-wm | **改 geo-platform-differences 的 Copilot 行** |
+| yandex-wm、naver-wm、baidu-ziyuan | **改对应市场门户页(markets/ru.md、ko.md、zh.md)+ markets.json 的引擎格局数字** |
+| statcounter-search | **改 multilingual-workflow 的市场总表** |
+| statcounter-ai、bing-wm | **改 geo-platform-differences 的引擎份额和 Copilot 行** |
+| seroundtable | **改 penalty-recovery 的案例库**/rendering-seo |
+
+完整映射以 `scripts/intel_check.py` 里 `SOURCES[...]["modules"]` 为准;文字版见 [intel-sources.md](intel-sources.md) 第五节。
 
 ### 第三步:验证
 
@@ -103,6 +108,18 @@ gh issue close <N> -R <OWNER/REPO> -c "已处理: <摘要>"   # 有工单时
 | freshness.py 扫 references | 月一次 | 兜底:防止漏检的过期声明 |
 | 竞品仓扫描(GitHub API) | 双周 | 新趋势起点(见 intel-sources.md 检索式) |
 
+## 检查清单(每次处理工单前后)
+
+| 检查什么 | 怎么查 | 通过 / 失败判据 |
+|---|---|---|
+| 云端检测在跑 | `gh run list -R <OWNER/REPO> -w intel-update --limit 5` | 最近 5 次里有当天(UTC 01:11 后)的运行,且 `check-and-flag` 为 success。超过 2 天没有运行 → 查 Actions 页是否被停用 |
+| 工单没积压 | `gh issue list -R <OWNER/REPO> -l intel-update-pending --state open` | 0 张,或最老一张不超过 72 小时 |
+| 本地基线与云端一致 | `git pull --rebase` 后看 `.github/state/intel-state.json` 的 `checked_at` | 日期是今天或昨天。落后 → 云端状态提交失败,看 workflow 日志 |
+| 注册源数量与文档一致 | `python3 -c "import sys; sys.path.insert(0,'skills/seo-suite/scripts'); import intel_check as i; print(len(i.SOURCES))"` | 等于本文写的 20 和 intel-sources.md 的数字 |
+| 改完不留红 | `python3 skills/seo-suite/scripts/self_check.py`;`python3 skills/seo-suite/scripts/link_check.py` | 全绿,无死链 |
+| 过期断言 | `python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references --fail-stale` | 退出码 0。1 = 有 >90 天 stale,回写头部日期前先重核事实 |
+| 没带运行态文件 | `git status --short` | 不含 `.intel-state.json`、`findings.json`、`crawl.json`、`briefs/` |
+
 ## 来源
 
-intel_check.py 源注册表与 references/overview/intel-sources.md 同步维护;本协议 2026-10-10 建立,2026-10-15 改为云端检测 + issue 工单 + 本地处理。
+intel_check.py 源注册表与 references/overview/intel-sources.md 同步维护;`.github/workflows/intel-update.yml` 是云端实现。本协议 2026-10-10 建立,2026-10-15 改为云端检测 + issue 工单 + 本地处理,2026-10-21 按当前 workflow 重核。

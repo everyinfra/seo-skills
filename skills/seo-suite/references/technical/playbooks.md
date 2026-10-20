@@ -4,7 +4,7 @@
 
 ## 先看红线
 
-Google 的垃圾内容政策明确针对**规模化内容滥用**（主要为了操纵排名而大量生成低价值页面，无论用什么方式生成）和**门页**（大量相似页面把用户导向同一个目的地）。因此：
+Google 的垃圾内容政策明确针对**规模化内容滥用**（原文：为操纵搜索排名而不是帮助用户，大量生成页面，「no matter how it's created」）和**门页**（为排名特定的相似查询而建，把用户导向没有最终目的页有用的中间页）（[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)，核对 2026-10-21）。Google 对自动生成内容的口径：用自动化（含 AI）生成内容，如果主要目的是操纵排名，就违反垃圾内容政策（[有用内容指南](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)）。Google 也说它没有偏好的字数，不要按字数下限做模板。因此：
 
 - 每个页面都要有独立的用户价值：独有的数据、实用的工具结果或真实的对比，而不是只换了关键词的同一段话。
 - 文本重复率低不等于安全；判断标准是对用户是否有用。
@@ -40,6 +40,16 @@ Google 的垃圾内容政策明确针对**规模化内容滥用**（主要为了
 7. **分批放量**：先发布一小批，观察索引、展示和用户行为，再扩大规模。
 8. **维护**：数据更新机制；过期页面的更新、合并或下线规则。
 
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 模式有真实需求 | `python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://example.com/sitemap.xml`（GSC 查询导出 CSV） | 输出 GO 或 WATCH 且有 addressable 量 → 可做；白空间 → 先别做 |
+| 批次质量 | `python3 scripts/pseo_batch_gate.py --records batch.jsonl --rendered rendered/` | 退出码 0 → 可发布；1 → 退回数据层（阈值见 [programmatic-seo-gates.md](programmatic-seo-gates.md)） |
+| 上线后收录 | `python3 scripts/pseo_cohort.py init ...` 登记 cohort，每周 `ingest` GSC 页面导出，`report` 看判读（参数用 `--help` 现查） | 预注册的判读标准达标 → 放量；未达标 → 停止放量 |
+| 零展示页处置 | `python3 scripts/prune_gate.py --urls urls.txt --gsc gsc.csv --crawl crawl.json` | 有入链/外链/排名词的页面不下线（NO-GO）；其余按 prune/merge/watch 处置 |
+| 每页独有内容 | 随机抽 5 页，遮住关键词和城市名后对比 | 仍能看出各页内容不同 → 通过 |
+
 ## 交付
 
 - 选定的模式、目标查询模板和需求证据。
@@ -58,7 +68,7 @@ Google 的垃圾内容政策明确针对**规模化内容滥用**（主要为了
 
 # (rampstack 深读 2026-10-09b) 运营层工作流手册(rampstack forward-deployed tier)
 
-来源：[rampstackco/claude-skills](https://github.com/rampstackco/claude-skills) 的 workflows/ 目录（README、GETTING-STARTED + 15 个工作流，共 17 个文档）。技能目录解决"把一个站建好一次"；这一层解决"持续运营一条已部署的内容与增长管线"。
+来源：[rampstackco/claude-skills](https://github.com/rampstackco/claude-skills) 的 workflows/ 目录（README、GETTING-STARTED + 15 个工作流，共 17 个文档；2026-10-21 对照仓库 HEAD 核对：15 个工作流文件、车道名、状态阶梯、honest-stop 约定、仅 Content Pipeline 为 validated 均与仓库一致）。这是一套第三方的运营框架，不是搜索引擎规则，也不是本套件的流程要求。技能目录解决"把一个站建好一次"；这一层解决"持续运营一条已部署的内容与增长管线"。
 
 ## 全层共用的六个机制
 
@@ -96,4 +106,4 @@ Google 的垃圾内容政策明确针对**规模化内容滥用**（主要为了
 ## 来源
 
 - 仓库：https://github.com/rampstackco/claude-skills（workflows/ 目录，15 工作流 + README + GETTING-STARTED）
-- 第三方盲测：openaddict.com 对其中 3 个工作流的多模型测试（traffic-drop 病因命名正确率 80–100%；corpus 完整性 24 个植入错误找到 64–76%；链图审计 51 个植入错误找到 74–100%）
+- 第三方盲测：[openaddict.com](https://openaddict.com/workflows) 对其中 3 个工作流的多模型测试（页面标注最后一次运行 2026-10-03，每个模型跑 5 次，核对 2026-10-21）：traffic-drop 病因命名正确率 80–100%（Sonnet 5 为 80%，Opus 5 与 Fable 5.1 为 100%）；corpus 完整性 24 个植入错误，找到 64.2–75.8%；链图审计 51 个植入错误，找到 73.7–100%。该站自己声明：三份测试材料由站点运营方编写并自测，「Nobody outside checked any of it」，所以只当作该框架可用性的旁证，不当作效果证据。

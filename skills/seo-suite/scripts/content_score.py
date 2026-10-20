@@ -143,20 +143,22 @@ def read_text(path):
 
 
 def wc(text):
-    """CJK 感知词数(site_audit.py 思路独立实现): 汉字/假名/谚文逐字计,
-    其余按字母数字连续段计词;土耳其 İ 先折叠防拆词。"""
-    text = text.replace("İ", "i")
+    """CJK 感知词数。同 site_audit.wc(B47)口径(B61 修,2026-10-21):CJK 逐字计;其余文字字母/数字
+    连续段为一词,组合符号(Mn/Mc/Me,如天城体 matra/virama)附着在词内,空格与标点断词,
+    「बेस्ट लैपटॉप कैसे खरीदें」=4。不 import site_audit:本脚本 CJK_RE 含扩展 A 区,site_audit.is_cjk 不含,复用会改汉字计数。"""
+    text = text.replace("İ", "i").replace("I\u0307", "i").replace("\u0307", "")
     perchar = words = 0
-    prev = False
+    prev = False  # 前一字符是否处于词内
     for c in text:
         if CJK_RE.match(c):
             perchar += 1
             prev = False
-        else:
-            is_l = unicodedata.category(c)[0] == "L" or c.isdigit()
-            if is_l and not prev:
-                words += 1
-            prev = is_l or (c == "'" and prev)
+            continue
+        cat = unicodedata.category(c)
+        is_l = cat[0] in ("L", "N")
+        if is_l and not prev:
+            words += 1
+        prev = is_l or ((c in "'’" or cat[0] == "M") and prev)
     return perchar + words
 
 

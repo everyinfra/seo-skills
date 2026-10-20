@@ -46,13 +46,26 @@
 
 ## 五、不要作为扣分依据
 
-以下说法没有 Google 一手依据，或与 Google 的说明相反（见 [SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)里「不必关注」的部分），不作为扣分项：
+以下说法没有 Google 一手依据，或与 Google 的说明相反（见 [SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)里「不必关注」的部分，核对 2026-10-21），不作为扣分项：
 
-- 固定的字数目标、关键词密度。堆砌关键词本身违反[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)。
-- 「只能有一个 H1」「标题层级不能跳级」。层级清楚有助于读者和辅助技术，可以作为可读性建议，但不作为排名问题扣分。
+- 固定的字数目标、关键词密度。入门指南原文：没有神奇的字数目标，无论下限还是上限。堆砌关键词本身违反[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)。
+- 「只能有一个 H1」「标题层级不能跳级」。入门指南原文：标题顺序对读屏软件很好，但从 Google 搜索角度看，乱序没有影响，也没有理想的标题数量。层级清楚有助于读者和辅助技术，可以作为可读性建议，但不作为排名问题扣分。Bing 的指南要求有逻辑的标题层级，面向 Bing 的站点可以单独提。
 - `<title>` 或 meta description 的固定字符数。Google 按设备宽度截断，并可能改写标题；只有在真实结果里被截断、影响理解时才提出。
-- URL 里必须含关键词。
+- URL 里必须含关键词。入门指南原文：域名或 URL 路径里的关键词除了出现在面包屑里，几乎没有排名影响。URL 里放对用户有用的词仍是好习惯。
+- 填写 meta keywords：Google 不使用该标签。
+- 把 E-E-A-T 当成排名因子打分。入门指南原文：它不是。第一维度里的作者、出处检查是内容质量的自评项，不是 Google 的评分项。
 - 为了富结果加 FAQPage。FAQ 富结果已停止展示，FAQPage 只用于页面上真实存在的问答（见 [geo-evidence.md](../content/geo-evidence.md)）。
+
+## 检查清单
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 门槛：状态码与重定向 | `python3 scripts/redirect_chain.py <URL> --max 3` | 通过：200 或一跳 301 到 200。失败：多跳、循环、终点非 200 |
+| 2 | 门槛：可抓取、可索引 | `curl -sI <URL>` 看 `X-Robots-Tag`；`python3 scripts/head_check.py <URL>` 看 robots meta 与 canonical；robots.txt 见 [robots-txt-reference.md](robots-txt-reference.md) 检查清单 | 失败：noindex、被 robots.txt 屏蔽、canonical 指向无关页 |
+| 3 | 门槛：渲染后主内容可见 | [rendering-seo.md](rendering-seo.md) 检查清单第 1、2 项 | 失败：主内容只在渲染后出现 |
+| 4 | 页面体验用字段数据 | `python3 scripts/field_data.py --url <URL> --strategy both` | 失败：移动端 p75 任一核心指标为 poor。无字段数据时记"无法验证"，不猜 |
+| 5 | 每个扣分项有证据 | 看报告里每个扣分项是否带 URL、时间、设备或 UA、截图或导出 | 失败：只有结论没有证据 |
+| 6 | 没有用第五节的说法扣分 | 报告全文搜索"字数""H1""字符""关键词密度" | 失败：这些词出现在扣分理由里 |
 
 ## 交付时给出
 
@@ -60,10 +73,12 @@
 
 ## 市场差异:审计阈值换算(拉平轮;英文默认值需按语言调)
 
+> 本表所有数字都是**本套件的提示阈值**，用来发现可能有问题的页面。它们不是 Google 规则：Google 对 title 和 description 没有固定字符数（按设备宽度截断），对正文也没有字数要求（见第五节）。表中的字数行只作薄内容预警。
+
 | 检查项 | 英文基线 | 市场换算 |
 |---|---|---|
 | title 长度 | ~60 字符 | 日 32 全角/泰按字素/德 55–65/越 45–65(词进前 30)——完整表见 title-formulas 市场差异节 |
-| 正文字数下限 | ~300 词 | 日 300 全角字(体裁分层)/中 pillar ≥1,500 字/印尼 EYD V |
+| 薄内容预警线（不是字数要求） | ~300 词 | 日 300 全角字(体裁分层)/中 pillar ≥1,500 字/印尼 EYD V |
 | 句长 | 15–20 词 | 中 15–25 字(>35 难解析)/泰 ≤25 词(>30 罚)/日 ≤25 词 |
 | 营销词密度 | hype 克制 | 中 ≤3/页(创新领先/极致类)+标题党禁 |
 | 内链数 | 按内容比例 | 日 1 見出し 1–2 本/3,000 字 4–8 本/单页 45 本上限 |
@@ -74,6 +89,8 @@
 
 ## 完全装载:三个成品评分器(seomachine/SEOmator/gtm,百仓深扫)
 
+> 本节是三个第三方评分器的权重与扣分规则，本套件没有逐条复核其源码，也不是 Google 规则。引用时写"某工具判定"。其中"词数<2000 扣 30"这类字数规则与 Google 的说明相反，**不要照搬**；"publishing_ready≥80"之类的线只对该工具有意义。
+
 **seomachine 质量评分器**:六维权重 content 0.20/keywords 0.25/meta 0.15/structure 0.15/links 0.15/readability 0.10;**publishing_ready=总分≥80 且 0 个 critical**;扣分制:词数<2000 扣 30/标题缺关键词扣 20/前 100 词缺扣 15/密度>max×1.5 判 stuffing 扣 20/meta title 缺失扣 40/多 H1 扣 20/**>20% 句子超 37.5 词扣 10**/全文零列表扣 5。
 **首屏 700 字符"5 秒测试"**(above_fold_analyzer):四元素加权 headline 0.35/value_prop 0.25/cta 0.25/trust 0.15,≥70 过;弱标题正则黑名单(`^Welcome to`/`^The (best|ultimate)`/`^Introducing`/`^We (help|offer)`)各扣 30;CTA 首现 <300 字符 +20;标题健康区 20-80 字符。
 **信任信号计分**(trust_signal_analyzer):证言≤35(≥3 条 25 分+具体数字署名再+10)/社会证明≤30/风险反转≤25(**4 类中 3 类=strong 拿满**:free trial/no credit card/cancel anytime/guarantee)/权威≤10。
@@ -82,7 +99,7 @@
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-21。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/on-page-seo-auditor/references/scoring-rubric.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/on-page-seo-auditor/references/scoring-rubric.md)（Apache-2.0）
 - 一手资料：[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)、[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[标题链接](https://developers.google.com/search/docs/appearance/title-link)、[摘要与 meta description](https://developers.google.com/search/docs/appearance/snippet)、[可抓取链接与锚文本](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[Core Web Vitals 与 Google 搜索](https://developers.google.com/search/docs/appearance/core-web-vitals)、[优化 LCP](https://web.dev/articles/optimize-lcp)、[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)

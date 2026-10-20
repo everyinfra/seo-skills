@@ -11,7 +11,7 @@
 | 你站点的查询与页面表现 | 知道自己已经覆盖什么、表现如何 | Search Console 效果报告导出，需要你自己的账号 |
 | 站内内容清单 | 知道有哪些页面、各自对准什么 | 爬虫工具导出或站点地图，逐页标主题和意图 |
 | 搜索竞争对手的查询概况 | 找对方覆盖而你没有的查询 | 商业 SEO 工具导出（例如 Ahrefs、Semrush，需要你自己的账号）；数据为估算值，只作相对比较 |
-| 目标查询的 SERP 快照 | 判断意图、形式和 SERP 功能 | 你自有或自选的数据源，记录日期、地域、设备 |
+| 目标查询的 SERP 快照 | 判断意图、形式和 SERP 功能 | 你自有或自选的数据源，记录日期、地域、设备；供给缺口的取数和分类见下文「SERP 供给缺口检查」 |
 
 **竞争对手按 SERP 选**：在你的目标查询上反复出现的站点，才是搜索意义上的对手，可能是媒体、社区或工具站，不一定是业务竞品。
 
@@ -22,6 +22,90 @@
 3. **形式缺口**：SERP 前列要的是工具、模板、对比表、视频或步骤教程，你只有一篇文字文章。判断依据是 SERP 本身，不是对手各类内容的数量。
 4. **漏斗缺口**：按认知、考虑、决策、使用几个阶段盘点页面，找出空缺的阶段；再用 GA4（需要你自己的账号）看各阶段页面之后用户去了哪里，找到在哪里流失。流失阈值按站点自己的历史数据定。阶段划分见 [keyword-intent-taxonomy.md](keyword-intent-taxonomy.md)。
 5. **SERP 功能缺口**：目标查询上出现的视频、图片、精选摘要、购物或本地结果，你是否具备资格。只把 Google 当前仍在展示的功能算作缺口；FAQ 和 HowTo 富结果已停止展示，不计入。各功能的条件见 [serp-feature-taxonomy.md](serp-feature-taxonomy.md)。
+
+## SERP 供给缺口检查（可执行）
+
+用途：判断一批候选（平台、能力、工具、主题页）里，哪些在搜索结果上**没有人在专门满足**。它回答「值不值得建页」，不回答「有多少人搜」。适用于任务型查询（要调用、要转换、要计算、要抓取）。评测、口碑、「值不值得买」类查询上，论坛占位是意图本身，不算缺口，见 [keyword-intent-taxonomy.md](keyword-intent-taxonomy.md) 的 Discussions and forums 一节。
+
+### 步骤
+
+| 步 | 做什么 | 具体写法 |
+|---|---|---|
+| 1 候选来源 | 列出候选，再减去已覆盖的 | 来源可选：同类产品的公开目录和分类页、竞争对手站点地图、客服或销售的原话、站内搜索无结果的词、自家 GSC / Bing Webmaster 里已出现但没有专页的查询。减去自家站点地图里已有的页面。写成 `candidates.csv`：`candidate,source,covered`。虚构例子：目录里有 FooVideo、BarShop、BazJobs，自家已上线 BarShop，则候选 = FooVideo、BazJobs |
+| 2 每个候选查什么 | 每个候选查 1–2 条查询 | 英文 `<候选> api`；需要时加 `<候选> scraper`。目标市场不是英语时，加该语言的同义词，并设对应的语言和地区参数（例如 `hl=zh-cn`、`gl=cn`）。同一候选的两条查询用同一引擎、同一地区 |
+| 3 记录每次取数 | 每次取 SERP 都记下引擎、时间、地区 | 字段：`engine`（引擎或接口名）、`fetched_at`（ISO 时间和时区）、`gl`、`hl`、`device`、`degraded`（是否从主引擎降级到备用引擎）。任一字段缺失，这批 SERP 不进结论 |
+| 4 前 10 条逐条分类 | 每条 URL 归入下表七类之一 | 只看前 10 条自然结果，广告和 SERP 功能块不计。分类规则见下表 |
+| 5 算供给分 | 供给分 = vendor 条数 + marketplace 条数（0–10） | 用下面的脚本算，输入是第 4 步的分类表 |
+| 6 判缺口 | 供给分 ≤ 2，且 official 不能直接满足 | official 能否满足要读它的官方文档确认：有没有公开 API，公开 API 给不给你要的这类数据。记文档 URL 和阅读日期 |
+| 7 需求代理，只排序 | 缺口候选之间排先后用 | 搜索框联想词条数、相关搜索里含 `api` / `接口` / `scraper` 的条数、自家 GSC 和 Bing 里该候选相关查询的展示。这些是代理指标，不是搜索量，不跨来源相加，不写进「月搜索量」列 |
+
+### 七类分类规则
+
+| 类别 | 判定 | 例子（虚构） |
+|---|---|---|
+| official | 候选平台自己的开发者文档或开放平台 | `dev.foovideo.example/docs` |
+| vendor | 第三方 API、爬虫或数据服务的产品页，页面主体是「调用 / 购买」 | `scrapers.example/foovideo-api` |
+| marketplace | API 或爬虫的市场、商店里的商品页 | `market.example/apis/foovideo` |
+| code | 代码托管和包仓库：GitHub、PyPI、npm 等 | `github.com/x/foovideo-client` |
+| forum | 论坛、问答、讨论串 | `forum.example/t/123` |
+| article | 博客、清单文、新闻、教程文章 | `blog.example/foovideo-data` |
+| unrelated | 与该候选的 API 任务无关（同名歧义、泛词结果） | 另一家同名公司的官网 |
+
+拿不准的 URL 打开读首屏再分，不凭域名猜。unrelated 达到 5 条以上，说明查询有歧义，换更具体的查询重查，不直接下结论。
+
+### 供给分和缺口判据（本套件口径）
+
+- 「供给分 ≤ 2」是本套件的起始阈值，没有外部校准。第一批候选跑完后，看供给分的分布，必要时按分布调整，并把调整理由写进报告。
+- article 多而 vendor 少，说明有人在教怎么自己做。这是需求旁证，不算供给。
+- code 条数不计入供给分；单列一列，作为「开源方案已有」的提示。
+- 得分为 `check-official` 的候选，必须读完官方文档再判，不能默认算缺口。
+
+### 可信度
+
+- 每条 SERP 的可信度由取数方式决定：主引擎、地区和时间齐全 = 高；地区或设备缺一项 = 中；`degraded=yes`（搜索接口自动降到备用引擎）= 降一级；两项以上缺失或降级且缺字段 = 低。
+- 低可信度的结果不单独支撑「缺口」结论：换主引擎重查，或人工在无痕窗口复查前 10 条。
+- 结论里写明「第 N 位（第 1 页）」，不写「排名第一」；决定头号结论的那一条查询，成稿前重跑一次，两次不一致写后者并在括号里记前值。
+
+### 计算脚本
+
+本套件没有现成的取 SERP 脚本，取数用你自己的来源（无痕窗口手查、排名追踪工具导出、有授权的 SERP 接口服务）。不要自己写脚本批量请求 Google 结果页：Google 垃圾政策把「为查排名而抓取结果」列为违规的自动查询（[Machine-generated traffic](https://developers.google.com/search/docs/essentials/spam-policies#machine-generated-traffic)）。分类表保存为 `serp_rows.csv`，列：`candidate,query,rank,url,class,engine,fetched_at,gl,hl,degraded`。
+
+```python
+import csv, sys
+from collections import defaultdict
+rows = list(csv.DictReader(open(sys.argv[1], encoding="utf-8-sig")))
+by = defaultdict(list)                     # (candidate, query) -> 前 10 条
+for r in rows:
+    if int(r["rank"]) <= 10:
+        by[(r["candidate"], r["query"])].append(r)
+cands = defaultdict(list)
+for (cand, _q), rs in by.items():
+    cands[cand].append(rs)
+print("candidate,supply,official,unrelated,degraded,flag")
+for cand, serps in cands.items():
+    n = lambda rs, k: sum(1 for r in rs if r["class"] == k)
+    supply = max(n(rs, "vendor") + n(rs, "marketplace") for rs in serps)   # 多条查询取最高，避免假缺口
+    official = max(n(rs, "official") for rs in serps)
+    unrelated = max(n(rs, "unrelated") for rs in serps)
+    degraded = any(r["degraded"] == "yes" for rs in serps for r in rs)
+    flag = "gap" if supply <= 2 and official == 0 else ("check-official" if supply <= 2 else "no")
+    flag += " (low-confidence)" if degraded else ""
+    print(f"{cand},{supply},{official},{unrelated},{'yes' if degraded else 'no'},{flag}")
+```
+
+运行：`python3 gap_score.py serp_rows.csv`。同一候选有两条查询时，脚本按查询分别数前 10 条，取供给分最高的一条（宁可漏掉缺口，不制造假缺口）。
+
+两个现有脚本可以配合：`python3 scripts/serp_occupancy.py --market tr "域名1,域名2,…"` 统计某市场 SERP 上论坛、比价、投诉站的占位数（市场码见 `scripts/markets.json`）；`python3 scripts/serp_overlap.py input.csv` 判断两条查询的前 10 条是否重合到应当合并成一页。
+
+### 通过 / 失败
+
+| 检查 | 通过 | 失败 |
+|---|---|---|
+| 每条 SERP 都有引擎、时间、地区 | 全部齐全 | 缺项的 SERP 不进结论 |
+| 前 10 条全部分类，无空白 | 每候选 10 行（结果不足 10 条时按实际条数） | 有未分类行 |
+| 缺口候选已读官方文档 | 记了文档 URL 和日期 | 只凭供给分下结论 |
+| 低可信度候选 | 已换引擎或人工复查 | 直接列为缺口 |
+| 需求代理只用于排序 | 报告里没有「月搜索量」字样引用代理指标 | 把联想词条数当搜索量 |
 
 ## 先过滤，再排序
 
@@ -60,6 +144,16 @@
 
 汇总可用 [content-gap-output.md](../../templates/research/content-gap-output.md)。多个缺口属于同一主题时，合并成一个主题集群来排期，不要逐条各写一篇。
 
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 缺口不是已有页面的蚕食 | 导出 GSC「查询 × 页面」，运行 `python3 scripts/gsc_mining.py matrix.csv --mode matrix`，看同一查询是否已有 ≥2 个页面 | 新建前已排除蚕食；有蚕食的先合并，不新建 |
+| 竞争对手按 SERP 选 | 把目标查询前 10 条的 URL 存成列表，`cut -d/ -f3 urls.txt \| sort \| uniq -c \| sort -rn \| head`，反复出现的域才是搜索对手 | 对手名单来自 SERP 频次，不来自业务直觉 |
+| 每条缺口有证据和日期 | 交付物「证据」列含数据来源、导出日期、查询或 URL | 缺日期或来源：退回补齐 |
+| 打分的权重调整有理由 | 默认 1–3 分等权；改权重时在交付物里写原因 | 无理由改权重：失败 |
+| 供给缺口按上节检查 | 跑「SERP 供给缺口检查」的 7 步和通过表 | 通过表全绿才进排期 |
+
 ## 上线后验证
 
 依次确认：页面已被编入索引，开始获得目标查询的展示，排名和点击的走势，是否带来了下一步动作。复查时间点按站点自己以往新页面的表现节奏来定，不套固定周数。
@@ -73,6 +167,8 @@
 - 把已停止展示的富结果当作要补的缺口。
 
 ## open-seo 缺口工作流深读(open-seo+Ryze 深读,2026-10-09)
+
+> 本节和下一节是来源仓（open-seo、Ryze）的工作流与护栏，2026-10-21 抽查了 open-seo 的 `competitive-landscape`、`seo-audit` 两份 SKILL.md，条目与原文一致。其中的数字（查询集 <10 称 directional、候选 5–10 条、品牌词自然捕获率 50–70% 等）是来源仓的约定，没有外部校准，按「本套件口径」使用。
 
 **市场面 vs 单对手两条线**:多个对手的市场级读法用 competitive-landscape(5-10 条混合意图代表查询→SERP 反复出现的域分组:直品竞品/出版媒体/市场目录/社区论坛/文档资源,**标注域类型,出版者≠产品竞品**→最强 3-5 个域拉概况→缺口表带"谁目前拥有该主题"+少数主题承载大部分需求时配条形图);单对手深钻用 competitor-analysis,其关键词主题六分组可直接当缺口骨架:**产品/品类词、alternatives/comparisons、模板/工具/计算器、教育指南、品牌需求、本地词**;漏洞按"可赢性"排序输出。查询集小(<10)时结论必须自称 directional。
 

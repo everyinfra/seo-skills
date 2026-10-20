@@ -1,261 +1,109 @@
 # 视频 SEO/GEO(被 AI 引用的视频层)
 
-> 建立于 2026-10-09。来源:Google/YouTube/Gemini 官方文档为基准;引用占比各家研究差异大(4.4%–29.5%),引用时必须注明样本;标注来源类型(官方/行业/社区)。
+> 建立于 2026-10-09;2026-10-21 逐条重新核对:Google、YouTube、Gemini API、Spotify 官方文档逐句读过;第三方研究标注来源、样本和时间。YouTube 站内算法、变现和各平台排序的数字没有一手来源,已删除(见文末)。「本套件口径」是做法约定,不是平台规则。
 
-## 一、AI 怎么"读"视频(机制)
+## 一、AI 怎么用视频
 
-- **Gemini/AIO「进片内」引用**:指向视频内具体时间戳而非整片;ChatGPT 在视频之间挑选、以整片为单位(行业,BrightEdge)。
-- **双通道**:Gemini 直接吃视频 URL 时默认采样 1 FPS 关键帧+音频转写;给 YouTube URL 时按付费层取帧/transcript(官方 API 文档)——**关键帧视觉+transcript 文本是两条被引通道**。
-- **ChatGPT 读附着在视频上的"词"**(transcript/标题/描述)而非像素(行业/社区,与 youtube-transcript-api 实践一致)。
-- **决定性事实:播放量不是被引门槛,文本可及性才是**——被引视频 41% 播放量不足 1,000,被引与高播放量仅 52% 相关(Gumshoe,行业)。
-- **API 可及性(官方)**:captions.download 仅视频所有者可取;第三方视频拿不到官方 transcript——**主动上传的人工校对字幕是唯一可控文本层**。
+**官方机制**
 
-## 二、YouTube SEO 要素
+- **Gemini API 读视频**:默认静态处理,以 1 FPS 抽帧,并取音频;可以把公开的 YouTube URL 直接传给 Gemini API(预览功能);只能上传公开视频,不能上传私有或不公开视频([Gemini API 视频理解](https://ai.google.dev/gemini-api/docs/video-understanding),核对 2026-10-21)。含义:帧画面和音频转写是两条信息通道。
+- **官方 transcript 取不到别人的视频**:YouTube Data API 的 `captions.download` 要求调用者有编辑该视频的权限([文档](https://developers.google.com/youtube/v3/docs/captions/download))。主动上传并校对过的字幕,是你唯一能控制的文本层。
 
-**官方可见性层**:watch page 可索引;缩略图稳定 URL(≥60×30px);Googlebot 可取视频真实字节(勿 robots 屏蔽 CDN/M3U8);title/description/thumb 各来源一致;视频 sitemap(单文件≤5 万条)加速发现;VideoObject 必须;**Key Moments 两法**——`Clip` 标记(全语言)或 `SeekToAction`(部分语言),YouTube 描述内时间戳亦可。
+**第三方研究(带样本;引用时必须写样本和时间)**
 
-**算法层(行业,无官方确认)**:CTR(诊断线 ~4%)、前 30 秒留存(目标 80%+)、观看时长。章节(描述时间戳)同时服务站内导航、key moments 与 AI 定位引用。
-
-### 视频 sitemap vs 站内标记对照(2026-10,官方文档口径)
-
-| 维度 | 视频 sitemap(XML) | VideoObject 站内标记(JSON-LD) |
+| 研究 | 样本与时间 | 结论 |
 |---|---|---|
-| 核心职能 | **发现**:让 Google 找到视频页(JS 加载/深层页面收益最大) | **理解**:单视频元数据(标题/时长/缩略图/upload date/contentUrl) |
-| 富结果 | 不直接触发 | VideoObject 是富结果+Key Moments 的必要条件 |
-| 官方等价关系 | `<video:player_loc>` ≡ `VideoObject.contentUrl`;`<video:thumbnail_loc>` ≡ `thumbnailUrl`(官方文档明确"equivalent") | 同左 |
-| 两者都要吗 | Google 官方推荐 sitemap 作**第二信号**加速发现(行业转述官方建议);标记管细节+sitemap 管覆盖=最大索引面 | 用 sitemap 的标签可省页面上的对应字段,反之亦然——**同一信息别指望双份加权,等价即不叠加** |
-| 典型故障 | 空壳 sitemap(页在但视频 JS 后加载且无标记)→Google 索引页面但不知"有视频" | 标记指向 Googlebot 取不到的 M3U8/CDN(被 robots 拦)→"视频无法索引" |
-| 优先级 | 自建 watch page 站必做(≤5 万条/文件) | 所有路径必做(含 YouTube 嵌入页) |
+| BrightEdge([链接](https://www.brightedge.com/resources/weekly-ai-search-insights/youtube-presence-ai-search)) | AI Catalyst 数据,2024-05 至 2025-09 | YouTube 在各 AI 平台平均占 20% 引用份额;在 Google AI 概览里 29.5%、排第 1 的域名;AI Mode 16.6%;Perplexity 9.7%;ChatGPT 0.2% |
+| OtterlyAI([链接](https://otterly.ai/blog/youtube-ai-citation-study-2026/)) | 超过 1 亿次 AI 引用,30 天,2026 年发表 | 94% 的 YouTube 引用指向长视频;播放、点赞、订阅数与引用频率几乎不相关(r ≈ −0.03);40.83% 的被引视频播放量不足 1,000;带时间戳的引用只出现在 Google AI 概览(73%)和 AI Mode(27%) |
 
-**决策口诀**:只有 YouTube 嵌入→只做 VideoObject(embedUrl 版);自托管视频→sitemap+VideoObject(contentUrl 版)双做;视频在 JS 弹层/无限滚动里→sitemap 是唯一可靠发现通道(官方 image/video sitemap 场景描述)。
+- 两项都是厂商研究,方法细节以原文为准。含义:不要用播放量判断一条视频能不能被 AI 引用;文本可及性(字幕、章节、描述、页面)更值得先做。
+- 「ChatGPT 只读视频附着的文字、不读像素」没有一手来源,已删除。
 
-**视频 sitemap 验收命令(自托管视频站巡检)**:
+## 二、Google 视频索引与富结果要求(官方)
+
+出处:[视频 SEO 最佳做法](https://developers.google.com/search/docs/appearance/video)(2025-12-18 更新)、[VideoObject 结构化数据](https://developers.google.com/search/docs/appearance/structured-data/video)(2026-09-24 更新)、[视频 sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/video-sitemaps)(2026-05-20 更新)。
+
+- **索引条件**:watch page 必须被索引,且在搜索里表现良好,其视频才可能被考虑索引;视频必须嵌在 watch page 上且不被其他元素遮挡;有付费墙时要加付费内容结构化数据;缩略图必须有效且 URL 稳定。
+- **缩略图**:至少 60×30 像素,越大越好。CDN 的过期 URL 会让视频无法索引。
+- **文件类型**:Google 能处理 3GP、3G2、ASF、AVI、DivX、M2V、M3U、M3U8、M4V、MKV、MOV、MP4、MPEG、OGV、QVT、RAM、RM、VOB、WebM、WMV、XAP;不支持 data URL。要进入 key moments、视频预览,视频文件也要有稳定 URL。
+- **元数据**:Google 支持结构化数据、视频 sitemap 和 Open Graph。为每个视频建独立 watch page(只有一个视频是页面主旨)。
+- **Key moments 两种做法**:`Clip` 结构化数据(精确起止时间和标签,所有 Google 搜索支持的语言);`SeekToAction`(告诉 Google 时间戳在 URL 里怎么写,仅限英、西、葡、意、中、法、日、德、土、韩、荷、俄语);YouTube 托管的视频,在 YouTube 描述里写时间戳。你设定的 key moments 优先于 Google 自动识别的。
+- **视频 sitemap**:sitemap 里引用的所有 URL 必须允许 Googlebot 抓取(不被 robots.txt 禁止、不需要登录、不被防火墙拦);不要列与宿主页内容无关的视频;`<video:content_loc>` 等价于 `VideoObject.contentUrl`,`<video:player_loc>` 用于 YouTube、Vimeo 等 iframe 嵌入,对应 `embedUrl`(官方 sitemap 文档标明等价关系);官方推荐优先提供 `content_loc`;单个 sitemap 文件最多 50,000 个 URL(通用 sitemap 限制)。同一信息写在 sitemap 里或结构化数据里都行,不会因为写两份而叠加权重(本套件口径)。
+- **地域限制**:用 `<video:restriction>`(sitemap)或 `regionsAllowed`(结构化数据)。没有国家限制的视频不要写,误写会让视频在其他地区消失。
+- **决策口诀(本套件口径)**:只嵌 YouTube → 做 VideoObject(`embedUrl`);自托管视频 → VideoObject(`contentUrl`)加视频 sitemap;视频在 JS 弹层或无限滚动里 → sitemap 是更可靠的发现通道。
+
+**视频 sitemap 验收命令(自托管视频站)**
 
 ```bash
 # 1) 条目数(单文件 ≤50,000)
 curl -s https://example.com/video-sitemap.xml | grep -c '<url>'
-# 2) 必填四件套抽查:thumbnail/title/description(或 player_loc/contentUrl)
-curl -s https://example.com/video-sitemap.xml | grep -c -e 'video:thumbnail_loc' -e 'video:title' -e 'video:description'
-# 3) 视频字节真实可取(M3U8/MP4 直链不被 robots/WAF 拦)
+# 2) 缩略图、标题、描述标签数应与视频条数一致
+for t in video:thumbnail_loc video:title video:description; do curl -s https://example.com/video-sitemap.xml | grep -c "<$t>"; done
+# 3) 视频文件能被 Googlebot UA 取到前 1KB(不被 robots/WAF 拦)
 curl -s -A "Googlebot" -o /dev/null -w "%{http_code} %{content_type}\n" -r 0-1024 "https://cdn.example.com/v/123.mp4"
-# 4) 页面上的 VideoObject 与 sitemap 不冲突(contentUrl 一致)
+# 4) 页面 VideoObject 的 contentUrl 与 sitemap 一致
 curl -s https://example.com/watch/123 | grep -o '"contentUrl":\s*"[^"]*"'
-# 5) regionsAllowed 误伤排查(不该出现在全球内容上)
+# 5) 全球内容上不应出现国家限制
 curl -s https://example.com/video-sitemap.xml | grep -c 'video:restriction'
 ```
 
-(GSC 侧:「索引>页面」+ video 页报告;官方 Video 页报告 2023 年并入 Sitemaps/Enhancements 视频报告,看 "Video pages crawled" 覆盖趋势而非绝对值。)
+## 三、视频 GEO 实操清单
 
-## 三、视频 GEO 实操清单(8 项)
+1. 上传人工校对的字幕(本套件口径;官方 transcript 拿不到别人的,见第一节)。
+2. 章节:YouTube 描述里写时间戳,自托管页面用 `Clip` 标记。
+3. 描述前几行写事实句和可引用的结论;标题带目标查询词(本套件口径)。
+4. 自建 watch page:VideoObject、`contentUrl` 可抓取、视频 sitemap。
+5. 口播里自然说出关键词,屏幕文字开头出现关键词(本套件口径;平台对口播和屏幕文字的索引没有一手文档)。
+6. **多语言音轨**:YouTube 的 Multi-language audio 让一个视频(含 Shorts)带多条音轨,长视频还可上传各语言缩略图;官方帮助页说,视频有翻译后的标题和描述后,搜索系统会按这些翻译文本匹配用户语言;该功能面向有「Advanced features」权限的创作者([YouTube 帮助](https://support.google.com/youtube/answer/13338784))。单频道多音轨与分语言频道哪个更好,没有官方结论。
+7. **hreflang**:Google 的视频文档里没有视频专用的 hreflang 说明(本组读到的版本),视频集合页沿用页面级 hreflang。YouTube 托管的视频无法加 hreflang;自建 watch page 每种语言一个 URL 并各自带本地化的 VideoObject(本套件口径)。
+8. 监测:用 `citation_panel.py record`(口径见 [kpi-definitions.md](../monitoring/kpi-definitions.md))对目标问题定期采样,看自己的视频是否被 AI 面引用;引用不等于播放。
 
-1. 上传人工校对字幕(transcript 质量直接决定 AI 摘要与引用)。
-2. 章节化:描述时间戳+描述性章节名(帮 Gemini 定位"片内某点")。
-3. 描述前几行写事实句/可引用定义(数字、结论);标题带目标查询词。
-4. 自建 watch page+VideoObject+contentUrl 可爬+视频 sitemap(进 Google 视频索引才可能进 AIO)。
-5. `Clip`/`SeekToAction` 显式标 key moments。
-6. 口播自然说关键词(ASR 是 YouTube/TikTok/抖音共同索引层);屏幕文字开头叠关键词(OCR 层)。
-7. 多市场用 **MLA 多音轨**(官方:单视频多配音+每语言独立标题/描述/缩略图)而非只靠英文字幕;MLA 单频道 vs 分语言频道无定论(行业争议,标注)。
-8. 监测:Gumshoe/SE Ranking 类工具查自己视频是否被 AIO 引用;引用≠播放,与品牌监测互补。
+**短视频平台(TikTok、Reels、Shorts)**:这三个平台站内搜索的索引规则没有找到一手文档,不给平台专属数字。通用做法(本套件口径):标题或 caption、口播、屏幕文字围绕同一个问题,各层说法一致。
 
-### 三点五、TikTok·Reels·Shorts 三平台"可索引文本层"清单(2026-10)
+**转录**:开源 OpenAI Whisper 起草,人工校对数字、专名、术语,再上传为字幕,并把全文放进自建 watch page(本套件口径)。
 
-三个短视频平台的站内搜索都在索引"附着在视频上的文字",但入口与权重不同:
+## 四、市场差异
 
-| 文本层 | TikTok | Instagram Reels | YouTube Shorts |
-|---|---|---|---|
-| **caption/标题** | **关键词放 caption 开头**,写 2–3 个自然句(勿堆砌;Toptal 2026 指南)——caption 即标题层 | **caption 当标题用**(写满前 125 字符,搜索取前段);**Reels 是三者中唯一可写 alt text 的**(发布页高级设置) | 标题 ~40 字符截断,**4–6 词甜点**;描述前 125 字符承重(套件已录) |
-| **口播(ASR)** | TikTok 自动转写音频——**目标关键词要口头说出**(Reflect Digital/Stan Store 实操共识) | Reels 音频转写索引(平台功能,权重低于 TikTok) | YouTube ASR 索引+自动字幕生态最成熟 |
-| **屏幕文字(OCR)** | 屏幕字/贴纸文字被读(Toptal:关键词进 on-screen text) | 屏幕字索引(行业实测) | 屏幕字+标题首帧出关键词(套件 OCR 层口径) |
-| **hashtag** | 3–5 个混合长尾+趋势词(Toptal;>15 被忽略同 YT) | 3–5 个;话题页是 Reels 主要分发轴 | 3–5 个,#Shorts 已不必要 |
-| **参与信号(排序)** | 完播/重看/保存为搜索排名重信号(Toptal 2026) | 保存/分享主导 | Viewed vs Swiped Away(套件 Shorts 节已录) |
-| **站外索引** | TikTok 页面可被 Google 索引(caption+转写是索引面) | Reels 独立 URL 可索引但权重弱 | **Shorts 进 YouTube 搜索+Google 移动结果**——三者中唯一稳定双索引 |
+- **韩国**:Naver TV 于 2026-09-30 15:00 关停,内容迁移到 Clip([Herald 2026-07-31](https://mbiz.heraldcorp.com/article/10826754)、[Chosun 2026-07-30](https://biz.chosun.com/en/en-it/2026/07/30/W7NSHITITFC5JCYJPQRYHVREQY/),第三方新闻)。
+- 其他市场的用户数、平台份额旧版有数字,没有找到一手来源,已删除;做客户方案前按目标市场查最新的统计机构或平台数据。
+- 地域控制见第二节(`regionsAllowed`)。
 
-**通用铁律**:同一关键词**四个文本层(caption/口播/屏幕字/hashtag)至少覆盖三层**——平台搜索对多信号一致性内容给更高排序(三平台实操共识,标注)。
+## 五、播客(发现机制与转录层)
 
-### 三点六、视频转录服务与工具(2026-10 盘点)
+- **Spotify(官方)**:Spotify for Creators 文章称,Spotify 现在为每个符合条件的单集自动生成 transcript、章节、嘉宾和主题标签;transcript 给 Spotify 的系统提供单集的全文版本用于索引,让内容可以在主题和关键词层被发现([Spotify for Creators](https://creators.spotify.com/resources/podcast-seo))。
+- **Apple Podcasts**:2024-03 起提供 transcripts([Apple Newsroom 2024-03-05](https://www.apple.com/newsroom/2024/03/apple-introduces-transcripts-for-apple-podcasts/)、[Apple 帮助](https://podcasters.apple.com/support/5316-transcripts-on-apple-podcasts))。transcript 是否进 Apple 站内搜索,本组没有找到一手说法(未核)。
+- **本套件口径的做法**:
+  1. 每集有 transcript;自建 episode 页放全文(Google 搜索流量主要靠页面文字,不靠音频文件)。
+  2. episode 标题写搜索意图,节目名写品牌。
+  3. RSS 填完整的 iTunes 标签;节目名称和描述在各平台一致。
+  4. 章节化 show notes(时间戳加要点)。
+  5. 视频化复用(YouTube 或 Shorts 切片)。
+- 旧版引用的「加 transcript 后站内入站流量 +4.36%」(3Play Media 自述)和「PodcastEpisode 富结果 2023 年弃用」没有找到一手来源,已删除。
 
-**为什么值得花钱**:captions.download 仅所有者可取(官方,套件已录)→第三方视频拿不到官方 transcript;**人工校对字幕是唯一可控文本层**(决定 AI 摘要质量与引用)。
+## 六、YouTube 站内算法:证据边界
 
-| 类别 | 代表 | 适用 |
+YouTube 站内分发(CTR 基准、留存阈值、Shorts 信号层级、RPM、会员与联盟门槛、A/B 测试细节)的旧版数字大多来自第三方仓库和单一厂商博客,没有 YouTube 官方文档支持,已全部删除。处理客户的 YouTube 频道时:
+
+- 用该频道自己的 YouTube Studio 数据,不套行业基准。
+- 找「包装吃到流量」的假设:导出频道视频清单 CSV(列 `title,duration_s,views[,is_short][,channel]`),跑 `python3 scripts/yt_outlier.py videos.csv`。它按频道和形态(≤60 秒算 Short)分组,播放量超过组均值 2 倍的视频列为离群(本套件口径)。离群只是假设来源,不是结论。
+- 变现、政策和披露要求以 YouTube 帮助中心和 FTC 原文为准,本套件不转述数字。
+
+## 七、检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
-| **开源自托管** | **OpenAI Whisper**(衍生工具生态最广:WhisperTranscribe 等) | 批量/隐私敏感/零边际成本;需校对(专有名词错误率仍可观) |
-| **API 商用** | Deepgram/AssemblyAI/Rev AI/Google STT(Mixpeek 2026 对比) | 生产管线集成;按分钟计费;多语言覆盖是选型主轴 |
-| **人工/混合服务** | **GoTranscript**(Wirecutter 2026 最佳+PCMag Editors' Choice,"AI 辅助+人工"混合最准)/Otter(自动+免费层慷慨) | 少量高价值视频的终稿;播客/访谈类 |
-| **平台内建** | YouTube Studio 字幕编辑器(手动 SRT 索引优于自动,套件已录) | YouTube 主战场零成本路径 |
-
-**管线建议(成本阶梯)**:Whisper 起草→人工抽校关键段(数字/专名/术语)→SRT 上传 YouTube+全文 transcript 页(自建 watch page 的可索引文本)——**同一份 transcript 三用:字幕/页面正文/播客 show notes**,边际成本最低。
-
-## 四、市场差异:视频平台格局
-
-| 市场 | 格局(2026) | 要点 |
-|---|---|---|
-| 日本 | YouTube 7,850 万用户居首;niconico 边缘化 | AIO 引用榜 YouTube 第 1(套件已录) |
-| 韩国 | YouTube 4,813 万、媒体用时 44%;**Naver TV 已于 2026-09-30 关停** | 韩国视频只剩 YouTube 一极 |
-| 俄罗斯 | YouTube 降至 6,590 万;**VK Video 与 RuTube 日活已反超** | 俄语视频 GEO 要双投(套件俄语区指南呼应) |
-| 中国 | 抖音(标题前 10 字权重最高,社区口径)+B站(关键词+互动+账号权重) | 见中文指南四因子 |
-| 全球 | TikTok 关键词三入口:caption/屏幕字(OCR)/口播(ASR);Reels 的 caption 当标题+alt text 可写 | TikTok 自有搜索是 Gen Z 主发现渠道 |
-
-## 五、本地化注意
-
-Google **无视频专有 hreflang 指引**(官方确认的缺口):视频集合页沿用页面级 hreflang;视频地域控制用 `regionsAllowed`/`<video:restriction>`(官方)。
-
-### 五点五、多语言视频实操:hreflang×MLA 的三条路径(2026-10 核实)
-
-- **路径 A:MLA 多音轨(单视频多语言)**——官方(Help 13338784)支持视频+Shorts;**已开放所有创作者自行添加多语言音轨**(Slator 报道,原仅官方邀请);入口在 Studio「Subtitles」区 Add Language,可配**每语言独立标题/描述/缩略图**;社区实践还可按国家定制缩略图(Reddit r/PartneredYoutube 创作者实录)——**SEO 含义:一份观看数据聚合多语言,算法信号集中;但 Google 搜索侧每个语言变体是否独立进索引无官方口径(缺口,标注)**;
-- **路径 B:分语言频道**——信号隔离、可按市场独立运营,但观看量摊薄+订阅分散;MLA vs 分频道**行业至今无定论**(DittoDub/Linguana 两派各执一词,标注争议)——按"市场重要性"决策:核心市场分频道、长尾市场用 MLA;
-- **路径 C:dubbing 工具链**——Rask AI(130+ 语言)/DittoDub/Maestra 类自动配音+音色克隆,进 MLA 或分频道两条路都通;**成本-质量权衡:AI 配音留存 −70% 的口径(套件已录)适用于"无人出镜纯 AI 配音"内容,真人配音+AI 辅助翻译不受此限(区分标注)**;
-- **hreflang 层的落地**:自建 watch page 每语言一个 URL(`<link rel="alternate" hreflang>` 互指)+**每语言独立 VideoObject**(名称/描述本地化,勿机翻堆砌);YouTube 托管侧无法加 hreflang——这是自建 watch page 相对 YouTube 的少数量化优势之一;
-- **字幕 vs 音轨的分工**:字幕(含 YouTube 自动字幕)服务"同语言可读性+AI 转写源";音轨(MLA)服务"跨语言触达+算法信号集中"——两者叠加而非二选一。
-
-## 五点八、Podcast SEO(播客的发现机制与转录层,2026-10 补缺口)
-
-**核心事实:两大平台都索引"附着在音频上的文字"**——与短视频同构,播客的可索引层=标题/描述/show notes/章节/**transcript**:
-
-- **Spotify(官方口径,一手)**:Spotify for Creators 官方指南《Words matter: How to get your podcast SEO right》明确——**"Transcripts give Spotify's systems a full-text version of your episode to index"**,使单集在 topic/keyword 层可被发现;即 Spotify 站内搜索吃全文转录;
-- **Apple Podcasts**:**已索引 transcripts 进搜索**(2026 社区实测+案例商 Ausha 口径);Apple 侧另有自己的转录规范(apple-podcast-transcript 标签在 RSS 内可指 transcript 文件);
-- **量化案例**:3Play Media 自案例——加 transcript 后站内入站流量 **+4.36%**(自述口径,量级参考:播客 SEO 是低基数高确定性优化);
-- **平台算法要点(Ausha 算法拆解,行业)**:订阅数/完听率/关注转化是排序主轴;标题含搜索词+描述前几行承重(与短视频同构);**节目级 consistency(题材簇连贯)比单集爆款更能累积搜索可见性**。
-
-**播客 SEO 实操清单(与视频层共用管线)**:
-
-1. **每集 transcript**(Whisper 起草+抽校,见三点六)→三用:平台转录层/自建 episode 页正文/show notes;
-2. **episode 标题=搜索意图词**(非机灵标题):"如何 X"式>第 42 期碎碎念;节目名与集名分工(节目名=品牌,集名=关键词);
-3. **自建 episode 页**(音频+transcript 全文+AudioObject schema?注意:**Google 已于 2023 弃用 PodcastEpisode 富结果**,AudioObject 现行)——**播客的 Google 流量主要来自 transcript 全文页,不是音频本身**;
-4. **RSS 层完善**:完整 iTunes 标签(author/category/episode type/duration);transcript 标签(Apple)指到自建页 transcript 文件;
-5. **章节化 show notes**(时间戳+要点)——Apple/Spotify 播放器内章节+页面锚文本双收益;
-6. **视频化复用**(YouTube upload 或 Shorts 切片)——播客是长视频内容金矿,双索引面(套件 repurposing 节同向);
-7. **跨平台一致**:节目在 Apple/Spotify/YouTube Podcasts 三处的名称/描述一致——品牌实体识别的输入;
-8. **监测**:Apple Podcasts Analytics/Spotify for Creators 的搜索词数据(平台各自提供,Spotify 侧较全)+ 自建 transcript 页的 GSC 数据。
-
-## YouTube 算法与 CTR 硬基准(claude-youtube 精读,百仓深扫)
-
-- **CTR 分流量源**(Focus Digital 2025-12):Search 12.5% / Suggested 9.5% / Browse 3.5% / External 2.8%;档位 <3% 需修 / 4-6 平均 / 7-10 好 / 10+ 卓越;70-100 字符标题比短标题 CTR 高 10-14%,关键词进前 40-50 字符。
-- **AVD**:均值 23.7%,仅 16.8% 视频超 50%;**<40% AVD 被降权**;章节 +4% AVD(Backlinko)、留存最高 +50%。
-- **三系统独立**(Browse/Search/Shorts)+ **4 层测试级联**(核心观众→扩展→更广→高权威);满意度信号排序:Shares 最强 > repeat viewing > session continuation > saves > surveys > likes > comments。
-- 标题 clickbait 惩罚(2024 末起全球):Gemini 对比标题/缩略图与实际内容;tags 已残废(最多 30 秒,只用于错拼消歧);hashtags 3-5 个(>15 全忽略);字幕 +12% 观看时长,手动 SRT 索引优于自动;2 小时内回复 50+ 评论=+15-20% 触达;24h 通知上限 3 次;章节须 0:00 起、≥3 章、每章 ≥10 秒。
-
-## 六、YouTube 站内算法(分发层速通,2026-10-12 增补)
-
-> **证据强度声明**:本章讲 YouTube **站内分发**算法——素材几乎全部为行业逆向与创作者实测(复用前文 claude-youtube 精读/深读两节),无官方算法文档;**站内算法证据强度系统性低于搜索 GEO**(后者有 Google 官方文档打底)。数字用于诊断方向,不作对客承诺。
-
-### 6.1 双因子:CTR × 留存
-
-- 分工:CTR 决定「给多少初始展示」(约占初始分发决策 80%,analytics 口径);留存决定「是否继续加码」——单因子优化必然撞墙。
-- 诊断四象限:高曝光+低 CTR=包装问题(换标题/缩略图)/ 高 CTR+低留存=clickbait 嫌疑(承诺须 5-10 秒内兑现)/ 低曝光+高 CTR=词或频道过窄 / 双低=内容问题,先修留存再修包装。
-- **CTR 必须分流量源看**(Search 12.5%/Suggested 9.5%/Browse 3.5%,Focus Digital 2025-12):拿 Browse 的 3.5% 对标 Search 的 12.5% 是最常见误诊;持续 4-8% 即健康(展示扩张自然下滑)。
-- **缩略图**:人脸+夸张真实表情 +20-30% CTR(中性表情比无脸还差);文字 ≤5 词、与标题文字不得重复——缩略图管情绪、标题管关键词承诺。
-- **前 30 秒留存**:前 60 秒丢 55%、10-15 秒 <50% 即钩子废;30 秒 70%/80% 为稳/优;留存高于频道均值 15%+ = 推广量 2.3 倍。
-- **章节**:0:00 起、≥3 章、每章 ≥10 秒——一站三用(站内跳看导航/Google key moments/Gemini 片内引用),双因子通吃的通用零件。
-
-### 6.2 Shorts 与长视频:两套独立分发
-
-- 三系统独立(Browse/Search/Shorts)+ 4 层测试级联(核心观众→扩展→更广→高权威)——同素材跨形态不共享信号。
-- Shorts 信号层级:完播/循环重播 > Viewed vs Swiped Away(<60% 立即换开场)> 评论分享;**CTR 几乎无效**——长视频的包装打法在 Shorts 失效。
-- 甜点与死区:15-60 秒可用、双峰 13s/60s、**30-45 秒是死区**;上限 3 分钟但别用满。
-- 新鲜度不对称:Shorts 28-30 天后降权、断更 2 周≈清零;**长视频常青不受影响——SEO 资产只有长视频形态成立**,Shorts 是获客面。
-- 双形态数据:观众重合仅 ~10%、双形态频道增长快 40-60%;变现靠长视频桥接(长视频 RPM 为 Shorts 的 10-100 倍)。
-- Shorts 的搜索占位:进 YouTube 搜索+Google 移动结果(标题 4-6 词、描述前 125 字符承重,套件已录)。
-
-### 6.3 标题-缩略图配对测试
-
-- 官方工具 Studio「Test & Compare」:最多 3 版、最长 2 周、仅桌面设置、Shorts/儿童内容不可用;2024 末起新增标题 A/B。
-- **优化目标是观看时长份额而非 CTR**(官方口径)——低 CTR 版可因观众看得久而赢,判读别看错指标。
-- 显著性:百万曝光级 0.5% CTR 差即显著;小频道曝光不足时用 6.4 的离群挖掘替代实验(先找假设后验证)。
-- clickbait 惩罚在位(2024 末起,Gemini 对比标题/缩略图与实际内容)——A/B 的边界是「包装更准」,不是「承诺更狠」。
-
-### 6.4 yt_outlier 工具接线(套件脚本)
-
-- `../../scripts/yt_outlier.py`(stdlib,零依赖):CSV 输入 `title,duration_s,views[,is_short][,channel]`,按「频道×形态」分组(≤60s=Short,长短视频基线自动分开),播放 >2× 组均值判离群,输出离群清单+标题高频词 Top 15。
-- 用法:竞品或自家频道视频清单导出 CSV → 跑离群 → 离群标题的高频词=该 niche 实际吃到分发的包装词形——直接喂标题/缩略图选题,不靠拍脑袋。
-- 与 A/B 的分工:yt_outlier 找假设(什么包装吃到流量),Test & Compare 在自家流量上验假设;两者闭环=站内算法层唯一可复制的增长循环。
-
-### 6.5 站内分发诊断检查单(接单即跑)
-
-按序过一遍,任一步不过先修再谈增长(阈值口径均出自本章与前文两节,行业级):
-
-1. 单一流量源占比 >60%?(Analytics;脆弱结构,Browse/Suggested/Search 至少两腿)。
-2. CTR 按流量源分层:Search <12% / Suggested <9% / Browse <3.5% 任一命中 → 包装层问题,进 3;全档位 <4% → 频道权重与选题问题,先修 6.4 选题。
-3. 缩略图三查:有脸且表情真实?文字 ≤5 词且与标题不重复?按 feed 小图(移动端 70%+)检验仍可读?
-4. 前 30 秒留存 ≥70%?(低于即钩子废——先改开场再看包装)。
-5. AVD vs 频道均值:留存低于均值 15% 以内?(超均值 15%+ 才有 2.3 倍推广;持续 <40% AVD 被降权)。
-6. 章节合规:0:00 起、≥3 章、每章 ≥10 秒?(双因子与 GEO 三层共用零件,最便宜的一项)。
-7. 标题长度按流量源对表(Search 向 70-100 字符/Browse 向短标题),关键词进前 40-50 字符。
-8. 有 App 的频道补品牌词 app pack 占位(与 [site-type-playbooks.md](../overview/site-type-playbooks.md) ②的 ASO 桥同款思路)。
-
-### 口径注意(引用时标注)
-
-- 本章数字全为行业级(Focus Digital/Backlinko/claude-youtube 深读,套件已录),单源居多——引用标「行业/观察」。
-- 标题长度三套口径矛盾(70-100 vs <55 vs <50 字符)按流量源取舍:Search 长标题、Browse/MrBeast 式短标题(详见文末「口径矛盾与注意」)。
-- 与搜索 GEO 的分工:本章管 YouTube 站内分发;视频被 AI 引用(GEO)走第 1-3 节文本可及性路线,两层信号不互通。
+| watch page 已索引 | Search Console 网址检查 watch page URL | 显示已编入索引为通过 |
+| 缩略图稳定且够大 | `curl -sI 缩略图URL`;`sips -g pixelWidth -g pixelHeight 图片`(macOS) | 返回 200、尺寸 ≥60×30、多次抓取 URL 不变为通过;URL 带过期签名为失败 |
+| 视频文件可被 Googlebot 取到 | 第二节命令 3 | 200 且 content-type 为视频为通过 |
+| VideoObject 必填字段 | Rich Results Test;`curl -s watch页 \| grep -o '"contentUrl"[^,]*'` | 无 error 为通过 |
+| sitemap 与标记一致 | 第二节命令 1、2、4 | 条数 ≤50,000、标签数一致、contentUrl 一致为通过 |
+| 不误用地域限制 | 第二节命令 5 | 全球内容输出 0 为通过 |
+| key moments | 页面有 `Clip` 标记,或 YouTube 描述含时间戳(0:00 起) | 有为通过 |
+| 字幕与全文 | YouTube Studio 字幕栏是人工上传版;watch 页有 transcript 全文 | 有为通过 |
+| 视觉与视频搜索测量 | Search Console 效果报告的 multimodal 筛选(见 [image-search-seo.md](image-search-seo.md));`python3 scripts/multimodal_report.py --gsc gsc.csv --videos videos.csv` | 能导出并与视频清单 join 为通过 |
 
 ## 来源
 
-- 官方:Google 视频 SEO 文档/VideoObject/key moments/视频 sitemap(sitemap 标记与结构化数据等价关系);Gemini API 视频理解;YouTube MLA 帮助页(Help 13338784:视频+Shorts 多音轨);captions API 文档;**Spotify for Creators《Words matter》播客 SEO 官方指南**;Apple Podcasts 转录规范
-- 行业:Suffes Digital(54.9% AIO 含 YouTube 引)、Search Engine Land/BrightEdge(29.5% 第一域名)、Gumshoe(41% 被引视频<1,000 播放)、Contently(transcript 影响);视频 sitemap vs 标记:AudiencePlayer/msangeetha(互补论)+官方等价口径;TikTok SEO:Toptal 2026/Reflect Digital/Stan Store/Hollyland;转录工具:Wirecutter+PCMag 2026(GoTranscript/Otter)/Mixpeek(Deepgram/Whisper/AssemblyAI 对比)/WhisperTranscribe;播客:Ausha(Apple/Spotify 算法)/3Play Media(+4.36% 自案例)/Reddit r/podcasting(Apple 索引 transcripts 实测);MLA:Slator(全创作者开放)/DittoDub/Linguana(MLA vs 分频道争议)
-- 平台口径:2pointagency/Toptal(TikTok/IG)、腾讯云开发者(抖音)、开源中国(B站)、Statista/TechTimes/iz.ru(市场格局)
-- GitHub:jdepoix/youtube-transcript-api(8.4k★,免 OAuth 取 transcript 自检)、AgriciDaniel/claude-youtube(436★)、hyperframes-student-kit(1.2k★)
-- 本文件由 EveryInfra 编写,仅收录要点与链接;2026-10-09 深挖轮新增:三点五(三平台文本层)/三点六(转录工具)/五点五(hreflang×MLA)/五点八(Podcast SEO)/视频 sitemap 对照表
-- 2026-10-12 增补:六(YouTube 站内算法速通——CTR×留存双因子/Shorts 独立分发/Test & Compare/yt_outlier 接线;素材复用前文 claude-youtube 两节,**站内算法证据强度低于搜索 GEO 已声明**)
-
-## (claude-youtube 深读 2026-10-09b)余下全量增量:留存/缩略图/Shorts/变现/模板/工具层
-
-> 本轮读完主 SKILL + 14 个 sub-skills + 余下 7 个 references(analytics/monetization/thumbnail-ctr/retention-scripting/shorts/repurposing/dataforseo)+ 3 个模板(education/shorts-first/niche-authority),与前文"精读"节不重复。
-
-### 留存与脚本(retention-scripting-guide)
-
-- **开场流失**:前 60 秒丢 55%、前 10 秒丢 20%;15 秒内给价值主张 = 1 分钟处留存 +18%;10-15 秒留存 <50% 即钩子失败,30 秒 70%/80% 为稳/优。
-- **模式打断**:前 5 秒一次 = 留存 +23%;频率按格式——预制 30 秒/次、直播 2-3 分钟/次、Shorts 2-3 秒/次;掉点处打断拉回 15-22%。
-- **留存曲线六形态**:悬崖(15 秒内丢 20%+ = 钩子废)、中段谷(40-60% 处 = 节奏)、尖峰(重看段,应主动复制)、悬索桥(开放环)= 完播 +68%、锯齿 = 完播 +43%、平稳下滑 = 正常。
-- **算法阈值**:留存高于频道均值 15%+ = 推广量 2.3 倍;留存提升 10 个百分点 = 展示 +25% 以上;**AI 叙事配音留存 -70%**(人出镜为准,除非频道本身 AI 主题)。
-- **CTA 布局**:仅 16% 观众看到片尾;1 分钟处约 60% 在看、4 分钟处约 35% → 双 CTA(约 1 分钟 + 约 4 分钟);视觉+口播嵌入式 CTA 比纯口播转化 +380%;有 CTA 每 33 观看 1 订阅(无 CTA 1/83)。
-- **长度**:教程 7-15 分钟、娱乐/vlog 8-12、教育 15-25、Shorts 15-30 秒;5-10 分钟留存峰值 31.5%;20+ 分钟视频吃掉全站 57% 观看时长;8 分钟解锁中插(收益约 +50%,勿注水)。
-- MrBeast 口径:100 条视频微改进复利(前 ~50 条别指望结果);标题/缩略图的承诺须 5-10 秒内兑现;片尾强 payoff 直接抬 AVD。
-
-### 缩略图与 CTR(thumbnail-ctr-guide)
-
-- 分 niche CTR 基准(Focus Digital 2025-12):游戏 8.5% > 健身 8.0% > 科技评测 7.5% > 美妆 6.5% > 娱乐 6.0% > 财经商科 5.5% > 教育 4.5%(教育最低但搜索意图最强)。
-- 人脸缩略图 +20-30% CTR、均多 92.1 万播放;但**中性表情比无脸还差**——要夸张且真实。
-- 规格:文字 ≤5 词(理想 3)、2-3 色板、负空间 30-40%、单焦点、<1 秒决策;1280×720 最低 / 1920×1080 供 TV;70%+ 观看在移动端,按 feed 小图检验;信息分工铁律——缩略图管视觉情绪、标题管关键词承诺,**两者文字不得重复**。
-- **A/B 测试(Studio 2024 中上线)**:最多 3 版、最长 2 周、仅桌面设置、Shorts/儿童内容不可用;**优化目标是观看时长份额而非 CTR**(低 CTR 版可因观众看得久而赢);百万曝光下 0.5% CTR 差即显著;2024 末新增标题 A/B;案例提升 37-110%。
-- 处罚:违规缩略图首犯警告(90 天过期),同期再犯 = strike,3 strike 封频道;色情缩略图**直接封号**无警告。
-
-### Shorts 独立算法体系(shorts-playbook)
-
-- 信号层级:完播/留存(70%+ = 强推)> 循环重播 > 评论分享 > **Viewed vs Swiped Away**(75%+ 良好,<50% 钩子废,**<60% 立即换开场**)> 满意度;CTR 几乎无效;最晚第 4 天才起飞属常态。
-- 规格:上限 3 分钟(2024-10)但甜点 15-60 秒、双峰 13 秒/60 秒,**30-45 秒是死区**;视觉每 3 秒一变、钩子 1-3 秒;Content ID 音乐直接封 1-3 分钟 Shorts。
-- 计数与新鲜度:2025-03 起任何播放 = 1 观看、循环也计,总量虚高 ~30%,跨期比较用官方 **engagedViews**(2025-04 起正式指标,长视频 = views);2025-09 起 ~28-30 天后降权(长视频常青内容不受影响)。
-- 收益:池化分配、创作者留 45%;**音乐按轨分账:无音乐 100%、1 轨 50%、2 轨 33%**;RPM $0.01-0.07(财经至 $0.30);2025 年 Shorts 占 YouTube 广告总收入 22%(2024 为 15%),vidIQ 称 2025 RPM +150%。
-- 与长视频:观众重合仅 ~10%、关联视频导流 <1%,但双形态频道增长快 40-60%、美国市场无蚕食(2025-02);**长视频桥接(RPM 为 Shorts 的 10-100 倍)才是 Shorts 频道真正变现路径**;TikTok 水印被降权;Shorts 进 YouTube 搜索 + Google 移动结果(标题 ~40 字符截断、4-6 词、描述前 125 字符承重)。
-
-### 变现数字(monetization-guide + analytics-guide)
-
-- **YPP 两级**:扩展级 500 订 + 90 天 3 更 + (1 年 3K 观看时 或 90 天 3M Shorts 观看)解锁会员/Super/购物;完整级 1K 订 + (4K 时 或 10M Shorts)解锁广告;审核约 1 个月。2025-07 起"重复内容"更名"**不真实内容**"政策——批量模板化/AI 滚雪球内容有掉收益风险。
-- RPM/CPM:RPM 恒低于 CPM(已扣 45%);美国观众价值为东南亚 5-8 倍(财经 RPM 美国 $15-25 vs 印度 $0.50-1.50);**Q4 CPM +30-60%、1 月全年最低**;8 分钟+中插使 RPM 约翻倍。分档:财经 $20-40+ / 法务地产 $20-35 / 科技 $15-25 / 教育 $8-15 / 游戏 $2-5(美国中位 $3.50)/ 音乐 $1-3。
-- 分成与硬顶:会员 YT 抽 30%($0.99-499.99/月、25 档);Super Chat 70/30、单用户周上限 $2K;购物联盟约 10K+ 订(口径混乱 1K-15K)、佣金 5-20%(中位 ~15%)、单视频 60 商品、30 天归因、2025-06 商品贴纸点击 +40%;商单地板 $1K+(游戏 $0.037/view、生活方式 $0.023);小频道优先商单+外链漏斗而非广告。
-- **FTC 披露四件套**:口播(前 15-30 秒)+ 屏幕文字(≥10 秒)+ 描述前两行;**YouTube 付费推广开关单独不合规**;每次违规罚 $53,088 且品牌与创作者连坐;**AI 生成内容需双重披露**。
-- Premium:125M+ 订阅、创作者分 ~55%、premium 型频道 15-30% 收入来自此。
-- Analytics:CTR 约占初始分发决策的 80%;诊断矩阵——高曝光+低 CTR = 包装问题 / 高 CTR+低 AVD = clickbait / 低曝光+高 CTR = 过窄;CTR 随展示扩张自然下滑(持续 4-8% 即健康);单一流量源 80%+ = 脆弱(analyze 子技能 60% 即报警);Analytics API 单查询 ≤200 行、组 ≤500 视频;Reporting API 数据仅存 60 天、`channel_reach_basic_a1` 含缩略图曝光与 CTR。
-
-### 内容策略与频道模板(repurposing-guide + 3 模板)
-
-- **Hub/Hero/Help**:Hero 1-2 次/年;增长期建议 ~70% Hub / 15% Help / 15% Hero;evergreen:trending = 70-80 : 20-30;**更新旧常青内容流量 +106%**。
-- 播放列表是独立 SEO 资产:YouTube+Google 双排名、+40% 观看时长、5-10 条/列表、Series 播放列表强制观看顺序、首条放最强视频;系列 5-7 条为优。
-- 微利基:受众缩 5 倍但收入可增("skincare for rosacea"式收窄);扩张三段:1-6 月核心利基 → 7-12 月邻接 → 第二年扩宽。
-- **教育频道模板**(留存最高格式 42.1%):Help 60/Hub 30/Hero 10、常青 80%+;月更 12+ = 观看增速 8 倍(vidIQ);双索引面(web Key Moments + YT 搜索)是复利资产。
-- **Shorts-first 模板**:流量 ~75% 来自 Shorts feed;solo 日更 1-3 条;系列化格式(Hub 50-60%)让算法识别"连看";断更 2 周 ≈ 清零(28-30 天新鲜窗),需 2 周内容缓冲;5K 订前就得启动长视频桥接,否则"频道大但穷"。
-- **利基权威模板**:搜索占 ~40% 流量、CTR 可打 6-9%(展示高度定向);先录 50 个关键词簇再开机;**包装(标题+缩略图)占制作时间 30%**,CTR<4% 时瓶颈在包装不在内容;每订阅收益为娱乐型 5-10 倍。
-- 竞对与复用:outlier = 3-10 倍频道均值才入库;评论挖未答问题;一条 20-30 分钟长片 = 10-20 条 Shorts,"钩子-价值弹-CTA"结构比连续切片好 74%;AI 剪辑省 70-90% 工时;vidIQ/TubeBuddy 无公开 API。
-
-### DataForSEO 工具层与 GEO(dataforseo-integration)
-
-- YouTube 端点(~$0.002/次):`serp_youtube_organic_live_advanced`(SERP)、`_video_info_`(元数据/标签/互动)、`_video_comments_`(评论挖掘,免 OAuth)、`_video_subtitles_`(字幕;注意 auto-generation 标志,自动字幕有错)。
-- **GEO 检测端点(~$0.01/次)**:`ai_optimization_chat_gpt_scraper`(ChatGPT 引用源)、`ai_opt_llm_ment_search` / `_top_domains`(LLM 提及)——直接查"自己视频是否被 AI 引用",与套件 AIO 引用监测同向,可作工具化路径。
-- 方法论:**Google 搜索量 ≠ YouTube 搜索量**(强代理;游戏/教程类在 YT 端偏重);高 Google 量 + informational intent = YT 优选目标;CPC 作 RPM 方向性代理但非线性;Trends 是 0-100 相对指数须配体量;单工作流 $0.004-0.04。
-- 主 SKILL 编排:14 子技能路由 + 9 频道类型模板;audit/competitor 各开 4 并行 agent;三道质量门(具体性/数据溯源/完整性)+ self-anneal 回炉;YouTube Data API 日配额 10K 单位、search 每次 100 单位(即日上限 100 次搜索)、太平洋午夜重置。
-
-### 口径矛盾与注意(引用时标注)
-
-- Shopping 联盟门槛官方不清(1K-15K 订各种说法)。
-- 标题长度三套口径:playbook 实证 70-100 字符 CTR 更高(已录)vs 教育模板"<55 字符"vs MrBeast"<50 字符"——按流量源取舍(Search 长标题、Browse/MrBeast 式短标题),不是单一答案。
-- Shorts 甜点双口径:playbook"15-60 秒"vs 模板"13 秒或 50-60 秒、30-45 死区"——完播最大化取 13s,单次收益最大化取 50-60s。
-- "模式打断每 30 秒"偏激进,指南自认 data-supported but aggressive。
+- 官方:[Gemini API 视频理解](https://ai.google.dev/gemini-api/docs/video-understanding)、[YouTube captions.download](https://developers.google.com/youtube/v3/docs/captions/download)、[视频 SEO 最佳做法](https://developers.google.com/search/docs/appearance/video)、[VideoObject](https://developers.google.com/search/docs/appearance/structured-data/video)、[视频 sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/video-sitemaps)、[YouTube Multi-language audio](https://support.google.com/youtube/answer/13338784)、[Spotify for Creators](https://creators.spotify.com/resources/podcast-seo)、Apple Newsroom。
+- 第三方:BrightEdge、OtterlyAI(研究);Herald、Chosun(Naver TV 关停)。
+- 2026-10-21 删除的旧说法(没找到一手或可信出处):「播放量被引相关性 52%」「41% 被引视频播放不足 1,000」归属 Gumshoe(实际是 OtterlyAI)、Gemini「按付费层取帧」、ChatGPT「读词不读像素」、CTR 诊断线 4%/留存 80% 等算法数字、各市场视频平台用户数与份额、转录服务排名、短视频三平台文本层表、YouTube 站内算法与变现全部数字、播客 +4.36% 与 PodcastEpisode 弃用说法。

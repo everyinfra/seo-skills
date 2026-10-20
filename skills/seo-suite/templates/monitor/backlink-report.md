@@ -2,7 +2,7 @@
 
 _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Period: {起止日期} · Data pulled: {工具+导出日期}_
 
-> 多市场站点:逐市场各出一份本报告,不合并。外链目录按市场清单:见 references/research/backlink-directory.md 市场差异节。
+> 多市场站点:逐市场各出一份本报告,不合并。外链目录按市场清单:见 references/research/backlink-directory.md 第四节(本地目录与榜单,按市场)。
 
 ## The answer
 
@@ -16,7 +16,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Peri
 | 新增引荐域/期 | {} | 上期 {} |
 | 丢失引荐域/期 | {} | 上期 {} |
 | 待复核风险项 | {} | 触发"直接进待复核"规则数 |
-| 建议 disavow | {} | 默认 0;仅人工处置临近时 |
+| 建议 disavow | {} | 默认 0;Google 的条件是同时满足「有相当数量的垃圾或人为链接指向你」和「这些链接已造成或可能造成人工操作」([官方](https://support.google.com/webmasters/answer/2648487),核对 2026-10-21) |
 
 ## Backlink Health Card(外链健康卡)
 
@@ -46,7 +46,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Peri
 
 ## Link Tiers(价带标注)
 
-按 link-quality-rubric.md 六维打分(相关性 30/来源质量 25/位置上下文 20/真实流量 10/锚文本 10/rel 5,可调但须注明)分层,每条附证据:
+按 [link-quality-rubric.md](../../references/monitoring/link-quality-rubric.md) 六维打分(相关性 30/来源质量 25/位置上下文 20/真实流量 10/锚文本 10/rel 5;这套权重是本套件口径的可调起点,不来自 Google 或任何工具,换权重须在报告里注明)分层,每条附证据:
 
 | 价带 | 条数 | 判定标准 | 处置 |
 |---|---|---|---|
@@ -68,14 +68,25 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Peri
 2. {建链主攻方向:按市场目录 {} 个候选}
 3.
 
+## 检查清单(逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 导出能统一解析 | `python3 scripts/backlink_import.py 导出.csv --format auto --out unified.csv --json summary.json`(自动嗅探 Ahrefs、Semrush、GSC 格式) | 通过:退出码 0,summary 有行数与引荐域数。失败:退出码 2(嗅探不出格式)→ 换导出格式,不猜 |
+| 2 | 同源跨期比较 | 两期导出来自同一工具、同一筛选 | 通过:同源。失败:跨工具比较 → 只写趋势方向 |
+| 3 | 风险项有证据 | 逐条打开链接页,截图或摘录,记日期 | 通过:每条风险项有页面 URL + 摘录。失败:只有工具分数 |
+| 4 | 丢失链先查我方原因 | `curl -sI 我方被链页面URL` 看状态码;`python3 scripts/redirect_chain.py URL` 看重定向 | 通过:我方 404 的已排 301 承接。失败:对方页还在而链接被删,才进「联系恢复」 |
+| 5 | 月度回归 | `python3 scripts/monitor.py run --checks monthly --backlinks backlinks.csv`,看有无 `backlink_loss`(总引荐域降 >10%,critical) | 通过:无告警或已解释。失败:告警未解释 |
+| 6 | disavow 前置 | 对照上方 disavow 条件;文件里每条有理由与日期 | 通过:条件满足才建议。失败:无人工操作风险却建议批量 disavow |
+
 ## What could change this conclusion
 
-- {数据缺口:各工具抓取覆盖不同,数量只能同源内跨期比较;GSC 链接报告只是样本}
+- {数据缺口:各工具抓取覆盖不同,数量只能同源内跨期比较;Search Console 链接报告不是完整列表,只是内部和外部链接的样本,表格最多 1,000 行([官方](https://support.google.com/webmasters/answer/9049606),核对 2026-10-21)}
 - {仅相关非因果:引荐域增长与排名的相关不证明因果;能定案的验证:定向建链后目标页排名/抓取频率 60 天对比}
-- {样本局限:低 DR 站点覆盖弱;新链发现滞后 2-6 周}
+- {样本局限:低 DR 站点覆盖弱;各工具发现新链有滞后,滞后多久因工具而异,报告里写明导出日期}
 - {继承假设:六维权重用默认值(未按站点类型调整)}
 
 ## Method Notes
 
-- 数据源与抓取时间:{外链工具导出+GA4 引荐报告+日期};每条结论抽样打开链接页人工核实。已知坑:{DR/DA 是工具自有指标非 Google 评分,不跨工具比,不设一刀切垃圾线}。数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{外链工具导出+GA4 引荐报告+日期};每条结论抽样打开链接页人工核实。已知坑:{DR/DA 是各工具自己的指标,不是 Google 的评分,不跨工具比,不设一刀切垃圾线;付费链接、链接买卖属于 Google 垃圾内容政策里的链接垃圾([政策](https://developers.google.com/search/docs/essentials/spam-policies#link-spam))}。数字缺失写 [要追加: 数据源],禁编造。
 - 符号:价带=重点维护/正常/待复核三层;disavow 仅在人工处置临近或已收到时使用,每条记理由与日期(见 link-quality-rubric.md 第四节)。

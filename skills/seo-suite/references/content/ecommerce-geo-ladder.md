@@ -1,93 +1,79 @@
 # 电商 GEO 阶梯(五级)与市场分叉
 
-> 建立于 2026-10-09。来源:Google Merchant/结构化数据官方文档、[ucp.dev](https://ucp.dev)(UCP 官方,Apache-2.0)、[agentic-commerce-protocol](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol)(ACP 官方 spec,OpenAI+Stripe)、[Shopify/ucp-cli](https://github.com/Shopify/ucp-cli)(79★)、市场数据见各条目标注。按证据纪律:UCP/AIO 内 free listings 属进行中状态,不承诺排名与转化。
+> 建立于 2026-10-09;2026-10-21 逐条重新核对:Google 商家与结构化数据文档、Merchant Center 帮助、blog.google、[ucp.dev](https://ucp.dev)(UCP 官方,Apache-2.0)、[agentic-commerce-protocol](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol)(ACP,OpenAI 与 Stripe 维护,Apache-2.0,仓库标注 beta)、[Shopify/ucp-cli](https://github.com/Shopify/ucp-cli)(MIT)。没有一手出处的市场份额和平台算法数字已删除。「本套件口径」是做法约定,不是 Google 规则。UCP 与 AI 面里的 free listings 仍在分阶段推出,不承诺排名与转化。
 
 ## 一、五级阶梯(从基础到 agent 交互,逐级验收)
 
 | 级 | 层 | 动作 | 验收 |
 |---|---|---|---|
-| **L1** | 产品数据 | 全 SKU 部署 Product+Offer(name/image/**price 纯数字**/priceCurrency ISO 4217/availability);接入 Merchant Center free listings,feed 与页面 schema 价格一致 | Rich Results Test 零 error;GSC「商家信息」有效;feed 价格差=0 |
-| **L2** | 评价信号 | AggregateRating/Review 挂在 Product 上(挂 Organization 属 self-serving 不出富结果);官网评分与 marketplace 店铺同步(不一致是 AI 提取噪声) | 星级富结果展示;reviewCount 与平台一致 |
-| **L3** | 内容层 | 比较页/选购指南/buying guide 覆盖 best/vs 类查询(AIO 最常引的产品推荐形态) | 目标查询 AIO 引用可见 |
-| **L4** | marketplace 分工 | 交易型宽词让给 marketplace(域名权威压制官网,土/印尤甚);官网争品牌词/长尾/内容词/售后查询 | 品牌词官网第一;transactional 由 marketplace 承接 |
-| **L5** | agent 交互 | 价格/库存对 AI 可读;发布 `/.well-known/ucp` 声明;AI 爬虫不恶意封锁;GMC conversational attributes 六字段(见「L5 深化四件」) | UCP profile 可解析;AI Mode/Gemini 可取价 |
+| **L1** | 产品数据 | 全 SKU 部署 Product + Offer(name、image、price、priceCurrency 必填;availability、gtin、sku、brand 推荐);接入 Merchant Center free listings;feed 与页面价格一致 | Rich Results Test 无 error;Search Console「商家信息」报告有效项;feed 与页面价差为 0(抽检) |
+| **L2** | 评价信号 | `aggregateRating`、`review` 挂在 Product 上;官网评分数据与平台上的真实评价一致 | 星级富结果展示;`reviewCount` 与平台一致 |
+| **L3** | 内容层 | 比较页、选购指南覆盖 best、vs、alternatives 类查询 | 目标查询手工月检,记录 AI 面引用的域名 |
+| **L4** | marketplace 分工 | 交易型宽词让给 marketplace;官网争品牌词、长尾词、内容词、售后查询(本套件口径) | 品牌词官网排第一;交易词由 marketplace 承接 |
+| **L5** | agent 交互 | 价格与库存对 AI 可读;UCP 接入(GMC UCP 集成中心或 `/.well-known/ucp`);Merchant Center conversational attributes | UCP profile 可解析;GMC 里能看到 AI performance insights |
 
-### 一点五、L1–L5 各级实操细节与验收命令(2026-10 深挖轮)
+### L1–L5 实操细节
 
-**L1(产品数据)——细节**:
+**L1(产品数据)**
 
-- 全 SKU 含**停产/清仓 SKU**(带 `availability: OutOfStock`)——断货下架页保留是长尾+比价流量入口,整页删除=丢积累;
-- `image` 数组:主图(白底)+辅图;主图 URL 与 GMC feed `image_link` **同 URL**;
-- 价格同步机制:页面价(渲染后 DOM 里的价,非 JS 异步后到的价——Google 渲染等待有限)、schema 价、GMC feed 价三方一致;促销期用 `priceValidUntil` 标截止;
-- 验收命令:
+- 官方对 merchant listing 的要求(核对 2026-10-21,[merchant listing 文档](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing),2026-09-08 更新):必填 `name`、`image`、`offers`;`offers` 里必填 `price`(或 `priceSpecification.price`,且大于 0)和 `priceCurrency`(ISO 4217 三字母)。`availability` 是**推荐**属性,不是必填。merchant listing 要求 `Offer`;`AggregateOffer` 只适用于商品摘要(product snippet),且要符合「价格下降」增强必须用 `Offer`。
+- `image`:官方建议提供多张高分辨率图(宽×高至少 5 万像素),比例 16:9、4:3、1:1;图片 URL 必须可抓取、可索引。本套件口径:主图 URL 与 Merchant Center feed 的 `image_link` 相同。
+- 价格:页面可见价、结构化数据价、feed 价三处一致(本套件口径);促销价用 `priceSpecification` 并带有效期(官方文档有示例)。
+- 停产商品页保留并标 `availability` 为 `OutOfStock` 或 `Discontinued`,避免整页删除丢失积累(本套件口径)。
 
-```bash
-# schema 价格纯数字(应输出不带 $ 与逗号的数字)
-curl -s https://shop.example.com/p/123 | grep -o '"price":\s*"[^"]*"'
-# 页面可见价与 schema 价一致性(抽 20 SKU 人工比对;脚本抓 DOM 文本价)
-# 富结果资格
-# → Rich Results Test API: POST https://searchconsole.googleapis.com/v1/urlTesting/tools/richResults?   (GSC API,或手工 Rich Results Test)
-# GMC 一致性 → Merchant Center「Diagnostics」零 Critical issue;feed vs 页面价差=0(抽检)
-```
+**L2(评价信号)**
 
-**L2(评价信号)——细节**:
+- 评价属于 Product。官方的 review snippet 文档对 Organization、LocalBusiness 上的「自我评价」有单独限制([review snippet](https://developers.google.com/search/docs/appearance/structured-data/review-snippet),2026-09-08 更新)。
+- Product snippet 要求 `review`、`aggregateRating`、`offers` 三者至少有一个;只有 `offers` 时 Rich Results Test 可能给 warning([product snippet](https://developers.google.com/search/docs/appearance/structured-data/product-snippet))。
+- 不要为了消 warning 编造评分(本套件口径)。
 
-- `aggregateRating` 挂在 `Product` 内(挂 `Organization` 属 self-serving,官方明确不出星);`reviewCount`/`ratingCount` 二选一与平台一致;
-- 第三方平台评价同步策略:官网聚合页引用 marketplace 评论需注明来源(编造评论数是人工处置红线);
-- 验收:GSC「商家信息」报告星标覆盖;Rich Results Test 显示 Rating;月度抽查 reviewCount 与 marketplace 店铺页一致。
+**L3(内容层)**:页型 best、vs、alternatives、how-to-choose;每页有可抽取的参数表或评分维度(本套件口径)。
 
-**L3(内容层)——细节**:
+**L4(marketplace 分工)**:验证方法:搜核心交易词,看前 10 名里 marketplace 占几个;占多数就把预算转向内容层和品牌词(本套件口径,阈值自定)。
 
-- 页型矩阵:best(榜单)/vs(对比)/alternatives/-sizing/how-to-choose;每页**真实结构化信息**(参数表/评分维度),AI 引用偏好可抽取的表格与要点;
-- 内链:内容页→产品页(锚文本带产品词);产品页→相关内容页(购买犹豫查询承接);
-- 验收:目标 best/vs 查询在 AIO/Gemini 手工月检 20 词,记录引用域名;内容页 organic 进前 20。
+**L5(agent 交互)**:见下节。
 
-**L4(marketplace 分工)——细节**:
+### L5:Google agentic commerce 与 UCP(核对 2026-10-21)
 
-- 官网保品牌词 SERP 第一(含 sitelinks);transactional 词让位 marketplace 的**验证方法**:搜核心 transactional 词,前 10 中 marketplace 占比>50% 即认清现实、预算转内容层;
-- marketplace 店铺名与官网品牌词一致(品牌词 SERP 里官网+店铺双占位)。
+- **UCP 结账功能的范围**:Merchant Center 帮助页写明,该结账功能只适用于在美国、加拿大、澳大利亚有资格的商品,面向选定商家的早期访问,商家仍是 seller of record,买家用 Google Pay 在 AI Mode 和 Gemini 里结账([Merchant Center 帮助](https://support.google.com/merchants/answer/16837055))。
+- **UCP 集成中心(Merchant Center)**:2026-09-16 的官方博客说,用集成中心做 UCP 结账的商家可以开启「购物车回传商家网站」和增强的结账流测试;新能力在美国逐步推出,澳大利亚和加拿大「early next year」;博客称 UCP 已支撑数十万品牌和零售商的直接结账;Tapestry(Coach、Kate Spade)是案例([blog.google 2026-09-16](https://blog.google/products-and-platforms/products/shopping/google-shopping-updates-holiday-shopping/))。
+- **Universal Cart**:2026-10-15 在美国上线(此前已预告)。跨零售商存入同一购物车,提示降价和补货,识别相关优惠码并显示,用 Google Pay 结账或转到商家购物车完成;建立在 Shopping Graph 的 600 亿以上持续刷新的商品条目上;列出的商家含 Nike、Sephora、Target、Ulta Beauty、Walmart、Wayfair 和许多 Shopify 商家([blog.google 2026-10-15](https://blog.google/products-and-platforms/products/shopping/universal-cart-launch/))。含义:购物车会追踪降价,所以页面价、结构化数据价、feed 价必须一致。
+- **conversational attributes(2026-09-16 起列入产品数据规范)**:6 个可选字段:`question_and_answer`、`document_link`、`related_product`、`item_group_title`、`variant_option`、`popularity_rank`。建议用补充数据源(supplemental data source)提交,也可用 Merchant API;不影响商品审批状态([Merchant Center 帮助](https://support.google.com/merchants/answer/17085370))。Google 在 2026-01-11 预告将有「dozens」的新属性([blog.google](https://blog.google/products/ads-commerce/agentic-commerce-ai-tools-protocol-retailers-platforms/))。官方称与 lululemon 的测试中,品牌提交的 conversational attributes 在相关 AI Mode 商品推荐里被采用 50%;采用核心 feed 最佳实践的商家,次月转化平均增加 5%(均为 Google 自述,见 2026-09-16 博客)。
+- **Business Agent**:2026-01 起在美国 Search 上线;2026-09-16 开放 YouTube 广告内嵌 Business Agent 的 beta,仅美国([blog.google](https://blog.google/products-and-platforms/products/shopping/google-shopping-updates-holiday-shopping/))。
+- **AI performance insights**:2026-09-16 起对澳大利亚、加拿大、印度、新西兰、美国的 Merchant Center 账户正式可用,仅限英语查询。指标是 share of voice(你的 AI 展示 ÷ 你与你自定竞品集的 AI 展示之和)、竞品平均份额、热门搜索词和属性的频率、你有多少商品在这些词下出现;按购物阶段(discovery、evaluation 等)筛选([帮助页](https://support.google.com/merchants/answer/17200695))。报告页没有点击、转化指标,基准取决于你自配的竞品集,只覆盖 Google 的 AI 面,不覆盖 ChatGPT、Perplexity。品牌主要经零售商销售时,商品数据多由零售商 feed 持有,逐账号确认覆盖范围。
+- **双轨 SoV**:电商客户的 AI 面可见度报告并列两轨:自采探针(跨引擎,按 [kpi-definitions.md](../monitoring/kpi-definitions.md) 的分级标注)和 AI performance insights(官方、仅 Google 面);两轨数字不互相对账,各带口径说明(本套件口径)。
+- UCP 不影响 Google 排名;Google 没有这样表述,不要写进客户材料。
 
-**L5(agent 交互)——细节(2026-10 更新)**:
-
-- **Merchant Center「UCP Integration Hub」已在美国先上线**(SEL/Seroundtable 2026 报道;官方文档 developers.google.com/merchant/ucp):商家可在 GMC 内连接 cart/checkout/identity,启用 AI Mode/Gemini/Search 的 agentic 动作——**L5 的入口从"手写 well-known 文件"升级为"GMC 后台向导+文件"双路径**;
-- [2026-10-17 P2] **Universal Cart 在美国上线**(2026-10-15,[Google 官方博客](https://blog.google/products-and-platforms/products/shopping/universal-cart-launch/)):Google 搜索和 Gemini App 里的跨商家购物车,由 UCP 驱动结账,可跨零售商存品、提示降价、自动套用可用优惠码、Google Pay 结账;底层是 Shopping Graph 600 亿+ 持续刷新的商品条目;合作商家含 Nike、Sephora、Target、Ulta Beauty、Walmart、Wayfair 和大量 Shopify 商家([SER 转述](https://www.seroundtable.com/universal-cart-google-search-42312.html))。**L5 从「可被 agent 读取」进入「可被 agent 加购结账」**——美国站点检查 UCP profile 与 GMC UCP 接入是否打通,价格/促销数据须与落地页一致(购物车会追踪降价)。
-- `/.well-known/ucp` 声明用 [Shopify/ucp-cli] 生成校验;AI 爬虫 UA(GPTBot 等)在 robots 里留白名单可读层(价格页不设登录墙);
-- 验收命令:
+**L5 验收命令**
 
 ```bash
-# UCP profile 可解析
+# UCP profile 可解析(已接入 UCP 的站点)
 curl -s https://shop.example.com/.well-known/ucp | python3 -m json.tool
-# ucp-cli 校验(Shopify 官方工具)
-npx @shopify/ucp-cli validate --url https://shop.example.com
-# AI 爬虫可达价格页(应 200)
+# 价格页对 AI 爬虫可达(应返回 200)
 curl -s -A "GPTBot" -o /dev/null -w "%{http_code}\n" https://shop.example.com/p/123
+# robots 对各 AI 爬虫的放行情况
+python3 scripts/robots_posture.py https://shop.example.com/robots.txt --json
 ```
 
-### L5 深化四件:Google agentic commerce(官宣 2026-09-16;入库 2026-10-12)
+## 二、Product schema 实操清单
 
-① **Merchant Center conversational attributes(结构化商品语境)**:新增 6 个可选 feed 字段——`question_and_answer`(品牌口径的问答对,助手答产品问题时用品牌内容而非推断)/`related_product`(配件·必需品·替代·常一起买)/`document_link`(规格书/手册/尺码表 PDF 链接)/`item_group_title`(多变体产品族共用标题)/`variant_option`(尺寸·口味·数量等区分属性)/`popularity_rank`(本品牌自有库存内的热度百分位)。经 **supplemental feed** 提交(也可 Merchant API),不影响既有商品审批;description/product_highlight/product_detail 已有的信息不必重复(NRF 2026-01 预告"数十个",首批落地 6 个;属性面向全球 rollout)。**lululemon 官方实测:品牌提交的 conversational attributes 被纳入 50% 的相关 AI Mode 产品推荐**(Google 口径)——L5 首次有了"官方数据支持的可运营引流面"。配套官方口径:采纳 Merchant Center feed 最佳实践的商家**次月转化平均 +5%**。
-② **Business Agent**:Search 内先上线(2026 上半年)的品牌级对话购物助手;新增 **YouTube ads 内嵌 beta**(美国邀请制报名):观众在广告内直接问复杂产品问题、得定制回答,不离开 YouTube 语境——从"看广告"变"跟品牌的 agent 对话"。
-③ **UCP Integration Hub 扩展——cart transfer 回商家站**:走 Hub 的 UCP-powered checkout 现可开启**购物车回传商家自有网站**与增强结账流测试(analytics 后续);官方称 UCP 已支撑**数十万品牌**的直接结账;Tapestry(Coach/Kate Spade)已借此在 Search(含 AI Mode)与 Gemini app 售卖。新能力美国渐次推出,**澳/加官宣"明年初"跟进**;另可连接 loyalty 数据(GMC 关联会员计划→AI 面展示会员价,Minted 例)。
-④ **AI Performance Insights GA(官方 AI 面 SoV 测量)**:入口 Merchant Center→Analytics→Products→AI performance;主指标=**share of voice**(本品牌 AI impressions ÷ 本品牌+自配竞品集的 AI impressions,并列竞品均值);可按购物旅程段(discovery/evaluation/purchase)、高频会话产品词、查询类型、商品属性拆分,并给 completeness score(缺属性商品清单)。**口径限制(写报告必带)**:只有聚合与 impressions——无真实 prompt、无点击/转化/收入;基准完全取决于自配竞品集;只覆盖 Google 面(不含 Rufus/ChatGPT/Perplexity)。GA 范围:**澳/加/印/新西兰/美**(2026-09-16);时间线:2026-05-20 GML 宣布→2026-07 美国限量试点→GA。**CPG 注意**:主要经零售商销售的品牌,listing 多由 retailer feed 持有——直接杠杆是 brand.com feed+Manufacturer Center,逐账号确认工具覆盖。
+出处:[merchant listing](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing)、[product snippet](https://developers.google.com/search/docs/appearance/structured-data/product-snippet)(均 2026-09-08 更新)。
 
-**测量节落地(双轨 SoV)**:电商客户的 AI 面 SoV 报告从此两轨并列——自采探针(跨引擎可比,按 IAB 分级标注 directional/decision-grade,见 [kpi-definitions](../monitoring/kpi-definitions.md) IAB 节)+ AI Performance Insights(官方、仅 Google 面、impressions-only);**两轨数字不可互相对账,并列呈现并各带口径注**;探针竞品集应与面板竞品集配置一致,便于同层比较。
+**高频错误**(前三项来自官方必填要求;其余为本套件口径的失败模式):
 
-来源(核对于 2026-10-12):blog.google "Retailers: Get ready for AI-driven holiday shopping"(2026-09-16,一手)、support.google.com/merchants/answer/17200695(AI performance insights 帮助页)、Search Engine Land 488930(2026-09-16)、genrise.ai 与 integrated.social(2026-09/10,六字段与面板细节);lululemon 50% 与 +5% 均为 Google 自述厂商口径,标"官方声明"引用。
+1. `price` 不是纯数字(例:`$1,299.99` 应写 `1299.99`)——官方示例用数字,并要求遵循 schema.org 的用法。
+2. 缺 `priceCurrency`——必填。
+3. 价格为 0 或缺 `offers`——merchant listing 要求价格大于 0。
+4. 页面可见价、结构化数据价、feed 价不一致(含舍入差)。
+5. 单品页使用 `AggregateOffer`——merchant listing 要求 `Offer`。
+6. 缺 `availability`、`gtin`、`sku`、`brand`——推荐属性,缺了不一定失去资格,但商品匹配和展示信息变少。
+7. 缺 `aggregateRating`/`review`——没有星级富结果;不要为此造假评分。
+8. `image` 指向被 robots 屏蔽的 CDN,或带会过期签名的 URL——官方要求图片 URL 可抓取、可索引。
+9. 主题或插件更新后 schema 失效——用下面的检查清单定期抽查。
 
-## 二、Product schema 实操清单(最常见错误即失败模式)
+**排查入口**:Search Console「商家信息」报告(按 SKU 列错误)、Rich Results Test(单 URL)、Merchant Center Diagnostics(feed 侧)。三者交叉:Search Console 报页面侧,Merchant Center 报 feed 侧,只看一边会漏。
 
-必填(merchant listing):`name`、`image`、`offers.price`、`offers.priceCurrency`;购物功能另需 `availability`。推荐:`gtin`/`sku`/`brand`/`mpn`、`Product.category`。
-**七个高频错误**:①price 带货币符号/千分位(`$1,299.99` 非法→`1299.99`);②缺 priceCurrency;③缺 availability;④schema 与页面可见价/GMC feed 不一致(舍入差即报错);⑤缺 offers 节点;⑥单品误用 AggregateOffer;⑦主题/插件更新后 schema 过期。
-
-**扩至 Top 10(2026-10 补,含 warning 级;Yoast/Rank Math/3wBiz/CommerceGurus/GSC 论坛汇总)**:
-
-- ⑧**缺 `sku`/`gtin`/`brand`(warning)**:merchant listing 资格可保但商品匹配质量受损——GSC「商家信息」会列 "缺字段" 警告;GTIN 对了才进 Shopping Graph 的全球商品实体(官方 Product data 规范);
-- ⑨**缺 `aggregateRating`/`review`(warning)**:"要么 offers 要么 review/aggregateRating" 的 GSC 提示——无评分=无星标富结果,商品 CTR 显著受损;但**为消 warning 造假评分**是人工处置直接原因,宁缺勿假;
-- ⑩**`priceValidUntil` 处理不当(warning/错误两态)**:仅促销价有意义(=促销截止),常价商品缺失此字段属正常可忽略(Yoast 官方口径)——但促销过期未撤导致 `priceValidUntil` 已过=价格信号失效,GMC 同步报错;
-- 补充两类隐性失败(不计入编号但常见):**图片不可抓**(schema `image` 指向 robots 屏蔽或带签名过期 URL 的 CDN);**Organization 上挂 AggregateRating**(见 L2,self-serving)。
-- **排查入口**:GSC「商家信息」报告(错误按 SKU 列出)+ Rich Results Test(单 URL)+ GMC Diagnostics(feed 侧);三者交叉——**GSC 报 schema 侧、GMC 报 feed 侧,只看一边会漏**。
-
-**最小可用 Product JSON-LD(L1 基线,零 warning 起步式)**:
+**最小可用 Product JSON-LD**
 
 ```json
 {
@@ -111,83 +97,64 @@ curl -s -A "GPTBot" -o /dev/null -w "%{http_code}\n" https://shop.example.com/p/
 }
 ```
 
-(price 纯数字/ISO 4217/availability 用完整 URL/reviewCount 与平台一致——四个高频错误一次规避。)
-GMC 联动:free listings 默认覆盖 Shopping tab/Search/Images,**2025–26 正向 AIO 与 AI Mode 扩展**(query fan-out 取结构化 feed);已可不开 GMC 账户、仅凭页面结构化数据获 merchant listing 资格(官方)。
+(示例数据为虚构。price 用纯数字、priceCurrency 用 ISO 4217、availability 用完整 URL。)
 
-## 三、市场分叉表(主导方与官网策略)
+Merchant Center 帮助页写明 free listings 可以出现在 Google 搜索、地图、Gemini、YouTube、购物标签、Google 图片和 Google Lens([Free listings 帮助](https://support.google.com/merchants/answer/9826670));需要 feed 与页面中的商品信息都准确(帮助页要求提供高质量商品数据)。
 
-| 市场 | marketplace 主导方 | 官网策略 |
+## 三、市场分叉(定性;份额数字未核,已删)
+
+旧版的各市场份额、平台算法清单和增长数字没有找到可核对的一手来源,已删除。做某个市场的客户方案前,先查该市场最新的一手数据(平台官方卖家中心、统计机构),再写入方案。
+
+| 市场 | marketplace 主导方(定性) | 官网策略(本套件口径) |
 |---|---|---|
-| 美/英 | Amazon("best"查询部分被 Rufus 截流) | DTC 争品牌词/对比词/"best alternative to X";transactional 让 Amazon |
-| 印度 | Amazon+Flipkart ~60–70% | 官网只做品牌词+内容;JustDial/IndiaMART 目录=GEO 引用源;AI 搜索已触及 ~22% 购买旅程 |
-| 印尼 | Tokopedia(AIO 被引 #6)/Shopee/Lazada | AIO 直接引 marketplace 页→官网全力内容层+schema,做"被引第二通道" |
-| 日本 | Amazon JP+楽天(双巨头 ~54% 价值份额) | 楽天店内 SEO≠Google SEO;海外品牌先进 marketplace 再建本地化官网 |
-| 韩国 | Coupang(40%+)+Naver Shopping ~64% | 官网 Google 价值有限,重点在 Naver 生态(Smart Store/博客/카페) |
-| 土耳其 | Trendyol(34–40%,月活 41.3M) | marketplace 页仅占 AIO 引用 2.5%→官网品牌词+内容层仍有空间 |
-| 俄罗斯 | Ozon/Wildberries(WB ~52% 订单) | **低优先级**:2026 基础设施风险高(EU 制裁金融实体+仓库受损;Reuters/AP);Ozon AI 助手测试中 |
+| 美/英 | Amazon | DTC 争品牌词、对比词;交易词让 marketplace |
+| 印度 | Flipkart、Amazon | 官网做品牌词和内容层 |
+| 东南亚 | Shopee、Lazada、Tokopedia | 官网做内容层和 schema |
+| 日本 | Amazon JP、楽天 | 楽天店内搜索与 Google 搜索是两套规则 |
+| 韩国 | Coupang、Naver Shopping | 重点在 Naver 生态 |
+| 土耳其 | Trendyol | 官网争品牌词和内容层 |
+| 拉美 | Mercado Libre | 标题、属性、问答在平台内优化 |
+| 中东 | Noon、Amazon | 阿拉伯语 RTL 站点,本地支付方式 |
+| 俄罗斯 | Ozon、Wildberries | 低优先级,先评估合规与履约风险 |
 
-## 三点五、marketplace 站内 SEO 分叉(2026-10-09 深挖轮;各平台算法均为社区口径非官方)
+## 四、AI 购物现状(核对 2026-10-21)
 
-| 平台(市场) | 站内排名清单(圈内版) |
-|---|---|
-| **Mercado Libre**(拉美) | 标题用满 60 字符(产品+品牌+型号+属性);ficha técnica 全字段喂过滤器;**问答响应速度/质量是排名因子**;转化率="女王指标";**投诉率<1% 保 Mercado Líder;Premium 曝光>Clássico**;工具 Nubimetrics(官方 partner) |
-| **Trendyol**(土耳其) | 九信号:单量转化最强/评分与投诉时效/标题公式 Marka+Ürün+Model+Özellik/Hızlı Teslimat 徽章/**断货即时掉**/行为信号/新品窗口/广告间接/价格力;**content score 传 80-90+**(卖家口径);工具 pazarus.io+Trendyol Akademi |
-| **Allegro**(波兰) | "Trafność"算法:标题匹配/**参数填满且逐月更新——常新增参数,过时即掉曝光**/缩略图+换算价/Allegro Analytics 迭代 |
-| **bol.com**(荷兰) | 先做 zoekterm 研究再组标题(~100 字符);官方 Zoekalgoritme 页基准;zoektrends 数据库 |
-| **Shopee**(越/泰/东南亚) | 关键词×**店铺指标**(回复率/粉丝/转化速度)+free ongkir;Lazada 给长描述更多内容分(分工) |
-| **Tokopedia**(印尼) | 官方 Analisis Pencarian 工具;商品名+直播+短视频标题优先;TikTok Shop SEO 并入 University |
-| **Salla/Zid**(沙特) | 平台级 SEO 偏弱需手动(sitemap/robots/抓取);App 生态 RankX;年费 SAR 990-2,990 |
+- **Google**:AI Mode、Gemini、Search 里的购物功能依赖 Merchant Center 与 Shopping Graph;UCP 结账见上节。
+- **OpenAI**:ChatGPT Instant Checkout 于 2025-09-29 推出(Forbes 2026-03-10)。OpenAI 在 2026-03-24 的官方文章里说,初版 Instant Checkout 灵活性不够,改为允许商家使用自己的结账流程,自己专注产品发现;商家通过 ACP 共享商品 feed 和促销信息;想要更深整合的商家可以开发 ChatGPT apps(Walmart 是首个例子)([OpenAI](https://openai.com/index/powering-product-discovery-in-chatgpt/))。CNBC 2026-03-20 报道 OpenAI 确认结束 Instant Checkout([CNBC](https://www.cnbc.com/2026/03/20/open-ai-agentic-shopping-etsy-shopify-walmart-amazon.html),第三方)。
+- 本套件口径的判断:AI 管发现,结算多回到商家网站。把 L5 当期货,把 L1–L4 当现货。公开的商家采用率和转化数据仍然缺失,对客户写「基建预备」,不写「流量渠道」。
 
-### 三点六、两个市场分叉深挖:印度 Flipkart 与中东 Noon(2026-10)
-
-**印度(Flipkart 主场确认+快商务变量)**:
-
-- **份额口径分层(引用时注明)**:GMV 口径 Flipkart ~32% vs Amazon ~28%,Meesho 增长最快(~$6.2B GMV,Digital in Asia);MAU 口径 Flipkart+Myntra ~35%,Amazon 从 ~29% 跌至 ~18%(Goldman Sachs/Sensor Tower,CEO Review 转述);**Flipkart 自 2019 年起每年保持约 10pp GMV 领先**(Times of India)——印度是 Flipkart 主场,与美国镜像相反;
-- **节庆脉冲**:Big Billion Days 期间 Flipkart 声称拿走全行业最高 ~70% 订单(峰值口径)——**印度电商预算要按节庆脉冲排班**(Q3/Q4),错峰=错季;
-- **快商务(quick commerce)是 2026 真变量**:Flipkart 系日单 ~82 万 vs Amazon Now ~47 万(CNBC);快商务预计 2030 年占印度线上零售 ~40%(eMarketer)——**10 分钟达正在吃掉"次日达"的即时型购买**,对官网 DTC 的含义:印度市场的履约体验基线被快商务抬高,慢物流 DTC 在转化端先天劣势;
-- **GEO 含义**:JustDial/IndiaMART 目录仍是 AI 引用源(见上表);Hinglish/地方语言内容是 Flipkart 生态外官网少数可竞争面(AI 搜索已触及 ~22% 购买旅程,套件已有数据)。
-
-**中东(Noon+Amazon 分治,2026 新格局)**:
-
-- **格局剧变:Amazon 入股 Noon**——沙特合并实体 ~31% 份额(Robusta Group 2026 报告);此前 Noon 完成新一轮 $500M 融资(LinkedIn/行业转述);**分治格局:Noon 主导沙特(其 52% 收入来自沙特,ECDB),Amazon 主导 UAE 尤其电子产品**——阿联酋与沙特要当两个市场做,不是一个"中东";
-- **市场体量**:沙特电商 2026 达 **$20B**(提前两年达预测),2028 预计 $25–27B;UAE 2026 $12.30B、2031 预计 $21B(Cloud6/Market Data Forecast);
-- **本地化要求(官网 DTC 进入门槛)**:阿拉伯语 RTL 站点(不是机翻)、COD(货到付款)与 Mada/Tabby(先买后付)支付、地址系统弱( landmarks 导向);`ar-SA` 内容+本地实体 schema;
-- **建站生态**:Salla/Zid(沙特 SaaS 建站,见三点五)是本地 DTC 快速路径——但平台级 SEO 弱,**schema/sitemap/robots 需手动补**(与三点五行呼应);
-- **GEO 含义**:中东 AI 引用生态尚浅(阿语语料质量参差)——**阿语内容层竞争低、先发优势大**;社交电商 $9.9B(2026,14.6% CAGR,Ken Research)与搜索并列入口。
-
-## 四、AI 购物现状(2026-10 可证实口径)
-
-- **Google**:AIO/AI Mode 集成 Merchant Center 与 Shopping Graph;AIO 内直接展示 free product listings 属测试中(官方确认路径,细节为行业观察)。
-- **OpenAI**:ChatGPT Instant Checkout(2025-09 发布)**已于 2026-03 退役**——官方口径"迁移到 Apps,购买在商家自己网站完成";采用率低;底层 ACP 协议保留(媒体源,属实)。
-- 格局共识:**"AI 管发现、商家管结算"**;ChatGPT 产品推荐日益依赖 merchant feed 而非开放网页。
-
-### 四点五、AI 购物代理采用进度(2026-10 增量)
-
-- **UCP 正式从 spec 走向产品化**:①**2026-03 大版本更新**(Semrush 口径)——agent 可浏览/比较/直接下单;②**Merchant Center「UCP Integration Hub」美国先上线**(SEL+Seroundtable;官方帮助页 support.google.com/merchants/answer/16837055)——GMC 内向导式连接 cart/checkout/identity,"Adopt UCP to enable agentic actions on AI Mode, Gemini and Search";③**Google I/O 2026 官宣 Universal Cart**(blog.google 一手,原"未证实"标记可升级):跨购物旅程的智能购物车,底层即 UCP 扩展;
-- **采用现状的诚实口径**:Integration Hub 美国先行的"先行"= 其他市场商家当下无操作入口,只能预埋 `/.well-known/ucp`+补 schema(L1-L2 做扎实是 L5 的前置);**公开的商家采用率/转化数据仍缺失**(见未证实项)——对客户的表述应是"基建预备",不是"流量渠道";
-- **ACP 侧**:Instant Checkout 退役后,ChatGPT 的商务路径=merchant feed(Apps/Directory 式);Stripe 同时支持 UCP/ACP 两协议是商家侧最稳的集成层;
-- **判断框架**:AGI 购物代理的"发现→比价→下单"三段里,2026-10 只成熟了"发现"(AI 推荐),"下单"段在协议层就绪但消费者采用未验证——**把 L5 当期货,L1-L4 是现货**。
-
-## 五、UCP 与 ACP(两大 agent 商务协议,2026-10)
+## 五、UCP 与 ACP
 
 | | UCP | ACP |
 |---|---|---|
-| 发起 | **Google 主导**,Shopify/Etsy/Wayfair/Target/Walmart 共同开发;~50 家背书(Amazon/Microsoft/Meta/Stripe/Visa/Mastercard/PayPal/Klarna/Flipkart/Shopee/Zalando) | OpenAI+Stripe 维护(GitHub 1,568★) |
-| 机制 | `/.well-known/ucp` 声明 services/capabilities;transport=rest/mcp/a2a/embedded;覆盖 catalog→cart→checkout→identity→订单→支付;商家保持 Merchant of Record | ChatGPT 侧结算协议 |
-| 状态 | spec 版本日期制,最新 2026-08-25;官方文档 developers.google.com/merchant/ucp;**GMC Integration Hub 美国上线(2026)**;垂直扩展 Lodging(草案)/Food(将上线) | Instant Checkout 退役但协议保留;Stripe 两者都支持 |
-| 实操入口 | [ucp.dev](https://ucp.dev)、[Shopify/ucp-cli](https://github.com/Shopify/ucp-cli)(79★,L5 直接可用)、NVIDIA Retail-Agentic-Commerce 参考实现 | agentic-commerce-protocol spec |
+| 发起 | Google 主导;ucp.dev 的「Co-developed」列表含 Shopify、Etsy、Wayfair、Target、Walmart 等;「Endorsed across the ecosystem」列表含 Adyen、Best Buy、Flipkart、Klarna、Mastercard、PayPal、Shopee、Stripe、Visa、Zalando 等 | OpenAI 与 Stripe 维护(仓库称 beta) |
+| 机制 | 商家在 `/.well-known/ucp` 发布 profile;传输层 REST、MCP、A2A、Embedded;商家保持 Merchant of Record | 连接买家、AI agent 与商家;2026-03 扩展到产品发现(商家共享 feed 和促销) |
+| 状态 | 规格按日期版本,当前最新 2026-08-25;垂直扩展:Lodging 草案、Food 即将推出;Google 侧结账见上节 | Instant Checkout 已改为允许商家自有结账 |
+| 实操入口 | [ucp.dev](https://ucp.dev)、[Shopify/ucp-cli](https://github.com/Shopify/ucp-cli) | [ACP 规范仓库](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol) |
 
-**UCP 不影响 Google 排名(Google 未如此表述,勿写入客户材料)。**
+## 六、检查清单
 
-## 六、未证实项
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| Product 必填项 | `curl -s URL \| grep -o '"price":[^,}]*'`;`python3 scripts/schema_lint.py URL` 检查 JSON-LD 的 `@id`、悬空引用、aggregateRating 范围 | `price` 是纯数字且大于 0,`priceCurrency` 存在,为通过 |
+| 价格三处一致 | 抽 20 个 SKU:页面可见价、JSON-LD 价、feed 价逐个对 | 价差为 0 为通过;任一不一致为失败 |
+| 富结果资格 | Rich Results Test(单页);Search Console「商家信息」报告 | 无 error 为通过 |
+| feed 侧问题 | Merchant Center Diagnostics | 无 critical 问题为通过 |
+| 单品页没有 AggregateOffer | `curl -s URL \| grep -c AggregateOffer` | 输出 0 为通过 |
+| 评价与平台一致 | 官网 `reviewCount` 对照平台店铺页 | 一致为通过;官网数大于平台实有评价数为失败 |
+| AI 爬虫可达价格页 | `curl -s -A "GPTBot" -o /dev/null -w "%{http_code}\n" URL`;`python3 scripts/robots_posture.py URL/robots.txt --json` | 返回 200,且 robots 立场与客户的决策一致为通过 |
+| UCP profile(已接入时) | `curl -s https://shop.example.com/.well-known/ucp \| python3 -m json.tool` | 能解析为 JSON 为通过 |
+| 官方 AI 面份额 | Merchant Center → Analytics → AI performance(仅在可用国家,英语查询) | 能看到 share of voice 并记录口径为通过 |
+| 内容层引用 | 20 个 best、vs 查询,手工在目标 AI 面检查,记录引用的域名 | 有记录为通过(采样纪律见 [ai-citation-patterns.md](ai-citation-patterns.md)) |
 
-AIO 内 free listings 的触发条件与覆盖面(测试报告级);印尼 AIO 引用分布无独立研究;Ozon AI 助手效果;UCP→转化的案例数据;**GMC UCP Integration Hub 非美市场开放时间表部分落地:澳/加官宣 2026"明年初"(2026-09-16),其余市场仍未说**;Amazon 入股 Noon 后 UAqar/UAE 合并实体的份额口径(Robusta 单源);Flipkart 70% 节庆订单份额为平台自述。
+## 七、未证实项
 
-**已升级为证实(2026-10 深挖轮)**:原列 "Google I/O 2026 Universal Cart 细节(claude-seo 自标非一手)" ——现有一手来源 blog.google/products-and-platforms/products/shopping/google-shopping-cart,移出未证实;UCP Integration Hub 有 SEL+Seroundtable+官方帮助页三源。
+- AI 面里 free listings 的触发条件与覆盖面。
+- UCP 到转化的案例数据;商家采用率。
+- Merchant Center UCP 功能在澳大利亚、加拿大的上线时间:官方只说「early next year」。
+- 各市场 marketplace 的份额与站内排名因素(旧版数字已删)。
 
-### 来源增补(2026-10 深挖轮)
+## 来源
 
-- 印度:Times of India(GMV 10pp 领先)/CNBC 2026-07(快商务日单)/eMarketer(2030 占比)/Digital in Asia(GMV 分层)/CEO Review(Goldman/Sensor Tower MAU 口径);
-- 中东:Robusta Group(沙特 $20B/合并 31%)/ECDB(Noon 收入 52% 沙特)/Cloud6(UAE 体量)/Ken Research(社交电商)/Market Data Forecast;
-- UCP/agent 商务:developers.google.com/merchant/ucp+support.google.com/merchants/answer/16837055(官方)/SEL+Seroundtable(Integration Hub)/Semrush(2026-03 更新)/blog.google(Universal Cart 一手)/Google Cloud(agentic commerce 叙事);
-- schema 错误:Yoast(priceValidUntil 语义)/Rank Math(offers/review/aggregateRating 警告)/3wBiz(两个 missing field 修法)/CommerceGurus(星标缺失影响)/Google Webmasters 论坛真实工单。
+- 官方:[merchant listing 结构化数据](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing)、[product snippet](https://developers.google.com/search/docs/appearance/structured-data/product-snippet)、[review snippet](https://developers.google.com/search/docs/appearance/structured-data/review-snippet)、Merchant Center 帮助([free listings](https://support.google.com/merchants/answer/9826670)、[UCP 结账](https://support.google.com/merchants/answer/16837055)、[conversational attributes](https://support.google.com/merchants/answer/17085370)、[AI performance insights](https://support.google.com/merchants/answer/17200695))、blog.google(2026-01-11、2026-09-16、2026-10-15 三篇)、[ucp.dev](https://ucp.dev)、[OpenAI 2026-03-24](https://openai.com/index/powering-product-discovery-in-chatgpt/)。
+- 第三方:CNBC、Forbes(Instant Checkout 时间线)。

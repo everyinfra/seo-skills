@@ -34,7 +34,7 @@ seo_vs_ads),消灭 4 形态手工导出(R2-2 落地层的前置件)。
 诚实边界(不假装能做到的):
   - 无 refresh 场景:SA JWT 换的 access_token 自含 1h 有效期,过期重签即可,不存在 refresh token;
   - token 仅内存缓存 50 分钟(不落盘,进程退出即失效);
-  - 配额 1200 qpm(searchconsole.googleapis.com,按项目计):批量拉取自然远低于此,429 时
+  - 配额每站点、每用户 1,200 QPM;每项目 40,000 QPM(developers.google.com/webmaster-tools/limits):批量拉取自然远低于此,429 时
     错误信息附降频提示;
   - 匿名查询(privacy 保护)不出现在 API 结果中——导出 CSV 同口径,不是数据丢失。
 
@@ -456,7 +456,7 @@ def describe_http_error(e):
                 "(permissionLevel ≥ restricted);确认 --site 前缀(sc-domain:example.com"
                 " 或 https://example.com/,与 sites 列表完全一致)")
     elif e.code == 429:
-        msg += "\n  429:配额 1200 qpm(searchconsole API 按项目计)——降频或稍后重试"
+        msg += "\n  429:配额每站点/每用户 1,200 QPM——降频或稍后重试"
     return 1, msg
 
 

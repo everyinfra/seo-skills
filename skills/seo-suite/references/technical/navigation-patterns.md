@@ -4,7 +4,7 @@
 
 ## 通用要求
 
-- 导航链接必须是带有效 `href` 的 `<a>`；按钮只用于操作。Google 通常只抓取带 `href` 的 `<a>`，靠脚本事件跳转的元素无法可靠提取（[Google 链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)，核对 2026-10-18）。
+- 导航链接必须是带有效 `href` 的 `<a>`；按钮只用于操作。Google 通常只抓取带 `href` 的 `<a>`，靠脚本事件跳转的元素无法可靠提取（[Google 链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)，核对 2026-10-21）。
 - 导航链接最好直接出现在服务端返回的 HTML 中。用 JS 插入也可以，但要等渲染队列处理后才被发现（[JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)）；不渲染 JS 的爬虫看不到。
 - 锚文本描述目标页内容，用用户熟悉的词，不用「点这里」。
 - 页面上有多个导航区域时（主导航、页脚、侧栏），每个用 `nav` 并给出可区分的名称（`aria-label`；见 [W3C WAI 页面区域教程](https://www.w3.org/WAI/tutorials/page-structure/regions/)）。
@@ -30,7 +30,7 @@
 
 ## 分面导航（faceted navigation）
 
-分面导航按参数组合展开 URL 空间，会导致过度抓取并拖慢新页面的发现（[Google 分面导航抓取管理](https://developers.google.com/crawling/docs/faceted-navigation)，2024-12-17 成文、2025-12-18 迁址，核对 2026-10-18）。规则层见 [redirects-canonical.md](redirects-canonical.md)，这里只管导航层。官方给两条路：
+分面导航按参数组合展开 URL 空间，会导致过度抓取并拖慢新页面的发现（[Google 分面导航抓取管理](https://developers.google.com/crawling/docs/faceted-navigation)，页面最后更新 2025-12-18，已迁到抓取基础设施站点，核对 2026-10-21）。规则层见 [redirects-canonical.md](redirects-canonical.md)，这里只管导航层。官方给两条路：
 
 **路径一：分面 URL 不需要被索引 → robots.txt 禁止抓取**（官方示例改写）
 
@@ -50,7 +50,7 @@ Allow: /*?products=all$
 - 无结果、重复或无意义的组合，以及不存在的分页号，在原 URL 返回 404；不要重定向到通用错误页（SPA 可能做不到）。
 - canonical 指向不带筛选的版本、指向筛选页的锚点加 `rel="nofollow"`：长期效果通常不如前两种方法；nofollow 要所有指向该 URL 的锚点都加才有效。
 
-**哪些分面值得索引**（本套件口径：每一条「可索引」都要有搜索量或转化数据支撑）：
+**哪些分面值得索引**（本套件口径：每一条「可索引」都要有搜索量或转化数据支撑；官方文档没有逐分面类型的处置表）：
 
 | 分面类型 | 默认处置 | 理由 |
 |---|---|---|
@@ -68,7 +68,7 @@ Allow: /*?products=all$
 
 ## 面包屑：视觉与 schema 的一致性
 
-- Google 建议面包屑写典型的用户访问路径，不必照搬 URL 层级；一个页面可以有多条路径；不必包含顶级域名一项和当前页一项（[Breadcrumb 文档](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)，核对 2026-10-18）。
+- Google 建议面包屑写典型的用户访问路径，不必照搬 URL 层级；一个页面可以有多条路径；不必包含顶级域名一项和当前页一项（[Breadcrumb 文档](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)，核对 2026-10-21）。
 - BreadcrumbList 至少 2 个 ListItem；每项必填 `name`、`position`、`item`，最后一项可以省略 `item`（Google 用当前页 URL）。面包屑富结果 2025-01-22 起只在桌面显示。
 - 视觉面包屑与 BreadcrumbList 必须一致：结构化数据要与可见内容一致是 Google 的通用要求（[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。常见错配：schema 写了视觉上没有的中间层（模板写死）；视觉有、schema 少；多语言站 schema 没有随语言切换。
 - Rich Results Test 检查的是标记能否产生富结果，不比对可见面包屑；一致性要用脚本对拍（见检查清单）。写法见 [schema-templates.md](schema-templates.md)。
@@ -91,7 +91,7 @@ Allow: /*?products=all$
 ## 内链流向的可视化审计
 
 1. **爬取导出**：`python3 scripts/site_crawl.py example.com --out crawl.json`，再 `python3 scripts/link_graph.py --crawl crawl.json`（PageRank 近似排序、深度直方图、零入链和单入链清单）。
-2. **力导向图**：Screaming Frog 的 Force-Directed Crawl Diagram 按最短路径和抓取深度分层展示站点结构（[官方教程](https://www.screamingfrog.co.uk/seo-spider/tutorials/site-architecture-crawl-visualisations/)）。
+2. **力导向图**：Screaming Frog 的 Force-Directed Crawl Diagram 用边表示链接（按最短路径），节点随抓取深度变小变浅，可识别不可索引页占比（[官方教程](https://www.screamingfrog.co.uk/seo-spider/tutorials/site-architecture-crawl-visualisations/)，核对 2026-10-21）。
 3. **Gephi 深分析**（第三方做法）：内链 CSV 导入 Gephi，看入度和模块度，找枢纽页集中度和断开的子图。
 4. **判读**（本套件口径）：高价值页入链很少（权重饥饿）；成片页面深度明显偏大（导航失效）；单页入链占比畸高（常是模板或面包屑错误）。
 5. **叠加日志**：把 [log-analysis.md](log-analysis.md) 的每目录抓取量叠到图上；链接流向与爬虫实际抓取不一致时，先修导航。
@@ -122,5 +122,5 @@ Allow: /*?products=all$
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[coreyhaines31/marketingskills · skills/site-architecture/references/navigation-patterns.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/site-architecture/references/navigation-patterns.md)（MIT）
-- 一手资料（核对 2026-10-18）：[Google：链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[分面导航抓取管理](https://developers.google.com/crawling/docs/faceted-navigation)、[分页与增量加载](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)、[Breadcrumb 结构化数据](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)、[移动优先索引](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)、[Google 常见抓取工具](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers)、[文档更新记录](https://developers.google.com/search/updates)；[W3C WAI 页面区域](https://www.w3.org/WAI/tutorials/page-structure/regions/)；[Brin & Page 1998](http://infolab.stanford.edu/~backrub/google.html)。
+- 一手资料（核对 2026-10-21）：[Google：链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[分面导航抓取管理](https://developers.google.com/crawling/docs/faceted-navigation)、[分页与增量加载](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)、[Breadcrumb 结构化数据](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)、[移动优先索引](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)、[Google 常见抓取工具](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers)、[文档更新记录](https://developers.google.com/search/updates)；[W3C WAI 页面区域](https://www.w3.org/WAI/tutorials/page-structure/regions/)；[Brin & Page 1998](http://infolab.stanford.edu/~backrub/google.html)。
 - 工具文档：[Screaming Frog 可视化教程](https://www.screamingfrog.co.uk/seo-spider/tutorials/site-architecture-crawl-visualisations/)。

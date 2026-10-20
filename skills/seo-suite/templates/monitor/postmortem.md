@@ -2,7 +2,7 @@
 
 _For: {复盘主持(incident commander)} · Date: {YYYY-MM-DD} · Incident: {编号/别名} · Severity: {critical/warn/误报风暴} · Owner team: {config owner_teams 映射出的归属团队,未映射写 "-"} · Review type: {算法更新事后 / 重大宕机 / 误报风暴}_
 
-> **Blameless 措辞纪律(对事不对人)**:本文件只描述系统行为、时间线与贡献条件,不出现"某人失误/某组失职/谁批准的"类措辞。前提假设:当时在场的人在已有信息、工具与激励下都做了合理决定——复盘要回答的是"系统为什么让合理决定导向了事故",不是审判决定本身。人名只允许出现在行动项表的 owner 列(含义是"跟进人",不是"过错人");引用对话写"当时的判断是 X",不写"X 错了"。
+> **Blameless 措辞纪律(对事不对人)**:本文件只描述系统行为、时间线与贡献条件,不出现"某人失误/某组失职/谁批准的"类措辞。依据:Google SRE 书「Postmortem Culture」写明,无责复盘要找出事故的贡献原因,不指责任何个人或团队,并假设所有相关的人当时都有好意、用手头信息做了正确的事([SRE 书](https://sre.google/sre-book/postmortem-culture/),核对 2026-10-21)——复盘要回答的是"系统为什么让合理决定导向了事故",不是审判决定本身。人名只允许出现在行动项表的 owner 列(含义是"跟进人",不是"过错人");引用对话写"当时的判断是 X",不写"X 错了"。
 
 ## The answer
 
@@ -30,13 +30,13 @@ _For: {复盘主持(incident commander)} · Date: {YYYY-MM-DD} · Incident: {编
 
 | 维度 | 数值 | 口径/备注 |
 |---|---|---|
-| 流量 | {} | GSC clicks 前后 7 天对比;注明 GSC 2-3 天滞后 |
+| 流量 | {} | GSC clicks 前后 7 天对比;近几天的 GSC 数据是临时的,注明取数日期 |
 | 可见性 | {} | site: 抽查 / 本地排名网格(local-grid-ranking 口径) |
 | 索引 | {} 页 | noindex/robots/收录数变化;单模板回归另看 site_crawl |
 | 收入/转化 | {} | 仅可归因时填,不强行 |
 | 持续时长 | {} | T0→Tn |
 
-{一句话判定:是否消耗 SLO 错误预算、slo_budget_low 是否触发——触发则说明当时已建议冻结发布,冻结协议(Freeze→Pause→Review)实际执行了没有。}
+{一句话判定:是否消耗 SLO 错误预算、slo_budget_low 是否触发——触发则说明当时已建议冻结发布,冻结协议(Freeze→Pause→Review,行业从业者做法,本套件口径,见 [seo-drift-monitoring.md](../../references/monitoring/seo-drift-monitoring.md) 第 0 步)实际执行了没有。}
 
 ## Alert Quality Review(告警质量自评)
 
@@ -77,15 +77,28 @@ _For: {复盘主持(incident commander)} · Date: {YYYY-MM-DD} · Incident: {编
 - {本次实际改动清单:监控配置/阈值/文档/runbook 改了什么(已执行的写"已改",附 commit/PR;未执行的必须出现在上方行动项表,不许只在叙述里)}
 - {本次复盘否定/修正了哪些旧假设(如有;无则删本行)}
 
+## 检查清单(定稿前逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 时间线锚点来自记录 | T0 取 deploy 记录或变更单;T1 取 `python3 scripts/monitor.py diff --run-id N --format json --out alerts.json` 里首条告警的时刻;T2 取 `notify-incidents.json`(notify.py 的告警生命周期记录)里的 ack 时刻;Tn 取 monitor 的 `*_resolved` 自愈告警或回滚时刻 | 通过:每个时刻都有记录出处。失败:凭印象填 → 写 [要追加: 数据源] |
+| 2 | MTTD / MTTR 算对 | MTTD=T1−T0,MTTR=Tn−T1,TTR=Tn−T0,ack 用时=T2−T1 | 通过:四个数用同一时区。失败:T0 错用成检测点 |
+| 3 | 哪条告警先醒 | `alerts.json` 按时刻排序,看首条 code | 通过:首响应是根因侧告警。派生信号先醒 → 抑制树(`INHIBITS`)漏配,进行动项 |
+| 4 | 影响面有数 | GSC 前后 7 天点击;`python3 scripts/site_crawl.py 站点 --max 500 --json` 数 noindex 页;`python3 scripts/log_session.py --log access.log --ua Googlebot --json`(会话级取证) | 通过:流量、索引、持续时长至少两项有数。失败:只有叙述 |
+| 5 | 5 Whys 止于系统性原因 | 逐层读证据 | 通过:每层有日志、diff 或记录;最后一层是流程/工具/防护缺环。失败:停在「人没注意」 |
+| 6 | 行动项可验证 | 每条有 owner、期限、可观测的验证方式 | 通过:验证方式是「再发生时系统自动拦住/叫醒人」。失败:写「加强意识」 |
+| 7 | 无责措辞 | 全文搜「失误」「失职」「应该注意」 | 通过:零命中,人名只在 owner 列。失败:任一命中 |
+| 8 | 误报与漏报已自评 | 对照 Alert Quality Review 表 | 通过:5 行都有答案。失败:缺行 |
+
 ## What could change this conclusion
 
-- {数据缺口:GSC 2-3 天滞后,影响面数字可能仍在变化;访问日志采样率}
+- {数据缺口:GSC 近几天的数据是临时的,影响面数字可能仍在变化;窗口含 2025-05-13 至 2026-04-27 时,展示、CTR、平均排名不可信,点击可用([官方记录](https://support.google.com/webmasters/answer/6211453));访问日志采样率}
 - {归因局限:同日 deploy 与下跌是强相关非证明;算法更新期归因噪声大}
 - {幸存者偏差:没响的告警不代表没出事,只代表没被看见;漏报检查只覆盖已知形态}
 
 ## Method Notes
 
-- 复盘时机:恢复后 48 小时内出初稿(情绪峰值过后、记忆衰减之前),重大事故 5 个工作日内定稿;blameless + 及早 + 行动项可验证(Google SRE postmortem 惯例)。
+- 复盘时机(本套件口径,不是 SRE 书的规定):恢复后 48 小时内出初稿,重大事故 5 个工作日内定稿。SRE 书的原则是无责、事先定好触发复盘的客观条件、任何相关方都可以要求复盘、行动项评审满意后归档进可检索的事故库。
 - 适用触发:①算法更新事后——seo-drift 归因五层(L1-L5)走完收尾时**强制**套用本模板(归因协议见 references/monitoring/seo-drift-monitoring.md);②重大宕机——任何 critical(homepage_down/robots_sitewide_block/SSL 等);③误报风暴——单日告警量异常、flapping 密集。
 - 数据源:monitor.py 的 diff/alerts JSON(run id)、notify incidents(ack/升级记录)、deploy/发布日历、GSC/服务器日志(会话级取证用 scripts/log_session.py)。数字缺失写 [要追加: 数据源],禁编造。
 - 关联:告警分级与升级链见 [alert-playbook.md](alert-playbook.md);运营节奏与冻结协议见 [continuous-operations.md](../../references/monitoring/continuous-operations.md);本模板对应监控对标⑤的 owner_team 字段与对标②(模板本体)。

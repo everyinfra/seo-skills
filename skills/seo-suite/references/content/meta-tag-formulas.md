@@ -115,7 +115,7 @@ Open Graph 的补充（Facebook [分享指南](https://developers.facebook.com/d
 | `description-too-short`（< 市场 `desc_min`，默认上限的一半）、`description-too-long` | WARN | 本套件口径 |
 | `h1-missing` | WARN | 本套件口径。Google 要求主标题清楚，没有规定必须有 h1 |
 | `h1-multiple`、`headings-skip-level` | WARN | 本套件口径。Google：标题的数量和顺序对搜索没有影响；Bing 指南要求逻辑的标题层级 |
-| `canonical-relative` | CRITICAL | 本套件口径，严于 Google（相对路径受支持，但不推荐） |
+| `canonical-relative` | WARN | 本套件口径（Google 支持相对路径，但建议用绝对 URL） |
 | `canonical-missing` | WARN | 本套件口径。Google：canonical 不是必需的 |
 | `robots-noindex` | CRITICAL | 页面不会出现在 Google 搜索结果里 |
 | `og-title-missing`、`og-image-missing`、`og-description-missing`、`og-image-not-absolute` | WARN | OGP：`og:title`、`og:image` 必需；`og:description` 可选 |

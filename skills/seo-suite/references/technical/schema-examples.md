@@ -80,13 +80,13 @@ WebPage 节点（`isPartOf`、`breadcrumb` 等关系）可以表达页面结构�
 ## 四、实施要点
 
 - 可见内容和 JSON-LD 从同一份数据生成，避免漂移。
-- 序列化时至少把 `<` 写成 `<`，防止内容里的 `</script>` 截断脚本（依据和第三方实现对照见 [schema-templates.md](schema-templates.md)「完全装载」节）。
+- 序列化时至少把 `<` 写成 `\u003c`，防止内容里的 `</script>` 截断脚本（依据和第三方实现对照见 [schema-templates.md](schema-templates.md)「完全装载」节）。
 - 同一实体不要同时用 microdata 和 JSON-LD 各写一份；确需并存时内容必须一致。评价类标记尤其要避免用多种方式表示「被评价的是什么」（Google 2025-11-12 在评价摘要文档里补充的说明）。
 - 验证时除了看报错，还要看节点之间的引用是否都能对上。
 
-## 富结果状态速查（2026-10-18 按 Google 文档更新记录核对）
+## 富结果状态速查（2026-10-21 按 Google 文档更新记录核对）
 
-依据：[文档更新记录](https://developers.google.com/search/updates) 与 [类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)（类型库页面最后更新 2026-10-16）。
+依据：[文档更新记录](https://developers.google.com/search/updates) 与 [类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)（类型库页面最后更新 2026-10-16）。2026-10-21 逐条重读了更新记录原文，日期按其 What/Why 条目写。
 
 **已停展（存量标记无害，但没有展示收益）**：
 

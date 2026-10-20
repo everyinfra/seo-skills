@@ -5,7 +5,7 @@
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
   "source_of_truth": {
-   "scripts": "SKILL.md 第 3 节(唯一事实来源;其计数文本 59 落后于文件系统 85,已知漂移见 data-source-contract.md「发现的差异」第 2 条)",
+   "scripts": "SKILL.md 第 3 节(唯一事实来源;脚本计数以文件系统为准)",
    "data_contract": "references/overview/data-source-contract.md(数据/降级/反编造三列)",
    "capability_map": "references/overview/capability-map.md(能力地图,人读姊妹篇)"
   },
@@ -1248,7 +1248,7 @@
    "path": "templates/content/trend-jack-playbook.md",
    "group": "templates/content",
    "inputs": [
-    "trend_watch.py watch/gate 输出(规格已定待实装)+人工角度与观点清单"
+    "trend_watch.py watch/gate 输出+人工角度与观点清单"
    ],
    "outputs_schema": "markdown",
    "data_source": "上游脚本产出+agent 结论(模板不自带数据)",

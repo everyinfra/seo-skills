@@ -2,6 +2,7 @@
 
 > 建立于 2026-10-12,来自 20 视角调研 R6"运营体系"(SEJ 2026-10 / decaseo / SearchPilot×Upwork 2026-02 /
 > srnaseo 2026-04 等;调研摘要登记于 [pipeline-completeness](../overview/pipeline-completeness.md) 第五节)。
+> **本文件是组织流程模板，来自第三方从业者（SearchPilot、decaseo、srnaseo 等）的做法，全部按「本套件口径」使用，不是 Google 或行业标准。**文中的时长（如判读窗口 ≥4 周）、分级和 RACI 都应按你的团队改。
 > 定位:SEO 一旦超过一个人、跨内容/前端/后端/法务多团队,就必须按产品管理(PM)纪律运作。本文件管
 > **"改动怎么立项、审批、复盘"**;机器节奏(日/周/月监控)与人的节奏(四层 cadence/RICE)见
 > [continuous-operations](continuous-operations.md);算法 rollout 期间的变更冻结与解冻后排期见
@@ -11,8 +12,7 @@
 ## 一、为什么 PM 化:三种失败模式
 
 - **无 PRD**:大改(迁站/模板改版)只有口头共识,上线后无人能回答"当初为什么这么改、成功标准是什么";
-- **无证据库**:每次测试的结论随会议纪要一起遗失,下个季度重做同样的测试(SearchPilot×Upwork 2026-02:
-  企业 SEO 测试结果的内部复用率极低,证据库是对策);
+- **无证据库**:每次测试的结论随会议纪要一起遗失,下个季度重做同样的测试(SearchPilot 与 Upwork 的 2026-02 调研称企业 SEO 测试结果的内部复用率很低——第三方说法，本次未核一手;证据库是对策);
 - **无治理**:三个人同时改 title 模板、迁站没人签字、新成员上手靠口口相传——出了事查不到决策链。
 
 **改动分级速查**:
@@ -39,7 +39,7 @@ PRD 判读窗口撞上算法 rollout 时冻结顺延(不做"边 rollout 边判�
 3. **Why now**:为什么这个季度做(算法动向/竞品动作/资源窗口),过期作废;
 4. **不可破坏项(non-negotiables)**:高流量承载页清单/合同义务页/法务合规页——PRD 的任何方案不得触碰,
    违者 launch gate 拦下(见第五节);
-5. **时间线**:`baseline 采集 → 变更窗口 → 判读窗口`。判读窗口 ≥4 周;算法敏感改动的窗口还要避开更新
+5. **时间线**:`baseline 采集 → 变更窗口 → 判读窗口`。判读窗口 ≥4 周（本套件口径;Google 说明改进后「几天到几个月」才能见效，见 [核心更新说明](https://developers.google.com/search/updates/core-updates)）;算法敏感改动的窗口还要避开更新
    rollout(撞上即冻结顺延,见 seo-drift-monitoring 第五节第 0 步);
 6. **成功度量与判读口径**:主指标 + 对照构造(DiD 控制组或 split test)+ 提前中止条件(恶化到什么程度回滚)。
 
@@ -62,7 +62,7 @@ change: PDP title 模板 "{product} | {brand}" → "{product} {modifier} | {bran
 prd: PRD-2026-07            # 无 PRD 的小测写 ticket 链接
 window: 2026-08-01 ~ 2026-09-15   # 变更+判读全窗
 design: DiD(section 对照,pre 56d / post 28d)
-result: clicks +6.2%(CI +1.1~+11.3,likely_positive)
+result: clicks +6.2%(CI +1.1~+11.3,likely_positive)   # 示例数字，非真实数据
 verdict: 保留;Confidence 更新为 1.0(自家数据)
 ```
 
@@ -88,8 +88,8 @@ continuous-operations 第二节);同机制的反例存在时,PRD 必须写明"�
 **判读窗口与 owner 已登记**。
 
 **launch gate 前置检查清单(合入主干前)**:
-1. ci-gates 回归门绿(audit_compare --baseline-gate);
-2. robots/canonical 无意外翻转(drift compare 17 规则零 CRITICAL);
+1. ci-gates 回归门绿(`audit_compare.py --old base.json --new audit.json --baseline-gate 3`，见 [ci-gates](ci-gates.md));
+2. robots/canonical 无意外翻转(`monitor.py diff` 零 critical，规则见 [seo-drift-monitoring](seo-drift-monitoring.md));
 3. 不可破坏项清单上的页 200 且 expect_substring 断言通过;
 4. 判读窗口、主指标、回滚条件已写进 PRD 第 6 件并指定 owner。
 
@@ -104,6 +104,18 @@ continuous-operations 第二节);同机制的反例存在时,PRD 必须写明"�
 **SOW 纪律**:交付物写"物"(审计报告/PRD/落地页面数),不写"活动"(会议/调研次数);测试与实验的
 数据/结论 IP 归客户——直接进客户自己的证据库,换 agency 不换证据;退出条款含交接包(账号/证据库/文档),
 防"人走史失"。
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 改动分级正确 | 对照第二节「任一命中即 PRD」;ticket 的影响面是否已扩到模板 | 模板级改动走了 ticket = 升级为 PRD |
+| PRD 六件齐全 | 逐项核对问题（有数据）、假设（若 X 则 Y 因 Z）、why now、不可破坏项、时间线、成功度量 | 缺 Z 或缺回滚条件 = 退回 |
+| ticket 三要素 | `python3 scripts/remediation.py list --file remediations.json`，每张单有 URL / 字段、证据、验收标准 | 缺任一 = 不立 |
+| 状态机合规 | `remediation.py update REM-001 --status accepted --file remediations.json`；只能逐级前进，verified 由 `verify --old --new` 自动设置 | 跳级会被拒绝 |
+| 起草与人审分开 | `python3 scripts/fix_plan.py --audit audit.json --apply --git-branch` 只写 `./seo-fixes/` 并建分支，发布由人做 | 脚本不直接改线上 = 通过 |
+| 证据库归档 | 判读窗口关闭当周新增一条（含回滚的实验） | 实验结案但无条目 = 补 |
+| RACI 每行一个 A | 逐行数 A | 零个或两个 A = 先修表 |
 
 ## 七、来源
 

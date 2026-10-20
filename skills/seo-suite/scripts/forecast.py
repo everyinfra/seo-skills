@@ -9,7 +9,7 @@
     --save-calibration 持久化,下次 --load-calibration 自动套用
     (四家方法论中唯一明示的"模型自校准"环节)
   4 CPC 竞争:acquisition_value = traffic × CPC(等效付费成本)
-  5 三情景【官方枚举】(>30 位的词不预测——官方口径"Google 认为相关但不权威"
+  5 三情景【本套件口径】(>30 位的词不预测——官方口径"Google 认为相关但不权威"
     区间之外):
       rank3  全部词到第 3 位(已优于该位的保持原位,不预测退步)
       pct10  位次提升 10%(保守默认)
@@ -177,14 +177,14 @@ def ctr_at(pos, anchors=None):
     return anchors[-1][1]
 
 
-# ---------- 情景(seoClarity 官方枚举) ----------
+# ---------- 情景(本套件口径;seoClarity 原文只有六步流程,没有这三档) ----------
 
 def parse_scenario(s):
     """'rank3'/'pct10'/'pos2'(及任意 rankN/pctN/posN)→ (kind, n, 规则文本)。"""
     s = (s or "").strip().lower()
     m = re.fullmatch(r"(rank|pct|pos)(\d+)", s)
     if not m:
-        raise DataError(f"未知 --scenario: {s!r};官方枚举形如 rank3 / pct10 / pos2"
+        raise DataError(f"未知 --scenario: {s!r};情景形如 rank3 / pct10 / pos2"
                         "(也接受任意 rankN/pctN/posN)")
     kind, n = m.group(1), int(m.group(2))
     if kind == "rank" and n < 1:
@@ -434,7 +434,7 @@ def build_parser():
         prog="forecast.py",
         description="SEO 流量与收入预测(seoClarity 六步官方方法论):"
                     "CTR 曲线→估算→GA 校准→CPC 竞争→三情景→汇报",
-        epilog="情景为官方枚举:rank3=全部词到第 3 位 / pct10=位次提升 10%(保守默认)"
+        epilog="情景(本套件口径):rank3=全部词到第 3 位 / pct10=位次提升 10%(保守默认)"
                "/ pos2=每词升 2 位;>30 位的词不预测。示例:\n"
                "  python3 forecast.py --kws kws.csv --ctr gsc_ctr.csv --cvr 0.02 "
                "--aov 100 --actual 4200 --save-calibration calibration.json --json")

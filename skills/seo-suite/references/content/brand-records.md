@@ -1,11 +1,11 @@
 # Brand Records：品牌事实库与 Grounding Page
 
-> 建立于 2026-10-10；复核于 2026-10-18：来源归属已更正；YAML 格式按 `scripts/oracle_check.py`、`scripts/grounding_page.py` 源码和实跑结果对齐。
-> 来源归属（核对 2026-10-18）：
+> 建立于 2026-10-10；复核于 2026-10-21（首轮 2026-10-18）：来源归属已更正；YAML 格式按 `scripts/oracle_check.py`、`scripts/grounding_page.py` 源码和实跑结果对齐，10-21 又用示例重跑一次，结果一致。
+> 来源归属（核对 2026-10-21）：
 > - 六类记录的思路来自 Profound 的 Context Manager：它的「knowledge records」覆盖公司、受众、竞品、产品、战略、执行，每条说法都能追到出处；缺信息时一次只问一个问题（[Profound 帮助中心](https://help.tryprofound.com/articles/5615587527-about-context-manager)，厂商文档）。本套件把「竞品」并进 Market 记录；每条 fact 的字段和 YAML 格式是**本套件约定**。
 > - 「一条 fact 只断言一件事」参考 Profound FactCheck：它只核对事实性、可执行、原子化的说法，每条只断言一件能被事实库确认或否定的事（[FactCheck](https://help.tryprofound.com/articles/5793584301-about-factcheck)，厂商文档）。
 > - Grounding Page 出自 [Grounding Page Standard](https://groundingpage.com/spec/)（独立开放项目，Hanns Kronenberg 提出；v1.7 于 2026-10-09 发布）。Rankscale 的 [/facts 页](https://rankscale.ai/facts) 是一个实现例子。旧版把「11 条」写成 Rankscale 官方规则，不准确。
-> - `oracle_check.py` 在 fact 少于 25 条时报「样本不足」。脚本注释说这个门槛出自 Athena，本组没有在公开文档里找到出处，按本套件口径处理。
+> - `oracle_check.py` 在 fact 少于 25 条时报「样本不足」。25 条这个门槛出自 AthenaHQ：它的 Oracle 文档写明需要至少 25 条已验证 facts（[AthenaHQ Oracle 文档](https://docs.athenahq.ai/oracle)，厂商文档，核对 2026-10-21）。本套件借用这个数当「低样本警告线」，不是品牌库的质量标准。
 >
 > 本文件管「品牌自己说什么才是对的」。对外可引用性的证据边界见 [geo-evidence.md](geo-evidence.md)：照做不承诺被 AI 引用。
 
@@ -198,11 +198,11 @@ facts:
   - 实测（虚构数据，2026-10-18）：报出了 $49 对 $59 的价格冲突、2015 对 2017 的成立年份冲突、SOC 2 和 Free 计划 SSO 的是否冲突；也有误报：回答里另一个上下文的年份撞上了含年份的 fact。给容易撞词的 fact 写 `keywords`，并保持一条 fact 一件事，可以减少误报。
   - `findings.json` 记每条 finding 的状态：`pending` → 人工改成 `acknowledged` 或 `ignored`；重跑时按指纹（引擎、prompt、回答序号、fact、AI 原句）保留状态。`ignored` 不计入 Inaccuracy%。
   - 指标：Inaccuracy% = 含有效 finding 的回答数 ÷ 回答总数；按引擎分列准确率；按记录分组统计出错主题。语义级矛盾（定位、受众、语气）由人判断，Possible sources 由人填。
-- **维护**：每条 fact 的 `date` 是复核锚点。Grounding Page Standard 建议每 3–6 个月复核一次，最长不超过 12 个月（超过就不能再展示其 Human Verified 标记）；本套件的检查器用 183 天作为上限。
+- **维护**：每条 fact 的 `date` 是复核锚点。Grounding Page Standard 建议每 3–6 个月复核一次，最长不超过 12 个月（超过就不能再展示其 Human Verified 标记；[技术实施指南](https://groundingpage.com/spec/technical-implementation/)，核对 2026-10-21）；本套件的检查器用 183 天作为上限。
 
 ## 六、Grounding Page
 
-**Standard v1.7 的 11 个构件与本套件检查器的对应**（Standard 原文见[技术实施指南](https://groundingpage.com/spec/technical-implementation/)，核对 2026-10-18；检查器指 `python3 scripts/grounding_page.py --check page.md --name "Acme"`）：
+**Standard v1.7 的 11 个构件与本套件检查器的对应**（Standard 原文见[技术实施指南](https://groundingpage.com/spec/technical-implementation/)，核对 2026-10-21；检查器指 `python3 scripts/grounding_page.py --check page.md --name "Acme"`）：
 
 | Standard 构件 | Standard 的要求 | 检查器怎么查 | 差异 |
 |---|---|---|---|
@@ -228,14 +228,14 @@ Standard 还要求：FAQ 是可选的；检查器第 4 项却要求 5–10 条 F
 4. **复核日期改成人工审核的真实日期**，写上审核人，并在 JSON-LD 的 WebPage 节点写 `reviewedBy`、`lastReviewed`。不要保留生成器写的当天日期。
 5. `python3 scripts/grounding_page.py --check grounding-page.md --name "Acme"`：FAIL 项改到通过；MANUAL 项和上表「差异」列逐项人工确认。
 
-**生成器输出的骨架**（上面的示例实跑，2026-10-18，节选；`--check` 结果 PASS 9 / FAIL 0 / MANUAL 2）：
+**生成器输出的骨架**（上面的示例实跑，2026-10-21，节选；`--check` 结果 PASS 9 / FAIL 0 / MANUAL 2）：
 
 ```markdown
 # Acme
 
 Acme 是一家客户关系管理(CRM)软件公司,以部署 10 分钟上手为差异化。
 
-Entity type: Organization · Status: verified · Updated: 2026-10-18
+Entity type: Organization · Status: verified · Updated: 生成当天
 
 ## Core facts(稳定事实)
 
@@ -260,7 +260,7 @@ Entity type: Organization · Status: verified · Updated: 2026-10-18
 </ul>
 </section>
 
-最后复核:2026-10-18 · Status: verified · Entity type: Organization
+最后复核:生成当天 · Status: verified · Entity type: Organization
 
 <script type="application/ld+json">
 {"@context": "https://schema.org", "@type": "Organization", "name": "Acme", "foundingDate": "2015",
@@ -268,7 +268,7 @@ Entity type: Organization · Status: verified · Updated: 2026-10-18
 </script>
 ```
 
-骨架里「最后复核:2026-10-18」是生成器写的生成日期，按第 4 步换成人工审核日期。
+骨架里「最后复核」后的日期是生成器写的生成日期，按第 4 步换成人工审核日期。
 
 ## 检查清单
 

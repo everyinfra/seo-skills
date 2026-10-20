@@ -1,235 +1,191 @@
-# Mercado Hispanohablante(西语市场:es-ES + es-419 深度参考)
+# Mercado Hispanohablante(西语市场:es-ES + 拉美 + es-US)
 
-> 建立于 2026-10-09(R6 语言专项轮)。
-> 数据源:套件既有知识(`overview/multilingual-workflow.md` 西语区段)+ 2026-10 西语原生检索增量研究(SEO México 2026 / SEO España 2026 趋势、Mercado Libre 算法 2026、西班牙 AI 引用格局、WhatsApp 商务统计、西语外链价带报价)。
-> 断言半衰期 6-12 个月,随复审更新。配套数据层:`scripts/markets.json` 的 `markets.es` 键(本文件不改 json)。
+> 建立于 2026-10-09,2026-10-21 逐条重核:每个数字回到原始页面读过;读不到的删除或降级。数据层见 `scripts/markets.json` 的 `markets.es`(本文件不改 json)。
+> 标注:【官】=官方页面或统计机构;【三方】=第三方研究或厂商(写机构、时间);【本套件口径】=本套件约定。断言半衰期 6–12 个月。
+> 提问对齐见 [question-alignment.md](../content/question-alignment.md);句子写法见 [asd-ste100-web-writing.md](../content/asd-ste100-web-writing.md);多语言流程见 [multilingual-workflow.md](../overview/multilingual-workflow.md)。
 
-## 一、格局:一种语言,两个宏观市场(加一块 es-US)
+## 一、格局:一种语言,两个宏观市场,加一块 es-US
 
-### 1.1 引擎份额与市场结构
+### 1.1 引擎份额
 
-- **搜索引擎**:Google 88–94%(es-ES 与 es-419 一致;2026-09 分国复核:**es-ES 93.81% / es-MX 88.08%**,墨 Bing 9.43% 近半岛 3 倍),无本地引擎;Bing 残余份额喂 Copilot,不单独投入——**墨西哥例外:Bing 供给够 Copilot 引用面,抽检时单列**。
-- 与日/韩/俄不同——西语**不是"独立学科"市场**:无自有引擎生态,差异全在**语言变体与渠道结构**。
-- **市场切分**:
-  - 西班牙 es-ES(~4,800 万人口,欧元区,高价带 B2B 成熟);
-  - 拉美 es-419(~20 国,墨西哥最大 ~1.3 亿;阿根廷/智利高客单,哥伦比亚/秘鲁增长带);
-  - es-US(4,000 万+ 西语人口,搜索行为见 1.3)。
-- **hreflang 决策**:`es-419` 是 Google 接受的**唯一 UN 区域码**——拉美全域用 `es-419` 覆盖,国别码(es-MX/es-AR/es-CO…)按投入深度细化;裸 `es` 兜底 + `es-ES`/`es-419` 双主档是最小正确集。
-- 全套建议码:`es` / `es-ES` / `es-MX` / `es-AR` / `es-419`(与 markets.json hreflang_codes 一致)。
+StatCounter 搜索引擎份额,2026-09,全设备(页面表读数;同月 CSV 导出差 0.0x 个百分点,如西班牙 Google 93.78%、墨西哥 88.08%→87.99%):
 
-### 1.2 支付即意图碎片化(payment_words 已入 json)
-
-- 墨西哥:OXXO(现金便利店付款)、efectivo——现金偏好词即购买意图。
-- 阿根廷:cuotas(分期)、dólar/financiamiento——通胀经济的分期词带。
-- 哥伦比亚/秘鲁:contra entrega(货到付款)——信任缺失市场的转化闸门词。
-- 通用层:envío gratis / envio gratis(免运费)。
-
-### 1.3 es-US 集体代搜
-
-- **81% 受托搜索**:西语用户常替家人/朋友搜索(集体代搜,deputized searching)。**2026-10-09 重核:西语+英语双路检索均未复现原研究,标单源降置信**;最接近的公开数字为 MediaPost 转述 Google 研究"56% 替亲戚在英文站购物"——具体百分比勿当目标值,代看视角的实操见「八、本地实测」案例化。
-  - 含义:品牌词 SERP 常被代理商页面/目录页占据;品牌词审计必须做"代看视角"——搜的人不是用的人。
-  - 转化归因与文案都要按"帮别人买"场景重写(礼物、家人配单)。
-
-### 1.4 墨西哥 2026 增量动态
-
-- **本地 SEO 竞争激化**:PyME 大量涌入 Google Business Profile——照片与评价的**更新节奏**(而非仅在场)成为排位变量。
-- E-E-A-T 2.0 强调**作者可验证经验**(verifiable experience)——作者履历实体化是内容层投入方向。
-- 微意图(micro-intenciones)+ 内容聚类(content clustering)成为主流实操框架。
-- 语音/多模态查询上升:移动端主导,Question-form 关键词层加权重叠(见三、倒问号)。
-
-## 二、渠道:Mercado Libre、外链价带、WhatsApp+Facebook
-
-### 2.1 Mercado Libre listing 五支柱(2026 算法口径)
-
-排名按五支柱评分(来源:Base.com 2026 算法文 + Mercado Libre 官方卖家中心):
-
-| # | 支柱 | 操作口径 |
+| 国家 | Google | Bing |
 |---|---|---|
-| 1 | Reputación del vendedor | 卖家声誉等级(订单履行/投诉率;投诉率 <1% 是门槛带) |
-| 2 | Conversión histórica | listing 历史转化率;新品无历史 → 用 MeLi Ads 注入初始转化 |
-| 3 | Título + 关键词 | 60 字符标题模型:品牌+产品+关键属性,关键词前置 |
-| 4 | Precio competitivo | 价格竞争力(含 vs catálogo 同款比价) |
-| 5 | Envíos | 发货速度/成本;Flex 当日/次日权重最高 |
+| 西班牙 | 93.81% | 3.49% |
+| 阿根廷 | 93.82% | 4.71% |
+| 哥伦比亚 | 93.30% | 4.74% |
+| 秘鲁 | 91.87% | 5.65% |
+| 智利 | 90.23% | 7.28% |
+| 墨西哥 | 88.08% | 9.43% |
 
-**ficha técnica(产品资料卡)是第六个隐形支柱**:
+- 来源:[StatCounter](https://gs.statcounter.com/search-engine-market-share/all/mexico)(各国同路径,取数 2026-10-21)。结论:Google 88–94%,无本地引擎。
+- 墨西哥的 Bing 份额是西班牙的 2.7 倍。Bing 喂 Copilot,墨西哥站的 AI 引用抽检要单列 Bing / Copilot。
+- 西语不是「独立引擎学科」市场:差异在语言变体与渠道结构,不在引擎。
+- Google AI Overviews 在西班牙、墨西哥等拉美国家可用,语言含西语(【官】[Google 帮助中心可用国家与语言清单](https://support.google.com/websearch/answer/14901683?hl=en),核对 2026-10-21)。
 
-- 全字段填满 → 资格进 **catálogo**(平台级产品目录,类 buy-box)→ 赢得 catálogo 直接抬升排名与曝光。
-- 字段缺失 = 连参赛资格都没有;漏填字段是 listing 审计里最廉价的修复项。
-- **listing 审计顺序**:先 ficha técnica 完整性(全字段清单比对),再五支柱逐项打分。
+### 1.2 市场切分
 
-### 2.2 西语外链价带(2026-10 报价刷新)
+- 西班牙 es-ES:49,801,559 人(【官】[INE 2026-07-01](https://www.ine.es/dyngs/Prensa/ECP2T26.htm));欧元区。
+- 墨西哥:130,911,314 人(【官】[INEGI 2025](https://www.inegi.org.mx/temas/estructura/)),是最大的西语国家。
+- 美国 es-US:5 岁以上家中说非英语的人 7,410 万(2024),其中西语占一半以上,即 3,700 万以上(【官】ACS 2024,经 [USAFacts](https://usafacts.org/answers/how-many-people-speak-a-language-other-than-english-at-home/country/united-states/) 汇总)。
+- 已删:「阿根廷/智利高客单,哥伦比亚/秘鲁增长带」(无来源)。
 
-高度商品化市场,价带(欧元,ES/LATAM 混合池):
+### 1.3 hreflang 决策
 
-| 层级 | 价带 |
-|---|---|
-| 平台起步价(Publisuites/Getlinko/Linkatomic/Prensalink) | 12–20 €/链 |
-| niche 博客 DR 10–30 | 15–60 €/链 |
-| 中权威 DR 30–50 | 60–200 €/篇 |
-| 优质单篇(ES/LATAM 通稿) | 80–200 €/篇 |
-| 大媒体/大报 | >1,500 €(至 5,000 €) |
-| 新闻稿分发 | 7 €/媒体起 |
+- Google 只支持 ISO 639-1 语言码加可选 ISO 3166-1 Alpha-2 区域码。原文:「other codes that aren't listed in those standards, such as es-419, aren't supported」(【官】[Google localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions),页面标注更新 2026-09-21,核对 2026-10-21)。
+- 所以:`es-419` 不能当 hreflang 值。拉美写 `es` 兜底;需要按国家分页时加 `es-MX`、`es-AR`、`es-CO` 等国家码。`es-419` 只作内容层的「拉美西语」写法。
+- 最小正确集(本套件口径):`es`(兜底) + `es-ES` + 你有独立内容的拉美国家码。与 `markets.json` 的 `hreflang_codes` 一致(es、es-ES、es-MX、es-AR)。
+- 值不区分大小写;Google 不用 hreflang 或 `lang` 判定页面语言,用算法判定;两页没有互相指向时,这对标注会被忽略,其余照常处理(同一份文档)。
 
-参考锚:
+### 1.4 支付词即购买意图
 
-- Dinorank 口径:"高质量 backlink 均价 ~361 $"。
-- comprarenlaces.net 在售 ES+LATAM 域名 5,000+(供给体量的直接证据)。
-- **含义**:低价带供给海量 → 竞品外链档案极易被 PBN/付费 niche 污染;审计按 DR 分档识破足迹(见六)。
+- 墨西哥:OXXO 是便利店连锁,顾客可到店用现金支付线上订单(【官】[Stripe 文档](https://docs.stripe.com/payments/oxxo)),「efectivo」「OXXO」是现金偏好词。
+- 阿根廷 `cuotas`(分期)、哥伦比亚/秘鲁 `contra entrega`(货到付款)、通用 `envío gratis`:本套件口径,入意图分类(`markets.json` 的 `payment_words`),没有逐条取到一手来源。
 
-### 2.3 拉美 WhatsApp + Facebook
+### 1.5 es-US 的「代看」视角
 
-- **WhatsApp 是事实转化按钮**:
-  - 拉美对话式商务转化 **45–60%,vs 传统网站 2–4%**——十倍以上量差;
-  - 落地页 CTA 审计:wa.me 深链是否在场、是否预填消息(wa.me/?text=)、响应时效承诺。
-- **Facebook 本地页 = 事实店面**(尤其墨/哥中小企业):帖子节奏+评价+Messenger 响应速度,占品牌 SERP 与发现流量。
-- **QR 到店 + WA 索评**:线下转化闭环标准动作——QR 落地索评页走 WhatsApp,不走邮件(邮件在拉美消费场景近缺席)。
-- 2026 变量:
-  - Meta **Business Agent**(WA 内 AI 导购,Conversations 2026 发布)——对话商务的 AI 层开始成型;
-  - Meta 消息计费模式 2026-10-01 调整(巴西新客 2026-07 起 BRL 本币结算)——商务 WA 流量成本结构要重测。
+- 原先写的「81% 受托搜索」两次检索都找不到原研究(2026-10-09、2026-10-21),已删这个数字。
+- 保留的是方法(本套件口径):搜的人不一定是用的人,品牌词和品类词 SERP 要用「代看」视角审计。步骤见第九节案例。
+
+### 1.6 墨西哥 2026 动态
+
+已删:「GBP 拥挤」「E-E-A-T 2.0」「微意图」「语音/多模态上升」四条,原文只有二手总结,没有可核来源。本地 SEO 的检查看第八节。
+
+## 二、渠道:Mercado Libre、外链、WhatsApp
+
+### 2.1 Mercado Libre 的排序
+
+- 【官】Mercado Libre 学习中心写的是「竞争中的 listing」规则:同一商品的 listing 会被分组,**条件最好的**(价格、listing 类型、免息分期)显示为最醒目的一个,其余折叠成「Review More Options」;声誉黄色及以上的卖家更容易胜出;listing 质量(标题、描述、照片、属性)要完整准确。重复 listing 只保留一个,类目错误会被调整或下架,模糊或带水印的图片会让 listing 被立即暂停(【官】[Winning Strategies for Competing Listings](https://sellers.mercadolibre.com/learning-center/news/guide-to-your-listings-in-competition))。
+- 【官】声誉由订单取消、延误、投诉等指标构成(【官】[Seller reputation](https://sellers.mercadolibre.com/learning-center/news/seller-reputation-learn-how-it-works))。
+- 【三方】卖家工具厂商 Base.com(2026-04-24)归纳了「五支柱」模型:声誉、历史转化率、价格竞争力、listing 质量(标题、照片、ficha técnica)、物流(Full / Flex / 时效);标题 60 字符、品牌加型号加关键属性(【三方】[Base.com](https://base.com/es-AR/blog/algoritmo-posicionamiento-mercado-libre-2026/))。这是厂商的归纳,Mercado Libre 没有发布过这样的排序公式,也没有「投诉率 <1% 门槛」的官方说法(已删)。
+- 做法(本套件口径):先把 listing 的属性/ficha técnica 填全,再看价格、声誉、物流三项;Flex 与 Full 的权重高低以自己店铺的数据为准。
+
+### 2.2 外链价带
+
+- 买卖带排名意图的链接违反 Google 链接 spam 政策(【官】[Spam policies](https://developers.google.com/search/docs/essentials/spam-policies):「Buying or selling links for ranking purposes」)。下面的价带只用来识别竞品档案里的付费层。
+- 【三方】链接平台 Publisuites 自报(2026-06-16):利基博客约 50 €;专题博客 50–300 €;地区报纸 150–800 €;有影响力的数字媒体 400–1,500 €;顶级媒体 1,500 € 以上,个别 5,000 €(【三方】[Publisuites](https://www.publisuites.com/blog/precio-linkbuilding/))。平台自报价,不是成交价。
+- 已删:「12–20 €/链」平台起步价表、按 DR 分档的价带、Dinorank「361 $」、「comprarenlaces.net 5,000+ 域名」、「新闻稿 7 €」(找不到可核来源)。
+
+### 2.3 WhatsApp 与 Facebook
+
+- 【三方·厂商博客】watsi(2026-03-22)称:WhatsApp 对话对合格线索的转化率 45–60%,网站 2–4%。两者的分母不同(合格线索 vs 全部访客),不能当基准;已不用「十倍差」的说法。
+- 落地页检查(本套件口径):`wa.me` 深链在场;预填消息(`wa.me/<号码>?text=`);写明响应时效。
+- Meta 计费(【官】[Meta 开发者文档](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing/non-template-messages)):自 2026-10-01 起,所有服务消息按条计费。Business Agent 回复自 2026-08-01 起按 token 计费(【三方】[Omnichat](https://blog.omnichat.ai/meta-business-agent-platform-explained-features-pricing-and-what-the-2026-whatsapp-changes-mean-for-your-business/))。商务 WhatsApp 的成本要重算。巴西本币结算那一条没找到来源,已删。
+- 已删:「Facebook 本地页是事实店面」「邮件在拉美消费场景近缺席」(无来源)。
 
 ## 三、语言机制:变体分流是本体
 
-### 3.1 词汇三胞胎(不可互换)
+### 3.1 词汇
 
-- `coche`(西班牙)/ `carro`(墨/哥)/ `auto`(阿/智/乌)——核心高频词分裂最深的一组。
-- 同类分流:ordenador/computadora(电脑)、móvil/celular(手机)、patata/papa(土豆)、zumo/jugo(果汁)、autobús/camión(墨"卡车"vs 哥"公交")。
-- **关键词研究按变体组分开做**:一份词表通吃 = 拉美或半岛一侧的流量结构性丢失。
-- 仲裁工具:Google Trends 按 es-ES / es-MX / es-AR 分域比量级(见七)。
+- `coche`(西班牙)、`carro`(墨西哥、哥伦比亚等)、`auto`(阿根廷、智利、乌拉圭等):常见高频词分裂。同类:ordenador / computadora,móvil / celular。
+- 关键词研究按变体组分开做;仲裁用 Google Trends 按 es-ES / es-MX / es-AR 分区比量级(本套件口径)。
+- 已删:「autobús / camión」「patata / papa」「zumo / jugo」的国别归属(未逐条核)。
 
-### 3.2 vosotros–ustedes 二分(复数第二人称)
+### 3.2 vosotros 与 ustedes,tú 与 vos
 
-- 西班牙口语用 **vosotros**(动词变位 -áis/-éis);拉美不分正式与否一律 **ustedes**。
-- 为西班牙写的文案在拉美读来"外国腔",反之亦然——CTA 文案(`Descubrid` vs `Descubran`)错层直接暴露外包/机翻。
-- **单数层**再叠 tú/usted:
-  - es-419 B2C 偏 tú;正式 B2B 用 usted;
-  - 墨西哥客服/服务场景 usted 密度高于阿根廷(阿 tú 渗透最深);
-  - markets.json 口径:tú/usted 按国别,正式 B2B usted。
+- 【官】RAE《泛西班牙语疑难词典》:`vosotros` 是西班牙大部分地区的非正式复数称呼;在美洲没有使用,在加那利群岛和安达卢西亚西部也用 `ustedes` 代替(【官】[DPD: vosotros](https://www.rae.es/dpd/vosotros))。动词变位 `-áis/-éis` 同样不用于美洲。
+- 单数层:美洲很多地区用 voseo(`vos` 代替 `tú`),阿根廷是典型(【官】[DPD: voseo](https://www.rae.es/dpd/voseo) 的例句来自阿根廷等国)。原先写的「阿根廷 tú 渗透最深」不对,已改。文案要不要用 voseo,按目标国的品牌调性定(本套件口径),至少不要在阿根廷页混用西班牙的 `vosotros`。
+- 正式 B2B 用 `usted`(本套件口径)。
 
-### 3.3 ¿...? 倒问号与疑问式结构
+### 3.3 倒问号
 
-- 疑问式 H2 是西语内容高频形态:`¿Cuánto cuesta...?` / `¿Cómo elegir...?` / `¿Qué es...?`。
-- 倒问号 **¿** + 疑问词开头 = 与语音搜索及 AI 问答 Query 同构——可引性结构(特殊检查项已入 json)。
-- 缺倒问号的疑问标题是机翻/外包信号(英文直译漏 ¿)。
+- 【官】RAE:疑问句和感叹句的开头符号 `¿` `¡` 必须写,省略是错误;开头符号放在问句真正开始的位置,不一定在整句开头(【官】[RAE 正字法](https://www.rae.es/espanol-al-dia/ortografia-de-los-signos-de-interrogacion-y-exclamacion))。
+- 疑问式 H2(`¿Cuánto cuesta…?`、`¿Cómo elegir…?`)与用户提问同构,方法见 [question-alignment.md](../content/question-alignment.md)。缺 `¿` 的标题是机翻或外包信号(本套件口径)。
 
-### 3.4 数字与日期格式分裂
+### 3.4 数字与日期
 
-- `1.234,56`(es-ES 欧式)vs `1,234.56`(墨西哥及部分拉美随美制)。
-- 同一站内混用 = 未本地化信号;货币同理(€ vs MXN/ARS/COP——阿根廷通胀下价格须带更新日期)。
-- 日期 DD/MM/YYYY 为主(09/10/2026);墨西哥长格式 "9 de octubre de 2026"。
+- 【官】Unicode CLDR 48:`es`(西班牙)小数用逗号、千分位用点,且最小分组位数为 2,即 1234,56 不加点,12.345,67 才加点;`es-MX` 与 `es-419` 小数点用点、千分位用逗号(1,234.56)(【官】[CLDR es numbers](https://raw.githubusercontent.com/unicode-org/cldr-json/main/cldr-json/cldr-numbers-full/main/es/numbers.json) 及 es-MX、es-419 同路径)。
+- 同一站内混用两种写法,是未本地化的信号。日期按日/月/年(09/10/2026);货币 € 与 MXN/ARS/COP 分开写,通胀国价格带更新日期(本套件口径)。
 
-### 3.5 中性西语的边界
+### 3.5 中性西语
 
-- `es neutral`(中性西语)只该用于 **UI 骨架与产品文案**,不用于关键词层与转化文案。
-- 正确分层:关键词层按变体组 → 转化文案按目标国 → UI/法务中性层。
+- `es neutral` 只用于 UI 骨架和产品文案,不用于关键词层和转化文案(本套件口径)。分层:关键词按变体组;转化文案按目标国;UI 与法务用中性层。
 
-## 四、AI-GEO:半岛偏置与语言绑定
+## 四、AI-GEO
 
-### 4.1 语言绑定 83–84%
+### 4.1 西班牙的引用格局
 
-- 西语查询的 AI 引用 **83–84% 指向西语源**(套件既有公理)。
-- 翻译英文站有效的前提是**真西语内容**(非机翻骨架);源语言错配 = 直接退出引用池。
+- 【三方】Media and Journalism Research Center《AI Information Map: Spain》(2026-07-10):10 个 AI 助手、2 种语言、同一组问题。El País 是被引最多的来源,占 4.9%;前三名合计 10.2%;其余 77.6% 分散在 1,924 个来源(【三方】[原文](https://journalismresearch.org/ai-information-map-spain/))。含义:没有一个西班牙媒体主导 AI 信息层,长尾来源有机会。
+- AIO 引用与自然 top-10 的重合,各家读数不同:Limón Publicidad 写 15%(代理商博客 2025-10,无方法说明);Forbes 的 4 百万条研究经 Mintec 转述为 38%;Isma Jiménez 写 47.7%(【三方】[Limón](https://limonpublicidad.com/blog/ai-overviews-en-espana-como-la-ia-de-google-revoluciona-los-resultados-organicos/)、[Mintec](https://mintec.co/es/blog/organic-ranking-vs-ai-citations/)、[Isma Jiménez](https://ismajimenez.com/google-ai-overviews-como-impactan-el-ctr-organico-y-el-trafico-en-espana/);后两条未读原文)。结论:区间 15%–48%,差距来自方法。做法:自然排名是前提但不是全部,指南页、数据页、垂直媒体页单独做可引性检查。
+- AIO 覆盖:SE Ranking 在 100,000 个西班牙关键词里,33.23% 出现 AIO(【三方】[SE Ranking 2025-06-18](https://seranking.com/es/blog/ai-overviews-en-espana/),15 个月前的读数);Laboratorio de Periodismo / Clara Soteras 与 M.J. Cachón 的研究:媒体类搜索中 29.8% 出现 AIO,桌面与移动无明显差异(【三方】[Laboratorio de Periodismo](https://laboratoriodeperiodismo.org/impacto-de-ai-overviews-en-espana-google-activa-resumenes-generativos-en-el-298-de-busquedas-sobre-medios/))。
+- ThinkEPI(Díaz-Noci,2026)分析了 Google 从搜索到生成内容后西班牙媒体流量的下降(【三方】[ThinkEPI](https://thinkepi.scimagoepi.com/index.php/ThinkEPI/es/article/view/91722));媒体类客户的预期管理用这个方向。
+- 【第三方研究】西语查询的 AI 引用多指向西语源:Google AI Overviews 和 Copilot 约 83–84%,Grok 55% 以上([Temso 2026-04](https://www.temso.ai/data/-Lost-in-Translation-How-AI-Models-Handle-Local-Language-Sources),700 万条引用、4 个模型;厂商研究,核对 2026-10-21)。不能推广到全部 AI 引擎。
+- 已删:「Clabe.org 43.6%」「mjcachon:经典排名是最佳预测因子」(找不到可核原文)。
+- 半岛偏置(AI 对拉美查询倾向引 es-ES 源):没有找到量化研究。做法保留为本套件口径:拉美查询用拉美出口测 SERP,不用西班牙代理数据代替;拉美站点常托管在欧洲,检查 CDN 与延迟。
 
-### 4.2 半岛偏置(peninsular bias)对抗
+### 4.2 测量
 
-- AIO/ChatGPT 对拉美查询倾向引 **es-ES 源**——系统性偏置,要主动对抗:
-  - es-419 独立测 SERP(勿用西班牙代理/VPN 数据代替);
-  - 拉美本地托管或 CDN 前置——拉美站点常托管在欧洲,延迟即排名税;
-  - 拉美本地作者/实体信号(作者所在地、本地引用、国别 TLD 外链占比)。
+- 【官】Search Console 的「Generative AI performance」报告(2026-06-03 公布,[Google 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports);2026-08-31 起覆盖所有站点,[SEJ](https://www.searchenginejournal.com/google-search-console-ai-reports-rolled-out-worldwide/587836/))只给**展示**,涵盖 AI Overviews 和 AI Mode,按页面、国家、日期、设备拆分,没有点击(【官】[帮助页](https://support.google.com/webmasters/answer/16984139?hl=en))。原先写的「曝光/点击」不对,已改。
+- 站点没有足够展示时看不到这份报告。西语站的 AI 可见性以它为第一数据源,第三方 AIO 抽样只作补充。
 
-### 4.3 西班牙 2026 增量——AI 引用层碎片化
+### 4.3 西语 LLM 偏见
 
-- **AI Information Map Spain**(journalismresearch.org, 2026):
-  - 无任何西班牙媒体主导 AI 信息层;
-  - 最可见的 El País 仅占引用 **4.9%**——引用池高度碎片化,长尾多样源被引。
-- **Limon Publicidad**:AIO 引用源仅 **~15% 与自然 top-10 重合**。
-  - 注意:与英文市场"92% AIO 引用来自 top-10"公理冲突——西语市场**经典排名仍是最佳预测因子(mjcachon 口径)但非充分条件**;
-  - 操作含义:只盯 top-10 排名会漏掉一半引用机会,长尾权威页(指南/数据页/垂直媒体)单独做可引性优化。
-- **覆盖面**:AIO 出现于 ~30–33% 信息型关键词(SE Ranking 33.2/10 万词;Laboratorio de Periodismo ~30% 媒体类查询;Clabe.org 43.6% SERP 无 AIO)。
-- **ThinkEPI(学术侧)**:AI Overviews 对西班牙媒体流量造成显著下压——媒体类客户预期管理要用该口径。
+- SESGO(Robles 等,arXiv 2509.03329,2025;AAAI/ACM AIES 论文集):评估指令微调 LLM 在西语语境里的区域性社会偏见(【三方】[arXiv](https://arxiv.org/abs/2509.03329))。含义:品牌在西语 AI 答案中的呈现,要单独抽检,不能沿用英语结果。
 
-### 4.4 测量基础设施
-
-- **GSC"生成式 AI 性能报告"**(informes de rendimiento de la IA generativa,2026-06 起):AI 面板曝光/点击与经典搜索分离。
-- 西语站测量基线必须切到该口径;第三方 AIO 抽样只做补充。
-
-### 4.5 SESGO 研究(2026)
-
-- 哥伦比亚研究者团队(WIRED 报道 + 论文 2509.03329):LLM 用西语回答时再现**不同于英语的偏见模式**。
-- 含义:西语侧 AI 输出存在系统性评估缺口——品牌在西语 AI 答案中的呈现要单独抽检,不可沿用英语检测结果。
-
-## 五、信息源(本圈在哪聊)
+## 五、信息源(圈内常被引用,未逐一核其方法)
 
 | 区域 | 源 | 用途 |
 |---|---|---|
-| 西班牙 | **SEOPLUS**(塞维利亚,年度大会) | 半岛算法更新第一手 |
-| 西班牙 | **Campamento Web** 播客 | 半岛实操圈层闲聊+风向 |
-| 西班牙 | Human Level(Fernando Macià) | 机构层方法论 |
-| 西班牙 | Punto Rojo / Vilma Núñez | 年度趋势报告(西语全球视角) |
-| 西班牙 | ThinkEPI | 学术侧(AI Overviews vs 媒体) |
-| 拉美 | **Nubimetrics Academy** + Telegram 群 | ML 卖家生态风向 |
-| 墨西哥 | Alan Quezada | AIO 触达与墨西哥实操 |
+| 西班牙 | SEOPLUS 年度大会(2026-07-25 场,见 [Convictorius 活动表](https://convictorius.com/eventos-seo/)) | 西班牙 SEO 圈动向 |
+| 西班牙 | ThinkEPI | 学术侧(AIO 与媒体) |
+| 拉美 | Nubimetrics(Mercado Libre Centro de Partners 在列:[页面](https://centrodepartners.mercadolibre.com.ar/apps/nubimetrics)) | Mercado Libre 卖家数据 |
+| 其他 | Campamento Web、Human Level、Punto Rojo、Alan Quezada | 未核其近况,按需使用 |
 
-## 六、红旗(什么话一出口就判外行)
+## 六、红旗
 
-1. **"一份中性西语通吃"**——首错:auto/coche/carro 不可互换;vosotros/ustedes 变位错层直接暴露外包(见三)。
-2. **"拉美=低竞争"**——假:墨城金融/电商词竞争激烈;GBP 拥挤度 2026 年再上一档(见 1.4)。
-3. **PBN 泛滥**:
-   - 外链市场从 12 € 起的商品化供给(2.2 价带)意味着:竞品档案里的 DR 20–40 单链密集、锚文本过度优化的 niche 群,大概率是租链/PBN;
-   - 自家采购同层 = 与垃圾池同游;
-   - 租链资产按月租摊销,勿按永久入账。
-4. **es-US 集体代搜(81% 受托)被忽略**——品牌词 SERP 被代理商页面占据却不做代看视角优化(见 1.3)。
-5. **拉美托管在欧洲不纠**——延迟+本地信号缺失;CDN 本地化是本地 SEO **前置**不是优化项(见 4.2)。
-6. **半岛数据代替拉美实测**——用西班牙 SERP 工具口径汇报"西语排名",掩盖半岛偏置。
-7. **机翻漏 ¿ 倒问号 / 数字格式混用**——低成本可检的未本地化信号(见 3.3/3.4)。
+1. **「一份中性西语通吃」**:coche / carro / auto 与 vosotros / ustedes 不能互换(第三节)。
+2. **「拉美 = 低竞争」**:没有一手来源支持这句话,不要写进方案。
+3. **买链和 PBN**:违反 Google 链接 spam 政策(2.2)。竞品档案里 DR 20–40 的单链密集、锚文本过度优化的站群,按付费链接怀疑,采购不跟。
+4. **半岛数据代替拉美实测**:用西班牙 SERP 工具口径汇报「西语排名」,会掩盖国家差异。
+5. **机翻漏 `¿`、数字格式混用**:低成本可检的未本地化信号(3.3、3.4)。
+6. **把厂商模型当平台规则**:Mercado Libre「五支柱」是厂商归纳(2.1)。
 
-## 七、Herramientas(工具箱)
+## 七、工具
 
-- **Nubimetrics**(首选,ML 生态):
-  - Mercado Libre **官方合作伙伴**(Centro de Partners 在列);
-  - Big Data+AI 分析 ML 全量 listing(供给/需求/价格带);
-  - 品类探索器:找低竞争高增长 niche;
-  - ML 账号登录即有免费档——低门槛起步。
-- **GSC 生成 AI 性能报告**(2026-06+):西语站 AI 可见性测量第一数据源,替代第三方 AIO 抽样。
-- **Google Trends 分域**(es-ES / es-MX / es-AR 独立会话):词汇分流(coche/carro/auto)的量级仲裁工具。
-- **SERP 采样按国别代理**(MX/AR/CO 独立):半岛偏置对抗的实测层(4.2 的执行工具)。
-- **外链交易平台**(Publisuites / Getlinko / Linkatomic / Prensalink / comprarenlaces.net):
-  - **审计视角使用**——识别竞队付费层与价带锚点;
-  - 不是采购建议(见六红旗 3)。
-- **链接档案审计**:按 DR 分档(15–60/60–200/>1,500 € 价带对应)标注可疑租链层;配合 `scripts/link_check.py` 与 monitoring/link-quality-rubric.md。
-- **GBP 节奏管理**(墨西哥重点):照片/评价更新频率进本地 SEO 检查表(见 1.4)。
-
-## 八、本地实测(2026-10-09,9.5 冲刺轮)
-
-### 重核(一手源分国核实)
-
-| 关键数字 | 重核结果(2026-10-09) | 判定 |
+| 工具 | 用途 | 备注 |
 |---|---|---|
-| Google 88–94% | StatCounter 2026-09 分国实测:**es-ES 93.81%**(Bing 3.49%)/ **es-MX 88.08%**(Bing 9.43%) | ✓ 双国均在带内;**墨西哥 Bing 近西班牙 3 倍——Copilot 引用面在墨不可忽略** |
-| es-US 集体代搜 81% 受托 | 西语+英语双路检索均未找到原研究;最接近公开数字:MediaPost 转述 Google 研究 56%(替亲戚在英文站购物) | ⚠ **单源未核实**——已降置信(1.3 同步标注),实操价值不变(见下) |
+| Search Console Generative AI performance | AIO / AI Mode 展示 | 【官】只有展示 |
+| Google Trends(es-ES / es-MX / es-AR 分区) | 词汇变体量级 | 本套件口径 |
+| Nubimetrics | Mercado Libre 供需与价格带 | 【三方】官方 Partner 列表在列 |
+| 国别 SERP 采样(MX / AR / CO 独立出口) | 半岛偏置对抗 | 本套件口径 |
+| 链接档案审计 | 识别竞品付费层 | 用 `scripts/link_check.py` 与 monitoring/link-quality-rubric.md |
 
-### 真实站验证(elmundo.es / eluniversal.com.mx × 3 工具)
+## 八、检查清单
 
-- `site_audit --market es`:elmundo — 480 链接>100、alt 缺失 29/48、**robots.txt 禁 OAI-SearchBot/ChatGPT-User/PerplexityBot(Claude-SearchBot 放行——四站实测中唯一例外)**;eluniversal — 399 链接>100、og:image 相对 URL、**四爬虫全禁**。`llmstxt check`:两站均无 llms.txt。`head_check`:均命中 twitter:* 全套/x-ua-compatible/fb:app_id 弃用;eluniversal 首页 2MB。
-- **结构性发现**:西语头部大报与印度同行(bhaskar)同姿态——**AI 检索爬虫封锁是大媒体的跨市场默认姿势**。叠加 4.3 引用碎片化(El País 仅 4.9%、AIO 引用仅 ~15% 与 top-10 重合),长尾权威源的机会窗口放大:头部主动退出,引用池向中腰部敞开——指南/数据页/垂直媒体的可引性优化(4.3)从"建议"升为"主路径"。
-- **工具盲区(实测确认)**:
-  1. `--market es` 无专属分支:¿ 倒问号、`1.234,56` 数字格式、coche/carro/auto 词汇分流**均不自动检查**(markets.json special_checks 是人肉清单)——西语审计必须手动过 3.1–3.4;
-  2. title 解析缺陷同印度站:head 内脚本并入 title(eluniversal 报 752,827 字符)——解析器问题,非站方;
-  3. elmundo.es 解码报 iso-8859-15(遗留 charset 声明,西语老站常见,迁移注意);
-  4. head_check 微信/QQ itemprop WARN 对西语站为纯噪音。
+| # | 检查什么 | 怎么查 | 通过判据 |
+|---|---|---|---|
+| 1 | hreflang 簇 | `python3 scripts/hreflang_cluster.py https://site/es/x https://site/es-es/x https://site/es-mx/x https://site/en/x` | 簇内互指;没有 `es-419`;`es` 兜底在场;含 `x-default` |
+| 2 | 全站 hreflang | `python3 scripts/sitemap_audit.py https://site --hreflang` | 无自引用缺失、无互指缺失、无非法语言码 |
+| 3 | 西语文案机检 | `python3 scripts/market_lint.py --market es page.html --report` | CRITICAL 0;`--report` 里「¿ H2」「coche/carro/auto 词汇分流」两项为 AUTO-OK(这两项脚本会机检;数字格式脚本不检,见第 5 项) |
+| 4 | 变体词汇 | `grep -ciE "coche\|carro\|auto" page.html`,按国别页分别统计 | es-ES 页无 carro/auto;es-MX 页无 coche |
+| 5 | 数字格式(脚本不检,人工) | `grep -nE "[0-9]{1,3}(\.[0-9]{3})+,[0-9]\|[0-9]{1,3}(,[0-9]{3})+\.[0-9]" page.html` 分别抓欧式与美式写法;对照 CLDR:es-ES 4 位数不加分隔符(1234,56),5 位起加点(12.345,67);es-MX 用逗号千分位 | 同一站点同一页面只用一种;es-ES 页无 1,234.56 |
+| 6 | AI 展示基线 | Search Console「Generative AI performance」按国家拆分 | 西班牙与墨西哥分别有展示数据;每月记录,不与旧版报表混比 |
+| 7 | AI 检索爬虫 | `python3 scripts/robots_posture.py https://site/robots.txt --json` | `visibility_failures` 为空,或封禁是记录在案的决定 |
+| 8 | 墨西哥 Bing | Bing Webmaster Tools;`python3 scripts/bing_wmt.py stats`(需 API key) | Bing 有数据;抽检 Copilot 引用 |
+| 9 | WhatsApp 深链 | 浏览器看 CTA 的 href | `wa.me` 深链在场;消息预填;页面写响应时效 |
+| 10 | Mercado Libre listing | 卖家后台 listing 质量与属性完整度 | 必填属性全填;标题含品牌、型号、关键属性;无重复 listing |
+| 11 | 代看视角 | 见第九节案例 | 前 10 中目录/评测/佣金站占比有记录 |
 
-### es-US 集体代搜:实操案例化(1.3 的落地)
+## 九、本地实测(2026-10-09,本套件记录;2026-10-21 抽查)
 
-**案例设定**:迈阿密西语保险品牌,品牌词 SERP 被第三方代理页占据、转化率异常低。按"搜的人≠用的人"五步审计:
+- 跑了 elmundo.es 与 eluniversal.com.mx × `site_audit --market es` / `llmstxt check` / `head_check`。
+- 2026-10-21 复查 robots(`robots_posture.py --json`):elmundo 对 OAI-SearchBot、PerplexityBot、ChatGPT-User 构成可见性失败,Claude-SearchBot 没有;eluniversal 对 11 个检索/用户类机器人构成可见性失败。与 10-09 记录一致。elmundo 的 `/llms.txt` 现在 301 到 CDN 域名后返回 404;eluniversal 返回 404。
+- **脚本口径 2026-10-21 已改**:`head_check` 里 twitter:* 与 OG 重复只记 INFO(不是弃用),x-ua-compatible、fb:app_id 等旧标签记「可删旧标签」INFO;微信/QQ itemprop 提示只在显式或自动判定为 zh 时出现;`site_audit` 缺 H1、缺 description 记 WARN。上面 10-09 的「弃用」「CRITICAL」表述按旧口径。
+- 其他记录(10-09):两站 `>100 链接` 与 alt 缺失;eluniversal 首页 2 MB、og:image 相对 URL;elmundo 老的 iso-8859-15 charset 声明;title 解析把 head 内脚本并入 title 的问题已知(解析器问题,非站方)。
+- 工具盲区:`market_lint --market es` 对 `¿` H2、coche/carro/auto 混用、支付词层有机检(2026-10-21 夹具实测),但「该用哪个变体」要人按国别判断;数字格式混用、`vosotros` / `ustedes` 混用、voseo 脚本都不检。
 
-1. **代看 SERP 快照**:品牌词与代搜品类词("seguro médico para mi mamá" 类)分别在美国西语 locale 拉 SERP;统计前 10 中目录/评测/佣金站占比——**>30% 判代搜污染**;
-2. **意图分离**:词表切"自用"(para mí)与"代搜"(para mi mamá/papá/abuela)两列,分开落地——代搜列文案按"帮家人选"重写:礼物框架、家人配单、双语客服;
-3. **问句层**:H2 用完整代搜问句("¿Cuál es el mejor seguro para padres mayores?"),守倒问号纪律(3.3)——代搜查询天然是疑问长尾,与 AI 引用问句同构(4.1 语言绑定下更须西语原文);
-4. **schema**:FAQPage/Question 文本直接放代搜口语全句;产品页加适格人群("para familiares de…")字段;
-5. **归因修正**:GA4 按"代理会话"特征切视图(晚间+移动+复访间隔长+直跳联系页),"代理转化"单列——否则 CPA 被稀释,误杀代搜词预算。
-- 纪律:以"代看视角是否已覆盖"为检查项,**不以 81% 具体百分比为目标值**(单源未核实,见重核表)。
+### es-US 代看案例(本套件方法)
+
+案例设定:迈阿密一家西语保险品牌,品牌词 SERP 被第三方代理页占据,转化率偏低。
+
+1. **代看 SERP 快照**:品牌词与代搜品类词(如 "seguro médico para mi mamá")分别在美国西语 locale 拉 SERP;统计前 10 里目录、评测、佣金站的占比。占比 >30% 判为污染(本套件口径阈值)。
+2. **意图分离**:词表分「自用」(para mí)与「代搜」(para mi mamá / papá / abuela)两列,分别落地;代搜列的文案按「帮家人选」写。
+3. **问句层**:H2 用完整问句(`¿Cuál es el mejor seguro para padres mayores?`)。
+4. **结构化数据**:FAQ 文本写代搜口语全句;产品页写适用人群。只写页面上可见的内容。
+5. **归因**:GA4 按特征切「代理会话」视图(晚间、移动、复访间隔长、直跳联系页),代理转化单列,避免 CPA 被稀释。
 
 ## 维护
 
 - 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.es.review_cycle` 保持一致,以 json 为准。
-- 触发即复审的信号:StatCounter es-ES/es-MX 分国月度份额(墨西哥 Bing 波动单记)、GSC 生成式 AI 报告口径变化、Mercado Libre 算法/卖家中心公告、Meta WA 计费与 Business Agent 政策、AI Information Map Spain 年更、es-US 代搜原始研究复现(回填 1.3)。
-- 断言半衰期 6–12 个月;81% 受托搜已标单源降置信,复现原研究时优先回填。
+- 触发即复审:StatCounter 分国月度份额(墨西哥 Bing 波动单记);Search Console Generative AI 报告口径变化;Mercado Libre 学习中心与卖家政策公告;Meta WhatsApp 计费与 Business Agent 政策;AI Information Map Spain 年更。

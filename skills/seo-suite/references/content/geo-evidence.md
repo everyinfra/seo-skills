@@ -1,6 +1,6 @@
 # GEO 的证据基础与实施边界
 
-> 建立于 2026-08-29；一手来源全量复核于 **2026-10-18**。
+> 建立于 2026-08-29；一手来源全量复核于 **2026-10-21**（上一轮 2026-10-18）：官方页面、论文和第三方研究都重新打开读过原句。
 > 本文件是本套件 GEO 结论的**仲裁**：其他参考文件里的数字、阈值或「AI 偏好」说法与本文件冲突时，以本文件为准。
 > 目标是让真实内容更容易被发现、理解和核实；不把 HTML 形状、Schema、域名后缀或自发转载包装成 AI 排名公式。
 > 数字、论文与第三方研究的样本和局限见 [geo-evidence-bank.md](geo-evidence-bank.md)。
@@ -14,15 +14,15 @@
 | 观察/相关研究 | 现象和方向 | 因果权重 |
 | 厂商/营销转述 | 「有人报告了这个结果」 | 实施验收和预算收益 |
 
-### 官方事实（核对 2026-10-18）
+### 官方事实（核对 2026-10-21）
 
 - **Google AI 功能**（[AI features](https://developers.google.com/search/docs/appearance/ai-features)）：页面要作为 AI Overviews / AI Mode 的链接出现，只需已被索引、且可以带摘要展示；没有额外技术要求。控制入口是 Googlebot 的 robots.txt，以及 `nosnippet`、`data-nosnippet`、`max-snippet`、`noindex`。这些流量计入 Search Console 效果报告的「网页」类型。
 - **Google 生成式 AI 优化指南**（[ai-optimization-guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)，2026-05-15 发布，2026-07-10 更新）：Google Search 不使用 llms.txt、AI 文本文件或特殊标记；不要求切块；没有理想页长；不需要为 AI 改写；追逐不真实的提及作用有限；结构化数据不是必需项，也没有专用 schema。为每个 fan-out 变体批量建页、以操纵排名或 AI 回答，违反规模化内容滥用政策。站点还必须在 Search Console 中处于「纳入生成式 AI 功能」状态。
 - **Google 政策**：2026-05-15 起，垃圾内容政策明确适用于生成式 AI 回答；2026-06-15 起，指南补充 llms.txt 不会正面或负面影响 Google 可见性（[文档更新记录](https://developers.google.com/search/updates)）。
-- **Search Console**：[Search generative AI 控制](https://support.google.com/webmasters/answer/16908024)（2026-08-31 全球上线，路径「设置 → Search generative AI」）可纳入或排除 AI Overviews、AI Mode 和 Discover 的生成式功能。排除通常 1–2 天生效。它不管训练；训练控制用 Google-Extended。[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)只有展示次数，维度是页面、国家、日期、设备。
+- **Search Console**：[Search generative AI 控制](https://support.google.com/webmasters/answer/16908024)（2026-08-31 全球上线，路径「设置 → Search generative AI」）可纳入或排除 AI Overviews、AI Mode 和 Discover 的生成式功能。排除通常 1–2 天生效。它不管训练；训练控制用 Google-Extended。[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)（[2026-06-03 发布](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)，先对部分站点开放，2026-08-31 全球）只有展示次数，维度是页面、国家、日期、设备；这些数据同时计入总体效果报告，AI 功能带来的点击仍拆不出来。
 - **Bing / Copilot**（[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)）：Bing 与 Copilot 共用抓取、索引、排名基础。指南原话：GEO「does not guarantee grounding or citations」。`NOARCHIVE` 让内容不进 Copilot 回答和 grounding；`NOCACHE` 只允许使用网址、标题和摘要。结构化数据不保证可见性。面向语言模型的 prompt injection 会被降权或移除。
 - **第三方工具**（[Google 指南](https://developers.google.com/search/docs/fundamentals/third-party-seo)，2026-06-05）：第三方工具拿不到 Google 内部排名数据；Google 不评估第三方服务；用工具不保证排名。本套件的评分器一律标注为「启发式」。
-- **内容自查**：Google [有用内容指南](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) 用「Who / How / Why」自查：署名能否链到作者背景；AI 辅助过程是否该披露；内容是否为人而写。指南明确：Google 没有偏好的字数；只改日期装新鲜是负面信号。
+- **内容自查**：Google [有用内容指南](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) 用「Who / How / Why」自查：署名能否链到作者背景；AI 辅助过程是否该披露；内容是否为人而写。指南明确：Google 没有偏好的字数（原文「No, we don't.」）；自查问题里把「改页面日期装作新鲜」列为不该做的事。
 
 **用法**：官方说明只约束该产品。Google 的结论不外推到 ChatGPT、Perplexity 或中文引擎。
 
@@ -49,7 +49,7 @@ Google 指南不要求切块；它建议语义 HTML 的理由是帮助读者和�
 - 实时抓取阶段：searchVIU 2025-10-30 测试 5 个 AI 系统，没有一个读出只存在于 JSON-LD 里的价格。关键事实必须写在可见正文里。
 - 验收：渲染出的问答与 JSON-LD 逐条对应；无重复、无虚构评分、无不可见的独家答案。用 Schema Markup Validator 查词汇合法性，用当前搜索文档查支持范围；解析成功不等于有富结果资格。
 
-**证据：一手产品文档 + 三条生产研究，2026-10-18 复核。** 「Schema 抽取 16%→54%」之类数字只有二手转述，没有一手方法，不作通用实证。
+**证据：一手产品文档 + 三条生产研究，2026-10-21 复核。** 「Schema 抽取 16%→54%」之类数字只有二手转述，没有一手方法，不作通用实证。
 
 ### 3. .edu/.org 高 30%，.co/.io/.tech/.expert 更受 AI 青睐？
 
@@ -67,7 +67,7 @@ Google [关于新顶级域名的说明](https://developers.google.com/search/blo
 
 ## 三、论文能说明什么，不能说明什么
 
-- **GEO 原始论文**（[arXiv 2311.09735](https://arxiv.org/abs/2311.09735)，Aggarwal 等，KDD 2024）：GEO-bench 有 1 万条查询。生成引擎是 gpt-3.5-turbo，输入固定为 Google 前 5 条结果。指标是回答内的可见度（位置加权词数、主观印象），不是检索、排名或流量。最佳方法相对基线分别 +41%、+28%；「引用来源 / 加引语 / 加统计」三种方法在位置加权词数上 +30–40%。原排第 5 的来源用「引用来源」后 +115.1%，排第 1 的来源平均 −30.3%。关键词堆砌几乎无效。在 Perplexity.ai 上复测，「加引语」+22%。
+- **GEO 原始论文**（[arXiv 2311.09735](https://arxiv.org/abs/2311.09735)，Aggarwal 等，KDD 2024）：GEO-bench 有 1 万条查询。生成引擎是 gpt-3.5-turbo，输入固定为 Google 前 5 条结果。指标是回答内的可见度（位置加权词数、主观印象），不是检索、排名或流量。最佳方法相对基线分别 +41%、+28%；「引用来源 / 加引语 / 加统计」三种方法在位置加权词数上 +30–40%。原排第 5 的来源用「引用来源」后 +115.1%，排第 1 的来源平均 −30.3%。关键词堆砌几乎无效。在 Perplexity.ai 上复测（200 条测试样本，来源文本以文件上传，不是让它自己搜索），「加引语」+22%。
 - **C-SEO Bench**（[arXiv 2506.11097](https://arxiv.org/abs/2506.11097)，Puerto 等，NeurIPS 2025 Datasets & Benchmarks，代码和数据公开）：两类任务（问答、商品推荐）各三个领域，并比较不同采纳率。多数受测内容优化方法基本无效，常常压低排名；提高来源在上下文中排序的传统 SEO 更有效；采纳者越多，总收益越低。
 - **批判综述**（[arXiv 2607.14035](https://arxiv.org/abs/2607.14035)，2026-07，单作者预印本，45 篇研究）：原始论文的增益在其设定内成立，但前提是来源已在固定上下文里；它不证明自然可发现性，也不证明持续流量。最可复现的杠杆是主题相关性与上下文位置。已被检索的内容可以因果地改变自己被引用的方式，但没有一项技术显示稳定、纵向、跨平台的因果效应。
 
@@ -115,7 +115,7 @@ Google [关于新顶级域名的说明](https://developers.google.com/search/blo
 | 7 | llms.txt 不被当成杠杆 | `python3 scripts/llmstxt.py check https://站点` | 通过：没有文件，或文件有效（H1 + 链接）且方案里不写「提升引用」。失败：把它写进 GEO 收益 |
 | 8 | 引用基线可复现 | `python3 scripts/citation_panel.py init --brand X --prompts-file 问题库.md --domain 站点`；每个引擎 `record`；`report` | 通过：≥10 个 prompt，每个 prompt ≥3 次采样，报告带 Wilson 区间并标出 unstable。失败：单次采样就下结论 |
 | 9 | 真实引荐的下界 | `python3 scripts/ai_referral_log.py access.log --bot-ua --classify` | 通过：检索型爬虫抓取成功率高，AI 引荐按引擎分列。失败：把 App 内无 referrer 的访问算成 0 |
-| 10 | 改动效果有对照 | `python3 scripts/split_test.py plan / assign / analyze`；参考 Ahrefs 设计（5–10 个处理页 + 5–10 个对照页，观察 ≥30 天） | 通过：效应 95% CI 不含 0 才说有效；否则报告「未检出」。失败：只有改前改后对比 |
+| 10 | 改动效果有对照 | `python3 scripts/split_test.py plan / assign / analyze`；参考 [Ahrefs 自测步骤](https://ahrefs.com/blog/schema-ai-citations/)（5–10 个处理页 + 5–10 个引用水平相近的对照页，改完比较 30 天或更久；样本小，只能当探针，统计功效见 `split_test.py plan`） | 通过：效应 95% CI 不含 0 才说有效；否则报告「未检出」。失败：只有改前改后对比 |
 | 11 | 官方测量面已接通 | GSC 生成式 AI 效果报告；Bing Webmaster Tools → AI Performance；Yandex / Naver 对应报告（有该市场时） | 通过：每月记一次，按平台分列。失败：跨平台相加成一个「AI 可见度」 |
 
 ## 八、证据保鲜机制与证据治理（本套件口径）

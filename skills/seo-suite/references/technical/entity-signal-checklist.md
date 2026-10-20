@@ -12,7 +12,7 @@
 
 ## 一、站内基础
 
-- **名称一致**：官方全称、简称、中英文名在标题、页脚、关于页、结构化数据中一致。Google 要求 Organization 的 `name`/`alternateName` 与站点名称一致（[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)，核对 2026-10-18）。
+- **名称一致**：官方全称、简称、中英文名在标题、页脚、关于页、结构化数据中一致。Google 要求 Organization 的 `name`/`alternateName` 与站点名称一致（[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)，核对 2026-10-21）。
 - **关于页**：成立时间、业务范围、所在地、负责人、联系方式等可核实的事实，与外部资料一致。
 - **Organization 标记**（或更具体的子类型）：放在首页或一个介绍页即可，不需要每页都放；Google 没有必填属性，建议写 `name`、`alternateName`、`address`、`telephone`、`url`、`logo`（至少 112×112px）、`sameAs` 等真实存在的内容（同上）。用稳定的 `@id`（如 `https://example.com/#organization`）全站引用。
 - **人物**：作者页或团队页；Person 标记与可见署名一致，`worksFor` 指向组织的 `@id`。Article 的 `author.url` 指向唯一标识作者的页面（[Article](https://developers.google.com/search/docs/appearance/structured-data/article)）。
@@ -21,7 +21,7 @@
 
 ## 二、外部资料
 
-- **知识库**：Wikidata 条目要满足至少一条收录标准：有有效的维基媒体站点链接，或指向可用公开可靠资料描述的明确实体，或满足结构需要（[Wikidata:Notability](https://www.wikidata.org/wiki/Wikidata:Notability)）。Wikipedia 条目要求有独立可靠来源的显著报道；有利益冲突的人被强烈劝阻直接编辑，应披露关联并在讨论页提出修改（[关注度](https://en.wikipedia.org/wiki/Wikipedia:Notability)、[利益冲突](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)，核对 2026-10-18）。详见 [knowledge-graph-guide.md](knowledge-graph-guide.md)。
+- **知识库**：Wikidata 条目要满足至少一条收录标准：有有效的维基媒体站点链接，或指向可用公开可靠资料描述的明确实体，或满足结构需要（[Wikidata:Notability](https://www.wikidata.org/wiki/Wikidata:Notability)）。Wikipedia 条目要求有独立可靠来源的显著报道；有利益冲突的人被强烈劝阻直接编辑，应披露关联并在讨论页提出修改（[关注度](https://en.wikipedia.org/wiki/Wikipedia:Notability)、[利益冲突](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)，核对 2026-10-21）。详见 [knowledge-graph-guide.md](knowledge-graph-guide.md)。
 - **目录与平台资料**：行业目录、应用商店、代码托管、地图商家资料等，信息与官网一致。
 - **独立第三方证据**：媒体报道、独立评测、客户案例。自己在多个平台转载同一篇文章不算独立证据。
 - **出现不一致**：先改自己可控的来源，再按各平台流程申请更正，保留证据。
@@ -69,11 +69,11 @@
 
 ## 市场差异：可核实的身份信息与实体源
 
-英文市场常用 Wikidata、Crunchbase 作实体参照。其他市场先补下表里有一手依据的项目（核对 2026-10-18）：
+英文市场常用 Wikidata、Crunchbase 作实体参照。其他市场先补下表里有一手依据的项目（核对 2026-10-21）：
 
 | 市场 | 可核实的身份信息 / 实体源 | 依据 |
 |---|---|---|
-| 韩国 | Naver「사이트 연관채널」：在网站根页面用 Person 或 Organization 标记写 `name`、`url`、`sameAs`（均必填），列出关联频道。当前识别的频道：네이버TV、블로그、스마트스토어、지식iN、치지직，以及 당근、Threads、Instagram、YouTube、카카오스토리、카카오톡 채널、Tistory、TikTok、Facebook、X。Naver 说明不保证展示 | [Naver Search Advisor](https://searchadvisor.naver.com/guide/structured-data-channel) |
+| 韩国 | Naver「사이트 연관채널」：在网站根页面用 Person 或 Organization 标记写 `name`、`url`、`sameAs`（均必填），列出关联频道。当前识别的频道：네이버TV、블로그、스마트스토어、지식iN、치지직，以及 당근、Threads、Instagram、YouTube、카카오스토리、카카오톡 채널、Tistory、TikTok、Facebook、X。Naver 说明不保证展示，支持频道可能变动，以页面当前列表为准 | [Naver Search Advisor](https://searchadvisor.naver.com/guide/structured-data-channel) |
 | 俄罗斯 | Яндекс Бизнес：免费添加公司信息，让公司出现在 Яндекс Карты 和搜索中 | [Яндекс Бизнес](https://yandex.ru/support/business-priority/ru/) |
 | 德国 | Impressum：商业性数字服务须长期提供名称、地址、法律形式、代表人、电子邮件、商业登记及编号、受监管职业的所属行业协会、增值税号等 | [§5 DDG](https://www.gesetze-im-internet.de/ddg/__5.html) |
 | 法国 | mentions légales：企业名称、法律形式、注册号（RCS/RNE）、增值税号、联系方式，以及托管商的名称、地址和电话 | [service-public.gouv.fr](https://entreprendre.service-public.gouv.fr/vosdroits/F37351) |
@@ -91,4 +91,4 @@
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · cross-cutting/entity-optimizer/references/entity-signal-checklist.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/cross-cutting/entity-optimizer/references/entity-signal-checklist.md)（Apache-2.0）
-- 一手资料（核对 2026-10-18）：[Google：Organization 结构化数据](https://developers.google.com/search/docs/appearance/structured-data/organization)、[Google：站点名称](https://developers.google.com/search/docs/appearance/site-names)、[schema.org sameAs](https://schema.org/sameAs)、[Knowledge Graph Search API](https://developers.google.com/knowledge-graph)、[Wikidata:Notability](https://www.wikidata.org/wiki/Wikidata:Notability)、[Wikipedia:Notability](https://en.wikipedia.org/wiki/Wikipedia:Notability)、[Wikipedia:Conflict of interest](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)；各市场依据见表内链接。
+- 一手资料（核对 2026-10-21）：[Google：Organization 结构化数据](https://developers.google.com/search/docs/appearance/structured-data/organization)、[Google：站点名称](https://developers.google.com/search/docs/appearance/site-names)、[schema.org sameAs](https://schema.org/sameAs)、[Knowledge Graph Search API](https://developers.google.com/knowledge-graph)、[Wikidata:Notability](https://www.wikidata.org/wiki/Wikidata:Notability)、[Wikipedia:Notability](https://en.wikipedia.org/wiki/Wikipedia:Notability)、[Wikipedia:Conflict of interest](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)；各市场依据见表内链接。

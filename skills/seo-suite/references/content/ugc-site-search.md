@@ -1,6 +1,6 @@
 # UGC 内容 SEO 与站内搜索优化（双模块）
 
-> 建立于 2026-10-09；2026-10-18 逐条核对一手来源（证据账本 C3）。上篇讲用户生成内容（UGC）怎么排上名；下篇讲站内搜索怎么处理和挖掘。两者在工程上共享同一批 URL（论坛帖、搜索结果页），所以合为一份。
+> 建立于 2026-10-09；2026-10-18 逐条核对一手来源（证据账本 C3），2026-10-21 又重新打开官方文档和第三方来源复核一遍。上篇讲用户生成内容（UGC）怎么排上名；下篇讲站内搜索怎么处理和挖掘。两者在工程上共享同一批 URL（论坛帖、搜索结果页），所以合为一份。
 > 规则以 Google Search Central 文档为准。平台排序机制多为公开观察，已逐条标注。「本套件口径」是本套件的做法约定，不是 Google 规则。不承诺排名。
 > 分工（只引用不复述）：AI 爬虫放行见 [ai-crawler-policy.md](../technical/ai-crawler-policy.md)；UGC 进 JSON-LD 与 llms.txt 的注入防御见 [meta-tag-formulas.md](meta-tag-formulas.md) 与 [llms-txt-guide.md](llms-txt-guide.md)；rel=ugc 链接审计见 [link-quality-rubric.md](../monitoring/link-quality-rubric.md)；DiscussionForumPosting 字段细则见 [schema-templates.md](../technical/schema-templates.md)；FAQ 停展与 QAPage 存续见 [schema-examples.md](../technical/schema-examples.md)。
 
@@ -34,7 +34,7 @@
 | 有规模的活跃社区 | 后审加举报 | 发布延迟会压低参与度 |
 | 任何阶段 | 新用户首帖必审，限制发帖频率 | Google 建议对可疑互动人工审核（见下） |
 
-**官方反垃圾建议**（[Prevent user-generated spam](https://developers.google.com/search/docs/monitor-debug/prevent-abuse)，核对 2026-10-18）：
+**官方反垃圾建议**（[Prevent user-generated spam](https://developers.google.com/search/docs/monitor-debug/prevent-abuse)，核对 2026-10-21）：
 
 - 对没有信誉的新用户帖子加 `noindex`；用户积累信誉后再放开索引。
 - 给不可信内容里的所有链接加 `rel="ugc"` 或 `rel="nofollow"`。Google 建议评论和论坛帖的链接用 `ugc`；对长期高质量的贡献者可以去掉该属性（[链接属性文档](https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links)）。
@@ -63,8 +63,8 @@
 > 平台大多没有公开当前算法。以下是公开资料与观察口径。
 
 - **Reddit**：旧版开源代码里的 hot 排序函数 `hot(ups, downs, date)` 用票数和发帖时间计算热度（[reddit-archive/reddit](https://github.com/reddit-archive/reddit/blob/master/r2/r2/lib/db/_sorts.pyx)，仓库 2017-11-09 归档；现行算法未公开）。
-- **Quora**：同义问题会被合并到同一个问题页，官方帮助有撤销合并的说明（[Quora Help](https://help.quora.com/hc/en-us/articles/360001043426-How-do-I-unmerge-my-question)）。一个 URL 对应一个问题，查询与页面对齐度高。
-- **知乎**：盐值按「基础信用、内容创作、友善互动、遵守规范、社区建设」五个维度计算（[知乎盐值说明](https://www.zhihu.com/term/credit)）。它在排序中的权重未公开。
+- **Quora**：同义问题会被合并到同一个问题页，官方帮助有撤销合并的说明（[Quora Help](https://help.quora.com/hc/en-us/articles/360001043426-How-do-I-unmerge-my-question)；本次抓取返回 403，未能重新核对）。一个 URL 对应一个问题，查询与页面对齐度高。
+- **知乎**：盐值按「基础信用、内容创作、友善互动、遵守规范、社区建设」五个维度计算（[知乎盐值说明](https://www.zhihu.com/term/credit)）。知乎说明盐值会作用于内容推荐系统和赋权系统，具体权重未公开。
 - **百科类 UGC（Wikipedia 模式）**：中立立场、引用门槛、敏感页编辑复核、讨论页解决争议。内容是「达标才留」（观察口径）。
 
 **机制到自建实现的翻译表（本套件口径）**：
@@ -152,7 +152,7 @@
 3. 页面有**超出结果列表的增量内容**（导购文案、聚合评价、筛选说明）。
 4. URL **规范化可控**：参数用 `&` 分隔；分面顺序固定；不出现重复筛选（分面导航文档的最佳实践）。
 
-可索引的「搜索页」本质是程序化落地页。例：Class Central 2022 年用 `site:` 统计，Coursera 约有 146 万个关键词定向的搜索结果页（[seo.to 案例转述](https://seo.to/case-studies/coursera-course-catalog)，第三方）。选题与闸门走 [programmatic-seo-playbook.md](../technical/programmatic-seo-playbook.md) 与 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md)，不要拿「搜索页可索引」当免审理由。
+可索引的「搜索页」本质是程序化落地页。例：Class Central 2022 年的报告记录 Coursera 约有 146 万个关键词定向的搜索结果页（经 [seo.to 案例](https://seo.to/case-studies/coursera-course-catalog) 转引，第三方）。选题与闸门走 [programmatic-seo-playbook.md](../technical/programmatic-seo-playbook.md) 与 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md)，不要拿「搜索页可索引」当免审理由。
 
 **robots.txt 参考块（按自家路径改）**：
 

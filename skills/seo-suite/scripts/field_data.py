@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """CWV 现场数据(field data)采集器:PSI v5 + CrUX API 双源 REST 客户端(stdlib only)。
+注意:PSI 文档写明计划停止在 API 响应里返回 CrUX 现场数据(developers.google.com/speed/docs/insights/v5/get-started,
+核对 2026-10-21);现场数据以 CrUX 源为准,PSI 源主要看实验室数据。
 现场(field)= CrUX 28 天真实用户 p75;实验(lab)= Lighthouse 合成环境审计数值——
 两口径分开解析、分开呈现,输出显式标注"现场 vs 实验"。
 数据接入口径(与 references/overview/data-onboarding.md 的 want-cwv/T1 条目一致:

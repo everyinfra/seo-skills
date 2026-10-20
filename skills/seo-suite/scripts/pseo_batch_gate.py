@@ -24,6 +24,7 @@ import hashlib
 import json
 import os
 import re
+import unicodedata
 import sys
 from collections import Counter, defaultdict
 from html.parser import HTMLParser
@@ -87,8 +88,23 @@ def tokens(text):
 
 
 def wc(text):
-    """词数(site_audit.py 口径):拉丁词数 + CJK 字数(每字≈一词)。"""
-    return len(LATIN_RE.findall(text)) + sum(len(r) for r in CJK_RUN.findall(text))
+    """词数。同 site_audit.wc(B47)口径(B61 修,2026-10-21):CJK 逐字计;其余文字字母/数字
+    连续段为一词,组合符号(Mn/Mc/Me,如天城体 matra/virama)附着在词内,空格与标点断词,
+    「बेस्ट लैपटॉप कैसे खरीदें」=4。不 import site_audit:CJK 判定沿用本脚本 CJK_RUN(含扩展 A/兼容区);下划线照旧连词(snake_case=1)。修前只认 ASCII,印地语计 0。"""
+    text = text.replace("İ", "i").replace("I\u0307", "i").replace("\u0307", "")
+    perchar = words = 0
+    prev = False  # 前一字符是否处于词内
+    for c in text:
+        if CJK_RUN.fullmatch(c):
+            perchar += 1
+            prev = False
+            continue
+        cat = unicodedata.category(c)
+        is_l = cat[0] in ("L", "N") or c == "_"
+        if is_l and not prev:
+            words += 1
+        prev = is_l or ((c in "'’" or cat[0] == "M") and prev)
+    return perchar + words
 
 
 def simhash(toks, bits=SIMHASH_BITS):

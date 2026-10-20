@@ -2,7 +2,7 @@
 
 > 涉及 FAQPage 或 AI 引用的判断，先读 [geo-evidence.md](../content/geo-evidence.md)。
 
-> **schema.org v30.1（2026-09-16）**（[发布说明](https://schema.org/docs/releases.html)，核对 2026-10-18）：Product 新增 `consumerNotice`、`isOftenBoughtWith`、`specification`；Offer 新增 `itemPopularity`；ShippingRateSettings 新增 `minimumOrderValue`；PriceTypeEnumeration 新增 `MaximumRetailPrice`；PropertyValue 新增 `valueGroup`。欧盟数字产品护照：新类 `DigitalProductPassport` 和属性 `hasDigitalProductPassport`（Product/Offer）；`EnvironmentalProductDeclaration`、`DeclarationOfConformity` 是 Certification 的子类；Product 新增 `importer`、`recycledContentPercentage`、`substanceOfConcern`；Product/Organization 新增 `authorizedRepresentative`；MedicalSpecialty 新增 Ophthalmology、Audiology。以上新增词汇都在 schema.org 的 pending 区（[词汇表 JSON-LD](https://schema.org/version/latest/schemaorg-current-https.jsonld)）。Google 文档截至 2026-10-18 未提到它们：写进模板时标「词汇可用，富结果未承诺」。
+> **schema.org v30.1（2026-09-16）**（[发布说明](https://schema.org/docs/releases.html)，核对 2026-10-21）：Product 新增 `consumerNotice`、`isOftenBoughtWith`、`specification`；Offer 新增 `itemPopularity`；ShippingRateSettings 新增 `minimumOrderValue`；PriceTypeEnumeration 新增 `MaximumRetailPrice`；PropertyValue 新增 `valueGroup`。欧盟数字产品护照：新类 `DigitalProductPassport` 和属性 `hasDigitalProductPassport`（Product/Offer）；`EnvironmentalProductDeclaration`、`DeclarationOfConformity` 是 Certification 的子类；Product 新增 `importer`、`recycledContentPercentage`、`substanceOfConcern`；Product/Organization 新增 `authorizedRepresentative`；MedicalSpecialty 新增 Ophthalmology、Audiology。除最后一项（属 health-lifesci 扩展区）外，以上新增词汇都在 schema.org 的 pending 区（对照[词汇表 JSON-LD](https://schema.org/version/latest/schemaorg-current-https.jsonld)的 `isPartOf` 逐项核对，2026-10-21）。Google 文档截至 2026-10-21 未提到它们：写进模板时标「词汇可用，富结果未承诺」。
 
 ## 用途
 
@@ -21,7 +21,7 @@
 
 ## 二、常用类型何时用
 
-状态列以 Google 类型库为准（页面最后更新 2026-10-16，核对 2026-10-18）。
+状态列以 Google 类型库为准（页面最后更新 2026-10-16，核对 2026-10-21）。
 
 | 类型 | 放在哪里 | Google 要求（核对 2026-10-18） | 注意 |
 |---|---|---|---|
@@ -103,7 +103,7 @@
 
 ## 五、大规模验证（分层采样 + CI 门禁 + 部署后漂移对比）
 
-单页用 Rich Results Test 点验只适合少量页面。千页以上的站按**模板**验证：页面由模板生成，错误也由模板生成。第三方研究：Digital Applied 2026-04 对 5,000 个站做分层抽样审计，71% 部署了至少一种 schema 类型，只有 22% 所有类型都能干净通过 Rich Results Test（[原文](https://www.digitalapplied.com/blog/schema-markup-adoption-5k-site-audit-2026)，核对 2026-10-18）。「部署了」和「验证通过」是两件事。
+单页用 Rich Results Test 点验只适合少量页面。千页以上的站按**模板**验证：页面由模板生成，错误也由模板生成。第三方研究：Digital Applied 2026-04 对 5,000 个站做分层抽样审计，71% 部署了至少一种 schema 类型，只有 22% 所有类型都能干净通过 Rich Results Test（[原文](https://www.digitalapplied.com/blog/schema-markup-adoption-5k-site-audit-2026)，核对 2026-10-21）。这是营销博客，原文没有公开抽样名单和判定脚本，只当量级参考，不当基准。「部署了」和「验证通过」是两件事。
 
 三步闭环（本套件口径）：
 
@@ -123,12 +123,12 @@
 
 ## 完全装载：稀有类型的 Google 必填属性与安全序列化
 
-**稀有类型速查**（逐个核对 Google 文档，2026-10-18）。「状态」指 Google 搜索是否还用它产生展示。
+**稀有类型速查**（逐个核对 Google 文档，2026-10-21 复核）。「状态」指 Google 搜索是否还用它产生展示。
 
 | 类型 | 状态 | Google 必填属性 | 易错点 |
 |---|---|---|---|
 | ClaimReview | Google 搜索逐步停用（2025-06-12 公告）；Fact Check Explorer 仍支持 | `claimReviewed`、`reviewRating`、`url` | `claimReviewed` 建议少于 75 个字符（[Fact check](https://developers.google.com/search/docs/appearance/structured-data/factcheck)）；旧版本文写的「≤140 字符」没有出处 |
-| Dataset | 只用于 Dataset Search，不用于 Google 搜索（2025-11-05） | `name`、`description` | 文本属性只用前 5,000 字符（[Dataset](https://developers.google.com/search/docs/appearance/structured-data/dataset)） |
+| Dataset | 只用于 Dataset Search，不用于 Google 搜索（2025-11-05 文档更新）；类型库仍列出 | `name`、`description` | 文本属性只用前 5,000 字符；`description` 必须在 50 到 5,000 字符之间（[Dataset](https://developers.google.com/search/docs/appearance/structured-data/dataset)） |
 | DiscussionForumPosting | 支持 | `author`、`author.name`、`datePublished`，以及 `text`/`image`/`video` 三选一 | 只写 author + datePublished 不够（[Discussion forum](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum)）；2026-03-24 新增评论线程属性 |
 | EmployerAggregateRating | 支持（招聘体验） | `itemReviewed`（Organization）、`ratingValue`、`ratingCount` 或 `reviewCount` 至少一个 | （[Employer rating](https://developers.google.com/search/docs/appearance/structured-data/employer-rating)） |
 | ImageObject（图片元数据） | 支持（Google 图片） | `contentUrl`，加 `creator`/`creditText`/`copyrightNotice`/`license` 四选一 | （[图片元数据](https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata)） |
@@ -143,9 +143,9 @@
 
 **JSON-LD 安全序列化**：
 
-- 标准依据：W3C JSON-LD 1.1 第 7.2 节（非规范性）要求作者避免在 HTML 内嵌脚本里出现可能被当成 comment-open（`<!--`）、script-open（`<script`）、comment-close（`-->`）、script-close（`</script`）的字符序列（[W3C](https://www.w3.org/TR/json-ld11/#restrictions-for-contents-of-json-ld-script-elements)，核对 2026-10-18）。
-- 最简做法（本套件口径）：序列化后把 JSON 字符串里的每个 `<` 写成 `<`。`<` 在 JSON 里就是 `<`，解析结果不变；四种序列都以 `<` 开头或依赖前面的 `<!--`，因此全部被避开。
-- 第三方实现对照：next-seo 的 `stringify` 只替换 `</script>`、`<!--`、`-->` 三种，并刻意不转义 `&`、`<`、`>`、引号，同时剔除 null 值（[源码](https://github.com/garmeeh/next-seo/blob/main/src/utils/stringify.ts)，MIT）；next-forge 把 `<`、`>`、`&` 和 U+2028/U+2029 全部转义。两种都安全。
+- 标准依据：W3C JSON-LD 1.1 第 7.2 节（非规范性）要求作者避免在 HTML 内嵌脚本里出现可能被当成 comment-open（`<!--`）、script-open（`<script`）、comment-close（`-->`）、script-close（`</script`）的字符序列（[W3C](https://www.w3.org/TR/json-ld11/#restrictions-for-contents-of-json-ld-script-elements)，核对 2026-10-21）。
+- 最简做法（本套件口径）：序列化后把 JSON 字符串里的每个 `<` 写成转义序列 `\u003c`。`\u003c` 在 JSON 里就是 `<`，解析结果不变；`<!--`、`<script`、`</script` 都以 `<` 开头，`-->` 只有跟在 `<!--` 后才危险，因此四种序列全部被避开。
+- 第三方实现对照：next-seo 的 `stringify` 只替换 `</script>`、`<!--`、`-->` 三种，并刻意不转义 `&`、`<`、`>`、引号，同时剔除 null 值（[源码](https://github.com/garmeeh/next-seo/blob/main/src/utils/stringify.ts)，MIT，核对 2026-10-21 仅确认其 replacer 剔除 null）；next-forge 把 `<`、`>`、`&` 和 U+2028/U+2029 全部转义。两种都安全。
 - 反例信号：页面 JSON-LD 里出现未转义的 `</script>`：脚本被提前截断，后半段 JSON 解析失败，也有注入风险。
 
 ## 检查清单
@@ -153,6 +153,8 @@
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
 | 必填属性 | Rich Results Test 逐模板测代表页；对照本文第二节和「完全装载」表 | 无「严重」错误 → 通过；缺必填 → 失败 |
+| 属性名真实存在 | 把页面 JSON-LD 的 `@type` 与属性名对照 [schema.org 词汇表 JSON-LD](https://schema.org/version/latest/schemaorg-current-https.jsonld) 的 `@graph[].@id`（`schema:属性名`） | 全部能查到 → 通过；查不到（拼写错或自造）→ 失败。pending 区的词汇算存在，但 Google 富结果不承诺 |
+| 转义 | `curl -s URL \| grep -o '</script>' \| wc -l` 与页面里 `<script>` 的数量对照；JSON-LD 字符串里不应出现未转义的 `</script` | 无 → 通过 |
 | 可见一致 | 对照页面可见文本逐项核对 name、价格、评分、日期 | 全部能在页面上看到 → 通过 |
 | 实体规则 | `python3 scripts/schema_lint.py URL` | 退出码 0 → 通过；1 或 2 → 失败 |
 | Product 位置 | `curl -s URL \| grep -c 'application/ld+json'` 与渲染后对比 | Product 标记在初始 HTML → 通过；只在渲染后出现 → 记风险 |

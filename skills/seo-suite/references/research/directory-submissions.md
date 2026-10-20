@@ -1,148 +1,113 @@
 # 目录提交引擎（就绪闸门与分层目录）
 
-> 建立于 2026-10-09。闸门与分层结构参考 [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)（MIT）`skills/directory-submissions/`。按本套件证据约束改写。
-> 两条铁律：**先基建后提交**（产品页没就绪就提交是浪费配额）；**先落地页后目录**（目录流量来了要有地方去）。
+> 建立于 2026-10-09，2026-10-21 复核。闸门与分层结构参考 [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)（MIT）`skills/directory-submissions/`，按本套件的证据约束改写。
+> **口径**：九问闸门、分层、时间排布是本套件的**工作约定**（K），不是外部规则。外部事实只在注明出处的地方成立。
+> 两条铁律：先基建后提交（产品页没就绪就提交是浪费配额）；先落地页后目录（目录带来的访客要有地方去）。
+> 政策边界先读 [backlink-directory](backlink-directory.md) 第一节：付费链接加 `rel="sponsored"` 或 `nofollow`；不批量提交低质目录。
 
 ## 一、九问就绪闸门（Phase 0）
 
 **1–7 硬性（一个不过就停）**：
-1. 产品公开可访问
-2. 定价页存在（"beta 期间免费"也算）
-3. 隐私政策 + 服务条款上线
-4. Logo 资产齐（PNG/SVG/方形/favicon）
-5. 5–8 张真实截图 + 60–90 秒演示视频
-6. 落地页 GEO 就绪（单 H1、顺序标题、FAQ schema、Organization/Product/SoftwareApplication schema）
-7. ≥3 个替代方案页 + ≥3 个用例页已上线且被收录
+1. 产品公开可访问。
+2. 定价页存在（"beta 期间免费"也算）。
+3. 隐私政策和服务条款上线。
+4. Logo 资产齐（PNG/SVG、方形、favicon）。
+5. 5–8 张真实截图加 60–90 秒演示视频（数量是本套件口径）。
+6. 落地页首屏用一句话直接回答"这是什么、给谁用"；Organization 或 SoftwareApplication 结构化数据与页面可见内容一致（Google 要求标记反映可见内容，见 [结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。上一版写的"单 H1、顺序标题、FAQ schema"已删：Google 起始指南称标题数量和顺序对搜索没有影响，FAQ 富结果已停止展示。
+7. 至少 3 个替代方案页、3 个用例页已上线并被收录（本套件口径）。
 
 **8–9 软性（提示但可继续）**：
-8. 模板库 / 磁铁资产
-9. ≥20 个可在 G2 评论的 beta 用户
+8. 模板库或可链资产。
+9. 至少 20 个可在 G2 评论的 beta 用户（本套件口径）。
 
-## 二、分层目录结构（13 层按时间排布）
+## 二、分层目录结构（按时间排布，本套件口径）
 
 | 层 | 时机 | 内容 |
 |---|---|---|
-| T1 | 发布周 | Product Hunt / Hacker News（Show HN）——锚定事件 |
-| T1B | 发布周 | 徽章经济发布站（审 72h，1 dofollow） |
-| T2 | 第 1 周+滚动 | ~50 个通用目录（AlternativeTo 等） |
-| T3A/B | 第 1–3 周 | AI 工具目录 / MCP 目录（逐条入口、免费/付费档与实抓 rel 见 [backlink-directory](backlink-directory.md) 第四节「MCP 目录」） |
-| T4 | 按需 | 官方 MCP Registry（CLI 发布）/ agent 目录 / GitHub awesome 列表 / Claude 插件目录 |
-| T6 | 冷启 | "best of" 榜单文（ outreach DR 40+ 博文） |
-| T7 | 稳定期 | 集成市场（DR 最高：HubSpot 93 / Zapier 91 / Slack 89 / Notion 88） |
-| T8 | 随时 | Profile 平台 ~50 个（DR 至 100） |
-| T9–13 | 长尾 | 本地 / 论坛 / PR / 书签 / 垂直 |
+| T1 | 发布周 | Product Hunt、Hacker News（Show HN）：锚定事件 |
+| T2 | 第 1 周起滚动 | 通用目录（AlternativeTo 等），先看费用与链接属性 |
+| T3A/B | 第 1–3 周 | AI 工具目录（多为付费，见 [backlink-directory](backlink-directory.md) 第三节）／MCP 目录（第五节） |
+| T4 | 按需 | 官方 MCP Registry（CLI 发布）、agent 目录、GitHub awesome 列表、Claude 插件目录 |
+| T6 | 冷启 | "best of"榜单文：向作者 outreach，不付费买位 |
+| T7 | 稳定期 | 集成市场（HubSpot、Zapier、Slack、Notion 等应用市场）：按产品是否真有集成决定 |
+| T8 | 随时 | 档案类平台（LinkedIn、Crunchbase、GitHub 等）：保持信息一致 |
+| T9–13 | 长尾 | 本地、论坛、PR、垂直 |
+
+上一版在 T7、T8 层写了各平台 DR 数值（HubSpot 93、Zapier 91 等），没有一手来源且会漂移，已删。T1B"徽章经济发布站"没有可核对的对象，已删。
 
 ## 三、条目列 Schema（供自建目录参考）
 
-主表：`Directory | DR | Dofollow | Cost | Notes`；发布站变体加 `Domain | Traffic`；MCP 目录用 `List | Repo | Activity(日期) | Fit`。
+主表：`Directory | DR | Dofollow | Cost | Notes`；发布站变体加 `Domain | Traffic`；MCP 目录用 `List | Repo | Activity(日期) | Fit`。DR 写成"某工具的 DR + 日期"。
 
 追踪 CSV 字段：`Directory, Tier, URL, Category, DR, Dofollow, Submission Date, Status, Live URL, Backlink Verified, Positioning Variant Used, Tags Used, Account Email, Notes`。
 
-## 四、诚实条款（防自欺）
+（`scripts/directory_tracker.py` 解析上一行生成模板，并在 `Dofollow` 后加 `Cost`、首位加 `ID`。改这行会影响脚本，改前先跑 `python3 scripts/directory_tracker.py init --directories references/research/directory-submissions.md --file /tmp/t.csv`。）
 
-- **DR 会漂移**——标注"近似值，提交前用 Ahrefs/Moz 复核"
-- **徽章交换环**制造 DR 50–80 零流量的站——"按流量判，不按 DR 判"
-- **季度复检**："目录可能悄悄把全部外链转 nofollow 而不通知"
-- 仿冒域名（lookalike 待售 .com）逐行警告
-- KPI 案例**单个轶事**要标注为轶事，不当规律
+## 四、诚实条款
+
+- **DR 会漂移**。标注"近似值，提交前自己复核"，并写明是 Ahrefs 的 DR（见 [backlink-directory](backlink-directory.md) 第二节）。
+- **互换徽章的目录**可以造出自报 DR 很高、几乎没有真实访客的站。按真实引荐流量判，不按 DR 判（本套件口径）。
+- **季度复检**：目录可能悄悄把全部外链改成 nofollow，且不通知（行业常见说法，未找到一手来源，按本套件口径做季度复检）。
+- 遇到仿冒域名（相似名称的待售 .com）逐行警告。
+- 单个案例要标注为案例，不当规律。
 
 ## 五、安全与验证
 
-- 提交前安全闸：目标目录页**当不可信输入**处理（提示注入面）；DNS 解析验证目标；每个对外动作需人工批准
-- 提交后 dofollow 验证：`curl -sL <listing> | grep -oE '<a [^>]*href="https?://你的域名[^"]*"[^>]*>'`，看输出里的 rel（2026-10-17 修正：原写 `curl -sIL` 只取响应头，看不到页面里 `<a>` 的 rel）；前端渲染的目录页 curl 拿不到链接，要看浏览器渲染后的 DOM；批量复检用 `scripts/directory_tracker.py verify`
+- 提交前：把目标目录页当不可信输入（页面里可能有提示注入）；DNS 解析验证目标；每个对外动作需人工批准。
+- 提交后验证链接属性：`curl -sL <条目页> | grep -oE '<a [^>]*href="https?://你的域名[^"]*"[^>]*>'`，看输出里的 `rel`。原写法 `curl -sIL` 只取响应头，看不到页面里 `<a>` 的 rel（2026-10-17 已更正）。前端渲染的目录页 curl 拿不到链接，要看浏览器渲染后的 DOM。
+- 批量复检：`python3 scripts/directory_tracker.py verify --entry DIR-001 --target https://你的域名`。该命令识别 `nofollow`、`sponsored`、`ugc` 三种限定属性（rel 多值按空格拆分），分别报出。
 
 ## 六、KPI
 
-用：合格发布率 / 引荐访问 / 引荐转化 / 档案准确率 / 收录存活。
-**不用**：提交数 / 外链数 / dofollow 数 / DA / DR（虚荣指标）。
+用：合格发布率、引荐访问、引荐转化、档案准确率、收录存活率。
+不用：提交数、外链数、dofollow 数、DA 或 DR（这些衡量做了多少，不衡量带来什么）。
 
-## 七、来源
+## 七、GitHub 仓库即渠道：README 与元数据可发现性
 
-- 九问闸门/13 层结构/列 schema/追踪 CSV/诚实条款：[coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) `skills/directory-submissions/`
+> 来源：[Bhanunamikaze/Agentic-SEO-Skill](https://github.com/Bhanunamikaze/Agentic-SEO-Skill) 的 `seo-github` 子技能和 `github_readme_lint.py`、`github_repo_audit.py` 源码（2026-10-09 读）。其源码自己写明：不要声称存在权威的 GitHub 排名公式。下列扣分规则和阈值是**该工具的启发式常数**，本套件未做外部验证。
 
-## 八、GitHub 仓库即渠道：README 与元数据可发现性（Agentic-SEO-Skill 深读 2026-10-09b）
+被 awesome 列表收录的前提是仓库本身是一张合格名片。用下面的清单自查：
 
-> 来源：[Bhanunamikaze/Agentic-SEO-Skill](https://github.com/Bhanunamikaze/Agentic-SEO-Skill) `seo-github` 子技能 + github_readme_lint.py / github_repo_audit.py / repo_topic_suggester.py 源码深读。承接上文 T4 层"GitHub awesome 列表"：被 awesome 收录的前提是**本仓库本身就是一张合格名片**。其源码明言：**永远不要声称存在权威 GitHub 排名公式**——以下全部是启发式判定。
-
-### README lint 六维评分（满分 100）
-
-| 维度 | 分值 | 扣分规则（源码常数） |
+| 检查什么 | 怎么查 | 通过/失败 |
 |---|---|---|
-| 开场清晰度 | 20 | 首 20 行（去代码块）无目标意图词 −12；全文字数<250 −4 |
-| 信息架构 | 20 | H1 数≠1 −12（0 个=Critical）；标题跳级（如 H2→H4）−5 |
-| 安装+快速开始 | 20 | 无 install/quickstart/getting started/setup 节 −14（Critical）；0 个代码块 −4 |
-| 证据+可信 | 15 | 无 example/output/report/screenshot/demo/result 节 −8；全文无 license 字样 −4 |
-| CTA+社区 | 15 | contribut/issue/pull request/support/discussion/star 关键词命中<2 −9 |
-| 可读性+无障碍 | 10 | 图片缺 alt −6；标题总数<4 −2 |
+| 仓库简介（description）存在且说清范围、受众 | `gh repo view <owner/repo> --json description` | 为空＝补；该工具把 <60 字符记为提示（工具口径） |
+| topics 数量 | `gh repo view <owner/repo> --json repositoryTopics` | GitHub 官方文档：最多 20 个 topics（[文档](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics)，核对 2026-10-21）。0 个＝补；该工具把 <5 个记为提示 |
+| README 有 1 个 H1、有安装与快速开始、有示例或截图、有 LICENSE | 肉眼读，或用该工具的 lint | 缺安装与快速开始最影响转化（工具口径） |
+| 维护信号 | `gh repo view --json pushedAt,isArchived` | 已归档、长期无提交会降低信任（该工具以 180 天提示；本套件口径） |
+| 社区文件（CONTRIBUTING、SECURITY、ISSUE_TEMPLATE） | 看仓库文件列表 | 缺失只是提示 |
+| 流量快照 | GitHub 的 traffic（referrers/paths）只保留 14 天，需要追踪就要定期归档 | 双周归档一次（本套件口径；14 天是 GitHub 行为，未在本次逐页复核） |
 
-- 评级带：≥90 Excellent / ≥70 Good / ≥50 Needs Improvement / ≥30 Poor / 其余 Critical。
-- 字数统计剔除代码块、图片、链接标记——只数散文词；标题解析含 Setext（`===` 下划线）式。
+**诚实条款**：没有公开证据表明 GitHub 搜索排序直接使用这些字段，把它们当转化与信任的自查项。README 优化须保留项目原有语气，不为关键词改写定位。
 
-### 仓库元数据判定（github_repo_audit.py）
+## 八、让 AI 引擎引用你的目录档案（GEO 侧）
 
-- 评分=`max(0, 100 − Critical×20 − Warning×8)`（与审计侧同式）。
-- description：缺失=Warning、<60 字符=Info（建议写出范围+受众+意图词）。
-- topics：0 个=Warning、**>20 个=Critical**（GitHub 硬上限）、<5 个=Info（意图覆盖薄）。
-- 维护信号：archived=Critical；last push **>180 天**=Warning（建议发维护版本或文档刷新）；slug 用下划线=Warning（连字符分词更利于搜索索引切分）。
-- community profile health **<85%**=Warning；README/LICENSE 缺失=Critical（本地文件核查）；CONTRIBUTING / CODE_OF_CONDUCT / SECURITY / SUPPORT / CITATION.cff / ISSUE_TEMPLATE / PR_TEMPLATE 缺失=Warning。
-- 鉴权纪律：无 token→`gh` CLI 回退；API 失败→结论降级为 **Likely** 并记入 limitations（环境问题≠仓库缺陷）；本地文件检查仅在 cwd 的 git origin 与目标仓库一致时启用。
+> 来源：[ReScienceLab/opc-skills](https://github.com/ReScienceLab/opc-skills) 的 `seo-geo` 技能（2026-10-09 读）。下列数字已逐条回查一手来源，过不了的已删。证据分级以 [geo-evidence](../content/geo-evidence.md) 为准。
 
-### topics 建议器（repo_topic_suggester.py）
+**Princeton GEO 论文**：Aggarwal 等，KDD 2024，[arXiv 2311.09735](https://arxiv.org/abs/2311.09735)（核对 2026-10-21，读了 PDF 表 1）。摘要写明：GEO 方法最多可把内容在生成式引擎回答中的可见度提高约 40%。表 1 用"位置加权词数"（Overall 列，无优化基线 19.3）测九类方法，相对基线的提升：加引语 +41%、加统计数据 +31%、流畅度优化 +28%、加引用来源 +27%、技术术语 +18%、易读化 +14%、权威语气 +10%、独特词汇 +6%、堆关键词 −8%（比值由表 1 数值计算）。样本是论文自建的 GEO-bench 和单一生成式引擎设置，结果是**研究观察**，不是搜索引擎规则。上一版把这些增益写成另一组数字（+37%、+25%、+20%、+18%、+15%），与表 1 对不上，已改；"FAQPage schema +40%"在论文中没有对应结果，已删。
 
-- 评分公式：规范 topic 短语命中得分=命中次数×(20+额外词数×12)；**竞品 topic 每票×5**；词频候选需 ≥3 字符、≤50 字符、过停用词表。
-- 判定：当前 topics<3=Warning；建议列表去重后按分排序，上限 20。
+**ChatGPT 引用因素（SE Ranking 研究，2025-11-24 发布）**：分析 129,000 个域名、216,524 个页面、20 个领域。来链域超过 350,000 的站平均被引 8.4 次；越过 32,000 个来链域时被引次数从 2.9 升到 5.6；近三个月更新过的内容平均被引 6.0 次，对照 3.6 次（[原文](https://seranking.com/blog/how-to-optimize-for-chatgpt/)，核对 2026-10-21）。这是**第三方相关性研究**，不是 OpenAI 的规则。同一研究还发现带 FAQ schema 的页面平均 3.6 次，不带的 4.2 次，即 schema 本身没有显著提升被引。
 
-### 运营口径
+**Bing 与 Copilot**：Bing 官方准则写明 Bing 和 Copilot 的搜索体验"依赖同一套核心抓取、索引和排名基础"，准则同时说 GEO 不保证被引用（[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)，核对 2026-10-21）。因此要在 Bing 站长平台提交站点并用 IndexNow 通知变更。
 
-- **流量快照 14 天保留窗**：GitHub traffic（top referrers/paths）只留 14 天，要追踪就得定期归档（其 github_traffic_archiver.py 职责）——与上文"季度复检"衔接，这里周期是**双周**。
-- 提交 awesome 列表前自检顺序：repo_audit（description/topics/治理文件）→ readme_lint 六维 → search_benchmark（目标词位次）——三项过关再 outreach，对应 Phase 0 闸门思路。
+**已删除的断言**：Perplexity"站内托管 PDF 被优先引用""FAQ schema 更高引用率"；Google AI Overview"权威引用 +132% 可见度"；Copilot"LinkedIn、GitHub 提及有助力、页速 <2s"；Claude"走 Brave Search 而非 Google"；ChatGPT"权重表（权威 40%/质量 35%/平台信任 25%）"。均无一手来源。Claude 的检索后端要看 Anthropic 当前文档，本文件不断言。
 
-### 诚实条款（GitHub 侧）
+**与目录提交的衔接**：目录档案的价值是让品牌的名称、定位、官网 URL 在多个可抓取页面一致。这是做法建议，不是已被证明的引用杠杆。
 
-- 六维评分与元数据判定是**转化与信任代理**，无公开证据表明 GitHub 搜索排序直接消费这些字段；topic 建议词须单独验证搜索量。
-- README 优化须**保留项目原有语气与品牌**，不得为关键词改写定位。
+## 九、检查清单
 
-## 九、GEO：让 AI 引擎引用你（opc-skills 深读 2026-10-09c）
+| 检查什么 | 怎么查 | 通过/失败 |
+|---|---|---|
+| 九问闸门 | 逐条回答，记录证据 URL | 1–7 全部通过才开始提交 |
+| 追踪表可生成 | `python3 scripts/directory_tracker.py init --directories references/research/directory-submissions.md --file dirs.csv` | 退出码 0；已存在文件时退出码 2，不会覆盖 |
+| 登记目录 | `python3 scripts/directory_tracker.py add --directory https://d.com --tier 2 --cost 0 --file dirs.csv` | 同域重复登记退出码 2 |
+| 链接属性 | 第五节 curl 命令；或 `directory_tracker.py verify --entry DIR-001 --target https://你的域名 --file dirs.csv` | 带 `nofollow`、`sponsored` 或 `ugc`＝Dofollow 记对应属性（多个时按 nofollow > sponsored > ugc 取一）；找不到链接＝不盖 verified 章 |
+| 季度复检 | `python3 scripts/directory_tracker.py quarterly --file dirs.csv` | 队列非空退出码 1，接 `notify.py` |
+| robots.txt 是否放行搜索类爬虫 | `python3 scripts/robots_posture.py https://你的域名/robots.txt` | 搜索类与用户类 bot 为 allowed；封训练类 bot 不算失败（脚本口径） |
+| GitHub 仓库自查 | 第七节表 | 描述、topics、README 三项齐 |
 
-> 来源：[ReScienceLab/opc-skills](https://github.com/ReScienceLab/opc-skills) 10 技能深读收官。本节主体出自 `seo-geo` 技能；`twitter`（twitterapi.io 取证：from:/since:/min_faves: 查询语法、~$0.15-0.18/1k 请求）仅作社媒倾听渠道带注；`logo-creator` / `banner-creator` / `nanobanana` 为纯设计类、`archive` 为本地会话知识管理——**均无 SEO 增量，如实跳过**。
+## 十、来源
 
-### 核心定位：引用即排名
-
-AI 搜索引擎（ChatGPT/Perplexity/Gemini/Copilot/Claude）**不排名、只引用**——"被引用是新的排名 #1"。这改写了目录提交的价值账：目录档案不只是外链，更是 AI 检索阶段可命中的**品牌域实体证据**。
-
-### 9 条 Princeton GEO 方法（可见度增益自述值）
-
-| 方法 | 增益 | | 方法 | 增益 |
-|---|---|---|---|---|
-| 引用来源 | +40% | | 技术术语 | +18% |
-| 加统计数据 | +37% | | 独特词汇 | +15% |
-| 加专家引语 | +30% | | 流畅度优化 | +15–30% |
-| 权威语气 | +25% | | ~~关键词堆砌~~ | **−10%，禁用** |
-| 易于理解 | +20% | | | |
-
-最佳组合：**流畅度 + 统计数据**。FAQPage schema 自述 +40% AI 可见度[未证实:引用时须注明二手来源——未找到把 +40% 单独归到 FAQPage schema 的一手研究,二手口径混杂(Princeton GEO 的 +40% 系"引用来源"因子/Semrush"被引页 40% 带结构化数据"系占比非增益/Milestone 2023 系富结果曝光);系 AI 可见面主张,与 SERP 富结果退役无关]。
-
-### Phase 0 闸门扩展：AI 爬虫放行清单
-
-robots.txt 须放行：Googlebot、Bingbot、PerplexityBot、ChatGPT-User、ClaudeBot/anthropic-ai、GPTBot。一条 curl 即验：`curl -s "https://example.com/robots.txt"`；元标签快查：`curl -sL <url> | grep -E "<title>|meta name=\"description\"|og:|ld\+json"`。
-
-### 平台分因子（其 platform-algorithms.md 汇编）
-
-- **ChatGPT**（SE Ranking 129K 域研究(129,000 域/216,524 页/20 领域),研究发布 2025-11-24,来源:seranking.com;SEJ 2025-11-26 转述）：引荐域名数是最强预测因子（>350K 域≈8.4 平均引用;>32K 域处引用翻倍 2.9→5.6）;**近 3 个月更新内容引用 ≈1.7x(6.0 vs 3.6;2026-10-11 复核纠正——原文无"30 天 3.2x"口径)**;"域信任分 91–96≈6/97–100≈8.4"与"官方域 +11.1pp"未在该研究原文/SEJ 转述中找到[未证实:引用时须注明二手来源];头部引用源 Wikipedia 7.8% / Reddit 1.8% / Forbes 1.1% 系 **Profound** ChatGPT 口径(测量于 2024-08~2025-06,发布 2025-06-05,来源:tryprofound.com)——两源勿混,勿记在 SE Ranking 名下。
-- **Perplexity**：放行 PerplexityBot + FAQ schema（更高引用率）+ **站内托管 PDF（被优先引用）** + 语义相关优先于关键词。
-- **Google AI Overview**：E-E-A-T + 结构化数据 + 专题权威（内容簇+内链）+ 权威引用（+132% 可见度）。
-- **Copilot/Bing**：**Bing 索引是引用前提**；LinkedIn/GitHub 提及有助力；页速 <2s；清晰实体定义。
-- **Claude**：走 **Brave Search 而非 Google**——只查 Google `site:` 会漏判；偏好高事实密度、结构清晰易抽取的内容。
-
-### 与本文件的衔接
-
-- 九问闸门第 6 条"GEO 就绪"由本节充实：AI 爬虫放行 + FAQPage schema + answer-first 结构（H1>H2>H3、短段落、对比表格）。
-- T8 Profile 平台档案价值重估：ChatGPT 引用研究把**品牌域与引荐域名数**列首位——档案一致性即实体信号。
-- 30 天新鲜度（3.2x）与上文"季度复检"冲突时**取更短周期**：档案/落地页至少双周至月度触碰。
-- 验证链：Rich Results Test / validator.schema.org 验 schema；Google+**Bing** 双 `site:` 查索引（Copilot 前提）。
-
-### 诚实条款（GEO 侧）
-
-- 增益数字（+40%/+37%/3.2x/+132% 等）转述自其自述的 Princeton GEO 研究与 SE Ranking 研究，SKILL.md 未附一手链接——**均为相关性观察、非因果保证**，采用前须溯源复核原文。
-- ChatGPT 权重表（权威 40%/质量 35%/平台信任 25%）是外部逆向推断，官方从未公布权重。
-- "Claude 走 Brave"属平台行为快照，AI 搜索后端随时可换，按季度复核。
+- 九问闸门、分层、列 schema、追踪 CSV：[coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) `skills/directory-submissions/`（本套件改写）
+- GitHub 自查：[Bhanunamikaze/Agentic-SEO-Skill](https://github.com/Bhanunamikaze/Agentic-SEO-Skill)；[GitHub 文档](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics)
+- GEO：[arXiv 2311.09735](https://arxiv.org/abs/2311.09735)；[SE Ranking](https://seranking.com/blog/how-to-optimize-for-chatgpt/)；[Bing 准则](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)
+- 外链政策：[Google 垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies#link-spam)

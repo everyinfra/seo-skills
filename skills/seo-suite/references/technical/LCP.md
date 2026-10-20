@@ -4,13 +4,13 @@
 
 ## 定义与阈值
 
-- LCP 衡量视口内最大的图片、文本块或视频完成渲染的时间（从页面开始加载算起）。候选元素：`<img>`、`<svg>` 内的 `<image>`、`<video>`（取封面图加载和首帧呈现中较早的一个）、用 `url()` 加载背景图的元素、包含文本节点的块级元素（[web.dev：LCP](https://web.dev/articles/lcp)，核对 2026-10-18）。
-- 阈值：≤2.5 秒为良好，2.5–4 秒需要改进，>4 秒为差；按真实用户第 75 百分位，移动端和桌面端分开看（同上）。
+- LCP 衡量视口内最大的图片、文本块或视频完成渲染的时间（从页面开始加载算起）。候选元素：`<img>`、`<svg>` 内的 `<image>`、`<video>`（取封面图加载和首帧呈现中较早的一个）、用 `url()` 加载背景图的元素、包含文本节点的块级元素（[web.dev：LCP](https://web.dev/articles/lcp)，核对 2026-10-21）。
+- 阈值：≤2.5 秒为良好，2.5–4 秒需要改进，>4 秒为差；按真实用户第 75 百分位，移动端和桌面端分开看（[LCP](https://web.dev/articles/lcp) 给出 2.5 秒和 p75，[阈值方法说明](https://web.dev/articles/defining-core-web-vitals-thresholds)的表格给出 >4000 ms 为差）。
 - Search Console 的 Core Web Vitals 报告数据来自 CrUX（真实 Chrome 用户），按最近 28 天的 p75 计算（[Search Console 帮助](https://support.google.com/webmasters/answer/9205520)）。实验室工具的一次测量不能代替它。
 
 ## 把 LCP 拆成四段
 
-web.dev 把 LCP 拆为四个连续阶段，并给出各段的参考占比（[web.dev：优化 LCP](https://web.dev/articles/optimize-lcp)，核对 2026-10-18）：
+web.dev 把 LCP 拆为四个连续阶段，并给出各段的参考占比（[web.dev：优化 LCP](https://web.dev/articles/optimize-lcp)，核对 2026-10-21）：
 
 | 阶段 | 含义 | 参考占比 | 常见原因 | 常见修法 |
 |---|---|---|---|---|
@@ -38,7 +38,7 @@ LCP 是 CSS 背景图时，浏览器要等样式解析后才发现它，可以�
 <link rel="preload" as="image" href="/img/cover-bg.webp" fetchpriority="high">
 ```
 
-用 web-vitals 库采集真实用户的 LCP 和四段耗时（attribution 构建；字段名按 [web-vitals README](https://github.com/GoogleChrome/web-vitals)，main 分支 6.2.3 核对 2026-10-18）：
+用 web-vitals 库采集真实用户的 LCP 和四段耗时（attribution 构建；字段名按 [web-vitals README](https://github.com/GoogleChrome/web-vitals)，main 分支 6.2.3 核对 2026-10-21）：
 
 ```js
 import { onLCP } from 'web-vitals/attribution';
@@ -63,13 +63,13 @@ onLCP(({ name, value, rating, attribution }) => {
 4. **按上表处理占比最大的阶段**，一次改一类，改完重新测量。
 5. **上线后回看现场数据**：CrUX 是 28 天滚动平均、每天更新，改善要在窗口滚动后才完整体现。
 
-PageSpeed Insights API 可以不带 key 调用；频繁的自动化调用建议用 API key（[PSI API](https://developers.google.com/speed/docs/insights/v5/get-started)）。CrUX API 必须带 key。
+PageSpeed Insights API 可以不带 key 调用；频繁的自动化调用建议用 API key（[PSI API](https://developers.google.com/speed/docs/insights/v5/get-started)）。该文档同时写明：PSI API 计划停止返回 CrUX 现场数据，官方建议改用 CrUX API 或 CrUX History API；现场数据以 CrUX API 为准，PSI 只当实验室数据入口。CrUX API 必须带 key。
 
 ## 检查清单
 
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
-| 现场 LCP | `python3 scripts/field_data.py --url URL --strategy both --json`，读 `field` 里 LCP 的 p75 | 两种设备 p75 ≤2.5s → 通过；>4s → 差 |
+| 现场 LCP | `python3 scripts/field_data.py --url URL --strategy both --json`，读 `field` 里 LCP 的 p75（需要 `--key` 或环境变量 `PSI_API_KEY`/`CRUX_API_KEY`，CrUX 无 key 会被跳过） | 两种设备 p75 ≤2.5s → 通过；2.5–4s → 需改进；>4s → 差；CrUX 无数据（流量不够）→ 记「无现场数据」，改用自建 RUM |
 | 最长分段 | CrUX API 四个 `largest_contentful_paint_image_*` 分段，或 RUM 里 attribution 四段 | 找出超出参考占比最多的一段，作为第一修复项 |
 | LCP 资源可发现 | `curl -s URL \| grep -io '<img[^>]*fetchpriority="high"[^>]*>'`；对照 DevTools 识别出的 LCP 元素 | LCP 图片出现在初始 HTML 且没有 `loading="lazy"` → 通过 |
 | 懒加载误用 | DevTools Elements 选中 LCP 元素看属性 | 带 `loading="lazy"` → 失败 |
@@ -89,4 +89,4 @@ PageSpeed Insights API 可以不带 key 调用；频繁的自动化调用建议�
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[addyosmani/web-quality-skills · skills/core-web-vitals/references/LCP.md](https://github.com/addyosmani/web-quality-skills/blob/main/skills/core-web-vitals/references/LCP.md)（MIT）
-- 一手资料（核对 2026-10-18）：[web.dev：LCP](https://web.dev/articles/lcp)、[web.dev：优化 LCP](https://web.dev/articles/optimize-lcp)、[web.dev：TTFB](https://web.dev/articles/ttfb)、[Search Console Core Web Vitals 报告](https://support.google.com/webmasters/answer/9205520)、[web-vitals 库](https://github.com/GoogleChrome/web-vitals)、[CrUX API](https://developer.chrome.com/docs/crux/api)、[PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started)
+- 一手资料（核对 2026-10-21）：[web.dev：LCP](https://web.dev/articles/lcp)、[web.dev：优化 LCP](https://web.dev/articles/optimize-lcp)、[web.dev：TTFB](https://web.dev/articles/ttfb)、[Search Console Core Web Vitals 报告](https://support.google.com/webmasters/answer/9205520)、[web-vitals 库](https://github.com/GoogleChrome/web-vitals)、[CrUX API](https://developer.chrome.com/docs/crux/api)、[PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started)

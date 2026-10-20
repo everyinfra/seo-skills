@@ -60,12 +60,12 @@
 
 - 只用真实、已获客户同意公开的评价，写明身份和使用场景。
 - 结果数字要有来源、时间范围和对比基线；没有就只描述变化，不给百分比。
-- 不给自家产品添加自评性质的评分结构化数据，结构化数据只描述页面上可见且真实的内容。
+- 不给自家产品添加自评性质的评分结构化数据，结构化数据只描述页面上可见且真实的内容。Google 的[评论摘要文档](https://developers.google.com/search/docs/appearance/structured-data/review-snippet)对 LocalBusiness 和 Organization 类型限定"只适用于收集他人评论的站点"，并另有"自我服务式评论"准则（核对 2026-10-21）。
 
 ### 常见问题（可选）
 
 - 只收真实被问到的问题，答案与正文一致。
-- 如需标记，FAQPage 只描述页面上可见的问答；Google 已停止展示 FAQ 富结果，不把它当作获取展示的手段，见 [geo-evidence.md](../content/geo-evidence.md)。
+- 如需标记，FAQPage 只描述页面上可见的问答。Google 自 2026-05-07 起不再展示 FAQ 富结果（[更新日志](https://developers.google.com/search/updates)，核对 2026-10-21），不把它当作获取展示的手段，见 [geo-evidence.md](../content/geo-evidence.md)。
 
 ### 行动引导
 
@@ -79,6 +79,18 @@
 - [ ] 价格比较口径一致，假设已写明
 - [ ] 评价真实、已获客户同意，数字有来源
 - [ ] 结构化数据与可见内容一致
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过/失败 |
+|---|---|---|
+| 开头结论含"选对方更合适"的情形 | 读 TL;DR | 有＝通过；无＝补 |
+| 首段回答买家的真实提问 | `python3 scripts/question_align.py --gsc <GSC导出.csv> --page <页面URL> --fetch`（方法见 [question-alignment](../content/question-alignment.md)） | 页面标题与首段对上高展示查询的问法 |
+| 句子短、术语一致 | `python3 scripts/ste_lint.py <正文.txt> --lang en` | 无 FAIL 项（规则见 [asd-ste100-web-writing](../content/asd-ste100-web-writing.md)） |
+| 对比表无空格、价格口径一致 | 人工逐格读；每格有核对日期 | 空格为零；假设已写明 |
+| 对方事实可追溯 | 抽 5 条关于对方的说法，打开来源 URL | 5 条都读到对应文字 |
+| 评价真实、已获同意 | 查客户同意记录 | 无记录的评价不上线 |
+| 结构化数据与可见内容一致 | `python3 scripts/schema_lint.py <页面URL>` | 无悬空引用、无占位符 |
 
 ## 来源
 

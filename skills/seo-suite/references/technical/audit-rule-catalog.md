@@ -1,6 +1,6 @@
 # 审计规则全目录(SEOmator 373 规则,源码深读)
 
-> 来源:SEOmator 开源审计器 [seo-skills/seo-audit-skill](https://github.com/seo-skills/seo-audit-skill) 的 `docs/SEO-AUDIT-RULES.md`。2026-10-09 吸收的是 e047a5e2(2026-09-22)快照。上游 2026-10-15 在 132d2384 按代码重写了该文档,多条规则的语义与严重度变了。**第一波 P0/P1 的 79 条已按 132d2384 复核(核对 2026-10-18);其余表格与条目仍是 09-22 快照,与现行版冲突时以现行版为准。**
+> 来源:SEOmator 开源审计器 [seo-skills/seo-audit-skill](https://github.com/seo-skills/seo-audit-skill) 的 `docs/SEO-AUDIT-RULES.md`。2026-10-09 吸收的是 e047a5e2(2026-09-22)快照。上游 2026-10-15 在 132d2384 按代码重写了该文档,多条规则的语义与严重度变了。**第一波 P0/P1 的 79 条已按 132d2384 复核(核对 2026-10-18),2026-10-21 又逐条回读 Google 文档原文并对齐 site_audit 现行行为;其余表格与条目仍是 09-22 快照,与现行版冲突时以现行版为准。**
 > 三态计分:Pass=100 / Warn=50 / Fail=0;总分=类别加权平均。现行档位 **90-100=A / 80-89=B / 70-79=C / 50-69=D / <50=F**;单页审计另有封顶(noindex 或 robots.txt 屏蔽封 20,无 title 封 69 等)。
 > **20 类权重表已吸收于 [scoring-rubric.md](scoring-rubric.md)「完全装载」节,不重抄**(Core 11%/Perf 10%/Links·Images·Security 各 8%/Tech·A11y 各 7%/Crawl·SD·Content·JS 各 5%/Social·E-E-A-T·URL·Redirects 各 3%/Mobile·i18n·HTMLval·AI-GEO 各 2%/Legal 1%)。
 > **严重度与阈值是 SEOmator 的工具约定,不是搜索引擎规则。** 搜索引擎的一手说法写在各条「依据」里;没有官方出处的写"无官方出处"。
@@ -25,9 +25,9 @@
 
 | 简写 | 命令 | 用途与限制 |
 |---|---|---|
-| `AUDIT` | `python3 scripts/site_audit.py URL [--market xx] [--json] [--export-dir DIR]` | 单页;输出 `[级别] area: 消息`;有 CRITICAL 退出码 1。不跨页、不渲染、只读第一个/最后一个 meta robots,不识别 `none` 与 googlebot meta |
-| `SITEMAP` | `python3 scripts/sitemap_audit.py 站点 --check-limit 0` | 六坏桶:1 非200/2 3xx/3 noindex/4 canonical 他指/5 robots 屏蔽/6 参数重复 + lastmod 三判定;默认只逐条查前 50 条 |
-| `HREFLANG` | `python3 scripts/hreflang_cluster.py URL1 URL2 …` | 簇矩阵:自引用/语言码/绝对URL/HTTP200/双向回报 + 三载体冲突;跟随重定向 |
+| `AUDIT` | `python3 scripts/site_audit.py URL [--market xx] [--json] [--export-dir DIR]` | 单页;输出 `[级别] area: 消息`;有 CRITICAL 退出码 1。CRITICAL 只有:缺 title、noindex、staging 子域、搜索类 AI bot 被禁(Google-Extended 为 WARN)、抓取失败。缺 description、缺 H1/多个 H1、缺 canonical、相对 canonical 是 WARN;>100 链接是 INFO(工具约定,Google 无此上限)。title/description 区间取 `scripts/markets.json`(`desc_min` 为 description 下限;zh/ja/ko 按显示宽度)。挑战页只按结构特征判,命中输出 `[SKIP]` 拒审。不跨页、不渲染;meta robots 只取最后一个 `name=robots`,与 X-Robots-Tag 合并判 noindex,不识别 `none` 与 googlebot meta |
+| `SITEMAP` | `python3 scripts/sitemap_audit.py 站点 --check-limit 0` | 六坏桶:1 非200/2 3xx/3 noindex/4 canonical 他指/5 robots 屏蔽/6 参数重复 + lastmod 三判定;默认只逐条查前 50 条;加 `--hreflang` 另查 sitemap 载体的 hreflang(自引用、互指、码值、完整 URL) |
+| `HREFLANG` | `python3 scripts/hreflang_cluster.py URL1 URL2 …` | 簇矩阵:自引用/语言码/绝对URL/HTTP200/双向回报 + 三载体冲突;跟随重定向;语言码按 Google 口径判(拒 es-419、认 zh-Hans、大小写不敏感、UK/EU 报保留码) |
 | `REDIR` | `python3 scripts/redirect_chain.py URL [--max N]` | 逐跳;>2 跳 WARN,>5 跳或环 CRITICAL;临时码用于永久变化 WARN;打印「终态: HTTP」 |
 | `CRAWL` | `python3 scripts/site_crawl.py 站点 --max N --out crawl.json` | `pages[]` 含 url/status/final_url/canonical/depth/inlinks/source,另有 `edges`、`orphans`;N 要覆盖全站,截断时入链偏少 |
 | `GRAPH` | `python3 scripts/link_graph.py --crawl crawl.json` | 深度直方图(>3 层占比)、入链 0/1 清单、锚文本审计 |
@@ -176,7 +176,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 ### crawl-hreflang-incoming-conflict ⛏
 - 源表:fail · 权重 7 · 需 `--crawl`。他页给本页标了不同语言码;本页自己的注解不计,x-default 不算冲突。工具约定。建议优先级 high。
-**依据**: Google 要求每个语言版列出同一套链接(含自己),各版本的集合一致([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。同一 URL 被标两种码,说明各页集合不一致。核对 2026-10-18。
+**依据**: Google 要求每个语言版列出自己和对应的其他语言版,且互相指回;没互指的那一对被忽略([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。同一 URL 被不同页标成不同语言码,这几对注解互相矛盾;Google 如何裁决未公开。核对 2026-10-21。
 **判据**: 通过=所有入向注解对本页用同一个码。失败=出现 ≥2 个不同码(x-default 除外)。
 **执行**: `HREFLANG 簇内全部URL`,在矩阵里对比各行给本 URL 的码;站外引用方用 G7 逐页抓。
 **修复**: 找到写错的引用方改码;双语页拆成两个 URL。
@@ -187,7 +187,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **依据**: "If two pages don't both point to each other, the tags will be ignored";可以在部分页省略部分语言,互指的仍会处理([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。核对 2026-10-18。
 **判据**: 通过=每个目标都含"指向本页且码对应"的条目。失败=任一目标缺该条目。
 **执行**: `HREFLANG 簇内全部URL`,「双向回报」列出现 ✗ 即失败(脚本退出码 1)。
-**修复**: 双向成对生成,优先在 sitemap 载体集中维护;修完重跑 `HREFLANG`。
+**修复**: 双向成对生成;页数多时用 sitemap 载体集中维护更省事(三载体对 Google 等价,这只是维护建议);修完重跑 `HREFLANG`。
 **关联**: i18n-hreflang-return-links;[hreflang-validation.md](hreflang-validation.md)
 
 ### crawl-isolated-url ⛏
@@ -440,7 +440,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 ### eeat-author-byline
 - 名称/类型: 作者署名缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn)
 **这意味(what)**: 内容页(文章/指南/评测)没有可见的作者归属——无 byline,也无链接到作者档案的署名元素。
-**为什么(why)**: Google 强烈建议在读者期待的地方加准确的作者信息(byline),并让 byline 链到作者背景;伪造作者信息不可取。E-E-A-T 本身不是具体排名因素([有用内容文档](https://developers.google.com/search/docs/fundamentals/creating-helpful-content))。署名也是 Article author 字段的可见依据:结构化数据描述的内容须在页面可见([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies))。
+**为什么(why)**: Google 在有用内容文档里写「We strongly encourage」在读者期待的地方加准确的作者信息(byline),并让 byline 链到作者背景;伪造作者信息不可取。E-E-A-T 本身不是具体排名因素([有用内容文档](https://developers.google.com/search/docs/fundamentals/creating-helpful-content))。署名也是 Article author 字段的可见依据:结构化数据描述的内容须在页面可见([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies))。
 **触发(trigger)**: 1) 页面属内容模板(文章/博客/新闻形态,判定口径源表未公布[待核]);2) 无作者名文本或指向作者档案的署名链接即 warn。
 **不修的条件(caveat)**: 署名不是直接排名因素,然而它是整条 E-E-A-T 评估链的入口,所以一般建议内容页必配。但公司公告/产品页/工具页以组织身份发布是正当形态,author 用 Organization 代替 Person 即可。
 **修复(fix)**: 内容模板加可见 byline 并链接到作者档案页;与 Article schema 的 author 字段同源输出;匿名编辑部的站至少给"编辑团队"一个实体页。
@@ -468,7 +468,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 - 名称/类型: 权威引用缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;链向权威源 .gov/.edu/论文/行业出版物)
 **这意味(what)**: 内容页的论断没有外部权威来源支撑——无出站引用,或引用全指向低可信源。
 **为什么(why)**: Google 说链出引用来源有助于建立可信度,nofollow 只用于不信任的来源([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable))。把引用链接全 nofollow 等于亲手关掉这个信号(见 links-nofollow-external)。.gov/.edu 等"权威域清单"是工具约定,不是 Google 规则。
-**触发(trigger)**: 内容页出站引用中权威源(.gov/.edu/论文域名/行业出版物清单[清单口径待核])计数=0 即 warn。
+**触发(trigger)**: 源表现行:正文里(导航、页头、页脚、侧栏及指向本站域名的链接不算)有出站链接,却没有一条指向权威主机(政府、教育、研究、主流新闻等清单)才 warn;完全没有出站链接=通过。
 **不修的条件(caveat)**: 引用密度不是排名公式(不是每页都得挂 .gov),所以一般建议论断型内容配引用、叙事型内容不强求。但为凑权威链接硬引不相关来源,反而稀释主题相关度。
 **修复(fix)**: 数据/论断处补一手来源链接(正常 follow);证据分级规范见 [geo-evidence.md](../content/geo-evidence.md);死引用按 links-external-reachability 定期清理。
 **关联(seealso)**: links-nofollow-external、eeat-disclaimers;[geo-evidence.md](../content/geo-evidence.md)、[geo-evidence-bank.md](../content/geo-evidence-bank.md)
@@ -485,7 +485,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 ### eeat-contact-page
 - 名称/类型: 联系页缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;email/电话/表单/地址至少其一)
 **这意味(what)**: 站点没有联系页,或联系页没有任何可用通道(源表口径:email/电话/表单/地址至少其一)。
-**为什么(why)**: 联系信息是信任的底线证据,电商/服务类尤甚。多地法律要求电商标明经营者与联系方式,以当地法务意见为准。通道的真实可用性比数量重要,一个真实表单胜过四个死邮箱。
+**为什么(why)**: 联系信息是读者判断站点是否真实存在的基本证据,电商/服务类尤甚。是否有法定披露义务因辖区而异,以法务意见为准(本套件无统一来源)。通道的真实可用性比数量重要,一个真实表单胜过四个死邮箱。
 **触发(trigger)**: 站内无可达联系页,或联系页四类通道(email/电话/表单/地址)计数=0 即 warn。
 **不修的条件(caveat)**: 联系页不影响常规排名,然而缺失在 YMYL/电商场景是信任硬伤,所以一般建议必配。但开源项目站用 GitHub issue 等单一通道替代是可接受形态。
 **修复(fix)**: 建联系页(≥1 真实通道);页脚全局链接;电话/地址与 LocalBusiness/PostalAddress schema 同源(见 eeat-physical-address)。
@@ -494,7 +494,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 ### eeat-privacy-tos(家族条:privacy-policy+terms-of-service)
 - 名称/类型: 隐私政策/服务条款链接缺失 —— warning · 优先级 low · 输出 WARN(源表各=warn:页脚隐私政策链接、页脚 ToS 链接)
 **这意味(what)**: 页脚缺隐私政策或服务条款链接(两条同构:均为页脚法定页存在性检查,并作一条)。
-**为什么(why)**: 两页是商业信任与合规的基建:收集个人数据或加载追踪脚本时,多数辖区要求公开隐私政策(以法务意见为准);ToS 划定内容与交易权责。对搜索引擎无已知直接作用。缺失还联动 legal-cookie-consent。
+**为什么(why)**: 两页是商业信任与合规的基建:收集个人数据或加载追踪脚本时,不少辖区要求公开隐私政策(因辖区而异,以法务意见为准;本套件无统一来源);ToS 划定内容与交易权责。对搜索引擎无已知直接作用。缺失还联动 legal-cookie-consent。
 **触发(trigger)**: 页脚(或全站级导航)无 Privacy Policy / Terms of Service 链接即各 warn。
 **不修的条件(caveat)**: 法定页本身不是排名因素,然而隐私政策缺失在多数辖区是合规缺口,所以一般建议全站配。但无 cookie 无收集的纯静态个人站可从简——从简不等于没有。
 **修复(fix)**: 页脚模板级补两链接(勿逐页手写);隐私政策覆盖实际收集行为并与 CMP 配置一致(见 legal-cookie-consent)。
@@ -512,7 +512,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 ### eeat-affiliate-disclosure
 - 名称/类型: 联盟披露缺失 —— warning · 优先级 medium · 输出 WARN(源表 warn;FTC 口径 "This post contains affiliate links.")
 **这意味(what)**: 含联盟/付费推广链接的页面没有披露声明(FTC 要求的显式披露,如 "This post contains affiliate links.")。
-**为什么(why)**: 链接层面,Google 要求付费链接用 rel=sponsored 或 nofollow([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable));法律层面,美国 FTC 要求披露实质性关联,披露要放在推荐信息旁、难以错过,只放页尾或要点开才看到的位置容易被忽略([FTC](https://www.ftc.gov/business-guidance/resources/disclosures-101-social-media-influencers))。
+**为什么(why)**: 链接层面,Google 要求付费链接用 rel=sponsored 或 nofollow([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable));法律层面,美国 FTC 的网红披露指南(针对社交媒体,原则同样适用于博客)要求披露实质性关联,披露要与推荐信息放在一起、难以错过;只放在关于页、帖子末尾或要点开才看到的位置容易被忽略([FTC](https://www.ftc.gov/business-guidance/resources/disclosures-101-social-media-influencers),核对 2026-10-21)。
 **触发(trigger)**: 1) 页面含联盟链接特征(amazon.*/tag=、/aff/、?aff_id= 等形态[特征表待核]);2) 无披露文本即 warn。
 **不修的条件(caveat)**: 披露不影响链接本身的排名语义(那是 rel=sponsored 的职责),然而它是合规义务,所以一般建议凡有佣金链接必配。但自然外链与联盟链接要分清——无商业关系的推荐不需要披露。
 **修复(fix)**: 联盟链接统一 rel="sponsored";页首/链接前置披露声明;模板级注入勿逐页手写。
@@ -537,10 +537,10 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **关联(seealso)**: eeat-about-page、eeat-content-dates;[content-patterns.md](../content/content-patterns.md)
 
 ### eeat-trust-signals
-- 名称/类型: 信任信号缺失 —— warning · 优先级 low · 输出 WARN(源表 warn;评论/认证/安全徽章/媒体报道)
+- 名称/类型: 信任信号清单 —— opportunity · 优先级 insight · 输出 PASS(源表现行 pass only:只列出信号,永不扣分;少于 3 类时建议补充)
 **这意味(what)**: 站点没有任何可验证的信任信号:用户评论、第三方认证、安全徽章、媒体报道引用。
-**为什么(why)**: 第三方背书是信任的社会化证据;认证与媒体报道可写进 Organization schema(award/subjectOf)。信号要可验证:无链接的 logo 墙没有价值;虚假评论违反 Google 结构化数据指南([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies))。源表现行改为 pass only:只列出信号,不扣分。
-**触发(trigger)**: 全站(或关键模板)评论/认证/徽章/媒体报道四类信号计数=0 即 warn(计入粒度口径[待核])。
+**为什么(why)**: 第三方背书是信任的社会化证据;认证与媒体报道可写进 Organization schema(award/subjectOf)。信号要可验证:无链接的 logo 墙没有价值;虚假评论违反 Google 结构化数据指南([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies))。源表现行为 pass only:只列出信号,不扣分。
+**触发(trigger)**: 源表现行永远通过,只列出已发现的信号类型(评论 schema、认证、安全徽章、媒体报道等);本套件口径:全站一类都没有时,人工提示补充,不记失败。
 **不修的条件(caveat)**: 信任信号是加法不是底线,所以一般建议按业务形态选配(电商重评论,B2B 重认证与报道)。但伪造信号(假评论/未授权徽章)比没有更糟,是信任硬伤。
 **修复(fix)**: 接真实评论系统(schema 配页面可见评分,可见性判定见 sd-rating-scope);认证挂权威来源链接;媒体报道用 subjectOf/citation 进 schema。
 **关联(seealso)**: sd-rating-scope、eeat-author-expertise;[entity-signal-checklist.md](entity-signal-checklist.md)
@@ -598,9 +598,9 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 ### i18n-hreflang
 - 源表:warn/fail · 权重 10。见上表;码格式要求"语言小写区域大写",比 Google 严。工具约定。建议优先级 medium。
-**依据**: hreflang 是可选做法,不加 Google 也可能自己找到其他语言版,但最好显式声明;码值规则与 x-default 见本节开头([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。核对 2026-10-18。
+**依据**: Google 说不做也可能自己找到其他语言版,但通常最好显式声明;码值规则与 x-default 见本节开头([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。核对 2026-10-18。
 **判据**: 通过=多语言页的注解集码值合法、含自引用,≥2 条时有 x-default(源表 warn 项)。失败=空值、重复码、非法码。大小写不同不算错(Google 不敏感)。
-**执行**: `HREFLANG 簇内全部URL`,看「条目」「自引用」「语言码」三列。注意脚本要求区域码大写、拒收 zh-Hans、放行 es-419,三点都与 Google 口径相反,命中后按本节开头人工复判。
+**执行**: `HREFLANG 簇内全部URL`,看「条目」「自引用」「语言码」三列;脚本的语言码按 Google 口径判(大小写不敏感、认 zh-Hans、拒 es-419、UK/EU 报保留码)。sitemap 载体用 `SITEMAP --hreflang`。
 **修复**: 三载体任选一种,覆盖全簇加 x-default;载体选择见 [hreflang-validation.md](hreflang-validation.md) 第二节。
 **关联**: i18n-hreflang-multiple-methods、i18n-hreflang-x-default;[hreflang-validation.md](hreflang-validation.md)
 
@@ -646,7 +646,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 ### i18n-hreflang-conflicting
 - 源表:fail · 权重 10。同码多 URL、同 URL 多码、本页被多码自引用;x-default 豁免。工具约定。建议优先级 high。
-**依据**: Google 要求每个语言版列出同一套链接,集合在各版本间一致([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions));一码对多 URL 时无法判断该给哪一个。Google 对冲突注解的处理未公开。核对 2026-10-18。
+**依据**: 每个语言版须列出自己和对应的其他语言版([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions));文档允许部分页省略部分语言,但没有说同码对多 URL 或同 URL 对多码怎么处理,这一项是本套件的一致性要求,冲突时 Google 的裁决未公开。核对 2026-10-21。
 **判据**: 通过="码→URL"与"URL→码"都是一对一(x-default 不计)。失败=任一方向一对多。
 **执行**: `curl -s URL | grep -oiE '<link[^>]+hreflang=[^>]*>' | grep -oiE 'hreflang=.?[a-zA-Z-]+' | sort | uniq -d` 有输出=同码重复;同 URL 多码从 G7 输出人工看。
 **修复**: 保证映射一对一;混排页拆成各语言独立 URL。
@@ -665,7 +665,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **依据**: 三种方法在 Google 看来等价;可以同时用,但"there's no benefit in Search",还更难维护([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。不是错误。核对 2026-10-18。
 **判据**: 通过=只用一种载体,或多载体内容完全一致(降为提示)。失败=多载体且内容不一致。
 **执行**: `HREFLANG URL`,看「三载体冲突」段;单页 G7 加 `curl -sI URL | grep -i '^link:.*hreflang'`。
-**修复**: 选一种载体(规模站多用 sitemap,集中维护),清空其余载体。
+**修复**: 选一种载体并清空其余(页数多时 sitemap 便于集中维护,这是维护建议,不是 Google 规则)。
 **关联**: i18n-hreflang;[hreflang-validation.md](hreflang-validation.md) 第二节
 
 ### i18n-hreflang-relative-url
@@ -686,9 +686,9 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 ### i18n-hreflang-incoming-invalid ⛏
 - 源表:fail · 权重 8 · 需 `--crawl`。他页指向本页的注解用了无效码(x-default 恒合法)。工具约定。建议优先级 high。
-**依据**: Google 只支持 ISO 639-1 语言码加可选 ISO 3166-1 Alpha-2 区域码(或 ISO 15924 文字);es-419 不支持;UK、EU 这类保留码只是区域部分被忽略,不是整条作废;只写区域不合法([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。下划线写法(en_US)不符合规定格式,Google 是否容错未公开。核对 2026-10-18。
+**依据**: Google 只支持 ISO 639-1 语言码加可选 ISO 3166-1 Alpha-2 区域码(或 ISO 15924 文字);es-419 不支持;UK、EU 这类保留码只是区域部分被忽略,不是整条作废;只写区域不合法([localized-versions](https://developers.google.com/search/docs/specialty/international/localized-versions))。下划线写法(en_US)不符合规定格式,Google 是否容错未公开。核对 2026-10-21。
 **判据**: 通过=入向注解全用合法码。失败=出现非法语言码、只有区域、下划线分隔;保留区域码(en-UK)按"区域无效"报警告。
-**执行**: 对引用方跑 `HREFLANG 引用方URL…`,「语言码」列 ✗ 的条目即问题(注意该列对 zh-Hans 与大小写误报,见 i18n-hreflang)。
+**执行**: 对引用方跑 `HREFLANG 引用方URL…`,「语言码」列 ✗ 的条目即问题;引用方在站外时,逐页抓其 `<head>` 用 G7 复核。
 **修复**: 改引用方:en_US→en-US、en-UK→en-GB;全站语言码表 lint 一次。修在引用方,不在本页。
 **关联**: crawl-hreflang-incoming-conflict、i18n-hreflang;[hreflang-validation.md](hreflang-validation.md)
 
@@ -785,9 +785,9 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 #### core-canonical-present
 - 源表:`core-canonical-present` fail · 权重 10(缺失);`core-canonical-valid` warn/fail · 权重 1(href 不是绝对 http(s) URL;空或相对=fail,缺失=warn;不请求目标)。建议优先级 medium(缺失是缺信号)。
-**依据**: 指定 canonical 不是必需,不指定时 Google 自行选择;规范页上加自引用 canonical 是建议做法([规范化文档](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls))。相对路径 Google 支持但不推荐,建议用绝对 URL(同上)。核对 2026-10-18。
-**判据**: 通过=有一条绝对 https canonical。警告=缺失(单版本页可接受)或根相对路径。失败=空值或相对路径(源表)。
-**执行**: `AUDIT URL`:`[WARN] canonical: 缺失`;`[CRITICAL] canonical: 相对 URL`(只对不以 http 或 / 开头的值报,比 Google 严;`/path` 与 `//host` 不报)。
+**依据**: 指定 canonical 不是必需,不指定时 Google 自行选择;规范页上加自引用 canonical 是建议做法([规范化文档](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls))。相对路径 Google 支持但不推荐,建议用绝对 URL(同上;2013 博文 Mistake 2 讲相对路径写错的常见事故)。核对 2026-10-21。
+**判据**: 通过=有一条绝对 https canonical。警告=缺失(单版本页可接受)或相对路径。失败=空值(源表)。
+**执行**: `AUDIT URL`:`[WARN] canonical: 缺失`;`[WARN] canonical: 相对 URL(Google 支持但建议改绝对 URL)`(值不带协议就报,`/path` 与 `//host` 都算)。site_audit 对这两项只给 WARN,不给 CRITICAL。
 **修复**: 有参数、分页、打印版等重复形态的页补自引用绝对 canonical。
 **关联**: core-canonical-conflicting;[redirects-canonical.md](redirects-canonical.md) 六场景
 
@@ -827,7 +827,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 - 源表:`core-title-present` fail · 权重 25(无非空 `<title>`;内联 SVG 里的 title 不算);`core-title-length` warn/fail · 权重 1(30-60 字符)。长度是工具约定。建议优先级 high(缺失)/low(长度)。
 **依据**: 每个页面都要有 `<title>`;"there's no limit on how long a `<title>` element can be",title link 按需截断以适配设备宽度,Google 还会从 h1、og:title、锚文本等来源自行生成([title link 文档](https://developers.google.com/search/docs/appearance/title-link))。**Google 无固定上限;本套件 site_audit 用 markets.json 的阈值作提示(en 为 <20 或 >60 字符)。** 像素宽度(~580px 一类)是工具约定。核对 2026-10-18。
 **判据**: 通过=非空且描述本页。失败=缺失或空白。长度超出提示阈值只算提示。
-**执行**: `AUDIT URL [--market xx]`:`[CRITICAL] title: 缺失`;`[WARN] title: N chars <20`;`[WARN] title: N chars 超上限 60`(其他市场按 markets.json 单位与上限,如 ja 32 全角)。
+**执行**: `AUDIT URL [--market xx]`:`[CRITICAL] title: 缺失`;`[WARN] title: N chars <20`;`[WARN] title: N chars 超上限 60`(其他市场按 `scripts/markets.json` 的单位与上限:ja 32、zh 30 按显示宽度,全角计 1、半角计 0.5)。
 **修复**: 缺失就补每页唯一、描述性的标题;过长就把限定词挪进 description;避免堆砌与全站同模板标题。
 **关联**: core-title-unique;[head-elements.md](head-elements.md)、[scoring-rubric.md](scoring-rubric.md) "不作为扣分依据"节
 
@@ -841,9 +841,9 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 #### core-description-present
 - 源表:`core-description-present` fail · 权重 15(缺 meta description);`core-description-length` warn · 权重 1(120-160 字符)。长度是工具约定。建议优先级 medium(缺失)/low(长度)。
-**依据**: Google 主要用页面内容生成摘要,只在 meta description 更准确时采用;"there's no limit on how long a meta description can be",按设备宽度截断;大站可程序化生成([snippet 文档](https://developers.google.com/search/docs/appearance/snippet))。**Google 无固定上限;本套件用 markets.json 的阈值作提示(en 为 <80 或 >155 字符)。** 核对 2026-10-18。
-**判据**: 通过=有且描述本页。失败=缺失(源表 fail;建议优先级只到 medium)。长度只算提示。
-**执行**: `AUDIT URL [--market xx]`:`[CRITICAL] description: 缺失`;`[WARN] description: N chars <80`;`[WARN] description: N chars 超上限 155`。
+**依据**: Google 主要用页面内容生成摘要,只在 meta description 更准确时采用;"There's no limit on how long a meta description can be",摘要按需截断;大站可程序化生成([snippet 文档](https://developers.google.com/search/docs/appearance/snippet))。**Google 无固定上限,也不要求必须有 description;本套件用 `scripts/markets.json` 的区间作提示(en 为 <77 或 >155 字符,下限 `desc_min` 默认取上限的一半,本套件口径)。** 核对 2026-10-21。
+**判据**: 通过=有且描述本页。失败=缺失(源表 fail;site_audit 与建议优先级都只到 WARN/medium)。长度只算提示。
+**执行**: `AUDIT URL [--market xx]`:`[WARN] description: 缺失`;`[WARN] description: N chars 低于下限 77(本套件口径)`;`[WARN] description: N chars 超上限 155`(其他市场的下限和上限见 markets.json;zh 按显示宽度)。
 **修复**: 核心页手写(先给答案和行动点);模板页用真实字段拼装,别输出空串或全站同文案。
 **关联**: core-title-present、content-duplicate-description;[head-elements.md](head-elements.md)
 
@@ -851,14 +851,14 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 - 源表:`core-h1-present` fail · 权重 15(无 h1);`core-h1-single` warn/fail · 权重 1(多于 1 个)。工具约定。建议优先级 medium(缺失)/low(多个)。
 **依据**: 标题的数量与顺序对 Google 搜索无所谓,对屏幕阅读器有用([SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide));把主标题放进第一个可见 h1 有助 Google 选 title link([title link 文档](https://developers.google.com/search/docs/appearance/title-link))。"只能有一个 H1"不是 Google 规则。核对 2026-10-18。
 **判据**: 通过=有一个描述主题的 h1。警告=缺失或多个(组件卡片各一个 h1 时)。
-**执行**: `AUDIT URL`:`[CRITICAL] h1: 无 H1`(源表 fail,按建议优先级降档处理);`[WARN] h1: N 个 H1`。
+**执行**: `AUDIT URL`:`[WARN] h1: 无 H1`(源表 fail,site_audit 按 Google 文档降为 WARN);`[WARN] h1: N 个 H1`。
 **修复**: 每页一个主题 h1,与 title 呼应但不雷同;卡片标题降为 h2/h3。
 **关联**: core-title-present、content-duplicate-h1;[semantic-html.md](semantic-html.md)
 
 #### core-viewport [待核 ID]
 - 名称/类型: viewport 缺失 —— issue · 优先级 high · 输出 CRITICAL(源表 `core-viewport-present` fail)
 **这意味(what)**: 页面 head 没有 `<meta name="viewport">`。
-**为什么(why)**: 缺 viewport 时移动浏览器按约 980px 桌面宽度渲染再缩放,字号、点击目标与布局都按桌面算。Google 自 2024-07-05 起只用智能手机版 Googlebot 抓取,"在移动设备上完全无法访问"的内容不再可索引([公告](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc));缺 viewport 不等于无法访问,但移动体验与评估全部失真。规范值 `width=device-width, initial-scale=1`([head-elements.md](head-elements.md))。
+**为什么(why)**: 缺 viewport 时多数移动浏览器按约 980px 的虚拟视口渲染再缩放(浏览器行为,不是 Google 规则),字号、点击目标与布局都按桌面算。Google 自 2024-07-05 起只用智能手机版 Googlebot 抓取,"在移动设备上完全无法访问"的内容不再可索引([公告](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc));缺 viewport 不等于无法访问,但移动体验与评估全部失真。规范值 `width=device-width, initial-scale=1`([head-elements.md](head-elements.md))。
 **触发(trigger)**: head 内无 viewport meta 即 fail;配置不合规另归 mobile-viewport-config。
 **不修的条件(caveat)**: 纯桌面工具页、仅登录后使用的后台可按内部系统豁免。
 **修复(fix)**: 全站模板 head 注入 `<meta name="viewport" content="width=device-width, initial-scale=1">`;别用 user-scalable=no。
@@ -868,24 +868,26 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 - 名称/类型: favicon 缺失 —— warning · 优先级 low · 输出 CRITICAL(源表现行 `core-favicon-present` fail,权重 1;旧快照为 warn)
 **这意味(what)**: head 无 `<link rel="icon">` 或 `rel="shortcut icon"`(源表:只有 apple-touch-icon 不算)。
 **为什么(why)**: Google 自 2019-05 移动结果改版起在结果卡顶部显示网站图标与名称([公告](https://blog.google/products-and-platforms/products/search/new-design-google-search/));缺了只剩占位图标,浏览器标签页与书签同样。纯品牌露出项,与排名无关。
-**触发(trigger)**: head 无 rel=icon/shortcut icon 即触发(源表);本套件另查根路径 /favicon.ico 是否 404。
+**触发(trigger)**: head 无 rel=icon/shortcut icon 即触发(源表);site_audit 不查,手工另查 `curl -sI 站点/favicon.ico`。
 **不修的条件(caveat)**: 内部系统/预发布环境可豁免。
 **修复(fix)**: 出多尺寸 ICO 或 PNG/SVG + `<link rel="icon" sizes="…">`;apple-touch-icon 180px 另配;别引用外域图标。
 **关联(seealso)**: core-viewport;[head-elements.md](head-elements.md)
 
 ### Performance(28 条,权重 10%)
 
-**CWV 五指标阈值已吸收于 [LCP.md](LCP.md) 与 [scoring-rubric.md](scoring-rubric.md)**:LCP ≤2.5s/2.5-4/>4;CLS ≤0.1/0.1-0.25/>0.25;INP ≤200ms/200-500/>500;TTFB ≤800ms/800-1800/>1800;FCP ≤1.8s/1.8-3/>3。表内补静态项:DOM **<800 过/800-1500 警/>1500 败,深度>32 警**;`perf-asset-cache-policy`(静态资源 max-age ≥1 小时,渲染专属);`perf-asset-compression`(**>2KB** 文本资源须 gzip/Brotli,按 content-length,chunked 无长度不判);`perf-image-encoding`(图片传输 **>100KB=warn**,BMP/TIFF=fail);`perf-page-weight`(**<3MB** 建议);`perf-cache-policy`(带内容 hash 的静态资源 `max-age=31536000`);`perf-minify-css/js`(内联查空白比/块注释;外链 **>2KB** 且 URL 无 `.min.` 标记=启发式嫌疑,恒 ≤warn);`perf-response-time`、`perf-http2`(须 HTTP/2+)、`perf-render-blocking`(head 内脚本无 async/defer)、`perf-lazy-above-fold`(首屏图禁 lazy)、`perf-lcp-hints`(LCP 图须 preload+fetchpriority=high)、`perf-font-loading`(font-display:swap)、`perf-preconnect`、`perf-text-compression`、`perf-brotli`、`perf-video-for-animations`(GIF→video 省 90%)、`perf-legacy-javascript`、`perf-duplicate-js`(同库多 URL)、`perf-source-maps`(不得暴露 sourceMappingURL)。
+**CWV 阈值**(web.dev,核对 2026-10-21):LCP ≤2.5s、>4s 为差([vitals](https://web.dev/articles/vitals)、[阈值研究](https://web.dev/articles/defining-core-web-vitals-thresholds));INP ≤200ms、>500ms 为差([INP](https://web.dev/articles/inp));CLS ≤0.1、>0.25 为差([CLS](https://web.dev/articles/cls));TTFB ≤0.8s、>1.8s 为差([TTFB](https://web.dev/articles/ttfb));FCP ≤1.8s、>3.0s 为差([FCP](https://web.dev/articles/fcp))。详见 [LCP.md](LCP.md)、[scoring-rubric.md](scoring-rubric.md)。SEOmator 的 `cwv-inp` 不计分(审计没有真实输入)。
+
+**静态项**(SEOmator 现行 132d2384,均为工具约定):`perf-dom-size` 节点 >800 warn、>1500 fail,嵌套 >32 warn、>48 fail,单元素子节点 >60 warn(Lighthouse 是 body 节点 ~800 警、~1,400 错,[文档](https://developer.chrome.com/docs/lighthouse/performance/dom-size));`perf-css-file-size`(外链样式表 >3 warn、>6 fail;内联 CSS >50KB warn、>100KB fail);`perf-js-file-size`(内联 JS 合计 >50KB warn、>150KB fail,外链脚本不量);`perf-page-weight` 只量 HTML 文档本身(>100KB warn、>300KB fail);`perf-cache-policy` 查页面自身响应有没有缓存头(Cache-Control、ETag、Last-Modified、Expires 任一即过);`perf-asset-cache-policy`(渲染专属,静态资源 max-age ≥1 小时,Expires 不读);`perf-text-compression`(页面响应须 gzip/br/deflate/zstd)、`perf-brotli`;`perf-asset-compression`(渲染专属,>2KB 文本资源须压缩,按 content-length,chunked 无长度不判);`perf-image-encoding`(渲染专属,传输 >100KB warn,BMP/TIFF fail);`perf-minify-css/js`(内联超 500 字节后,空白占比 >15% 或 JS 块注释=warn;外链 >2KB 且 URL 无 `.min.` 为启发式,恒 ≤warn);`perf-http2` 只看有无 `alt-svc` 头,不读协商协议;`perf-video-for-animations` 任何 GIF 都 warn(分不出是否动画,「省 90%」是上游说法);`perf-response-time`、`perf-render-blocking`(head 内脚本无 async/defer)、`perf-lazy-above-fold`(首屏图禁 lazy)、`perf-lcp-hints`(LCP 图须 preload 与 fetchpriority=high)、`perf-font-loading`(font-display:swap)、`perf-preconnect`、`perf-legacy-javascript`、`perf-duplicate-js`(同库多 URL)、`perf-source-maps`(不得暴露 sourceMappingURL)。
 
 **解释层(9 条;ID 未公布原文的按家族命名法推得并标 [待核];CWV 五指标本身见 [LCP.md](LCP.md) 不重述)**
 
-#### perf-page-weight [待核 ID]
-- 名称/类型: 页面总重 —— warning · 优先级 medium · 输出 WARN(源表 warn;<3MB 建议)
-**这意味(what)**: 页面传输总体积(HTML+全部子资源)超过 3MB 建议线。
-**为什么(why)**: 总重是 CWV 的上游约束:移动网络下 3MB 意味着数十秒的下载窗口;抓取侧大页也消耗更多引擎时间。3MB 是建议线不是硬阈值——超得多(10MB+)几乎必然伴随未压缩图/未懒加载视频,那些才是要修的实体。
-**触发(trigger)**: 1) 渲染后汇总 HTML+子资源传输字节(chunked 无长度资源的计入口径[待核]);2) >3MB 即 warn。
-**不修的条件(caveat)**: 页重不(直接)影响排名,然而它给所有体验指标设了天花板,所以一般建议压回 3MB 内。但图库/作品集类页面在已做现代格式+lazy 的前提下适度超线是内容属性,不是技术债。
-**修复(fix)**: 按子资源体积排序逐项处理:图片(格式/分辨率/lazy)、视频(poster+按需)、脚本(拆包);文本资源兜底走 perf-asset-compression。
+#### perf-page-weight
+- 名称/类型: HTML 文档体积 —— warning · 优先级 medium · 输出 WARN/CRITICAL(源表现行 warn/fail:HTML 本身 >100KB warn、>300KB fail;图片、脚本、样式只在详情里计数,不参与判定;旧快照写的是「总重 <3MB」,已作废)
+**这意味(what)**: HTML 文档本身(未含子资源)超过 100KB(工具约定)。
+**为什么(why)**: Googlebot 抓取一个文件只取前 2MB,PDF 前 64MB,超出部分不参与索引,限制按解压后字节算([Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot),核对 2026-10-21)。100KB 与 300KB 远低于 2MB,标记的多是内联脚本、内联样式或嵌入数据(如整份 JSON 状态)撑大的文档。
+**触发(trigger)**: HTML 响应体 >100KB warn,>300KB fail(未压缩字节)。
+**不修的条件(caveat)**: 文档长度不直接影响排名;数据密集的长文档(手册、规格表)超线是内容属性。接近 2MB 才有索引截断风险。
+**修复(fix)**: 内联脚本、样式、状态数据移到可缓存的外部文件;超长页拆页。图片、视频走 images-* 规则。
 **关联(seealso)**: perf-asset-compression、images-modern-formats;[LCP.md](LCP.md)
 
 #### perf-asset-compression [待核 ID]
@@ -897,11 +899,11 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **修复(fix)**: 服务器/CDN 层开 gzip(底线)或 Brotli(静态资源构建期预压缩最优);验收看响应头。
 **关联(seealso)**: perf-asset-cache-policy、perf-page-weight;[cwv-playbook.md](cwv-playbook.md)
 
-#### perf-asset-cache-policy [待核 ID]
-- 名称/类型: 缓存策略(缓存家族) —— warning · 优先级 medium · 输出 WARN(源表 warn;perf-asset-cache-policy 渲染专属:静态资源 max-age ≥1 小时;perf-cache-policy:带内容 hash 的资源 max-age=31536000)
-**这意味(what)**: 静态资源 Cache-Control max-age <1 小时;或 URL 带内容 hash 的资源没设 max-age=31536000。
+#### perf-asset-cache-policy
+- 名称/类型: 缓存策略(缓存家族) —— warning · 优先级 medium · 输出 WARN(源表 warn;perf-asset-cache-policy 渲染专属:静态资源 max-age ≥1 小时,不读 Expires;perf-cache-policy 现行只查页面自身响应有无缓存头,「内容 hash 资源须 max-age=31536000」是旧快照写法,现行文档仅把「一年」列为带 hash URL 的修复建议)
+**这意味(what)**: 静态资源 Cache-Control max-age 缺失或 <1 小时;页面自身响应没有任何缓存头。
 **为什么(why)**: 缓存决定回访与深层爬取的成本:短 max-age 每次访问都重下全部资源;内容 hash 文件名(hash 变=新 URL)天然免疫过期,理应一年期 immutable。CWV 字段数据(CrUX)也依赖真实用户侧缓存生效。
-**触发(trigger)**: 1) 静态资源(CSS/JS/图/字体)max-age <3600s 即 warn;2) URL 含内容 hash(如 app.a3f9c2.js 形态)且 max-age ≠31536000 即 warn(perf-cache-policy)。
+**触发(trigger)**: 1) 静态资源(CSS/JS/图/字体)max-age 缺失或 <3600s 即 warn;2) 页面响应无 Cache-Control(含 max-age/no-cache/no-store)、ETag、Last-Modified、Expires 任一即 warn(perf-cache-policy)。
 **不修的条件(caveat)**: 缓存头不影响排名,然而它决定重复访问的真实体验,所以一般建议分层:hash 资源一年+immutable、入口 HTML 短缓存。但无 hash 管道的 CSS 频繁热修时短缓存是运维取舍——先建 hash 管道再拉长缓存。
 **修复(fix)**: 构建产物文件名带 hash,配 max-age=31536000, immutable;HTML 用 no-cache/短缓存;两者配合才安全。
 **关联(seealso)**: perf-asset-compression;[cwv-playbook.md](cwv-playbook.md)
@@ -918,7 +920,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 #### perf-lcp-hints [待核 ID]
 - 名称/类型: LCP 图加载提示 —— warning · 优先级 high · 输出 WARN(源表 warn;LCP 图须 preload+fetchpriority=high)
 **这意味(what)**: 页面 LCP 元素是图,却没有 `<link rel=preload as=image>` 且缺 fetchpriority="high"。
-**为什么(why)**: LCP 图常经 CSS/字体之后才被发现(CSS background 声明的图尤甚),preload 让它进解析早期队列;fetchpriority=high 在带宽竞争时优先喂它。两个提示叠加是 LCP 优化的标准组合拳——LCP Good 阈值 ≤2.5s(见 [LCP.md](LCP.md))。
+**为什么(why)**: fetchpriority="high" 告诉浏览器这张 LCP 图属于高 Fetch Priority 资源(这是资源加载提示,与 sitemap 的 priority 无关),让 LCP 更早发生;preload 让浏览器在发现前就开始加载([web.dev Fetch Priority](https://web.dev/articles/fetch-priority),核对 2026-10-21)。两者叠加是常见做法,「必须同时有」是 SEOmator 的工具约定。LCP Good 阈值 ≤2.5s(见 [LCP.md](LCP.md))。
 **触发(trigger)**: 1) 渲染判定 LCP 元素;2) 为图且无 preload 或无 fetchpriority=high 即 warn。
 **不修的条件(caveat)**: 资源提示不影响排名,然而它们直接调度 LCP 资源的优先级,所以一般建议 LCP 图必配。但 LCP 元素是文字的页面不适用;preload 滥用(全页 preload)反而稀释优先级,只给这一张。
 **修复(fix)**: `<link rel="preload" as="image" href="…hero.webp" fetchpriority="high">`,img 同步加 fetchpriority="high";LCP 图禁 lazy(见 images-lazy)。
@@ -927,26 +929,26 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 #### perf-font-loading [待核 ID]
 - 名称/类型: 字体加载策略 —— warning · 优先级 medium · 输出 WARN(源表 warn;font-display:swap)
 **这意味(what)**: @font-face 声明缺 font-display:swap(或等价的防隐形策略)。
-**为什么(why)**: 默认字体行为是 FOIT——字体下载完前文字不可见,慢字体=隐形文字=FCP/LCP 双输;swap 先用系统字渲染、字体到了再换,把"不可见"降级为"闪换"。
+**为什么(why)**: 浏览器对未到达字体的默认行为并不一致,常见是字体下载完前文字不可见(FOIT);`font-display` 让你指定行为,swap 先用后备字体渲染、字体到了再换([web.dev](https://web.dev/articles/optimize-webfont-loading),核对 2026-10-21)。
 **触发(trigger)**: 渲染检查 @font-face 无 font-display:swap/optional 即 warn。
 **不修的条件(caveat)**: swap 的双字 metrics 差异会小幅推高 CLS,然而换来的立即可见远大于抖动代价,所以一般建议 swap。但排版严苛页可选 optional(超时永用系统字);中文大字符集字体建议子集化后再 swap。
 **修复(fix)**: @font-face 加 font-display:swap;关键字体 `<link rel=preload as=font crossorigin>`;中文字体按常用字切片。
 **关联(seealso)**: perf-lcp-hints;[cwv-playbook.md](cwv-playbook.md)
 
-#### perf-dom-size [待核 ID]
-- 名称/类型: DOM 规模 —— warning · 优先级 medium · 输出 WARN(源表:DOM <800 过/800-1500 警/>1500 败,深度>32 警)
-**这意味(what)**: 渲染后 DOM 元素节点数超 800(>1500 更重),或最大嵌套深度 >32。
-**为什么(why)**: DOM 规模是 INP 与 CLS 的放大器:节点越多,样式计算/布局/交互响应越慢;深度 >32 几乎总是组件套组件叠出来的无语义容器,对语义树零贡献。
-**触发(trigger)**: 1) 统计渲染后元素节点数:<800 过、800-1500 警、>1500 败;2) 最大嵌套深度 >32 即警。
+#### perf-dom-size
+- 名称/类型: DOM 规模 —— warning · 优先级 medium · 输出 WARN(源表现行:节点 >800 warn、>1500 fail;嵌套 >32 warn、>48 fail;单元素子节点 >60 warn)
+**这意味(what)**: 渲染后 DOM 节点数超 800(>1500 更重),或最大嵌套深度 >32,或某元素子节点 >60。
+**为什么(why)**: DOM 过大会拖慢样式计算、布局和交互响应(web.dev 关于 DOM 大小与交互性的文章把 Lighthouse 的 ~800 节点警告、~1,400 节点错误当参考线,[文章](https://web.dev/articles/dom-size-and-interactivity),核对 2026-10-21);深度 >32 多是组件层层嵌套出的无语义容器。
+**触发(trigger)**: 1) 渲染后元素节点数 >800 warn、>1500 fail;2) 最大嵌套深度 >32 warn、>48 fail;3) 单元素子节点 >60 warn。
 **不修的条件(caveat)**: DOM 规模不(直接)影响 SEO,然而它给交互响应设上限,所以一般建议长列表分页/虚拟滚动。但数据密集页(财务表格)DOM 天然大,分页才是正解,不是硬删。
 **修复(fix)**: 列表虚拟滚动或分页;拆装饰性嵌套容器;组件库治理"div 三明治"(每组件三层无语义 div)。
 **关联(seealso)**: perf-page-weight;[cwv-playbook.md](cwv-playbook.md)
 
 #### perf-resource-hygiene [待核 ID]
 - 名称/类型: 资源卫生家族(六小条) —— warning · 优先级 low · 输出 WARN(源表各=warn)
-**这意味(what)**: 六项资源层卫生任一命中:非 HTTP/2+(perf-http2 须 HTTP/2+);legacy polyfill 包(perf-legacy-javascript);同库多 URL 重复加载(perf-duplicate-js);暴露 sourceMappingURL(perf-source-maps 不得暴露);动画 GIF 该换 video(perf-video-for-animations,GIF→video 省 90%);css/js 压缩嫌疑(perf-minify 家族:内联查空白比/块注释;外链 >2KB 且 URL 无 .min. 标记=启发式嫌疑,恒 ≤warn)。
-**为什么(why)**: 每项都是确定的字节/时间浪费:HTTP/1.1 队头阻塞限制同域并行;legacy JS 给现代浏览器发多余 polyfill;同库多 URL 既多下载又版本漂移;source map 公开暴露源码结构(偏安全面);GIF 做动画体积远大于等效视频(源表称 GIF→video 省 90%,工具口径)。单项轻,叠加是可量化的无谓传输。
-**触发(trigger)**: 协议 <HTTP/2 → warn;脚本含 es5 时代 polyfill 特征 → warn;同库 ≥2 个不同 URL → warn;脚本带 sourceMappingURL → warn;动画 GIF[体积阈值源表未公布,待核] → warn;外链 css/js >2KB 且无 .min. → 恒 ≤warn(启发式;图片传输侧另见 perf-image-encoding:>100KB=warn、BMP/TIFF=fail,与 Images 节 images-modern-formats 同一事实两面)。
+**这意味(what)**: 六项资源层卫生任一命中:响应没有 `alt-svc` 头(perf-http2 现行只看这个头,服务器已跑 HTTP/2 也会 warn);legacy polyfill 包(perf-legacy-javascript);同库多 URL 重复加载(perf-duplicate-js);暴露 sourceMappingURL(perf-source-maps 不得暴露);GIF 该换 video(perf-video-for-animations:任何 GIF 都 warn,分不出是否动画);css/js 压缩嫌疑(perf-minify 家族:内联超 500 字节后空白占比 >15% 或 JS 块注释;外链 >2KB 且 URL 无 .min. 标记=启发式嫌疑,恒 ≤warn)。
+**为什么(why)**: 每项都是确定的字节/时间浪费:HTTP/1.1 队头阻塞限制同域并行;legacy JS 给现代浏览器发多余 polyfill;同库多 URL 既多下载又版本漂移;source map 公开暴露源码结构(偏安全面);GIF 做动画体积通常远大于等效视频(上游称最多省 90%,工具口径)。单项轻,叠加是可量化的无谓传输。
+**触发(trigger)**: 无 `alt-svc` 头 → warn;脚本含 es5 时代 polyfill 特征 → warn;同库 ≥2 个不同 URL → warn;脚本带 sourceMappingURL → warn;任何 GIF → warn;外链 css/js >2KB 且无 .min. → 恒 ≤warn(启发式;图片传输侧另见 perf-image-encoding:>100KB=warn、BMP/TIFF=fail,与 Images 节 images-modern-formats 同一事实两面)。
 **不修的条件(caveat)**: 家族单项都不影响排名,然而叠起来是可量化的浪费,所以一般建议一次清完。但 source map 若仅鉴权后可访问,暴露面已受控,可降优先级。
 **修复(fix)**: 全站 HTTP/2+;构建 target 现代浏览器砍 polyfill;依赖收敛单版本;source map 仅上传错误平台、产物剥离 sourceMappingURL;GIF→MP4/WebM;构建开 css/js 压缩输出 .min. 产物。
 **关联(seealso)**: perf-asset-compression、perf-asset-cache-policy;[cwv-playbook.md](cwv-playbook.md)
@@ -962,7 +964,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 ### Links(27 条,权重 8%)
 
-内链 4xx=fail;外链可达性=warn(结果缓存);无内链=warn;nofollow 滥用=warn;泛化锚文本("click here"/"read more"/"link")=warn;`links-depth`(**点击距离 ≤3**,crawl);死端页(无出链)=warn;HTTPS 页链 HTTP=warn;**外链 >100=warn**;空/javascript:/畸形 href=warn;tel:/mailto: 格式=warn;重定向链(**1-2 跳=warn,≥3=fail**);`links-localhost`(127.0.0.1=fail)/`links-local-file`(file://=fail);断锚点(#id 无匹配)=warn;`links-onclick`(onclick 导航替代 href=warn);href 首尾空白=warn;非 HTTP 协议(ftp:/intent:/chrome:)=warn;**crawl 专属入链族 8 条**:inbound-all-nofollow(全 nofollow=零权重流入,洞见级)/inbound-mixed-follow(有follow有nofollow=不一致)/inbound-low-quality(入链全 nofollow 或全来自被 canonical 走的页)/inbound-anchor-text(全部入链锚文本<2 字符或泛化)/nofollow-internal(同主机链接禁 nofollow)/weak-inbound(**非入口页须 >1 条 dofollow 入链**)/chrome-inbound(**至少 1 条入链在 nav/header/footer 之外**——正文链才算票)/orphan-pages(真孤儿由 crawl-sitemap-orphan-urls 配合判)。
+内链 404/410/5xx=fail(其他 4xx 通过);外链可达性=warn(只查前 20 条,不缓存);无内链=warn;nofollow 滥用=warn;泛化锚文本("click here"/"read more"/"link")=warn;`links-depth`(**点击距离 ≤3**,crawl);死端页(无出链)=warn;HTTPS 页链 HTTP=warn;**外链 >100=warn**(`links-external-count`);**页内链接总数 >100=warn、>300=fail**(`links-excessive`);空/javascript:/畸形 href=warn;tel:/mailto: 格式=warn;重定向链(**1-2 跳=warn,≥3=fail**);`links-localhost`(127.0.0.1=fail)/`links-local-file`(file://=fail);断锚点(#id 无匹配)=warn;`links-onclick`(onclick 导航替代 href=fail);href 首尾空白=warn;非 HTTP 协议(ftp:/intent:/chrome:)=warn;**crawl 专属入链族 8 条**:inbound-all-nofollow(全 nofollow=零权重流入,洞见级)/inbound-mixed-follow(有follow有nofollow=不一致)/inbound-low-quality(入链全 nofollow 或全来自被 canonical 走的页)/inbound-anchor-text(全部入链锚文本<2 字符或泛化)/nofollow-internal(同主机链接禁 nofollow)/weak-inbound(**非入口页须 >1 条 dofollow 入链**)/chrome-inbound(**至少 1 条入链在 nav/header/footer 之外**——正文链才算票)/orphan-pages(真孤儿由 crawl-sitemap-orphan-urls 配合判)。
 
 **解释层(16 条;ID 未公布原文的标 [待核];入链族 8 条的 5 条并入 links-weak-inbound/links-chrome-inbound 陈述)**
 
@@ -998,35 +1000,35 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **修复**: 查环境变量与绝对 URL 拼装基准;上线检查清单加 localhost/file:// 扫描。
 **关联**: links-broken-internal
 
-#### links-anchor-generic [待核 ID]
-- 名称/类型: 泛化锚文本 —— warning · 优先级 medium · 输出 WARN(源表 warn;"click here"/"read more"/"link")
+#### links-anchor-generic
+- 名称/类型: 泛化锚文本 —— warning · 优先级 medium · 输出 WARN(源表 ID `links-anchor-text`,warn;"click here"/"read more"/"link")
 **这意味(what)**: 站内链接的锚文本是泛化词——click here/read more/link 一类,不含目标页主题信息。
-**为什么(why)**: 锚文本是引擎理解目标页相关度的第一信号,泛化锚等于把票投给"一个叫 click here 的页面";无障碍侧,屏幕阅读器用户常脱离上下文按链接列表浏览,一列 "read more" 完全不可用。批量泛化锚几乎总是模板省事,不是文案选择。
+**为什么(why)**: Google 说好的锚文本应具体、简短、与所在页相关,并举 "Click here" 为需要改得更具体的例子([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable),核对 2026-10-21);屏幕阅读器用户常按链接列表浏览,一列 "read more" 无法区分。批量泛化锚多半是模板省事,不是文案选择。
 **触发(trigger)**: 锚文本命中泛化词表(click here/read more/link/more/here 等[词表源表未公布,待核])且为普通文本链即 warn;图标链接的可访问名(alt/aria-label)即其锚文本,同口径计。
 **不修的条件(caveat)**: 锚文本不(直接)决定目标页排名,然而它是零成本的相关度信号,所以一般建议锚含目标主题词。但 CTR 导向的行动按钮("免费试用")是转化文案,别为 SEO 破坏——链接补 aria-label 带上主题即可。
 **修复(fix)**: 模板把目标页标题注入锚("阅读:SEO 审计入门");纯图标链接补 aria-label;全站泛化锚 lint 进 CI。
 **关联(seealso)**: links-weak-inbound;[link-architecture-patterns.md](link-architecture-patterns.md)、[semantic-html.md](semantic-html.md)
 
-#### links-nofollow-internal [待核 ID]
+#### links-nofollow-internal
 - 名称/类型: 内链 nofollow —— warning · 优先级 medium · 输出 WARN(源表 warn;同主机链接禁 nofollow)
 **这意味(what)**: 指向同主机的内链被加了 rel=nofollow。
-**为什么(why)**: nofollow 的语义是"不为这个链接背书",用在自家内链上是自我否定;且 Google 2009 年公开说明,nofollow 链接分走的那份 PageRank 直接蒸发,不再转给同页其余链接([Matt Cutts 博文](https://www.mattcutts.com/blog/pagerank-sculpting/),时任 Google 反垃圾负责人;改动早于该文一年多)——"用内链 nofollow 调节权重流向"的动机从起点就不成立(口径见 [deprecated-signals.md](deprecated-signals.md))。剩下的成因几乎只有误加:CMS 默认、UGC 模板全局套用。
+**为什么(why)**: nofollow 的语义是"不为这个链接背书",用在自家内链上是自我否定;且 Google 时任反垃圾负责人在 2009 年的博文里说,nofollow 链接分走的那份 PageRank 不再转给同页其余链接,改动早于该文一年多,并建议站内链接不要用 nofollow([博文](https://www.mattcutts.com/blog/pagerank-sculpting/),核对 2026-10-21;文中自称用「经典 PageRank」简化模型,是 2009 年的口径)——"用内链 nofollow 调节权重流向"的动机站不住(口径见 [deprecated-signals.md](deprecated-signals.md))。剩下的成因几乎只有误加:CMS 默认、UGC 模板全局套用。
 **触发(trigger)**: 同域 `<a>` 带 rel=nofollow 即 warn。
 **不修的条件(caveat)**: 内链 nofollow 不带来任何收益,然而删除它也无即时排名变化(权重会计在引擎内部),所以一般建议作为卫生项清理。但 UGC 区(论坛/评论)给用户发布的外链加 nofollow/ugc 是反 spam 标准做法,不属"内链"。
 **修复(fix)**: 模板移除内链 nofollow;UGC 外链区保留 ugc/nofollow;抓取预算问题走 robots.txt,索引控制走 noindex/canonical。
 **关联(seealso)**: links-external-many、url-search-indexed;[robots-txt-reference.md](robots-txt-reference.md)
 
-#### links-external-many [待核 ID]
-- 名称/类型: 外链过多 —— warning · 优先级 low · 输出 WARN(源表 warn;外链 >100)
+#### links-external-many
+- 名称/类型: 外链过多 —— warning · 优先级 low · 输出 WARN(源表 ID `links-external-count`,warn,外链 >100;同族 `links-excessive`:页内链接总数 >100 warn、>300 fail;site_audit 的 `[INFO] links: N 链接 >100` 对应后者,按 a 标签总数计)
 **这意味(what)**: 单页指向外部的链接超过 100 条。
-**为什么(why)**: 100 是早年 Google 指南里的经验数,现行 Google 链接文档没有数量上限([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable));但外链爆炸仍是链接农场/资源页失控的形态信号,且链接权重按出链数稀释——100+ 出链时每条(含你想推的内链)分到的投票趋近于零。
+**为什么(why)**: 现行 Google 链接文档没有链接数量上限([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable),核对 2026-10-21),100 是工具约定。外链很多时,先查是不是链接列表或资源页失控;Google 没有说过「每页链接越多每条越弱」,本套件不把这当理由。
 **触发(trigger)**: 统计页内出站(跨域)`<a href>` 数;>100 即 warn(nofollow 是否计入的口径[待核])。
 **不修的条件(caveat)**: 外链数量不影响本页排名,然而它稀释每条链接的相对价值,所以一般建议长资源页分栏分页。但学术引文页/目录站的百条外链是内容真实形态,分页反而伤可用性。
 **修复(fix)**: 长资源页按主题分页;非核心外链区 nofollow/ugc 收口;付费与联盟位用 rel=sponsored。
 **关联(seealso)**: links-nofollow-internal;[link-architecture-patterns.md](link-architecture-patterns.md)
 
-#### links-dead-end [待核 ID]
-- 名称/类型: 死端页 —— warning · 优先级 medium · 输出 WARN(源表 warn;无出链)
+#### links-dead-end
+- 名称/类型: 死端页 —— warning · 优先级 medium · 输出 WARN(源表 ID `links-dead-end-pages`,warn;无出链)
 **这意味(what)**: 页面没有任何 follow 出链——用户与爬虫到这里都走不动了。
 **为什么(why)**: 死端页截断浏览路径(用户只能回退)与爬行路径(引擎无法从它继续发现);与孤立 URL(无入链)互为镜像——一个进不来,一个出不去。转化终点页(支付成功/退订确认)是唯一常见合理形态。
 **触发(trigger)**: 页面 follow 出链计数=0 即 warn(爬取入口与纯工具页的豁免口径[待核])。
@@ -1034,26 +1036,26 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **修复(fix)**: 补相关内容推荐/面包屑/返回分类;结算页类模板确认其 noindex 与出链策略是刻意设计。
 **关联(seealso)**: crawl-isolated-url、links-depth;[link-architecture-patterns.md](link-architecture-patterns.md)
 
-#### links-weak-inbound [待核 ID]
+#### links-weak-inbound
 - 名称/类型: 弱入链(入链族核心) —— warning · 优先级 medium · 输出 WARN(源表 warn;crawl 专属;非入口页须 >1 条 dofollow 入链)
 **这意味(what)**: 非爬取入口的页面只有 ≤1 条 dofollow 入链——技术上可达,权重与健壮性上贫血。
-**为什么(why)**: 单链页在链接图上是"叶子":首页一改版挪掉那条链接,它就掉成孤立页;权重流入也只有一条窄通道,排名天花板低。本规则是入链族 8 条的核心判定,同族同构维护:inbound-all-nofollow(全 nofollow=零权重流入,洞见级)/inbound-mixed-follow(follow·nofollow 混杂)/inbound-low-quality(入链全来自被 canonical 走的页)/inbound-anchor-text(全部入链锚 <2 字符或泛化)——四条都是对同一入链图不同切面的质量计数,阈值见本节表,不逐条扩写。
+**为什么(why)**: 单链页很脆弱:唯一那条入链被改版挪掉,它就成了孤立页(Google 发现页面主要靠链接,见 crawl-isolated-url)。「入链少排名天花板低」是工具约定,无搜索引擎文档。本规则是入链族 8 条的核心判定,同族同构维护:inbound-all-nofollow(全 nofollow=零权重流入,洞见级)/inbound-mixed-follow(follow·nofollow 混杂)/inbound-low-quality(入链全来自被 canonical 走的页)/inbound-anchor-text(全部入链锚 <2 字符或泛化)——四条都是对同一入链图不同切面的质量计数,阈值见本节表,不逐条扩写。
 **触发(trigger)**: 1) crawl 构建 dofollow 入链图;2) 非入口页 dofollow 入链数 ≤1 即 warn。
 **不修的条件(caveat)**: 入链数不(直接)决定排名(质量重于数量),然而 1 条链是脆弱性指标,所以一般建议关键页 ≥2-3 条来自不同区域。但刚发布未及内链的新页与法律页是过渡态/低需求态,可豁免。
 **修复(fix)**: 分类页/相关推荐/正文上下文多点接入;重要页至少导航与正文各一条(见 links-chrome-inbound)。
 **关联(seealso)**: links-chrome-inbound、crawl-isolated-url;[link-architecture-patterns.md](link-architecture-patterns.md)
 
-#### links-chrome-inbound [待核 ID]
+#### links-chrome-inbound
 - 名称/类型: 仅有导航区入链 —— warning · 优先级 medium · 输出 WARN(源表 warn;crawl 专属;至少 1 条入链在 nav/header/footer 之外)
 **这意味(what)**: 页面的全部入链都来自导航 chrome(导航/页头/页脚),没有任何一条来自正文区。
-**为什么(why)**: 导航链接全站同款,引擎对其的评估趋于"模板信号"而非"编辑性投票";正文内语境链接才是"该主题下值得推荐"的表达,也是相关度传递者。全 chrome 入链的页面=只被模板带到,没被任何内容论证过。
+**为什么(why)**: 导航链接全站同款;正文里的上下文链接才说明「这个主题下值得读这页」,也给锚文本提供语境(Google 建议锚文本具体、相关,见 links-anchor-generic)。引擎是否区别对待导航链接没有官方说法,这是本套件的推断。
 **触发(trigger)**: 1) 入链图标注每条入链来源区域(nav/header/footer vs 正文);2) 正文区入链=0 即 warn。
 **不修的条件(caveat)**: 正文入链不影响排名本身,然而它是相关度信号的载体,所以一般建议核心页有语境内链。但政策/法务页(无需主题论证)全 chrome 入链是正常形态;相关推荐模块算不算正文区[待核:源表区域划分口径未公布]。
 **修复(fix)**: 在相关正文里以描述性锚接入(锚文本规范见 links-anchor-generic);让内容作者而非仅模板产出内链。
 **关联(seealso)**: links-weak-inbound、links-anchor-generic;[link-architecture-patterns.md](link-architecture-patterns.md)
 
-#### links-no-internal [待核 ID]
-- 名称/类型: 无内链 —— warning · 优先级 medium · 输出 WARN(源表 warn)
+#### links-no-internal
+- 名称/类型: 无内链 —— warning · 优先级 medium · 输出 WARN(源表 ID `links-internal-present`,warn)
 **这意味(what)**: 该 URL 的页面上没有任何指向本站其他页面的链接——出链全空或只剩外链。
 **为什么(why)**: 爬虫沿内链爬行,无内链出边的页面是爬行路径终点,站内再深一层的内容失去一条发现通道;用户读完即"离开站点",相关推荐与转化路径全部缺席。与 links-dead-end 互补:那条判"零出链",本条把"有出链但无一是站内"也纳入——把流量送出门却不留后路。
 **触发(trigger)**: 页面同域 follow `<a href>` 计数=0 即 warn。
@@ -1061,26 +1063,26 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **修复(fix)**: 补相关内容模块/面包屑/回到分类入口;模板保证每页有站内链接区块。
 **关联(seealso)**: links-dead-end、links-depth;[link-architecture-patterns.md](link-architecture-patterns.md)
 
-#### links-external-reachability [待核 ID]
-- 名称/类型: 外链可达性(含 HTTPS 页链 HTTP) —— warning · 优先级 low · 输出 WARN(源表 warn;外链可达性结果缓存;HTTPS 页链 HTTP=warn 同族)
+#### links-external-reachability
+- 名称/类型: 外链可达性(含 HTTPS 页链 HTTP) —— warning · 优先级 low · 输出 WARN(源表 ID `links-external-valid`,warn:取页上前 20 条外链,先 HEAD、失败再 GET,4xx/5xx/无应答 warn,结果不跨审计缓存;HTTPS 页链 HTTP 是另一条 `links-https-downgrade`)
 **这意味(what)**: 页面指向外部的链接目标不可达(4xx/5xx/超时),或 HTTPS 页面上仍用 http:// 外链。
-**为什么(why)**: 死外链伤用户信任(点出去 404),也标记页面疏于维护;HTTPS 页混 http 外链本身不构成混合内容(仅子资源才算),但形态不一致在目标站完成 https 化后容易变成断链。外链判定带结果缓存,避免全站审计反复打同一目标。
+**为什么(why)**: 死外链伤用户信任(点出去 404),也标记页面疏于维护;HTTPS 页混 http 外链本身不构成混合内容(仅子资源才算),但形态不一致在目标站完成 https 化后容易变成断链。
 **触发(trigger)**: 1) 请求全部跨域 href(缓存结果);4xx/5xx/超时即 warn;2) 页面 HTTPS 而 href 为 http:// 即 warn。
 **不修的条件(caveat)**: 外链目标不受你控制——对方改版删页你这边全站误报,所以一般建议批量检测后只修高频引用的死外链。但支撑 E-E-A-T 的权威引用页(eeat-citations)值得保持零死链,优先级另计。
 **修复(fix)**: 死外链换网页存档链接或替代来源;http 外链统一改 https(目标支持时);引用型内容的死链优先于资源页死链。
 **关联(seealso)**: links-broken-internal、eeat-citations;[http-status-codes.md](http-status-codes.md)
 
 #### links-malformed-href [待核 ID]
-- 名称/类型: 畸形 href 家族 —— warning · 优先级 low · 输出 WARN(源表各=warn:空/javascript:/畸形 href;tel:/mailto: 格式;非 HTTP 协议 ftp:/intent:/chrome:;href 首尾空白)
+- 名称/类型: 畸形 href 家族(本套件合并名;源表 ID `links-invalid`、`links-tel-mailto`、`links-non-http-protocol`、`links-whitespace-href`) —— warning · 优先级 low · 输出 WARN(源表各=warn:空/javascript:/畸形 href;tel:/mailto: 格式;非 HTTP 协议 ftp:/intent:/chrome:;href 首尾空白)
 **这意味(what)**: `<a>` 的 href 是空串、javascript: 伪协议或畸形值;tel:/mailto: 格式错;scheme 为 ftp:/intent:/chrome: 等非 HTTP(S) 协议;或首尾带空白字符。
-**为什么(why)**: 空 href 与 javascript: 链接对引擎是不可跟随的假链接——权重与发现都不传递,键盘用户聚焦过去也无处可去;tel:/mailto: 格式错在移动端直接呼叫/发信失败;异形协议链接多数是模板变量泄漏。首尾空白则是"能工作但制造变体 URL"的卫生问题。
+**为什么(why)**: Google 只能可靠提取带 href、且能解析成真实地址的 `<a>`([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable),核对 2026-10-21);空 href 与 javascript: 链接没有可抓取的目标,键盘用户聚焦过去也无处可去;tel:/mailto: 格式错在移动端直接呼叫/发信失败;异形协议链接多数是模板变量泄漏。首尾空白则是"能工作但制造变体 URL"的卫生问题。
 **触发(trigger)**: 1) href 空串或 javascript: 伪协议即 warn;2) tel: 不匹配 `tel:+数字` 形态、mailto: 无合法邮箱即 warn;3) scheme ∈ ftp:/intent:/chrome: 等非 HTTP(S) 即 warn;4) href 首尾含空白即 warn。
 **不修的条件(caveat)**: 伪协议链接不(直接)影响排名,然而它把交互做成引擎与部分用户到不了的门,所以一般建议真导航一律用可跟随 href。但 mailto:/tel: 本身合法,只查格式;确需 JS 行为的元素正解是 `<button>`,不是豁免。
 **修复(fix)**: 真导航用真实 URL;JS 行为改 button+事件;tel/mailto 按规范格式输出;模板输出 href 时 trim。
 **关联(seealso)**: links-onclick、i18n-hreflang-to-broken;[semantic-html.md](semantic-html.md)
 
-#### links-broken-anchor [待核 ID]
-- 名称/类型: 断锚点 —— warning · 优先级 low · 输出 WARN(源表 warn;#id 无匹配)
+#### links-broken-anchor
+- 名称/类型: 断锚点 —— warning · 优先级 low · 输出 WARN(源表 ID `links-broken-fragment`,warn;#id 无匹配)
 **这意味(what)**: 链接的 fragment(#section)在目标页里找不到对应 id/命名锚点。
 **为什么(why)**: 锚点链接是长页深链与 AI 引用定位的常用形态;目标页重构后 heading id 改名,来源页的 fragment 全部落空——用户被丢在页顶以为内容不存在。同页 fragment 直接查本页 DOM,跨页 fragment 要抓目标页才能判。
 **触发(trigger)**: 1) 提取带 fragment 的 href;2) 在目标页(本页或已抓取缓存)DOM 查 id/`<a name>` 匹配;3) 无匹配即 warn。
@@ -1088,19 +1090,19 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 **修复(fix)**: 目标页恢复旧 id(加别名)或改引用方 fragment;CMS 生成 heading 时输出稳定 slug id,别用序号。
 **关联(seealso)**: links-broken-internal、links-onclick;[semantic-html.md](semantic-html.md)
 
-#### links-onclick [待核 ID]
-- 名称/类型: onclick 导航 —— warning · 优先级 medium · 输出 WARN(源表 warn;onclick 导航替代 href)
+#### links-onclick
+- 名称/类型: onclick 导航 —— warning · 优先级 medium · 输出 CRITICAL(源表现行 fail · 权重 5;onclick 导航替代 href)
 **这意味(what)**: 用元素 onclick 事件做页面导航——`<a>` 无真实 href(或 href="#" 配 onclick 跳转)。
-**为什么(why)**: 引擎与多数不执行 JS 的爬虫只认 href:onclick 导航对它们是死路,后续页面失去这条发现路径;中键/右键新开标签、悬停预览、状态栏 URL 全部失效,键盘与辅助技术同样受损。与 [rendering-seo.md](rendering-seo.md) 的口径一致:导航必须在初始 HTML 的可跟随 href 里。
+**为什么(why)**: Google 说它无法可靠地从没有 href 的 `<a>` 或靠脚本事件起作用的元素里提取 URL,`<a onclick="goto(...)">` 属「不推荐」写法([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable),核对 2026-10-21);不执行 JS 的爬虫更是只认 href,后续页面失去这条发现路径;中键/右键新开标签、悬停预览、状态栏 URL 全部失效,键盘与辅助技术同样受损。与 [rendering-seo.md](rendering-seo.md) 的口径一致:导航必须在初始 HTML 的可跟随 href 里。
 **触发(trigger)**: `<a>` 无 href 或 href="#"/javascript: 且带 onclick 属性(含常见前端路由跳转特征)即 warn。
 **不修的条件(caveat)**: onclick 导航不(直接)惩罚,然而它把不执行 JS 的访问者挡在门外,所以一般建议 href 写真实目标 URL、JS 只做增强。但 SPA 视图切换用真实 href+pushState 的渐进增强是正解形态,不是豁免。
 **修复(fix)**: `<a href="/real/url">` 为主体,onclick preventDefault 仅做无刷新增强;纯动作元素(提交/展开)改 button。
 **关联(seealso)**: links-malformed-href、js-content-dependency;[rendering-seo.md](rendering-seo.md)、[semantic-html.md](semantic-html.md)
 
-#### links-nofollow-external [待核 ID]
-- 名称/类型: 外链 nofollow 滥用 —— warning · 优先级 low · 输出 WARN(源表 warn;nofollow 滥用;与 links-nofollow-internal 互补)
+#### links-nofollow-external
+- 名称/类型: 外链 nofollow 滥用 —— warning · 优先级 low · 输出 WARN(源表 ID `links-nofollow-appropriate`,warn;nofollow 滥用;与 links-nofollow-internal 互补)
 **这意味(what)**: 站内出站链接被大面积加 rel=nofollow——包括自然引用的权威来源、合作伙伴等本应正常投票的链接。
-**为什么(why)**: nofollow 的语义是"不为该链接背书":全站外链一刀切 nofollow 等于声明"我引用的一切都不算数"——E-E-A-T 的引用信号(eeat-citations)同时被自己关掉。正当用法只有三类:付费/赞助(rel=sponsored)、UGC(rel=ugc)、不信任目标。与 links-nofollow-internal 互补:一个错在自我否定,一个错在过度防御。
+**为什么(why)**: Google 说 nofollow 只在不信任来源时用,不是每条外链都加;付费链接用 sponsored 或 nofollow,用户生成内容用 ugc 或 nofollow([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable),核对 2026-10-21)。引用来源本来有助建立可信度,全站外链一刀切 nofollow 等于自己关掉这个信号(eeat-citations)。与 links-nofollow-internal 互补:一个错在自我否定,一个错在过度防御。
 **触发(trigger)**: 跨域 `<a>` 带 rel=nofollow(不含 sponsored/ugc)占比超出自然水平(阈值源表未公布[待核]),或权威引用源(.gov/.edu/论文)被 nofollow 即 warn。
 **不修的条件(caveat)**: nofollow 外链不影响本页排名,然而它同时放弃引用背书与链接语义准确性,所以一般建议只给三类正当用途。但法务要求全站外链免责的场景(金融合规)可整体保留,报告记豁免。
 **修复(fix)**: 自然引用去 nofollow;付费位改 sponsored;UGC 区改 ugc;CMS 若默认全局加 nofollow,改模板开关。
@@ -1108,7 +1110,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 
 ### Images(14 条,权重 8%)
 
-alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=warn;宽高属性缺失=warn(防 CLS);below-fold 须 `loading="lazy"`=warn;现代格式(WebP/AVIF 比 JPEG/PNG 小 30-50%)=warn;体积=warn;srcset 响应式=warn;图片 404=fail;figure 缺 figcaption=warn;文件名(IMG_001.jpg 坏/red-running-shoes.jpg 好)=warn;**内联 SVG >5KB 应外链**=warn;picture 缺 img 回退=fail;内容图用 CSS background(引擎读不到)=warn。
+alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **>125 字符 warn、>250 fail,无下限**;宽高属性缺失=warn(防 CLS);below-fold 须 `loading="lazy"`=warn;现代格式(建议 WebP/AVIF)=warn;体积(`images-size`,只按文件名线索或声明的宽高推断「像是过大」,不取文件)=warn;srcset 响应式=warn;图片 404=fail;figure 缺 figcaption=warn;文件名(IMG_001.jpg 坏/red-running-shoes.jpg 好)=warn;**内联 SVG >5KB 应外链**=warn;picture 缺 img 回退=fail;内联 style 的 background-image(`images-background-seo`):**2-5 个 warn、>5 个 fail**,样式表里的背景图看不到。
 
 **解释层(6 条;ID 未公布原文,标 [待核])**
 
@@ -1120,16 +1122,16 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=w
 **修复**: 内容图写"图里有什么";装饰图用空 alt;复杂图表用 figcaption 写长描述。
 **关联**: images-alt-generic;[semantic-html.md](semantic-html.md)
 
-#### images-alt-generic [待核 ID]
-- 名称/类型: 泛化/文件名式 alt —— warning · 优先级 low · 输出 WARN(源表 warn;"image"/文件名)
+#### images-alt-generic
+- 名称/类型: 泛化/文件名式 alt —— warning · 优先级 low · 输出 WARN(源表 ID `images-alt-quality`,warn;"image"/文件名)
 **这意味(what)**: 内容图的 alt 是泛化词("image"/"photo"/"图片")或直接复述文件名(img001),没有描述图内内容。
-**为什么(why)**: 泛化 alt 对图片搜索与屏幕阅读器约等于没有:图片搜索靠 alt 理解图意,SR 用户听到 "image" 毫无信息。与 images-alt-present(缺失/长度)同族互补:那条管"没写/写多长",本条管"写了但零信息量"。
+**为什么(why)**: Google 把 alt 当作图片最重要的元数据,结合计算机视觉和页面内容理解图意([图片 SEO 文档](https://developers.google.com/search/docs/appearance/google-images),核对 2026-10-21);SR 用户听到 "image" 毫无信息。与 images-alt-present(缺失/长度)同族互补:那条管"没写/写多长",本条管"写了但零信息量"。
 **触发(trigger)**: 1) alt 值命中泛化词表(image/photo/picture 等[词表源表未公布,待核])即 warn;2) alt 与 src 文件名(去扩展名)相同即 warn;3) 装饰图空 alt 不判(正确做法)。
 **不修的条件(caveat)**: alt 文案质量不(直接)影响网页排名,然而决定图片搜索的匹配面与无障碍信息量,所以一般建议写"图里有什么"。但 logo 类小图的短描述(alt="ExampleCorp 商标")属可接受形态。
 **修复(fix)**: 按图内容写名词性描述(对象+动作+语境);别把关键词堆进 alt(那归 content-keyword-stuffing);模板无法自动生成时留空待人工补,也别输出文件名。
 **关联(seealso)**: images-alt-present;[semantic-html.md](semantic-html.md)、[image-search-seo.md](../content/image-search-seo.md)
 
-#### images-dimensions [待核 ID]
+#### images-dimensions
 - 名称/类型: 宽高属性缺失(尺寸家族) —— warning · 优先级 medium · 输出 WARN(源表 warn;防 CLS)
 **这意味(what)**: `<img>` 缺 width/height 属性(也无 aspect-ratio 兜底),浏览器无法预留占位。
 **为什么(why)**: 缺宽高时图片到位后布局重排,直接推高 CLS(阈值见 [cwv-playbook.md](cwv-playbook.md));现代浏览器按属性计算宽高比,加载前就留好空间。本家族其余规则同构(缺信号 warn 档):srcset 响应式缺失=warn、figure 缺 figcaption=warn、文件名无描述性(IMG_001.jpg 坏/red-running-shoes.jpg 好)=warn、内联 SVG >5KB 应外链=warn;picture 缺 img 回退=**fail** 档(不支持环境整图消失);图片 404=**fail** 档(与 links-broken-internal 同构的断链家族)。
@@ -1138,36 +1140,36 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=w
 **修复(fix)**: CMS/构建管道存原始尺寸并输出 width/height;动态尺寸图用 aspect-ratio;响应式配 srcset+sizes;figure 配 figcaption。
 **关联(seealso)**: images-modern-formats、perf-dom-size;[cwv-playbook.md](cwv-playbook.md)
 
-#### images-modern-formats [待核 ID]
-- 名称/类型: 老旧图片格式/传输体积 —— warning · 优先级 low · 输出 WARN(源表 warn;WebP/AVIF 比 JPEG/PNG 小 30-50%;与 Performance 节 perf-image-encoding 同一事实的两面)
+#### images-modern-formats
+- 名称/类型: 老旧图片格式/传输体积 —— warning · 优先级 low · 输出 WARN(源表 ID `images-modern-format`,warn:建议 WebP/AVIF,上游未给节省比例;与 Performance 节 perf-image-encoding 同一事实的两面)
 **这意味(what)**: 页面图片仍是 JPEG/PNG 老格式且未提供 WebP/AVIF(协商或 picture 回退),或单图传输体积过大。
-**为什么(why)**: WebP/AVIF 同画质小 30-50%(源表口径),省下的字节直接改善 LCP 与页面总重。perf 侧同源规则 perf-image-encoding(渲染专属)判**传输 >100KB=warn、BMP/TIFF=fail**——本条看"格式供给",那条看"实际传输",命中其一就该动手。
+**为什么(why)**: Google 的对比研究:同等 SSIM 下 WebP 比 JPEG 小 25%-34%([WebP 研究](https://developers.google.com/speed/webp/docs/webp_study),核对 2026-10-21;AVIF 无本次回读的一手数字)。省下的字节改善 LCP 与传输量。perf 侧同源规则 perf-image-encoding(渲染专属)判**传输 >100KB=warn、BMP/TIFF=fail**——本条看"格式供给",那条看"实际传输",命中其一就该动手。
 **触发(trigger)**: 1) img src 无 .webp/.avif 且响应无格式协商(Accept/Vary)即 warn;2) 渲染口径:单图传输 >100KB=warn、BMP/TIFF=fail。
 **不修的条件(caveat)**: 格式不影响图片相关性判定,然而传输体积是 LCP 的一半战场,所以一般建议全站切现代格式。但图片本就 <30KB 且 CMS 无转换能力的场景,收益排序靠后。
 **修复(fix)**: 构建/CDN 层自动转 WebP/AVIF+picture 回退;大图压到展示分辨率;截图类 PNG 走有损压缩;验收看单图传输量。
 **关联(seealso)**: perf-page-weight、images-lazy;[cwv-playbook.md](cwv-playbook.md)、[image-search-seo.md](../content/image-search-seo.md)
 
-#### images-lazy [待核 ID]
-- 名称/类型: loading="lazy" 家族 —— warning · 优先级 medium · 输出 WARN(源表 warn;below-fold 须 lazy;首屏图禁 lazy=perf-lazy-above-fold)
+#### images-lazy
+- 名称/类型: loading="lazy" 家族 —— warning · 优先级 medium · 输出 WARN(源表 ID `images-lazy-loading`,warn;below-fold 须 lazy;首屏图禁 lazy=perf-lazy-above-fold)
 **这意味(what)**: 折叠线以下的图没加 loading="lazy",或首屏图(尤其 LCP 图)反而加了 lazy。
-**为什么(why)**: 两个方向伤同一指标:下页图不 lazy=全部抢首屏带宽,LCP 被非关键图拖慢;首屏图 lazy=LCP 资源被延迟加载。原生 loading="lazy" 主流浏览器均支持,零脚本成本,属于"一行属性换半个 LCP"的修复。
+**为什么(why)**: 两个方向伤同一指标:下页图不 lazy=全部抢首屏带宽,LCP 被非关键图拖慢;首屏图 lazy=LCP 资源被延迟加载。原生 loading="lazy" 由浏览器实现,不需要脚本库;web.dev 建议 LCP 图用默认的 eager 加载([web.dev](https://web.dev/articles/browser-level-image-lazy-loading),核对 2026-10-21)。
 **触发(trigger)**: 1) below-fold 图无 loading="lazy" 即 warn;2) 首屏/LCP 图带 loading="lazy" 即 warn(Performance 侧 perf-lazy-above-fold)。
 **不修的条件(caveat)**: lazy 属性不影响图片索引(仍会被抓取),然而它调度首屏带宽,所以一般建议 below-fold 全配。但首屏边缘图(是否在视口随设备变化)宁可不 lazy——误 lazy 的白屏代价大于误加载的带宽代价。
 **修复(fix)**: 模板按位置分流:首屏/LCP 图 eager+fetchpriority=high(见 perf-lcp-hints),其余 lazy;首屏判定以常见移动视口为准。
 **关联(seealso)**: perf-lcp-hints、perf-page-weight;[cwv-playbook.md](cwv-playbook.md)
 
-#### images-css-background [待核 ID]
-- 名称/类型: 内容图用 CSS background —— warning · 优先级 medium · 输出 WARN(源表 warn;引擎读不到)
+#### images-css-background
+- 名称/类型: 内容图用 CSS background —— warning · 优先级 medium · 输出 WARN/CRITICAL(源表 ID `images-background-seo`:数内联 style 里的 background-image(不含 data URL 与渐变),1 个过、2-5 个 warn、>5 个 fail;样式表里的背景图看不到)
 **这意味(what)**: 承载内容信息的图(产品图/文章配图/图表)用 CSS background-image 呈现,而非 `<img>`。
-**为什么(why)**: 引擎把 background 归为样式,不作为内容图索引——图片搜索完全收不到,alt/宽高/srcset/lazy 一整套图片优化全部不可用。背景图的合理域是装饰;内容图的合理域是 img(或 picture/svg)。
-**触发(trigger)**: 主内容区的信息图走 background-image(URL 提取自内联样式与样式表)且无对应 img 语义即 warn。
+**为什么(why)**: Google 说它不索引 CSS 图片("Google doesn't index CSS images"),要被图片搜索收录需用 `<img>` 或 `<picture>`([图片 SEO 文档](https://developers.google.com/search/docs/appearance/google-images),核对 2026-10-21);alt/宽高/srcset/lazy 这套图片优化也都用不上。背景图的合理域是装饰;内容图的合理域是 img(或 picture/svg)。
+**触发(trigger)**: 源表:内联 style 的 background-image 数量 2-5 warn、>5 fail。本套件另要求人工判断该图是否承载内容。
 **不修的条件(caveat)**: 纯装饰背景(渐变/纹理/氛围图)用 background 是正确做法,不判;只有当图承载内容语义(用户需要"看懂"它)时才构成问题——判定依赖"信息图"识别,命中后建议人工复核再改。
 **修复(fix)**: 内容图改 `<img>` 带 alt/宽高/现代格式;装饰保留 background;图表类用 svg+figcaption 或 img+长描述。
 **关联(seealso)**: images-alt-generic;[semantic-html.md](semantic-html.md)
 
 ### Security(26 条,权重 8%)
 
-非 HTTPS=fail;HTTP 不 301 到 HTTPS=warn;缺 HSTS(`max-age=31536000; includeSubDomains`)/CSP/X-Frame-Options(DENY/SAMEORIGIN)/nosniff/Permissions-Policy/Referrer-Policy(strict-origin-when-cross-origin)/COOP(`same-origin`,防 tabnabbing)=各 warn;`target=_blank` 缺 noopener/noreferrer=warn;表单 action 非 HTTPS=warn/fail;混合内容=warn/fail;`security-csp-xss`(CSP 是否真约束脚本:'unsafe-inline' 无 nonce=不设防;无 CSP 时按权重 0 报,避免与 security-csp 双重扣)/`security-info-disclosure`(Server 带版本号/X-Powered-By=warn,裸 `Server: nginx` 过)/`security-paste-blocking`(onpaste 阻止粘贴=fail,毁密码管理器)/`security-trusted-types`(仅已设 CSP 的站评,`require-trusted-types-for 'script'`)/`security-leaked-secrets`(AWS key/API token/私钥/数据库 URL=fail)/`security-password-http`(HTTP 页密码框=fail)/协议相对 URL `//`=warn;Cookie 三旗(Secure/HttpOnly/SameSite)=warn/fail;**Cookie 寿命 >400 天上限=warn**;SSL 到期=warn/fail;**TLS 须 1.2+**(1.0/1.1=warn/fail);SRI(跨域脚本/stylesheet 须 integrity hash)=warn;混淆脚本(长高熵内联脚本调 eval/Function/atob)=warn;品牌登录链指向品牌或本域=warn。
+非 HTTPS=fail;HTTP 不 301 到 HTTPS=warn/fail;缺 HSTS(`max-age=31536000; includeSubDomains`)=warn/fail;XFO(DENY/SAMEORIGIN)=warn/fail;nosniff=**fail**;CSP/Permissions-Policy/Referrer-Policy(strict-origin-when-cross-origin)/COOP(`same-origin`,防 tabnabbing)=各 warn;`target=_blank` 缺 noopener/noreferrer=warn;表单 action 非 HTTPS=warn/fail;混合内容=warn/fail;`security-csp-xss`(CSP 是否真约束脚本:'unsafe-inline' 无 nonce=不设防;无 CSP 时按权重 0 报,避免与 security-csp 双重扣)/`security-info-disclosure`(Server 带版本号/X-Powered-By=warn,裸 `Server: nginx` 过)/`security-paste-blocking`(onpaste 阻止粘贴=fail,毁密码管理器)/`security-trusted-types`(仅已设 CSP 的站评,`require-trusted-types-for 'script'`)/`security-leaked-secrets`(AWS key/API token/私钥/数据库 URL=fail)/`security-password-http`(HTTP 页密码框=fail)/协议相对 URL `//`=warn;Cookie 三旗(Secure/HttpOnly/SameSite)=warn/fail;**Cookie 寿命 >400 天上限=warn**;`security-ssl-expiry`/`security-ssl-protocol`(**现行并不读证书、不测 TLS 版本**,只拿 HSTS 当代理,见 security-tls 条);SRI(跨域脚本/stylesheet 须 integrity hash)=warn;混淆脚本(长高熵内联脚本调 eval/Function/atob)=warn;品牌登录链指向品牌或本域=warn。
 
 **解释层(6 条,第三批;ID 未公布原文的按家族命名法推得并标 [待核];安全头落地清单另见 [validation-guide.md](validation-guide.md) C28)**
 
@@ -1184,16 +1186,16 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=w
 - 名称/类型: 安全响应头家族 —— warning · 优先级 medium · 输出 WARN(源表各=warn:HSTS `max-age=31536000; includeSubDomains`/CSP/X-Frame-Options(DENY/SAMEORIGIN)/nosniff/Permissions-Policy/Referrer-Policy(strict-origin-when-cross-origin)/COOP(`same-origin`,防 tabnabbing))
 **这意味(what)**: 七个安全响应头任一缺失:HSTS、CSP、X-Frame-Options、X-Content-Type-Options(nosniff)、Permissions-Policy、Referrer-Policy、COOP。
 **为什么(why)**: 每个头各管一面:HSTS 防协议降级剥离(缺了首访 http 可被中间人劫持);CSP 约束脚本注入面;X-Frame-Options 防 clickjacking 嵌套;nosniff 防 MIME 嗅探错配执行;Permissions-Policy 收 API 权限;Referrer-Policy 控引荐信息外泄;COOP(same-origin)防 tabnabbing 类跨窗引用。SEO 侧关联是间接的:可被任意嵌套/注入的页面不是引擎信任的展示形态。CSP 的有效性另由 security-csp-xss 深化('unsafe-inline' 无 nonce=不设防;无 CSP 时按权重 0 报,避免与缺失双重扣),security-trusted-types 仅对已设 CSP 的站评 `require-trusted-types-for 'script'`。
-**触发(trigger)**: 响应头逐一断言存在与推荐值(照抄源表:HSTS `max-age=31536000; includeSubDomains`;XFO DENY/SAMEORIGIN;RP strict-origin-when-cross-origin;COOP same-origin);缺失即 warn。
+**触发(trigger)**: 响应头逐一断言存在与推荐值(照抄源表:HSTS `max-age=31536000; includeSubDomains`;XFO DENY/SAMEORIGIN;RP strict-origin-when-cross-origin;COOP same-origin);缺失即 warn(上游里 HSTS、XFO 可到 fail,nosniff 缺失直接 fail;CSP 只发 Report-Only 也按缺失 warn)。
 **不修的条件(caveat)**: 安全头不(直接)影响排名,然而它们是站点治理质量的可见面与真实攻击面的闸门,所以一般建议按 C28 清单补齐。但 CSP 要灰度上线(先 Report-Only 观察),一次性 enforce 打挂第三方脚本反成事故。
 **修复(fix)**: 按 [validation-guide.md](validation-guide.md) C28 五头起步(HSTS/CSP/nosniff/XFO/RP);CSP 走 Report-Only 灰度;CDN/网关层统一注入。
 **关联(seealso)**: security-https、technical-content-type;[validation-guide.md](validation-guide.md)
 
-#### security-tls [待核 ID]
-- 名称/类型: TLS 版本与证书 —— warning/issue · 优先级 high · 输出 WARN/CRITICAL(源表:SSL 到期=warn/fail;TLS 须 1.2+,1.0/1.1=warn/fail)
-**这意味(what)**: TLS 证书临期或已过期,或协议版本低于 1.2(1.0/1.1)。
-**为什么(why)**: 过期证书让全部主流浏览器弹全页警告——流量断崖,引擎侧也随之抓取失败;TLS 1.0/1.1 已被 IETF 废弃且被主流浏览器禁用,老协议同时是降级攻击面。warn/fail 分型按临期程度与协议版本[待核:常见分型为临期=warn、已过期=fail]。
-**触发(trigger)**: 1) 证书 notAfter 进入预警窗(窗口阈值源表未公布[待核])→ warn;已过期 → fail;2) 协商协议 <TLS1.2 → warn/fail。
+#### security-tls
+- 名称/类型: TLS 版本与证书(HSTS 代理) —— warning/issue · 优先级 high · 输出 WARN/CRITICAL(源表现行 `security-ssl-expiry`、`security-ssl-protocol`:都不读证书、不测协商的 TLS 版本;HTTP 页=fail;HTTPS 页无 HSTS 头:expiry 条 warn、protocol 条 fail;HSTS max-age <1 年 warn;缺 includeSubDomains 或 preload warn。旧快照写的「证书临期、TLS 须 1.2+」并非现行行为)
+**这意味(what)**: 站点没有用 HSTS 声明长期只走 HTTPS;证书与协议版本本身需另查。
+**为什么(why)**: 过期证书让主流浏览器弹全页警告;TLS 1.0/1.1 已被 IETF 在 RFC 8996 正式废弃([RFC 8996](https://www.rfc-editor.org/rfc/rfc8996.html),核对 2026-10-21)。HSTS 让浏览器此后只用 HTTPS 访问,但它不证明证书有效。
+**触发(trigger)**: 源表现行:1) HTTP 页 fail;2) HTTPS 无 Strict-Transport-Security → warn/fail;3) max-age <31536000 → warn;4) 缺 includeSubDomains 与 preload → warn。证书到期和 TLS 版本手工查:`echo | openssl s_client -connect 域名:443 -servername 域名 2>/dev/null | openssl x509 -noout -enddate`;`openssl s_client -tls1_1 -connect 域名:443`(握手失败即已关闭 1.1)。
 **不修的条件(caveat)**: 证书与协议不(直接)影响内容排名,然而过期即全站不可达,是可用性事故级,所以一般建议自动续期+到期告警。但多证书/多边缘节点的站先盘点覆盖面再统一切 1.2+,避免漏节点造成部分用户不可达。
 **修复(fix)**: ACME 自动续期(如 cert-manager);notAfter 双阈值告警(30/7 天);TLS 下限 1.2(逐步 1.3),关闭 1.0/1.1。
 **关联(seealso)**: security-https;[validation-guide.md](validation-guide.md)
@@ -1201,7 +1203,7 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=w
 #### security-cookies [待核 ID]
 - 名称/类型: Cookie 旗标与寿命 —— warning · 优先级 medium · 输出 WARN/CRITICAL(源表:三旗 Secure/HttpOnly/SameSite=warn/fail;寿命 >400 天=warn)
 **这意味(what)**: Cookie 缺 Secure/HttpOnly/SameSite 旗标,或 Set-Cookie 的 max-age/expires 超过 400 天。
-**为什么(why)**: 三旗各堵一类:Secure 限 https 传输(防明文截获)、HttpOnly 禁 JS 读取(防 XSS 窃会话)、SameSite 防跨站携带(CSRF);Chrome M104(2022-08)起把超过 400 天的过期时间截到 400 天,RFC 6265bis 草案建议同一上限([Chrome](https://developer.chrome.com/blog/cookie-max-age-expires));声明更长只是自欺。warn/fail 分型按 cookie 用途[待核:常见分型为会话/鉴权类缺旗标取 fail 侧]。
+**为什么(why)**: 三旗各堵一类:Secure 限 https 传输(防明文截获)、HttpOnly 禁 JS 读取(防 XSS 窃会话)、SameSite 防跨站携带(CSRF);Chrome M104(2022-08)起把超过 400 天的过期时间截到 400 天,不拒绝该 cookie([Chrome](https://developer.chrome.com/blog/cookie-max-age-expires),核对 2026-10-21);声明更长没有效果。warn/fail 分型按 cookie 用途[待核:常见分型为会话/鉴权类缺旗标取 fail 侧]。
 **触发(trigger)**: 逐一解析 Set-Cookie:1) 缺任一旗标 → warn/fail;2) max-age/expires >400 天 → warn。
 **不修的条件(caveat)**: Cookie 旗标不影响 SEO,然而会话安全缺口的后果(账号接管)会以最差方式登上 SERP,所以一般建议三旗全配。但第三方嵌入要求的宽松 SameSite 场景,用分区 cookie(CHIPS)替代裸放松。
 **修复(fix)**: 会话 cookie `Secure; HttpOnly; SameSite=Lax`;持久 cookie ≤400 天并按业务再收;跨站场景评估 CHIPS/First-Party Sets。
@@ -1210,7 +1212,7 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=w
 #### security-link-integrity [待核 ID]
 - 名称/类型: 链接与引用安全家族 —— warning · 优先级 medium · 输出 WARN(源表各=warn:target=_blank 缺 noopener/noreferrer;协议相对 URL `//`;跨域脚本/stylesheet 缺 SRI integrity;品牌登录链须指向品牌或本域)
 **这意味(what)**: 四项链接/引用卫生任一:`target=_blank` 的链接缺 rel=noopener/noreferrer;URL 用协议相对 `//example.com` 形态;跨域脚本与样式表没有 integrity(SRI)hash;登录/支付类品牌入口链接指向非品牌域。
-**为什么(why)**: noopener 防新窗口反向操纵 opener(tabnabbing 的页面侧防线);协议相对 URL 在 http 上下文解析成 http,与全站 https 化冲突且行为依赖上下文;SRI 缺失时第三方脚本被篡改即直接进你页面(供应链注入面);品牌登录链指向陌生域是钓鱼的教科书形态——引擎与用户都对"登录入口不在品牌域"高度敏感。
+**为什么(why)**: noopener 防新窗口反向操纵 opener(tabnabbing 的页面侧防线);协议相对 URL 在 http 上下文解析成 http,与全站 https 化冲突且行为依赖上下文;SRI 缺失时第三方脚本被篡改即直接进你页面(供应链注入面);品牌登录链指向陌生域是常见钓鱼形态(本条是上游的安全启发式,非搜索引擎规则)。
 **触发(trigger)**: 1) `<a target="_blank">` 的 rel 不含 noopener 即 warn;2) href 以 `//` 开头即 warn;3) 跨域 `<script src>`/`<link rel="stylesheet">` 无 integrity 属性即 warn;4) 登录/账单类锚文本的 href 域 ∉ {本域,已知品牌域} 即 warn。
 **不修的条件(caveat)**: 家族单项不(直接)影响排名,然而 SRI 与登录链两项是真实攻击/钓鱼面,所以一般建议一次配齐。但第三方面向无版本化 URL 的脚本(内容随构建变)无法静态钉 SRI,先换版本化 URL 再上。
 **修复(fix)**: target=_blank 统一 `rel="noopener noreferrer"`;协议相对改 https 绝对 URL;第三方资源走版本化 URL+SRI(integrity+crossorigin);登录链收敛品牌域或已知 IdP 域并公示。
@@ -1227,21 +1229,21 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **5-125 字符**=w
 
 ### Technical SEO(18 条,权重 7%)
 
-robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连字符)=warn;尾斜杠一致性=warn;www 一致性 301=warn;自定义 404=warn;soft-404(200 但错误内容)=warn;5xx=fail;**非 404 的 4xx(403/410 等)=warn**;超时=fail;Content-Type 错=warn/fail;**200 空 HTML(fhead/body 皆空)=fail**;`technical-form-get-method`(GET 表单产生可抓取查询串 URL=warn);**多 GTM 容器/多 GA 属性(>1 个不同 ID)=warn**;`technical-consent-mode`(Google 标签须配 consent update)=warn。
+robots.txt 存在=fail、语法=warn/fail;sitemap 存在/格式=warn/fail;URL 结构(小写+连字符)=warn/fail;尾斜杠一致性(同一路径带与不带斜杠都被链接)=warn;www 一致性 301=warn/fail;自定义 404=warn/fail;soft-404(200 但错误内容)=**fail**;5xx=fail;**非 404 的 4xx:401/403/其他=fail,410 与 429=warn**;响应时间(`technical-timeout`):**≥3 秒 warn、>10 秒 fail**;Content-Type 错=warn/fail;**200 空响应体或 head/body 皆空=fail**;`technical-form-get-method`(GET 表单产生可抓取查询串 URL=warn);**多 GTM 容器/多 GA 属性(>1 个不同 ID)=warn**;`technical-consent-mode`(Google 标签须配 consent update)=warn。
 
 **解释层(10 条,第三批;ID 未公布原文的按家族命名法推得并标 [待核])**
 
 #### technical-5xx [待核 ID]
-- 名称/类型: 服务器错误与超时 —— issue · 优先级 critical · 输出 CRITICAL(源表:5xx=fail;超时=fail)
-**这意味(what)**: 该 URL 返回 5xx 状态码,或连接/DNS 层直接超时。
-**为什么(why)**: 5xx 告诉引擎"服务器出问题":短时出现会降低抓取速度,持续出现时已编入索引的 URL 会被移出索引——这是少数"放着不管就掉索引"的故障(处置表见 [http-status-codes.md](http-status-codes.md));DNS/连接超时等网络错误按同档处理。单页 5xx 指应用层,全站 5xx 指基础设施,修复路径不同。
-**触发(trigger)**: 1) 响应状态 5xx 即 fail;2) 连接/DNS/TLS 握手超时即 fail;3) 输出按影响面分型(单页/全站)。
+- 名称/类型: 服务器错误与超时(源表 ID `technical-server-error`、`technical-timeout`) —— issue · 优先级 critical · 输出 CRITICAL(源表:5xx=fail;响应时间 ≥3 秒 warn、>10 秒 fail)
+**这意味(what)**: 该 URL 返回 5xx 状态码,或响应慢到 3 秒以上(>10 秒为失败)。
+**为什么(why)**: 5xx 和 429 会让 Google 抓取器降低抓取速度,持续出现时已编入索引的 URL 会被移出索引([HTTP 状态码文档](https://developers.google.com/search/docs/crawling-indexing/http-network-errors),核对 2026-10-21;处置表见 [http-status-codes.md](http-status-codes.md))。慢响应的 3 秒/10 秒线是 SEOmator 工具约定。单页 5xx 指应用层,全站 5xx 指基础设施,修复路径不同。
+**触发(trigger)**: 1) 响应状态 5xx 即 fail;2) 响应时间 ≥3 秒 warn、>10 秒 fail;3) 输出按影响面分型(单页/全站)。site_audit 对 HTTP 错误页只出 `[CRITICAL] fetch`(401/403/429/503 则按「疑似挑战页」`[SKIP]` 拒审),不量响应时间。
 **不修的条件(caveat)**: 计划内维护应返回 503+Retry-After(告诉引擎稍后再来),用 200 返回维护页反而制造 soft-404;真故障无豁免,修的是稳定性本身。
 **修复(fix)**: 全站 5xx 查基础设施(部署窗口/数据库连接池);单页 5xx 查应用日志;维护窗口统一 503+Retry-After;要降抓取速度短期用 429/503,不用 401/403。
 **关联(seealso)**: technical-empty-html、technical-soft-404;[http-status-codes.md](http-status-codes.md)、[log-analysis.md](log-analysis.md)
 
-#### technical-empty-html [待核 ID]
-- 名称/类型: 200 空 HTML —— issue · 优先级 critical · 输出 CRITICAL(源表 fail;head/body 皆空)
+#### technical-empty-html
+- 名称/类型: 200 空 HTML —— issue · 优先级 critical · 输出 CRITICAL(源表 fail;200 且响应体为空,或 head 与 body 皆空)
 **这意味(what)**: URL 返回 200,响应体却是 head 与 body 都为空的 HTML 壳。
 **为什么(why)**: 200+空壳是最高危的"假正常":索引流程收到"成功"却没有可索引内容,GSC 归入 soft 404 类目;客户端渲染失败(js-runtime-hygiene 的未捕获异常)也会呈现这个形态。引擎视角:页面存在但什么都没有,慢性退索引。
 **触发(trigger)**: 1) 状态 200;2) 解析后 head 与 body 均无有效内容节点即 fail。
@@ -1249,26 +1251,26 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: 查渲染管道(SSR 失败回退空模板是常见肇因);模板兜底至少输出错误说明+正确状态码;CI 对发布产物做"空 HTML"断言。
 **关联(seealso)**: technical-5xx、technical-soft-404、js-runtime-hygiene;[http-status-codes.md](http-status-codes.md)
 
-#### technical-soft-404 [待核 ID]
-- 名称/类型: soft 404 —— issue · 优先级 high · 输出 WARN(源表 warn;200 但错误内容)
+#### technical-soft-404
+- 名称/类型: soft 404 —— issue · 优先级 high · 输出 CRITICAL(源表现行 fail,权重 10;200 但错误内容)
 **这意味(what)**: URL 返回 200,页面内容却是"未找到/已下架"的错误态。
-**为什么(why)**: 引擎对 200 页照常走索引流程,内容是错误信息时被判 soft 404——占着"正常响应"的抓取预算却没有可服务的内容;它们在 GSC 索引报告里混成噪音,真假问题难分。典型来源:下架商品页返回 200"商品不存在";把大量删除页统一 301 到首页/无关页同样可能被判 soft 404(官方口径见 [http-status-codes.md](http-status-codes.md) 第二节)。
+**为什么(why)**: 2xx 页面内容却是空页或错误信息时,Search Console 显示 soft 404([HTTP 状态码文档](https://developers.google.com/search/docs/crawling-indexing/http-network-errors);[索引报告](https://support.google.com/webmasters/answer/7440203),核对 2026-10-21),Google 建议对真正不存在的页返回 404 码。它们在索引报告里混成噪音,真假问题难分。典型来源:下架商品页返回 200"商品不存在"。
 **触发(trigger)**: 1) 状态 200;2) 内容命中错误态特征("未找到/已下架/page not found"文案、空分类、搜索无结果壳、渲染失败空壳)即 warn。
 **不修的条件(caveat)**: 判定是内容启发不是状态码,误报存在(正文合法引用"not found"字样),所以一般建议命中后人工抽查再改状态码。但确要保留的"内容已移除"说明页(带后续指引)属正当形态,配 noindex 即可。
 **修复(fix)**: 真没了→真 404/410;有替代→301 到最近亲内容页(不是首页);保留说明页→加 noindex。
 **关联(seealso)**: technical-4xx-non404、technical-custom-404;[http-status-codes.md](http-status-codes.md)
 
-#### technical-4xx-non404 [待核 ID]
-- 名称/类型: 非 404 的 4xx —— warning · 优先级 medium · 输出 WARN(源表 warn;403/410 等)
+#### technical-4xx-non404
+- 名称/类型: 非 404 的 4xx(源表 ID `technical-4xx-non-404`) —— warning · 优先级 medium · 输出 CRITICAL/WARN(源表现行:401、403 及其他 4xx=fail;410 与 429=warn;单页审计遇 4xx/5xx 会以退出码 2 中止,这两条规则只在 crawl 里出结果)
 **这意味(what)**: 页面返回 403、410、451 等 404 之外的 4xx 状态。
-**为什么(why)**: 各 4xx 语义不同,审计价值在分清"状态码用对了吗":401/403 是权限语义(Google 当作内容不存在;要短期降抓取速度应返回 500/503/429,[降速文档](https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate));410 是明确的永久下线声明;451 是法律移除。除 429 外 Google 对所有 4xx 处理相同([HTTP 状态码文档](https://developers.google.com/search/docs/crawling-indexing/http-network-errors)),选错码主要污染你自己的监控分类。
-**触发(trigger)**: 响应状态 ∈ 4xx 且 ≠404 即 warn(404 本身不算错误,由内链/sitemap 交叉规则管)。
+**为什么(why)**: 各 4xx 语义不同,审计价值在分清"状态码用对了吗":401/403 是权限语义;Google 对除 429 外的 4xx 一律当作「内容不存在」,不要用 401/403 限制抓取速度([HTTP 状态码文档](https://developers.google.com/search/docs/crawling-indexing/http-network-errors),核对 2026-10-21);要短期降速应返回 500/503/429([降速文档](https://developers.google.com/search/docs/crawling-indexing/reduce-crawl-rate))。410 是明确的永久下线声明。选错码主要污染你自己的监控分类。
+**触发(trigger)**: 响应状态 ∈ 4xx 且 ≠404:401/403/其他 fail,410 与 429 warn(404 本身不算错误,由内链/sitemap 交叉规则管)。
 **不修的条件(caveat)**: 4xx 状态不惩罚站点(404 是正常 web 形态),然而选错码会误导引擎与监控,所以一般建议按语义选码。但登录墙内容返回 401/403 是正当设计,别为审计绿灯改成 404。
 **修复(fix)**: 永久下线→410;临时不可用→503+Retry-After;限流→429;无权访问→401/403 保持。
 **关联(seealso)**: technical-soft-404、technical-5xx;[http-status-codes.md](http-status-codes.md)
 
-#### technical-custom-404 [待核 ID]
-- 名称/类型: 自定义 404 页 —— warning · 优先级 low · 输出 WARN(源表 warn)
+#### technical-custom-404
+- 名称/类型: 自定义 404 页(源表 ID `technical-404-page`) —— warning · 优先级 low · 输出 WARN(源表 warn/fail)
 **这意味(what)**: 站点 404 时返回服务器默认错误页,而非带导航与搜索的自定义 404 页。
 **为什么(why)**: 404 本身不伤 SEO,伤的是 404 之后用户去留:默认错误页零出路,用户直接关站;自定义 404 给导航/搜索/热门内容,把撞错 URL 的流量接回站内。对引擎,自定义 404 也证明错误态是设计过的而非配置事故。
 **触发(trigger)**: 请求不存在路径;返回 404 但响应体为服务器默认页(无站内导航特征/体积极小)即 warn;404 返回 200 另归 technical-soft-404。
@@ -1276,26 +1278,26 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: 404 模板带站点导航+站内搜索+热门链接;保持真 404 状态码;别自动跳首页(制造 soft-404)。
 **关联(seealso)**: technical-soft-404、technical-4xx-non404;[http-status-codes.md](http-status-codes.md)
 
-#### technical-robots-txt [待核 ID]
-- 名称/类型: robots.txt 存在性与语法 —— warning · 优先级 high · 输出 WARN(源表 warn)
+#### technical-robots-txt
+- 名称/类型: robots.txt 存在性与语法(源表 ID `technical-robots-txt-exists` fail、`technical-robots-txt-valid` warn/fail) —— warning · 优先级 high · 输出 CRITICAL/WARN
 **这意味(what)**: 站点没有 robots.txt,或文件存在但含语法错误(非法指令/拼写错的键/未闭合组)。
-**为什么(why)**: robots.txt 是抓取层第一道闸:不存在时按"全部允许"处理(失去 AI 爬虫策略等声明载体);存在但语法坏时引擎按容错解析——你写的 Disallow 可能没按你以为的生效。它还是 crawl-* 交叉规则(crawl-sitemap-disallowed 等)的前置输入,坏语法会级联污染下游判定。
-**触发(trigger)**: 1) /robots.txt 404/5xx → 缺失档;2) RFC 9309 解析报语法错 → 语法档;均 warn。
+**为什么(why)**: robots.txt 是抓取层第一道闸。Google 对 4xx(含 404)的 robots.txt 按「没有抓取限制」处理;5xx 则更糟:先暂停抓取全站约 12 小时,之后 30 天内沿用最后一份可用的版本([robots 规范](https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec),核对 2026-10-21)。语法坏时你写的 Disallow 可能没按你以为的生效。它还是 crawl-* 交叉规则(crawl-sitemap-disallowed 等)的前置输入,坏语法会级联污染下游判定。
+**触发(trigger)**: 1) /robots.txt 不可访问 → 存在性(源表 fail);2) RFC 9309 解析报语法错 → 语法档(warn/fail)。site_audit 对 robots.txt 404 视为全放行、不出 finding;其他不可达出 `[INFO] robots: /robots.txt 不可达`。
 **不修的条件(caveat)**: 缺 robots.txt 不(直接)影响 SEO(全允许也是合法状态),然而失去声明面与审计输入,所以一般建议放显式文件。但确无任何屏蔽需求的小站,空文件与缺文件等价,可记豁免。
 **修复(fix)**: 提交显式 robots.txt(至少含 Sitemap 行,见 crawl-sitemap-in-robotstxt);用 RFC 9309 校验器过一遍;模板生成禁手维护([ai-crawler-policy.md](ai-crawler-policy.md) 口径)。
 **关联(seealso)**: crawl-sitemap-disallowed、crawl-blocked-resources、crawl-crawl-delay;[robots-txt-reference.md](robots-txt-reference.md)、[ai-crawler-policy.md](ai-crawler-policy.md)
 
-#### technical-sitemap-existence [待核 ID]
-- 名称/类型: sitemap 存在性与格式 —— warning · 优先级 medium · 输出 WARN(源表 warn)
+#### technical-sitemap-existence
+- 名称/类型: sitemap 存在性与格式(源表 ID `technical-sitemap-exists`、`technical-sitemap-valid`) —— warning · 优先级 medium · 输出 WARN/CRITICAL(源表 warn/fail)
 **这意味(what)**: 站点没有可发现的 sitemap,或 sitemap 格式坏(XML 不合法/编码错/非 sitemap 结构)。
-**为什么(why)**: sitemap 是发现与再抓取的加速器:格式坏时整文件被丢弃等于没有,GSC 提交也报解析错误。存在性按发现路径判:robots.txt Sitemap 行、/sitemap.xml 常规路径、GSC 声明。条数/体积/lastmod 质量/domain 一致性由 Crawlability 节 sitemap 家族分规则管,本条只立"有没有、能不能解析"。
-**触发(trigger)**: 1) 无任何可发现 sitemap → 缺失档;2) XML 解析失败/缺 urlset 命名空间 → 格式档;均 warn。
+**为什么(why)**: sitemap 是发现与再抓取的加速器:格式坏时 GSC 提交会报解析错误,该文件无法被处理。存在性按发现路径判:robots.txt Sitemap 行、/sitemap.xml 常规路径、GSC 声明。条数/体积/lastmod 质量/domain 一致性由 Crawlability 节 sitemap 家族分规则管,本条只立"有没有、能不能解析"。
+**触发(trigger)**: 1) 无任何可发现 sitemap → 缺失档;2) XML 解析失败/缺 urlset 命名空间 → 格式档;均 warn/fail(上游按条目问题轻重分档)。site_audit 只探 `/sitemap.xml`,不可达出 `[INFO] sitemap`。
 **不修的条件(caveat)**: sitemap 是推荐机制不是排名因素,内链完整的小站缺失损失有限,所以一般建议核心站必配、极小站可缓。但无 sitemap 时 GSC 的提交与覆盖率诊断面也少一半,通常仍值得配。
 **修复(fix)**: 生成器输出标准 XML(可选 gzip);robots.txt 声明+GSC 提交;校验命名空间与转义(& 用 &amp;)。
 **关联(seealso)**: crawl-sitemap-url-limit、crawl-sitemap-lastmod、crawl-sitemap-in-robotstxt;[validation-guide.md](validation-guide.md)
 
-#### technical-content-type [待核 ID]
-- 名称/类型: Content-Type 错误 —— issue/warning · 优先级 medium · 输出 WARN/CRITICAL(源表 warn/fail;分型口径源表未公布[待核])
+#### technical-content-type
+- 名称/类型: Content-Type 错误(源表 ID `technical-bad-content-type`) —— issue/warning · 优先级 medium · 输出 WARN/CRITICAL(源表 warn/fail;分型口径源表未公布[待核])
 **这意味(what)**: 响应的 Content-Type 头与实际内容或用途不符:HTML 页声明成 text/plain、字体声明成 text/html、缺 charset 等。
 **为什么(why)**: 引擎与浏览器按 Content-Type 决定解析路径:声明错时 HTML 被当纯文本(索引流程拿不到 DOM)、资源被按错误类型处理;缺 charset 触发编码猜测,与 mojibake(content-deploy-hygiene)同源;nosniff 生效时被误标的资源直接被拒执行。
 **触发(trigger)**: 1) 主文档非 text/html(且非刻意的 data feed)即触发;2) 子资源 Content-Type 与扩展/内容嗅探不符即触发;warn/fail 按分型[待核:主文档误标取重档的常见分型]。
@@ -1304,16 +1306,16 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: content-mime-broken、content-deploy-hygiene、security-headers;[http-status-codes.md](http-status-codes.md)
 
 #### technical-url-consistency [待核 ID]
-- 名称/类型: URL 形态一致性家族 —— warning · 优先级 medium · 输出 WARN(源表各=warn:URL 结构小写+连字符;尾斜杠一致性;www 一致性 301)
+- 名称/类型: URL 形态一致性家族(源表 ID `technical-url-structure`、`technical-trailing-slash`、`technical-www-redirect`) —— warning · 优先级 medium · 输出 WARN(源表 warn/fail:URL 结构小写+连字符;同一路径带与不带尾斜杠都被链接;www 一致性 301)
 **这意味(what)**: 站点级 URL 形态不统一:大小写/分词符混用、同站尾斜杠两可、www 与非 www 双可达且不互 301。
-**为什么(why)**: 三项都在制造"同内容多 URL":大小写敏感的服务器上 /About 与 /about 是两个 200;尾斜杠两可时引擎靠规范化猜;www 双可达是经典重复站点种子。它们是 url-shape(单页形态卫生)的站点级聚合面——[validation-guide.md](validation-guide.md) C3 检查项(四变体 301 到唯一规范 host)就是本条的落地。
+**为什么(why)**: 三项都在制造"同内容多 URL":Google 的 URL 处理区分大小写,/APPLE 与 /apple 是两个 URL([URL 结构文档](https://developers.google.com/search/docs/crawling-indexing/url-structure),核对 2026-10-21);尾斜杠两可时引擎靠规范化猜;www 双可达是经典重复站点种子。它们是 url-shape(单页形态卫生)的站点级聚合面——[validation-guide.md](validation-guide.md) C3 检查项(四变体 301 到唯一规范 host)就是本条的落地。
 **触发(trigger)**: 1) 站内 URL 混用大小写/下划线与连字符即 warn;2) 同路径带/不带尾斜杠均 200 即 warn;3) www 与非 www 均可达且无单向 301 即 warn。
 **不修的条件(caveat)**: 一致性家族不(直接)影响单页排名,然而每项都在给规范化添噪音,所以一般建议定一种形态+301 收口。但历史 URL 的大写形态已积累外链时,保持现状+canonical 比强改更稳。
 **修复(fix)**: 定规范形态(小写+连字符+固定尾斜杠策略+单 host),其余变体 301 到规范形;CMS 输出层统一;新内容从源头合规。
 **关联(seealso)**: url-shape、crawl-canonical-form-drift、redirects-case-normalization;[redirects-canonical.md](redirects-canonical.md)、[validation-guide.md](validation-guide.md)
 
 #### technical-tagging [待核 ID]
-- 名称/类型: 埋点与表单卫生家族 —— warning · 优先级 low · 输出 WARN(源表各=warn:多 GTM 容器/多 GA 属性(>1 个不同 ID);consent mode;GET 表单)
+- 名称/类型: 埋点与表单卫生家族(源表 ID `technical-duplicate-gtm`、`technical-duplicate-ga`、`technical-consent-mode`、`technical-form-get-method`) —— warning · 优先级 low · 输出 WARN(源表各=warn:多 GTM 容器/多 GA 属性(>1 个不同 ID);consent mode;GET 表单)
 **这意味(what)**: 三项埋点/表单卫生任一命中:页面加载 >1 个不同 ID 的 GTM 容器或 GA 属性;Google 标签未配 consent mode update;GET 表单产生可抓取的查询串 URL。
 **为什么(why)**: 双容器/双属性是"两拨人各埋一套"的事故:双计、页面变重、数据口径分裂——SEO 决策的数据底座被毁;consent mode 缺失在欧盟市场意味着同意前信号丢失与合规缺口;GET 表单把用户输入变成 URL,爬虫沿结果页发散(与 url-search-indexed 同源),敏感参数还可能进日志与外泄。
 **触发(trigger)**: 1) 页面 GTM 容器 ID 去重后 >1 或 GA 属性 >1 即 warn;2) 有 gtag/GTM 但无 consent 默认态+update 调用即 warn;3) `<form method=get>`(缺省即 GET)且 action 产生站内查询 URL 即 warn。
@@ -1323,56 +1325,56 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 
 ### Structured Data(19 条,权重 5%)
 
-缺 JSON-LD=warn;JSON 语法坏=fail;缺 @type=warn;类型必填字段=warn;Article 须 headline/author/datePublished/image;BreadcrumbList(非首页,**≥2 个 itemListElement**)=info;FAQPage 每个 Question 须 name+acceptedAnswer.text=fail;LocalBusiness 须 name/address/telephone/geo;Organization 须 name/logo/sameAs;Product 须 offers(price/priceCurrency/availability)=fail;Review 须 itemReviewed/author/reviewRating;VideoObject 须 name/thumbnailUrl/uploadDate(时长 ISO 8601 如 PT1M30S);WebSite SearchAction 含 `{search_term_string}`=info。**实体图六查已吸收于 [entity-signal-checklist.md](entity-signal-checklist.md) 与 [validation-guide.md](validation-guide.md)**:entity-id(@id 绝对)/rating-scope(AggregateRating 不在 legal/account URL 且 ratingValue 可见)/entity-conflict(一 @id 两 logo/两电话)/entity-dangling(publisher/author/isPartOf 的 @id 须在爬取中声明)/entity-type-drift(同 @id 跨页同 @type)/entity-split(同名组织不挂两 @id)。
+没有 JSON-LD/microdata/RDFa=fail(只有 microdata 或 RDFa=warn;site_audit 只数 JSON-LD,缺则 `[WARN] schema`);JSON-LD 语法:部分坏 warn、全坏 fail;缺 @type:部分缺 warn、全缺 fail;必填字段缺=fail、推荐字段缺=warn;Article 必填 headline/author/datePublished,推荐 image/publisher/dateModified/description/mainEntityOfPage;BreadcrumbList(非首页,**≥2 个 itemListElement**)=warn;FAQPage 每个 Question 须 name+acceptedAnswer.text=fail;LocalBusiness 须 name/address/telephone/geo;Organization 须 name/logo/sameAs;Product 须 offers(price/priceCurrency/availability);Review 须 itemReviewed/author/reviewRating;VideoObject 须 name/thumbnailUrl/uploadDate(时长 ISO 8601 如 PT1M30S);WebSite SearchAction 含 `{search_term_string}`=warn。**实体图六查已吸收于 [entity-signal-checklist.md](entity-signal-checklist.md) 与 [validation-guide.md](validation-guide.md)**:entity-id(@id 绝对)/rating-scope(AggregateRating 不在 legal/account URL 且 ratingValue 可见)/entity-conflict(一 @id 两 logo/两电话)/entity-dangling(publisher/author/isPartOf 的 @id 须在爬取中声明)/entity-type-drift(同 @id 跨页同 @type)/entity-split(同名组织不挂两 @id)。
 
 **解释层(8 条;ID 未公布原文的按家族命名法推得并标 [待核];第四批补实体图六查 3 条,细则深读见 [entity-signal-checklist.md](entity-signal-checklist.md))**
 
-#### sd-jsonld-missing [待核 ID]
-- 名称/类型: 缺 JSON-LD —— warning · 优先级 low · 输出 WARN(源表 warn)
+#### sd-jsonld-missing
+- 名称/类型: 缺 JSON-LD(源表 ID `schema-present`) —— warning · 优先级 low · 输出 WARN(site_audit 现行 `[WARN] schema: 无 JSON-LD`;上游源表:三种载体都没有=fail,只有 microdata/RDFa=warn)
 **这意味(what)**: 页面没有任何 `<script type="application/ld+json">` 结构化数据。
 **为什么(why)**: 结构化数据帮助 Google 理解页面并带来富结果资格;没有证据表明它独立提升 AI 引用(口径见 [geo-evidence.md](../content/geo-evidence.md))。缺信号类:不惩罚,只放弃一层机器可读性,故 low。
-**触发(trigger)**: DOM 无 ld+json script 节点即 warn(microdata/RDFa 载体是否豁免[待核:源表按 JSON-LD 判])。
+**触发(trigger)**: 上游:无 JSON-LD、microdata、RDFa(`typeof`)任一即 fail;只有后两者 warn;Open Graph 不算。site_audit 只数 `ld+json` 节点,无则 warn。
 **不修的条件(caveat)**: schema 不(直接)影响排名,然而决定富结果资格,所以一般建议至少配全站级 Organization+页面主类型。但登录墙内页/纯工具页可不配。
 **修复(fix)**: 按页面类型配最小集(全站 Organization,文章 Article,产品 Product——各类型必填见 sd-required-fields 家族);模板化生成,勿手拼 JSON。
 **关联(seealso)**: sd-json-syntax;[schema-templates.md](schema-templates.md)、[validation-guide.md](validation-guide.md)
 
-#### sd-json-syntax [待核 ID]
-- 名称/类型: JSON-LD 语法坏/缺 @type —— issue · 优先级 high · 输出 CRITICAL(语法坏,源表 fail)/WARN(缺 @type,源表 warn)
+#### sd-json-syntax
+- 名称/类型: JSON-LD 语法坏/缺 @type(源表 ID `schema-valid`、`schema-type`) —— issue · 优先级 high · 输出 CRITICAL/WARN(源表现行:部分块坏或缺 @type=warn,全部坏或全缺=fail)
 **这意味(what)**: ld+json 内容不是合法 JSON(尾逗号/单引号/未转义引号),或解析成功但缺 @type。
-**为什么(why)**: 语法坏时整块被静默丢弃——写了等于没写,且多数 CMS 不报错,坏块能潜伏数月;缺 @type 则引擎无法路由到任何类型校验,注解同样悬空。这是"坏信号"档:存在但残缺比没有更隐蔽,语法坏判 fail。
-**触发(trigger)**: 1) JSON.parse 失败即 fail;2) 解析成功但顶层无 @type 即 warn。
+**为什么(why)**: 语法坏的块无法被解析,等于没写,且多数 CMS 不报错,坏块能潜伏数月;缺 @type 则引擎无法路由到任何类型校验,注解同样悬空。这是"坏信号"档:存在但残缺比没有更隐蔽,语法坏判 fail。
+**触发(trigger)**: 1) 每个 ld+json 块做 JSON.parse:部分失败 warn、全部失败 fail;2) 解析成功但无 @type:部分缺 warn、全缺 fail。
 **不修的条件(caveat)**: 语法错误不产生负面排名信号(只是白写),然而它是静默失效——没有任何报错渠道,所以一般建议 CI 里对全部 ld+json 做 JSON.parse 断言;修复本身无豁免。
 **修复(fix)**: 用 JSON.stringify 生成而非手写模板拼接;补 @type;上线前过 Rich Results Test 类校验器。
 **关联(seealso)**: sd-jsonld-missing、sd-required-fields;[validation-guide.md](validation-guide.md)
 
 #### sd-required-fields [待核 ID]
-- 名称/类型: 类型必填字段家族 —— issue/warning · 优先级 high(fail 档)/low(warn 档) · 输出 CRITICAL/WARN(源表:通用=warn;Product 缺 offers 与 FAQPage 缺结构=fail)
-**这意味(what)**: 已部署的 schema 缺该类型的必填字段。源表口径照抄(工具约定,宽于 Google:Google 的 Article 与 Organization 没有必填属性,LocalBusiness 只要求 name 与 address,[Article](https://developers.google.com/search/docs/appearance/structured-data/article)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)、[LocalBusiness](https://developers.google.com/search/docs/appearance/structured-data/local-business)):Article 须 headline/author/datePublished/image;LocalBusiness 须 name/address/telephone/geo;Organization 须 name/logo/sameAs;Review 须 itemReviewed/author/reviewRating;VideoObject 须 name/thumbnailUrl/uploadDate(时长 ISO 8601 如 PT1M30S);Product 须 offers(price/priceCurrency/availability)=**fail**;FAQPage 每个 Question 须 name+acceptedAnswer.text=**fail**。
-**为什么(why)**: 富结果与实体理解按"类型+必填"判资格:缺字段=该类型功能整体失效(Product 无 offers 则无价格类资格)。Product/FAQPage 判 fail 是"半残标记比缺失更浪费"的取舍。**注意 FAQPage 在此仅是对既有标记的结构校验**——FAQPage 富结果 2026-05-07 起全站停展,不要为 SERP 展示新增这类标记,真问答页用 QAPage(口径见 [deprecated-signals.md](deprecated-signals.md) 第一节)。
-**触发(trigger)**: 按类型逐字段断言(清单照抄源表);缺任一必填:Product/FAQPage 走 fail 档,其余 warn 档。
+- 名称/类型: 类型必填字段家族(源表 ID `schema-required-fields`、`schema-article`、`schema-faq`、`schema-product` 等) —— issue/warning · 优先级 high(fail 档)/low(warn 档) · 输出 CRITICAL/WARN(源表现行:缺必填=fail,缺推荐=warn)
+**这意味(what)**: 已部署的 schema 缺该类型的必填字段。源表口径照抄(工具约定,宽于 Google:Google 的 Article 与 Organization 没有必填属性,LocalBusiness 只要求 name 与 address,[Article](https://developers.google.com/search/docs/appearance/structured-data/article)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)、[LocalBusiness](https://developers.google.com/search/docs/appearance/structured-data/local-business)):Article 必填 headline/author/datePublished(缺则 fail),推荐 image/publisher/dateModified/description/mainEntityOfPage(缺则 warn);LocalBusiness 须 name/address/telephone/geo;Organization 须 name/logo/sameAs;Review 须 itemReviewed/author/reviewRating;VideoObject 须 name/thumbnailUrl/uploadDate(时长 ISO 8601 如 PT1M30S);Product 须 offers(price/priceCurrency/availability);FAQPage 每个 Question 须 name+acceptedAnswer.text(`schema-faq` 固定 fail)。
+**为什么(why)**: 富结果与实体理解按"类型+必填"判资格:缺字段=该类型功能整体失效(Product 无 offers 则无价格类资格)。缺必填判 fail 是"半残标记比缺失更浪费"的取舍。**注意 FAQPage 在此仅是对既有标记的结构校验**——Google 的 FAQ 富结果自 2026-05-07 起不再展示,相应文档已于 2026-06-15 删除([更新日志](https://developers.google.com/search/updates),核对 2026-10-21);不要为 SERP 展示新增这类标记,真问答页用 QAPage(口径见 [deprecated-signals.md](deprecated-signals.md) 第一节)。
+**触发(trigger)**: 按类型逐字段断言(清单照抄源表);缺必填走 fail 档,缺推荐走 warn 档。
 **不修的条件(caveat)**: 缺必填不惩罚,然而该类型的机器理解整体落空,所以一般建议补齐或删类型。但 Organization 的 sameAs 在社交资产确实少时可先上子集、后补字段。
 **修复(fix)**: 对照 [schema-templates.md](schema-templates.md) 每类型最小集补齐;数据源缺字段时模板应跳过该类型而非输出空壳。
 **关联(seealso)**: sd-json-syntax;[schema-templates.md](schema-templates.md)、[entity-signal-checklist.md](entity-signal-checklist.md)
 
-#### sd-breadcrumblist [待核 ID]
-- 名称/类型: BreadcrumbList —— opportunity · 优先级 low · 输出 INFO(源表 info;非首页,≥2 个 itemListElement)
+#### sd-breadcrumblist
+- 名称/类型: BreadcrumbList(源表 ID `schema-breadcrumb`) —— opportunity · 优先级 low · 输出 WARN(源表现行 warn;非首页,≥2 个 itemListElement,JSON-LD、RDFa、microdata 均可)
 **这意味(what)**: 非首页页面缺 BreadcrumbList,或已有但 itemListElement <2 个。
-**为什么(why)**: 面包屑 schema 让桌面结果以层级路径替代裸 URL;2025-01-23 起移动结果不再显示面包屑,只显示域名,标记仍受支持([公告](https://developers.google.com/search/blog/2025/01/simplifying-breadcrumbs))。它也是站内层级的机器可读声明。源表给 info:纯增益项,缺了不扣分——两轴哲学里典型的 opportunity。
-**触发(trigger)**: 1) 非首页无 BreadcrumbList 即 info;2) 有但 itemListElement <2 即 info;首页不需要面包屑。
+**为什么(why)**: 面包屑 schema 让桌面结果以层级路径替代裸 URL;2025-01-23 起移动结果不再显示面包屑,只显示域名,桌面仍支持该标记([公告](https://developers.google.com/search/blog/2025/01/simplifying-breadcrumbs))。它也是站内层级的机器可读声明。缺了不影响排名,本套件把它当 opportunity 排低优先级。
+**触发(trigger)**: 1) 非首页无 BreadcrumbList 即 warn;2) 有但 itemListElement <2 即 warn;首页不需要面包屑。
 **不修的条件(caveat)**: 面包屑 schema 不影响排名,然而影响 SERP 展示形态,所以一般建议有真实面包屑 UI 的页面配同源 schema。但扁平站(全站一层)没有层级可表达,硬造两级反而是错。
 **修复(fix)**: 面包屑 UI 与 schema 用同一数据源生成;每级 name 与目标页 title 呼应;末级指当前页。
 **关联(seealso)**: sd-required-fields;[schema-templates.md](schema-templates.md)
 
-#### sd-searchaction [待核 ID]
-- 名称/类型: WebSite SearchAction —— opportunity · 优先级 insight · 输出 INFO(源表 info;target 须含 {search_term_string})
+#### sd-searchaction
+- 名称/类型: WebSite SearchAction(源表 ID `schema-website-search`) —— opportunity · 优先级 insight · 输出 WARN(源表现行 warn、权重 8;target 须含 {search_term_string})
 **这意味(what)**: 站点缺 WebSite+SearchAction 标记,或 potentialAction 的 target 模板没含字面 {search_term_string} 占位符。
-**为什么(why)**: Google 已于 2024-11-21 起在全球移除 sitelinks 搜索框;现存标记不报错、无需删除;WebSite 结构化数据仍用于站点名称([公告](https://developers.google.com/search/blog/2024/10/sitelinks-search-box))。本条只剩标记卫生意义,源表现行仍按 warn 计分。
-**触发(trigger)**: WebSite 类型的 potentialAction target URL 模板须含字面 {search_term_string};缺失或占位符变形即 info。
+**为什么(why)**: Google 自 2024-11-21 起在全球移除 sitelinks 搜索框;现存标记不报错、无需删除;WebSite 结构化数据仍用于站点名称([公告](https://developers.google.com/search/blog/2024/10/sitelinks-search-box),核对 2026-10-21)。本条只剩标记卫生意义,上游仍按 warn 计分,本套件排最低优先级。
+**触发(trigger)**: WebSite 类型的 potentialAction target URL 模板须含字面 {search_term_string};缺失或占位符变形即 warn(上游)。
 **不修的条件(caveat)**: 对 Google 已无展示收益,不必新增;存量标记可留。注意与 url-search-indexed 不矛盾:搜索功能要真实可用,搜索**结果页**要 noindex——一个对用户,一个对索引。
 **修复(fix)**: WebSite schema 配 SearchAction,target 用真实搜索 URL+{search_term_string};搜索结果页模板加 noindex。
 **关联(seealso)**: url-search-indexed;[schema-templates.md](schema-templates.md)
 
-#### sd-entity-reference [待核 ID](entity-id + entity-dangling)
+#### sd-entity-reference [待核 ID](源表 ID `schema-entity-id` + `schema-entity-dangling`)
 - 名称/类型: 实体引用完整性(@id 形态+悬空引用) —— issue/warning · 优先级 high · 输出 WARN(源表:entity-id @id 绝对;entity-dangling: publisher/author/isPartOf 的 @id 须在爬取中声明;档位未单列[待核])
 **这意味(what)**: 实体的 @id 不是绝对 URL,或页面引用的实体 @id(publisher/author/isPartOf)在整站爬取中从未被任何页面声明——悬空引用。
 **为什么(why)**: @id 是实体图的节点主键:绝对 URL 形态让它可跨页跨源稳定合并;悬空引用(指了没人声明的 @id)让 author/publisher 连不上具体 Person/Organization,实体消歧退回按名字猜——同名不同人就此混淆。六查的一号位:id 体系错,后面五查全部失真。
@@ -1381,7 +1383,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: @id 用站内稳定绝对 URL(https://site/#organization);声明与引用两侧用同一模板变量;人/组织实体挂 Wikidata sameAs 作外部锚。
 **关联(seealso)**: sd-entity-consistency、eeat-author-expertise;[entity-signal-checklist.md](entity-signal-checklist.md)
 
-#### sd-entity-consistency [待核 ID](entity-conflict + entity-type-drift + entity-split)
+#### sd-entity-consistency [待核 ID](源表 ID `schema-entity-conflict` + `schema-entity-type-drift` + `schema-entity-split`)
 - 名称/类型: 实体一致性(conflict/type-drift/split) —— issue/warning · 优先级 high · 输出 WARN/CRITICAL(源表:entity-conflict 一 @id 两 logo/两电话;entity-type-drift 同 @id 跨页同 @type;entity-split 同名组织不挂两 @id;分档未单列[待核];仅 crawl 模式)
 **这意味(what)**: 同一实体在站内自相矛盾:一个 @id 挂两个 logo/两个电话(conflict);同 @id 在不同页面是不同 @type——组织页是 Organization、文章页变 Person(type-drift);同名组织拆成两个 @id(split)。
 **为什么(why)**: 实体图的全部价值取决于一致性:引擎按 @id 合并属性,冲突值要么随机取一要么降低实体置信度;type 漂移让节点身份不稳;split 把同一组织的信任信号(外链/评价/资质)摊薄到两个幽灵实体。三条是同一病(模板各自为政)的三张化验单,与 eeat-nap-consistency 的可见层判定互为表里。
@@ -1390,10 +1392,10 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: Organization/Person 属性单一数据源(CMS 站点信息表)全站注入;@type 与 @id 定死在模板常量;品牌子体用独立 name+独立 @id。
 **关联(seealso)**: sd-entity-reference、eeat-nap-consistency、sd-rating-scope;[entity-signal-checklist.md](entity-signal-checklist.md)
 
-#### sd-rating-scope [待核 ID](rating-scope)
+#### sd-rating-scope [待核 ID](源表 ID `schema-rating-scope`)
 - 名称/类型: 评分作用域错配 —— issue · 优先级 high · 输出 CRITICAL/WARN(源表:AggregateRating 不在 legal/account URL 且 ratingValue 可见;分档未单列[待核])
 **这意味(what)**: AggregateRating 挂错了地方:出现在法律页/账户页等无评分语境的 URL,或 schema 声明了 ratingValue 但页面渲染后看不见对应评分(暗评)。
-**为什么(why)**: 评分是本地/电商富结果与实体信任的硬信号,也是结构化数据滥用重灾区:对"看不见的评分"(schema 有、页面无),Google 要求不标记页面上看不到的内容;结构化数据人工处置会让页面失去富结果资格,但不影响网页排名([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies));legal/account URL 上的评分则是全站 footer schema 带评分类的模板泄漏。两轴口径:主动错配(评分挂错页/暗评)是坏信号,排 high。
+**为什么(why)**: 评分是本地/电商富结果与实体信任的硬信号,也是结构化数据滥用重灾区:对"看不见的评分"(schema 有、页面无),Google 要求不标记页面上看不到的内容;结构化数据人工处置会让页面失去富结果资格,不影响该页在网页搜索里的排名([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies),核对 2026-10-21);legal/account URL 上的评分则是全站 footer schema 带评分类的模板泄漏。两轴口径:主动错配(评分挂错页/暗评)是坏信号,排 high。
 **触发(trigger)**: 1) URL 属 legal/account 类(路径词表[待核])却含 AggregateRating 即触发;2) 有 ratingValue 声明但渲染后页面无可见评分文本/星标即触发(可见性判定口径[待核])。
 **不修的条件(caveat)**: 站点级 AggregateRating(组织整体评分)在首页/关于页展示可见即可;Review/AggregateRating 分层数据必须真实——刷出来的评分是负信号不是增益。
 **修复(fix)**: 评分 schema 只挂在有可见评分的产品/店铺页;数据源接真实评价系统;legal/account 模板剥离评分块;资格用富结果测试类工具复验。
@@ -1401,7 +1403,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 
 ### Content(27 条,权重 5%)
 
-词数 **≥300 过/100-299 警/<100 败**(文章建议 500+,长文 1000+);Flesch-Kincaid **60-70** 最优(源表说法);关键词堆砌=warn/fail;标题层级不跳(H1→H3=invalid);**标题 <3 字符或 >100 字符=警**;页内标题重复=warn;text/HTML 比=warn;title 与 H1 相同=warn;**title 像素宽 ≤~580px、description ≤~920px**(工具约定;Google 无固定上限,按设备宽度截断);title=description 全同=warn;meta 在 body 里=fail;MIME=warn/fail;**crawl 专属**:duplicate-description/duplicate-exact(=fail)/duplicate-near/duplicate-h1(跨页同 H1)/thin-vs-site(**<同类页中位词数一半=警**,需 ≥4 个同类页)/title-pattern(标题未带全站 ≥60% 使用的后缀=警);`content-mojibake`(UTF-8 被按 Latin-1/Windows-1252 解码,如 `â€™`=fail);`content-unrendered-markup`(code/pre 外的字面 Markdown `**bold**`=warn);`content-placeholder-text`(**`{{ }}`/`{% %}`/`<% %>`/`[object Object]`=fail;TODO:/FIXME:=warn**;`content-stale-copyright`(页脚版权年落后当年=warn,区间取末年);`content-date-agreement`(datePublished/time datetime//20xx/ 路径三年份不一致=warn,dateModified 不比);`content-hidden-text`(**≥80 字符**被内联样式隐藏(display:none/visibility:hidden/font-size:0/大负 text-indent/opacity:0)=warn,nav/对话框/sr-only 豁免,仅样式表隐藏不判);`content-broken-html`/`content-meta-in-body`。
+词数 **≥300 过/100-299 警/<100 败**(上游建议标准页 500+、文章 1000+,Google 没有字数要求);Flesch-Kincaid **60-70** 最优(源表说法,`content-reading-level`);关键词堆砌=warn;标题层级不跳(H1→H3=invalid,warn/fail);**标题 <10 字符或 >70 字符=warn**(`content-heading-length`;旧快照写 3/100,已作废);页内标题重复=warn;text/HTML 比=warn/fail;title 与 H1 相同=warn;**title 像素宽 ≤~580px、description ≤~920px**(工具约定;Google 无固定上限,按设备宽度截断);title=description 全同=warn;meta 在 body 里=fail;MIME=warn/fail;**crawl 专属**:duplicate-description/duplicate-exact(=fail)/duplicate-near/duplicate-h1(跨页同 H1)/thin-vs-site(**<同类页中位词数一半=警**,需 ≥4 个同类页)/title-pattern(标题未带全站 ≥60% 使用的后缀=警);`content-mojibake`(UTF-8 被按 Latin-1/Windows-1252 解码,如 `â€™`=fail);`content-unrendered-markup`(code/pre 外的字面 Markdown `**bold**`=warn);`content-placeholder-text`(**`{{ }}`/`{% %}`/`<% %>`/`[object Object]`=fail;TODO:/FIXME:=warn**;`content-stale-copyright`(页脚版权年落后当年=warn,区间取末年);`content-date-agreement`(datePublished/time datetime//20xx/ 路径三年份不一致=warn,dateModified 不比);`content-hidden-text`(**≥80 字符**被内联样式隐藏(display:none/visibility:hidden/font-size:0/大负 text-indent/opacity:0)=warn,nav/对话框/sr-only 豁免,仅样式表隐藏不判);`content-broken-html`/`content-meta-in-body`。
 
 **解释层(15 条;ID 未公布原文,标 [待核])**
 
@@ -1422,7 +1424,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联**: content-duplicate-exact;[programmatic-seo-gates.md](programmatic-seo-gates.md)
 
 #### content-duplicate-description ⛏
-- 源表:warn/fail · 权重 5。重复或不足 50 字符的 description=warn(需 `--crawl`);缺失=fail(任何审计)。工具约定。建议优先级 low。
+- 源表:warn/fail · 权重 5。重复或不足 50 字符的 description=warn(需 `--crawl`);缺失=fail(任何审计;site_audit 对缺 description 记 WARN,因为 Google 不要求必须有)。工具约定。建议优先级 low。
 **依据**: 全站相同或相似的 description 对用户没有帮助;无暇逐页写时先保核心页,大站可程序化生成([snippet 文档](https://developers.google.com/search/docs/appearance/snippet))。description 不是排名因素。核对 2026-10-18。
 **判据**: 通过=可索引页 description 各不相同。失败=模板级重复(零星几页可排后)。
 **执行**: `while read u; do curl -s "$u" | grep -oiE '<meta[^>]+name=.?description[^>]*>'; done < urls.txt | sort | uniq -c | sort -rn | awk '$1>1'`。
@@ -1437,35 +1439,35 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复**: h1 带页面级变量;真重复页合并。
 **关联**: core-h1-present、content-duplicate-exact
 
-#### content-word-count [待核 ID]
+#### content-word-count
 - 名称/类型: 词数 —— warning · 优先级 low · 输出 WARN(100-299)/CRITICAL(<100)(源表:≥300 过/100-299 警/<100 败;文章建议 500+,长文 1000+)
 **这意味(what)**: 页面主内容词数不足:100-299 词 warn,<100 词 fail 档(文章类建议 500+、长文 1000+ 为参考线不扣分[待核])。
-**为什么(why)**: 词数不是排名因素,是"页面有没有内容"的粗代理:<100 词几乎必然是空壳/占位/极薄页,才配 fail 档。质量口径见 [scoring-rubric.md](scoring-rubric.md) "不作为扣分依据"——**不要机械灌字数到 300**。
-**触发(trigger)**: 主内容区(剥导航/页脚/广告)文本词数:<100 → fail 档;100-299 → warn;≥300 过。
+**为什么(why)**: Google 说它没有偏好的字数("Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)",[有用内容文档](https://developers.google.com/search/docs/fundamentals/creating-helpful-content),核对 2026-10-21)。词数只是"页面有没有内容"的粗代理:<100 词几乎必然是空壳/占位/极薄页,才配 fail 档;site_audit 的词数线是 <200 记 `[WARN] content`(本套件口径,另按 CJK/泰文/天城文感知计数)。质量口径见 [scoring-rubric.md](scoring-rubric.md) "不作为扣分依据"——**不要机械灌字数到 300**。
+**触发(trigger)**: 主内容区(剥导航/页脚/广告)文本词数:<100 → fail 档;100-299 → warn;≥300 过。站内实跑用 `AUDIT URL`(<200 词 warn,不剥导航,仅剥 script/style)。
 **不修的条件(caveat)**: 词数不(直接)影响 SEO,然而它是薄内容检测的第一道症状指标,所以一般建议主内容 ≥300 词。但联系页/工具页/表单页天然短,按页面类型豁免。
 **修复(fix)**: 薄页补实质内容(回答/示例/数据)或并入父页;程序化薄页过 [programmatic-seo-gates.md](programmatic-seo-gates.md) 门槛;别注水。
 **关联(seealso)**: content-keyword-stuffing、content-duplicate-near;[scoring-rubric.md](scoring-rubric.md)
 
-#### content-keyword-stuffing [待核 ID]
-- 名称/类型: 关键词堆砌 —— issue · 优先级 high · 输出 CRITICAL/WARN 分型(源表 warn/fail;分型阈值源表未公布[待核])
+#### content-keyword-stuffing
+- 名称/类型: 关键词堆砌 —— issue · 优先级 high · 输出 WARN(源表现行 warn、权重 5;密度阈值源表未公布)
 **这意味(what)**: 页面文本/alt/meta 里同一关键词的密度与重复超出自然语言频率。
-**为什么(why)**: 关键词堆砌违反 Google 垃圾政策,例子包括罗列城市名、不自然地重复同一词组([垃圾政策](https://developers.google.com/search/docs/essentials/spam-policies))。判 warn 还是 fail 按程度分型(阈值未公布)。
+**为什么(why)**: 关键词堆砌违反 Google 垃圾政策,例子包括罗列要排名的城市和地区、不自然地重复同一词组([垃圾政策](https://developers.google.com/search/docs/essentials/spam-policies),核对 2026-10-21)。工具判定的密度阈值未公布,命中只作人工复查线索。
 **触发(trigger)**: 主文本关键词密度+n-gram 不自然重复检测(密度阈值[待核]);meta/alt 内同词根堆叠另计。
 **不修的条件(caveat)**: 没有公认的安全密度魔法数,机器判堆砌误报不低,所以一般建议命中后人工复查再动文案。但主题集中的专题页关键词命中率高是自然结果,别一见重复就删。
 **修复(fix)**: 用同义词/实体变体分散表达;每段回答一个问题;alt/title 里的堆叠优先清。
 **关联(seealso)**: content-hidden-text、content-word-count;[scoring-rubric.md](scoring-rubric.md)
 
 #### content-heading-family [待核 ID]
-- 名称/类型: 标题结构家族 —— warning · 优先级 low · 输出 WARN(源表:层级跳级 H1→H3=invalid;标题 <3 字符或 >100 字符=警;页内标题重复=warn)
-**这意味(what)**: 页内标题树有问题:层级跳级(H1 直接 H3)、标题过短(<3 字符)或过长(>100 字符)、同页重复标题文本。
-**为什么(why)**: 标题树是引擎与屏幕阅读器共用的内容骨架:跳级让语义树断裂(SR 按级别导航会迷路),过长标题是段落伪装,页内重复让章节失去区分度。单项影响都轻,合并看是内容结构质量分。
-**触发(trigger)**: 1) 相邻标题级别差 >1 即 invalid;2) 标题文本 <3 或 >100 字符即警;3) 同页两标题文本相同即 warn。
+- 名称/类型: 标题结构家族(源表 ID `content-heading-hierarchy`、`content-heading-length`、`content-heading-unique`) —— warning · 优先级 low · 输出 WARN(源表现行:层级跳级 H1→H3=invalid;标题 <10 字符或 >70 字符=warn;页内标题重复=warn)
+**这意味(what)**: 页内标题树有问题:层级跳级(H1 直接 H3)、标题过短(<10 字符)或过长(>70 字符)、同页重复标题文本。
+**为什么(why)**: Google 说标题的数量与顺序对搜索没有影响("Number and order of headings",[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide),核对 2026-10-21);层级对屏幕阅读器导航有用,Bing 另要求层级有逻辑。这一族是无障碍与内容结构项,不是 Google 排名规则。site_audit 的对应项:`[WARN] headings: 跳级 hN→hM`。
+**触发(trigger)**: 1) 相邻标题级别差 >1 即 invalid;2) 标题文本 <10 或 >70 字符即警(源表现行);3) 同页两标题文本相同即 warn。
 **不修的条件(caveat)**: 标题结构不(直接)影响排名,然而影响无障碍与 AI 摘要的章节切分,所以一般建议树形规范。但设计系统组件自带级别(卡片 H3 出现在 H1 区)造成的"跳级"是工程取舍,可按组件规则豁免。
 **修复(fix)**: 模板按语义排 H1→H2→H3;标题写"这节说什么";组件标题级别参数化。
 **关联(seealso)**: core-h1-present、content-agreement;[semantic-html.md](semantic-html.md)
 
 #### content-agreement [待核 ID]
-- 名称/类型: 元素一致性家族 —— warning · 优先级 low · 输出 WARN(源表:title 与 H1 相同=warn;title=description 全同=warn;content-date-agreement 三年份不一致=warn,dateModified 不比)
+- 名称/类型: 元素一致性家族(源表 ID `content-title-same-as-h1`、`content-title-same-as-description`、`content-date-agreement`,像素宽度线 `content-title-pixel-width`/`content-description-pixel-width`) —— warning · 优先级 low · 输出 WARN(源表:title 与 H1 相同=warn;title=description 全同=warn;content-date-agreement 三年份不一致=warn,dateModified 不比)
 **这意味(what)**: 本该各司其职的信号互相雷同或矛盾:title 与 H1 完全相同;title 与 description 全同;页面三处年份(datePublished/`<time>` datetime/路径 /20xx/)互不一致。
 **为什么(why)**: title 是 SERP 行、H1 是页内主题、description 是摘要候选——雷同等于放弃两层独立表达;年份不一致则对引擎发出矛盾的新鲜度信号。dateModified 不参与比对(更新时间晚于发布是常态)。均为轻档:单页雷同无实质影响,批量模板雷同才是病。
 **触发(trigger)**: 1) 归一化后 title==H1 即 warn;2) title==description 即 warn;3) 三处年份取值 ≥2 个不同即 warn。
@@ -1473,7 +1475,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: 三字段分模板变量;日期单一来源(CMS updated_at)注入全部位置;像素口径(title ≤~580px/description ≤~920px)见本节表。
 **关联(seealso)**: core-title-present、core-h1-present、content-heading-family;[head-elements.md](head-elements.md)
 
-#### content-hidden-text [待核 ID]
+#### content-hidden-text
 - 名称/类型: 隐藏文本 —— issue · 优先级 high · 输出 WARN(源表 warn;≥80 字符被内联样式隐藏)
 **这意味(what)**: ≥80 字符的文本被**内联样式**隐藏(display:none/visibility:hidden/font-size:0/大负 text-indent/opacity:0)。
 **为什么(why)**: 为操纵排名而隐藏文本违反 Google 垃圾政策(字号或透明度设 0、移出屏幕等);折叠、选项卡等动态显示内容不违规([垃圾政策](https://developers.google.com/search/docs/essentials/spam-policies))。源表三个精准边界:只判内联样式(样式表隐藏可能是响应式规则,不判);≥80 字符(短文本隐藏多为 UI 状态);nav/对话框/sr-only 豁免(sr-only 是无障碍正确做法)。
@@ -1483,7 +1485,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: content-keyword-stuffing;[semantic-html.md](semantic-html.md)
 
 #### content-deploy-hygiene [待核 ID]
-- 名称/类型: 部署卫生家族 —— issue · 优先级 high · 输出 CRITICAL/WARN(源表:占位符 {{ }}/{% %}/<% %>/[object Object]=fail,TODO:/FIXME:=warn;mojibake=fail;code/pre 外字面 Markdown=warn;页脚版权年落后=warn,区间取末年)
+- 名称/类型: 部署卫生家族(源表 ID `content-placeholder-text`、`content-mojibake`、`content-unrendered-markup`、`content-stale-copyright`) —— issue · 优先级 high · 输出 CRITICAL/WARN(源表:占位符 {{ }}/{% %}/<% %>/[object Object]=fail,TODO:/FIXME:=warn;mojibake=fail;code/pre 外字面 Markdown=warn;页脚版权年落后=warn,区间取末年)
 **这意味(what)**: 渲染管道事故漏进生产:未渲染占位符(fail 档)、TODO:/FIXME: 残留(warn)、乱码 mojibake——UTF-8 被按 Latin-1/Windows-1252 解码,如 `â€™`(fail 档)、code/pre 外的字面 Markdown `**bold**`(warn)、页脚版权年落后当年(warn,年份区间取末年)。
 **为什么(why)**: 每项都是"管道坏了"的直接证据:占位符=模板引擎没跑或变量没注入;乱码=编码声明与实际字节不符;字面 Markdown=静态生成器漏处理。对用户是可见破损(信任度),对引擎是无意义文本;fail 档两项意味着页面实质坏死。
 **触发(trigger)**: 正则扫主内容:占位符模式 → fail 档;TODO:/FIXME: → warn;mojibake 特征序列(â€™/Ã© 族)→ fail;code/pre 外 `**…**`/行首 # → warn;版权年 < 当年 → warn。
@@ -1491,8 +1493,8 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: CI 加渲染产物断言(无占位符/无 mojibake);charset 声明与实际编码统一为 UTF-8;版权年由服务器时间动态输出。
 **关联(seealso)**: content-word-count、sd-json-syntax(同为"静默失效"家族);[validation-guide.md](validation-guide.md)
 
-#### content-text-html-ratio [待核 ID]
-- 名称/类型: 文本/HTML 比 —— warning · 优先级 low · 输出 WARN(源表 warn;阈值源表未公布[待核])
+#### content-text-html-ratio
+- 名称/类型: 文本/HTML 比 —— warning · 优先级 low · 输出 WARN/CRITICAL(源表现行 warn/fail、权重 7;阈值源表未公布)
 **这意味(what)**: 页面可见文本量与 HTML 标记量的比值过低。
 **为什么(why)**: 低比值是"标记-heavy"的粗代理:内联样式/深层嵌套容器/隐藏 DOM 把标记撑大,正文被稀释——引擎要剥壳取肉,移动端要为壳付流量。它从来不是排名因素,是内容密度的症状指标;真正的病(多余嵌套/内联属性)由它暴露。
 **触发(trigger)**: 渲染后可见文本字符数 ÷ HTML 总字符数,低于阈值即 warn(具体比值[待核:源表未公布])。
@@ -1500,8 +1502,8 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: 内联样式剥离到样式表;组件嵌套扁平化;隐藏 DOM 按需挂载;SSR 输出真实内容。
 **关联(seealso)**: perf-dom-size、content-word-count;[scoring-rubric.md](scoring-rubric.md)
 
-#### content-readability [待核 ID]
-- 名称/类型: 可读性 —— warning · 优先级 low · 输出 WARN(源表 warn;Flesch-Kincaid **60-70** 最优)
+#### content-readability
+- 名称/类型: 可读性(源表 ID `content-reading-level`) —— warning · 优先级 low · 输出 WARN(源表 warn;Flesch-Kincaid **60-70** 最优)
 **这意味(what)**: 正文可读性得分偏离 60-70 建议区(Flesch-Kincaid 口径)。
 **为什么(why)**: 60-70 是源表给的最优区间(工具约定);可读性不是 Google 排名因素。英文公式不适用于中文,得分只作同类页横向对比。
 **触发(trigger)**: 主内容文本计算 Flesch-Kincaid 读易分;<60 或 >70 即 warn(中文近似的口径[待核])。
@@ -1509,7 +1511,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: 长句拆短(一句一个意思);术语首次出现给解释;段落 ≤4 行;中英混排统一标点口径。
 **关联(seealso)**: content-word-count、content-heading-family;[scoring-rubric.md](scoring-rubric.md)
 
-#### content-thin-vs-site [待核 ID]
+#### content-thin-vs-site
 - 名称/类型: 相对站内同类过薄 —— warning · 优先级 medium · 输出 WARN(源表 warn;crawl 模式;**<同类页中位词数一半=警,需 ≥4 个同类页**)
 **这意味(what)**: crawl 全站后,该页词数不足同模板/同类页面中位数的一半(同类页 ≥4 个才可判)。
 **为什么(why)**: 绝对词数阈值(content-word-count)对工具页/长文页一刀切失真;相对口径按同类校准——同是产品详情页,别家中位 800 词你 200 词,薄就是同维度可比的薄。≥4 个同类页的门槛保证中位数有统计意义,不足则不判(缺数据不等于缺内容)。
@@ -1518,8 +1520,8 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **修复(fix)**: 查模板空字段(无描述的产品页);补齐结构化内容模块;确实无话可说的页并入父级或 410。
 **关联(seealso)**: content-word-count、content-duplicate-near;[programmatic-seo-gates.md](programmatic-seo-gates.md)
 
-#### content-title-pattern [待核 ID]
-- 名称/类型: 标题模式偏离 —— warning · 优先级 low · 输出 WARN(源表 warn;crawl 模式;标题未带全站 ≥60% 使用的后缀=警)
+#### content-title-pattern
+- 名称/类型: 标题模式偏离(源表 ID `content-title-pattern`) —— warning · 优先级 low · 输出 WARN(源表 warn;crawl 模式,≥4 页;标题未以至少 60% 标题所用的后缀结尾=警,标题恰为品牌名则通过)
 **这意味(what)**: crawl 全站后,该页 title 不带全站 ≥60% 页面都在用的标题后缀(品牌后缀/站名)。
 **为什么(why)**: 品牌后缀一致性是模板健康与品牌 SERP 露出的双信号:多数页"| Brand"而个别页裸标题,几乎总是模板分支漏拼——SERP 里品牌词忽有忽无,同一站在结果页的视觉一致性碎掉。60% 是"主流模式"判定线:达到它,偏离者才算异常。
 **触发(trigger)**: 1) 全站 title 提取公共后缀(分词对齐);2) 某后缀覆盖率 ≥60%;3) 不带该后缀的页即 warn。
@@ -1528,7 +1530,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: core-title-present、content-agreement、core-title-unique;[scoring-rubric.md](scoring-rubric.md)
 
 #### content-mime-broken [待核 ID]
-- 名称/类型: MIME 与文档破损家族 —— issue/warning · 优先级 high(fail 档)/medium · 输出 CRITICAL/WARN(源表:MIME=warn/fail;meta 在 body 里=fail;content-broken-html)
+- 名称/类型: MIME 与文档破损家族(源表 ID `content-mime-type`、`content-meta-in-body`、`content-broken-html`) —— issue/warning · 优先级 high(fail 档)/medium · 输出 CRITICAL/WARN(源表:MIME=warn/fail;meta 在 body 里=fail;content-broken-html)
 **这意味(what)**: 文档级破损三型:页面 MIME 声明与实际不符(warn/fail 分型[待核]);meta 标签出现在 body 里(fail);HTML 结构破损(关键标签未闭合/非法嵌套)。
 **为什么(why)**: MIME 错让引擎选错解析器(technical-content-type 的内容侧镜像);meta 出现在 body 时解析器容错重组,description/robots/canonical 可能全部失位——与 core-canonical-outside-head 同构的"声明不在有效位置"家族;结构性破损让 DOM 树与源码意图错位,内容提取随之漂移。三型叠加是"同一页面在不同工具里长得不一样"的根因。
 **触发(trigger)**: 1) 响应 Content-Type 与文档实际形态(HTML/XML/文本)不符即 warn/fail;2) meta robots/description/charset 出现在 body 区即 fail;3) 关键标签未闭合/非法嵌套造成解析器重组即破损档。
@@ -1538,41 +1540,41 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 
 ### JavaScript Rendering(16 条,权重 5%)
 
-**raw-vs-rendered 实现要点已吸收于 [rendering-seo.md](rendering-seo.md) 与 [validation-guide.md](validation-guide.md)**(HTTP 抓原始→$;Playwright 二抓→rendered$;web-vitals 库 goto 前注入;INP 合成标记 inpSynthetic 不计分)。规则粒度:title/description/H1/canonical 不在初始 HTML=fail/warn/warn/fail;canonical 或 noindex 在源码与渲染 DOM 间不一致=fail;JS 事后改写 title/description/H1=warn;主内容/内链依赖 JS=warn;JS/CSS 被 robots 挡=warn;SSR 检查=warn/fail;**console 未捕获异常与错误=warn/fail**;**子资源加载失败=warn/fail**;内联脚本用 `document.write()`=warn。
+**raw-vs-rendered 实现要点已吸收于 [rendering-seo.md](rendering-seo.md) 与 [validation-guide.md](validation-guide.md)**(HTTP 抓原始→$;Playwright 二抓→rendered$;web-vitals 库 goto 前注入;INP 合成标记 inpSynthetic 不计分)。规则粒度(上游现行,多数需渲染):渲染后 DOM 里 title/description/H1/canonical 缺失或为空=fail(**JS 注入的元素算通过**);canonical 或 meta robots 的 noindex/nofollow 在源码与渲染 DOM 间不一致=fail(不比较 X-Robots-Tag);JS 事后改写 title/description/H1=warn;`js-rendered-content`(源码正文 <100 字符而渲染后 >500 字符=fail;渲染后文本多于源码 3 倍=warn);`js-rendered-links`(渲染后 `a[href]` 数超过源码 2 倍且多 10 个以上=warn);`js-blocked-resources`(只查同主机 script 是否被 `*` 组 Disallow,不查样式表、不读 Allow)=warn;SSR 检查=warn/fail;**console 未捕获异常=fail、console 错误=warn**;**子资源加载失败=warn/fail**(script/stylesheet/document/fetch/XHR 失败=fail);内联脚本用 `document.write()`=warn。site_audit 无渲染,只有 `rendering` 五项近似检查(CSR 空挂载点、noscript、JS 重量、服务端内容、H1/H2)。
 
 **解释层(4 条;ID 未公布原文的按家族命名法推得并标 [待核];双抓实现见 [rendering-seo.md](rendering-seo.md))**
 
 #### js-initial-html [待核 ID]
-- 名称/类型: 关键注解不在初始 HTML —— issue · 优先级 critical · 输出 CRITICAL(title/canonical,源表 fail)/WARN(description/H1,源表 warn);SSR 检查=warn/fail(分型口径[待核])
-**这意味(what)**: title/canonical 等关键注解不在服务端返回的初始 HTML,要等 JS 渲染才出现(源表分型:title 缺=fail、canonical 缺=fail、description=warn、H1=warn);SSR/SSG 检查同源。
-**为什么(why)**: 初始 HTML 是所有抓取方的公共层:多数 AI 爬虫不执行 JS、社交爬虫不执行、Google 的渲染队列"may stay on this queue for a few seconds, but it can take longer"([JS SEO 文档](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics))——注解只在渲染后 DOM 里,对不渲染的消费者等于不存在。
+- 名称/类型: 关键注解不在初始 HTML(本套件要求;上游对应 `js-rendered-title/description/h1/canonical`、`js-ssr-check`) —— issue · 优先级 critical · 输出 CRITICAL(title/canonical)/WARN(description/H1)
+**这意味(what)**: title/canonical 等关键注解不在服务端返回的初始 HTML,要等 JS 渲染才出现。注意上游 `js-rendered-*` 查的是渲染后 DOM,JS 注入也算通过;「必须在初始 HTML」是本套件更严的口径(原稿把它写成源表分型,已更正)。
+**为什么(why)**: 初始 HTML 是所有抓取方的公共层。Google 的渲染队列"may stay on this queue for a few seconds, but it can take longer"([JS SEO 文档](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics),核对 2026-10-21)。第三方研究(Vercel 与 MERJ,2024-12,样本为 nextjs.org 与两个招聘站的服务器日志):OpenAI、Anthropic、Meta、ByteDance、Perplexity 的爬虫会下载 JS 文件但不执行([文章](https://vercel.com/blog/the-rise-of-the-ai-crawler));该结论是 2024 年底的数据,需定期复测。社交预览抓取器是否执行 JS 本次未核,按「通常不执行」作工程假设。
 **触发(trigger)**: 1) HTTP 抓 raw HTML;2) 检查 title/description/H1/canonical 存在性;3) 缺失再查渲染 DOM——仅渲染后存在即按上列分型触发。
 **不修的条件(caveat)**: Google 终会渲染并读取 JS 注解,然而渲染延迟与非 Google 消费者的缺失是实打实的,所以一般建议 head 注解全部服务端输出。但客户端路由切换时的注解更新另归 js-meta-drift,不属本条。
 **修复(fix)**: 框架切 SSR/SSG 或预渲染;至少 head 层(title/canonical/og)服务端输出;验收标准=raw HTML 即含全部关键注解。
 **关联(seealso)**: js-meta-drift、js-content-dependency;[rendering-seo.md](rendering-seo.md)、[ai-crawler-policy.md](ai-crawler-policy.md)
 
 #### js-meta-drift [待核 ID]
-- 名称/类型: 注解在源码与渲染间漂移 —— issue · 优先级 high · 输出 CRITICAL(canonical/noindex 不一致,源表 fail)/WARN(JS 改写 title/description/H1,源表 warn)
+- 名称/类型: 注解在源码与渲染间漂移(源表 ID `js-canonical-mismatch`、`js-noindex-mismatch`、`js-title-modified`、`js-description-modified`、`js-h1-modified`) —— issue · 优先级 high · 输出 CRITICAL(canonical/noindex 不一致,源表 fail)/WARN(JS 改写 title/description/H1,源表 warn)
 **这意味(what)**: 同一页的 canonical 或 noindex 在 raw HTML 与渲染 DOM 间不一致(如源码 noindex、渲染后被删),或 JS 事后改写 title/description/H1。
-**为什么(why)**: 引擎两阶段抓取(先 raw 后渲染)各记一次注解,不一致时以哪次为准不可控——canonical/noindex 漂移意味着索引决策分裂,故 fail;title 类改写最终值仍会被读到,影响小一档 warn。典型肇因:客户端路由器接管 head 但没与 SSR 输出对齐。
+**为什么(why)**: Google 先抓原始 HTML、再排队渲染([JS SEO 文档](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics));两次读到的 canonical/noindex 不一致时以哪次为准,Google 没有公布,所以按 fail 处理;title 类改写最终值仍会被读到,影响小一档 warn。典型肇因:客户端路由器接管 head 但没与 SSR 输出对齐。
 **触发(trigger)**: 双抓对比:1) canonical/noindex raw ≠ rendered 即 fail;2) title/description/H1 文本被 JS 改写即 warn。
 **不修的条件(caveat)**: 修漂移不改变最终渲染值,然而它消除两阶段解读分裂,所以一般建议注解只写一次且客户端不改。但单页应用路由切换时更新 og 标签属合法客户端更新——本条只看首屏注解的稳定性。
 **修复(fix)**: head 管理收敛到框架 head 组件一处;禁 JS 改写 canonical/noindex;A/B 测试不落在 head 层。
 **关联(seealso)**: js-initial-html;[rendering-seo.md](rendering-seo.md)、[head-elements.md](head-elements.md)
 
 #### js-content-dependency [待核 ID]
-- 名称/类型: 主内容/内链依赖 JS —— warning · 优先级 high · 输出 WARN(源表 warn)
+- 名称/类型: 主内容/内链依赖 JS(源表 ID `js-rendered-content`、`js-rendered-links`) —— warning · 优先级 high · 输出 WARN/CRITICAL(源表 warn/fail)
 **这意味(what)**: 页面主内容或内链只存在于渲染后 DOM,raw HTML 里没有。
 **为什么(why)**: 与 js-initial-html 同因不同层:注解缺失伤元数据,主内容缺失伤实体——AI 引用与社交摘要都取 raw 层,内容不在就等于对它们不存在;内链不在则按 raw 层计算的链接图(发现/权重)漏掉它们(Google 渲染后会计入,多数 AI/社交爬虫不渲染)。JS/CSS 再被 robots 挡住时问题翻倍(见 crawl-blocked-resources)。
-**触发(trigger)**: 1) raw HTML 主内容区为空壳(仅挂载点)即 warn;2) raw 内链数远小于渲染后内链数(比例阈值源表未公布[待核])即 warn。
+**触发(trigger)**: 1) 源码可见文本 <100 字符而渲染后 >500 字符=fail;渲染后文本多于源码 3 倍=warn;2) 渲染后 `a[href]` 数超过源码 2 倍且多 10 个以上=warn。site_audit 近似项:`[WARN] rendering: CSR 疑似…`(空挂载点且纯文本 <200 字或文本/HTML <0.02)。
 **不修的条件(caveat)**: Google 渲染能力成熟,纯 Google 视野下 JS 内容可索引,然而渲染预算与延迟真实存在、AI/社交侧多不渲染,所以一般建议主内容与核心内链服务端输出。但交互后的次级内容(评论区/展开区)客户端加载是正当形态。
 **修复(fix)**: 主内容 SSR;首屏内链进模板;评论区等增强层保留客户端。
 **关联(seealso)**: js-initial-html、crawl-blocked-resources;[rendering-seo.md](rendering-seo.md)
 
 #### js-runtime-hygiene [待核 ID]
-- 名称/类型: 运行时卫生家族 —— issue/warning · 优先级 high(fail 分型)/medium · 输出 CRITICAL/WARN(源表:console 未捕获异常=warn/fail;子资源加载失败=warn/fail;document.write()=warn;分型口径未公布[待核])
+- 名称/类型: 运行时卫生家族(源表 ID `js-console-errors`、`js-failed-requests`、`js-document-write`) —— issue/warning · 优先级 high(fail 分型)/medium · 输出 CRITICAL/WARN(源表现行:未捕获异常=fail、console 错误=warn;script/stylesheet/document/fetch/XHR 加载失败=fail;document.write()=warn)
 **这意味(what)**: 渲染时 console 有未捕获异常/错误、子资源(脚本/样式/图)加载失败,或内联脚本用 document.write()。
-**为什么(why)**: 未捕获异常常中断后续脚本——依赖它的注解注入/内容挂载全部静默失败,是"页面看起来正常但 SEO 层坏死"的头号原因;子资源 4xx/超时拖慢渲染且常是 CDN/版本漂移;document.write 插入的跨站阻塞脚本在 2G 等慢网络下可能被 Chrome 拦截([Chrome](https://developer.chrome.com/blog/removing-document-write))。
+**为什么(why)**: 未捕获异常常中断后续脚本——依赖它的注解注入/内容挂载全部静默失败,是"页面看起来正常但 SEO 层坏死"的头号原因;子资源 4xx/超时拖慢渲染且常是 CDN/版本漂移;document.write 注入的外部脚本在 2G 等慢连接上可能把主内容显示拖慢数十秒,Chrome 为此对其做过拦截干预([Chrome](https://developer.chrome.com/blog/removing-document-write),核对 2026-10-21)。
 **触发(trigger)**: 渲染过程:1) console error/uncaught 非空按分型触发;2) 任一子资源网络失败按分型触发;3) 内联脚本调 document.write 即 warn。
 **不修的条件(caveat)**: console 噪声本身不影响 SEO,然而它标记渲染链路断裂,所以一般建议零未捕获异常再上线。但第三方脚本(广告/统计)抛的错不在你掌控内,归类外部噪声跟踪,不必阻塞发布。
 **修复(fix)**: 异常接错误监控;子资源 404 修路径/版本;document.write 全部换 DOM API 或异步注入。
@@ -1582,12 +1584,14 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 
 对比度 **≥4.5:1 正文/3:1 大字**;触控目标 **≥44×44 CSS px**(源表;出自 WCAG 2.5.5 AAA,AA 级 2.5.8 为 24×24 或留足间距);交互元素须可访问名(aria-label/文本/title);focus 样式可见;表单 label(placeholder 不算);标题不跳级;landmark(main/nav/header/footer);描述性链接文本;skip-to-content 链接;表格 th+scope;视频字幕/文稿;viewport 禁缩放(user-scalable=no/maximum-scale=1)=fail;aria-hidden 包可聚焦元素=fail;**ARIA 角色/属性拼错浏览器静默丢弃(aria-lable→aria-label)=fail**;accesskey 唯一;**ID 重复致 aria-labelledby/label for 解析到第一个匹配=fail(svg 内 url(#id) 引用的 clipPath 豁免)**;空标题=fail;一控件一 label;同文本链接须同目的地;iframe/object 须 title/替代文本;`<input type=image>` 须 alt;**可访问名须含可见文本(语音用户"说所见")**;按钮有名;email/tel 输入配对 autocomplete token;lang 与 xml:lang 一致;html/body 禁 aria-hidden;ARIA widget 须有所需父子角色(tab 在 tablist 内/option 在 listbox 内);列表只含 li;**恰一个 main landmark**;role=none/presentation 不被 ARIA/可聚焦性反证;alt 不重复相邻链接/图注文本;img 角色 SVG 须可访问名;表格用 caption 不用跨列首行;**tabindex 禁正值**;元素级 lang 合法 BCP 47。
 
+**上游现行 ID 与档位(132d2384,核对 2026-10-21)**:fail=`a11y-zoom-disabled`、`a11y-aria-hidden-focusable`、`a11y-aria-valid`、`a11y-empty-heading`、`a11y-iframe-title`、`a11y-input-image-alt`、`a11y-aria-hidden-body`、`a11y-list-structure`、`a11y-object-alt`、`a11y-svg-img-alt`;warn/fail=`a11y-aria-labels`、`a11y-focus-visible`、`a11y-form-labels`、`a11y-heading-order`、`a11y-link-text`、`a11y-table-headers`、`a11y-video-captions`、`a11y-duplicate-id`、`a11y-main-landmark`;warn=其余(`a11y-color-contrast`、`a11y-landmark-regions`、`a11y-skip-link`、`a11y-touch-targets`、`a11y-tabindex-positive`、`a11y-autocomplete` 等)。**`a11y-color-contrast` 现行只是对内联样式颜色的启发式检查,页面没有内联颜色时不测量**,下文 a11y-contrast 的「渲染后算 computed 对比度」是本套件对完整做法的描述,不是上游行为。家族名与上游 ID 的对应:tabindex↔tabindex-positive、aria-hidden↔aria-hidden-focusable、aria-hidden-root↔aria-hidden-body、aria-typo↔aria-valid、accessible-name↔aria-labels、form-label↔form-labels、one-label-per-control↔form-multiple-labels、autocomplete-token↔autocomplete、accesskey↔accesskey-unique、name-contains-visible↔label-name-mismatch、heading-hierarchy↔heading-order、single-main↔main-landmark、landmarks↔landmark-regions、link-consistency↔identical-links-purpose、media-transcripts↔video-captions、svg-name↔svg-img-alt、alt-duplicate↔redundant-alt、aria-parent-child↔aria-required、role-presentation↔presentation-role-conflict、touch-target↔touch-targets、contrast↔color-contrast。
+
 **解释层(32 条,第四批;ID 未公布原文,按家族命名法推得并标 [待核]。归并边界:alt 家族已归 Images 节 images-alt-present 三条、语言码两条已并入 i18n-lang-consistency、viewport 禁缩放已并入 mobile-viewport-config,不重复。why 只写无障碍理由;原"SEO 面"推断(引擎读无障碍树、aria-hidden 影响索引等)无一手出处,已删,仅保留有 Google 文档支持的几句)**
 
 #### a11y-contrast [待核 ID]
-- 名称/类型: 文本对比度不足 —— warning · 优先级 medium · 输出 WARN(源表:≥4.5:1 正文/3:1 大字;档位未单列[待核])
+- 名称/类型: 文本对比度不足 —— warning · 优先级 medium · 输出 WARN(源表:≥4.5:1 正文/3:1 大字;档位见节首对照行)
 **这意味(what)**: 文本与背景的前景/背景对比度低于阈值:正文 <4.5:1,大字(约 ≥18pt/14pt 粗体) <3:1。
-**为什么(why)**: 无障碍:低对比对低视力/老年/强光环境用户直接不可读,4.5:1 是 WCAG 2.1 AA(1.4.3)硬阈值。
+**为什么(why)**: 无障碍:低对比对低视力/老年/强光环境用户直接不可读;WCAG 1.4.3 要求文本对比度至少 4.5:1,大号文本至少 3:1([W3C](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html),核对 2026-10-21)。
 **触发(trigger)**: 渲染后计算文本节点 computed 前景/背景对比度(图片背景的采样口径[待核]):正文 <4.5:1、大字 <3:1 即 warn。
 **不修的条件(caveat)**: 对比度不(直接)影响排名,然而 4.5:1 是可读性工程下限,所以一般建议正文全站达标。但 disabled 态/水印等非必要信息文本豁免;改版走设计系统调 token,别逐页打补丁。
 **修复(fix)**: 设计 token 化色对并预检 ≥4.5:1;灰阶层压进合规区间;CI 对主题色组合跑对比度断言。
@@ -1603,7 +1607,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: mobile-interstitial、mobile-font-size;[mobile-seo.md](mobile-seo.md)
 
 #### a11y-accessible-name [待核 ID]
-- 名称/类型: 交互元素无可访问名 —— warning · 优先级 high · 输出 WARN(源表:aria-label/文本/title;档位未单列[待核])
+- 名称/类型: 交互元素无可访问名 —— warning · 优先级 high · 输出 WARN(源表:aria-label/文本/title;档位见节首对照行)
 **这意味(what)**: 链接/按钮/输入等交互元素没有可访问名(accessible name)——无文本内容、无 aria-label、无 title。
 **为什么(why)**: 无障碍:屏幕阅读器按可访问名朗读控件,无名控件只念"按钮",用户不知道会发生什么;语音控制用户更是无法下指令("点'提交'按钮"落空)。SEO 面唯一有出处的一点:空 `<a>` 时 Google 可用 title 作锚文本,图片链接用 img 的 alt 作锚文本([链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable))。
 **触发(trigger)**: 交互元素(a/button/input/select/textarea)按 accname 算法计算(优先级:aria-labelledby → aria-label → label/alt 等原生标签 → 内容文本 → title,[accname 1.2](https://www.w3.org/TR/accname-1.2/)):结果为空即 warn。
@@ -1621,7 +1625,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-accessible-name、a11y-form-label;[semantic-html.md](semantic-html.md)
 
 #### a11y-name-contains-visible [待核 ID]
-- 名称/类型: 可访问名不含可见文本 —— warning · 优先级 low · 输出 WARN(源表:可访问名须含可见文本,语音用户"说所见";档位未单列[待核])
+- 名称/类型: 可访问名不含可见文本 —— warning · 优先级 low · 输出 WARN(源表:可访问名须含可见文本,语音用户"说所见";档位见节首对照行)
 **这意味(what)**: 元素的可访问名(aria-label/aria-labelledby)与其可见文本不一致——可见写"购买",可访问名却是"加入购物车 submit"。
 **为什么(why)**: 无障碍:语音控制用户"说所见"——对着屏幕念"点击购买"命中不了名为"加入购物车"的按钮;SR 用户听到的与看到的也不同,两套词两套认知。
 **触发(trigger)**: 1) 元素同时有可见文本与 aria-label/aria-labelledby;2) 可访问名归一化后不包含可见文本字符串即 warn(源表"须含"口径,即扩写方向合法、替换方向违例)。
@@ -1630,7 +1634,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-accessible-name、links-anchor-generic;[semantic-html.md](semantic-html.md)
 
 #### a11y-focus-visible [待核 ID]
-- 名称/类型: 焦点样式不可见 —— warning · 优先级 medium · 输出 WARN(源表:focus 样式可见;档位未单列[待核])
+- 名称/类型: 焦点样式不可见 —— warning · 优先级 medium · 输出 WARN(源表:focus 样式可见;档位见节首对照行)
 **这意味(what)**: 可聚焦元素被聚焦时没有任何可见指示——`outline:none` 且无替代 focus 样式。
 **为什么(why)**: 无障碍:键盘用户(运动障碍/高级用户/部分 AT)靠焦点环知道"现在在哪",全局删 outline 等于蒙眼操作。
 **触发(trigger)**: 1) 样式表出现 :focus{outline:none/0} 且无 :focus-visible 替代即触发;2) 渲染后聚焦元素无可感知的指示变化(判定口径[待核])即 warn。
@@ -1639,7 +1643,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-tabindex、links-onclick;[semantic-html.md](semantic-html.md)
 
 #### a11y-tabindex [待核 ID]
-- 名称/类型: 正值 tabindex —— warning · 优先级 medium · 输出 WARN(源表:tabindex 禁正值;档位未单列[待核])
+- 名称/类型: 正值 tabindex —— warning · 优先级 medium · 输出 WARN(源表:tabindex 禁正值;档位见节首对照行)
 **这意味(what)**: 元素带正整数 tabindex(tabindex="1"/"3"),覆盖文档流的自然 Tab 顺序。
 **为什么(why)**: 无障碍:正 tabindex 把焦点顺序钉死在作者想象的顺序上,DOM 变化(插组件/异步内容)后跳转顺序错乱,键盘用户在页面里"瞬移"。
 **触发(trigger)**: 任一元素 tabindex 属性值为正整数即 warn(tabindex=0/-1 合法:0 加入自然序、-1 可编程聚焦)。
@@ -1648,16 +1652,16 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-focus-visible、a11y-aria-parent-child;[semantic-html.md](semantic-html.md)
 
 #### a11y-skip-link [待核 ID]
-- 名称/类型: 缺 skip-to-content 链接 —— warning · 优先级 low · 输出 WARN(源表:skip-to-content 链接;档位未单列[待核])
+- 名称/类型: 缺 skip-to-content 链接 —— warning · 优先级 low · 输出 WARN(源表:skip-to-content 链接;档位见节首对照行)
 **这意味(what)**: 页面没有"跳到主内容"链接——键盘/SR 用户每页都要 Tab 过整条导航才能到正文。
-**为什么(why)**: 无障碍:键盘用户每次换页从页头 Tab 二十几个导航链接,skip 链是 WCAG 2.4.1 的经典达标手段。
+**为什么(why)**: 无障碍:键盘用户每次换页从页头 Tab 二十几个导航链接,skip 链是满足 WCAG 2.4.1 Bypass Blocks 的常见手段([W3C](https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html),核对 2026-10-21)。
 **触发(trigger)**: 页面首部(body 前几个焦点元素)无指向主内容锚点的跳转链接(href="#main"/#content 形态[待核])即 warn。
 **不修的条件(caveat)**: 短导航页(≤5 个链接)的 skip 链价值低,所以一般建议导航项多的模板配。但配了就别 display:none 隐藏——要"聚焦时可见"。
 **修复(fix)**: body 首元素加 `<a href="#main" class="skip-link">跳到主内容</a>`;CSS 默认移出视口、:focus 时归位;与 main landmark 同步(见 a11y-landmarks)。
 **关联(seealso)**: a11y-landmarks、a11y-single-main;[semantic-html.md](semantic-html.md)
 
 #### a11y-accesskey [待核 ID]
-- 名称/类型: accesskey 重复 —— warning · 优先级 low · 输出 WARN(源表:accesskey 唯一;档位未单列[待核])
+- 名称/类型: accesskey 重复 —— warning · 优先级 low · 输出 WARN(源表:accesskey 唯一;档位见节首对照行)
 **这意味(what)**: 多个元素绑定了同一个 accesskey 快捷键。
 **为什么(why)**: 无障碍:重复 accesskey 只有浏览器选中的那个生效,用户记住的快捷键在半数页面失灵;accesskey 还与浏览器/AT 自身快捷键冲突(Alt+字母多被占用),现代最佳实践已弱化它。
 **触发(trigger)**: 全页收集 accesskey 属性值;同一字符出现 ≥2 次即 warn。
@@ -1666,7 +1670,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-duplicate-id、a11y-focus-visible;[semantic-html.md](semantic-html.md)
 
 #### a11y-form-label [待核 ID]
-- 名称/类型: 表单控件无 label —— warning · 优先级 high · 输出 WARN(源表:表单 label,placeholder 不算;档位未单列[待核])
+- 名称/类型: 表单控件无 label —— warning · 优先级 high · 输出 WARN(源表:表单 label,placeholder 不算;档位见节首对照行)
 **这意味(what)**: 表单控件(input/select/textarea)没有关联 label——无 `<label for>`、无 aria-label(ledBy);placeholder 占位文本不算 label。
 **为什么(why)**: 无障碍:SR 对 placeholder 的支持参差,且输入后 placeholder 消失——用户回改时字段名没了;label 的点击命中区同时扩大触控目标。
 **触发(trigger)**: 每个 input(除 hidden/button/submit 等自带语义型[豁免清单待核])/select/textarea 计算 label 关联(for=id 匹配/aria-label/aria-labelledby):结果为空即 warn;placeholder 存在不豁免。
@@ -1675,7 +1679,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-one-label-per-control、a11y-autocomplete-token、a11y-accessible-name;[semantic-html.md](semantic-html.md)
 
 #### a11y-one-label-per-control [待核 ID]
-- 名称/类型: 一控件多 label —— warning · 优先级 low · 输出 WARN(源表:一控件一 label;档位未单列[待核])
+- 名称/类型: 一控件多 label —— warning · 优先级 low · 输出 WARN(源表:一控件一 label;档位见节首对照行)
 **这意味(what)**: 同一表单控件被多个 label 关联(多个 for 指向同一 id,或嵌套 label 与显式 for 并存)。
 **为什么(why)**: 无障碍:多 label 时 AT 读取行为不一(读首个/拼接),用户听到的字段名不可预期。
 **触发(trigger)**: 按 for=id 聚合:任一控件的关联 label 计数 >1 即 warn(嵌套+显式并存的计数口径[待核])。
@@ -1684,7 +1688,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-form-label、a11y-duplicate-id;[semantic-html.md](semantic-html.md)
 
 #### a11y-autocomplete-token [待核 ID]
-- 名称/类型: email/tel 输入缺 autocomplete token —— warning · 优先级 low · 输出 WARN(源表:email/tel 输入配对 autocomplete token;档位未单列[待核])
+- 名称/类型: email/tel 输入缺 autocomplete token —— warning · 优先级 low · 输出 WARN(源表:email/tel 输入配对 autocomplete token;档位见节首对照行)
 **这意味(what)**: type=email 的输入框没配 autocomplete="email",type=tel 没配 autocomplete="tel"。
 **为什么(why)**: 无障碍:autocomplete token 是 AT 与密码管理器/浏览器自动填充的对接协议——正确 token 让运动障碍用户一次完成表单,自编 token(autocomplete="email-address")静默失效。
 **触发(trigger)**: type=email 的 autocomplete 不含 "email"、type=tel 不含 "tel"(精确 token 按 HTML 规范词表[待核:源表按这两个 token 判])即 warn。
@@ -1693,7 +1697,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-form-label;[semantic-html.md](semantic-html.md)
 
 #### a11y-landmarks [待核 ID]
-- 名称/类型: landmark 角色缺失 —— warning · 优先级 medium · 输出 WARN(源表:landmark main/nav/header/footer;档位未单列[待核])
+- 名称/类型: landmark 角色缺失 —— warning · 优先级 medium · 输出 WARN(源表:landmark main/nav/header/footer;档位见节首对照行)
 **这意味(what)**: 页面缺 HTML5 landmark 语义:无 `<main>`/`<nav>`/`<header>`/`<footer>`(或对应 role),整页是 div 沙漠。
 **为什么(why)**: 无障碍:SR 用户靠 landmark 区跳转(到导航/到主内容),无 landmark 只能逐元素线性听。
 **触发(trigger)**: 渲染后解析 landmark 元素(main/nav/header/footer/aside 及对应 role):main 或 nav 计数为 0 即 warn(header/footer 缺失是否同判[待核:footer 常并入分组判定])。
@@ -1702,7 +1706,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-single-main、a11y-skip-link、links-chrome-inbound;[semantic-html.md](semantic-html.md)
 
 #### a11y-single-main [待核 ID]
-- 名称/类型: main landmark 数量错误 —— warning · 优先级 medium · 输出 WARN(源表:恰一个 main landmark;档位未单列[待核])
+- 名称/类型: main landmark 数量错误 —— warning · 优先级 medium · 输出 WARN(源表:恰一个 main landmark;档位见节首对照行)
 **这意味(what)**: 页面的 main landmark 数量 ≠1:零个(缺失面与 a11y-landmarks 重叠)或多个(组件化误用)。
 **为什么(why)**: 无障碍:HTML 规范规定一个文档不得有多于一个未带 hidden 的 main([WHATWG](https://html.spec.whatwg.org/multipage/grouping-content.html));多个 main 时"跳到主内容"的落点不可预期。
 **触发(trigger)**: 渲染后 `<main>`/role=main 计数 0 或 >1 即 warn(0 个已由 a11y-landmarks 报缺失,本条侧重 >1 与计数口径)。
@@ -1738,7 +1742,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: links-anchor-generic、a11y-name-contains-visible;[semantic-html.md](semantic-html.md)
 
 #### a11y-link-consistency [待核 ID]
-- 名称/类型: 同文本链接不同目的地 —— issue/warning · 优先级 medium · 输出 WARN(源表:同文本链接须同目的地;档位未单列[待核])
+- 名称/类型: 同文本链接不同目的地 —— issue/warning · 优先级 medium · 输出 WARN(源表:同文本链接须同目的地;档位见节首对照行)
 **这意味(what)**: 页面里两处链接的可访问名完全相同,href 却指向不同地址。
 **为什么(why)**: 无障碍:SR/语音用户按链接名操作,同名不同目的地让指令二义——念"产品页"命中哪个全凭 Tab 位置。
 **触发(trigger)**: 全页按可访问名归一化聚合链接;同名的 href 集合去重后 >1 即 warn(大小写/空白归一化口径[待核])。
@@ -1747,7 +1751,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-link-text、links-anchor-generic;[semantic-html.md](semantic-html.md)
 
 #### a11y-table-headers [待核 ID]
-- 名称/类型: 数据表缺表头关联 —— warning · 优先级 medium · 输出 WARN(源表:表格 th+scope;档位未单列[待核])
+- 名称/类型: 数据表缺表头关联 —— warning · 优先级 medium · 输出 WARN(源表:表格 th+scope;档位见节首对照行)
 **这意味(what)**: 数据表(对比表/报价表/规格表)的单元格没有表头关联:无 `<th>`,或有 th 但缺 scope 属性/headers-id 映射。
 **为什么(why)**: 无障碍:SR 按表头+单元格报坐标("价格 第3列 ¥299"),无 scope 的表读出来是一串无上下文的数字,复杂数据表等于不可用。
 **触发(trigger)**: `<table>` 含 ≥2 列数据(简单双列键值表豁免口径[待核])但表头单元格无 scope(或无 headers/id 映射)即 warn。
@@ -1756,7 +1760,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-table-caption、a11y-landmarks;[semantic-html.md](semantic-html.md)
 
 #### a11y-table-caption [待核 ID]
-- 名称/类型: 表格标题用跨列首行替代 —— warning · 优先级 low · 输出 WARN(源表:表格用 caption 不用跨列首行;档位未单列[待核])
+- 名称/类型: 表格标题用跨列首行替代 —— warning · 优先级 low · 输出 WARN(源表:表格用 caption 不用跨列首行;档位见节首对照行)
 **这意味(what)**: 表格标题被写成第一行的跨列单元格(`<td colspan=全表宽>`),而不是 `<caption>` 元素。
 **为什么(why)**: 无障碍:SR 进入表格前先播报 caption——用首行单元格冒充标题时,用户进了表还不知道表是什么,跨列首行在导航模式里只是普通数据格。
 **触发(trigger)**: 表格首行为跨全部列的单单元格文本(疑似标题)且无 `<caption>` 即 warn(疑似标题的判定口径[待核])。
@@ -1765,7 +1769,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-table-headers;[semantic-html.md](semantic-html.md)
 
 #### a11y-media-transcripts [待核 ID]
-- 名称/类型: 视频缺字幕/文稿 —— warning · 优先级 medium · 输出 WARN(源表:视频字幕/文稿;档位未单列[待核])
+- 名称/类型: 视频缺字幕/文稿 —— warning · 优先级 medium · 输出 WARN(源表:视频字幕/文稿;档位见节首对照行)
 **这意味(what)**: 页面内嵌视频(`<video>`/iframe 播放器)没有字幕轨道(track)或页内文稿(transcript)。
 **为什么(why)**: 无障碍:聋哑/重听用户与静音自动播放场景(社交分发常态)完全依赖字幕——无字幕的视频内容对这部分用户不存在。
 **触发(trigger)**: 1) `<video>` 无 `<track kind="captions|subtitles">` 即 warn;2) iframe 嵌入按页内有无 transcript 文本判(判定口径[待核])。
@@ -1774,7 +1778,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: sd-required-fields(VideoObject);[video-geo-guide.md](../content/video-geo-guide.md)
 
 #### a11y-iframe-title [待核 ID]
-- 名称/类型: iframe/object 缺 title —— warning · 优先级 medium · 输出 WARN(源表:iframe/object 须 title/替代文本;档位未单列[待核])
+- 名称/类型: iframe/object 缺 title —— warning · 优先级 medium · 输出 WARN(源表:iframe/object 须 title/替代文本;档位见节首对照行)
 **这意味(what)**: `<iframe>`(或 `<object>`)没有 title 属性(或等价替代文本)。
 **为什么(why)**: 无障碍:SR 把 iframe 当独立浏览区,进入前读 title——无名框架只报"框架",用户不知道里面是广告、表单还是地图,键盘焦点进入无名框架时尤其迷失。
 **触发(trigger)**: 任一 `<iframe>`/`<object>` 无 title 或 title 空白即 warn(装饰性隐藏框架的豁免口径[待核])。
@@ -1783,7 +1787,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-accessible-name、sd-required-fields(VideoObject);[semantic-html.md](semantic-html.md)
 
 #### a11y-svg-name [待核 ID]
-- 名称/类型: img 角色 SVG 缺可访问名 —— warning · 优先级 medium · 输出 WARN(源表:img 角色 SVG 须可访问名;档位未单列[待核])
+- 名称/类型: img 角色 SVG 缺可访问名 —— warning · 优先级 medium · 输出 WARN(源表:img 角色 SVG 须可访问名;档位见节首对照行)
 **这意味(what)**: 承载信息的内联 SVG(role=img 或视觉等价于内容图)没有可访问名——无 `<title>`/`<desc>`、无 aria-label。
 **为什么(why)**: 无障碍:SR 默认跳过纯图形,role=img 后会尝试播报但无名则读不出内容——信息图形对盲用户完全不存在。SEO:Google 图片文档建议内联 svg 用 `<title>` 提供替代文本([图片 SEO 文档](https://developers.google.com/search/docs/appearance/google-images))。
 **触发(trigger)**: 内联 svg 带 role="img"(或被判为信息图形[判定口径待核])且 accessible name(svg>title 或 aria-label)为空即 warn。
@@ -1792,7 +1796,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-accessible-name、images-alt-present;[semantic-html.md](semantic-html.md)
 
 #### a11y-alt-duplicate [待核 ID]
-- 名称/类型: alt 复读相邻文本 —— warning · 优先级 low · 输出 WARN(源表:alt 不重复相邻链接/图注文本;档位未单列[待核])
+- 名称/类型: alt 复读相邻文本 —— warning · 优先级 low · 输出 WARN(源表:alt 不重复相邻链接/图注文本;档位见节首对照行)
 **这意味(what)**: 图片的 alt 与紧邻的链接文本或 figcaption 图注完全相同——SR 用户同一句话听两遍。
 **为什么(why)**: 无障碍:图文卡片(图+标题链)是最常见布局,alt=标题文本时 SR 逐卡片读两遍标题,信息零增量、耐心双倍消耗。W3C 建议:相邻文本已描述图意时用空 alt([W3C](https://www.w3.org/WAI/tutorials/images/decorative/))。
 **触发(trigger)**: img 的 alt 与同容器内链接文本或 figcaption 归一化后相同即 warn(相邻范围的判定口径[待核])。
@@ -1819,7 +1823,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-aria-hidden-root、a11y-tabindex;[semantic-html.md](semantic-html.md)
 
 #### a11y-aria-hidden-root [待核 ID]
-- 名称/类型: html/body 级 aria-hidden —— issue · 优先级 critical · 输出 CRITICAL(源表:html/body 禁 aria-hidden;档位未单列[待核],按 aria-hidden 家族 fail 档从重,两轴校准注明)
+- 名称/类型: html/body 级 aria-hidden —— issue · 优先级 critical · 输出 CRITICAL(源表:html/body 禁 aria-hidden;档位见节首对照行,按 aria-hidden 家族 fail 档从重,两轴校准注明)
 **这意味(what)**: `<html>` 或 `<body>` 元素上出现 aria-hidden 属性(常见 true——SPA 加载态/新手引导插件的遗产)。
 **为什么(why)**: 无障碍:根级隐藏让整页对 AT 消失——浏览器里正常显示,SR 用户听到的却是空页面,是能写出的最重无障碍事故之一。
 **触发(trigger)**: `<html>` 或 `<body>` 元素带 aria-hidden 属性即触发(无论值)。
@@ -1828,7 +1832,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-aria-hidden、js-runtime-hygiene;[semantic-html.md](semantic-html.md)
 
 #### a11y-aria-parent-child [待核 ID]
-- 名称/类型: ARIA widget 父子角色缺失 —— warning · 优先级 medium · 输出 WARN(源表:ARIA widget 须有所需父子角色,tab 在 tablist 内/option 在 listbox 内;档位未单列[待核])
+- 名称/类型: ARIA widget 父子角色缺失 —— warning · 优先级 medium · 输出 WARN(源表:ARIA widget 须有所需父子角色,tab 在 tablist 内/option 在 listbox 内;档位见节首对照行)
 **这意味(what)**: ARIA 复合控件的角色结构不完整:role=tab 不在 role=tablist 内、role=option 不在 role=listbox 内、menuitem 不在 menu 内。
 **为什么(why)**: 无障碍:复合控件的 AT 行为(方向键导航/选中播报)由完整角色树驱动——孤儿 tab 退化为普通元素,键盘用户按方向键没反应。
 **触发(trigger)**: 需容器角色清单(tab/option/menuitem/menuitemcheckbox 等[清单待核])中的角色,其祖先链内无对应 required parent 角色即 warn。
@@ -1837,7 +1841,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-aria-typo、a11y-list-structure;[semantic-html.md](semantic-html.md)
 
 #### a11y-list-structure [待核 ID]
-- 名称/类型: 列表子元素非法 —— warning · 优先级 low · 输出 WARN(源表:列表只含 li;档位未单列[待核])
+- 名称/类型: 列表子元素非法 —— warning · 优先级 low · 输出 WARN(源表:列表只含 li;档位见节首对照行)
 **这意味(what)**: `<ul>`/`<ol>` 的直接子元素不是 `<li>`——塞了 div/p/文本节点,或 `<li>` 裸奔在列表容器外。
 **为什么(why)**: 无障碍:SR 播报列表先报"列表,共 N 项"再逐项读——非法子元素打断计数,项数与实际不符,用户对内容量失去预期。
 **触发(trigger)**: `<ul>`/`<ol>` 的 Element 直接子节点标签 ∉ {li, script, template}(HTML 规范豁免口径[待核])即 warn。
@@ -1846,7 +1850,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-aria-parent-child、sd-breadcrumblist;[semantic-html.md](semantic-html.md)
 
 #### a11y-role-presentation [待核 ID]
-- 名称/类型: role=none/presentation 被反证 —— warning · 优先级 low · 输出 WARN(源表:role=none/presentation 不被 ARIA/可聚焦性反证;档位未单列[待核])
+- 名称/类型: role=none/presentation 被反证 —— warning · 优先级 low · 输出 WARN(源表:role=none/presentation 不被 ARIA/可聚焦性反证;档位见节首对照行)
 **这意味(what)**: 元素声明 role="none"/"presentation"(意图:从无障碍树抹掉),但它带全局 ARIA 属性(aria-label 等)或含可聚焦子元素——声明与实态互相反驳。
 **为什么(why)**: 无障碍:presentation 说"我是装饰",aria-label 说"我有名字"——AT 按规范丢弃矛盾的角色声明回退隐式语义,行为不可预期;可聚焦子元素更让"隐藏"名存实亡(与 a11y-aria-hidden 同族矛盾)。
 **触发(trigger)**: 1) role=none/presentation 元素带全局 aria-* 属性或含可聚焦子元素即 warn;2) `<table role=presentation>` 内含 th/scope(表头是内容信号,布局表不该有)同类触发[表格分型待核]。
@@ -1855,7 +1859,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 **关联(seealso)**: a11y-aria-hidden、a11y-aria-typo;[semantic-html.md](semantic-html.md)
 
 #### a11y-input-image-alt [待核 ID]
-- 名称/类型: 图像提交按钮缺 alt —— warning · 优先级 medium · 输出 WARN(源表:`<input type=image>` 须 alt;档位未单列[待核])
+- 名称/类型: 图像提交按钮缺 alt —— warning · 优先级 medium · 输出 WARN(源表:`<input type=image>` 须 alt;档位见节首对照行)
 **这意味(what)**: `<input type="image">`(图像形式的提交按钮)没有 alt 属性。
 **为什么(why)**: 无障碍:图像按钮的可访问名只能来自 alt——无名时 SR 只读"提交按钮 图像"或文件名,用户不知道点了会提交什么。
 **触发(trigger)**: `<input type="image">` 无 alt 或 alt 空白即 warn。
@@ -1874,7 +1878,7 @@ robots.txt 存在/语法=warn;sitemap 存在/格式=warn;URL 结构(小写+连�
 
 ### Social(9 条,权重 3%)
 
-og:title/description/image 各=warn;**og:image 推荐 1200×630(配 og:image:width/height meta)**;og:url=warn;**og:url 与 canonical 不一致=fail**;twitter:card(summary_large_image)=warn;分享按钮(**≥2 平台**)=warn;社交资料链接(**≥3 个**,入 Organization sameAs)=warn。
+og:title/description/image 缺失或为空=**fail**(用 `name=` 代替 `property=` 或 og:image 非绝对 URL=warn);**og:image 推荐 1200×630**,`og:image:width/height` 缺失或小于 1200×630=warn、小于 200×200 或无 og:image=fail;og:url 缺失=fail;**og:url 与 canonical 不一致=fail**(只有 og:url 或两者都无=warn);twitter:card 缺失=fail、未知类型=warn(已知类型 summary、summary_large_image、app、player);分享按钮(**≥2 平台**)=warn;社交资料链接(**≥3 个**,入 Organization sameAs)=warn。
 
 **解释层(4 条;ID 未公布原文,标 [待核])**
 
@@ -1887,19 +1891,19 @@ og:title/description/image 各=warn;**og:image 推荐 1200×630(配 og:image:wid
 **关联**: core-canonical-conflicting;[head-elements.md](head-elements.md) OG 消费矩阵
 
 #### social-og-basic [待核 ID]
-- 名称/类型: og 标签家族缺失 —— warning · 优先级 low · 输出 WARN(源表各=warn;twitter:card 同构)
+- 名称/类型: og 标签家族缺失(源表 ID `social-og-title`、`social-og-description`、`social-og-image`、`social-og-url`、`social-twitter-card`) —— warning · 优先级 low · 输出 CRITICAL/WARN(源表现行:缺失或为空=fail;`name=` 代替 `property=` 或 URL 非绝对=warn;本套件把建议优先级压到 low,因为只影响分享卡片)
 **这意味(what)**: 页面缺 og:title/og:description/og:image(og:url 缺失另计 warn,与 canonical 的冲突见 social-og-url-canonical);twitter:card 同构——缺=warn,推荐值 summary_large_image。
-**为什么(why)**: og 标签是社交平台与主流聊天应用(WhatsApp/Slack/Discord)抓分享卡片的依据;缺了平台自行抓页面,卡片图文不可控——分享 CTR 的隐形漏斗。对搜索排名无影响,纯分享层缺信号,故 low。
-**触发(trigger)**: 逐一断言 og:title/og:description/og:image/og:url 存在且非空;twitter:card 值应为 summary_large_image;任一缺失即 warn。本家族其余规则同构:字段不同、阈值同为存在性检查。
+**为什么(why)**: Open Graph 协议定义了这些标签,分享平台据此生成卡片([ogp.me](https://ogp.me/));缺了平台自行抓取页面,卡片图文不可控。各平台具体怎么用本次未逐个核对。对搜索排名没有已知影响,纯分享层缺信号,故 low。
+**触发(trigger)**: 逐一断言 og:title/og:description/og:image/og:url 存在且非空;twitter:card 为已知类型;任一缺失即上游 fail。site_audit 对缺 og:title/og:description/og:image 记 `[WARN] og`,不查 og:url 与 twitter:card。
 **不修的条件(caveat)**: og 标签不影响搜索排名,然而决定分享卡片完整度,所以一般建议核心模板页全配。但法律/结账流等不需要被分享的页面可豁免。
 **修复(fix)**: 模板用与 title/description 同源变量输出 og:title/og:description;og:image 用固定比例专图(见 social-og-image-dimensions);twitter:card 配 summary_large_image。
 **关联(seealso)**: social-og-url-canonical、social-og-image-dimensions;[head-elements.md](head-elements.md) OG 消费矩阵
 
-#### social-og-image-dimensions [待核 ID]
-- 名称/类型: og:image 尺寸 —— warning · 优先级 low · 输出 WARN(源表 warn;推荐 1200×630,配 og:image:width/height meta)
+#### social-og-image-dimensions
+- 名称/类型: og:image 尺寸(源表 ID `social-og-image-size`) —— warning · 优先级 low · 输出 WARN/CRITICAL(源表现行:缺 width/height 或小于 1200×630=warn;小于 200×200 或无 og:image=fail;推荐 1200×630)
 **这意味(what)**: og:image 分辨率明显偏离 1200×630(1.91:1),或未配 og:image:width/og:image:height meta。
 **为什么(why)**: 各平台分享卡裁切比例不一,1.91:1 是最大公约数;尺寸离谱时平台裁掉关键内容或弃图。配 width/height meta 让平台免下整图即可算占位,加快卡片渲染。
-**触发(trigger)**: 1) og:image 目标宽高比偏离 1.91:1(容差阈值源表未公布[待核]);2) 无 og:image:width/og:image:height 即 warn。
+**触发(trigger)**: 读声明的 og:image:width/height(不下载图片):缺失或小于 1200×630 warn,小于 200×200 fail。宽高比 1.91:1 只作建议。
 **不修的条件(caveat)**: 尺寸不影响 SEO,然而影响分享卡展示完整度,所以一般建议 1200×630 专图。但主投放平台明确(如以 X 的 1:1 为主)时可按主平台调优。
 **修复(fix)**: 出 1200×630 专图;head 补 og:image:width/og:image:height;每页独立图,别全站一张。
 **关联(seealso)**: social-og-basic;[head-elements.md](head-elements.md)
@@ -1915,39 +1919,39 @@ og:title/description/image 各=warn;**og:image 推荐 1200×630(配 og:image:wid
 
 ### URL Structure(14 条,权重 3%)
 
-slug 含描述关键词(数字 ID/?p=123 坏)=fail/warn;URL 停用词=warn;大写=warn;下划线=warn(连字符才是词分隔);双斜杠=warn;**%20 编码空格=fail**;非 ASCII=warn;**路径 ≤75 字符**=warn;重复路径段(/shoes/shoes/)=warn;**查询参数 3-5 个=warn、>5=fail**,同名参数重复或多个 `?`=畸形=warn;**URL 会话 ID=fail**;UTM/追踪参数=warn;站内搜索 URL 被索引=warn;HTTP/HTTPS 双可达=warn。
+slug 含描述关键词(数字 ID/?p=123 坏)=warn/fail;URL 停用词(占路径词数 >40%)=warn;大写=warn;下划线=warn(连字符才是词分隔);**双斜杠=fail**;**%20 编码空格=fail**;非 ASCII=warn;**完整 URL(含协议和主机)≤75 字符过、≤200 warn、>200 fail**;重复路径段(/blog/blog/)=**fail**;**查询参数 3-5 个=warn、>5=fail**,同名参数重复或多个 `?`=畸形=warn;**URL 会话 ID=fail**;UTM/追踪参数=warn;站内搜索 URL 被索引=warn;`url-http-https-duplicate`:绝对 canonical 的协议与页面不同=warn(不请求另一协议版本)。
 
 **解释层(5 条;ID 未公布原文的按家族命名法推得并标 [待核])**
 
 #### url-slug-quality [待核 ID]
-- 名称/类型: slug 质量 —— issue/warning · 优先级 high(数字 ID 形态)/low(停用词) · 输出 CRITICAL/WARN(源表:slug 含描述关键词,数字 ID/?p=123 坏=fail/warn 分型[口径待核];URL 停用词=warn)
+- 名称/类型: slug 质量(源表 ID `url-slug-keywords`、`url-stop-words`) —— issue/warning · 优先级 high(数字 ID 形态)/low(停用词) · 输出 CRITICAL/WARN(源表:slug 含描述关键词,数字 ID/?p=123 坏=fail/warn 分型[口径待核];URL 停用词=warn)
 **这意味(what)**: URL slug 不含描述性关键词:纯数字 ID 或 ?p=123 形态取内容(fail/warn 档),或 slug 塞满停用词(warn)。
 **为什么(why)**: slug 是弱相关信号之一:外链 URL 展示、SERP 面包屑、引用复制里都会原样露出;?p=123 形态还与参数规范化纠缠。停用词只是稀释信息密度,故仅 warn。
-**触发(trigger)**: 1) 路径段为纯数字/单字母 ID,或内容经查询串 ID 选取 → fail/warn 分型;2) slug 停用词(of/the/a/and 等)占比过高 → warn。
+**触发(trigger)**: 1) 路径段为纯数字/单字母 ID,或内容经查询串 ID 选取 → fail/warn 分型;2) 停用词(a、the、of 等)占路径词数 >40% → warn。
 **不修的条件(caveat)**: 改 slug=改 URL=必须 301,老 URL 有外链与历史时改名收益常抵不过搬家风险,所以一般建议新页用好 slug、老页不为 SEO 单独改名。
 **修复(fix)**: 新页 slug=主关键词短语(小写连字符);确需语义化的老 ID URL 用 301 迁移并同步更新内链与 sitemap。
 **关联(seealso)**: url-shape、url-length;[link-architecture-patterns.md](link-architecture-patterns.md)
 
 #### url-shape [待核 ID]
-- 名称/类型: URL 形态卫生家族 —— warning · 优先级 low · 输出 WARN/CRITICAL(源表:大写/下划线/双斜杠/非 ASCII/重复路径段/HTTP-HTTPS 双可达=warn;%20 编码空格=fail)
-**这意味(what)**: URL 含形态瑕疵:大写字母、下划线分词、双斜杠、非 ASCII 字符、重复路径段(/shoes/shoes/)、HTTP 与 HTTPS 双可达不互跳(以上各 warn);最重的是 %20 编码空格(fail)。
-**为什么(why)**: 形态决定"同一 URL 会有几种写法":大写混用制造大小写变体(部分服务器区分大小写);下划线不被当词分隔符;双斜杠/重复段制造规范化噪音;双协议可达是重复站点种子。%20 空格是硬伤——空格在 URL 中非法,编码形态在点击/引用/重写链条上最易断裂。
-**触发(trigger)**: 逐项:含大写 → warn;含 _ → warn;含 // → warn;路径段重复 → warn;含非 ASCII → warn;http 与 https 版本均 200 不互跳 → warn;含 %20 → fail。
+- 名称/类型: URL 形态卫生家族(源表 ID `url-uppercase`、`url-underscores`、`url-double-slash`、`url-spaces`、`url-non-ascii`、`url-repetitive-path`、`url-http-https-duplicate`) —— warning · 优先级 low · 输出 WARN/CRITICAL(源表现行:大写/下划线/非 ASCII=warn;双斜杠、%20 编码空格、重复路径段=fail;canonical 与页面协议不同=warn)
+**这意味(what)**: URL 含形态瑕疵:大写字母、下划线分词、双斜杠、非 ASCII 字符、重复路径段(/shoes/shoes/)、canonical 协议与页面不同(以上大写/下划线/非 ASCII/协议不符各 warn);双斜杠、重复路径段和 %20 编码空格为 fail。
+**为什么(why)**: 形态决定"同一 URL 会有几种写法":大小写混用制造变体(Google 的 URL 处理区分大小写,见 technical-url-consistency);Google 建议用连字符分词、不建议下划线([URL 结构文档](https://developers.google.com/search/docs/crawling-indexing/url-structure),核对 2026-10-21);双斜杠/重复段制造规范化噪音。%20 空格是硬伤——空格在 URL 中非法,编码形态在点击/引用/重写链条上最易断裂。
+**触发(trigger)**: 逐项:含大写 → warn;含 _ → warn;含 // → fail;路径段重复 → fail;含非 ASCII → warn;绝对 canonical 协议与页面不同 → warn;含 %20 → fail。http 与 https 双版本均 200 另用 `curl -sI http://域名/` 手工查。
 **不修的条件(caveat)**: 单项瑕疵不(直接)影响排名,然而每项都在增加变体重复的概率,所以一般建议全站 lint。但非 ASCII(中文/日文 slug)在相应语种市场是正当形态,warn 不等于要求转拼音。
 **修复(fix)**: 新 URL 全小写+连字符;CMS 输出层统一规范化;老 URL 301 到规范形;http 单向 301 到 https。
 **关联(seealso)**: url-slug-quality、crawl-canonical-form-drift;[redirects-canonical.md](redirects-canonical.md)
 
-#### url-length [待核 ID]
-- 名称/类型: URL 路径长度 —— warning · 优先级 low · 输出 WARN(源表 warn;路径 ≤75 字符)
-**这意味(what)**: URL 路径部分超过 75 字符(不含协议与域名的口径[待核])。
-**为什么(why)**: 长度本身不是排名因素,但超长路径几乎总意味着嵌套过深(点击距离超标,见 links-depth)、路径关键词堆砌、或筛选状态写进路径——这些才是问题,长度只是症状。75 字符也是 SERP 展示与外链复制的经验舒适线。
-**触发(trigger)**: 解析 URL 取路径段;长度 >75 即 warn。
+#### url-length
+- 名称/类型: URL 长度 —— warning · 优先级 low · 输出 WARN/CRITICAL(源表现行:完整 URL 含协议与主机,≤75 字符过、≤200 warn、>200 fail;旧快照写「路径 ≤75」)
+**这意味(what)**: 完整 URL 超过 75 字符。
+**为什么(why)**: 长度本身不是排名因素,但超长路径几乎总意味着嵌套过深(点击距离超标,见 links-depth)、路径关键词堆砌、或筛选状态写进路径——这些才是问题,长度只是症状。75 与 200 是工具约定;Google 建议尽量缩短 URL、去掉不改变内容的参数([URL 结构文档](https://developers.google.com/search/docs/crawling-indexing/url-structure)),没有字符上限。
+**触发(trigger)**: 完整 URL 长度 >75 warn,>200 fail。
 **不修的条件(caveat)**: URL 长度不(直接)影响 SEO,然而它是结构与堆砌的症状指标,所以一般建议控制。但多级分类的文档站(v2/api/auth/methods)超线是结构真实,不是错误。
 **修复(fix)**: 压层级(去掉冗余中间层)、砍路径关键词堆砌;筛选状态移到参数并由规范化收口。
 **关联(seealso)**: links-depth、url-slug-quality;[link-architecture-patterns.md](link-architecture-patterns.md)
 
 #### url-query-params [待核 ID]
-- 名称/类型: 查询参数家族 —— issue/warning · 优先级 high(会话 ID=fail)/medium(计数与追踪) · 输出 CRITICAL/WARN(源表:参数 3-5 个=warn、>5=fail;同名参数重复或多个 ?=畸形 warn;URL 会话 ID=fail;UTM/追踪参数=warn)
+- 名称/类型: 查询参数家族(源表 ID `url-parameters`、`url-session-ids`、`url-tracking-params`) —— issue/warning · 优先级 high(会话 ID=fail)/medium(计数与追踪) · 输出 CRITICAL/WARN(源表:参数 3-5 个=warn、>5=fail;同名参数重复或多个 ?=畸形 warn;URL 会话 ID=fail;UTM/追踪参数=warn)
 **这意味(what)**: 查询串失控:参数 3-5 个 warn、>5 个 fail;同名参数重复/多个 ? 畸形 warn;URL 带会话 ID(PHPSESSID/jsessionid 形态)fail;站内链接带 UTM/追踪参数 warn。
 **为什么(why)**: 参数爆炸是抓取预算头号杀手:每个参数组合都是潜在唯一 URL,爬虫在组合空间指数级发散,预算耗尽时真页面反而抓不到。会话 ID 更重:每访客一个 URL=无限重复页,是 2000 年代就被定性的反模式。UTM 入内链则是把追踪污染引进自己站内。
 **触发(trigger)**: 解析查询串:参数计数 3-5 → warn、>5 → fail;同名键 ≥2 次或 ≥2 个 ? → warn;参数名匹配会话 ID 模式 → fail;内链 href 含 utm_/gclid 等追踪参数 → warn。
@@ -1955,10 +1959,10 @@ slug 含描述关键词(数字 ID/?p=123 坏)=fail/warn;URL 停用词=warn;大�
 **修复(fix)**: 内链剥 UTM(仅保留外链入口);筛选参数 canonical 收口或 robots.txt 屏蔽;会话状态改 cookie 承载;参数计数超标先审功能设计。
 **关联(seealso)**: crawl-sitemap-non-canonical、url-search-indexed;[robots-txt-reference.md](robots-txt-reference.md)
 
-#### url-search-indexed [待核 ID]
-- 名称/类型: 站内搜索结果被索引 —— warning · 优先级 medium · 输出 WARN(源表 warn)
+#### url-search-indexed
+- 名称/类型: 站内搜索结果被索引(源表 ID `url-internal-search`:只看 URL 形态,页面有 noindex 也照报) —— warning · 优先级 medium · 输出 WARN(源表 warn)
 **这意味(what)**: 站内搜索结果页(?s=/q=/search= 形态,键名口径[待核])可被索引——无 noindex、甚至进了 sitemap/内链。
-**为什么(why)**: 搜索结果页是"关于查询的链接列表",无独立内容价值:引擎明确不喜欢索引一层"搜索结果套搜索结果"(用户从搜索引擎点进你的搜索页,看到的还是一堆链接);无限查询组合也是抓取预算黑洞。
+**为什么(why)**: 搜索结果页是"关于查询的链接列表",无独立内容价值:无限查询组合也是抓取预算黑洞。Google 对「搜索结果页不该被索引」没有专页说法(其「自动生成内容」类垃圾政策不针对站内搜索),此处为工程判断。
 **触发(trigger)**: 1) URL 匹配站内搜索参数形态;2) 页面可索引(无 noindex、被内链/sitemap 引用)即 warn。
 **不修的条件(caveat)**: 搜索页索引不(直接)拖累其他页面排名,然而批量索引会稀释抓取预算,所以一般建议模板级 noindex。但确有搜索流量价值的长尾工具站,可把高价值查询做成内容化落地页保留索引——先看 GSC 流量再一刀切。
 **修复(fix)**: 搜索结果模板加 noindex(整模板而非逐页);从 sitemap 与内链清除搜索 URL;站内搜索入口改 POST 或前端路由,不生成可爬 URL。
@@ -1983,7 +1987,7 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 **依据**: Google 不索引返回 4xx 的 URL,已索引的会被移除;5xx 持续则移除([HTTP 状态码文档](https://developers.google.com/search/docs/crawling-indexing/http-network-errors))。旧 URL 的去向因此丢失。核对 2026-10-18。
 **判据**: 通过=终点 2xx。失败=终点 4xx/5xx。
 **执行**: `REDIR URL` 看「终态: HTTP」行,4xx/5xx 即失败(脚本只打印不判定)。迁移后按映射表逐行跑。
-**修复**: 终点恢复内容,或改指最近亲的存活页;不要统一跳首页(Google 可能当 soft 404)。
+**修复**: 终点恢复内容,或改指最近亲的存活页;不要统一跳首页(内容不对应时,首页不是合适的替代)。
 **关联**: links-broken-internal、crawl-sitemap-non-200;[http-status-codes.md](http-status-codes.md)
 
 #### redirect-type
@@ -2003,25 +2007,25 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 **关联**: redirect-type;[redirects-canonical.md](redirects-canonical.md)
 
 #### redirects-static-resource [待核 ID]
-- 名称/类型: 静态资源被重定向 —— warning · 优先级 medium · 输出 WARN(源表 warn)
-**这意味(what)**: 页面引用的静态资源(CSS/JS/图/字体)URL 自身返回 3xx,要再跳一次才拿到内容。
+- 名称/类型: 静态资源被重定向(源表 ID `redirect-resource`) —— warning · 优先级 medium · 输出 WARN(源表现行:HTTPS 页的样式表、脚本、图片 URL 以 `http://` 开头即 warn,不发请求,这类 URL 通常会跳转到 HTTPS)
+**这意味(what)**: 页面引用的静态资源(CSS/JS/图)用了 `http://` 地址(上游判据);或其 URL 自身返回 3xx(本套件另查,需渲染)。
 **为什么(why)**: 每条资源重定向都是渲染瀑布里多出的一跳:握手与请求白付两次,渲染阻塞资源(同步 CSS)的重定向直接串行拖慢 FCP/LCP;抓取侧同样双倍成本。典型来源:资源改版后旧 URL 301 保底、CDN 规则把 /assets/ 整体跳新路径、http 资源在 https 页被协议跳转。
-**触发(trigger)**: 提取页面子资源 URL;任一返回 3xx 即 warn(终点 4xx/5xx 或成环另归 redirects-resource-chain 的 fail 档)。
+**触发(trigger)**: 上游:HTTPS 页的子资源 URL 以 http:// 开头即 warn。本套件另查:子资源返回 3xx 即 warn(终点 4xx/5xx 或成环另归 redirects-resource-chain 的 fail 档)。
 **不修的条件(caveat)**: 单条资源重定向不影响排名,然而它在渲染关键路径上按毫秒计价,所以一般建议资源引用直指最终 URL。但迁移窗口期保留旧资源 URL 的 301 兜底是正当缓冲,发版后收直。
 **修复(fix)**: 模板/构建产物里资源引用写最终 URL;http 资源引用改 https 直连;CDN 层把跳转规则改写为内部重写。
 **关联(seealso)**: redirects-resource-chain、perf-render-blocking;[redirects-canonical.md](redirects-canonical.md)
 
-#### redirects-case-normalization [待核 ID]
-- 名称/类型: 大小写规范化重定向 —— warning · 优先级 low · 输出 WARN(源表 warn)
-**这意味(what)**: URL 仅因大小写差异被重定向(/About → /about)——站点在用重定向兜 URL 大小写不一致。
+#### redirects-case-normalization
+- 名称/类型: URL 大小写规范化(源表 ID `redirect-case-normalization`) —— warning · 优先级 low · 输出 WARN(源表现行:最终服务的 URL 与页面 canonical 仅大小写不同才 warn;请求大小写变体后被 301 到规范形式=通过)
+**这意味(what)**: 页面最终服务的 URL 与 canonical 仅大小写不同——大小写变体没有被收口到规范形式。(原稿把「大小写重定向本身」当问题,与上游现行相反,已更正:重定向到规范形式是正确做法。)
 **为什么(why)**: host 之后的路径大小写是否敏感取决于服务器/CDN,两种策略混用时唯一安全的收口是统一小写+301;但"每条内链先写成大写再靠 301 兜底"意味着每次点击都付一跳——这是把规范化成本从模板层转嫁到运行时。与 url-shape/technical-url-consistency 同源:根因是 URL 生成不规范。
-**触发(trigger)**: 重定向的 source 与 target 仅大小写不同(其余成分一致)即 warn。
+**触发(trigger)**: 最终服务的 URL 与 canonical 仅大小写不同即 warn;大小写变体 301 到规范形式则通过。
 **不修的条件(caveat)**: 规范化重定向本身是正确收口(比双 200 好),然而它标记模板还在产大写 URL,所以一般建议源头改小写、301 只留兜底。但从大小写不敏感服务器迁到敏感服务器时,这批 301 是必要过渡,可长期保留。
 **修复(fix)**: URL 生成层统一小写输出;内链/模板/sitemap 排查大写引用;301 规则保留作外链兜底。
 **关联(seealso)**: technical-url-consistency、url-shape;[redirects-canonical.md](redirects-canonical.md)
 
 #### redirects-resource-chain [待核 ID]
-- 名称/类型: 资源重定向链家族(渲染专属三条) —— issue/warning · 优先级 high(fail 档)/medium · 输出 CRITICAL/WARN(源表:resource-broken 资源重定向终点 4xx/5xx=fail;resource-loop 资源重定向环,浏览器 ERR_TOO_MANY_REDIRECTS=fail;resource-chain 资源 ≥2 跳=warn,单跳 http→https/尾斜杠视为良性)
+- 名称/类型: 资源重定向链家族(渲染专属三条;源表 ID `redirect-resource-broken`、`redirect-resource-loop`、`redirect-resource-chain`) —— issue/warning · 优先级 high(fail 档)/medium · 输出 CRITICAL/WARN(源表:resource-broken 资源重定向终点 4xx/5xx=fail;resource-loop 资源重定向环,浏览器 ERR_TOO_MANY_REDIRECTS=fail;resource-chain 资源 ≥2 跳=warn,单跳 http→https/尾斜杠视为良性)
 **这意味(what)**: 子资源重定向的三种深浅:链终点 4xx/5xx(资源实际丢失)、重定向成环(资源永不可得)、链长 ≥2 跳。
 **为什么(why)**: 资源层与页面层(links-redirect-chains)同构但更苛:页面重定向用户还能多点一次,资源重定向直接决定渲染成败——CSS 链断则整页无样式,脚本链断则交互与注解注入全灭。单跳 http→https/尾斜杠被显式豁免为良性(规范化常态),≥2 跳才算链。
 **触发(trigger)**: 渲染后逐资源跟踪 Location:1) 终点 4xx/5xx 即 fail;2) 回到途经任一 URL 即 fail;3) 跳数 ≥2 即 warn;4) 单跳且属 http→https/尾斜杠形态不报。
@@ -2031,30 +2035,30 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 
 ### Mobile(12 条,权重 2%)
 
-正文字号 **≥16px 过,<12px 败**(rem/em 优);横向滚动=warn/fail;插页弹窗(跳过 cookie/GDPR/年龄验证/登录)=warn/fail;viewport 须 device-width=warn;多 viewport 标签=fail;**parity 五条(`--mobile` 双渲染对比,我们覆盖薄)**:content/title+description/canonical=warn/fail,structured-data=fail(JSON-LD 桌面有移动无),links(内链数量可比)=warn;image maps(`<map>`/`<area>` 客户端图像地图,固定像素坐标不适配触屏)=warn;viewport content 规范(width 存在+initial-scale=1+**不设 minimum-scale**)=warn。
+正文字号 **<12px 败、内联 12-16px 警**(只读内联 `style` 与 `<style>` 块,外部样式表不读;em/rem/% 按 16px 换算;行高 <1.2 或 body/html 内联字号 <14px 也警);横向滚动=warn/fail;插页弹窗(跳过 cookie/GDPR/年龄验证/登录)=warn/fail;viewport 设固定像素宽度=**fail**(须 device-width);多 viewport 标签=fail;**parity 五条(`--mobile` 双渲染对比,我们覆盖薄)**:content、title+description=warn/fail,canonical=fail,structured-data=fail(JSON-LD 桌面有移动无),links(移动 `a[href]` 数至少为桌面一半)=warn;image maps(`<map>`/`<area>` 客户端图像地图,固定像素坐标不适配触屏)=warn;viewport content 规范(width 存在+initial-scale=1+**不设 minimum-scale**)=warn。
 
 **解释层(6 条,第三批;ID 未公布原文的按家族命名法推得并标 [待核];移动优先索引与 m. 站背景见 [mobile-seo.md](mobile-seo.md) 第一节)**
 
-#### mobile-font-size [待核 ID]
-- 名称/类型: 正文字号 —— warning · 优先级 medium · 输出 WARN(中间档)/CRITICAL(<12px,源表败)(源表:≥16px 过,<12px 败;rem/em 优)
+#### mobile-font-size
+- 名称/类型: 正文字号 —— warning · 优先级 medium · 输出 WARN(中间档)/CRITICAL(<12px,源表败)(源表现行:只读内联 style 与 <style> 块;任何 <12px=fail;内联 12-16px、行高 <1.2、body/html 内联字号 <14px=warn)
 **这意味(what)**: 移动视口下正文主体字号低于 16px 建议值,<12px 进败档。
-**为什么(why)**: 小字号在移动端直接降可读性(老年/弱视用户不可读),也是"视口没配对"的伴生症状——桌面排版塞进移动宽度时字号缩水。[mobile-seo.md](mobile-seo.md) 审计口径:表单 input 字号 <16px 会触发 iOS Safari 聚焦自动放大(强制缩放体验),审计必报。rem/em 单位让用户的浏览器字号设置能生效。
-**触发(trigger)**: 渲染后计算正文主体(段落/列表)computed font-size:<12px → 败档;12-16px → 警;≥16px 过;input 字号 <16px 单列必报。
+**为什么(why)**: 小字号降低移动端可读性。Google 2016 年的博文把「文字无需缩放即可阅读」描述为移动友好标准之一([博文](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on),核对 2026-10-21);现行[页面体验文档](https://developers.google.com/search/docs/appearance/page-experience)仍把「内容在移动设备上是否显示良好」列为自评问题。字号阈值本身是工具约定。[mobile-seo.md](mobile-seo.md) 审计口径:表单 input 字号 <16px 会触发 iOS Safari 聚焦自动放大(Safari 行为,本次未回读 Apple 文档),审计必报。rem/em 单位让用户的浏览器字号设置能生效。
+**触发(trigger)**: 上游:扫内联 style 和 <style> 块里的 font-size(em/rem/% 按 16px 换算):<12px → fail;内联 12-16px → warn。外部样式表里的字号用浏览器 DevTools 的 computed 值复核;input 字号 <16px 本套件单列必报。
 **不修的条件(caveat)**: 字号不(直接)影响排名,然而它影响移动可用性与移动优先索引下的页面评估,所以一般建议正文 ≥16px。但辅助信息(脚注/标签/法律小字)适度小一档是排版惯例,别一刀切拉平。
 **修复(fix)**: 正文基准 16px(1rem)+行高 ≥1.4;input 全部 ≥16px 防 iOS 聚焦放大;对比度配套 ≥4.5:1。
 **关联(seealso)**: mobile-viewport-config、mobile-overflow;[mobile-seo.md](mobile-seo.md)
 
 #### mobile-viewport-config [待核 ID]
-- 名称/类型: viewport 配置家族 —— issue/warning · 优先级 high · 输出 CRITICAL(多 viewport、禁缩放,源表 fail)/WARN(缺 device-width、content 规范,源表 warn)
+- 名称/类型: viewport 配置家族(源表 ID `mobile-viewport-width`、`mobile-multiple-viewports`、`mobile-viewport-content`、`a11y-zoom-disabled`) —— issue/warning · 优先级 high · 输出 CRITICAL(固定宽度、多 viewport、禁缩放,源表 fail)/WARN(width/initial-scale/minimum-scale 不规范,源表 warn)
 **这意味(what)**: viewport meta 存在但配置错:缺 width=device-width、content 不规范(width 缺失/initial-scale≠1/设了 minimum-scale)、文档里多条 viewport、或用 user-scalable=no/maximum-scale=1 禁用缩放。
 **为什么(why)**: 移动优先索引下 viewport 是渲染的控制面:缺 device-width 按桌面宽渲染再缩放,字号与点击目标全错;禁缩放拿走弱视用户的最后手段(捏合放大)——无障碍硬红线;多 viewport 时浏览器取舍不一,行为不可控。与 core-viewport(缺失=fail)分工:那条管"有没有",本条管"对不对"。
-**触发(trigger)**: 1) viewport meta 计数 >1 即 fail;2) content 含 user-scalable=no 或 maximum-scale=1 即 fail;3) 无 width=device-width 即 warn;4) width 缺失/initial-scale≠1/含 minimum-scale 即 warn。
+**触发(trigger)**: 1) viewport meta 计数 >1 即 fail;2) content 含 user-scalable=no 或 maximum-scale=1 即 fail;3) 设固定像素宽度(无 device-width)即 fail(源表现行);4) width 缺失/initial-scale≠1/含 minimum-scale 即 warn。
 **不修的条件(caveat)**: viewport 配置影响渲染形态与可用性,不改变内容相关度,所以一般建议按规范值整站统一。但全屏交互(地图/画布)确需局部禁缩放时,只在该视图动态设置并给替代操作。
 **修复(fix)**: 单条 `<meta name="viewport" content="width=device-width, initial-scale=1">`;删 user-scalable/maximum-scale/minimum-scale;刘海屏加 viewport-fit=cover。
 **关联(seealso)**: core-viewport、mobile-font-size;[mobile-seo.md](mobile-seo.md)、[head-elements.md](head-elements.md)
 
-#### mobile-overflow [待核 ID]
-- 名称/类型: 横向滚动 —— issue/warning · 优先级 high · 输出 WARN/CRITICAL(源表 warn/fail;分型口径源表未公布[待核])
+#### mobile-overflow
+- 名称/类型: 横向滚动(源表 ID `mobile-horizontal-scroll`) —— issue/warning · 优先级 high · 输出 WARN/CRITICAL(源表 warn/fail;分型口径源表未公布[待核])
 **这意味(what)**: 移动视口(常见 ~375px)下页面出现横向滚动——有元素超出视口宽度。
 **为什么(why)**: 横向滚动是移动可用性的一票否决项:双轴滚动让用户极易迷失,"内容超出视口"长期是移动可用性评估的硬伤形态。常见肇因:固定宽度元素(表格/图/iframe 未 max-width)、绝对定位残片、长串不换行(裸 URL)。
 **触发(trigger)**: 1) ~375px 视口渲染;2) scrollWidth > innerWidth 即触发;3) warn/fail 分型[待核:常见按超出幅度与是否整页双轴滚动分档]。
@@ -2062,16 +2066,16 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 **修复(fix)**: img/iframe/video 加 max-width:100%;宽表包横向滚动容器或改卡片式;fixed 宽度改响应式;pre/长 URL 强制换行。
 **关联(seealso)**: mobile-font-size、mobile-interstitial;[mobile-seo.md](mobile-seo.md)
 
-#### mobile-interstitial [待核 ID]
-- 名称/类型: 侵扰性插页 —— issue/warning · 优先级 high · 输出 WARN/CRITICAL(源表 warn/fail;官方三形态+豁免清单)
+#### mobile-interstitial
+- 名称/类型: 侵扰性插页(源表 ID `mobile-interstitials`) —— issue/warning · 优先级 high · 输出 WARN/CRITICAL(源表 warn/fail;官方三形态+豁免清单)
 **这意味(what)**: 用户从搜索进入后立即遭遇遮蔽主内容的弹窗/独立插页页,或 cookie/GDPR/年龄验证/登录类横幅采用违规形态(全屏、难关闭、进入即弹)。
-**为什么(why)**: Intrusive Interstitials 是 2017-01-10 生效的算法性排名调整(仅移动端,非手动动作)。官方三形态:进入即弹遮主内容的弹窗、须关闭才能看内容的独立插页页、首屏伪内容横幅。豁免清单:法律必需的 cookie/GDPR 横幅(合规形态:非全屏、易关)、登录墙(公开内容有免费替代)、占合理比例且可关的横幅——政策全拆解见 [mobile-seo.md](mobile-seo.md) 2.5 节。
+**为什么(why)**: Google 2016-08-23 宣布,2017-01-10 之后从移动搜索结果进入后内容不易获取的页面「may not rank as highly」([博文](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on),核对 2026-10-21)。官方列举的三种形态:进入即弹遮主内容的弹窗、须关闭才能看内容的独立插页页、首屏伪内容横幅。豁免清单:法律必需的 cookie/GDPR 横幅(合规形态:非全屏、易关)、登录墙(公开内容有免费替代)、占合理比例且可关的横幅——政策全拆解见 [mobile-seo.md](mobile-seo.md) 2.5 节。
 **触发(trigger)**: 进入页面即检测遮罩(全屏 overlay/独立插页跳转);按"进入即弹/遮蔽比例/关闭难度"分型 warn/fail[分型口径源表未公布,待核]。
 **不修的条件(caveat)**: 合规横幅不(必然)触发惩罚——判定看形态不看业务目的,所以一般建议 cookie/年龄类用非全屏、易关的形态。但"合规必需"不等于"任意形态免责",全屏 GDPR 墙同样在打击面内。
 **修复(fix)**: 弹窗改用户交互后触发;横幅收紧为可关的顶部条;插页页移除;关闭目标(×)至少 24×24 CSS px(WCAG 2.5.8),最好 44×44。
 **关联(seealso)**: mobile-overflow、legal-cookie-consent;[mobile-seo.md](mobile-seo.md)
 
-#### mobile-image-maps [待核 ID]
+#### mobile-image-maps
 - 名称/类型: 客户端图像地图 —— warning · 优先级 low · 输出 WARN(源表 warn)
 **这意味(what)**: 页面用 `<map>`/`<area>` 客户端图像地图做导航或交互——固定像素坐标的热区不适配。
 **为什么(why)**: image map 的热区是绝对像素坐标:响应式图片缩放后热区不再对位(点 A 命中 B),触屏精度下小热区几乎不可点;屏幕阅读器对 area 的支持参差。这是 90 年代遗产技术,现代替代(CSS 定位/SVG 热区/拆分图片)全面更优。
@@ -2081,31 +2085,31 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 **关联(seealso)**: mobile-overflow;[semantic-html.md](semantic-html.md)
 
 #### mobile-parity [待核 ID]
-- 名称/类型: 移动-桌面内容平价(parity 五条) —— issue/warning · 优先级 high · 输出 CRITICAL/WARN(源表:content/title+description/canonical=warn/fail,structured-data=fail(JSON-LD 桌面有移动无),links(内链数量可比)=warn;`--mobile` 双渲染对比)
+- 名称/类型: 移动-桌面内容平价(parity 五条;源表 ID `mobile-parity-content/-title/-canonical/-structured-data/-links`) —— issue/warning · 优先级 high · 输出 CRITICAL/WARN(源表现行:content、title+description=warn/fail,canonical=fail,structured-data=fail(JSON-LD 桌面有移动无),links(移动至少为桌面一半)=warn;`--mobile` 双渲染对比)
 **这意味(what)**: 同一 URL 的移动与桌面渲染(或 m. 站双域)内容不对等:主内容/标题描述/canonical 出入、桌面有移动无的 JSON-LD、内链数量不可比。
-**为什么(why)**: 移动优先索引下引擎用移动版内容评级——桌面专属内容等于不存在;m. 站遗留时瘦移动版被索引,www 的优化投入落空。JSON-LD 桌面有移动无是最隐蔽的形态:富结果资格随移动版消失。parity 检查法(双视口抓取 diff、GSC 按设备拆分、Live Test)见 [mobile-seo.md](mobile-seo.md) 1.4 节:diff >20% 黄旗、>50% 红旗。
-**触发(trigger)**: `--mobile` 双渲染(~375px 与 ~1280px)对比:1) 主内容文本量/title+description/canonical 不一致 → warn/fail[分型待核];2) 桌面 JSON-LD 移动缺失 → fail;3) 内链数量显著不可比 → warn。
+**为什么(why)**: Google 用移动版内容做索引(2024-07-05 起只用 Googlebot Smartphone 抓取,[公告](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc)),桌面专属内容不参与索引;m. 站遗留时瘦移动版被索引,www 的优化投入落空。JSON-LD 桌面有移动无是最隐蔽的形态:富结果资格随移动版消失。parity 检查法(双视口抓取 diff、GSC 按设备拆分、Live Test)见 [mobile-seo.md](mobile-seo.md) 1.4 节(其 diff >20%/>50% 旗线是本套件口径)。
+**触发(trigger)**: `--mobile` 双渲染(~375px 与 ~1280px)对比:1) 主内容文本量/title+description/canonical 不一致 → warn/fail[分型待核];2) 桌面 JSON-LD 移动缺失 → fail;3) 移动 `a[href]` 数不足桌面一半 → warn(源表现行)。
 **不修的条件(caveat)**: parity 差异不(必然)是错——大屏增强内容(桌面才显示的对比图)被移动省略是响应式常态,移动优先索引按移动版算,损失的是增强加分而非硬伤。但结构性差异(schema 缺失/内容整段缺失)必须修平。
 **修复(fix)**: 结构化数据与关键注解两端同源输出;m. 站遗留按 [mobile-seo.md](mobile-seo.md) 1.3 风险清单收敛到响应式;双模板站点建 parity CI diff。
 **关联(seealso)**: js-content-dependency、js-meta-drift、mobile-viewport-config;[mobile-seo.md](mobile-seo.md)、[rendering-seo.md](rendering-seo.md)
 
 ### HTML Validation(11 条,权重 2%)
 
-缺 DOCTYPE=warn;缺 charset(utf-8 须 head 首位)=warn;head 含非法元素=warn(白名单:meta/title/link/script/style/base/noscript);head 内 noscript=warn;多 head=fail;**HTML 体积 >250KB 警、>500KB 败、~2MB 以上 Googlebot 可能只索引前段**;lorem ipsum=warn;多 title=**fail**;多 description=**fail**;title 在 head 外=fail;base 元素(href 空/畸形/非 HTTP(S)=fail,多条=warn,须 ≤1 条)。
+缺 DOCTYPE=**fail**(任何 DOCTYPE 都过);缺 charset(utf-8 须 head 首位)=warn/fail;head 含非法元素=warn(白名单:meta/title/link/script/style/base/noscript;读的是served 源码,因为解析后的 DOM 已把它们挪进 body);head 内 noscript 仅当含 link/style/meta 以外元素时 warn;多 head=fail;**HTML 体积 >250KB 警、>500KB 败、~2MB 以上 Googlebot 可能只索引前段**;lorem ipsum=**fail**;多 title=**fail**;多 description=**fail**;title 在 head 外=fail;base 元素(href 空/畸形/非 HTTP(S)=fail,多条=warn,须 ≤1 条)。
 
 **解释层(5 条,第三批;ID 未公布原文的按家族命名法推得并标 [待核])**
 
 #### htmlval-document-structure [待核 ID]
-- 名称/类型: 文档结构家族 —— issue/warning · 优先级 medium · 输出 CRITICAL(多 head,源表 fail)/WARN(缺 DOCTYPE、charset 位置,源表 warn)
+- 名称/类型: 文档结构家族(源表 ID `htmlval-missing-doctype` fail、`htmlval-missing-charset` warn/fail、`htmlval-multiple-heads` fail) —— issue/warning · 优先级 medium · 输出 CRITICAL(缺 DOCTYPE、多 head,源表 fail)/WARN(charset 位置)
 **这意味(what)**: 文档骨架错:没有 DOCTYPE、charset 声明不在 head 首位(utf-8 须 head 首位)、或文档解析出多个 head。
-**为什么(why)**: DOCTYPE 决定标准模式还是怪异模式——怪异模式下盒模型与解析规则回退上古行为,布局不可预测;charset 不在 head 前部时浏览器可能先用错编码解码再重解析,正是 mojibake 的机制性来源(与 content-deploy-hygiene 的乱码判定同源);多 head 是模板拼接事故,解析器容错重组后的 DOM 与你写的不一致。
-**触发(trigger)**: 1) 无 `<!DOCTYPE html>` 即 warn;2) charset 声明非 head 内首位即 warn;3) 文档解析出 >1 个 head 即 fail。
+**为什么(why)**: DOCTYPE 决定浏览器用标准模式还是怪异模式,怪异模式下布局规则回退到旧行为;charset 不在 head 前部时浏览器可能先用错编码解码再重解析,正是 mojibake 的机制性来源(与 content-deploy-hygiene 的乱码判定同源);多 head 是模板拼接事故,解析器容错重组后的 DOM 与你写的不一致。
+**触发(trigger)**: 1) 无 DOCTYPE 即 fail(源表现行);2) charset 声明非 head 内首位即 warn;3) 文档解析出 >1 个 head 即 fail。
 **不修的条件(caveat)**: 结构家族不(直接)影响排名(引擎容错强),然而它决定浏览器与引擎各自"看到什么",所以一般建议骨架零错。但遗留系统改 DOCTYPE 会牵动整站盒模型的,先在影子环境回归再上。
 **修复(fix)**: 模板统一 `<!DOCTYPE html>` 开头;`<meta charset="utf-8">` 紧随 head 开标签;排查双 head 的模板拼接/组件注入。
 **关联(seealso)**: htmlval-duplicate-meta、htmlval-head-content、content-deploy-hygiene;[semantic-html.md](semantic-html.md)、[head-elements.md](head-elements.md)
 
 #### htmlval-duplicate-meta [待核 ID]
-- 名称/类型: 重复 title/description(title 家族与 description 家族收口) —— issue · 优先级 high · 输出 CRITICAL(源表:多 title=fail;多 description=fail;title 在 head 外=fail)
+- 名称/类型: 重复 title/description(源表 ID `htmlval-multiple-titles`、`htmlval-multiple-descriptions`、`htmlval-title-outside-head`) —— issue · 优先级 high · 输出 CRITICAL(源表:多 title=fail;多 description=fail;title 在 head 外=fail)
 **这意味(what)**: 文档里不止一个 `<title>` 或不止一条 meta description,或 title 出现在 head 之外。
 **为什么(why)**: 多条声明时引擎取哪条不可控(常见取第一条或最后一条,实现不一),SERP 展示与你的优化对象脱节;title 在 head 外按无效处理等于没写。与 core-canonical-multiple(多条 canonical)同构:重复声明的歧义性比缺失更糟——坏信号>缺信号的又一次体现。title/description 家族的其余形态(缺失/长度/跨页重复)分别见 core-title-present、core-description-present、core-title-unique、content-duplicate-description,本条收口"多条/错位"。
 **触发(trigger)**: 1) `<title>` 计数 >1 即 fail;2) meta description 计数 >1 即 fail;3) title 元素祖先链不含 head 即 fail。
@@ -2114,15 +2118,15 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 **关联(seealso)**: core-title-present、core-description-present、core-canonical-multiple、htmlval-document-structure;[head-elements.md](head-elements.md)
 
 #### htmlval-head-content [待核 ID]
-- 名称/类型: head 非法元素家族 —— warning · 优先级 low · 输出 WARN(源表 warn;head 白名单 meta/title/link/script/style/base/noscript;head 内 noscript=warn)
+- 名称/类型: head 非法元素家族(源表 ID `htmlval-invalid-head`、`htmlval-noscript-in-head`) —— warning · 优先级 low · 输出 WARN(源表 warn;head 白名单 meta/title/link/script/style/base/noscript;head 内 noscript 仅含 link/style/meta 以外元素时 warn)
 **这意味(what)**: head 里出现白名单之外的元素(文本、div、img 等),或 head 内放了 noscript。
-**为什么(why)**: HTML 规范限定 head 只容纳元数据元素;非法内容触发解析器把 head 提前截断,把后续本该在 head 里的声明(meta/canonical)挤进 body——连带制造 core-canonical-outside-head 一类问题。head 内 noscript 是特例:其内部只允许 link/style/meta,常被误用于塞内容或脚本。
-**触发(trigger)**: 1) head 子元素标签名 ∉ {meta,title,link,script,style,base,noscript}(纯空白文本豁免)即 warn;2) head 内存在 noscript 即 warn。
+**为什么(why)**: HTML 规范限定 head 只容纳元数据元素;Google 说 head 里出现无效元素后,其后的元素会被忽略([valid-page-metadata](https://developers.google.com/search/docs/crawling-indexing/valid-page-metadata),核对 2026-10-21),连带造成 core-canonical-outside-head 一类问题。head 内 noscript 是特例:其内部只允许 link/style/meta,常被误用于塞内容或脚本。
+**触发(trigger)**: 1) head 子元素标签名 ∉ {meta,title,link,script,style,base,noscript}(纯空白文本豁免)即 warn;2) head 内 noscript 含 link/style/meta 以外元素即 warn。
 **不修的条件(caveat)**: 解析器会自愈重组,多数用户看不出异常,然而重组后的 DOM 与源码意图错位是隐患源,所以一般建议 head 纯净。但模板注释/条件注释残片命中属误报级,顺手清理即可。
 **修复(fix)**: 内容元素全部移出 head;noscript 的降级样式放 style、跳转提示放 body;模板 lint 头部白名单。
 **关联(seealso)**: htmlval-document-structure、core-canonical-outside-head;[head-elements.md](head-elements.md)
 
-#### htmlval-base [待核 ID]
+#### htmlval-base [待核 ID](源表 ID `htmlval-base-url`)
 - 名称/类型: base 元素误用 —— issue/warning · 优先级 medium · 输出 CRITICAL(href 空/畸形/非 HTTP(S),源表 fail)/WARN(多条,源表 warn;须 ≤1 条)
 **这意味(what)**: `<base>` 的 href 为空、畸形或非 HTTP(S) 协议,或文档里有多条 base。
 **为什么(why)**: base 重定义全页相对 URL 的解析基准:它一坏,页内所有相对链接/canonical/hreflang 的解析结果整体漂移——一条坏 base 能同时引爆相对 URL 类判罚,是单点故障放大器。规范限定每文档至多一条。
@@ -2132,17 +2136,17 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 **关联(seealso)**: i18n-hreflang-relative-url、core-canonical-present、htmlval-head-content;[head-elements.md](head-elements.md)
 
 #### htmlval-html-size [待核 ID]
-- 名称/类型: HTML 体积与占位文本 —— warning/issue · 优先级 medium · 输出 WARN(>250KB 与 lorem ipsum)/CRITICAL(>500KB)(源表:>250KB 警、>500KB 败、~2MB 以上 Googlebot 可能只索引前段;lorem ipsum=warn)
+- 名称/类型: HTML 体积与占位文本(源表 ID `htmlval-size-limit`、`htmlval-lorem-ipsum`) —— warning/issue · 优先级 medium · 输出 WARN(>250KB)/CRITICAL(>500KB、lorem ipsum)(源表:>250KB 警、>500KB 败;lorem ipsum=fail)
 **这意味(what)**: 未压缩 HTML 超过 250KB(500KB 进败档,~2MB 以上 Googlebot 可能只索引前段),或页面含 lorem ipsum 占位文本。
-**为什么(why)**: HTML 体积是解析与抓取预算的直接消耗:超大文档可能只处理前段,尾部内容与链接被截断;250/500KB 几乎总是内联数据 JSON/隐藏 DOM/注释未清的症状。lorem ipsum 则是模板没换真文案就上线的直接证据,对用户与引擎都是无意义内容(与 content-placeholder-text 的 {{ }} 占位符同族,此处并入陈述)。
-**触发(trigger)**: 1) HTML 响应体 >250KB 即警;>500KB 即败;2) 文本命中 lorem/ipsum 词表即 warn。
+**为什么(why)**: HTML 体积是解析与抓取预算的直接消耗:Googlebot 只抓文件前 2MB(解压后),之后的内容与链接不参与索引([Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot),核对 2026-10-21;与 perf-page-weight 同源);250/500KB 几乎总是内联数据 JSON/隐藏 DOM/注释未清的症状。lorem ipsum 则是模板没换真文案就上线的直接证据,对用户与引擎都是无意义内容(与 content-placeholder-text 的 {{ }} 占位符同族,此处并入陈述)。
+**触发(trigger)**: 1) HTML 响应体 >250KB 即警;>500KB 即败;2) 文本命中 lorem/ipsum 词表即 fail(源表现行)。
 **不修的条件(caveat)**: 体积阈值不是排名开关,然而它标记"尾部内容可能不被处理",所以一般建议压回 250KB 内并把关键内容与链接放前段。但合法的大文档(长表格/内联数据应用页)超线是形态属性,优先保证前段完整而非硬拆。
 **修复(fix)**: 内联 JSON 改按需接口拉取;注释/调试属性剥离;长列表服务端分页;lorem 命中直接换真文案或下线页面。
 **关联(seealso)**: perf-page-weight、perf-dom-size、content-deploy-hygiene;[cwv-playbook.md](cwv-playbook.md)
 
 ### AI/GEO Readiness(13 条,权重 2%)
 
-**全部 13 条细则已吸收于 [validation-guide.md](validation-guide.md)「审计阈值补充」与 [ai-crawler-policy.md](ai-crawler-policy.md)**,此处仅存目:geo-semantic-html/geo-content-structure/geo-ai-bot-access(GPTBot/Claude-Web/Anthropic/Google-Extended 放行)/geo-llms-txt(info)/geo-schema-drift(schema 须与可见内容一致)/geo-content-signals(Content-Signal 语法+ai-train=yes 但训练 bot 全 Disallow=矛盾)/geo-noai-signals(恒 pass 不扣分)/geo-agents-md/geo-well-known(MCP/agent-card)/geo-rsl-license/geo-markdown-response(根路径出 Markdown)/geo-markdown-page(非根 URL 须有 .md 表示)/geo-pay-per-crawl(402 且无 Pay/Crawler-Price/X-Crawler-Price/payment Link 头才警)。
+**全部 13 条细则已吸收于 [validation-guide.md](validation-guide.md)「审计阈值补充」与 [ai-crawler-policy.md](ai-crawler-policy.md)**,此处仅存目:geo-semantic-html/geo-content-structure/geo-ai-bot-access(GPTBot/Claude-Web/Anthropic/Google-Extended 放行)/geo-llms-txt(warn:页面未引用 llms.txt 才报,不取文件本身;Google 说明 llms.txt 对 Google 搜索无正负影响,见 [更新日志](https://developers.google.com/search/updates) 2026-06-15)/geo-schema-drift(schema 须与可见内容一致)/geo-content-signals(Content-Signal 语法+ai-train=yes 但训练 bot 全 Disallow=矛盾)/geo-noai-signals(恒 pass 不扣分)/geo-agents-md/geo-well-known(MCP/agent-card)/geo-rsl-license/geo-markdown-response(根路径出 Markdown)/geo-markdown-page(非根 URL 须有 .md 表示)/geo-pay-per-crawl(402 且无 Pay/Crawler-Price/X-Crawler-Price/payment Link 头才警)。
 
 ### Legal Compliance(1 条,权重 1%)
 
@@ -2153,7 +2157,7 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 #### legal-cookie-consent
 - 名称/类型: 追踪脚本无 CMP —— warning · 优先级 medium · 输出 WARN(源表:有 CMP 或无追踪脚本=pass,有追踪无 CMP=warn)
 **这意味(what)**: 页面加载了追踪脚本(GA/GTM/广告类)却没有检测到任何 CMP(consent management platform:CookieYes/OneTrust/Cookiebot/Termly/Quantcast)。
-**为什么(why)**: 双重后果:合规面,欧盟 GDPR/ePrivacy 系要求追踪前取得同意,无 CMP 的追踪直接踩监管红线(罚款案例常态化);数据面,无同意框架时 Google 标签在 EEA 按未同意降级处理——consent mode 缺失(见 technical-tagging)连带信号缺失,SEO 决策依赖的流量数据也失真。判定按"追踪器脚本指纹+CMP 特征 DOM"双查,不读 Cookie 值。
+**为什么(why)**: 合规面:欧盟 ePrivacy/GDPR 对非必要追踪通常要求事先同意(以法务意见为准,本套件未回读法规原文);数据面:Google 标签的 consent mode 缺失会影响 EEA 流量的计量(本次未回读 Google 文档,见 technical-tagging)。判定按"追踪器脚本指纹+CMP 特征 DOM"双查,不读 Cookie 值。源表现行 warn、权重 15。
 **触发(trigger)**: 1) 页面脚本命中追踪器指纹(GA/GTM/Meta Pixel 等[清单口径待核]);2) DOM/脚本无已知 CMP 特征(CookieYes/OneTrust/Cookiebot/Termly/Quantcast);两者同时成立即 warn;无追踪脚本则 pass。
 **不修的条件(caveat)**: 无 cookie 同意强制要求的辖区,无 CMP 不构成当地合规问题,然而境外流量接入后即暴露;纯必要 Cookie(会话/安全)无 CMP 是合法形态,不判。
 **修复(fix)**: 部署 CMP 并接 consent mode(gtag consent default+update,见 technical-tagging);追踪器一律经 CMP 门控加载;隐私政策同步(见 eeat-privacy-tos)。

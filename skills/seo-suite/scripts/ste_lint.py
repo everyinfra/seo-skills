@@ -37,6 +37,7 @@ import csv
 import json
 import os
 import re
+import unicodedata
 import sys
 from html.parser import HTMLParser
 
@@ -391,8 +392,17 @@ def is_prose(text: str, lang: str) -> bool:
     toks = text.split()
     if not toks:
         return False
-    words = sum(1 for x in toks if re.fullmatch(r"[A-Za-z][A-Za-z'’-]*[.,:;!?)]?", x))
+    words = sum(1 for x in toks if _is_word_token(x))
     return words / len(toks) >= 0.5
+
+
+def _is_word_token(tok: str) -> bool:
+    """按 Unicode 字母判断(B49 修):首字符是字母(L*),其余为字母、组合符号(M*)或 '’-,
+    末尾可带一个标点。修前 ASCII 正则把越南语(thế)、泰语、土耳其语(ç ş ğ ı)整块判成数据跳过。"""
+    t = tok[:-1] if tok and tok[-1] in ".,:;!?)…。、" else tok
+    if not t or not unicodedata.category(t[0]).startswith("L"):
+        return False
+    return all(unicodedata.category(c)[0] in ("L", "M") or c in "'’-" for c in t)
 
 
 def term_variants(body: str) -> list[dict]:

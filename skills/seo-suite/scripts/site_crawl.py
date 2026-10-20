@@ -66,6 +66,9 @@ SITEMAP_DEPTH_MAX = 3            # sitemap index 递归层数上限
 SITEMAP_CHILD_CAP = 100          # 单个 index 的子 sitemap 上限
 SITEMAP_LOC_CAP = 50_000         # loc 总量护栏
 SITEMAP_CLOSES_CRAWL = 50        # ≥50 条 loc 关闭爬虫兜底(ci-gates §四 unlighthouse 口径)
+# 口径核对(B56,2026-10-21):unlighthouse 文档 URL Discovery 页写「over 50 paths」会关爬虫,
+# 但源码 packages/core/src/discovery/routes.ts 是 `sitemapUrls.length >= 50`(main 分支)。
+# 行为以源码为准,保持 ≥50;文档与源码的差异记在这里,不改阈值。
 DEFAULT_MAX_PAGES = 500
 HARD_MAX_PAGES = 5_000           # --max 上限(超出警告+截断,建议采样)
 DEFAULT_DELAY = 1.0

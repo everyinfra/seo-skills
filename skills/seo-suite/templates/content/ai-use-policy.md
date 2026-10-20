@@ -1,8 +1,8 @@
-# AI 使用政策:{站点/品牌名} 内容生产四象限(AP 通讯社口径)
+# AI 使用政策:{站点/品牌名} 内容生产四象限(本套件口径)
 
 > **模板性质**:内容生产线的 AI 参与治理件——写给编辑与写手的分级规则,不是结果报告。
 > 每篇内容进入发布队列前,按本政策四象限定级;定级结果与处置写进 [pre-publish-checklist.md](pre-publish-checklist.md) 第 33 条(人工条目)。
-> **字段出处**:四象限口径=美联社(AP)AI 使用指引(研究/转录/翻译初稿/标题建议等可辅助,报道判断与新闻图片生成等禁用,产出须经人工审改);
+> **字段出处**:四象限分级、任务清单和披露三件套是**本套件口径**,不是 AP 的原文分类。已核对的外部依据只有三份:①AP 公开的生成式 AI 标准([AP](https://www.ap.org/the-definitive-source/behind-the-news/standards-around-generative-ai/),核对 2026-10-21)——AP 不用 ChatGPT 生成可发布内容,AI 输出一律当作未核实的素材,不用生成式 AI 增删照片、视频、音频里的元素,疑似虚假的 AI 图像不传播,AI 生成的插画只有在作为新闻主题时才可用并要在图注标明;②[Google 对生成式 AI 内容的指南](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content)(更新 2026-10-01)——AI 适合做调研和给原创内容加结构,批量生成无增量价值的页面可能违反规模化内容滥用政策,发布前要人工核对事实,标题、描述、结构化数据、图片 alt 同样要核;③[Google 垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies):规模化内容滥用「无论内容如何生成」都适用。
 > 登记于 [pipeline-completeness.md](../../references/overview/pipeline-completeness.md) R6 内容体系(ai-use-policy)。
 > 与 scaled-content-abuse 红线的关系:本政策是**合规底座**——见第三节。
 
@@ -10,7 +10,7 @@ _For: {编辑负责人 / 法务复核人} · Date: {YYYY-MM-DD} · Market: {市�
 
 ## The answer
 
-{一段独立成立:本站按 AP 四象限管理 AI 参与——AI 只做"可辅助"级任务(研究/转录/翻译初稿/标题建议/语法),且**人须审改后发布**;禁用级(报道判断/事实核实/采访引语杜撰/新闻图片生成)一律回人;"须人审"级 AI 起草、人重写;"须披露"级补标注三件套(工具名+版本+如何验证)。违反禁用级=内容不得进入发布队列;缺披露=发布闸第 33 条不通过。}
+{一段独立成立:本站按四象限管理 AI 参与——AI 只做"可辅助"级任务(研究/转录/翻译初稿/标题建议/语法),且**人须审改后发布**;禁用级(报道判断/事实核实/采访引语杜撰/新闻图片生成)一律回人;"须人审"级 AI 起草、人重写;"须披露"级补标注三件套(工具名+版本+如何验证)。违反禁用级=内容不得进入发布队列;缺披露=发布闸第 33 条不通过。}
 
 ## 一、四象限任务分级表
 
@@ -47,8 +47,8 @@ _For: {编辑负责人 / 法务复核人} · Date: {YYYY-MM-DD} · Market: {市�
 - 披露位置:页面可见的编辑说明或文末注;不藏在 meta/注释里。
 
 ## 三、与 scaled-content-abuse 红线的衔接(合规底座)
-- Google scaled-content-abuse 政策针对"大量无独立价值页"——批量闸门见 [programmatic-seo-gates.md](../../references/technical/programmatic-seo-gates.md);本政策是其**前置合规底座**:"人须审改后发布"+"人重写"保证每页有人工价值投入,批量化才不越红线。
-- 执行链:内容生产 → 本政策四象限定级(记录在案)→ [pre-publish-checklist.md](pre-publish-checklist.md) 第 33 条核验 → 发布。
+- Google 的规模化内容滥用政策针对「为操纵排名、而不是帮用户,批量生成的页面」,「无论内容如何生成」都适用,例子包括用生成式 AI 批量生成无增量价值的页面([垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies),核对 2026-10-21)。批量闸门见 [programmatic-seo-gates.md](../../references/technical/programmatic-seo-gates.md);本政策是其**前置合规底座**:"人须审改后发布"+"人重写"保证每页有人工价值投入。这只降低风险,不是 Google 认可的豁免条件。
+- 执行链:内容生产 → 本政策四象限定级(记录在案)→ [pre-publish-checklist.md](pre-publish-checklist.md) 第 33 条核验 → 发布。Google 的指南还要求核对「会出现在搜索结果里的元数据」:`<title>`、meta description、结构化数据、图片 alt,也走同一条人审。
 - 违规处置:禁用级任务回人;须披露级补标注后重过第 33 条;重复违规的管线停线复盘。
 
 ## 四、示例披露语(两则)
@@ -56,16 +56,28 @@ _For: {编辑负责人 / 法务复核人} · Date: {YYYY-MM-DD} · Market: {市�
 - 中文:本文翻译初稿由 {工具名}({版本})辅助完成,编辑 {姓名} 逐段重译并逐条对照 {原始来源} 核查事实后定稿;文中观点与判断均为编辑部的。
 - English: A draft translation of this article was assisted by {tool name} ({version}). Editor {name} re-translated each section and verified all facts against {primary sources} before publication; all judgments are the editors' own.
 
+## 五、检查清单(逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 每篇内容有定级记录 | 打开内容台账或 PR 描述,找「AI 参与等级」字段 | 通过:每篇有等级和处置。失败:任一篇无记录 → 不得进发布队列 |
+| 2 | 禁用级任务无 AI 产出 | 对照稿件修订历史或写作日志,看选题判断、事实核实、引语、新闻图片的来源 | 通过:全部由人完成,引语有采访记录。失败:出现 AI 生成的引语或图片 → 整篇回炉 |
+| 3 | 事实与数字已人工核实 | 抽 5 个数字点开来源;`python3 scripts/market_lint.py --market XX 稿件.md --report` 看「有源数字密度」 | 通过:抽查数字都能在来源页读到原句,有源数字密度不是 FAIL。失败:来源打不开或与原文不符 |
+| 4 | 搜索结果里会出现的元数据已人工核 | 逐项读 `<title>`、meta description、JSON-LD、图片 alt | 通过:与正文一致,无 AI 编造的信息。失败:任一项与正文不符 |
+| 5 | 披露三件套完整(触发披露时) | 读页面可见的编辑说明或文末注 | 通过:工具名、版本、验证方式都在,且在页面可见处(不在 meta 或注释里)。失败:缺项或版本过期 |
+| 6 | 批量发布过质量闸 | 批量页面准备 JSONL 后跑 `python3 scripts/pseo_batch_gate.py --records batch.jsonl --json`(退出码 0=PASS) | 通过:退出码 0。失败:退出码 1(STOP/WARNING)→ 退回数据层,不发布 |
+| 7 | 句子写法符合 STE | `python3 scripts/ste_lint.py 稿件.md --fail-on fail` | 通过:退出码 0(无 FAIL 级)。失败:退出码 1。脚本只做近似检查,报告里不写「符合 STE」 |
+
 ## What could change this conclusion
 
-- {AP 口径本身在演进:其内部指引更新(可用任务增删)时本表同步修订}
+- {外部依据更新:AP 公开标准或 Google 生成式 AI 内容指南变化时,本表同步修订}
 - {新工具/新版本进入编辑部 → 三件套的版本字段与"如何验证"口径须重新登记}
-- {法规变化:如 EU AI Act 透明度义务扩展到更多内容形态,披露要求只增不减}
+- {法规:欧盟 AI 法案第 50 条要求,为向公众通报公共利益事项而发布的 AI 生成或操纵文本须披露;经人工审校或编辑控制、且有自然人或法人承担编辑责任的内容可豁免([条文](https://artificialintelligenceact.eu/article/50/),核对 2026-10-21)。在欧盟发布的站点,本政策的人审记录要能证明这两个条件;适用日期和范围由法务确认}
 - {边界案例争议(某任务算可辅助还是须人审)→ 记入 Method Notes,季度复核时裁定并固化进分级表}
 
 ## Method Notes
 
-- 口径出处:四象限=AP(Associated Press)AI 使用指引框架;任务清单与三件套为套件落地口径;登记线索见 [pipeline-completeness.md](../../references/overview/pipeline-completeness.md) R6。
+- 口径出处:四象限、任务清单、披露三件套都是套件落地口径;外部依据见文件头三项(AP 公开标准、Google 生成式 AI 内容指南、Google 垃圾内容政策);登记线索见 [pipeline-completeness.md](../../references/overview/pipeline-completeness.md) R6。
 - 接口:定级结果与处置在 [pre-publish-checklist.md](pre-publish-checklist.md) 第 33 条 [人工] 核验;机检脚本不判 AI 参与等级,该条永远人工。
 - 使用方式:实例化时替换 {占位符}(站点名/适用范围/复核频率);入仓即受 self_check 七段式守护(本文件含 The answer / What could change this conclusion / Method Notes)。
 - 已知坑:披露写在 meta 或 HTML 注释里=没披露;披露语中的版本号过期(工具升级后未更新)按缺失处理。

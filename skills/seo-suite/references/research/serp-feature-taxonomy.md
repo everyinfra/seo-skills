@@ -9,25 +9,39 @@
 ## 三条通用原则
 
 1. **展示由搜索引擎自动决定。** 内容格式和结构化数据只影响是否「有资格」、能否被正确理解，不保证出现，也不保证排名或点击。
-2. **功能会变。** 同一查询在不同时间、地域、语言、设备下的功能组合不同，Google 也会增删功能。记录查看条件；拿不准某功能当前是否还在展示，以当前 Google 文档为准。
+2. **功能会变。** 同一查询在不同时间、地域、语言、设备下的功能组合不同，Google 也会增删功能（时间线见下文「Google 已收缩或移除的功能」）。记录查看条件；拿不准某功能当前是否还在展示，查 [Search Central 更新记录](https://developers.google.com/search/updates) 和 [结构化数据类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)。
 3. **结构化数据必须与可见正文一致。** 支持哪些富结果以 Google 结构化数据类型库的当前列表为准；schema.org 里有某个类型，不等于 Google 会为它展示富结果。
 
 ## 常见功能
 
 | 功能 | 出现时通常说明 | 页面能做什么 | 不能保证 / 注意 |
 |---|---|---|---|
-| 精选摘要 | 用户要一个直接答案：定义、步骤、列表或表格 | 在对应标题下紧跟简洁完整的回答，用真实的 `<ol>`、`<ul>`、`<table>` 组织 | 没有专门标记能申请；可用 `nosnippet`、`max-snippet` 限制摘录 |
-| People Also Ask | 主题下还有一串相关疑问 | 把真实相关问题当选题线索，在正文里清楚回答 | FAQPage 标记不会让页面进入 PAA |
+| 精选摘要 | 用户要一个直接答案：定义、步骤、列表或表格 | 在对应标题下紧跟简洁完整的回答，用真实的 `<ol>`、`<ul>`、`<table>` 组织 | 无法申请：Google 文档原文「You can't」，由系统判定。可用 `nosnippet`、`data-nosnippet`、`max-snippet` 限制摘录（[Featured snippets 文档](https://developers.google.com/search/docs/appearance/featured-snippets)，核对 2026-10-21） |
+| People Also Ask | 主题下还有一串相关疑问 | 把真实相关问题当选题线索，在正文里清楚回答 | Google 文档只说 PAA（related questions group）里可以出现精选摘要；没有任何文档说标记能让页面进入 PAA，本套件不把标记当手段 |
 | AI 概览 / AI 模式 | 问题需要综合多个来源 | 页面可被抓取、已编入索引、能以摘要形式展示；事实清楚、来源可核对 | Google 说明没有额外要求或专门的 AI 标记；不承诺被引用 |
-| 知识面板 | 查询指向一个实体（品牌、人物、机构） | 官网信息一致，Organization 结构化数据与可见信息一致，其他可信来源里有准确记录 | 不能直接申请或编辑；实体认领需走 Google 的验证流程 |
-| 附加链接（sitelinks） | 导航型、品牌型查询 | 清楚的站点结构、唯一且描述准确的页面标题、合理内链 | 全自动生成，无标记可控制；附加链接里的站内搜索框已被 Google 取消，以当前 Google 文档为准 |
+| 知识面板 | 查询指向一个实体（品牌、人物、机构） | 官网信息一致，Organization 结构化数据与可见信息一致，其他可信来源里有准确记录 | 内容自动生成。任何人可在结果页用「Feedback」提修改建议；验证身份后可提交「验证反馈」，Google 称可直接更正部分内容（如社交资料链接）（[Knowledge Panel 帮助](https://support.google.com/knowledgepanel/answer/7534842)，核对 2026-10-21） |
+| 附加链接（sitelinks） | 导航型、品牌型查询 | 清楚的站点结构、唯一且描述准确的页面标题、合理内链 | 文档原文「sitelinks are automated」，无标记可控制。附加链接里的站内搜索框已移除：2024-11-21 起不再显示（[博客 2024-10-21](https://developers.google.com/search/blog/2024/10/sitelinks-search-box)），文档 2024-11-29 删除（[更新记录](https://developers.google.com/search/updates)） |
 | 图片结果 | 用户想看样子、示意、设计 | 原创图片、描述性文件名和 alt、图片靠近相关文字、图片站点地图 | 图片搜索流量不一定转化 |
 | 视频结果 | 操作演示、评测类需求 | 视频有独立可索引的观看页面，提供 VideoObject 和视频站点地图；可标记关键片段 | 视频平台的结果常占多数，自有页面不一定进得去 |
 | 本地结果 | 显性或隐性的本地需求 | 维护商家资料（需要你自己的 Google 商家资料账号），各处名称、地址、电话一致 | 距离等因素不受网站控制 |
 | 购物结果 | 明确的购买意图 | Product 结构化数据与页面价格、库存一致；商品数据经 Merchant Center 提交（需要你自己的账号） | 页面和数据源不一致会被拒 |
 | 评分星级等富结果 | 用户在比较品质 | 只为 Google 支持的类型、真实存在的评分加标记 | 没有真实评分就不写 aggregateRating |
-| FAQ / HowTo 富结果 | 均已停止展示 | FAQPage 只描述页面上真实存在的问答；步骤照常用有序列表写清楚 | FAQ 按 [geo-evidence.md](../content/geo-evidence.md) 的记录；HowTo 以当前 Google 文档为准；都不当争取目标 |
+| FAQ / HowTo 富结果 | 均已停止展示 | FAQPage 只描述页面上真实存在的问答；步骤照常用有序列表写清楚 | FAQ：2026-05-07 起不再展示；HowTo：2023-09 起桌面和移动端都不再展示。时间和原文见下表。都不当争取目标 |
 | 相关搜索 | 用户的后续探索方向 | 作为选题和内链线索 | 无优化位 |
+
+### Google 已收缩或移除的功能（官方时间线，核对 2026-10-21）
+
+| 日期 | 变化 | 一手来源 |
+|---|---|---|
+| 2023-08-08 | FAQ 富结果只对「well-known, authoritative government and health websites」展示；HowTo 富结果只在桌面展示 | [博客](https://developers.google.com/search/blog/2023/08/howto-faq-changes) |
+| 2023-09-14 | 删除 HowTo 文档，原因：「no longer shown in search results, on both desktop and mobile devices」 | [更新记录](https://developers.google.com/search/updates) |
+| 2024-11-21 | 站内搜索框（sitelinks search box）不再显示；2024-11-29 删文档 | [博客](https://developers.google.com/search/blog/2024/10/sitelinks-search-box) |
+| 2025-01-22 | 面包屑富结果只在桌面端展示 | [更新记录](https://developers.google.com/search/updates) |
+| 2025-06-12 | 逐步停止 Book Actions、Course Info、Claim Review、Estimated Salary、Learning Video、Special Announcement、Vehicle Listing；2025-09-09 起这些类型从 Search Console 报告和 Rich Result Test 移除（Book Actions 的横幅后在 2025-11 撤回，仍有功能使用该标记） | [博客](https://developers.google.com/search/blog/2025/06/simplifying-search-results) |
+| 2025-11 | 停止 Practice Problem 和 Dataset 在 Google Search 展示（Dataset 标记仅用于 Dataset Search） | [更新记录](https://developers.google.com/search/updates) |
+| 2026-05-07 | FAQ 富结果不再展示（弃用通知 2026-05-08），文档 2026-06 删除 | [更新记录](https://developers.google.com/search/updates) |
+
+读法：这些变化「won't affect how pages are ranked」（2025-06 博客原文），只是少了展示样式。不必为此删标记；2023 年博客原文也说「Structured data that's not being used does not cause problems for Search」。
 
 ## 读 SERP 组合
 
@@ -41,6 +55,17 @@
 - 每个目标查询记录：日期、地域、语言、设备、出现的功能、各功能由哪个 URL 占据，最好附截图。数据来自你自有或自选的数据源（例如排名追踪工具导出、手工抽查）。
 - Search Console 效果报告的「搜索外观」筛选可看部分富结果的表现；按 Google 的 AI 功能说明，AI 概览和 AI 模式带来的流量计入「网页」搜索类型的总数（能否单独拆分以当前 Google 文档为准）。需要你自己的 Search Console 权限。
 - 功能出现、消失或易主时，先确认是否为功能本身调整，再判断是否与页面改动有关，不把相关性当因果。
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 要争取的功能 Google 仍在展示 | 对照上文「已收缩或移除」表；再看 [更新记录](https://developers.google.com/search/updates) 近 6 个月条目和 [类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery) | 功能不在移除表、类型库仍列出：通过。已移除：不列入缺口，不新增标记 |
+| 目标查询的功能快照带查看条件 | 无痕窗口手查或排名工具导出；每条记日期、地域、语言、设备、功能、占据 URL | 每条快照四项条件齐全：通过。缺任一项：该快照不用于对比 |
+| 标记与可见正文一致 | `python3 scripts/schema_lint.py <URL>` 抽取 JSON-LD 并查悬空引用、空答案、评分范围；再用 [Rich Results Test](https://search.google.com/test/rich-results) 看是否被识别 | 无 ERROR 且测试通过：通过。标记里有页面上看不到的内容：失败，删标记 |
+| 功能占有率 | 用上文长表算 `我方占据数 ÷ 该功能实际出现的查询数`；分母为 0 的功能不报 | 查询集固定、分母已记录：通过 |
+| 波动归因 | 自有词集：`python3 scripts/sensor_volatility.py --gsc <GSC导出.csv>` 看分档和 z30 异常日；再查 [状态面板](https://status.search.google.com/) | 异常日与公告日期重合才写「疑似更新」，窗口内结论标「待确认」 |
+| 品牌词 SERP 占位 | `python3 scripts/serp_occupancy.py --market <市场码> "域名1,域名2,…"`（市场码见 `markets.json`：tr/th/in/kr/jp/vn/ru） | 投诉站、UGC 站占位数已记录并写进品牌审计 |
 
 ## 交付物
 
@@ -65,9 +90,18 @@
 
 ## 市场差异:各市场 AIO 覆盖与 SERP 占位层(2026-10-09 深挖轮)
 
-**AIO 上线时间线(=市场红利窗口)**:印尼/巴西 2024-08 → 波兰 2025-03-26(Przeglądy od AI,~28.95% 单源)→ 德国 ~2025(覆盖 ~20%,Sistrix)→ **法国 2026-07-22(比德晚一年多——后上线市场多吃一年经典 SEO 窗口)**;巴西 AI Mode 2025-09-08 免 Search Labs 全量;荷兰触发率信息类仅 6.43%(2025-06,远低于美);意大利 48-54%[未证实:引用时须注明二手来源——检索未找到意语市场 48-54% 覆盖的一手研究;最接近口径为全球触发率 48%(2026-02,Otterly 等)与意语信息类查询 35-40%(lensky.it,无测量期),勿把全球数当地处数]。
+**AIO 上线时间线（市场红利窗口；核对 2026-10-21）**：
 
-**SERP 占位层(审计必查"谁占着本国 SERP")**:土耳其=UGC 五霸(Ekşi Sözlük/DonanımHaber/Technopat/Akakçe/Şikayetvar);泰国=Pantip(评测词霸榜,声誉+排名双角色);印度=聚合器层(JustDial 1000+ 城市/IndiaMART/Sulekha);越南=Kaskus 衰而未亡;韩国=Naver 自有垂直。
+| 市场 | 日期 | 来源 |
+|---|---|---|
+| 印尼、巴西（同批：英国、印度、日本、墨西哥） | 2024-08-15 | [Google 博客](https://blog.google/products-and-platforms/products/search/new-ways-to-connect-to-the-web-with-ai-overviews/) |
+| 德国、波兰、意大利、西班牙、葡萄牙、奥地利、瑞士、比利时、爱尔兰 | 2025-03-26 前后（Google 博客 2025-03-25 发布，[SERoundtable](https://www.seroundtable.com/google-ai-overviews-more-eu-regions-39132.html) 报道 03-26 上线） | [Google 博客](https://blog.google/feed/were-bringing-the-helpfulness-of-ai-overviews-to-more-countries-in-europe/) |
+| 巴西 AI 模式（巴西葡语，同批：印地语、印尼语、日语、韩语） | 2025-09-08 | [Google 博客](https://blog.google/products-and-platforms/products/search/ai-mode-expands-more-languages/) |
+| 法国（AI 概览和 AI 模式） | 2026-07-22，比德国晚一年多 | [Le Monde](https://www.lemonde.fr/en/pixels/article/2026/07/22/google-s-ai-overview-now-available-in-france-raises-anticipation-and-concern_6755715_13.html) |
+
+触发率是第三方样本，口径各不相同，只带样本引用，不互相比较：德国约 20% 的关键词出现 AIO（[Sistrix 2026-02-25](https://www.sistrix.com/blog/ai-overviews-in-germany/)，1 亿+ 德语关键词）；波兰 24.17% 的查询（[Senuto 2025-07](https://www.senuto.com/pl/blog/ai-overviews/)）；荷兰信息类查询 6.43%、商业类 2.17%（[SE Ranking 2025-06-04](https://seranking.com/nl/blog/ai-overviews-nederland/)，10 万个荷兰查询）。意大利没有找到可核的一手或可复现的覆盖率研究；全球触发率和意语子集的二手数字均不能当意大利数据引用。
+
+**SERP 占位层(审计必查"谁占着本国 SERP"；行业观察，本套件口径，各市场内置域名表见 `scripts/markets.json` 的 `serp_occupancy`，用 `python3 scripts/serp_occupancy.py --market tr "域名1,域名2"` 统计)**:土耳其=UGC 五霸(Ekşi Sözlük/DonanımHaber/Technopat/Akakçe/Şikayetvar);泰国=Pantip(评测词霸榜,声誉+排名双角色);印度=聚合器层(JustDial 1000+ 城市/IndiaMART/Sulekha);越南=Kaskus 衰而未亡;韩国=Naver 自有垂直。
 
 **声誉层通用模式**:品牌词 SERP 被本国投诉/UGC 平台占据(Şikayetvar/Pantip/Reclame Aqui/Отзовik/食べログ)——催生各国 ORM 产业;品牌词审计必查投诉站占位与情感。
 
@@ -77,9 +111,9 @@
 
 **垂直检索面清单**（multi-platform-search 类工具）：购物=Amazon / Walmart / eBay 站内搜索（各有独立排序因子，是 Google 购物卡之外的第二战场）；视频=YouTube 搜索 + 频道 + 字幕（字幕文本即视频关键词与 FAQ 素材，评论区=PAA 式追问挖掘）；应用=Apple App Store 搜索；本地 / 出行=TripAdvisor（类别与坐标过滤）、Airbnb；社交=TikTok / Instagram 档案页。广告库（Meta / Reddit / LinkedIn / TikTok）免费可查，是竞品付费创意与落地信息的监测源。观测任一引擎都记录引擎 + 查询 + 日期 + 地域参数，与上文「记录查看条件」同规矩。
 
-**页面变迁取证**（Wayback CDX，免费，约 15 请求/分钟）：prefix 匹配拉整域快照、按天去重、`id_` 后缀取原始 HTML。用途：核对竞品页面何时改版 / 改价、找回已下线的对比页与客户名单、为「变化开始的日期」提供独立证据，服务报告的时间线对齐。
+**页面变迁取证**（Wayback CDX 接口，免费；`matchType=prefix` 拉整域快照，`collapse` 参数去重，URL 时间戳后加 `id_` 取原始 HTML，参数见 [CDX 服务器文档](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server)；请求限速以 Internet Archive 当前说明为准，本次未找到官方数字）。用途：核对竞品页面何时改版 / 改价、找回已下线的对比页与客户名单、为「变化开始的日期」提供独立证据，服务报告的时间线对齐。
 
-**数字 PR 外联的序列规则**（cold-email-outreach / outbound-prospecting-engine，移植到链接、评测与专家引用请求）：触达节奏 Day 1 / 5 / 12，每次换角度换框架（Signal-Proof-Ask → PAS → 社证）；个性化三档——合并字段 / 按细分 / 逐人定制（超过 50 人不做逐人）；硬规则：首句谈对方不谈自己、每次触达给新理由（禁止 just checking in）、每封一个低门槛 CTA、主题 50 字符以内无感叹号；联系人去重并缓存，不重复触达；发出前人工审核样信；效果分层看（送达 → 打开 → 回复 → 正向回复），基准按客群给区间。注意边界：外联争取的是**第三方页面上的位置**，SERP 槽位本身仍由搜索引擎决定，与上文三条通用原则不冲突。
+**数字 PR 外联的序列规则**（来源仓 cold-email-outreach 的约定，本套件口径，未独立验证）：触达节奏 Day 1 / 5 / 12，每次换角度；首句谈对方，不写 just checking in；每封一个低门槛请求；主题 50 字符以内；联系人去重；发出前人工审核样信；分层看送达、打开、回复、正向回复。外联争取的是**第三方页面上的位置**，SERP 槽位本身仍由搜索引擎决定，与上文三条通用原则不冲突。
 
 ## 触发条件与优化动作对照表（深读 2026-10-09）
 
@@ -88,11 +122,11 @@
 | 特征 | 常见触发条件（旁证） | 优化入口 | 主要不可控项 |
 |---|---|---|---|
 | AI 概览 | 问题型、需综合多源的信息查询 | 无专门标记：页面可抓取、已索引、事实清楚可核对、被可靠来源引用；深入做法见 [geo-evidence.md](../content/geo-evidence.md) 与 [ai-citation-patterns.md](../content/ai-citation-patterns.md)（[Google AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)） | 是否被引用及引用版式 |
-| 精选摘要 | 定义 / 步骤 / 列表 / 表格型查询；页面通常已在前十，5-20 位常被引用为机会带（[Frase](https://www.frase.io/blog/how-to-optimize-for-featured-snippets-on-google)、[Moz](https://moz.com/blog/optimize-featured-snippets)） | 问题作 H2/H3，紧跟约 40-60 词直接回答；步骤用 `<ol>`、对比用 `<table>`；答案里不塞品牌名（[Moz](https://moz.com/blog/optimize-featured-snippets)、[Nightwatch](https://nightwatch.io/blog/optimize-for-featured-snippets)） | 无申请入口；`nosnippet` / `max-snippet` 只能主动限制 |
-| PAA | 主题存在追问链 | 用 PAA 树工具（如 AlsoAsked）与相关搜索挖真实问题，正文自然回答（[Semrush PAA 研究](https://www.semrush.com/blog/how-to-maximize-people-also-ask-seo-opportunities-study)）；FAQPage 标记不进 PAA | 问题由 Google 生成且会变 |
-| 本地包 | 显性 / 隐性地域意图 | Google 官方三因子：相关性、距离、知名度（[官方文档](https://support.google.com/business/answer/7091)）——资料完整、类目准确、各处 NAP 一致、真实评价积累；网格监测见 [local-grid-ranking.md](../monitoring/local-grid-ranking.md) | 距离权重不受网站控制 |
+| 精选摘要 | 定义 / 步骤 / 列表 / 表格型查询；第三方经验：页面已排自然结果前十的更有机会（[Frase](https://www.frase.io/blog/how-to-optimize-for-featured-snippets-on-google)），Google 文档没有写排名门槛 | 问题作 H2/H3，紧跟一段直接回答；步骤用 `<ol>`、对比用 `<table>`。第三方经验值：Nightwatch 写 40–60 词、Frase 写 40–50 词，Moz 建议答案里少用品牌名（[Moz](https://moz.com/blog/optimize-featured-snippets)、[Nightwatch](https://nightwatch.io/blog/optimize-for-featured-snippets)）。Google 没有字数要求，字数以把问题答完整为准 | 无申请入口；`nosnippet` / `max-snippet` 只能主动限制 |
+| PAA | 主题存在追问链 | 用 PAA 树工具（如 AlsoAsked）与相关搜索挖真实问题，正文自然回答。第三方研究：Semrush 对 100 万个美国桌面关键词的研究显示 PAA 出现在约 40–42% 的 SERP（[Semrush PAA 研究](https://www.semrush.com/blog/how-to-maximize-people-also-ask-seo-opportunities-study)，样本和日期见原文） | 问题由 Google 生成且会变 |
+| 本地包 | 显性 / 隐性地域意图 | Google 官方三因子：相关性（relevance）、距离（distance）、知名度（prominence）（[官方文档](https://support.google.com/business/answer/7091)）——资料完整、类目准确、各处 NAP 一致、真实评价积累；网格监测见 [local-grid-ranking.md](../monitoring/local-grid-ranking.md) | 距离权重不受网站控制 |
 | 购物 | 明确购买意图 | Product 结构化数据与页面价格 / 库存一致，Merchant Center feed 与页面一致（[电商指南](https://developers.google.com/search/docs/specialty/ecommerce)） | 商品数据审核与排序机制 |
-| 视频轮播 | 操作、评测、教程类查询 | 独立可索引观看页 + VideoObject；SeekToAction 让 Google 自动识别关键片段（[Google 官方博客](https://developers.google.com/search/blog/2021/07/new-way-key-moments)）；完整字幕 / 转录文本利于理解（[Search Engine Land](https://searchengineland.com/guide/how-to-win-video-driven-serps)） | 平台视频常占多数位 |
+| 视频轮播 | 操作、评测、教程类查询 | 独立可索引观看页 + VideoObject；SeekToAction 只需告诉 Google 跳转时间点的 URL 规则，Google 用 AI 识别关键片段；也可用 Clip 标记手动标注，或用 `nosnippet` 退出（[Google 官方博客 2021-07](https://developers.google.com/search/blog/2021/07/new-way-key-moments)）；完整字幕 / 转录文本利于理解（[Search Engine Land](https://searchengineland.com/guide/how-to-win-video-driven-serps)） | 平台视频常占多数位 |
 | 知识面板 | 查询指向实体 | Organization 结构化数据与可见信息一致；Wikidata 等外部实体源准确 | 面板内容自动生成 |
 | 图片包 | 视觉型查询（样子 / 设计 / 示意） | 原创图、描述性文件名与 alt、图片靠近相关文字、图片站点地图（[Google 图片 SEO](https://developers.google.com/search/docs/appearance/google-images)） | 图片流量不一定转化 |
 | 相关搜索 / 热门搜索 | 用户有后续探索方向 | 当选题与内链线索，无优化位 | 无 |
@@ -125,11 +159,11 @@
 
 ## SERP 波动测量
 
-- **Semrush Sensor**：0-10 日度波动分，0-2 低 / 2-5 正常 / 5-8 高 / 8-10 极高；可按 20+ 类目与设备拆分，支持对自己的查询集算 personal score（[官方](https://www.semrush.com/sensor)、[KB](https://www.semrush.com/kb/652-sensor)、[档位解读](https://seo.co/blog/rankings-volatility)）。
-- **MozCast**：固定约 1 万查询的「气温」隐喻指数，温度越高越动荡（[对比说明](https://seo.co/blog/rankings-volatility)）。
+- **Semrush Sensor**：0–10 日度波动分，官方 KB 原文档位「0-2 low, 2-5 normal, 5-8 high, 8-10 very high」；按行业类目、设备和国家拆分，可监测 30+ 种 SERP 功能的出现率，并可把自己的 Position Tracking 查询集算成个人分（[KB](https://www.semrush.com/kb/652-sensor)，核对 2026-10-21）。
+- **MozCast**：Moz 每 24 小时追踪人工挑选的 10,000 个关键词（20 个行业类目、5 个美国城市），与前一天的第一页自然结果比较，用「温度」表示变化程度（[MozCast](https://moz.com/mozcast)，核对 2026-10-21）。
 - **自建指数（不依赖第三方时）**：固定查询集每日快照前十，算「位置变动比例」= 发生排名变化的 URL 数 ÷（查询数 × 10）；更精细用 Spearman footrule 距离。特征变化另计一列：任一特征的占据者变化记 1。
 - **自建快照的操作步骤**：①固定查询集（30-100 个，含品牌词 / 非品牌词 / 各意图）→ ②固定查看条件（地域、语言、设备、个性化关闭或一致）→ ③每日同一时段抓取前十与特征清单 → ④入库为长表 → ⑤每周算位置变动比例与特征变化数，画时间线。
-- **判读纪律**（接上文「不把相关性当因果」）：全行业 Sensor 高企 + 本站波动 → 先怀疑算法更新，查 Google [搜索状态面板](https://status.search.google.com/products/rGHU1u87FJnkP6W2WywE/history) 是否有公告；Sensor 平静 + 单页暴跌 → 优先查自身改动（技术、内容、canonical）。波动期的策略是记录而非立即改页（[Nightwatch](https://nightwatch.io/blog/serp-volatility-tracking)）。
+- **判读纪律**（接上文「不把相关性当因果」）：全行业 Sensor 高企 + 本站波动 → 先怀疑算法更新，查 Google [搜索状态面板](https://status.search.google.com/) 是否有公告；Sensor 平静 + 单页暴跌 → 优先查自身改动（技术、内容、canonical）。波动期的策略是记录而非立即改页（[Nightwatch](https://nightwatch.io/blog/serp-volatility-tracking)）。
 - **混杂因素**：地域与设备个性化会让不同观察者看到不同 SERP；快照条件不固定时，「波动」里混着观察误差。快照必须锁定地域、语言、设备与采集时段。
 - **疑似更新期的报告写法**：只陈述「日期区间、受影响查询数、特征变化数、涨跌分布」，归因等 1-2 周窗口过后再下；窗口内结论标注「待确认」。
 - **类目分层**：Sensor 支持按行业类目看波动（[官方](https://www.semrush.com/sensor)）；本站查询集的类目与 Sensor 类目对齐后，行业波动与个体波动才可比。
@@ -158,4 +192,4 @@
 
 ### 来源补遗
 
-[Google 本地排名官方文档](https://support.google.com/business/answer/7091)、[SeekToAction 关键片段官方博客](https://developers.google.com/search/blog/2021/07/new-way-key-moments)、[Google AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)、[Semrush PAA 研究](https://www.semrush.com/blog/how-to-maximize-people-also-ask-seo-opportunities-study)、[Moz 精选摘要](https://moz.com/blog/optimize-featured-snippets)、[Frase 精选摘要](https://www.frase.io/blog/how-to-optimize-for-featured-snippets-on-google)、[Nightwatch 精选摘要](https://nightwatch.io/blog/optimize-for-featured-snippets)、[Search Engine Land 视频 SERP](https://searchengineland.com/guide/how-to-win-video-driven-serps)、[Semrush Sensor](https://www.semrush.com/sensor)、[Sensor KB](https://www.semrush.com/kb/652-sensor)、[SEO.co 波动档位](https://seo.co/blog/rankings-volatility)、[Nightwatch 波动应对](https://nightwatch.io/blog/serp-volatility-tracking)、[cloro.dev 特征追踪](https://cloro.dev/blog/serp-features-tracking)、[排名追踪工具对比](https://nathanojaokomo.com/blog/best-rank-tracking-tools)、[Semrush 排名追踪](https://www.semrush.com/features/rank-tracking/)、[Google 搜索状态面板](https://status.search.google.com/products/rGHU1u87FJnkP6W2WywE/history)
+[Google 本地排名官方文档](https://support.google.com/business/answer/7091)、[SeekToAction 关键片段官方博客](https://developers.google.com/search/blog/2021/07/new-way-key-moments)、[Google AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)、[Semrush PAA 研究](https://www.semrush.com/blog/how-to-maximize-people-also-ask-seo-opportunities-study)、[Moz 精选摘要](https://moz.com/blog/optimize-featured-snippets)、[Frase 精选摘要](https://www.frase.io/blog/how-to-optimize-for-featured-snippets-on-google)、[Nightwatch 精选摘要](https://nightwatch.io/blog/optimize-for-featured-snippets)、[Search Engine Land 视频 SERP](https://searchengineland.com/guide/how-to-win-video-driven-serps)、[Semrush Sensor](https://www.semrush.com/sensor)、[Sensor KB](https://www.semrush.com/kb/652-sensor)、[SEO.co 波动档位](https://seo.co/blog/rankings-volatility)、[Nightwatch 波动应对](https://nightwatch.io/blog/serp-volatility-tracking)、[cloro.dev 特征追踪](https://cloro.dev/blog/serp-features-tracking)、[排名追踪工具对比](https://nathanojaokomo.com/blog/best-rank-tracking-tools)、[Semrush 排名追踪](https://www.semrush.com/features/rank-tracking/)、[Google 搜索状态面板](https://status.search.google.com/)

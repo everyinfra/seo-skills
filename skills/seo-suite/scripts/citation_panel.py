@@ -151,7 +151,7 @@ STAGE_ALIASES = {"认知": "awareness", "比较": "consideration", "决策": "de
                  "转化": "conversion", "忠诚": "loyalty",
                  "awareness": "awareness", "consideration": "consideration",
                  "decision": "decision", "conversion": "conversion", "loyalty": "loyalty"}
-# persona 前缀表(Scrunch 官方配方)+ 固定后缀
+# persona 前缀表(本套件口径,参考 Scrunch 公开文章)+ 固定后缀
 PERSONA_PREFIXES = {
     "CMO": "As a CMO evaluating this for a 50-person team, ",
     "Founder": "As a bootstrapped founder, ",
@@ -338,9 +338,7 @@ def _row_to_prompt(cells, header):
         if k in PROMPT_COL_KEYS and v and v.strip():
             text = v.strip()
             break
-    if not text and cells:
-        text = (cells[0] or "").strip()
-    if not text:
+    if not text:                               # prompt 列为空 → 不拿编号等别的列顶替(B58)
         return None
     obj = {"text": text}
     for f in ("topic", "region", "lang"):
@@ -375,31 +373,46 @@ def _plain_prompt_text(s):
 
 def read_prompts_file(path):
     """templates/research/prompt-bank.md 形态 → prompt 对象列表。
-    支持: markdown 表格(列名 prompt/text/stage/topic/tags/branded/region/lang 任意子集,
-    分隔行 |---| 跳过)、带表头 CSV(首列为 prompt/text 等)、纯文本一行一条
-    (# 标题、<!-- 注释、> 引用行跳过;- / * / 1. 列表标记剥除)。表格与纯文本可混排;
+    契约(B58 修,2026-10-21):
+    - Markdown 表格:每张表按自己的表头解析(表与表之间以非表格行分隔),只收表头含
+      prompt 列(prompt/text/query/提示词/模板/模板(整句)…)的表的该列单元格,其余列
+      (漏斗→stage、topic/tags/branded/region/lang…)作元数据;表头行、分隔行 |---|、
+      没有 prompt 列的表(persona 前缀表、定义表)不收。文件里只要有一张带 prompt 列
+      的表,标题、正文句子、列表条目一律不算 prompt。
+      (修前:只看第一张表的表头,其余表的表头/persona 行和全部正文句子都被当 prompt,
+      整份 prompt-bank.md 解析出 72 条;修后 22 条 = 主矩阵 20 + 风险组 2。)
+    - 无带 prompt 列的表:带表头 CSV(首列为 prompt/text 等),或纯文本一行一条
+      (# 标题、<!-- 注释、> 引用行跳过;- / * / 1. 列表标记剥除)。
     按 text 去重。"""
     with open(path, encoding="utf-8") as f:
         raw_lines = f.read().splitlines()
-    table_rows, plain_lines = [], []
+    tables, plain_lines, cur = [], [], None
     for line in raw_lines:
         s = line.strip()
         if s.startswith("|") and s.endswith("|") and len(s) > 2:
             cells = [c.strip() for c in s[1:-1].split("|")]
             if cells and all(re.fullmatch(r":?-{2,}:?", c) for c in cells if c):
                 continue                       # markdown 分隔行
-            table_rows.append(cells)
-        elif s and not s.startswith(("#", "<", ">")):
+            if cur is None:
+                cur = []
+                tables.append(cur)
+            cur.append(cells)
+            continue
+        cur = None                             # 非表格行 → 当前表结束
+        if s and not s.startswith(("#", "<", ">")):
             plain_lines.append(s)
     out = []
-    if table_rows:
-        header = [c.lower() for c in table_rows[0]]
-        mapped = any(h in PROMPT_COL_KEYS or h in PROMPT_FIELDS for h in header if h)
-        for cells in table_rows[1:] if mapped else table_rows:
-            obj = _row_to_prompt(cells, header if mapped else None)
-            if obj:
-                out.append(obj)
-        out.extend({"text": t} for t in map(_plain_prompt_text, plain_lines) if t)
+    prompt_tables = []
+    for rows in tables:
+        header = [c.lower() for c in rows[0]]
+        if any(h in PROMPT_COL_KEYS for h in header if h):
+            prompt_tables.append((header, rows[1:]))
+    if prompt_tables:
+        for header, body in prompt_tables:
+            for cells in body:
+                obj = _row_to_prompt(cells, header)
+                if obj:
+                    out.append(obj)
     elif plain_lines:
         header = [c.strip().lower() for c in next(csv.reader([plain_lines[0]]))]
         if any(h in PROMPT_COL_KEYS for h in header):
@@ -418,7 +431,7 @@ def read_prompts_file(path):
 
 
 def persona_fanout(core_query, personas, existing=None):
-    """前缀注入变体清单(Scrunch 官方 persona 变换): 前缀+core query+固定后缀。
+    """前缀注入变体清单(本套件口径,参考 Scrunch 的 persona 变换思路): 前缀+core query+固定后缀。
     core query 命中 existing 中同名 prompt 时继承其 topic/stage 等元数据。"""
     core = core_query.strip()
     base = None
@@ -2631,8 +2644,9 @@ def build_parser():
     p.add_argument("--prompts", default="",
                    help="prompt 列表 CSV(单列,可带表头;产出旧字符串形态)")
     p.add_argument("--prompts-file", default="",
-                   help="prompt 库文件(markdown 表格/带表头 CSV/纯文本一行一条,"
-                        "templates/research/prompt-bank.md 形态;产出对象形态)")
+                   help="prompt 库文件,产出对象形态。Markdown:只取各表「模板(整句)/prompt/"
+                        "text/query」列单元格(漏斗/stage 等列作元数据;无 prompt 列的表、"
+                        "标题、正文不收);否则带表头 CSV 或纯文本一行一条")
     p.add_argument("--stage-mix", action="store_true",
                    help="打印 stage 配方建议(Scrunch 官方: 5 awareness+3 consideration+2 decision)")
     p.add_argument("--persona-fanout", default="",

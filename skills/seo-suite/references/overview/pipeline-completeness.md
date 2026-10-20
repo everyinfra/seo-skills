@@ -2,11 +2,13 @@
 
 > 建立 2026-10-11,来自 10 视角并行审计(策略适配/管线断链/pSEO/内容生命周期/内链架构/国际化/外链 PR/监控完备性/数据集成层/管线形态对标)。**愿景基准**:拿到一个网站 → 诊断它适合哪些策略 → 每条策略有一条完整落地管线(数据→计划→执行→验证)→ 每条有长期监控。断言半衰期:状态列每月 intel-update 复盘搭车核对。
 >
+> 性质:项目内部的建设登记簿,记录 2026-10-11 审计时的缺口和 2026-10-12 的收口状态。**文中的脚本数、测试数、文档数是当时的数**;现行数字以 `data/capability-matrix.json`(脚本 87、模板 25)和 `ls references/*/*.md | wc -l`(129,核对 2026-10-21)为准。提交号可用 `git cat-file -t <SHA>` 核对(本节引用的 13 个 SHA 2026-10-21 均存在)。外部来源的条目(IAB、arXiv 论文等)只登记入库状态,事实在 geo-evidence-bank.md 等文件里核对。
+>
 > **2026-10-12 收口**:R0-R4 各节头部已加状态行(✅=完成并指向实现物与 commit);R5 37 bug 修复波次与 R6 入库进度见第五节各组标注;50-agent 战役一句话总结见第五节末「战役总结」。
 
 ## 一、总判定
 
-分析零件 59 个、知识文档 119 篇都是第一梯队;缺的是**管线感**的四个根因:
+分析零件 59 个、知识文档 119 篇(审计当时的数,现为 87 个脚本、129 篇)都是第一梯队;缺的是**管线感**的四个根因:
 1. **无 project 实体与编排器**——链只存在于 SKILL.md 原则 0 的散文里;状态散落 6 处(.seo-monitor/、panel.json、remediations.json、.trend-state.json、.intel-state.json、seo-fixes/),agent 每次会话要重读 400 行自行拼链
 2. **无诊断型路由**——现在的路由是"用户要什么给什么";缺"体检×站型×资源→推荐策略组合"的 strategy-fit 层;8 张站型卡无识别信号(靠用户自报)、几乎不含命令链
 3. **数据线未打通**——GSC 同一份数据 4 种形态手工喂 6 个脚本;site_crawl 产的 edges 内链图零下游消费者;envelope 采用率 14/30;云/本地 sqlite 双份无同步
@@ -43,7 +45,7 @@
 | R0-6 | ~~trend_watch 无 cron/workflow~~ | ✅已修(c9ba773:3h cron,退出码 1 接 notify) |
 | R0-7 | ~~trend-state 写进 skill 安装目录~~ | ✅已修(新脚本状态一律 cwd;--state 可指工作区) |
 | R0-8 | ~~monitor 告警不进工单~~ | ⚠️未按原规格接线(critical 走 notify 路由,工单化由 project 编排层承担) |
-| R0-9 | ~~intel issue 无超时升级~~ | ✅已修(c9ba773:>72h 未关→notify) |
+| R0-9 | ~~intel issue 无超时升级~~ | ✅已修(c9ba773:>72h 未关→Actions 日志 ::warning,不自动关单,见 self-update-protocol.md) |
 | R0-10 | ~~freshness 无 CI 守护~~ | ✅已修(c9ba773:capability-drift job 顺带 --fail-stale) |
 
 ### R1 管线骨架(把散珠串成链——最高结构性优先)
@@ -130,9 +132,9 @@
 
 ### R6 知识边界接入(50+ 项,外部 8 视角)
 
-- 新方法论:Search Everywhere Optimization(Semrush/SEL/Adobe)/Kalicube Brand SERP 八面+Algorithmic Trinity v1.0/Community SEO/Zero-click 体系化 ——**已入库**(acd7100:search-everywhere-optimization.md/brand-serp-methodology.md/community-seo-playbook.md;Zero-click 并入 Search Everywhere 体系)
+- 新方法论(IAB《Measuring Visibility in the AI Era》2026-08-03 发布 4P:Presence、Prominence、Portrayal、Persuasion,[IAB](https://www.iab.com/news/iab-releases-measuring-visibility-in-the-ai-era/);下列其余条目为第三方方法,入库状态见各文件):Search Everywhere Optimization(Semrush/SEL/Adobe)/Kalicube Brand SERP 八面+Algorithmic Trinity v1.0/Community SEO/Zero-click 体系化 ——**已入库**(acd7100:search-everywhere-optimization.md/brand-serp-methodology.md/community-seo-playbook.md;Zero-click 并入 Search Everywhere 体系)
 - GEO 新面:IAB 4P 测量标准(Presence/Prominence/Portrayal/Persuasion)/Google agentic commerce 四项/ChatGPT Ads 正式面+Perplexity 转订阅/AI Mode monitoring 全量/个人 agent 客户端×5(Muse·dots·Grok Bot·Instinct·Perplexity Computer)/negative GEO 纠错 playbook ——**已入库**(acd7100:geo-evidence-bank.md Q3 批次+ai-crawler-policy.md/agent-protocols.md)
-- 学术修正(必须入库):arXiv 2609.35077(200 万引用:Schema/FAQ/CWV 正效应在域名固定效应下反转)/2607.14035(GEO 批判综述:无稳定跨平台因果)/2609.06811(提示集=答案市场)+6 篇全新(robots 合规实验/agent-ready 49→89/对话捕获/GEO 痕迹 8.9%/CHASE/冲突幻觉) ——**已入库**(acd7100:证据银行 Q3 学术批次 11 条,3 修正回改 7 处)
+- 学术修正(必须入库):[arXiv 2609.35077](https://arxiv.org/abs/2609.35077)(约 200 万条 LLM 引用、1 万页、19 个 B2B SaaS 工作区:FAQ、结构化数据、CWV 在合并数据里的正效应,加入域名固定效应后反转或归零)/[2607.14035](https://arxiv.org/abs/2607.14035)(GEO 批判综述)/[2609.06811](https://arxiv.org/abs/2609.06811)(提示语料定义答案市场)+6 篇全新(robots 合规实验/agent-ready 49→89/对话捕获/GEO 痕迹 8.9%/CHASE/冲突幻觉) ——**已入库**(acd7100:证据银行 Q3 学术批次 11 条,3 修正回改 7 处)
 - 运营体系:算法更新变更冻结协议(Freeze→Pause→Review)/四层运营节奏/治理 RACI(≥3 贡献者)/PRD+证据库/RICE/领导层沟通 ——**已入库**(acd7100:program-management.md+seo-drift-monitoring.md 冻结协议+continuous-operations 四层节奏)
 - 归因实验:split_test+功效计算(最足)/synthetic_control/geo_experiment(Meridian GeoX)/triangulate 三源 ——**已实装**(e8750d1:三脚本+triangulate 测试 42 例)
 - 内容体系:ContentOps 状态机+遥测/ai-use-policy(AP 四象限)/人评刻度+IRR/content_inventory 四轴治理(keep·update·consolidate·remove+redirect map——此前未登记)/组件化 COPE ——**已实装/入库**(c9ba773 content_queue ContentOps+ai-use-policy 模板;ec4422c content_inventory 四轴)
@@ -159,3 +161,13 @@
 ## 四、建设顺序建议
 
 R0(半天)→ R1(管线骨架,1-2 轮 agent 波)→ R2(数据接入)→ R3(生产线)→ R4(末端)。R1 是关键:没有 project 编排器,后面每个新工具都在加重"散珠"问题;有了它,59 个零件变成 10 条命名管线。
+
+## 检查清单(更新本登记簿时)
+
+| 检查什么 | 怎么查 | 通过 / 失败判据 |
+|---|---|---|
+| ✅ 条目的实现物存在 | `ls scripts/<名>.py`;`grep '<名>' data/capability-matrix.json` | 文件存在且矩阵有行。缺一项就把状态改回"未完成" |
+| 引用的提交存在 | `git cat-file -t <SHA>` | 输出 `commit`。输出错误 = SHA 写错或被改写,改成现存提交 |
+| 标"未实装"的条目确实没有脚本 | `ls scripts/linkable_assets.py scripts/disavow_check.py` | 报"没有该文件"才算一致;已有就把状态改为完成 |
+| 数字与现状一致 | `ls scripts/*.py \| wc -l`;`find templates -name '*.md' \| wc -l`;`python3 tests/test_capability_matrix.py` | 与矩阵 summary 一致;文中历史数字保留时要写明"当时的数" |
+| 论文条目可打开 | `curl -s "https://export.arxiv.org/api/query?id_list=<编号>"` | 返回标题与本文一致 |

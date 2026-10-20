@@ -56,7 +56,7 @@
 | sitemap_audit.py | URL --check-limit(可选) | markdown | sitemap URL 实时抓取(sitemapindex 递归 1 层;逐 loc 抽查状态码/标签) | ③+② | — | beta |
 | hreflang_cluster.py | URL...(多个) --max-extra(可选) | markdown | 多个 URL 实时抓取(HTML link 标签+HTTP Link 头+sitemap XML 三载体) | ② | test_hreflang_cluster.py | stable |
 | redirect_chain.py | URL | markdown | URL 实时逐跳 GET(手动跟随不自动重定向) | ③ | — | beta |
-| robots_posture.py | URL --fix-robots(可选) | json | robots.txt 实时抓取;27 bot 三层名单+RFC 9309 解析器内置本地 | ③ | test_robots_posture.py | stable |
+| robots_posture.py | URL --fix-robots(可选) | json | robots.txt 实时抓取;37 bot 四层名单(search 15/training 11/user 8/other 3,带官方核实标记)+RFC 9309 解析器内置本地 | ③ | test_robots_posture.py | stable |
 | llmstxt.py | validate FILE\|check URL\|generate --sitemap | markdown | validate=本地文件;check=线上 /llms.txt 等 4 路径探测;generate=--sitemap 实时抓取 | ③ | run_tests.py(内联) | stable |
 | schema_lint.py | URL | markdown | URL 实时抓取(提取全部 ld+json 块) | ③ | — | beta |
 | head_check.py | URL\|FILE --market(可选,zh 门控) | markdown | URL 实时抓取或本地 HTML 文件;--market zh 门控中文项 | ③+④ | run_tests.py(内联) | stable |

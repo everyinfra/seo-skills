@@ -15,7 +15,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Trac
 | 追踪词数 | {} | |
 | 进入 top10 / top3 | {} / {} | 上期 {} / {} |
 | 桶分布变化 | {top3 +n,11-20 -n} | 见下表 |
-| 首页词中 SERP 有 AIO 的 | {} | CTR 被压缩面 |
+| 首页词中 SERP 有 AI 概览的 | {} | 点击可能被分流的面(时点观测,不等于点击损失) |
 | Winners / Losers(阈值内) | {} / {} | Δ≥{} 位 |
 
 ## Rank Distribution(排名分布桶)
@@ -63,14 +63,25 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Trac
 2. {losers 止血:先查 {},复查日 {YYYY-MM-DD}}
 3.
 
+## 检查清单(出报告前逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 两期排名来自同一工具、同一设置 | 记录工具、地域、语言、设备、抓取时点 | 通过:两期设置相同。失败:换了设置 → 不比较 |
+| 2 | 排名与 GSC 同向 | `python3 scripts/gsc_api.py query` 拉规范化 CSV(`--help` 看参数),或网页导出;`python3 scripts/gsc_mining.py cur.csv prev.csv --decay --json` 看衰退词 | 通过:Winners 的点击同向上升、Losers 的点击同向下降。失败:排名升而点击不动 → 查 SERP 特性与 CTR |
+| 3 | quick-win 池 | `python3 scripts/gsc_mining.py queries.csv --json` 的 striking distance 节(排名 5–20、展示 ≥20,本套件口径) | 通过:清单里的词能对应到页面组。失败:对不上页面 |
+| 4 | 桶数相加等于追踪词数 | 数五个桶 | 通过:总和=追踪词数。失败:有词漏桶或重复 |
+| 5 | 单周抖动不当信号 | 只列 |Δ|≥{} 位且连续两期同向的词,或商业价值高的词 | 通过:Movements 表符合规则。失败:单周尖峰入选 |
+| 6 | 本地业务另行处理 | 本地网格排名用 `python3 scripts/grid_rank.py --help` 看参数,口径见 local-grid-ranking.md | 通过:不混入本表。失败:混入 |
+
 ## What could change this conclusion
 
 - {数据缺口:排名工具为采样(地域/个性化/时点),与真实用户位置可差 ±;不同工具不可比}
-- {仅相关非因果:升幅与 {} 同期发生非证明;定案:GSC 同词 CTR/点击同向确认}
+- {仅相关非因果:升幅与 {} 同期发生非证明;定案:GSC 同词 CTR/点击同向确认(窗口含 2025-05-13 至 2026-04-27 时 CTR 不可信,只看点击,[官方记录](https://support.google.com/webmasters/answer/6211453))}
 - {样本局限:追踪集 {} 词,长尾未覆盖;AIO 出现为时点观测}
 - {继承假设:桶界与 winner/loser 阈值沿用 {日期} 校准}
 
 ## Method Notes
 
-- 数据源与抓取时间:{排名工具+抓取时点+地域/设备设置}。已知坑:{GSC 平均排名变大可能是新增靠后展示稀释,不等于排名下降;位置随个性化波动,单周抖动不作信号}。数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{排名工具+抓取时点+地域/设备设置}。已知坑:{GSC 平均排名是站点最靠前那条结果的平均位置([官方定义](https://support.google.com/webmasters/answer/7576553)),新增靠后的展示会让数字变大,不等于排名下降;位置随个性化波动,单周抖动不作信号(本套件口径)}。数字缺失写 [要追加: 数据源],禁编造。
 - 符号:Change 正=上升;量级=工具估算月搜索;AIO=AI 概览。本地业务另用 local-grid-ranking.md 的网格口径,不入本表。

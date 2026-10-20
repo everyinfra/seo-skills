@@ -1,19 +1,19 @@
 # Google Discover 与新闻 SEO
 
-> 建立于 2026-10-09；2026-10-18 逐条核对一手来源（证据账本 C3）。规则以 Google Search Central 文档、Search Status Dashboard 和 Publisher Center 帮助为准。第三方数字标「第三方」，并写样本和时间。「本套件口径」是本套件的做法约定，不是 Google 规则。GEO 证据的仲裁见 [geo-evidence.md](geo-evidence.md)。
+> 建立于 2026-10-09；2026-10-18 逐条核对一手来源（证据账本 C3），2026-10-21 重新打开官方原文和第三方来源复核一遍。规则以 Google Search Central 文档、Search Status Dashboard 和 Publisher Center 帮助为准。第三方数字标「第三方」，并写样本和时间。「本套件口径」是本套件的做法约定，不是 Google 规则。GEO 证据的仲裁见 [geo-evidence.md](geo-evidence.md)。
 
 ## 一、Discover 机制（官方口径）
 
-- **资格**：内容被 Google 索引，并且符合 Discover 内容政策，就自动有资格。不需要特殊标签或结构化数据。有资格不等于一定出现。来源：[Get on Discover](https://developers.google.com/search/docs/appearance/google-discover)，核对 2026-10-18。
+- **资格**：内容被 Google 索引，并且符合 Discover 内容政策，就自动有资格。不需要特殊标签或结构化数据。有资格不等于一定出现。来源：[Get on Discover](https://developers.google.com/search/docs/appearance/google-discover)，核对 2026-10-21。
 - **排序**：Discover 复用 Search 的许多信号和系统。旧内容只要对用户有帮助、与兴趣相关，也可能出现。
-- **流量定位**：官方原话是 "less predictable or dependable"，并建议把 Discover 视为关键词搜索流量的补充。官方列出三类波动原因：用户兴趣变化、Discover 调整内容类型、Search 更新。官方没有说波动「与质量或发文频率无关」。
+- **流量定位**：官方原话是 "less predictable or dependable"，并建议把 Discover 视为关键词搜索流量的补充。官方列出三类波动原因：用户兴趣变化、Discover 调整内容类型、Search 更新。官方原话还说：Discover 的持续改进可能让站点流量变化，这些变化「unrelated to the quality or publishing frequency」，即不一定是内容质量或发文频率的问题。这句话不等于发文频率对 Discover 没有影响。
 - **2026-02 Discover 核心更新**：
   - Status Dashboard 事件名 "February 2026 Discover update"，起止 2026-02-05 09:00 至 2026-02-27 02:00（US/Pacific）。来源：[事件页](https://status.search.google.com/incidents/mYbNTqV1ytDc2fA8hUz4)。
   - 博客标题 "Google's February 2026 Discover Core Update"，正文称 "February 2026 Discover core update"。来源：[Search Central 博客 2026-02-05](https://developers.google.com/search/blog/2026/02/discover-core-update)。
   - 三项目标：多展示用户所在国家网站的本地相关内容；减少煽情内容和标题党；多展示有专长网站的深度、原创、及时内容。
   - 专长按话题逐个判断。综合站与垂直站有同等机会。例如本地新闻站的园艺版块可以在园艺话题上有专长。
   - 先对美国英语用户发布，"in the months ahead" 扩展到所有国家和语言。扩展进度以 Status Dashboard 为准。
-  - Search Engine Roundtable 称它是首个只针对 Discover 的核心更新（第三方）。
+  - Search Engine Roundtable 称它是 2026 年首个核心更新，且只针对 Discover（[SER 2026-02-05](https://www.seroundtable.com/google-february-2026-discover-core-update-40887.html)，第三方）。
 - **关注层（订阅）现状**：
   - 2025-09-17：用户可以在 Discover 里关注出版商和创作者。Discover 开始混入 X、Instagram 帖子和 YouTube Shorts。来源：[blog.google](https://blog.google/products-and-platforms/products/search/discover-updates-september-2025/)。
   - 2025-11-19：Google 从 Discover 文档删除旧版 Follow 功能（基于 feed 的 Chrome 实验）的指引，原因是 "The Follow feature is no longer shown in Google Discover"。来源：[文档更新日志](https://developers.google.com/search/updates)。
@@ -61,7 +61,7 @@
 
 ### News sitemap 规范（官方）
 
-来源：[Create a News Sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap)，核对 2026-10-18。
+来源：[Create a News Sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap)，核对 2026-10-21。
 
 - 只放最近两天内创建的文章。文章超过两天后，删掉该 URL，或删掉它的 `<news:news>` 标签。sitemap 因此变空时，Search Console 会给 Empty Sitemap 警告；官方说这不会造成问题。
 - 每个 news sitemap 最多 1,000 个 `<news:news>`。超过就拆成多个 sitemap。
@@ -171,7 +171,7 @@ curl -sI https://example.com/news/article | grep -i 'x-robots-tag'; curl -s http
 
 ## 五、监测
 
-- **GSC Discover 效果报告**（[帮助](https://support.google.com/webmasters/answer/9216516)）：指标只有展示、点击、CTR；可按页面、国家、Discover 外观、日期分组；没有查询词和排名位置。数据覆盖近 16 个月；达到最低展示量才显示报告；包含 Chrome 上的 Discover 流量。表格最多 1,000 行；日期按太平洋时间；数据一般延迟 2 至 3 天；指标记在 canonical URL 上。
+- **GSC Discover 效果报告**（[帮助](https://support.google.com/webmasters/answer/9216516)）：指标只有展示、点击、CTR；可按页面、国家、Discover 外观、日期分组；没有查询词和排名位置。数据覆盖近 16 个月；达到最低展示量才显示报告；包含 Chrome 上的 Discover 流量。表格最多 1,000 行；日期按太平洋时间；指标记在 canonical URL 上。数据延迟沿用效果报告的口径，一般 2 至 3 天（[数据差异说明](https://support.google.com/webmasters/answer/17010575)）。
 - **API**：Search Analytics API 的 `type` 参数支持 `discover` 和 `googleNews`（news.google.com 与 Google News App）；`news` 指 Search 的「新闻」标签。`discover` 和 `googleNews` 不支持 `aggregationType=byProperty`。来源：[searchanalytics.query](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)。套件的 `gsc_api.py query` 目前没有 `--type` 参数，Discover 数据要直接调 API 或在 GSC 导出：
 
 ```bash

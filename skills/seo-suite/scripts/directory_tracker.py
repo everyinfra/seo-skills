@@ -11,12 +11,13 @@ import/export CSV round-trip。
 数据文件 CSV(默认当前目录 directory-submissions.csv,--file 可指定),列(init 实测):
   ID, Directory, Tier, URL, Category, DR, Dofollow, Cost, Submission Date, Status,
   Live URL, Backlink Verified, Positioning Variant Used, Tags Used, Account Email, Notes
-  Dofollow: "?"(未知,默认)| dofollow | nofollow(verify 现场改写)
+  Dofollow: "?"(未知,默认)| dofollow | nofollow | sponsored | ugc(verify 现场改写;
+  后三者是 Google 链接限定属性,同一锚点多个时按 nofollow>sponsored>ugc 取一)
   Status: pending(未提交)| submitted | live | removed(verify 现场改写)
   Tier: 1-13(文档 13 层目录结构 T1..T13)
 
 用法: python3 directory_tracker.py <init|add|list|verify|quarterly|export|import> [选项]
-退出码: 0 正常 / 1 verify 发现问题(removed/nofollow/找不到链接/不可达)或
+退出码: 0 正常 / 1 verify 发现问题(removed/nofollow/sponsored/ugc/找不到链接/不可达)或
 quarterly 队列非空(cron 消费,照 trend_watch 口径接 notify) / 2 输入或参数错误。
 
 并发口径(R5,照 remediation.py):save_store 原子写(tempfile + os.replace)+
@@ -41,7 +42,10 @@ from datetime import datetime, timezone
 SCHEMA_VERSION = 1
 DEFAULT_FILE = "directory-submissions.csv"
 STATUSES = ("pending", "submitted", "live", "removed")
-DOFOLLOW_VALUES = ("?", "dofollow", "nofollow")
+# Google 链接限定属性(qualify-outbound-links):三者都让链接不传权,分别记录(B60)。
+# 一个锚点带多个时按此优先级落 Dofollow 列;checks.rel_qualifiers 列全。
+REL_QUALIFIERS = ("nofollow", "sponsored", "ugc")
+DOFOLLOW_VALUES = ("?", "dofollow") + REL_QUALIFIERS
 TIERS = range(1, 14)                       # 文档 13 层 T1..T13
 QUARTERLY_DAYS = 90                        # 季度复检窗
 RECHECK_STATUSES = ("submitted", "live")   # 需要复检的在途状态
@@ -70,7 +74,7 @@ init 模板 → add 登记目录 → verify 现场核验(HEAD/GET + rel=nofollow
   ID, Directory, Tier, URL, Category, DR, Dofollow, Cost, Submission Date, Status,
   Live URL, Backlink Verified, Positioning Variant Used, Tags Used, Account Email, Notes
   (骨=文档 14 列;ID/Cost 为工具管理列)
-  Dofollow: ?|dofollow|nofollow / Status: pending|submitted|live|removed / Tier: 1-13
+  Dofollow: ?|dofollow|nofollow|sponsored|ugc / Status: pending|submitted|live|removed / Tier: 1-13
 
 子命令:
   init --directories directory-submissions.md [--file F] [--json]
@@ -85,9 +89,10 @@ init 模板 → add 登记目录 → verify 现场核验(HEAD/GET + rel=nofollow
       表格(ID/Directory/Tier/Dofollow/Status/提交日/复检日)。
   verify --entry DIR-001 --target https://mysite.com [--file F] [--json]
       现场核验(模块级 fetch,测试打桩点):HEAD 目录页(liveness)→ GET 正文找
-      指向 --target 的 <a>,查其 rel 是否含 nofollow。200+dofollow → Status=live、
+      指向 --target 的 <a>,查其 rel 限定属性(nofollow/sponsored/ugc,多值按空白拆;
+      JSON checks.rel_qualifiers 列全)。200+dofollow → Status=live、
       Dofollow=dofollow、Backlink Verified=今天(退出码 0);404/410 → Status=
-      removed(1);发现 nofollow(1)/ 找不到指向目标的链接(1,不盖 verified 章)/
+      removed(1);发现 nofollow/sponsored/ugc(1,result=<属性>_found)/ 找不到指向目标的链接(1,不盖 verified 章)/
       不可达(1,行不动)。SSRF:仅 http(s),私网/环回/链路本地/元数据地址拒。
   quarterly [--file F] [--json]
       季度复检队列:Status ∈ submitted/live 且(Backlink Verified 空 → 从未核验,
@@ -364,14 +369,12 @@ HREF_RE = re.compile(r"""href\s*=\s*["']?([^"'>\s]+)""", re.I)
 REL_RE = re.compile(r"""rel\s*=\s*["']?([^"'>]+)["']?""", re.I)
 
 
-def check_dofollow(body, target):
-    """正文 → (anchor_found, "dofollow"|"nofollow"):找 href 指向 target 域的 <a>,
-    查其 rel 是否含 nofollow(多处锚点不一致时以 nofollow 为准——保守口径:
-    目录页只要任一指向目标的锚点带 nofollow 就按 nofollow 记)。"""
+def _target_rels(body, target):
+    """正文 → 指向 target 域的每个 <a> 的 rel token 集合列表;target 无域 → None。"""
     tdom = registrable_domain(target)
     if not tdom:
-        return False, "?"
-    nofollow_hits = []
+        return None
+    out = []
     for m in ANCHOR_RE.finditer(body or ""):
         attrs = m.group(1)
         hm = HREF_RE.search(attrs)
@@ -381,10 +384,26 @@ def check_dofollow(body, target):
         if h != tdom and not h.endswith("." + tdom):
             continue
         rm = REL_RE.search(attrs)
-        nofollow_hits.append(bool(rm and "nofollow" in rm.group(1).lower().split()))
-    if not nofollow_hits:
+        out.append(set(rm.group(1).lower().split()) if rm else set())   # 多值按空白拆
+    return out
+
+
+def rel_qualifiers(body, target):
+    """指向 target 的锚点上出现过的限定属性(按 REL_QUALIFIERS 顺序,去重)。"""
+    seen = set().union(*(_target_rels(body, target) or [set()]))
+    return [q for q in REL_QUALIFIERS if q in seen]
+
+
+def check_dofollow(body, target):
+    """正文 → (anchor_found, "dofollow"|"nofollow"|"sponsored"|"ugc"):找 href 指向
+    target 域的 <a>,查其 rel 的限定属性(B60 修:Google 文档三个限定属性 sponsored/
+    ugc/nofollow 都不是 dofollow;修前只认 nofollow)。多处锚点不一致时保守:任一锚点
+    带限定属性就按限定记,多个时按 REL_QUALIFIERS 优先级取一个,全部见 rel_qualifiers()。"""
+    rels = _target_rels(body, target)
+    if not rels:
         return False, "?"
-    return True, ("nofollow" if any(nofollow_hits) else "dofollow")
+    quals = rel_qualifiers(body, target)
+    return True, (quals[0] if quals else "dofollow")
 
 
 # ---------------------------------------------------------------------------
@@ -550,7 +569,7 @@ def cmd_verify(rest):
             return 1
         checks = {"reachable": res["status"] < 400,
                   "status_code": res["status"],
-                  "anchor_found": False, "dofollow": "?"}
+                  "anchor_found": False, "dofollow": "?", "rel_qualifiers": []}
         if res["status"] >= 400:
             row["Status"] = "removed"
             row["Backlink Verified"] = today_str()      # 核验过:确实没了
@@ -560,15 +579,17 @@ def cmd_verify(rest):
         else:
             anchor_found, dof = check_dofollow(res["body"], val["--target"])
             checks["anchor_found"], checks["dofollow"] = anchor_found, dof
+            checks["rel_qualifiers"] = rel_qualifiers(res["body"], val["--target"])
             if not anchor_found:
                 result = "anchor_missing"              # 页在但找不到指向目标的链接
-            elif dof == "nofollow":
+            elif dof in REL_QUALIFIERS:
                 row["Status"] = "live"
-                row["Dofollow"] = "nofollow"
+                row["Dofollow"] = dof
                 row["Backlink Verified"] = today_str()
                 row["Notes"] = (row.get("Notes") or "") + ("; " if row.get("Notes") else "") \
-                    + "verify %s: 转 nofollow(文档诚实条款:目录可能悄悄转)" % today_str()
-                result = "nofollow_found"
+                    + "verify %s: 转 %s(文档诚实条款:目录可能悄悄转)" % (
+                        today_str(), " ".join(checks["rel_qualifiers"]))
+                result = dof + "_found"
             else:
                 row["Status"] = "live"
                 row["Dofollow"] = "dofollow"
@@ -584,6 +605,8 @@ def cmd_verify(rest):
         msg = {"verified": "在链 + dofollow(Backlink Verified=%s)" % today_str(),
                "removed": "目录页 HTTP %d → 已标 removed" % res["status"],
                "nofollow_found": "页在但锚点 rel=nofollow(目录悄悄转 nofollow)",
+               "sponsored_found": "页在但锚点 rel=sponsored(付费链接,不传权)",
+               "ugc_found": "页在但锚点 rel=ugc(用户生成内容链接,不传权)",
                "anchor_missing": "页在但未找到指向 %s 的链接(不盖 verified 章)"
                                  % registrable_domain(val["--target"])}[result]
         print("verify: %s [%s] %s" % (tid, row["Directory"], msg))

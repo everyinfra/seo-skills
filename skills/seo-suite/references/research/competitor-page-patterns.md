@@ -43,7 +43,7 @@
 - 建立 competitor 数据单一事实源，统一维护定价、功能、优缺点、迁移信息。
 - individual page 与 hub page 双向内链。
 - 从 feature pages、solution pages、footer 向高优先级 comparison pages 分发内部链接。
-- 页面上有真实问答时可以用 FAQPage 描述，但按 [geo-evidence.md](../content/geo-evidence.md) 的记录，Google 已停止展示 FAQ 富结果，不要把它当作流量手段。
+- 页面上有真实问答时可以用 FAQPage 描述，但 Google 自 2026-05-07 起不再展示 FAQ 富结果（[更新日志](https://developers.google.com/search/updates)，核对 2026-10-21；另见 [geo-evidence.md](../content/geo-evidence.md)），不要把它当作流量手段。
 
 ## 输出要求
 默认应输出：
@@ -53,6 +53,18 @@
 4. 每种页面模板骨架
 5. 内链与 index page 方案
 6. 需要集中维护的 competitor data 字段
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过/失败 |
+|---|---|---|
+| 竞品 URL 清单完整 | `python3 scripts/site_crawl.py https://竞品域 --out crawl.json --urls-out urls.txt`（遵守其 robots.txt；脚本默认礼貌抓取） | `urls.txt` 行数与竞品 sitemap 的 loc 数量同量级 |
+| 分桶 | 对 `urls.txt` 按路径正则分桶：`grep -cE '/(alternatives|compare|vs)/' urls.txt` 等 | 各桶有计数；无规律 URL 走"抽样标注"兜底 |
+| 标题公式 | 每桶抽样取 title/H1：`python3 scripts/head_check.py <URL>` | 每桶 1–3 个公式及使用频率 |
+| 深度分布 | 每桶抽样记字数、H2/H3、表格数；取中位数与分位数 | 给出 P25/中位/P75，不用平均值 |
+| SERP 对照 | 对 10 个核心查询手工填第 4 步表，记录日期、地域、语言、设备 | 每行有 occupier_url 和页型 |
+| 我方页对应 | 每张页型卡的 URL pattern、标题公式、骨架、深度目标、内链规则齐全 | 7 项缺 1 项＝未完成 |
+| 页面规模闸门 | 批量生成对比页前对照 [programmatic-seo-gates](../technical/programmatic-seo-gates.md) | 每页有独立判断，不只换竞品名 |
 
 ## 来源
 

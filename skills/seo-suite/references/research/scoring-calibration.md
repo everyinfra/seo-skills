@@ -4,6 +4,12 @@
 
 套件里任何打分脚本(geo_difficulty.py、quality_rater.py、trust_signals.py、serp_occupancy.py 等)要**新建评分、调权重、改阈值曲线**时先读本文。一条铁律先行:权重和曲线**不许手调**——来源仓在权重表上方留了原话注释 `NEVER hand-tune these: refit with the study command under its pre-registered gates`。方法源自 ASO 域(respectlytics/respectaso,App Store 关键词评分器),与域无关,逐条移植到 SEO/GEO。
 
+## 先说清楚:哪些是来源仓的数,哪些是本套件的
+
+- 下文的闸门数值(Spearman ≥0.25、留出 30%、观测 <500 拒绝拟合、每箱 ≥25 观测、尾部上限 250)和结果数字(Spearman 0.61、Pearson 0.65、MAE 8.6、327 个官方值 + 90 个负样本)是 respectaso(App Store 关键词评分器)的值。2026-10-21 重新打开该仓 `rank_calibration_study.py`、`scoring.py`、`services.py`、`popularity.py`、`keyword_scoring.py` 逐条核对,数字与注释一致。
+- **它们是 ASO 的,不是 SEO 的。** 本套件至今没有任何评分脚本做过校准:`grep -ln "NEVER hand-tune" scripts/*.py` 无结果。`geo_difficulty.py` 的 0.35/0.40/0.25、`health_score.py` 的类权重、`gsc_mining.py` 的期望 CTR 曲线,都是**本套件口径**。
+- 把方法用到 SEO 评分时,阈值要自己在见数据前写下来(第二节),不能直接套 0.25。
+
 ## 核心立场
 
 评分器要回答一个它自己看不见的问题(ASO 例:"给定强度的 app 在给定难度的关键词上落在第几名")。答案不许假设,**问平台本身**:每个 SERP 一次就回答 200 个候选的排序问题,一次搜索就是 200 条标注。SEO/GEO 等价物:一份真实 SERP/AI 回答的引用列表就是一次多目标观测。
@@ -86,20 +92,57 @@ DIFFICULTY_VERSION = 3     # 难度算法变了
 
 SEO/GEO 移植:同一 URL 出现在多个报告/实体/扫描里时,审计结论、覆盖率、E-E-A-T 判定字段一律"读一次、写全部、各自只留自己的位置型字段";禁止每个消费者各自测量。
 
-## 移植清单(新评分器上线前逐项打勾)
+## 检查清单(新评分器上线前逐项过)
 
-1. 找到官方绝对锚并注明来源;找不到则声明纯启发式;
-2. 判据写进计划文档并注明日期,**见数前**固定,含"超旧模型"条款;
-3. 校准数据缓存落盘;观测数不足直接拒绝拟合;
-4. holdout 按 crc32(term/site) 哈希切,同组同行同侧,多种子复验;
-5. 三指标 + 分组校准误差并列输出,与 baseline 对照;
-6. 单调关系用加权 PAV 强制;首尾外推规则显式写明并给理由;
-7. 权重表上方留 NEVER hand-tune 注释,指向重拟合命令;
-8. 每类逻辑一个独立版本号,bump 才重算,重算吃冻结输入;
-9. 校准脚本与线上代码共用同一特征提取器;
-10. 一次测量扇出写全,幂等对齐兜底。
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 有官方绝对锚,或声明为纯启发式 | 在脚本头注释写出锚的来源 URL;没有就写「纯启发式,未校准」 | 头注释有来源或有声明 |
+| 2 | 判据在见数前写进计划文档并注明日期,含「超旧模型」条款 | 计划文档的提交时间早于第一次跑数据的时间(`git log --format=%cI -- <文档>`) | 提交早于数据:通过 |
+| 3 | 校准数据缓存落盘,观测不足时拒绝拟合 | 脚本有 `--cache` 一类参数;观测数低于下限时报错退出 | 低于下限的输入被拒绝 |
+| 4 | 留出集按键哈希切分,同键同侧 | 运行下面的 Python 片段,同一键两次结果相同 | 两次相同:通过 |
+| 5 | 三指标并列输出,并与 baseline 对照 | 输出同时含 Spearman、Pearson、log2 误差和现行模型的同一组数 | 缺任一项:失败 |
+| 6 | 单调关系用加权 PAV 强制 | 输出的曲线随难度单调不降 | 出现反向区间:失败 |
+| 7 | 权重表上方留「NEVER hand-tune」注释,指向重拟合命令 | `grep -n "NEVER hand-tune" <脚本>` | 有命中:通过 |
+| 8 | 每类逻辑一个独立版本号 | `grep -n "_VERSION *=" <脚本>`,改权重时只 bump 对应号 | 版本号随改动变化 |
+| 9 | 校准脚本与线上代码共用同一特征提取器 | 校准脚本里 `import` 打分脚本的函数,不复写 | 没有第二份实现 |
+| 10 | 一次测量扇出写全 | 同一对象出现在多个报告里,字段值一致 | 无字段分歧 |
+
+可直接运行的最小工具(标准库,按键哈希切留出集 + Spearman):
+
+```python
+import zlib, math
+
+def held_out(key, seed="s1", share=0.30):
+    return (zlib.crc32(f"{seed}:{key}".encode()) % 1000) / 1000 < share
+
+def rank(xs):
+    order = sorted(range(len(xs)), key=lambda i: xs[i])
+    r = [0.0] * len(xs)
+    i = 0
+    while i < len(order):                      # 并列取平均名次
+        j = i
+        while j + 1 < len(order) and xs[order[j + 1]] == xs[order[i]]:
+            j += 1
+        for k in range(i, j + 1):
+            r[order[k]] = (i + j) / 2 + 1
+        i = j + 1
+    return r
+
+def spearman(a, b):
+    ra, rb = rank(a), rank(b)
+    ma, mb = sum(ra) / len(ra), sum(rb) / len(rb)
+    num = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
+    den = math.sqrt(sum((x - ma) ** 2 for x in ra) * sum((y - mb) ** 2 for y in rb))
+    return num / den
+
+print(spearman([1, 2, 3, 4, 5], [2, 4, 6, 8, 10]))   # 1.0
+print(spearman([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]))    # -1.0
+print(held_out("kw-a") == held_out("kw-a"))           # True:同一键永远同侧
+```
+
+现有脚本的自检:`python3 scripts/geo_difficulty.py --self-test`(只验证算术,不验证权重是否合理)。
 
 ## 来源
 
 - 一手深读(2026-10-09,depth-1 克隆):[respectlytics/respectaso](https://github.com/respectlytics/respectaso) `aso/management/commands/rank_calibration_study.py`(469 行,全部闸门/PAV/crc32 实现)、`aso/scoring.py`(POP_TO_SEARCHES 锚定、RANK_BY_GAP/TYPICAL_BY_GAP 双表、rank_from_gap 外推)、`aso/services.py`(PopularityEstimator.V2_WEIGHTS 与 NEVER hand-tune 注释、信号设计)、`aso/popularity.py`(三版本号与重算)、`aso/keyword_scoring.py`(twin 行读写与对齐)。
-- 本文为方法论提炼,数字均出自上述文件内注释;引用实现细节以仓库原文件为准。
+- 本文为方法论提炼,数字均出自上述文件内注释(2026-10-21 重新核对,一致);引用实现细节以仓库原文件为准。

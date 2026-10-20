@@ -170,8 +170,10 @@ def unit_len(s, unit):
     if unit == "fullwidth":
         return math.ceil(sum(1.0 if unicodedata.east_asian_width(c) in ("W", "F") else 0.5 for c in s))
     if unit == "grapheme":
+        # SARA AM(U+0E33/U+0EB3)是 SpacingMark,并入前字(与 Intl.Segmenter 一致,B53 同类修)
         return sum(1 for c in s if unicodedata.combining(c) == 0
-                   and unicodedata.category(c) not in ("Mn", "Cf"))
+                   and unicodedata.category(c) not in ("Mn", "Mc", "Me", "Cf")
+                   and c not in "\u0e33\u0eb3")
     return len(s)
 
 def is_cjk(ch):
@@ -188,33 +190,37 @@ def is_grapheme_base(ch):
     """字素近似基字符(markets.json units.grapheme 口径)——泰文组合标记不计。"""
     return unicodedata.combining(ch) == 0 and unicodedata.category(ch) not in ("Mn", "Cf")
 
-def wc(text):
-    """词数(CJK 感知 + S2 修复):
-    - CJK 逐字计(原有);
-    - 天城文(0x0900-0x097F)逐字计——此前记 0;
-    - 泰文按字素近似计(组合元音/声调符不计)——此前记 0;
-    - 其余表音文字(拉丁/西里尔/希腊/希伯来/阿拉伯等一切 Unicode 字母)按"词字符
-      连续段"计——此前 ASCII 正则 [A-Za-z0-9'] 把越南(0x1EA0-1EF9)/波兰
-      (0x0100-1D7F)/土耳其(İ ı ş ğ)变音词切碎,阿文/俄文整段记 0;
-    - 土耳其 İ:先 replace('İ','i') 再清洗 U+0307 组合点(casefold 前替换口径,
-      避免分解形 I+U+0307 把一个词劈成两个)。"""
+def wc_info(text):
+    """词数 + 是否近似(B47 修,2026-10-21)→ (count, approx)。
+    - CJK(汉字/假名/谚文)逐字计(每字≈一词,本套件口径);
+    - 其余文字按 Unicode 词边界近似:字母/数字连续段为一词,组合符号(Mn/Mc/Me)附着在词内,
+      空格与标点断词(UAX #29 在空格处断开)。天城体的 matra(Mc)与 virama(Mn)不再断词,
+      「बेस्ट लैपटॉप कैसे खरीदें」=4(修前逐码点计 21);拉丁/西里尔/阿拉伯/希腊同此口径;
+    - 泰文不用空格分词,stdlib 没有词典分词:按空格分隔的短语计数,approx=True(修前返回字素数,
+      量纲不对)。精确分词需 Intl.Segmenter('th') 或 ICU;
+    - 土耳其 İ:先 replace('İ','i') 再清洗 U+0307 组合点(避免分解形 I+U+0307 劈词)。"""
     text = text.replace("İ", "i").replace("I\u0307", "i").replace("\u0307", "")
     perchar = words = 0
+    approx = False
     prev = False  # 前一字符是否处于词内
     for c in text:
-        if is_cjk(c) or is_devanagari(c):
+        if is_cjk(c):
             perchar += 1
             prev = False
-        elif is_thai(c):
-            if is_grapheme_base(c):
-                perchar += 1
-            prev = False
-        else:
-            is_l = unicodedata.category(c)[0] == "L" or c.isdigit()
-            if is_l and not prev:
-                words += 1
-            prev = is_l or ((c == "'" or unicodedata.category(c) == "Mn") and prev)
-    return perchar + words
+            continue
+        cat = unicodedata.category(c)
+        if is_thai(c):
+            approx = True
+        is_l = cat[0] in ("L", "N")
+        if is_l and not prev:
+            words += 1
+        prev = is_l or ((c in "'’" or cat[0] == "M") and prev)
+    return perchar + words, approx
+
+
+def wc(text):
+    """词数(见 wc_info;泰文为空格短语近似数)。"""
+    return wc_info(text)[0]
 
 class Page(HTMLParser):
     def __init__(self):
@@ -604,8 +610,10 @@ def audit(url, market="en"):
     if not p.lang: F.append(("WARN", "a11y", "html 无 lang"))
     body = re.sub(r"<script[^>]*>.*?</script>|<style[^>]*>.*?</style>", " ", html, flags=re.S | re.I)
     text = re.sub(r"<[^>]+>", " ", body)
-    W = wc(text)
-    if W < 200: F.append(("WARN", "content", f"词数 {W} <200(soft-thin)"))
+    W, W_approx = wc_info(text)
+    if W < 200:
+        F.append(("WARN", "content", f"词数 {W} <200(soft-thin)"
+                  + ("(泰文无空格分词,按空格短语近似计,实际词数更多)" if W_approx else "")))
     if p.links > 100:   # S2a B14:现行 Google 文档无链接数上限;100 是工具约定,只提示
         F.append(("INFO", "links", f"{p.links} 链接 >100(工具约定,非 Google 要求)"))
     if p.imgs and p.img_noalt / p.imgs > 0.2: F.append(("WARN", "images", f"alt 缺失 {p.img_noalt}/{p.imgs}"))

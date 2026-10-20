@@ -4,7 +4,7 @@
 
 ## 用途
 
-编写、审查 robots.txt，或排查 Search Console 里「被 robots.txt 屏蔽」「已编入索引，但被 robots.txt 屏蔽」时读。标准以 [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html) 为准，Google 的实现以 [Google 如何解析 robots.txt](https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec) 为准（2025-11 起该文档迁到 developers.google.com/crawling）。其他爬虫的实现可能不同。核对 2026-10-18。
+编写、审查 robots.txt，或排查 Search Console 里「被 robots.txt 屏蔽」「已编入索引，但被 robots.txt 屏蔽」时读。标准以 [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html) 为准，Google 的实现以 [Google 如何解析 robots.txt](https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec) 为准（2025-11 起该文档迁到 developers.google.com/crawling）。其他爬虫的实现可能不同。核对 2026-10-21。
 
 ## 一、它管什么，不管什么
 
@@ -45,17 +45,18 @@
 
 ## 四、常见错误
 
-- 屏蔽了渲染所需的 CSS、JS 或图片，Google 渲染出的页面不完整。Google 不会渲染被屏蔽文件里的 JavaScript。
+- 屏蔽了渲染所需的 CSS、JS 或图片，Google 渲染出的页面可能不完整：Google 搜索不会渲染被屏蔽文件或被屏蔽页面里的 JavaScript（[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)）。用网址检查的「查看已抓取的页面」核对屏幕截图。
 - 想「去索引」却用了 robots.txt。
 - 以为 `Disallow: /admin` 只屏蔽目录，实际还会屏蔽 `/admin-guide` 这类前缀相同的路径。
 - 测试环境的 `Disallow: /` 随上线一起带到了正式站。
-- robots.txt 返回 5xx 或超时，前 12 小时全站停止抓取。
+- robots.txt 返回 5xx、429 或超时，前 12 小时全站停止抓取。
+- robots.txt 位置返回 200 的 HTML 页面（例如统一的软 404 页）：Google 会尝试从中提取规则，忽略其余内容。该文件应返回真正的 404 或纯文本。
 - 为某个爬虫单独建组后，忘了它不再遵守 `*` 组的规则，需要的规则要在该组里重写。
 - 没评估就把参数页、分面页全部屏蔽：屏蔽后，这些 URL 上的 canonical 和 noindex 也不会被看到。做法见 [分面导航](https://developers.google.com/crawling/docs/faceted-navigation) 文档和 [redirects-canonical.md](redirects-canonical.md) 第五节。
 
 ## 五、AI 相关爬虫：分开决定
 
-搜索 / 检索型、训练型、用户触发型爬虫的用途不同，分别决定，不要合并成一个开关。下表只列官方文档写明的内容（核对 2026-10-18）：
+搜索 / 检索型、训练型、用户触发型爬虫的用途不同，分别决定，不要合并成一个开关。下表只列官方文档写明的内容（核对 2026-10-21）：
 
 | 运营方 | robots.txt 名称 | 用途 | 官方说明的要点 | IP 列表 |
 |---|---|---|---|---|
@@ -64,8 +65,8 @@
 | OpenAI | `OAI-SearchBot` | ChatGPT 搜索 | 屏蔽后不出现在 ChatGPT 搜索答案中；robots.txt 改动约 24 小时生效 | [searchbot.json](https://openai.com/searchbot.json) |
 | OpenAI | `GPTBot` | 训练 | 屏蔽表示内容不用于训练基础模型 | [gptbot.json](https://openai.com/gptbot.json) |
 | OpenAI | `ChatGPT-User` | 用户触发的访问 | 由用户发起，robots.txt 规则可能不适用；不用于判断能否出现在搜索中 | [chatgpt-user.json](https://openai.com/chatgpt-user.json) |
-| Anthropic | `ClaudeBot` / `Claude-SearchBot` / `Claude-User` | 训练 / 搜索 / 用户触发 | 三者分别控制；遵守 robots.txt，支持 `Crawl-delay`；靠封 IP 退出不可靠 | [bots.json](https://claude.com/crawling/bots.json)（三者共用） |
-| Perplexity | `PerplexityBot` / `Perplexity-User` | 搜索 / 用户触发 | 各自独立设置，改动最长 24 小时生效 | [perplexitybot.json](https://www.perplexity.com/perplexitybot.json)、[perplexity-user.json](https://www.perplexity.com/perplexity-user.json) |
+| Anthropic | `ClaudeBot` / `Claude-SearchBot` / `Claude-User` | 训练 / 搜索 / 用户触发 | 三者分别控制；官方称遵守 robots.txt，支持非标准的 `Crawl-delay`；靠封 IP 退出不可靠（会让它读不到 robots.txt） | [bots.json](https://claude.com/crawling/bots.json)（三者共用） |
+| Perplexity | `PerplexityBot` / `Perplexity-User` | 搜索 / 用户触发 | 各自独立设置，改动最长 24 小时生效；`Perplexity-User` 由用户发起，官方写明通常忽略 robots.txt | [perplexitybot.json](https://www.perplexity.com/perplexitybot.json)、[perplexity-user.json](https://www.perplexity.com/perplexity-user.json) |
 
 - 其他 AI 服务的名称、用途、是否遵守 robots.txt，以各家官方文档为准，不要从第三方汇总列表里抄。
 - 本 Skill 不替用户一刀切地放开或封禁。列出每类爬虫的用途，以及放开或屏蔽对可见度、内容使用和服务器负载的影响，由用户决定。需要强制执行时配合服务器端规则，并按各家公布的方式（反向 DNS 或 IP 列表）核实爬虫真伪，方法见 [log-analysis.md](log-analysis.md) 二C。
@@ -131,7 +132,7 @@ diff <(curl -s https://staging.example.com/robots.txt) <(curl -s https://example
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-18。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-21。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/technical-seo-checker/references/robots-txt-reference.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/technical-seo-checker/references/robots-txt-reference.md)（Apache-2.0）
 - 标准与 Google 实现：[RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html)、[Google 如何解析 robots.txt](https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec)、[robots.txt 入门](https://developers.google.com/search/docs/crawling-indexing/robots/intro)、[用 noindex 阻止编入索引](https://developers.google.com/search/docs/crawling-indexing/block-indexing)、[robots.txt 不支持的规则（2019-07-02）](https://developers.google.com/search/blog/2019/07/a-note-on-unsupported-rules-in-robotstxt)、[robots.txt 报告](https://support.google.com/webmasters/answer/6062598)、[网址检查工具](https://support.google.com/webmasters/answer/9012289)、[google/robotstxt](https://github.com/google/robotstxt)

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """robots.txt AI 爬虫姿势分析器(stdlib)。读取 robots.txt,按 RFC 9309(连续 UA 合并/
-最长匹配/Allow 平局胜出)对 27 个 AI bot 三层名单(training/search/user)做四态判定
+最长匹配/Allow 平局胜出)对 37 个 AI bot 四层名单(training/search/user/other)做四态判定
 (allowed/blocked/partial/missing),检测 Cloudflare 注入块,输出两级引用评分
 (citation_bots_ok / citation_bots_explicit)、分层统计、Content-Signal 建议与警告,
-可选 --fix-robots 打印修复建议块(只打印不写盘)。geo-optimizer 源码口径(borrow-specs C3)。
+可选 --fix-robots 打印修复建议块(只打印不写盘)。判定算法沿用 geo-optimizer 源码口径(borrow-specs C3);
+名单与分层以 references/technical/ai-crawler-policy.md 和各家官方页为准。
 用法: python3 robots_posture.py https://example.com/robots.txt [--signal visibility|protect-ip] [--json] [--fix-robots]"""
 import ipaddress, json, os, socket, sys, urllib.parse, urllib.request
 
@@ -11,51 +12,75 @@ UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.0)"
 MAX_BYTES = 500_000  # RFC 9309: 超过 500KiB 的 robots.txt 至少按前 500KiB 处理
 
 # ---------------------------------------------------------------------------
-# 27 bot 三层名单(模块级常量,geo-optimizer docs/ai-bots-reference.md 口径;
-# 分类证据见 references/technical/ai-crawler-policy.md)
+# 37 bot 四层名单(模块级常量)。分类以 references/technical/ai-crawler-policy.md 第一节表格
+# 与第七节「已知偏差」及其链接的各家官方页为准(2026-10-21 按第七节改,B42/B46):
 #   training: 基础模型训练——封禁是授权决策,不影响搜索/AI 答案可见性
 #   search:   搜索/答案索引——决定 AI 引用,封禁=逐出 AI 答案
 #   user:     按用户请求抓取(对话里用户点名某个 URL 时去取)——封禁=用户实测不可达
+#   other:    站长委托 / 广告审核 / 官方称目前不训练——不影响搜索可见性,也不是训练授权
+# verified=False:运营方没有可读的官方 bot 文档,只有第三方目录(第七节),结论仅供参考。
+# 修前(27 bot,geo-optimizer 口径)的偏差:Amazonbot 记搜索(官方训练/产品)、PetalBot 记训练
+# (官方搜索)、Google-CloudVertexBot 记训练(官方站长委托)、cohere-ai 记训练(Cohere 官方:目前
+# 不用 bot 训练基础模型);缺 Baiduspider、Amzn-SearchBot、Amzn-User、MistralAI-*、
+# meta-webindexer、Google-Agent、OAI-AdsBot、YandexAdditional。
 # ---------------------------------------------------------------------------
+def _bot(token, desc, tier, verified=True):
+    return {"token": token, "desc": desc, "tier": tier, "verified": verified}
+
+
 AI_BOTS = [
-    # --- training(12;合计 27 bot=12+10+5。ai-crawler-policy.md 全局训练名单仅 GPTBot/
-    #     ClaudeBot/CCBot,无更全者可补;MistralAI-Training 属法语区市场专属,不入全局名单) ---
-    {"token": "GPTBot",               "desc": "OpenAI GPT 模型训练(禁它不影响 ChatGPT 引用,引用走 OAI-SearchBot)", "tier": "training"},
-    {"token": "ClaudeBot",            "desc": "Anthropic Claude 模型训练(引用走 Claude-SearchBot)",                "tier": "training"},
-    {"token": "Google-Extended",      "desc": "Google Gemini 训练(不是 AI Overviews 开关)",                         "tier": "training"},
-    {"token": "Google-CloudVertexBot","desc": "Google Vertex AI 训练/评估",                                          "tier": "training"},
-    {"token": "Applebot-Extended",    "desc": "Apple Intelligence 训练(与 Applebot 收录分离)",                      "tier": "training"},
-    {"token": "cohere-ai",            "desc": "Cohere 模型训练",                                                     "tier": "training"},
-    {"token": "Bytespider",           "desc": "字节跳动模型训练(抖音/豆包)",                                          "tier": "training"},
-    {"token": "meta-externalagent",   "desc": "Meta AI 模型训练",                                                    "tier": "training"},
-    {"token": "PetalBot",             "desc": "华为 Petal 搜索/AI 抓取",                                              "tier": "training"},
-    {"token": "AI2Bot",               "desc": "Allen AI(OLMo/Semantic Scholar)训练抓取",                            "tier": "training"},
-    {"token": "AI2Bot-Dolma",         "desc": "Allen AI Dolma 数据集训练",                                           "tier": "training"},
-    {"token": "CCBot",                "desc": "Common Crawl 训练数据源",                                              "tier": "training"},
-    # --- search(10,决定 AI 引用) ---
-    {"token": "OAI-SearchBot",        "desc": "OpenAI ChatGPT 搜索索引(AI 引用入口)",                                "tier": "search"},
-    {"token": "Claude-SearchBot",     "desc": "Anthropic Claude 搜索索引(AI 引用入口)",                              "tier": "search"},
-    {"token": "PerplexityBot",        "desc": "Perplexity 搜索/引用(不训练)",                                         "tier": "search"},
-    {"token": "Googlebot",            "desc": "Google 通用收录+AI Overviews",                                        "tier": "search"},
-    {"token": "Applebot",             "desc": "Apple Siri/Spotlight 收录",                                           "tier": "search"},
-    {"token": "Bingbot",              "desc": "Bing 收录(喂 Copilot,无独立 Copilot bot)",                            "tier": "search"},
-    {"token": "DuckAssistBot",        "desc": "DuckDuckGo Duck.ai 答案抓取",                                         "tier": "search"},
-    {"token": "YouBot",               "desc": "You.com 搜索/AI 答案",                                                "tier": "search"},
-    {"token": "Amazonbot",            "desc": "Amazon Alexa/Rufus 索引",                                             "tier": "search"},
-    {"token": "xAI-Bot",              "desc": "xAI Grok 检索索引",                                                   "tier": "search"},
-    # --- user(5,按用户请求抓取) ---
-    {"token": "ChatGPT-User",         "desc": "OpenAI 按用户请求抓取(ChatGPT;厂商声明可能无视 robots)",              "tier": "user"},
-    {"token": "Claude-User",          "desc": "Anthropic 按用户请求抓取(Claude)",                                     "tier": "user"},
-    {"token": "Perplexity-User",      "desc": "Perplexity 按用户请求抓取",                                            "tier": "user"},
-    {"token": "Meta-ExternalFetcher", "desc": "Meta AI 按用户请求抓取",                                               "tier": "user"},
-    {"token": "facebookexternalhit",  "desc": "Meta 链接预览抓取",                                                    "tier": "user"},
+    # --- training(11) ---
+    _bot("GPTBot",               "OpenAI GPT 模型训练(禁它不影响 ChatGPT 引用,引用走 OAI-SearchBot)", "training"),
+    _bot("ClaudeBot",            "Anthropic Claude 模型训练(引用走 Claude-SearchBot)",                "training"),
+    _bot("Google-Extended",      "Google 控制 token:Gemini 训练与 grounding(不是 AI Overviews 开关;不单独抓取)", "training"),
+    _bot("Applebot-Extended",    "Apple 控制 token:Applebot 数据能否用于训练(不抓取)",                 "training"),
+    _bot("Bytespider",           "字节跳动(无官方页;第三方称训练与搜索)",                              "training", False),
+    _bot("meta-externalagent",   "Meta 训练基础模型或直接索引改进产品",                                 "training"),
+    _bot("Amazonbot",            "Amazon 改进产品与服务,可能用于训练 AI 模型(搜索走 Amzn-SearchBot)",   "training"),
+    _bot("AI2Bot",               "Allen AI 训练开放语言模型",                                           "training"),
+    _bot("AI2Bot-Dolma",         "Allen AI Dolma 数据集(无官方 bot 文档)",                              "training", False),
+    _bot("CCBot",                "Common Crawl 公开语料(第三方研究称是生成式 AI 主要训练源)",           "training"),
+    _bot("MistralAI-Training",   "Mistral 训练数据集抓取",                                              "training"),
+    # --- search(15,决定 AI 引用) ---
+    _bot("OAI-SearchBot",        "OpenAI ChatGPT 搜索索引(AI 引用入口)",                                "search"),
+    _bot("Claude-SearchBot",     "Anthropic Claude 搜索索引(AI 引用入口)",                              "search"),
+    _bot("PerplexityBot",        "Perplexity 搜索/引用(不训练)",                                         "search"),
+    _bot("Googlebot",            "Google 通用收录+AI Overviews",                                        "search"),
+    _bot("Applebot",             "Apple Siri/Spotlight 收录",                                           "search"),
+    _bot("Bingbot",              "Bing 收录(喂 Copilot,无独立 Copilot bot)",                            "search"),
+    _bot("DuckAssistBot",        "DuckDuckGo AI 辅助答案实时抓取(不训练)",                              "search"),
+    _bot("YouBot",               "You.com 搜索/AI 答案(无可读官方 bot 文档)",                           "search", False),
+    _bot("xAI-Bot",              "xAI Grok 检索索引(官方无爬虫文档)",                                   "search", False),
+    _bot("Amzn-SearchBot",       "Amazon Alexa 等搜索体验(不训练)",                                     "search"),
+    _bot("PetalBot",             "华为 Petal 搜索索引及 Huawei Assistant、AI Search",                   "search"),
+    _bot("Baiduspider",          "百度搜索(中文站主引擎;验证靠双向 DNS *.baidu.com/.jp)",              "search"),
+    _bot("MistralAI-Index",      "Mistral 搜索索引(不训练)",                                            "search"),
+    _bot("meta-webindexer",      "Meta AI 搜索质量与引用链接",                                          "search"),
+    _bot("YandexAdditional",     "Yandex 控制 token:能否进 Search with Yandex AI 回答(不认 * 组,必须点名)", "search"),
+    # --- user(8,按用户请求抓取) ---
+    _bot("ChatGPT-User",         "OpenAI 按用户请求抓取(ChatGPT;厂商声明可能无视 robots)",              "user"),
+    _bot("Claude-User",          "Anthropic 按用户请求抓取(Claude)",                                     "user"),
+    _bot("Perplexity-User",      "Perplexity 按用户请求抓取",                                            "user"),
+    _bot("Meta-ExternalFetcher", "Meta AI 按用户请求抓取",                                               "user"),
+    _bot("facebookexternalhit",  "Meta 链接预览抓取",                                                    "user"),
+    _bot("Amzn-User",            "Amazon 按用户请求实时取信息(如 Alexa)",                               "user"),
+    _bot("MistralAI-User",       "Mistral Vibe 按用户请求访问页面",                                      "user"),
+    _bot("Google-Agent",         "Google 基础设施上的 agent 按用户请求浏览/操作",                        "user"),
+    # --- other(3,不影响搜索可见性,也不是训练) ---
+    _bot("Google-CloudVertexBot","Google 站长委托的 Vertex AI Agents 抓取(不影响 Google 搜索)",          "other"),
+    _bot("cohere-ai",            "Cohere(官方:目前不用 bot 训练生成式基础模型;官方表格未列此 token)",  "other", False),
+    _bot("OAI-AdsBot",           "OpenAI 只审核提交为 ChatGPT 广告的落地页(不用于训练)",               "other"),
 ]
+
+# 只认点名规则、不认 `User-agent: *` 的 token(Yandex 官方机器人页:YandexAdditional 对通用规则
+# 填 No)。没有专属组时不受 * 组约束,按 allowed 处理,不因 * 组的 Disallow 判 blocked。
+WILDCARD_IGNORED = {"yandexadditional"}
 
 # 引用型 5 bot(刻意排除纯训练的 ClaudeBot:禁 ClaudeBot 不阻止 Claude 引用,引用走 Claude-SearchBot)
 CITATION_BOTS = ["OAI-SearchBot", "Claude-SearchBot", "PerplexityBot", "Googlebot", "Applebot"]
 
-TIER_LABELS = {"search": "检索", "user": "按需", "training": "训练"}
-TIER_ORDER = ("search", "user", "training")  # 展示顺序:先可见性攸关层,后授权决策层
+TIER_LABELS = {"search": "检索", "user": "按需", "training": "训练", "other": "其他"}
+TIER_ORDER = ("search", "user", "training", "other")  # 展示顺序:先可见性攸关层,后授权决策层
 SIGNALS = {"visibility": "search=yes, ai-input=yes, ai-train=yes",
            "protect-ip": "search=yes, ai-input=yes, ai-train=no"}
 
@@ -210,6 +235,9 @@ def classify(doc, bot):
     via_wildcard: True=结论来自 * 组而非 bot 专属规则(通配符 Allow 也行,但拿不到全分)。"""
     groups = doc["groups"]
     own = groups.get(bot.lower())
+    if own is None and bot.lower() in WILDCARD_IGNORED:
+        # 不认 * 组的 token:没有点名规则=没有任何限制(Yandex 官方口径),按放行算
+        return {"state": "allowed", "via_wildcard": False}
     star = groups.get("*")
     if own is not None:
         g, via = own, False
@@ -240,17 +268,18 @@ def citation_report(doc):
             "bots": states}
 
 def analyze(txt, mode="visibility"):
-    """全量分析:27 bot 四态矩阵 + 分层统计 + 两级引用评分 + 指令提取。"""
+    """全量分析:37 bot 四态矩阵 + 分层统计 + 两级引用评分 + 指令提取。"""
     doc = parse_robots(txt)
     bots = []
     for item in AI_BOTS:
         c = classify(doc, item["token"])
         bots.append({"token": item["token"], "desc": item["desc"], "tier": item["tier"],
+                     "verified": item.get("verified", True),
                      "state": c["state"], "via_wildcard": c["via_wildcard"]})
     buckets = {s: [b["token"] for b in bots if b["state"] == s]
                for s in ("allowed", "blocked", "missing", "partial")}
     tiers = {}
-    for tier in ("training", "search", "user"):
+    for tier in ("training", "search", "user", "other"):
         sub = [b for b in bots if b["tier"] == tier]
         tiers[tier] = {"total": len(sub)}
         tiers[tier].update({s: sum(1 for b in sub if b["state"] == s)
@@ -281,7 +310,8 @@ def fix_robots(report):
     lines = ["== robots.txt 修复建议(追加到现有 robots.txt 末尾;只打印不写盘)==", ""]
     headers = {"search": "# —— 引用层(search):被封/缺失=逐出 AI 答案,建议追加 ——",
                "user":   "# —— 按需层(user):封禁=用户端不可达,建议追加 ——",
-               "training": "# —— 训练层(training):封禁是授权决策而非错误,仅在你决定开放时追加 ——"}
+               "training": "# —— 训练层(training):封禁是授权决策而非错误,仅在你决定开放时追加 ——",
+               "other": "# —— 其他层(other:站长委托/广告审核/用途待核):不影响搜索可见性,按需追加 ——"}
     for tier in TIER_ORDER:
         need = [b for b in report["bots"] if b["tier"] == tier and b["state"] != "allowed"]
         if not need: continue
@@ -302,6 +332,7 @@ STATUS = {
     "search":   {"allowed": "✅", "blocked": "❌ 禁(逐出AI答案)", "partial": "◐ 部分(仅Allow路径)", "missing": "❓ 未提及"},
     "user":     {"allowed": "✅", "blocked": "❌ 禁(用户端不可达)", "partial": "◐ 部分(仅Allow路径)", "missing": "❓ 未提及"},
     "training": {"allowed": "放行", "blocked": "禁(不影响搜索,授权决策)", "partial": "部分(仅Allow路径)", "missing": "未提及(默认放行)"},
+    "other":    {"allowed": "放行", "blocked": "禁(不影响搜索)", "partial": "部分(仅Allow路径)", "missing": "未提及(默认放行)"},
 }
 
 def render(report):
@@ -313,8 +344,10 @@ def render(report):
         for b in report["bots"]:
             if b["tier"] != tier: continue
             mark = STATUS[tier][b["state"]]
-            if b["state"] == "allowed" and b["via_wildcard"] and tier != "training":
+            if b["state"] == "allowed" and b["via_wildcard"] and tier in ("search", "user"):
                 mark = "✅(靠 * 通配)"
+            if not b.get("verified", True):
+                mark += "(未核:无官方 bot 文档)"
             out.append(f"{b['token']:<22}{TIER_LABELS[tier]:<8}{mark}")
     out.append("")
     for s in ("allowed", "blocked", "missing", "partial"):
@@ -323,7 +356,8 @@ def render(report):
     t = report["tiers"]
     out.append(f"\n分层统计: training {t['training']['allowed']}/{t['training']['total']} 放行"
                f" | search {t['search']['allowed']}/{t['search']['total']} 放行"
-               f" | user {t['user']['allowed']}/{t['user']['total']} 放行")
+               f" | user {t['user']['allowed']}/{t['user']['total']} 放行"
+               f" | other {t['other']['allowed']}/{t['other']['total']} 放行")
     c = report["citation"]
     out.append(f"citation_bots_ok: {'✅' if c['ok'] else '❌'} {c['allowed_count']}/5 放行"
                + ("(基础分)" if c["ok"] else "(可见性失败:引用 bot 被封/未被放行)"))
@@ -345,7 +379,7 @@ USAGE = """usage: robots_posture.py URL [--signal visibility|protect-ip] [--json
 	URL 通常是 https://site/robots.txt(给站点根也行,自动拼 /robots.txt)。
 	仅 http(s):file:///ftp:// 等非 http(s) scheme 拒;私网/环回/链路本地拒连;
 	重定向逐跳复查(SSRF 防护;本地 fixture 请经 import analyze() 消费)。
-读取 robots.txt,输出 27 bot 三层矩阵(training/search/user)+四态判定(allowed/blocked/
+读取 robots.txt,输出 37 bot 四层矩阵(training/search/user/other)+四态判定(allowed/blocked/
 partial/missing)+两级引用评分(citation_bots_ok/citation_bots_explicit)+分层统计
 +bots_allowed/bots_blocked/bots_missing/bots_partial 四列表+Cloudflare 注入检测
 +Crawl-delay/Sitemap 提取+Content-Signal 建议。封 training 不扣分(授权决策),

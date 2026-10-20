@@ -1,6 +1,6 @@
 # HTML head 元素参考（2026 口径）
 
-> 建立于 2026-10-09，2026-10-18 逐条核对一手来源。元素清单参考 joshbuchea/HEAD（第三方，CC0，commit `de1304e`，2026-05-02 UTC）及其 DEPRECATED.md；HEAD 的说法只当线索，结论以 WHATWG HTML 标准、Google Search Central 和各平台官方文档为准。`<title>`/description 的写法见 [meta-tag-formulas.md](../content/meta-tag-formulas.md)；JS 注入 meta 的风险见 [rendering-seo.md](rendering-seo.md)；结构化数据见 [schema-templates.md](schema-templates.md)。
+> 建立于 2026-10-09，2026-10-18 逐条核对一手来源，2026-10-21 复核（含 X 官方 Cards 文档原文、Google 支持的 meta 标签文档）。元素清单参考 joshbuchea/HEAD（第三方，CC0，commit `de1304e`，2026-05-02 UTC）及其 DEPRECATED.md；HEAD 的说法只当线索，结论以 WHATWG HTML 标准、Google Search Central 和各平台官方文档为准。`<title>`/description 的写法见 [meta-tag-formulas.md](../content/meta-tag-formulas.md)；JS 注入 meta 的风险见 [rendering-seo.md](rendering-seo.md)；结构化数据见 [schema-templates.md](schema-templates.md)。
 
 ## 用途与何时读
 
@@ -61,7 +61,7 @@ Google 把 viewport 标签的存在视为页面适配移动端的信号（[Googl
 
 **Google 明确不用**：`meta keywords`、`lang` 属性（Google 按正文判断语言）、`rel="next"/"prev"`、`<meta name="google" content="nositelinkssearchbox">`（站点链接搜索框 2024-11-21 起停展，该规则 2024-11-29 归档）。其他 Google 不支持的 meta 会被忽略。
 
-**HTML 标准里的其他 metadata 名**（[WHATWG 标准 metadata 名](https://html.spec.whatwg.org/multipage/semantics.html#standard-metadata-names)）：`application-name`（仅 Web 应用使用）、`author`、`generator`、`referrer`、`theme-color`、`color-scheme`。`theme-color` 的浏览器支持：Safari 15+ 支持，Chrome 部分支持，Firefox 不支持（[MDN 兼容数据](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/theme-color) v8.1.6，核对 2026-10-18）。
+**HTML 标准里的其他 metadata 名**（[WHATWG 标准 metadata 名](https://html.spec.whatwg.org/multipage/semantics.html#standard-metadata-names)）：`application-name`（仅 Web 应用使用）、`author`、`generator`、`referrer`、`theme-color`、`color-scheme`。`theme-color` 的浏览器支持：Chrome 73+、Safari 15+，Firefox 不支持（[MDN 兼容数据](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/theme-color)，核对 2026-10-21）。
 
 **其他平台**：`msvalidate.01`（Bing 验证）、`yandex-verification`、`p:domain_verify`（Pinterest）按需写；`<meta name="format-detection" content="telephone=no">` 关闭 iOS Safari 的电话号码自动识别（[Apple Safari HTML 参考](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html)，存档文档）。`subject`、`rating=General` 等没有已知消费方，不写。
 
@@ -129,8 +129,8 @@ Open Graph 协议规定每页四个必填属性：`og:title`、`og:type`、`og:i
 | 平台 | 读法 | 依据 |
 |---|---|---|
 | Facebook | OG；`fb:app_id` 仍列在基础标签里，用 Facebook Insights 时必须加 | [Meta：Sharing for Webmasters](https://developers.facebook.com/docs/sharing/webmasters/)（2026-06-30 更新）；用 Sharing Debugger 验证 |
-| X | 先读 `twitter:*`，没有就回落到对应 OG 属性（`og:title`/`og:description`/`og:image`/`og:image:alt`）；缺 `twitter:card` 但有 `og:type`、`og:title`、`og:description` 时可能渲染 summary 卡。`twitter:site`、`twitter:creator` 没有 OG 对应项 | X Cards markup 文档（原 URL 已跳转，读 [Wayback 2026-02-01 存档](http://web.archive.org/web/20260201012312/https://developer.x.com/en/docs/x-for-websites/cards/overview/markup)）。结论：有 OG 时 `twitter:title` 等可以省略，**不是弃用**；要大图卡写 `twitter:card=summary_large_image` |
-| X 验证工具 | Card Validator 2022-08 起不再显示预览，只留日志；预览改在发帖框粘贴链接查看 | [X 开发者社区官方帖](https://devcommunity.x.com/t/card-validator-preview-removal/175006)（2022-08-02） |
+| X | X 的 Tag Reference 表逐项列出 OG 回落：`twitter:title`←`og:title`、`twitter:description`←`og:description`、`twitter:image`←`og:image`、`twitter:image:alt`←`og:image:alt`。缺 `twitter:card` 但有 `og:type`、`og:title`、`og:description` 时「可能」渲染 summary 卡。`twitter:card`、`twitter:site`、`twitter:creator` 没有 OG 对应项；文档把 `twitter:site`（或 `twitter:site:id`）标为必填，缺它的实际后果文档没写。文档给出的上限：title 70 字符、description 200 字符、图片小于 5MB，支持 JPG/PNG/WEBP/GIF，不支持 SVG | X Cards markup 文档（原 URL 已跳转，读 [Wayback 2026-02-01 存档](http://web.archive.org/web/20260201012312/https://developer.x.com/en/docs/x-for-websites/cards/overview/markup)，核对 2026-10-21）。结论：有 OG 时 `twitter:title` 等可以省略，**不是弃用**；要大图卡写 `twitter:card=summary_large_image` |
+| X 验证工具 | Card Validator 2022-08 起不再显示预览，只留日志；预览改在发帖框粘贴链接查看 | [X 开发者社区官方帖](https://devcommunity.x.com/t/card-validator-preview-removal/175006)（2022-08-02；帖子另写：Cards 数据最多缓存 7 天，改了标签后给 URL 加参数可提示抓取器重抓） |
 | LinkedIn | 要求 `og:title`、`og:image`、`og:description`、`og:url` | [LinkedIn 帮助](https://www.linkedin.com/help/linkedin/answer/a521928)；用 Post Inspector 验证 |
 | Mastodon | OG 决定预览；`fediverse:creator` 显示作者账号 | 见第十二节 |
 | Google 搜索 | `og:title` 是标题链接的候选来源之一；`og:site_name` 是站点名称的参考来源；`og:image` 是搜索和 Discover 缩略图的参考来源 | [标题链接](https://developers.google.com/search/docs/appearance/title-link)、[站点名称](https://developers.google.com/search/docs/appearance/site-names)、[图片 SEO](https://developers.google.com/search/docs/appearance/google-images)（2026-03-02 更新） |
@@ -185,21 +185,21 @@ Google 推荐 JSON-LD；放在 head 或 body 都可以（[Google：结构化数�
 
 **App Links**（`al:ios:*`、`al:android:*`、`al:web:url`）是 Facebook 发起的深链规范；当前消费方未核，按需写。
 
-**PWA**：应用名、独立显示模式、图标、主题色写进 `<link rel="manifest">`。`apple-touch-startup-image`、`apple-mobile-web-app-title`、`apple-mobile-web-app-status-bar-style` 是 Apple 旧机制，只作兜底。iOS 26 起，所有加到主屏幕的网站默认以 Web App 打开，不再看 meta 或 manifest（[WebKit：Safari 26.0](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/)，2025-09-15）。
+**PWA**：应用名、独立显示模式、图标、主题色写进 `<link rel="manifest">`。`apple-touch-startup-image`、`apple-mobile-web-app-title`、`apple-mobile-web-app-status-bar-style` 是 Apple 旧机制，只作兜底。iOS 26 起，加到主屏幕的网站默认以 Web App 打开；用户可在添加时关闭「Open as Web App」，与网站有没有写 meta 或 manifest 无关（[WebKit：Safari 26.0](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/)，2025-09-15）。
 
 ## 十三、可删除的旧标签（逐条核对 2026-10-18）
 
 | 标签 | 核对结论 | 替代 |
 |---|---|---|
 | `<meta http-equiv="x-ua-compatible">` | IE 11 桌面应用 2022-06-15 起在部分 Windows 版本停止支持（[Microsoft](https://learn.microsoft.com/en-us/lifecycle/faq/internet-explorer-microsoft-edge)） | 删除 |
-| `<meta name="msapplication-config">` + browserconfig.xml | Windows 11 不再提供动态磁贴（[Microsoft Win11 规格](https://www.microsoft.com/en-us/windows/windows-11-specifications)） | `<link rel="manifest">` |
-| `<meta name="apple-mobile-web-app-capable">` | web.dev 把它列为弃用 meta，建议不用（[web.dev](https://web.dev/learn/pwa/enhancements)）；HEAD 所称「iOS 17.4 弃用」在 Safari 17.4 发布说明里查无 | manifest `display` |
-| `<link rel="mask-icon">` | Safari 12 起固定标签页可用普通 favicon（第三方：[Evil Martians](https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs)）；HEAD 所称「Safari 17 移除 Pinned Tabs」在 Safari 17.0–17.2 发布说明里查无 | 普通 `<link rel="icon">` |
+| `<meta name="msapplication-config">` + browserconfig.xml | 这是 IE 11 / 旧 Edge 的动态磁贴机制。Windows 11 开始菜单不再有动态磁贴（微软社区回复；**官方页面未能核到原文**，按未核处理）；IE 11 桌面应用已于 2022-06-15 退役 | `<link rel="manifest">`；没有旧版 Windows 用户群就删除 |
+| `<meta name="apple-mobile-web-app-capable">` | web.dev 把它列为弃用 meta，建议不用（[web.dev](https://web.dev/learn/pwa/enhancements)） | manifest `display` |
+| `<link rel="mask-icon">` | Safari 12 起固定标签页可用普通 favicon（第三方：[Evil Martians](https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs)，核对 2026-10-21） | 普通 `<link rel="icon">` |
 | `<link rel="prerender">` | MDN 标为弃用；Chrome 63 起只做无状态预取（MDN 兼容数据） | Speculation Rules（见 [cwv-playbook.md](cwv-playbook.md)） |
 | `<link rel="chrome-webstore-item">` | 只服务于扩展内联安装；Chrome 71（2018-12）移除内联安装（[Chromium 博客](https://blog.chromium.org/2018/06/improving-extension-transparency-for.html)） | 链接到 Chrome 应用商店页面 |
 | `<meta name="alexaVerifyID">` | Alexa.com 2022-05-01 关停（第三方媒体：[The Verge](https://www.theverge.com/2021/12/9/22825744/amazon-retiring-alexa-web-ranking-sevice)） | 删除 |
 | `<meta name="google" content="nositelinkssearchbox">` | Google 已不再使用（见第四节） | 删除 |
-| `<meta http-equiv="x-dns-prefetch-control">` | 非标准；MDN 兼容数据显示 Chrome、Firefox 支持该 HTTP 头，Safari 不支持。HEAD 所称「Chromium 从未实现」与 MDN 不符 | 需要时用 `<link rel="dns-prefetch">`；关闭预解析才用它 |
+| `<meta http-equiv="x-dns-prefetch-control">` | 非标准；MDN 兼容数据显示 Chrome、Firefox 支持该 HTTP 头，Safari 不支持 | 需要时用 `<link rel="dns-prefetch">`；关闭预解析才用它 |
 | `twitter:*` 卡片标签 | **不是弃用**：X 先读 `twitter:*`，缺失时回落 OG（见第八节） | 有 OG 时可省略重复项；`twitter:card`、`twitter:site` 按需保留 |
 | `<meta property="fb:app_id">` | **不是弃用**：Meta 文档仍要求用 Facebook Insights 时添加 | 需要 Insights 就保留 |
 | `<link rel="amphtml">` | **不是弃用**：Google 仍索引 AMP（见第五节） | 已有 AMP 配对就保留；新项目可不做 AMP |
@@ -218,7 +218,15 @@ Google 推荐 JSON-LD；放在 head 或 body 都可以（[Google：结构化数�
 | 旧标签 | `python3 scripts/head_check.py URL`，对照第十三节 | 命中可删项只记 Info；`twitter:*`、`fb:app_id`、`amphtml`、geo meta 缺失或存在都不算错误 |
 | 中文分享 | 手机 QQ 内打开页面点分享；微信内打开看卡片 | QQ：三件套齐全且图片 ≥200×200 → 通过；微信：用 JS-SDK 时卡片按配置显示 → 通过 |
 
-`head_check.py` 参数：`url`（也可传本地文件或 `-` 读 stdin）、`--market`、`--timeout`、`--max-bytes`；严重问题退出码 1。脚本判定与本文冲突时，以本文为准。
+`head_check.py` 参数（`--help` 核对，2026-10-21）：`url`（也可传本地文件或 `-` 读 stdin）、`--market`、`--timeout`、`--max-bytes`。现行行为：
+
+- 抓取不发 `Accept-Language`，与 Googlebot 一致；请求被重定向时，输出头部会标出最终 URL。
+- ERROR（退出码 1）只有两项：charset 缺失或超出前 1024 字节、title 缺失或为空。
+- WARN：viewport 缺失、`og:image` 缺失或非绝对 URL、多个 `<title>`、中文市场下 `itemprop` 三件套缺项。
+- INFO：元素顺序（风格建议）、geo meta 存在（缺失不报）、`twitter:*` 与 OG 重复（可省略，不是弃用）、第十三节的旧标签、`meta keywords`。
+- `--market` 显式指定时优先；省略时按 `lang` 和正文自动判断。`itemprop` 三件套只在 zh 市场检查。
+
+脚本判定与本文冲突时，以本文为准。
 
 ## 源
 

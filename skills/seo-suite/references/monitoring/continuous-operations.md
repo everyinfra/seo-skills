@@ -16,7 +16,7 @@
 | 周·漂移 | 每周一 | 关键页 title/meta/canonical/og/watch **分字段** diff、robots 变更、AI 爬虫放行矩阵翻转 | run --checks weekly |
 | 周·趋势 | 每周一 | sitemap URL 数与 lastmod 对比、llms.txt 变更、**SSL 证书到期(30/14/7/0 梯度)** | 同上 |
 | 周·汇总 | 每周一 | 周报(趋势+告警汇总+建议 PR 列表)进 job summary/邮件 | report --days 7 |
-| 常态 | 每次调度 | dead man's switch:heartbeat ping(/ok、/fail)+ notify 端停摆检测(dead_man) | init --heartbeat-url |
+| 常态 | 每次调度 | dead man's switch:heartbeat ping(成功 ping URL 本身、失败 ping /fail)+ notify 端停摆检测(dead_man) | init --heartbeat-url |
 | 月·校准 | 每月 | 阈值/冷却期复盘、noise 率、改版后重建基线 | 手动,见 alert-threshold-guide 第五节 |
 
 日检四问的设计原则:**每问都能在 5 分钟预算内独立完成**(`--budget-minutes`,超时中止剩余检查),
@@ -63,7 +63,7 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
 
 | 级别 | 触发(monitor.py code) | 查哪 | 何时升级 | 自动还是人审 |
 |---|---|---|---|---|
-| critical | `homepage_down`/`key_page_down`(状态码≥400)、`robots_sitewide_block`、`visibility_zero`(过最小样本地板)、`ssl_cert_expiry`(≤7 天)/`ssl_cert_expired` | 立即查发布记录与 CDN;robots 逐行 diff;GSC 网址检查+处罚通知;证书立即续期 | 立即处理;1 小时未定位 → 按 [seo-drift-monitoring](seo-drift-monitoring.md) L1–L5 五层协议走 | auto 项可直接执行;其余人审当天 |
+| critical | `homepage_down`/`key_page_down`(状态码≥400)、`robots_sitewide_block`、`visibility_zero`(过最小样本地板)、`ssl_cert_expiry`(≤7 天)/`ssl_cert_expired` | 立即查发布记录与 CDN;robots 逐行 diff;Search Console 的网址检查，以及「人工操作」和「安全问题」报告;证书立即续期 | 立即处理;1 小时未定位 → 按 [seo-drift-monitoring](seo-drift-monitoring.md) L1–L5 五层协议走 | auto 项可直接执行;其余人审当天 |
 | warn | `visibility_drop`/`sitemap_urls_drop`/`gsc_clicks_drop`(百分比阈值×地板)、`mixed_content`、`fetch_error_confirmed`(连续两次)、`content_regression`(expect_substring 断言失败)、`ssl_cert_expiry`(≤14 天)、`dead_man`(监控停摆) | GSC 分层(query/page/device);sitemap 生成管道;本机网络→DNS→WAF;cron/Actions 调度 | 连续 2 个周期命中或恶化成 critical 形态 → 升 critical 处理节奏 | draft PR 项人审;1–2 个工作日 |
 | info | `title_meta_drift`(分字段)/`robots_changed`/`ai_posture_flip`/`llms_txt_*`/`latency_spike`/`gsc_clicks_spike`/`ssl_cert_expiry`(≤30 天) | diff 变更是否有意;发布日历对齐 | 无升级路径;周报汇总后决定是否处理 | 人审,排进本周计划 |
 | low | `*_resolved`(自愈:上次告警本次消失) | 不查;进周报复核一眼即可 | — | 全自动,静默 |
@@ -93,12 +93,14 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
 2. **钱词实时、长尾周报**:关键页/钱词走日检通道(critical/warn 即时或日批);长尾与 info 级一律进周报批量消化,永不单独推送。
 3. **调优期删噪**:每月复盘 noise 率(告警里多少不需要行动);`config.json` thresholds 放宽一档或加连续触发条件;改版/迁移期间登记维护窗口(不再是"显式接受误报")。冷却期默认 critical 12h / warn 24h / info 168h,同指纹冷却期内重复告警标记 **suppressed:只进报告,不进通知路径**(diff 的 counts/退出码同步排除,notify 路由前再剔除一次——双层保险);**陈旧 alerts.json 拒发**(notify `--max-age`,默认 30 分钟,防 run 失败时旧 critical 重播)。
 
+**阈值出处**：本手册和 `monitor.py` 的默认数值（5 分钟预算、冷却 12h / 24h / 168h、证书 30 / 14 / 7 / 0 天梯度、可见页降 30%、sitemap 降 15%、点击降 20%、延迟升 100%、最小样本地板）是**本套件口径**的经验起点，不是 Google 或行业标准。第一个月用本站数据按 [alert-threshold-guide](alert-threshold-guide.md) 第五节标定。
+
 ## 五、安全边界表:自动安全项 vs 必须 draft PR
 
 | 动作 | 边界 | 理由 |
 |---|---|---|
 | robots.txt 误封回滚(`Disallow: /` 删除) | **auto** | 几乎总是部署事故,分秒必争 |
-| sitemap ping / 重新提交 | **auto** | 幂等、无副作用 |
+| sitemap 重新提交（Search Console 里点「提交」，或 robots.txt 的 `Sitemap:` 行） | **人确认** | 幂等、无副作用，但本套件的 `gsc_api.py` 只读，不写。Google 的 sitemap ping 端点已停用：2023-06-26 宣布弃用，6 个月后对该端点的请求返回 404（[Search Central 博客](https://developers.google.com/search/blog/2023/06/sitemaps-lastmod-ping)），不要再把 ping 写进自动动作 |
 | robots 校验报告、meta 长度修正建议 | **auto**(只产 patch 建议) | 纯只读分析 |
 | meta/title 修正、混合内容批量替换 | **draft PR** | 改内容,须人审合并 |
 | 301 重定向表、canonical 修正 | **draft PR** | 错误重定向=二次事故 |
@@ -111,7 +113,7 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
 
 | 形态 | 适合 | 状态持久化 | 告警链路 |
 |---|---|---|---|
-| GitHub Actions(模板 `.github/workflows/seo-monitor.yml`) | 站点已在 GH,零运维 | **commit-back**(monitor.db 提交回库,永不过期;cache 仅迁移期兜底) | secrets 注入 webhook,notify.py 路由;critical 自动开 label issue,归零自动关;workflow 失败有 if: failure() 兜底 |
+| GitHub Actions(模板 `.github/workflows/seo-monitor.yml`) | 站点已在 GH,零运维 | **commit-back**(monitor.db 提交回库,不会被清除;Actions 缓存会被清掉：GitHub 会删除 7 天没被访问的缓存条目（[文档](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)），所以缓存只作迁移期兜底) | secrets 注入 webhook,notify.py 路由;critical 自动开 label issue,归零自动关;workflow 失败有 if: failure() 兜底 |
 | 本地 cron / launchd | 内网站、不想出门数据 | 本地 `.seo-monitor/` 天然持久(WAL+flock,多 cron 安全) | cron 行内判断 diff 退出码再调 notify.py(--max-age 防旧告警重播) |
 | `claude -p` 无头调 skill(Routines/Shortcuts 可同款定时) | 要"自动完善"闭环:告警→起草修复 | 本地 | agent 读 diff 输出,按本手册 playbook 起草 |
 
@@ -119,8 +121,7 @@ budget 中止的 run 状态记 `partial`,照常入库但**不充当 diff 基线*
 一站慢/挂不连坐),每站独立监控目录 `.seo-monitor-<host>`/独立 concurrency 组/独立 issue。
 
 **dead man's switch(监控器自身的监控)**:`init --heartbeat-url` 配 healthchecks.io 类
-ping URL(或自建);run 成功 ping `/ok`、失败 ping `/fail`(立即告警不等超时,堵死
-"run 失败只变红叉不发通知"的空窗);notify 端另有兜底——距上次成功 run 超 2×
+ping URL(或自建);run 成功 ping `<URL>` 本身、失败 ping `<URL>/fail`，与 healthchecks.io 官方端点一致（[Pinging API](https://healthchecks.io/docs/http_api/)，2026-10-21 起）。失败时立即 ping `/fail`、不等超时，堵死「run 失败只变红叉不发通知」的空窗。notify 端另有兜底——距上次成功 run 超 2×
 `run_cadence_hours` 即发 `dead_man` 告警。grace 公式:**cron 间隔×2+典型运行时长**,
 检查规模(页面数)增长后重估,别设一次不管。
 
@@ -140,7 +141,7 @@ claude -p "使用 seo-suite skill 的持续监控守护:
 
 部署后第一周只看不断电:首日建基线,第二日起 diff 才有意义;第一次 weekly report 之后把 thresholds 从"经验起点"校准成本站值。
 
-**本地 cron 参考行(diff 退出码 0=无/1=critical/2=warn/3=run 未完成/4=错误,只在 1/2 时通知)**:
+**本地 cron 参考行**(`diff` 退出码：0 = 无告警，1 = 有 critical，2 = 有 warn，4 = 用法或数据错误；`run` 退出码：3 = 运行未完成，2 = 月检外链导出损坏。只在 diff 返回 1 或 2 时通知)：
 
 ```cron
 17 3 * * *  cd /path/to/site && \
@@ -153,7 +154,7 @@ claude -p "使用 seo-suite skill 的持续监控守护:
   python3 /path/to/seo-suite/scripts/monitor.py report --days 7 | mail -s "SEO 周报" you@example.com
 ```
 
-rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.json 重发一遍;
+`run` 返回 3（未完成）时 `&&` 链断开，rc=3，不触发 notify——run 挂了不该把昨天的 alerts.json 重发一遍;
 该路径的告警由 heartbeat `/fail` 与 notify 的 dead_man 检测兜底。
 
 **GSC 流量问的喂数方法**:monitor.py 不带任何 API key,GSC 数据靠导出文件。在 run 之前把你账号下的效果报告导出(全期或固定 28 天窗)存为 `.seo-monitor/gsc.csv`(列含 Query,Clicks,Impressions),cron 里可用你自己的凭据先拉取;文件缺失=流量问 skipped,不猜数。口径固定:同一数据源、同一窗口、同一过滤,口径一变基线作废。
@@ -193,7 +194,7 @@ rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.jso
 
 ## 七、与套件现有监控件的分工
 
-- 本手册+monitor.py = **站点级守护进程**:调度、快照存储(SQLite runs/snapshots/alerts 三表)、阈值判定、通知分级、周报。回答"今天有没有事"。
+- 本手册 + `monitor.py` = **站点级守护进程**:调度、快照存储(SQLite runs/snapshots/alerts 三表)、阈值判定、通知分级、周报。回答"今天有没有事"。
 - [seo-drift-monitoring](seo-drift-monitoring.md) = **页面级漂移取证**:13 元素基线/17 规则对比、算法更新归因。monitor.py 报 `title_meta_drift` 或流量断崖后,转它做细粒度归因(diff 命中的项按其交叉路由走)。
 - [alert-threshold-guide](alert-threshold-guide.md) = **阈值方法论**:分级定义、波动带/相对变化/事件型/连续触发四法、月度调校。monitor.py 的 thresholds/cooldown 参数就是它的工程化落地。
 - [kpi-definitions](kpi-definitions.md) / [report-templates](report-templates.md) = 周报口径与对外模板;monitor.py report 的"趋势+告警汇总+建议 PR"是它们的机器底座,人写 stakeholder 报告时直接引用。
@@ -201,10 +202,22 @@ rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.jso
 - [program-management](program-management.md) = **改动治理层**:大改 PRD/小改 ticket/证据库/RACI。monitor 发现问题、drift 归因、算法冻结(见 seo-drift-monitoring 第五节第 0 步)之后,"改不改、谁批、怎么复盘"在这一层。
 - [agent-growth-loop](agent-growth-loop.md) = **增长周循环**:按「搜索曝光 × 落地页转化」选一张赚钱页,AI agent 每周只推荐一处改动、人批准后上线,搜索与业务一起判输赢。本手册回答"有没有出事",它回答"这周把力气花在哪"。
 
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 监控库已建，关键页覆盖模板 | `python3 scripts/monitor.py init --site https://example.com --market us --key-pages /,/pricing`；大站用 `sample-keypages --per-group 8` 按 sitemap 模板抽样 | 每种页面模板至少 1 个关键页 |
+| 日检四问都能出数 | `python3 scripts/monitor.py run --checks daily --dry-run` | 四问都有结果；缺数据源记 skipped，不能静默缺失 |
+| 基线可用 | 连续 2 次 `run` 后 `python3 scripts/monitor.py diff --format text` | 零告警；报「需要 ≥2 次 ok 的 run」= 还没建好基线 |
+| 通知路由可达 | `python3 scripts/notify.py run --dir .seo-monitor --alerts .seo-monitor/alerts.json --dry-run` | 能打印路由与消息；secret 只来自环境变量 |
+| 监控自己没停摆 | 配 `--heartbeat-url`，并确认接收端接受 URL 本身（成功）与 `/fail`（失败）；`run_cadence_hours` 设成实际间隔 | 超过 2 倍间隔无成功 run 会出 `dead_man` 告警 |
+| sitemap ping 已不再使用（端点 2023-12 起失效） | `grep -rn "google.com/ping" .github scripts cron/ 2>/dev/null` | 无命中；有命中就删除 |
+| 每月复盘噪声 | 按 [alert-threshold-guide](alert-threshold-guide.md) 第五节统计「无需行动」告警占比 | 占比超过你预先写下的上限就放宽阈值（上限由团队定，不用外部数字） |
+
 ## 来源
 
 - 分层(日四问/周趋势)、四级告警、百分比阈值防疲劳、安全自动项 vs 人审边界：行业共识实践(crawlseo/iannuttall/claude-seo 等仓库深扫,详见 [seo-drift-monitoring](seo-drift-monitoring.md) 来源节),按本套件"不猜数/不炸渠道/人审不可逆动作"约束改写。
-- 四层运营节奏(日 async standup/周 pulse check 15 分钟/月 review 60 分钟/季 OKR sprint)、RICE 公式、领导层沟通纪律("no one cares about crawling"):decaseo 运营体系,srnaseo 2026-04 佐证;20 视角调研 R6"运营体系"登记项,调研摘要见 [pipeline-completeness](../overview/pipeline-completeness.md) 第五节。
+- 四层运营节奏（日 async standup / 周 pulse check 15 分钟 / 月 review 60 分钟 / 季 OKR sprint）、领导层沟通纪律：来自第三方 SEO 运营体系（decaseo、srnaseo）的做法，时长和议程是**本套件口径的建议**，不是行业规定。RICE 是通用的产品优先级打分法，四个因子的刻度（影响 3/2/1，置信度 1.0/0.8/0.5）是本套件口径。调研摘要见 [pipeline-completeness](../overview/pipeline-completeness.md) 第五节。
 - budget/dry_run 参数形态参考本套件 geo-score 系脚本的预算纪律。
 
 ## 审计致谢(2026-10-09,20 路外部审计全量融入)
@@ -224,7 +237,7 @@ rc=3(run 未完成)不触发 notify——run 挂了不该把昨天的 alerts.jso
 - **垂直领域(06,uptime-kuma)**:维护窗口;**(10,Google SRE Workbook)**:双窗口判定
   (critical 需 7 天基线同向确认,单日抖动降 info)。
 - **周边形态(17,changedetection.io)**:关键页字段级 diff(title/meta/canonical/og/watch)
-  +selector 圈定;**(18,healthchecks.io)**:dead man's switch(heartbeat /ok、/fail);
+  +selector 圈定;**(18,healthchecks.io)**:dead man's switch(heartbeat:URL 本身=成功、/fail=失败);
   **(19,Alertmanager)**:告警抑制树(site_down 抑制 page_down,替 Top-K)。
 
 ## 附:方法边界与第一周清单

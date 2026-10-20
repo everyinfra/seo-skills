@@ -82,6 +82,18 @@
 
 汇总表格式见 [keyword-research-output.md](../../templates/research/keyword-research-output.md)。
 
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 主意图来自当前 SERP，不只看字面 | 在目标地域、语言、设备下查前 10 条，记页面类型和日期（见上文「用实际 SERP 核验」） | 前 10 条里同一页面类型占多数（本套件口径：≥6 条）= 置信度「高」；混杂 = 「中」；没看 SERP = 「低」 |
+| 两个词该不该合成一页 | 把两条查询的前 10 条 URL 存成 `keyword,url1;url2;…` 的 CSV，运行 `python3 scripts/serp_overlap.py input.csv` | 共享 ≥4 条 = 同簇（同页或同簇）；≤1 条 = 分开。阈值是来源仓约定，在目标市场自己复核 |
+| 页面实际拿到的查询和设想一致 | GSC 导出「查询 × 页面」，运行 `python3 scripts/question_align.py --gsc <导出.csv>`；意图错配的页面会进候选清单 | 目标词在该页的展示里出现：通过 |
+| 变体先归组再估量 | `cat words.txt \| python3 scripts/keyword_variants.py`（全半角、重音、土耳其 İ 等） | 合并后才报搜索量，不把变体当独立词 |
+| 量级数据带口径 | 每个量级数字旁写工具、日期、地域；Trends 是相对值、Keyword Planner 是估算（见 [serp-data-models.md](serp-data-models.md)「先读口径」） | 数字旁无口径：退回补齐 |
+| 本地化词表走对工具链 | 对照「市场差异」表选该市场的工具，再在该市场 SERP 上抽 5 个词核意图 | 抽查 5 个词意图判断与 SERP 一致 ≥4 个 |
+| 优先级排序 | `python3 scripts/gsc_mining.py queries.csv --mode query` 找 striking distance、低 CTR、蚕食、衰退 | 脚本输出只用于排序，不当结论 |
+
 ## 常见误区
 
 - 只看字面判意图，不看 SERP。
@@ -93,26 +105,26 @@
 
 ## 市场差异:关键词研究(各市场工具链与词形处理)
 
-意图分类跨市场通用,但**工具链和词形处理按市场换**:
+意图分类跨市场通用,但**工具链和词形处理按市场换**。本表是各市场从业者经验,没有逐条一手来源;带链接的数字已在 2026-10-21 核对,其余按「社区口径」使用,落地前自己在目标市场的 SERP 上验证。工具数据的口径(Trends 是 0–100 相对值、Keyword Planner 是估算且可能是区间)见 [serp-data-models.md](serp-data-models.md)「先读口径」:
 
 | 市场 | 工具链 | 词形处理要点 |
 |---|---|---|
 | 英文 | Google KW Planner + 自有 SERP 数据 | 词而非字;长尾靠修饰词扩展。**两个新轴**(2026-10):①fan-out 修饰词轴——vs/comparison/top/best/reviews(引用权重下行)vs site:/official(上行);②**共识治理型查询**——"best X"类推荐位由站外共识(G2/Reddit/分析师)决定,标注 citation-winnable / recommendation-gated,后者内容型优化收益封顶(行业,marketingskills) |
-| 中文 | 百度指数 + **微信指数**(搜一搜选题,7/30/90 天,官方)+ **巨量算数**(抖音,官方)+ 千瓜(小红书,第三方);各 AI 引擎采样见中文指南 | 15–25 字问句口语措辞;简繁分开;**超级 App(微信/抖音/小红书)站内搜索词与开放网页词分开建表**;知乎当"实体存在"做,不当必然引用渠道(2026-08 实测修正) |
-| 俄语区 | **Yandex.Wordstat**(`"短语"`=精确短语、`!词`=精确词形、`+/-`;精确频率公式 `"[!слово1 !слово2]"`;`(вариант1\|вариант2)` 变体合并) | 显示**预测曝光**非搜索量;右侧列≠精确频率;История/季节页**不支持运算符**;俄语形态丰富→"基础频率虚高"比英语严重,**聚类前双频过滤(基础/精确两档)**;按区域+设备分层 |
-| 韩语区 | **Naver DataLab**(趋势)+ Naver Ads 关键词工具(量)+ **연관검색어/자동완성 흡수도法**:目标词的自动完成词逐个检查正文覆盖(先做全员覆盖词,再做无人覆盖词=先占机会) | 韩国用户真实输入,非英译;**통합검색 콜렉션 结构**:查询词决定 블로그/카페/지식iN/웹문서/지역 哪类集合展示——关键词研究按"集合"分层(官方文档级) |
+| 中文 | 百度指数 + **微信指数**(微信小程序,看关键词当日、7、30、90 天的热度曲线,见 [百度百科](https://baike.baidu.com/item/%E5%BE%AE%E4%BF%A1%E6%8C%87%E6%95%B0/20570106) 和 [知乎转述](https://zhuanlan.zhihu.com/p/26056613);未取到微信官方说明页)+ **巨量算数**(抖音,官方工具,本次未核)+ 千瓜(小红书,第三方);各 AI 引擎采样见中文指南 | 15–25 字问句口语措辞;简繁分开;**超级 App(微信/抖音/小红书)站内搜索词与开放网页词分开建表**;知乎当"实体存在"做,不当必然引用渠道(2026-08 实测修正) |
+| 俄语区 | **Yandex.Wordstat**(官方支持 `!`(固定词形)、`+`(固定停用词)、`" "`(固定词数)、`[]`(固定词序)、`()` 和 `\|`,见 [Yandex Direct 帮助](https://yandex.ru/support/direct/ru/keywords/symbols-and-operators)、[Wordstat FAQ](https://yandex.ru/support2/wordstat/ru/content/faq);精确频率写法 `"[!слово1 !слово2]"` 是社区组合用法) | 官方说明 Wordstat 显示「包含该短语的查询数」及其占 Yandex 总查询的份额([界面说明](https://yandex.ru/support2/wordstat/ru/interface/new)),不是点击或预测曝光。**「动态」标签只有 `+` 可用,其余算子只在「地区」「热门查询」标签生效**(旧版「История запросов」同理);「地区」标签只给近 30 天。俄语形态丰富→"基础频率虚高"比英语严重(社区口径),**聚类前双频过滤(基础/精确两档)**;按区域+设备分层 |
+| 韩语区 | **Naver DataLab**(趋势)+ Naver Ads 关键词工具(量)+ **연관검색어/자동완성 흡수도法**:目标词的自动完成词逐个检查正文覆盖(先做全员覆盖词,再做无人覆盖词=先占机会) | 韩国用户真实输入,非英译;**통합검색 콜렉션 结构**(社区口径,本次未在 Naver 官方页核到):查询词决定 블로그/카페/지식iN/웹문서/지역 哪类集合展示——关键词研究按"集合"分层 |
 | 日语区 | **ラッコキーワード**(候选挖掘)→ Google KW Planner JP(验量) | **全角/半角(ＳＥＯ/SEO)与片假名转写变体归组**;汉字/假名同词多写法;**MEO/SEO 词分工**:MEO=「地域名+業種」「〇〇近く」(今から行く意图)→GBP,SEO=比较/情报类→网页(行业共识);ChatGPT 日语查询可能被内部英译(Ahrefs 假说,未证实)→重要词备英文对照页 |
-| 西语 | KW Planner 按区域 | **按方言区分套**:es-ES 与拉美词汇不同(coche/carro/auto);es-US 单独机会(70.2M 人口/45.5M 母语者,全球第二;**81% 受亲友之托代搜**的"集体搜索"特征——Pew);人称分层:tú=消费默认/usted=法律金融医疗/vos=rioplatense/vosotros=仅西班牙;**支付即意图词层**:MX=OXXO/efectivo、AR=cuotas/dólar(通胀语境,比较词带 precio/cuota 前缀,2025 电商 +55% 跑赢通胀 28 点——CACE 官方)、CO/PE=contra entrega |
+| 西语 | KW Planner 按区域 | **按方言区分套**:es-ES 与拉美词汇不同(coche/carro/auto);es-US 单独机会(美国西语使用者约 4,500 万量级,口径因来源而异,未取到统计局原页;原文「81% 受亲友之托代搜」在 Pew 2023 西语报告中找不到,已删);人称分层:tú=消费默认/usted=法律金融医疗/vos=rioplatense/vosotros=仅西班牙;**支付即意图词层**:MX=OXXO/efectivo、AR=cuotas/dólar(通胀语境,比较词带 precio/cuota 前缀;CACE 2025 年度研究预发布:电商销售额名义 +60%,年通胀 31%,见 [Revista Mercado 2026-02-06](https://mercado.com.ar/tendencias/cace-el-ecommerce-facturo-35-326-983-millones-en-2025-y-subio-60))、CO/PE=contra entrega |
 | 葡语(巴西) | KW Planner(br)+ **Reclame Aqui 当关键词语料**(真实用户抱怨语言) | 只做 pt-BR;**AO90 正字法唯一标准**(idéia→ideia,老拼法仅存量长尾,Trends 对比后决定兼收);标题禁 Title Case(英文 AI 味标志);实体全称句式("A X, agência de Y em São Paulo") |
 | 阿拉伯 | KW Planner(阿语最可靠工具之一)+ Google/YouTube 阿语 suggest + Ajebhom/TenKeyword;正字归一参考 Tanqeeh/tnkeeh 类库 | **打字=MSA、语音=方言**(从业者共识);埃及方言词跨区域触达最广;每核心词收录 MSA+方言(EG/SA/LV)+阿拉伯-印度/欧洲数字双写+正字变体(أ/ا/إ、ي/ى、ة/ه);Ahrefs/Semrush 阿语数据薄须交叉验证 |
-| 德语(DACH) | KW Planner(**分国别取数,禁合并 DACH 搜索量**——合并产生没人搜的虚高数) | **Ansprache(称谓)与 Tonalität(语气)拆两个字段**:传统 B2B 默认 Sie+locker Ton、B2C/SaaS 默认 du,混合仅允许按渠道或按阶段且写进 styleguide,**全触点一致性>单点选择**;词汇映射每国一份(Jänner/Januar、Metzger/Fleischhauer、Marille/Aprrikose);奥地利 44% 电商跨境流向德国——德国站可被动覆盖 |
-| 印尼 | KW Planner(id)+ 免费三源词研(客服对话/竞品评论区/社媒评论)+ Autocomplete a–z 验证 | **"关键词跟手指、正文跟词典"(kata kunci mengikuti jari pengguna, prosa mengikuti KBBI)**:gaul 词 Autocomplete 验证主导后可进 title/H2,正文保持 baku;五档 ragam 矩阵(beku/resmi/konsultatif/santai/akrar)比二元更细;gaul 区=实用/定义类,YMYL/健康/政府=baku 区(AIO 引用的健康/政府站全为规范语);宗教词用 KBBI 拼写(salat/Jumat);Ramadan/THR 季节内容刚需;**"hiruk pikuk"是印尼第一 ChatGPT 文风标记,绝对禁用**;±100 对 baku/salah 拼写(silakan≠silahkan) |
-| 印地/印度 | KW Planner(en-IN/hi-IN 分开)+ **GSC regex(RE2)隔离罗马化 Hinglish 查询** | **Hinglish 三书写+拼写漂移聚类**(kya hota hai/h、kaunsa/konsa——音译规范化后聚类,IndicXlit 思路);**两大形态分开建**:英文词+meaning in hindi(电商信息)vs 英文词+印地语法包装(oily skin ke liye best foundation);语音=助词词库(kaise/konsa/batao/chahiye,泰米尔 enna/epdi/yaar)×产品词模板;**"排名好但快照语言错配"缺口**:英文页在 Hinglish 查询排首页但 CTR 0.16% 纚——修法=排名页顶部加用户原样措辞的 Hinglish 定义行(案例实测) |
+| 德语(DACH) | KW Planner(**分国别取数,禁合并 DACH 搜索量**——合并产生没人搜的虚高数) | **Ansprache(称谓)与 Tonalität(语气)拆两个字段**:传统 B2B 默认 Sie+locker Ton、B2C/SaaS 默认 du,混合仅允许按渠道或按阶段且写进 styleguide,**全触点一致性>单点选择**;词汇映射每国一份(Jänner/Januar、Metzger/Fleischhauer、Marille/Aprikose);ECDB 预测奥地利 2026 年 44% 的线上支出来自跨境商店,为十个比较国最高([ECDB 帖](https://www.linkedin.com/posts/ecdb_e-commerce-in-europe-is-far-from-a-purely-activity-7480885334961065984-6NMZ));其中流向德国的份额未核 |
+| 印尼 | KW Planner(id)+ 免费三源词研(客服对话/竞品评论区/社媒评论)+ Autocomplete a–z 验证 | **"关键词跟手指、正文跟词典"(kata kunci mengikuti jari pengguna, prosa mengikuti KBBI)**:gaul 词 Autocomplete 验证主导后可进 title/H2,正文保持 baku;五档 ragam 矩阵(beku/resmi/konsultatif/santai/akrar)比二元更细;gaul 区=实用/定义类,YMYL/健康/政府=baku 区("AIO 引用的健康/政府站全为规范语"为社区观察,未核);宗教词用 KBBI 拼写(salat/Jumat);Ramadan/THR 季节内容刚需;"hiruk pikuk"被社区当作印尼语 ChatGPT 文风标记,建议避免(无统计来源,未核);±100 对 baku/salah 拼写(silakan≠silahkan) |
+| 印地/印度 | KW Planner(en-IN/hi-IN 分开)+ **GSC regex(RE2)隔离罗马化 Hinglish 查询** | **Hinglish 三书写+拼写漂移聚类**(kya hota hai/h、kaunsa/konsa——音译规范化后聚类,IndicXlit 思路);**两大形态分开建**:英文词+meaning in hindi(电商信息)vs 英文词+印地语法包装(oily skin ke liye best foundation);语音=助词词库(kaise/konsa/batao/chahiye,泰米尔 enna/epdi/yaar)×产品词模板;**"排名好但 CTR 低"的语言错配假设**:英文页在 Hinglish 查询排首页但点击率很低时,可在页面顶部加用户原样措辞的 Hinglish 定义行,再用 GSC 比较改前后同一查询的 CTR(原文的"CTR 0.16%"案例数字来源不明,已删) |
 | 意大利 | KW Planner(it-IT/it-CH) | **双语双轨**:科技/数字主题意英同搜("crm per pmi"/"crm tool");**P.IVA→Registro Imprese 竞品链**:页脚增值税号→ATECO 行业码+省→同码同省注册公司=真实竞品(公开 API,意语区独有);Lei 仅机构/高龄/奢侈,现代趋势全面 tu |
-| 土耳其 | KW Planner + **Wordstat TR(2026-01 上线,wordstat.yandex.com.tr,土语分词联想)** | **黏着语工作流:Zemberek-nlp(1.4k★)词干+形态分析→保留高频屈折变体→Wordstat 验证后缀族**;URL 一律转写(ı→i/ğ→g/ş→s,禁 percent-encode);**份额口径冲突并记**:StatCounter Yandex ~26% vs 本地机构 3–5%(俄语旅游带 5–7%)——投放前本地实测 |
-| 越南 | KW Planner(vi-VN;GKP/Ahrefs 有调无调是独立词条分别查量) | **内容用带调形式(Google 语义评估更优)+混入无调输入变体+slug 无调小写**;Coc Cốc 官方偏好越南语页与 .vn 域(文档化收录因素);**提问式 H2 ≥50% 用真实搜索措辞**(对 SEO/GEO 双高价值);标题 45–65 字符、词进前 30 字符(防 Google 改写) |
-| 泰国 | KW Planner(th-TH) | **分词定论:`Intl.Segmenter("th")`(word 粒度)正确切词零依赖——全球主流 SEO 工具栏在泰文站全部错误**;标题按 **grapheme(字素)** 计非字符串长;泰调可读性:句 ≤25 词(>30 罚)、词均 ≤5 字符;`Intl.Segmenter("vi")` 同解越南 |
-| 波兰 | KW Planner(pl-PL) | 内容带变音符+**URL/slug 转写(ą→a/ł→l)是六家波兰 SEO 机构一致共识**(转义 %C4%85 体验差);**Bing 桌面 ~13.3%**(全球均值 3 倍)→必做 Bing WMT+IndexNow,B2B 桌面词单独追;**品牌引用按引擎分列**(ChatGPT 偏 PKO/Gemini 偏 mBank——Basta Digital) |
+| 土耳其 | KW Planner + **Wordstat TR(wordstat.yandex.com.tr 页面存在,2026-10-21 打开确认;「2026-01 上线」的日期未核)** | **黏着语工作流:Zemberek-nlp([土耳其语形态分析库](https://github.com/ahmetaa/zemberek-nlp))词干+形态分析→保留高频屈折变体→Wordstat 验证后缀族**;URL 一律转写(ı→i/ğ→g/ş→s,禁 percent-encode);**份额口径冲突并记**:StatCounter 2026-09 Yandex 为 25.19%(见 [geo-platform-differences.md](../content/geo-platform-differences.md) 事实库);「本地机构 3–5%」未取到来源——投放前本地实测 |
+| 越南 | KW Planner(vi-VN;GKP/Ahrefs 有调无调是独立词条分别查量) | **内容用带调形式(Google 语义评估更优)+混入无调输入变体+slug 无调小写**;Cốc Cốc 偏好越南语页与 .vn 域(行业说法,本次没找到 Cốc Cốc 官方文档,未核);**提问式 H2 ≥50% 用真实搜索措辞**(对 SEO/GEO 双高价值);标题 45–65 字符、词进前 30 字符(本套件口径;Google 标题没有固定字符上限,按显示宽度截断) |
+| 泰国 | KW Planner(th-TH) | **分词:浏览器和 Node 自带的 `Intl.Segmenter("th", {granularity: "word"})` 可做泰语分词([MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter)),零依赖;「主流 SEO 工具栏在泰文站全部错误」无来源,已删,请自己用泰文样本验证你用的工具**;标题按 **grapheme(字素)** 计非字符串长;泰语可读性阈值(句 ≤25 词、词均 ≤5 字符)为本套件口径,无外部来源;`Intl.Segmenter("vi")` 同解越南 |
+| 波兰 | KW Planner(pl-PL) | 内容带变音符+URL/slug 转写(ą→a/ł→l)是波兰 SEO 从业者常见做法("六家机构共识"一说未核;转义 %C4%85 可读性差);**Bing 桌面 13.94%**([StatCounter 波兰桌面 2026-09](https://gs.statcounter.com/search-engine-market-share/desktop/poland);全设备 Bing 7.38%,2025-09 至 2026-09 区间)→必做 Bing WMT+IndexNow,B2B 桌面词单独追;**品牌引用按引擎分列**("ChatGPT 偏 PKO、Gemini 偏 mBank"出自 Basta Digital,未核) |
 | 荷兰/弗拉芒 | KW Planner(nl-NL/nl-BE) | 词汇分流(wagen/auto's、sloebers/gymschoenen)+**tone 双轨:nl-NL=je(连 B2B)/nl-BE=u(句中小写,商务政务),gij 仅乡土品牌**——同一内容无法靠词汇表通吃;hreflang 高频错误=nl-BE 页误标 nl-NL;**锚文本拒绝虚构比例 norm**(Google 不公布),自然顺序 brand>descriptive>naked>exact |
 
 **跨市场共同纪律**:关键词不互译(各语言独立研究,战略层对齐主题);SERP 证据记录地域与语言;变体归组后再估量,不把变体当独立词;**信源/词量断言带日期**(偏好结论半衰期 6–12 个月);屈折语系(俄/土)一律双频过滤。
@@ -121,15 +133,18 @@
 
 ## 聚类判据与机会公式(百仓深扫:claude-seo 四档/crawlseo 曲线/every-app 阈值)
 
-- **SERP 重叠四档判据**(top-10 有机结果共享 URL 数):**7-10=同一篇文章、4-6=同簇、2-3=互链、0-1=分开**;种子扩 30-50 变体;pillar 2500-4000 词、spoke 1200-1800;每 spoke ≥3 入链且与 pillar 双向。
-- **期望 CTR 曲线**(可直接照抄用于潜力估算):pos1=0.28/pos2=0.15/pos3=0.11/pos4-5=0.07/pos6-10=0.03/pos11-20=0.01/>20=0.005;潜力=曝光×expectedCtr(max(1, 位次−3))。
-- **机会四分法**(各家口径归并):striking distance=位 4-20 且曝光≥20(或 11-20+高曝光+低 CTR);low_ctr=曝光≥50 且位次≤15 且期望−实际 CTR>2pp;content_decay=28 天 vs 前 28 天点击降幅 ≤−25%(<−50% 记 high);cannibalization=同 query≥2 落地页,加权位次=Σ(位次×曝光)/曝光。
+本节的数字都是来源仓的约定值,**不是 Google 规则,也没有外部校准**,按「本套件口径」使用。
+
+- **SERP 重叠四档判据**(top-10 有机结果共享 URL 数;claude-seo `serp-overlap-methodology.md` 原表 2026-10-21 核对一致):**7-10=同一篇文章、4-6=同簇、2-3=互链、0-1=分开**。执行:`python3 scripts/serp_overlap.py input.csv`(输入 `keyword,url1;url2;…`)。种子扩 30-50 变体是来源仓的做法。
+- **页面字数(来源仓约定,不是要求)**:来源仓写 pillar 2500-4000 词、spoke 1200-1800 词。Google 明确没有偏好字数([Creating helpful content](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)),字数以把问题讲完为准。每 spoke ≥3 入链且与 pillar 双向,同样是来源仓约定。
+- **期望 CTR 曲线(来源仓 crawlseo 的常量,仅作排序)**:pos1=0.28/pos2=0.15/pos3=0.11/pos4-5=0.07/pos6-10=0.03/pos11-20=0.01/>20=0.005;潜力=曝光×expectedCtr(max(1, 位次−3))。第三方研究给出的首位 CTR 从 7.1% 到 27.6% 不等,没有通用基准;能用本站自己的分位次 CTR 时,用本站的(GSC「查询」导出按位次分段求加权 CTR)。
+- **机会四分法**(本套件脚本 `scripts/gsc_mining.py` 的实际口径):striking distance=位次 5–20 且展示 ≥20;low_ctr=位次 1–10、展示 ≥50、低于内置期望曲线 2 个百分点以上(曲线为本套件口径);content_decay=上期点击 ≥10 且本期降幅 ≥25%;cannibalization=同一查询 ≥2 个页面且最大展示 ≥20。来源仓版本略有不同(striking 4–20、low_ctr 位次 ≤15、28 天口径),以脚本为准。运行:`python3 scripts/gsc_mining.py queries.csv --mode query`。
 - **蚕食严重度公式**(claude-blog):severity = overlap_count × avg_search_volume × (1/position_gap),gap 最小取 1;四级聚类优先序 exact>stem>语义>subset。
 
 ## 完全装载:GEO 难度公式/内容护城河/llm_mentions 决策(百仓深扫)
 
-**GEO 绝对难度公式**(OpenClaudia):`0.35×KD + 0.40×median 竞品页 UR + 0.25×targeting%`——用页级 UR 不用域级 DR(McKinsey 泛文不虚增分);客户相对三档:WON(top-3 或被 AIO 引)/FOOTHOLD(4-10)/NOT RANKING(附差距)。
-**llm_mentions 决策规则**:DataForSEO `ai_optimization/llm_mentions`(platform: google|chat_gpt;**Perplexity 不支持**);include_subdomains:true 否则裸域 0 结果;**返回 ≥20 条→跳过猜测直接差距分析;<20 作种子;0 才推测**;推测=gpt-4o-search-preview 实测(~$0.01/问,一次 $0.15-0.20,1-2s 串行)。
+**GEO 绝对难度公式**(OpenClaudia 的权重,本套件口径,权重未经外部校准):`0.35×KD + 0.40×median 竞品页 UR + 0.25×targeting%`——用页级 UR 不用域级 DR(McKinsey 泛文不虚增分);客户相对三档:WON(top-3 或被 AIO 引)/FOOTHOLD(4-10)/NOT RANKING(附差距)。执行:`python3 scripts/geo_difficulty.py --kd 40 --ur-median 55 --targeting 0.3 --position 5`(`--targeting` 取 0–1);`--self-test` 可自检。
+**llm_mentions 决策规则**:DataForSEO `ai_optimization/llm_mentions`(2026-10-21 核对[官方文档](https://docs.dataforseo.com/v3/ai_optimization-llm_mentions-search_mentions-live/):`platform` 取 `google` 或 `chat_gpt`,不填则两者都返回,Perplexity 不在其中;`include_subdomains` 为可选布尔,要含子域须设 true;当前端点名为 `search_mentions/live`);**返回 ≥20 条→跳过猜测直接差距分析;<20 作种子;0 才推测**(来源仓约定);推测=gpt-4o-search-preview 实测(来源仓估算每问约 $0.01,未核,以当前价目为准)。
 **内容护城河公式**(Affitor):目标=TOP5 竞品(排除 Wikipedia/Reddit)平均页数×1.5;分档 <20 页 GREEN/20-50 YELLOW/50-100 ORANGE(收窄利基)/100+ RED;竞品页数用 site: 计数;加速杠杆=独家数据/格式优势/更新速度。
 
 ## 深读补充:机会规则/聚类成本/难度评分(R3 组四仓深读,2026-10-09)
@@ -150,7 +165,7 @@
 
 ## 需求发现:反查平台免费子域的「新出现自然点击」(2026-10-17 并入)
 
-**思路**(社区经验,来源 X @aiRobertDaily 2026-10-16;工具界面与付费边界 2026-10-17 核验):不少人先用托管平台的免费子域(如 `*.vercel.app`)快速上线试水。某个子域开始拿到自然搜索点击,相当于别人替你试过一轮需求。反查「平台根域下新出现点击的子域落地页」,能拿到一份低成本的**选题种子**清单——只是线索,不是结论,后面必须过本文的意图判定和 SERP 核验。和 `scripts/trend_scout.py`(HN/Reddit 热度)互补:那边看讨论热度,这边看已经被搜索验证过的落地页。
+**思路**(社区经验,来源 X @aiRobertDaily 2026-10-16,X 页面本次未能读取;工具界面 2026-10-21 重新核对 Similarweb 知识库):不少人先用托管平台的免费子域(如 `*.vercel.app`)快速上线试水。某个子域开始拿到自然搜索点击,相当于别人替你试过一轮需求。反查「平台根域下新出现点击的子域落地页」,能拿到一份低成本的**选题种子**清单——只是线索,不是结论,后面必须过本文的意图判定和 SERP 核验。和 `scripts/trend_scout.py`(HN/Reddit 热度)互补:那边看讨论热度,这边看已经被搜索验证过的落地页。
 
 **操作(Similarweb,菜单名以 2026-10 界面为准)**:
 1. Keyword research → Website explorer → Landing pages,输入平台根域 `vercel.app`(输入类型显示为 Domain)。
@@ -163,10 +178,9 @@
 - Clicks change 的官方口径:Trending=点击环比 >10% 且当月 >100;De-Trending=环比 <-10% 且当月 >100;Lost Clicks=当月 0、上月 >0;**New Clicks=当月 >0 且上月 =0**。这是**环比**口径:"新出现"只表示上月没有点击,不等于新建的站,季节性回流也会落进来。原帖说时间选最近 1–12 个月,截图里实际选的是单月;选多月区间时 New Clicks 怎么算,未核实。
 - 输入平台根域后能列出子域 URL:原帖截图可见(vercel.app 以 Domain 类型输入,单月列出 1.7 万余个 URL)。官方文档没写明 Domain 输入是否涵盖子域;换平台用之前,先确认列表里出现的确实是子域 URL。
 
-**付费边界(Similarweb 官网定价页,2026-10-17)**:
-- Landing Pages(organic and paid)只在带 SEO Intelligence 的自助档里:Competitive Intel & SEO & AEO,年付折合 $333/月,按月付 $399/月(更高的含 Ads 档也有)。入门的 Competitive Intelligence 档(年付折合 $125/月)不含。
-- 单独的 Subdomains 报告不在任何自助档里,只出现在企业定制套餐;自助用户只能走 Landing Pages 这条路。
-- 免费部分:similarweb.com 的公开页面只给高层样本,不能下钻。官方博客(2024-06)写的是 7 天试用、需绑卡、每天限 15 次操作;试用期能不能打开 Landing Pages,未核实。
+**付费边界**:
+- 2026-10-17 一轮记录过 Landing Pages 只在带 SEO Intelligence 的自助档、Subdomains 报告只在企业套餐。2026-10-21 复核时 [Similarweb 定价页](https://www.similarweb.com/packages/web/) 不再列出价格和档位明细,上述档位和美元价格**未核**,已删数字;买之前以官网当前页和销售报价为准。
+- 免费部分:similarweb.com 公开页面只给高层样本。官方博客(2024-06)写的是 7 天试用、需绑卡([官方博客](https://www.similarweb.com/blog/marketing/marketing-strategy/similarweb-free/)),免费账号每天最多 15 次网站查询;试用期能不能打开 Landing Pages,未核实。
 
 **局限**:
 - 点击数是 Similarweb 的**估算值**(官方文档原词即 estimated),小子域误差更大。只拿来排序找线索,不当搜索量入账,不写进对外材料。
@@ -177,8 +191,8 @@
 **同一思路可延伸到(未核实)**:netlify.app、pages.dev、github.io、replit.app、framer.website 等提供免费子域的平台。用之前先确认工具能把该根域下的子域 URL 列出来。
 
 **其他工具里的相近能力(只列核实过的功能,没有在平台根域上实测过)**:
-- Semrush Organic Research 的 Position Changes 报告可按 New / Improved / Declined / Lost 筛选(官方博客 2024-09)。同一来源写的免费账号额度是每天 10 次请求、每份报告 10 行、无历史数据——对平台根域这种量级基本不够用。
-- Ahrefs Site Explorer(付费)有 Top pages、Top subdomains 报告(官方 Traffic Checker 页介绍)。免费 Traffic Checker 能不能列出平台根域下的子域,未核实。
+- Semrush Organic Research 的 Position Changes 报告可按 New / Improved / Declined / Lost 筛选;同一篇[官方博客](https://www.semrush.com/blog/competitor-keyword-analysis-tool/)(2026-10-21 重读)写免费账号 $0:每天 10 次请求、每份报告 10 行、无历史数据——对平台根域这种量级基本不够用。
+- Ahrefs Site Explorer(付费)有 Top pages、Top subdomains 报告([Traffic Checker 页](https://ahrefs.com/traffic-checker)介绍,2026-10-21 核对)。免费 Traffic Checker 能不能列出平台根域下的子域,未核实。
 
 ## 新站选词:词根拓词、KGR 粗筛与「四找」研究循环(社区经验,2026-10-17 并入)
 
@@ -192,9 +206,9 @@
 - `allintitle` 要人工查:提出者说明该运算符被 Google 限频;Google 垃圾政策把未经许可向 Google 发送自动查询(包括为查排名抓取结果)列为违规——不要写脚本批量跑。
 - 同一对象的多个近似 KGR 词(加 review、加型号后缀之类),内容高度相似时合并成一页(提出者 FAQ),和上文「混合意图」的拆页判断一致。
 
-**SERP 供给缺口怎么读(社区经验,2026-10-17 并入)**:新站常用的弱 SERP 信号是「前一两页以论坛、问答帖为主(Reddit、Quora、X),没有一个专门解决这件事的页面」——用户在搜一个任务,结果里只有人在讨论它。Rank Math 知识库也把「论坛、Quora、过时内容占前排」列为低竞争信号。两条边界:
-- 只对**任务型、工具型**查询成立(要转换、要生成、要计算)。评测、经验、「值不值得买」类查询上,论坛占位是 Google 有意为之:Google 有专门展示论坛讨论的 Discussions and forums 结果功能,detailed.com 2024-07 抽查 10,000 个产品评测词,7,085 个出现该功能。这类词上论坛就是意图本身,不是空档。
-- 素材另列的两条信号(官方站刚注册、主流后缀还空着)不是排名判据:后缀与精确匹配域名的口径见 [domain-strategy.md](domain-strategy.md) 1.2(EMD 中性偏微小正效应,残值只在本地词等少数场景),抢注只关乎品牌与好记。
+**SERP 供给缺口怎么读**:完整的可执行检查(候选来源 → 查询 → 前 10 条分类 → 供给分与缺口判据 → 需求代理 → 引擎、时间、地区记录与可信度)见 [gap-analysis-frameworks.md](gap-analysis-frameworks.md)「SERP 供给缺口检查」。这里只留两条边界:
+- 只对**任务型、工具型**查询成立(要转换、要生成、要计算)。评测、经验、「值不值得买」类查询上,论坛占位是 Google 有意为之:Google 有专门展示论坛讨论的 Discussions and forums 结果功能([Search Central 博客 2023-11-27](https://developers.google.com/search/blog/2023/11/discussion-and-profile-markup)),detailed.com 在 2024-07 抽查 10,000 个产品评测词,7,085 个出现该功能([detailed.com](https://detailed.com/forum-serps/),核对 2026-10-21)。这类词上论坛就是意图本身,不是空档。
+- Rank Math 知识库把「Reddit 或 Quora 帖、小站、过时内容占前排」列为可竞争信号([Rank Math](https://rankmath.com/kb/find-low-competition-keywords/),核对 2026-10-21)。素材另列的两条信号(官方站刚注册、主流后缀还空着)不是排名判据:后缀与精确匹配域名的口径见 [domain-strategy.md](domain-strategy.md) 1.2(EMD 中性偏微小正效应,残值只在本地词等少数场景),抢注只关乎品牌与好记。
 
 **「四找」研究循环**:词找词(种子词扩相关词)→ 词找站(搜这些词,记 SERP 前十的站)→ 站找词(把站放进流量工具,看它的非品牌词和着陆页)→ 站找站(SERP 里冒出来的新站再放回工具)→ 回到词找词。原文转述的新手训练版:
 1. 在 Similarweb 一类流量工具里打开一个靠自然搜索起量的标杆站,先看自然搜索流量占比;
@@ -219,12 +233,14 @@
 - 深读来源（R3 组，2026-10-09）：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/ai-prompt-research/SKILL.md`（Apache-2.0）；[AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) `skills/seo-cluster/references/serp-overlap-methodology.md`、`hub-spoke-architecture.md`、`execution-workflow.md`（MIT）；[gooseworks-ai/goose-skills](https://github.com/gooseworks-ai/goose-skills) `skills/seo/composites/topical-authority-mapper/SKILL.md`、`seo-opportunity-finder/SKILL.md`（MIT）；[Ryze-AI-Adgent/open-seo-mcp-skills](https://github.com/Ryze-AI-Adgent/open-seo-mcp-skills) `skills/competitor-gap/SKILL.md`；[ericosiu/ai-marketing-skills](https://github.com/ericosiu/ai-marketing-skills) `seo-ops/content_attack_brief.py`
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · research/keyword-research/references/keyword-intent-taxonomy.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/research/keyword-research/references/keyword-intent-taxonomy.md)（Apache-2.0）
 - 一手资料：[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)、[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)
-- 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（西语 es-419 组合经 Google hreflang 文档核实；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）
+- 区域段：Yandex Wordstat 官方文档（算子）；Naver DataLab/Ads 官方说明；ラッコキーワード；方言/语域分裂为本地化共识（hreflang 只支持 ISO 639-1 语言码加 ISO 3166-1 区域码，`es-419` 不被支持，拉美西语用 `es` 加 `es-MX` 等国家码，见 [Google 本地化版本文档](https://developers.google.com/search/docs/specialty/international/localized-versions)；阿拉伯正字变体、印尼 baku/gaul、德语 Sie/du 为从业者共识，标注非量化研究）
 - 需求发现段（2026-10-17 核验）：方法出处 [X @aiRobertDaily 2026-10-16](https://x.com/aiRobertDaily/status/2110993420424778028)（帖文与截图，社区经验）；[Similarweb Knowledge Center · Using Landing Pages](https://support.similarweb.com/hc/en-us/articles/17226212657693-Using-Landing-Pages)（输入类型、Clicks change 四档口径、估算点击）；[Similarweb Web Intelligence 定价页](https://www.similarweb.com/packages/web/)（Entrepreneurs 档功能表）；[Similarweb 博客 · 13 Things You Can Do With Similarweb for Free](https://www.similarweb.com/blog/marketing/marketing-strategy/similarweb-free/)（2024-06，试用条款）；[Semrush 博客 · competitor keyword analysis tools](https://www.semrush.com/blog/competitor-keyword-analysis-tool/)（2024-09，Position Changes 与免费额度）；[Ahrefs Traffic Checker](https://ahrefs.com/traffic-checker)（Site Explorer 报告名）
 - 新站选词段（2026-10-17 核验）：素材 [X @qianshuixia2026 2026-10-17](https://x.com/qianshuixia2026/status/2111268767342997847)（整理哥飞公众号文章的二手笔记，社区经验）；KGR 定义、<250 上限、判读档位与近似词合并按提出者原文 [Niche Site Project · Keyword Golden Ratio](https://nichesiteproject.com/keyword-golden-ratio/) 及其 [FAQ](https://nichesiteproject.com/keyword-golden-ratio/faq/)；自动查询口径见 [Google 垃圾政策 · Machine-generated traffic](https://developers.google.com/search/docs/essentials/spam-policies#machine-generated-traffic)
-- SERP 供给缺口段（2026-10-17 核验）：素材 [X @liangzhu_AI 2026-09-25 长文](https://x.com/liangzhu_AI/status/2103402474677670352)（社区经验）；[Rank Math 知识库 · Find Low Competition Keywords](https://rankmath.com/kb/find-low-competition-keywords/)（SERP 低竞争核查表）；[detailed.com · forum SERPs](https://detailed.com/forum-serps/)（10,000 个产品评测词，2024-07 数据，2026-03 更新）；Discussions and forums 功能见 [Google Search Central 博客 2023-11](https://developers.google.com/search/blog/2023/11/discussion-and-profile-markup)
+- SERP 供给缺口段（2026-10-17 并入，2026-10-21 复核）：素材 [X @liangzhu_AI 2026-09-25 长文](https://x.com/liangzhu_AI/status/2103402474677670352)（社区经验，X 页面本次未能读取，未核）；[Rank Math 知识库](https://rankmath.com/kb/find-low-competition-keywords/)；[detailed.com](https://detailed.com/forum-serps/)；Discussions and forums 功能见 [Google Search Central 博客 2023-11-27](https://developers.google.com/search/blog/2023/11/discussion-and-profile-markup)
 
 ## (ericosiu 深读 2026-10-09c)转化信号词表/异议分类/闭环回读/意图交付闸门
+
+本节所有权重、阈值、基准分都是来源仓 ericosiu/ai-marketing-skills 的内置常量,不是独立研究,也没有外部校准;2026-10-21 抽查 `seo-ops/content_attack_brief.py`(`comp_pos <= 20 and my_pos > 50`、涨幅 `pct > 50` 等)与下文一致。按「本套件口径」使用。
 
 **交易意图的页面侧可机检词表**(conversion-ops `cro_audit.py`,946 行,纯 requests+BS4 无头浏览器外审计——反向用途:给交易/商业调研词的落地页做「意图满足度」静态打分):CTA 动词词表=get started/sign up/start free/try free/book a demo/schedule/download/buy now/add to cart/subscribe/join/register/request/claim/unlock/learn more/contact us/enroll/apply now/shop now(无任何命中即缺转化机制);社证词表=trusted by/used by/case stud/success stor/as seen in/logo+量化社证 `\d+\+?(users|customers|clients|companies)`;紧迫词表=limited time/only N/last chance/countdown/flash sale;信任词表=guarantee/money-back/refund/free trial/cancel anytime/GDPR/SOC 2/HIPAA/ISO/PCI/certified。**8 维权重**:CTA 可见性 0.20 最高,标题清晰/社证/表单摩擦各 0.15,信任/移动/速度各 0.10,**紧迫仅 0.05 且无紧迫时地板 35 分——紧迫非普适要素,按意图取舍**。表单摩擦分档:≤2 字段=90/3-4=75/5-6=55/7-10=35/>10=15,电话字段再 -10(弃填第一因),通用提交文案(submit/send)换利益导向文案。H1:无 H1 -30,词数<3 或>15 各 -10,多 H1 -10;首 CTA 位于页面前 30% HTML=above-fold 代理。行业基准(avg/上四分位):saas 62/78、ecommerce 58/74、agency 55/72、healthcare 52/68、b2b 56/73。
 

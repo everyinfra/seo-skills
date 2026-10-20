@@ -1,196 +1,234 @@
 # DACH-Markt(德语市场专项参考)
 
-> 适用圈:德国(de-DE 主市场)+ 奥地利(de-AT)+ 瑞士德语区(de-CH,约 62% 人口)+ 列支敦士登/卢森堡/南蒂罗尔(顺带,不建独立站)。
-> 数据锚点:2026-10-09;断言半衰期 6–12 个月,随复审更新。
-> 本轮增量信源:SISTRIX AIO-DE 研究(AIO ~20%/位置 1 CTR 27→11%/~2.65 亿点击)/StatCounter DE 2026-08(全平台 88.49%·桌面 78.73%·移动 95.89%)/heise(Ecosia+Qwant 自建德语索引 ~10 亿页)/IT-Recht-Kanzlei(OLG Köln 19.01.2024 拒绝键判例·购链 Abmahnung)/SEJ+Search Engine Land(Pew 8% vs 15%·Seer −61%·Ahrefs 1.3→2.4%)/SE Ranking DACH 2026/Handwerksblatt(商会目录)/Seokratie·seo-kueche(2026 趋势)。
+> 适用圈:德国(de-DE 主市场)+ 奥地利(de-AT)+ 瑞士德语区(de-CH)+ 列支敦士登/卢森堡/南蒂罗尔(顺带,不建独立站)。
+> 数据锚点:2026-10-21 逐条核对一手来源(StatCounter、Google 官方博客、Sistrix、Seer、Pew、gesetze-im-internet.de、法院判决库、heise);二手研究标「第三方研究」。断言半衰期 6–12 个月。
+> 写法约定见 [asd-ste100-web-writing](../content/asd-ste100-web-writing.md);标题与首段怎么对齐买家提问见 [question-alignment](../content/question-alignment.md)。
 
 ## 〇、关键数字速查
 
 | 维度 | 值 | 口径/日期 |
 |---|---|---|
-| Google 份额 | **87.8%**(内部锚点,主要市场最低)vs 88.49%(StatCounter)vs 92.3%(SE Ranking) | 三口径并记,2026-08/09 |
-| 桌面/移动拆分 | 桌面 78.73%(Bing **12.81%**)/移动 95.89% | StatCounter 2026-08 |
-| Ecosia | ~1.0%(桌面 1.03%/移动 0.92%) | StatCounter/SE Ranking |
-| AIO 上线 | **2025-03**(内部口径;法国 2026-07-22——早 ~16 个月) | fr.md 对照 |
-| AIO 覆盖 | ~**20%** 查询 | SISTRIX |
-| AIO CTR 冲击 | 位置 1:**27%→11%**(−59%);估算 ~2.65 亿点击损失 | SISTRIX/SEJ |
-| 链接月租 | **119€/月起**(租非买) | 内部锚点 2026-10 |
-| title/desc | **65(55–65 为佳)**/150 字符;支柱 ≥2 000 词 | markets.json(SISTRIX 口径) |
-| 文本膨胀 | 德语比英语长 **+25–35%** | markets.json |
-| Abmahnung 面 | 未标 Werbung 软文/二层 cookie banner/缺 Impressum | IT-Recht-Kanzlei 等 |
+| Google 份额(德国) | 全设备 87.84%;桌面 69.99%;移动 96.21% | [StatCounter DE](https://gs.statcounter.com/search-engine-market-share/all/germany),2026-09 月值,取数 2026-10-21 |
+| 份额波动 | 全设备 12 月区间 80.05–90.18%;桌面 Bing 2026-05 至 09 为 16.56 / 16.31 / 14.48 / 12.81 / 19.44% | 同上;**月间波动大,不引用单月为常数** |
+| AIO 上线 | **2025-03-25** 官方公告(德、奥、瑞士等) | [Google 官方博客](https://blog.google/feed/were-bringing-the-helpfulness-of-ai-overviews-to-more-countries-in-europe/) |
+| AIO 覆盖 | 约 20% 德国关键词 | [Sistrix](https://www.sistrix.de/news/ai-overviews-in-deutschland-so-stark-sinken-die-klickraten-wirklich/),>1 亿关键词,2026-02 发布、2026-10-13 更新 |
+| 位置 1 点击率 | 27% → 11%(约 −60%);有 AIO 的搜索中 33% 有自然点击,平均搜索 57% | 同上 |
+| 点击损失 | 约 2.65 亿次自然点击**每月**;全关键词平均 −6.6% | 同上 |
+| title/desc | 65(55–65 为佳)/150 字符;支柱 ≥2,000 词 | `scripts/markets.json`(本套件口径;Sistrix 出处的 55–65 未在其公开页读到;Google 无固定字符或字数要求) |
+| 德语比英语长 | +25–35% | 本套件口径,无一手来源;用 `parity_check.py` 实测 |
 
 ## 一、格局
 
-### 1.1 引擎份额:主要市场最低的 Google,桌面 Bing 是隐藏第二极
+### 1.1 引擎份额
 
-- 全平台 Google 87.8%(markets.json 锚点,主要市场最低)与 StatCounter 2026-08 的 88.49% 同档;SE Ranking 口径 92.3% 偏高——三口径并记,按设备拆分后再引用(总纲原则 23)。
-- **桌面 Bing 12.81%** 是行动级数字:德国桌面工作场景(企业采购/B2B)Bing 权重远高于"Bing 6.5%"的泛口径印象;且 Bing 索引喂 ChatGPT 引用——Bing Webmaster+IndexNow 是标配第二通道。
-- 移动 95.89% 一家独大;移动策略即 Google 策略。Yandex 1.56%/DDG 1.2%/Yahoo 1.57% 皆噪声级,不投入。
+StatCounter 2026-09 月值(取数 2026-10-21):
 
-### 1.2 AIO:早法国 16 个月——德国已在"冲击后"阶段
+| 地区 | 全设备 Google / Bing | 桌面 Google / Bing | 移动 Google |
+|---|---|---|---|
+| 德国 | 87.84% / 6.50% | 69.99% / 19.44% | 96.21% |
+| 奥地利 | 80.88% / 10.93% | 69.19% / 20.64% | 93.09% |
+| 瑞士 | 80.21% / 12.11% | 68.91% / 22.11% | 93.08% |
 
-- **2025-03 上线**(内部口径),法国 2026-07-22 才上线——德国比法国多吃 ~16 个月冲击,比荷兰(触发率 5–6%)深一个相位。
-- SISTRIX 量化:AIO 出现于 ~**20%** 德国查询;位置 1 CTR 从 27% 跌至 11%(**−59%**);估算全德 ~2.65 亿点击损失(采样口径见原研究)。
-- 国际对照(并记):Pew(美)15%→8%;Seer −61%;Ahrefs/SEL 追到 AIO CTR 从 1.3%(2025-12)回升至 **2.4%**(2026-02)——"跌后不恢复"叙事要软化,留恢复观察钩子。
-- 全球信息类查询 AIO 覆盖 2026 年初已 >50%(jsh.marketing 口径)——德国 20% 低于全球头部,但信息类 CTR 压缩已是既成事实。
-- 对客户话术:德国不是"要不要做 GEO"的市场(那是法/荷话术),而是"GEO 已跑 ~19 个月、引用面竞争成熟"的市场——交易词经典 SEO 与信息词 AIO 引用双轨并行,信息词自然流量 ROI 已折价入预算。
+- 旧稿的「Google 87.8%(内部锚点)」就是 StatCounter 2026-09 全设备值 87.84%,不是独立口径。「SE Ranking 92.3%」本次未核,已删。
+- 德国全设备 Google 2026-05 至 09 为 80.63 / 81.43 / 85.68 / 88.41 / 87.84%,变化大。引用时写月份。
+- 桌面 Bing 15–20% 是行动级数字:桌面采购与 B2B 场景要配 Bing Webmaster 与 IndexNow。旧稿「Bing 索引喂 ChatGPT」无官方点名(OpenAI 只写「第三方搜索服务商」,[OpenAI](https://openai.com/index/introducing-chatgpt-search/)),已删。
+- 移动 96.21% 一家独大。Yandex(全设备 1.56%)、DuckDuckGo、Yahoo 是噪声级(本套件口径)。
 
-### 1.3 Ecosia:索引混合体,"单独优化"仍是迷思
+### 1.2 AIO:德国已在「冲击后」阶段
 
-- 份额 ~1%(桌面 1.03%/移动 0.92%)——流量层面无单独优化价值。
-- 索引现实(比"Ecosia=Google 索引"的简化更进一步):传统以 **Bing 索引为主**,2024 年起混入 Google 索引结果;**2025 年起与 Qwant 共建德语自有 Web 索引(~10 亿页,heise 报道,CEO Oels 口径)**——欧洲索引自主化的最新动作。
-- 结论:优化 Ecosia≈优化 Google+Bing;其真实价值是柏林品牌+种树叙事的 CSR 公关位;自有索引若成为默认结果源再重评(复审钩子 2)。
+- Google 2025-03-25 官方公告把 AIO 带到奥地利(德、英)、德国(德、英)、瑞士(法、德、意、英)等九国。Sistrix 的文章写「2025-05 起」,与官方公告不同;时间点以官方公告为准。法国 2026-07-22 才上线(见 [fr.md](fr.md)),相差约 16 个月。
+- Sistrix(>1 亿关键词):AIO 出现在约 20% 的德国关键词;长尾约 30%;78.6% 的 AIO 在自然结果之上。位置 1 点击率 27% → 11%;每月损失约 2.65 亿次自然点击;平均损失 6.6%;各行业从 1% 到 24%+;最大的绝对损失者是 Wikipedia(每月 3,160 万次点击),最大的比例损失者是专业健康门户(30%+)。
+- 国际对照:
+  - Pew(2025-07-22 发布,2025-03 的美国数据):有 AI 摘要时 8% 的访问含点击传统链接,无摘要时 15%([Pew](https://www.pewresearch.org/short-reads/2025/07/22/google-users-are-less-likely-to-click-on-links-when-an-ai-summary-appears-in-the-results/))。
+  - Seer Interactive:有 AIO 的查询自然 CTR 在 2025 年持续下降;**2025-12 约 1.3%,2026-02 回升到约 2.4%**([Seer 2026-04 更新](https://www.seerinteractive.com/insights/aio-impact-on-google-ctr-2026-update))。旧稿把这个回升归给 Ahrefs,应为 Seer。
+  - Ahrefs(2026-02-04):位置 1 的点击在有 AIO 时低 58%([Ahrefs](https://ahrefs.com/blog/ai-overviews-reduce-clicks-update/))。
+- 「全球信息类查询 AIO 覆盖 >50%」来自一家营销公司,无一手来源,已删。
+- 做法(本套件口径):德国是「GEO 已跑一年半、引用面竞争成熟」的市场。交易词做经典 SEO,信息词做 AIO 引用占位。信息词自然流量按折价入预算。
+
+### 1.3 Ecosia 与 Qwant 的自有索引
+
+- Ecosia 全设备约 1.0%(2026-09 为 1.03%,移动 0.86%)。流量层面没有单独优化的价值。
+- Ecosia 与 Qwant 的合资公司 EUSP 在 2025-08 启用自有索引 Staan;**德国索引 2026-07 才投入运行**,约 10 亿网页(Ecosia 总经理 Oels 对 heise 的说法),Ecosia 逐步提高自有索引的结果占比([heise,2026-07-30](https://www.heise.de/news/Ecosia-und-Qwant-starten-deutschen-Webindex-11383500.html))。旧稿「2025 年起共建德语索引」应为 2026-07 德国索引上线。
+- 结论(本套件口径):优化 Ecosia 约等于优化 Google 与 Bing;自有索引成为默认结果源后再评估。
 
 ## 二、渠道
 
-### 2.1 德国 9 层目录体系(对照法国体系,fr.md §2.1)
+### 2.1 德国目录体系(本套件口径)
 
-| 层 | 德国代表 | 作用/法国对照 |
+| 层 | 德国代表 | 作用 |
 |---|---|---|
-| ① 地图/助手入口 | GBP/Bing Places(喂 ChatGPT)/Apple BC | NAP+AI 检索底座(同法①) |
-| ② 德式黄页 | Gelbe Seiten/Das Örtliche/11880 | 对应法 PagesJaunes |
-| ③ 评价 | Trustpilot/**ProvenExpert(德本土)**/eKomi | 信任+AI 引用源(同法③双占) |
-| ④ **商会官方登记** | **Handwerkskammer(手工业强制登记 Handwerksrolle)**/IHK/North Data | 实体验证 E-E-A-T(对应法 CCI/societe.com) |
-| ⑤ 行业垂直 | Jameda(医疗)/ImmoScout24(地产)/wlw.de(B2B 采购) | 垂类垄断入口(同法⑤) |
-| ⑥ B2B SaaS 目录 | **OMR Reviews(德本土)**/Capterra DE | B2B 评测占位(对应法 Appvizer) |
-| ⑦ 地方 | regionale Branchenbücher/城市与协会站 | 本地信号(同法⑦) |
-| ⑧ **比价(德国特色层)** | **idealo/Check24** | 高购买意图词占位(德国比价文化;法⑧变体) |
-| ⑨ 知识层 | Wikipedia(de)/Wikidata/GitHub/LinkedIn/XING(残留) | 实体图谱+AI 语料(同法⑨) |
+| ① 地图 | Google Business Profile、Bing Places、Apple Business Connect | NAP 一致性 |
+| ② 黄页 | Gelbe Seiten、Das Örtliche、11880 | 本地词占位 |
+| ③ 评价 | Trustpilot、ProvenExpert、eKomi | 信任信号 |
+| ④ 商会登记 | Handwerkskammer、IHK、North Data | 实体验证 |
+| ⑤ 行业垂类 | Jameda(医疗)、ImmoScout24(地产)、wlw.de(B2B 采购) | 垂类入口 |
+| ⑥ B2B SaaS | OMR Reviews、Capterra DE | B2B 评测占位 |
+| ⑦ 比价 | idealo、Check24 | 高购买意图词 |
+| ⑧ 知识层 | Wikipedia(de)、Wikidata、LinkedIn | 实体图谱 |
 
-- **Handwerkskammer/IHK 是德国特有硬资产**:法定登记制(手工业企业强制入 Handwerksrolle)→ 目录链是官方背书链;NAP 以登记数据为权威源逐字符对齐。Handwerksblatt 官方指南确认商会/黄页类目录是本地 SEO 基建(NAP 一致+权威外链)。
+- 手工业企业须登记入 Handwerksrolle(Handwerksordnung),所以商会目录是官方背书的实体来源(法律常识;本次未逐条核 HwO)。NAP 以登记数据为准,逐字符对齐。
 
-### 2.2 链接月租制:119€ 起的"租"不是"买"
+### 2.2 付费链接:Google 政策与 UWG
 
-- 德国链接市场主流是 **Mietlinks(月租制)**:平台按 DR/流量分层,套餐 **119€/月起**(内部锚点 2026-10)——对比法国平台层 €3–10/条买断,德国单价高一个量级。
-- 双结论:**停租即摘链**→可见性悬崖;台账按运营费用(OpEx)入账,勿按永久资产(markets.json special_check);租链在现金流模型里是订阅,不是投资。
-- 白帽替代:德国权威 .de 链(Fachmedien 行业媒体/Verband 协会/大学)效力高于进口泛链——路径见 2.4。
+- 旧稿的「月租 119€ 起」来自内部锚点,无公开来源,已删;「停租即摘链」是逻辑推论,保留为本套件口径:租来的链接按运营费用入账,不入资产。
+- Google 立场:以排名为目的的买卖链接属链接垃圾;标 `rel="sponsored"` 或 `nofollow` 不违规([Spam policies](https://developers.google.com/search/docs/essentials/spam-policies),更新 2026-09-16;[qualify outbound links](https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links),更新 2026-03-08)。
+- 德国法律侧:UWG § 5a 第 4 款——商业目的不能直接从情境看出时,不标明商业目的属不正当竞争,且足以影响消费者或其他市场参与者的交易决定([gesetze-im-internet.de](https://www.gesetze-im-internet.de/uwg_2004/__5a.html))。有律所解读:LG München 2015-07-31(4 HK O 21172/14)认为,只写「Sponsored」不足以标明广告性质(来源:[律所文章](https://www.ra-plutte.de/schleichwerbung-sponsored-hinweis-reicht-nicht-aus/),判决原文本次未读)。
+- 做法:付费或赞助内容同时做两件事:链接标 `rel="sponsored"`;页面上可见地标「Werbung」或「Anzeige」。审计顺序:先查法律暴露面,再查 Google 暴露面(本套件口径)。
+- 旧稿「单函成本常见四位数欧元」无来源,已删。
 
-### 2.3 Werbung 标注义务:Abmahnung 风险 > Google 惩罚
+### 2.3 数字 PR
 
-- 购链/软文/赞助内容未标注 = **双重暴露**:Google 侧(unnatural links 手动处罚/降值)+ 法律侧(**Abmahnung 律师函**:UWG 禁 Schleichwerbung(隐性广告),竞争对手与消费者保护机构均可发函,单函成本常见四位数欧元)。
-- IT-Recht-Kanzlei 口径:赞助链接须 **rel="sponsored"/"nofollow"+页面可见"Werbung/Anzeige"标注**双轨;只做技术标注不做可见标注(或反之)都不完整。
-- 审计顺序因此反转:**先查法律暴露面,再查 Google 暴露面**(markets.json:Abmahnung 风险先于 Google 惩罚)——德/法/荷三国链条风险模型的德国极。
-
-### 2.4 数字 PR:Gastbeitrag 文化 + Verband 数据
-
-- 德国路径是 **Gastbeitrag(专家客座文)**:Handelsblatt 系/品牌媒体/Fachmedien 管理版块长期收专家署名客座稿——比法国"记者回应式"更稳定可控,是德国白帽高权链主通道。
-- **Verband(行业协会)是德国特有权威引用层**:协会统计/白皮书同时被媒体与 AI 引用;有会员身份的客户应把协会目录链+协会数据引用做成标配。
-- 新闻分发走 Presseportal/newsaktuell 系;避免在 openpr 类免费站堆垃圾通稿(品牌词 SERP 污染)。
+- 德国常见路径是专家客座文(Gastbeitrag)与行业协会(Verband)数据。这是行业做法,无一手研究,标本套件口径。
+- 新闻分发可用 Presseportal;不要在免费通稿站堆垃圾稿。
 
 ## 三、语言机制
 
-### 3.1 Ansprache/Tonalität 两字段(不是开关)
+### 3.1 Ansprache 与 Tonalität
 
-- **Ansprache(Sie/du)与 Tonalität(seriös/freundlich/locker)是两个独立配置字段**:Sie+locker、du+seriös 都是合法组合——内容契约里分开声明,全站一致性 lint(markets.json special_check)。
-- 默认:**B2B 全场 Sie**;de-DE B2C du 化快(D2C 品牌全场 du 已常见),de-AT/de-CH 更保守(Sie 保留更久,瑞士尤甚);一页内 Sie/du 混用=红旗。
-- 问候语地域分流:Grüß Gott/Servus(南德+奥)/Grüezi(CH)/Guten Tag(全域安全)。
+- Ansprache(Sie/du)与 Tonalität(seriös/freundlich/locker)是两个字段,内容契约里分开声明。
+- 默认:B2B 全场 Sie。de-DE 的 B2C du 化快,de-AT、de-CH 更保守(本套件口径)。一页内混用 Sie 与 du 是红旗。
+- 问候语:Grüß Gott/Servus(南德与奥地利)、Grüezi(瑞士)、Guten Tag(通用)。
 
-### 3.2 复合词:不拆、整词建库
+### 3.2 复合词
 
-- 德语用户真实输入整词复合(Rechtsschutzversicherung/Krankenversicherung)——**复合词按整词建关键词库,不按词素拆分**;拆写形(Kranken Versicherung)仅作 FAQ 长尾兼收。
-- 复合变体即德国式长尾:同义复合(Kfz-Versicherung/Autoversicherung)、复合元素顺序、单复数——关键词表比英语市场更碎,量级须本地工具分验。
-- Google 德语词干匹配尚可,但复合元素级匹配弱于英语——**title/H1 必须含完整目标复合词**。
+- 德语用户输入整词复合(Rechtsschutzversicherung)。关键词库按整词建,不按词素拆;拆写形只作 FAQ 长尾兼收。
+- Google 对德语复合词的匹配强弱没有官方说明。本套件口径:title 和 H1 含完整目标复合词。
 
-### 3.3 数字·日期·货币·正字法(DACH 三国不同)
+### 3.3 数字、日期、货币、正字法
 
 | 项 | de-DE | de-AT | de-CH |
 |---|---|---|---|
-| 数字 | 1.000,00 | 1.000,00 | **1'000.00**(撇千分+点小数) |
-| 货币 | 50 €(EUR) | 50 €(EUR) | CHF(瑞郎原生定价) |
-| ß | 保留(Straße) | 保留 | **废除 ß 用 ss**(Strasse) |
+| 数字(CLDR) | 1.000,00 | 1 000,00(分组为不换行空格) | 1'000.00 |
+| 货币 | 50 € | € 50 | CHF 50 |
+| ß | 保留 | 保留 | 通常写 ss(Strasse) |
 | 电话 | +49 | +43 | +41 |
 
-- 日期三国同为 **09.10.2026**(DD.MM.YYYY);美式格式=红旗。
-- de-CH 独立建语言-国家对:同 .ch 下 /de/ 子目录+CHF 原生定价;de-AT 不冒充 de-DE(hreflang 分开)。
-- 词汇分流表(关键词层逐品类建):Jänner(AT)/Januar;Paradeiser(AT)/Tomate;Karfiol(AT)/Blumenkohl;Fleischhauer(AT)/Metzger;Velo(CH)/Fahrrad;Natel(CH)/Handy——de-DE 关键词表复制到 AT/CH 是默认错误。
+- 数字与货币来自 Unicode CLDR 的 `de`、`de-AT`、`de-CH` 区域数据(cldr-json,取数 2026-10-21):`de` 分组点、小数逗号,货币 `#,##0.00 ¤`;`de-AT` 分组为 U+00A0、货币 `¤ #,##0.00`;`de-CH` 分组为撇号、小数点。旧稿把 de-AT 数字写成「1.000,00」,与 CLDR 不同;奥地利实际文本两种写法都有,页面内保持统一并与本站既有写法一致。
+- 日期三国都用 DD.MM.YYYY(例 09.10.2026)。
+- 瑞士标准德语不用 ß,统一写 ss(语言常识,本次未引用权威页)。
+- de-CH 独立建语言-国家对:同域 /de/ 子目录加 CHF 定价;de-AT 不冒充 de-DE。hreflang 用 `de`、`de-DE`、`de-AT`、`de-CH`,大小写不敏感([Google 文档](https://developers.google.com/search/docs/specialty/international/localized-versions))。
+- 词汇分流(关键词层按品类建表):Jänner/Januar、Paradeiser/Tomate、Karfiol/Blumenkohl、Fleischhauer/Metzger、Velo/Fahrrad、Natel/Handy。
 
 ### 3.4 长度与排版
 
-- 德语比英语长 **+25–35%**:title 预算 **65 字符(55–65 为佳,<55 即浪费)**/desc 150;英文直译必截断,翻译留余量。
-- 句长 15–20 词;支柱 ≥2 000 词;营销词 revolutionär/führend/bahnbrechend ≤3/页。
-- 变音字符:正文一律 ä/ö/ü/ß 规范拼法(匹配层归组,展示层规范);主域避免 IDN punycode(xn--),变音词放路径与内容层。
+- 德语比英语长 25–35% 无一手来源。title 65、description 150 是本套件口径;用 `parity_check.py` 对一页英德版实测本站的比值。
+- 句长 15–20 词;营销词(revolutionär/führend/bahnbrechend)≤3/页。
+- 正文用 ä/ö/ü/ß 规范拼法;主域避免 IDN。
 
 ## 四、AI-GEO
 
-### 4.1 AIO 德国侧:覆盖与损失已量化
+### 4.1 AIO 与 AI Mode
 
-- 覆盖 ~20%(SISTRIX);AI Mode 随 2025 秋 200+ 国扩张落地(与荷 2025-10-08 同批次口径)。
-- 证据阶梯六级(eligible→retrieved→cited→mentioned→recommended→converted)分开记账,禁合并"AI 可见性";50 条德语查询×14 天重测(同总纲协议)。
-- 内容形态:信息类默认按"有 AIO"设计——答案前置、可切分、首段自足;~19 个月冲击期后,存量信息页的检修方向是"可引性"而非"再加长"。
+- 覆盖与损失见 1.2。AI Mode 德语:2025-10-07 官方博客宣布 35+ 新语言、40+ 新国家(含德语,见 [CNET 报道语言列表](https://www.cnet.com/tech/services-and-software/google-search-ai-mode-now-available-in-35-more-languages-and-40-more-countries/)),[官方博客](https://blog.google/products-and-platforms/products/search/ai-mode-expands-languages-locations/)。
+- 证据阶梯(可见、被检索、被引用、被提及、被推荐、转化)分开记账(见 [geo-evidence](../content/geo-evidence.md))。
+- Search Console 自 2026-06-03 提供「生成式 AI 表现报告」(2026-08-31 起全球开放;展示、页面、国家、设备、日期,无点击)([Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports))。
 
-### 4.2 引用源优先级:官方机构 > Tier-1 > 国际源
+### 4.2 引用源假设
 
-- **德国 AI 引用偏本土官方机构**:BAFA(联邦经济与出口管制局)/Fraunhofer/destatis(联邦统计局)/行业协会(markets.json entity_sources)优先于德国 Tier-1 媒体(Spiegel/Welt/Handelsblatt),再优先国际泛源。
-- GEO 内容策略:数据引用与表述对齐官方口径(命名/单位/as-of 日期),给 AI 一个"与权威源同构"的引用面;Wikipedia(de)+Wikidata 实体一致是底座。
-- 官方机构>国际源与法国(AFP/官方优先)同构,是欧陆共同模式——勿套英语市场"媒体+Reddit 优先"的引用面假设。
+- 本套件假设:德语 AI 引用偏向官方机构(BAFA、Fraunhofer、Destatis、行业协会)与德国 Tier-1 媒体。**未找到德语 AI 引用源的公开研究**,按假设处理,用自己的 50 条德语查询验证。
+- 做法:数据引用与官方口径对齐(命名、单位、as-of 日期)。Wikipedia(de)与 Wikidata 实体保持一致。
 
-### 4.3 测量与优先级
+### 4.3 测量
 
-- 测量栈:**GSC(免 consent)为基准+GA4/Consent Mode v2 建模值并列 consent rate**——德国拒绝率高,GA4 原始值系统性偏低,勿直接当真实流量汇报。
-- 优先级:交易词经典 SEO(桌面 Bing 加权)+信息词 AIO 引用占位双轨;AIO 覆盖破 40%(美国化)时重排(复审钩子 1)。
+- GSC 做基准,GA4 或 Matomo 的建模值并列同意率。拒绝率高时,GA4 原始值偏低(本套件口径),不直接当真实流量汇报。
 
 ## 五、合规
 
-### 5.1 Impressum(§5 DDG):法定页是 Abmahnung 磁铁
+### 5.1 Impressum:§ 5 DDG
 
-- **Impressum 义务(§5 DDG,2024-05 起 DDG 承接原 §5 TMG)**:名称/地址/联系方式/商业登记号/VAT ID 等法定字段;缺失=Abmahnung 标准标的,同时削弱 E-E-A-T 与 AI 引用信任。
-- 审计第一步查 Impressum 在场与字段完整(对应法国 societe.com 实体验证逻辑的德国版)。
+- 德国 Digitale-Dienste-Gesetz(DDG)自 2024-05-14 起取代 Telemediengesetz(TMG),Impressum 义务现在是 **§ 5 DDG**(IHK Nord Westfalen:TMG 2024-05-14 失效)。
+- § 5 DDG(原文):对「商业性质、通常有偿提供的数字服务」,服务提供者必须让以下信息易于识别、直接可达、持续可用——名称与住所地址(法人另有法律形式、代表人、已披露资本时的资本信息);能快速电子联系和直接沟通的信息(含电子邮件);须许可的活动的主管监管机构;商业登记簿与登记号;受监管职业的相关信息等([gesetze-im-internet.de](https://www.gesetze-im-internet.de/ddg/__5.html))。完整字段以条文为准。
+- 缺失会被竞争者或消费者协会警告(Abmahnung)。同时削弱可信度信号(本套件口径)。
 
-### 5.2 OLG Köln 2024-01-19 拒绝键判例:banner 第一层同等醒目
+### 5.2 Cookie 与 TDDDG
 
-- **OLG Köln 2024-01-19**:cookie banner 的"Alle ablehnen(全部拒绝)"必须与"Zustimmen(同意)"**同等醒目(大小/样式/位置)且位于第一层**;两层式 banner(先"显示目的"再拒)不足。
-- 判例链:OLG Frankfurt 2024-06-27、VG Hannover 2025-03-19 跟进确认——consent banner 审计按此线做合规闸门,**违规 banner 是比 Google 惩罚更近的 Abmahnung 面**。
-- 关联(并记):OLG Köln 2024-07-04(15 U 60/23)搜索引擎对不实搜索结果的责任——ORM 类项目引用。
+- 德国《电信与数字服务数据保护法》**TDDDG** 由原 TTDSG 更名而来,2024-05-14 随 DDG 一起生效(来源:[transformation-gastgewerbe.nrw](https://transformation-gastgewerbe.nrw/aktuelles/ttdsg-heisst-jetzt-tdddg-was-aendert-sich));现行文本见 [gesetze-im-internet.de/ttdsg](https://www.gesetze-im-internet.de/ttdsg/)。终端设备上存取信息的同意义务在其 § 25。
+- **OLG Köln,2024-01-19,6 U 80/23**(判决要旨):第一层不提供拒绝选项、第二层引导同意的 banner,不构成自愿且充分知情的同意;右上角「Akzeptieren und schließen X」按钮的设计违反透明和自愿原则,同意无效([MIR 2024, Dok. 025](https://medien-internet-und-recht.de/volltext.php?mir_dok_id=3354))。判决理由中提到同意与拒绝按钮要「gleichwertig」(dejure.org 摘录 Rn. 47)。旧稿写成「必须同等醒目且位于第一层」,与要旨大体一致,但「banner 第一层」的措辞以要旨为准。
+- 其他判例:VG Hannover 2025 年有一份关于「全部拒绝」按钮的判决,不同律所解读相反(一说要求第一层有「Alles ablehnen」,另一说法院并未强制),因此旧稿「VG Hannover 跟进确认」不采用。旧稿的「OLG Frankfurt 2024-06-27」本次未核,已删。
+- OLG Köln 2024-07-04,15 U 60/23:涉及搜索引擎运营者的案件,判决全文见 [justiz.nrw.de](https://www.justiz.nrw.de/nrwe/olgs/koeln/j2024/15_U_60_23_Urteil_20240704.html);具体结论本次未逐条核。
+- 以上是适用范围提示,不是法律意见。
 
-### 5.3 分析栈默认:Matomo/Plausible
+### 5.3 分析工具
 
-- DACH 采购默认隐私优先栈:**Matomo(自托管/数据驻留可选)/Plausible**;GA4 仅在 Consent Mode v2+consent rate 披露下并列汇报。
-- "数据驻留欧盟"是德国采购决策词(同法 Piano 逻辑);提案写 Matomo/Plausible 兼容+GDPR/DDG 同意架构是加分项。
+- DACH 采购常要求隐私优先:Matomo(可自托管)、Plausible。GA4 要在 Consent Mode v2 与同意率披露下使用。这是行业做法(本套件口径)。
 
 ## 六、红旗
 
-1. **Ecosia 单独优化迷思**:~1% 份额,结果=Bing+Google 索引混合;单独优化无意义——真正做的是 Google+桌面 Bing;自有索引(Ecosia+Qwant,~10 亿页)成为默认结果源前不重评。
-2. **Buy links=renting**:月租 119€ 起,停租即摘链——可见性悬崖+台账误记资产的双重错误;叠加未标 Werbung 的 Abmahnung 面,德国购链是"法律+现金流+Google"三重风险。
-3. **泛欧盟方案**:"一份欧洲方案通吃"——德(AIO 19 个月/月租链/Abmahnung 文化)vs 法(AIO 刚上线/€3–10 买断链/无律师函文化)vs 荷(AIO 5% 洼地)三个相位,预算与话术必须分国。
-4. **Sie/du 一刀切或混用**:Ansprache/Tonalität 两字段配置;de-DE 模板(B2C du)复制到 de-CH(保守 Sie)=品牌语域事故。
-5. **"德国人英语好=英文站成交"**:交易层(报价/AGB/客服/发票)在德语里闭合;复合词整词流量英文站全丢。
-6. **复合词拆分/英文式关键词处理**:按词素拆库、title 用拆写形——与真实查询行为相反。
-7. **合规面当软建议**:缺 Impressum/二层 cookie banner/未标 Werbung——每项都是 Abmahnung 活靶,先于任何 Google 惩罚落地。
-8. **份额口径单一引用**:87.8/88.49/92.3 三口径并记,按设备拆分后再引用。
+1. Ecosia 单独优化:约 1% 份额;优化 Google 加桌面 Bing 即可(见 1.3)。
+2. 租链接记资产:租来的链接按运营费用入账(见 2.2)。
+3. 泛欧盟方案:德、法、荷的 AIO 时间线不同(德 2025-03、法 2026-07-22),合规不同。
+4. Sie/du 一刀切或混用:de-DE 的 B2C 模板复制到 de-CH 会出品牌语域事故。
+5. 「德国人英语好,所以英文站能成交」:报价、AGB、客服、发票都要德语(本套件口径;未找到公开研究)。
+6. 复合词拆分处理。
+7. 合规当软建议:缺 Impressum、banner 无第一层拒绝、付费内容未标 Werbung,都是 Abmahnung 的靶子。
+8. 份额口径单一引用:德国月间波动大,写月份。
 
-## 七、Tools
+## 七、工具
 
-- **SISTRIX**:Sichtbarkeitsindex(可见度指数)是德国提案的事实货币;AIO-DE 研究(20%/−59%)源头;AIO 可见度模块纳入月报。
-- **Searchmetrics/XOVI**:德国可见度工具第二三极(德国客户比价时常被并列要求)。
-- **Seokratie**:慕尼黑系 SEO 博客——德语 SEO 结论先过它再引用(同法 Abondance 位)。
-- **ABAKUS 论坛**:德国最老 SEO 社区(2002 起)——租链行情/Abmahnung 动态的圈内一手源。
-- **IT-Recht-Kanzlei**:Abmahnung/Werbung 标注/cookie 判例的法律更新源(五·2 判例链出处)。
-- **heise**:Ecosia/EU 索引等搜索基础设施新闻源。
-- **StatCounter DE+SE Ranking DACH**:份额口径双源并记。
-- seo-kueche/seo-kreativ:德国 SEO 博客层(2026 趋势/GEO 话术源)。
+- **Sistrix**:可见度指数(Sichtbarkeitsindex)是德国提案常用货币;AIO-DE 研究出处。
+- **Searchmetrics、XOVI**:德国可见度工具。
+- **ABAKUS 论坛**:德国老牌 SEO 社区。
+- **IT-Recht-Kanzlei**:Abmahnung、Werbung 标注、Cookie 判例的法律更新来源。
+- **heise**:搜索基础设施新闻。
+- **StatCounter**:份额;德国月间波动大,配 GSC 自查。
 
-## 复审钩子(下次更新先查)
+## 复审钩子
 
-1. SISTRIX AIO-DE 覆盖率是否破 40%(美国化重排线);Ahrefs 1.3→2.4% 的 CTR 恢复是否持续。
-2. Ecosia+Qwant 自有德语索引(~10 亿页)是否成为 Ecosia 默认结果源(heise/Ecosia 博客)。
-3. 拒绝键判例链是否上行(BGH/EU 层);Abmahnung 波次是否波及 AI 生成内容标注。
-4. de-AT/de-CH 的 Sie→du 演化速度(模板默认是否翻转)。
-5. OMR Reviews/ProvenExpert 在 AIO 引用源中的份额(德本土评价层 AI 权重)。
+1. Sistrix AIO-DE 覆盖率是否破 40%;Seer 的 CTR 回升是否持续。
+2. EUSP 德国索引是否成为 Ecosia 默认结果源。
+3. Cookie banner 判例是否上行(BGH、欧盟层)。
+4. de-AT、de-CH 的 Sie→du 演化。
+
+## 上线检查清单
+
+| # | 检查什么 | 怎么查 | 通过/失败判据 |
+|---|---|---|---|
+| 1 | hreflang 互指 | `python3 scripts/hreflang_cluster.py <de URL> <de-AT URL> <de-CH URL> <en URL>` | 互指完整;码合法 |
+| 2 | 数字格式 | `python3 scripts/local_format.py --market de "<页面样本文本>"` | 德式 `1.234,56`,无英式 `1,234.56` ✗ |
+| 3 | title/description 长度 | `python3 scripts/site_audit.py <URL> --market de --json` | 本套件口径:title ≤65(<55 提示浪费)、description 75–150 字符 |
+| 4 | 头部元素 | `python3 scripts/head_check.py <URL> --market de` | 无 ERROR;charset 在前 1024 字节内 |
+| 5 | 市场 lint | `python3 scripts/market_lint.py --market de <html文件> --url <URL> --report` | CRITICAL=0;Sie/du 混用 WARN=0;Werbung 标注项已处理;Impressum 项通过 |
+| 6 | 中德长度比 | `python3 scripts/parity_check.py --source en.html --target de.html --market de` | 比值落在 markets.json 的带内;实测记入本站基线 |
+| 7 | Impressum | 打开 `<域名>/impressum`;对照 § 5 DDG 字段清单 | 名称、地址、电子联系方式、登记号等齐全;页脚每页可达 |
+| 8 | Cookie banner 第一层 | 无痕窗口打开页面,截图第一层 | 有与「同意」同等明显的「拒绝」入口(OLG Köln 6 U 80/23 要旨);无「X 即同意」设计 |
+| 9 | 追踪器同意前触发 | 不点同意,看 Network 面板 | 非必要追踪器请求为 0 |
+| 10 | AI 检索爬虫放行 | `python3 scripts/robots_posture.py https://<域名>/robots.txt --signal visibility` | 搜索类与用户类 allowed |
+| 11 | llms.txt(可选) | `python3 scripts/llmstxt.py check https://<域名>` | 看返回体是 markdown 而非 HTML 兜底页 |
+| 12 | 付费内容标注 | 列出所有付费链接与赞助稿 | 链接带 `rel="sponsored"`;页面有「Werbung」或「Anzeige」 |
+| 13 | AIO 覆盖 | GSC 生成式 AI 表现报告(若已开放),国家=德国 | 记录展示数,季度对比 |
 
 ## 本地实测(2026-10-09)
 
+> 脚本口径 2026-10-21 已改:twitter:* 与 OG 重复只记 INFO;缺 H1/描述为 WARN。下面的 ERROR/CRITICAL 数是旧口径结果,复测会不同。
+
 ### 真实站验证(spiegel.de / heise.de × site_audit + llmstxt check + head_check;zeit.de 403 换站)
 
-- **zeit.de 对非浏览器 UA 整站 403**——直接拒审;换 heise.de(七工具信源之一)补位。德国头部站 UA 过滤先于一切结论,审计先换浏览器 UA 重试(同 hi 轮 justdial/indiamart 实录)。
-- `site_audit --market de`:spiegel — **robots.txt 禁 OAI-SearchBot+ChatGPT-User+Claude-SearchBot(3/4;PerplexityBot 放行)**、首页无 H1、alt 缺失 575/649、title 32/65;heise — **title 67/65 超限 +2**(德市场 65 上限/55 理想下限真实触发,两站一上一下正好夹出 SISTRIX 口径的实操价值)、**charset 落在第 7,182 字节(>1024 ERROR)**、66 块 JSON-LD(结构化最重的实测站)、390 链接。
-- `llmstxt check`:两站均无 llms.txt(四路径真 404)。
-- `head_check`:spiegel — 5 ERROR(twitter:* 全套)+charset/viewport 在 title 后;heise — 5 ERROR(charset 超限+twitter:* 四条)。
-- **德文数字格式检查触发实证(market_lint.py)**:`--market de --url` 直跑——**德式数字识别 ✓**(spiegel ['180.000','400.000','14.000']/heise ['82.044','81.331','68.185'],千分点+逗号小数口径);**55–65 理想带双向触发**:spiegel 32 报「低于理想下限 55(浪费)」INFO、heise 67 报 CRITICAL 超限——markets.json 的 de 专有阈值链(65 上限+ideal_min 55)完整可用;Sie/du 混用 WARN(spiegel 50/2)与 Ansprache 一致性检查触发。
-- **结构性发现(德头部封锁与法同级)**:spiegel 3/4 禁=lefigaro 同日实测同姿态,PerplexityBot 均放行——欧陆付费墙大报封锁 ChatGPT/Claude 系但留 Perplexity 是共同模式。AIO 跑了 ~19 个月+头部退出 → 4.2 的引用源优先级(官方机构 BAFA/Fraunhofer/destatis>Tier-1)进一步强化:Tier-1 媒体自己在收缩 AI 面,白帽权威源是引用池的净增量入口。
+- **zeit.de 对非浏览器 UA 整站 403**,拒审;换 heise.de 补位。德国头部站的 UA 过滤先于一切结论,先换浏览器 UA 重试。
+- `site_audit --market de`:spiegel — robots.txt 禁 OAI-SearchBot、ChatGPT-User、Claude-SearchBot(3/4;PerplexityBot 放行)、首页无 H1、alt 缺失 575/649、title 32/65;heise — **title 67/65 超限 +2**、**charset 落在第 7,182 字节(>1024)**、66 块 JSON-LD、390 链接。
+- `llmstxt check`:两站均无 llms.txt。
+- `head_check`(旧口径):spiegel — 5 ERROR(twitter:* 全套)且 charset/viewport 在 title 后;heise — 5 ERROR(charset 超限、twitter:* 四条)。
+- **德式数字检查(market_lint.py)**:`--market de --url` 直跑,德式数字识别 ✓;title 55–65 带双向触发(spiegel 32 报低于下限 INFO、heise 67 报超限 CRITICAL);Sie/du 混用 WARN(spiegel 50/2)触发。
+- 单次观察:spiegel 3/4 封 AI 检索爬虫,lefigaro 同日 3/4,heise 未测 robots。三站不足以说「欧陆付费墙大报默认封锁」。
 
 ## 维护
 
-- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.de.review_cycle` 保持一致,以 json 为准。
-- 触发即复审的信号:**SISTRIX 博客**(AIO-DE 覆盖率破 40% 重排线/CTR 恢复曲线)、**StatCounter DE 月度份额**(桌面 Bing 12.81% 口径漂移)、heise/Ecosia 博客(自有索引是否成默认源)、IT-Recht-Kanzlei/ABAKUS(Abmahnung 波次与判例上行)、SE Ranking DACH 报告。
-- 断言半衰期 6–12 个月;CTR/份额类数字最先过期,判例与法定义务(DDG §5)最稳。
-- 增量研究前先读「本地实测(2026-10-09)」——zeit.de 403 与头部 robots 姿态是当日快照,复审时重跑实读;55–65 阈值链已实测可用,勿退回泛用 60。
+- 复审周期 **90 天**,下一次 **2027-01-09**(以 `scripts/markets.json` 的 `markets.de.review_cycle` 为准)。
+- 触发即复审:Sistrix 博客、StatCounter DE 月度份额(2026-09 桌面 Bing 单月跳至 19.44%)、heise/Ecosia 博客、IT-Recht-Kanzlei/ABAKUS、法院 Cookie banner 判例。
+- 断言半衰期 6–12 个月;CTR 与份额类数字最先过期,法定义务(DDG § 5)最稳。
+
+## 建议(需要别处配合,本文件不改)
+
+| 键路径 | 现值 | 应改值 | 来源 |
+|---|---|---|---|
+| `scripts/markets.json` → `markets.de.notes` | 「Google 87.8%(主要市场最低)+Bing 6.5%」 | 加月份「StatCounter 2026-09」,并注「月间波动大(12 月区间 80.05–90.18%)」 | StatCounter DE |
+| `markets.de.title_limit.note` | 「Sistrix 口径 55-65 字符」 | 改「本套件口径;Sistrix 公开页未读到该口径」 | Sistrix 页面 |
+| `markets.de.pillar_note` | 「德语版比英语长 25-35%」 | 同上,改「本套件口径,未核」 | 无一手来源 |
+| `markets.de.entity_sources[0]` | 「impressum(§5 DDG 法定页义务)」 | 保留 | gesetze-im-internet.de |
+| `markets.de.special_checks[2]` | 「软文 Werbung 标注(Abmahnung…);OLG Köln 2024 拒绝键同等醒目」 | 保留;加「UWG § 5a(4);OLG Köln 6 U 80/23 要旨:第一层须有拒绝选项」 | gesetze-im-internet.de、MIR 2024 Dok. 025 |
+| `markets.de.special_checks[3]` | 「租链(月租制)资产台账勿按永久入账」 | 保留(本套件口径),去掉「119€」类内部价带 | 无公开来源 |
+| `markets.de.special_checks[5]` | 「AIO CTR 恢复信号(1.3%→2.4%)」 | 加「Seer,2025-12 至 2026-02」 | Seer 2026-04 更新 |
+| `markets.de.special_checks[6]` | 「Ecosia 已混自有索引(非纯 Google)」 | 改「Ecosia/Qwant 德国自有索引 2026-07 上线,逐步提高占比」 | heise 2026-07-30 |
+| `markets.de.special_checks[7]` | 「桌面 Bing 12.81% 泛口径低估」 | 改「桌面 Bing 2026-05 至 09 为 12.81–19.44%」 | StatCounter DE |
+| `markets.de.special_checks[8]` | 「OLG Köln 判例:拒绝键同层同等醒目」 | 保留,措辞对齐判决要旨 | MIR 2024 Dok. 025 |
+| `markets.de.review_cycle.signals[1]` | 「桌面 Bing 12.81% 口径漂移」 | 改「桌面 Bing 月间 12.81–19.44%」 | StatCounter DE |
+| `markets.de.formats` | 只配 `de-DE` 风格数字 | 若需分国,补 de-AT(分组 U+00A0)、de-CH(撇号+小数点) | cldr-json |

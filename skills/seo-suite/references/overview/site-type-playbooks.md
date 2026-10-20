@@ -2,8 +2,10 @@
 
 用途:接单/开局先认站型,取对应打法卡定 KPI、渠道、防死清单与 pSEO 方向。
 分工:本文管「打法层」;页面类型、URL 层级与各站型深读在 [site-type-templates.md](../technical/site-type-templates.md)(互为表里,不重复);通用打法流程见 [playbooks.md](../technical/playbooks.md);pSEO 上线闸门见 [programmatic-seo-gates.md](../technical/programmatic-seo-gates.md)。
-基准数据均标注来源级别与日期(官方/报告/观察/共识);报告级数字用于对标,不用作对客承诺。
+基准数据均标注来源级别与日期(官方/报告/观察/共识);报告级数字用于对标,不用作对客承诺。2026-10-21 重核:第三方博客的数字已逐个打开原页面核对,核不到的已删;每卡的 URL 型谱、占比阈值(如 >30%、>60%)是本套件的判型启发式,不是外部统计。
 ⑨招聘/⑩房产(2026-10-12 增补)是⑦ Marketplace 的**垂直变体卡**:共用⑦的供需底盘与「库存密度先行」纪律,各叠垂直红线——判型命中⑦且供给为职位/房源时,升级取对应扩展卡。
+
+**Schema 提示(各卡通用)**:各卡 Schema 组合里的 FAQPage 与 HowTo——Google 的 FAQ 富结果自 2026-05-07 起不再展示,How-to 富结果也已不展示(文档 2023-09 移除,[Search 文档更新记录](https://developers.google.com/search/updates));这两种标记只在要给其它系统用时保留,Google 没有专门的 AI Schema,Schema 对 AI 引用没有独立效应的证据见 [geo-evidence.md](../content/geo-evidence.md)。Article 在 Google 文档里没有必填属性,Organization 也没有([Article](https://developers.google.com/search/docs/appearance/structured-data/article)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization),页面日期 2026-09-08)。
 
 ## 站型识别判别法(R1-4,识别结果喂给 [strategy-fit.md](strategy-fit.md))
 
@@ -31,21 +33,21 @@
 **Schema 组合**
 
 - SoftwareApplication(name/applicationCategory/operatingSystem)+ Organization;有真实用户评分才加 aggregateRating,禁止编造。
-- pricing/vs/alternatives 页 FAQPage(打 PAA 与 AI 引用);博客 Article/BlogPosting 带作者。
+- pricing/vs/alternatives 页的常见问题写成可见正文;Google 的 FAQ 富结果自 2026-05-07 起不再展示,FAQPage 标记没有富结果收益,是否保留看内容理解需要;博客 Article/BlogPosting 带作者(Article 无必填属性,作者为推荐属性)。
 - 全站 BreadcrumbList;完整映射见 [schema-templates.md](../technical/schema-templates.md)。
 
 **核心 KPI**
 
 - 非品牌词 demo/trial 注册占比——品牌词占比升高≠SEO 增长,常是品牌广告假象。
-- trial 落地页转化率:2026 报告级中位 1.5-3%、头部四分位 5%+(Stackmatix 2026-09)。
-- 自然渠道 close rate:报告级 ~14.6%,对比付费搜索 5.1%、付费社交 0.9%(Flighted 2026-05)——用渠道质量差为 SEO 争取预算。
+- 免费试用/demo 请求的转化率:SaaS/B2B 软件中位 1.5–3%、头部四分位 5%+(Stackmatix 汇总 Wordstream、Unbounce 等行业研究,第三方,[原文](https://www.stackmatix.com/blog/website-conversion-rate-benchmarks),核对 2026-10-21)。
+- 渠道 close rate:自然搜索约 14.6%、付费搜索 5.1%、付费社交 0.9%、展示 0.3%(Flighted B2B SaaS 基准,第三方,[原文](https://www.flighted.co/blog/b2b-saas-conversion-rate-benchmarks))——只作内部争取预算的参照,口径随公司而异。
 - solution 页 vs feature 页流量结构:解决方案词落在 solution 页才算对位,错配即预警。
-- AI 检索线索质量:demo show rate 报告级 14.2% vs 自然 2.8%(Authoricy 2026-06,单源,谨慎引用)。
+- AI 搜索流量质量:AI 来源访客转化率 14.2%,Google 自然流量 2.8%(Authoricy 文章引 Stackmatix 2025、1,200 万次访问,第三方单源,[原文](https://authoricy.com/blog/ai-search-conversion-benchmarks));旧稿把它写成"demo show rate"是错的,它是转化率。
 
 **获取策略重点**
 
 - vs/alternatives 矩阵截获竞品品牌词——SaaS 转化最高的词群,先打头三名竞品。
-- 集成页三层结构:app 单页 → pair 页(A × B)→ workflow 页;量级来自 pair/workflow 层(Zapier 范式:5000 工具生成约 5 万页,salt.agency 案例)。
+- 集成页三层结构:app 单页 → pair 页(A × B)→ workflow 页;量级来自 pair/workflow 层。Zapier 的 /apps/ 集成页按搜索意图分层(salt.agency 分析:月访问从 2020-11 的 119 万到 2023-11 的约 480 万,Zapier 称连接 6,000+ 个应用,[原文](https://salt.agency/blog/how-zapier-quadrupled-organic-traffic/));旧稿"5,000 工具生成约 5 万页"原文里没有,已删。
 - 支柱内容 + 免费工具引流;G2/Capterra/目录外链垫权威底座。
 
 **ABM 对齐(高客单补充)**
@@ -103,7 +105,7 @@ python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://examp
 
 **Schema 组合**
 
-- Product + Offer(price/availability/currency 三项必填)+ BreadcrumbList,全站 PDP。
+- Product + Offer + BreadcrumbList,全站 PDP。Google Product 文档:Product 必填 name,并须有 review、aggregateRating、offers 之一;Offer 必填 price(或 priceSpecification.price),priceCurrency 与 availability 是推荐属性([Product snippet](https://developers.google.com/search/docs/appearance/structured-data/product-snippet),页面日期 2026-09-08);商家列表面的要求更严,以文档为准。
 - AggregateRating/Review 仅挂页内真实评论;榜单页 ItemList;指南文 Article + FAQPage。
 - Merchant Center 免费清单并行——结构化数据不替代 feed,两条腿都要。
 
@@ -111,7 +113,7 @@ python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://examp
 
 - 品类页 vs SKU 页流量结构:头部品类页应扛主要非品牌流量,SKU 页补长尾——倒挂说明类目词全输给了亚马逊/聚合站。
 - 非品牌自然收入占比(报告口径先写进合同)。
-- facet 索引泄漏量:被索引的 `?filter=`/`?color=` URL 数;2026 共识级——facet 是电商第一爬虫预算杀手(DigitalApplied 2026-01)。
+- facet 索引泄漏量:被索引的 `?filter=`/`?color=` URL 数;DigitalApplied 2026-01 称 faceted navigation 是最常见的抓取预算杀手(第三方观点);Google 的抓取预算文档建议避免索引筛选与排序 URL(见 [large-site-managing-crawl-budget](https://developers.google.com/search/docs/crawling-indexing/large-site-managing-crawl-budget))。
 - 缺货排名品保留率(保留+标 availability 的比例)。
 - PDP 评论覆盖率(有评论文本的 PDP 占比,养长尾与富结果)。
 
@@ -124,7 +126,7 @@ python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://examp
 **ASO 桥(品牌词防御)**
 
 - 有购物 App 的 DTC:品牌词 SERP 的 app pack 是移动端第一屏占地——商店页标题/描述带品牌词守住 pack 位(竞品投品牌词抢屏时尤其要紧)。
-- web↔App 互认:商品 deep link 与 web URL 结构化对应(App Indexing 口径),App 内商品页进 Google 索引补移动占位。
+- web↔App 互认:商品 deep link 与 web URL 结构化对应(旧 App Indexing 说法,Google 现行做法本次未核),App 内商品页进 Google 索引补移动占位。
 - 全量 ASO(商店关键词排名/评分运营)**明示不做**——本桥只管品牌词 SERP 占位与互认,不越界。
 
 **典型死法**
@@ -179,7 +181,7 @@ python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://examp
 
 **核心 KPI**
 
-- Discover / Top Stories / 经典搜索三源流量构成:2026 报告级 Discover 占出版商自然流量 30-50%(DigitalApplied 2026-02)——单源依赖度是风险指标。
+- Discover / Top Stories / 经典搜索三源流量构成:DigitalApplied 称 Discover 在不少出版商、新闻站和内容站的自然流量里占 30–50%(第三方文章,2026-02,未给方法)——单源依赖度是风险指标,以自家 GSC Discover 报告为准。
 - 新稿首小时索引率与首日 CTR(新闻窗口期价值)。
 - 订阅/回访/单 UV 会话深度,替代裸 PV 考核。
 - 作者实体页收录率与知识面板命中数。
@@ -187,7 +189,7 @@ python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://examp
 **获取策略重点**
 
 - Publisher Center 收录 + news sitemap:时效内容必争 Top Stories 位。
-- Discover 优化:≥1200px 宽大图、实体清晰、标题克制——2026-02 Discover 更新后标题党流量掉 30-60%(报告级)。
+- Discover 优化:≥1200px 宽大图、实体清晰、标题克制——2026-02 Discover 更新后,依赖耸动标题的站点流量掉 30–60%(DigitalApplied,第三方;Google 的 2026-02 Discover update 见 Status Dashboard,持续约 21 天)。
 - 平台联合分发(Apple News/MSN)+ 社交引用回流;细则见 [discover-news-seo.md](../content/discover-news-seo.md)。
 
 **典型死法**
@@ -245,19 +247,19 @@ Discover/Top Stories 细则锚:[discover-news-seo.md](../content/discover-news-s
 **核心 KPI**
 
 - 本地包网格排名 ARP/ATRP/SoLV 三口径同报(公式与工具见 [local-grid-ranking.md](../monitoring/local-grid-ranking.md))。
-- GBP 行为量:来电、问路、预约(GBP 信号权重占本地六维的 25%)。
-- 评价速度:断档 18 天即见排名下滑的案例(观察级);10 条基准线、回复率 88% 消费者在意。
+- GBP 行为量:来电、问路、预约。
+- 评价节奏与回复:DigitalApplied 2026-03 称近 90 天的评价、店主回复率与本地包位置的相关性更强(第三方观点,未给可复核方法);旧稿的"断档 18 天""10 条基准线""88% 消费者在意"找不到出处,已删。Google 官方只说本地结果主要基于关联性、距离和知名度([GBP 帮助](https://support.google.com/business/answer/7091))。
 - 服务页 vs 位置页流量结构;`tel:` 点击与表单提交归因。
 
 **获取策略重点**
 
 - GBP 运营:主类目+最多 4 个次类目、帖子、Q&A 退场后常见问题写进商家描述。
 - 评价引擎:完工短信征集、不门控(违反 Google 假互动政策与 FTC)、持续回复。
-- 本地链接:"best of" 榜单 + 商会/赞助/行业目录;2026-03 核心更新后实体解析更看重真实本地提及(DigitalApplied 2026-03)。
+- 本地链接:"best of" 榜单 + 商会/赞助/行业目录(本套件口径);第三方文章称 2026-03 更新后本地包更看重网站与本地实体的关联信号(DigitalApplied,未核方法)。
 
 **典型死法**
 
-- 城市×服务 doorway 页:swap 测试(换城市名仍通顺)不过=整组去索引,HVAC 案例掉 80% 排名。
+- 城市×服务 doorway 页:swap 测试(换城市名仍通顺)不过=整组去索引或合并(本套件判据;Google 垃圾政策把 doorway 页列为垃圾,见 [spam policies](https://developers.google.com/search/docs/essentials/spam-policies));旧稿的"HVAC 案例掉 80%"找不到出处,已删。
 - SAB 业务乱展示街道地址(违反指南),或实体店硬藏地址。
 - 30+ 位置页模板复制、唯一内容 <60%(50+ 强制停线说明)。
 - 评价征集三天打鱼,速度断档。
@@ -306,8 +308,8 @@ python3 scripts/site_audit.py https://example.com/services/drain-cleaning --json
 
 **核心 KPI**
 
-- AI 引用份额:docs 是 LLM 编程答案的首选引用源;ChatGPT 占 AI 推荐流量 ~88%(2026 报告级)。
-- AI 爬虫抓取量与 ChatGPT/Copilot referral 增速(站内 AI 流量占比 ~1% 是 2026 常态基线,涨速比绝对值重要)。
+- AI 引用份额:用 `citation_panel.py` 对编程类提问分引擎采样;"docs 是首选引用源""ChatGPT 占 AI 推荐流量 ~88%"没有可核出处,已删。
+- AI 爬虫抓取量与 ChatGPT/Copilot referral 增速(基线看自家 GA4 的 AI Assistant 通道,涨速比绝对值重要;"~1% 是常态基线"没有出处,已删)。
 - quickstart 完成率(漏斗顶部质量)。
 - 站内搜索零结果率(文档覆盖缺口最直接信号)。
 - 旧版本页索引健康:该 noindex 的版本是否还在收录、是否蚕食最新版。
@@ -370,7 +372,7 @@ python3 scripts/ai_referral_log.py access.log --classify --bot-ua
 
 **核心 KPI**
 
-- 每工具页引用域获取速度:免费工具=最自然的 linkable asset(2026 共识级,Semrush 等)。
+- 每工具页引用域获取速度:免费工具=最自然的 linkable asset(业内说法,未核到一手来源)。
 - 工具→注册/付费转化率(免费到付费的漏斗必须能归因)。
 - 嵌入 widget 与分享链接带来的回链数。
 - 品牌词月增长(工具被口碑传播的滞后指标)。
@@ -500,7 +502,7 @@ python3 scripts/pseo_cohort.py ingest --cohort city-cat-v1 --gsc pages.csv
 
 **核心 KPI**
 
-- 实名作者实体被知识面板/AI 答案引用数:2026-08 报告级——YMYL 匿名内容不承载权重(Sure Oak)。
+- 实名作者实体被知识面板/AI 答案引用数:Sure Oak(第三方文章,2026-08)主张 YMYL 的财经内容需要署名、可核实资质的作者;这是该机构的观点,不是 Google 规则。
 - 医审/法审覆盖率与复核日期新鲜度(旧内容无复核=静默下滑)。
 - 品牌词 vs 非品牌比:YMYL 转化重度依赖品牌信任,纯非品牌流量转化差。
 - AI Overview/聊天引擎引用份额(见 [ai-citation-patterns.md](../content/ai-citation-patterns.md))。
@@ -630,7 +632,7 @@ python3 scripts/pseo_batch_gate.py --records jobs-batch.jsonl
 
 **Schema 组合**
 
-- 类型选择:RealEstateListing(schema.org 词汇表类型,描述 lease/sell 类 offers)+ Residence/SingleFamilyResidence 承属性细节,价格走 Offer 的 price 或 priceSpecification 嵌套(均现行有效,2026-10-12 核实)。**注意:Google 无 RealEstateListing 富结果**(官方搜索画廊未收录)——标记价值在 AI/实体理解层;度假租赁另有官方 VacationRental 结构化数据,勿混用。
+- 类型选择:RealEstateListing(schema.org 词汇表类型,描述 lease/sell 类 offers)+ Residence/SingleFamilyResidence 承属性细节,价格走 Offer 的 price 或 priceSpecification 嵌套(均现行有效,2026-10-12 核实)。**注意:Google 无 RealEstateListing 富结果**(官方搜索画廊未收录)——标记只是机器可读的实体描述,Google 不据此给富结果;Schema 对 AI 引用没有独立效应的证据见 geo-evidence.md;度假租赁另有官方 VacationRental 结构化数据,勿混用。
 - **IDX 重复内容纪律**:同一 MLS 房源出现在成百上千经纪站——镜像页必须有自有增量(本地市场解说/图集/估价上下文)才值得独立索引;纯镜像 canonical 到 MLS 源页;canonical 策略在 MLS/IDX 协议层约定,不静默处理(行业共识级)。
 - 经纪页 RealEstateAgent+LocalBusiness(真实评价);社区页/报告页 Article;全站 BreadcrumbList。
 
@@ -694,3 +696,13 @@ python3 scripts/pseo_pattern_mining.py --gsc queries.csv --sitemap https://examp
 - ⑨⑩ 官方核实(2026-10-12):[Google JobPosting 结构化数据文档](https://developers.google.com/search/docs/appearance/structured-data/job-posting)(必填字段/移除机制三选一/Indexing API 优先于 sitemap/canonical 要求;**无 90 天自动过期规则**)、[schema.org v30.0 发布说明](https://schema.org/docs/releases.html)(jobDuration 新增)、[Google 富结果画廊](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)(无 RealEstateListing 富结果;VacationRental 在列)
 - Fair Housing(行业):[GBREB 房源描述禁用词 15 条](https://www.gbreb.com/GBAR/Sites/GBAR/News/Agent_Insider/2022/Dont_Violate_Fair_Housing_15_Words_to_Ban_From_Property_Descriptions.aspx)、[SmartMLS Fair Housing 词表(2024-12)](https://compliance.smartmls.com/hc/en-us/articles/13116678459803-Fair-Housing-words-and-phrase-list)、[NFHA 负责任广告指南](https://nationalfairhousing.org/responsibleadvertising/);IDX canonical 纪律为行业共识级(无双源,引用时标注)
 - 本地六行业/网格排名/权重模型深读来源:见 [site-type-templates.md](../technical/site-type-templates.md) 文末及文内标注
+
+## 检查清单(开局认站型时)
+
+| 检查什么 | 怎么查 | 通过 / 失败判据 |
+|---|---|---|
+| URL 型谱判型 | `python3 scripts/site_crawl.py example.com --max 1000 --out crawl.json --urls-out urls.txt`,再看路径段前 10 | 至少两处信号吻合(型谱、schema、构成)才判型;只有一处或双信号强 → 列前二让用户确认 |
+| schema 分布 | `python3 scripts/site_audit.py <URL...> --json` 看 JSON-LD 类型 | 与卡里"schema 分布"吻合;出现 FAQPage / HowTo 只当内容标记,不记收益 |
+| 开局命令的参数真实存在 | 对卡里每条命令跑 `python3 scripts/<名>.py --help` | 参数都在 help 里(`site_crawl.py` 站点是位置参数) |
+| 报告里的基准数字有来源 | 每个 KPI 基准旁有链接与日期,且来源页能打开 | 无链接的数字删掉;第三方数字标"第三方",不对客承诺 |
+| 招聘 / 房产卡的官方要求 | 对照 [JobPosting 文档](https://developers.google.com/search/docs/appearance/structured-data/job-posting)(必填五件;下线三选一;职位 URL 建议用 Indexing API;无 90 天自动过期规则) | 与卡一致;文档更新日期晚于 2026-09-08 时重读 |

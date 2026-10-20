@@ -10,7 +10,8 @@
 
 - **一条结论 = 数据 + 对比期 + 数据源 + 口径。** 缺任何一项，就只能写成「待核实」。
 - **对比期**：环比用上一期同样长度的时间段，并对齐星期；有季节性时同时给同比。
-- **数据截止**：写明截止日期。Search Console 最近几天的数据可能还不完整，不要拿来下结论。
+- **数据截止**：写明截止日期。Search Console 通常 2 到 3 天后数据才完整，最新数据可能是初步数据；日数据按太平洋时间（[官方](https://support.google.com/webmasters/answer/17010575)，核对 2026-10-21）。不要拿不完整的数据下结论。
+- **数据异常期**：报告期若覆盖 Google 公布的数据异常期（如 2025-05-13 至 2026-04-27 的展示 / CTR / 排名记录错误，[官方](https://support.google.com/webmasters/answer/6211453)），在开头写明，并只用点击做对比。
 - **口径不变**：筛选条件、品牌正则、渠道定义和上期一致；有变化时在开头说明，并尽量回算上期。
 - **分清三种状态**：已上线（工程完成）、已观察到变化、原因已确认。不要把「已上线」写成「已见效」。
 - **不做承诺**：不预测具体的排名、流量或 AI 引用涨幅；外部基准没有出处就不写。
@@ -65,16 +66,28 @@
 
 ## 完全装载:报告工程约束与锚定评分(百仓深扫)
 
-**自包含 HTML 报告硬约束**(every-app seo-report):禁外部资源/禁 script;图必须内联 SVG/CSS bar 且**数字同时印在文字里**;目标 <80KB、硬上限 500,000 字节;**禁反引号和 `${`**(模板字面量语法);链接一律 target="_blank";summary <2,500 字符(给不打开页面的读者);finding 三段 Problem/Change/Expected effect;**"二十条 findings 的报告是失败报告"**;固定收尾节 "How this report was made"(Tools/Verified 分列)。
-**六维营销评分+收入公式**(ai-marketing):Content 25%/Conversion 20%/SEO 20%/Competitive 15%/Brand 10%/Growth 10%;等级 85=A/70=B/55=C/40=D;审计前业务预分类 6 类(SaaS/电商/本地/创作者…);收入影响=月流量×转化率提升×客单价;影响分级 High>$5,000/mo 或>20%;每子维度 0-10 分带**五档锚定文案**(9-10="crystal clear"…0-2=无清晰标题)。
-**30/60/90 方案模板**(GEORank):输出要求=先判优先级/含负责人+交付物+验收指标/覆盖页面结构·答案式内容·FAQ·Schema·权威引用·AI 可见性·长尾·转化路径/标信息缺口;输入 13 字段(goal/brand/url/industry/audience/stage/timeline/resources/market/competitors/constraints/context/focus),5 项必填。
+**自包含 HTML 报告硬约束**(every-app seo-report 的约定，第三方做法，本套件口径，不是标准):禁外部资源/禁 script;图必须内联 SVG/CSS bar 且**数字同时印在文字里**;目标 <80KB、硬上限 500,000 字节;**禁反引号和 `${`**(模板字面量语法);链接一律 target="_blank";summary <2,500 字符(给不打开页面的读者);finding 三段 Problem/Change/Expected effect;**"二十条 findings 的报告是失败报告"**;固定收尾节 "How this report was made"(Tools/Verified 分列)。
+**六维营销评分+收入公式**(ai-marketing 的约定，第三方，权重、分级线和金额阈值都没有外部出处，本套件口径，使用时在报告里标明是自定义评分):Content 25%/Conversion 20%/SEO 20%/Competitive 15%/Brand 10%/Growth 10%;等级 85=A/70=B/55=C/40=D;审计前业务预分类 6 类(SaaS/电商/本地/创作者…);收入影响=月流量×转化率提升×客单价;影响分级 High>$5,000/mo 或>20%;每子维度 0-10 分带**五档锚定文案**(9-10="crystal clear"…0-2=无清晰标题)。
+**30/60/90 方案模板**(GEORank 的模板，第三方，本套件口径):输出要求=先判优先级/含负责人+交付物+验收指标/覆盖页面结构·答案式内容·FAQ·Schema·权威引用·AI 可见性·长尾·转化路径/标信息缺口;输入 13 字段(goal/brand/url/industry/audience/stage/timeline/resources/market/competitors/constraints/context/focus),5 项必填。
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 每条结论带数据、对比期、数据源、口径 | 逐条核对第一节第一条规则 | 缺任一项 = 改成「待核实」 |
+| 报告期没有跨数据异常期 | 读[数据异常页](https://support.google.com/webmasters/answer/6211453) | 跨期的展示 / CTR / 排名对比已删或只比点击 |
+| 状态没混 | 每条行动项标：已上线 / 已观察到变化 / 原因已确认 | 「已上线」写成「已见效」= 失败 |
+| 报告数字可复现 | 附录写明导出文件路径与筛选条件；需要自包含 HTML 时 `python3 scripts/report_build.py --findings findings.json --out report.html` | 别人用同一导出能得到同一数字 |
+| 无来源的基准已删 | 搜报告里的「行业平均」「基准」字样 | 无出处的外部基准 = 删或标「本套件口径」 |
+| 实验结论遵守预注册 | `split_test.py plan --save-plan` 写档；`analyze --plan plan.json` | 没有预注册方案就不写「显著」 |
+| 行动项完整 | 每条有负责人、截止日期、验证方式 | 缺一 = 补 |
 
 ## 来源
 
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · monitor/performance-reporter/references/report-templates.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/monitor/performance-reporter/references/report-templates.md)（Apache-2.0）
-- 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[排名系统指南](https://developers.google.com/search/docs/appearance/ranking-systems-guide)、[Core Web Vitals 与 Google 搜索](https://developers.google.com/search/docs/appearance/core-web-vitals)
+- 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[排名系统指南](https://developers.google.com/search/docs/appearance/ranking-systems-guide)、[Core Web Vitals 与 Google 搜索](https://developers.google.com/search/docs/appearance/core-web-vitals)、[搜索流量下降排查](https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops)
 
 ## 情报摘要类报告：骨架、信号类型学与样本量阶梯（goose-skills 深读 2026-10-09b）
 
@@ -86,8 +99,8 @@
 
 **关键词战役式过滤**（newsletter-signal-scanner）：按四组建档——竞品名、ICP 痛点语言、市场迁移词、自有品牌词；命中只保留关键词前后约 50 字符的上下文，不整段复制；自有品牌词出现单独成节；条目按高 / 中 / 低相关过滤，低相关默认丢弃。**不强行给每条情报配策略**——多数只是「值得知道」，硬凑动作是噪音；只对真实可行动的聚簇出策略。
 
-**样本量置信阶梯**（sequence-performance）：<50=数据不足、50-100=方向性、100-250=可能胜出、250+=统计显著。A/B 结论（标题、摘要、模板改版）照此措辞，不提前宣布赢家。分层基准给区间不给单值（客群不同基准不同），并看「边际贡献」——该变体在剩余未响应样本中的增量，不把累计值当增量。报告要读原始样本（实际回复、实际查询、实际 URL），不只看聚合指标；「已送达 ≠ 已见效」与上文三状态一致。
+**样本量措辞阶梯**（sequence-performance 的做法，第三方，数字是该工具的经验分档）：<50 = 数据不足、50–100 = 方向性、100–250 = 可能胜出。**「250 以上 = 统计显著」不成立**——显著性取决于效应大小、方差和事先定下的检验方案，不由样本数单独决定。本套件的页面级实验用 `python3 scripts/split_test.py plan --pages 120 --baseline-clicks 2.5 --weeks 8 --save-plan plan.json` 先算功效和最小可检测效应（MDE），再用 `analyze` 读结果。A/B 结论（标题、摘要、模板改版）按预注册的方案措辞，不提前宣布赢家。分层基准给区间不给单值（客群不同基准不同），并看「边际贡献」——该变体在剩余未响应样本中的增量，不把累计值当增量。报告要读原始样本（实际回复、实际查询、实际 URL），不只看聚合指标；「已送达 ≠ 已见效」与上文三状态一致。
 
-**节奏表**：周一晨=内容与社区情报、周五午后=趋势与 KOL 峰值、每月 1 日=定价 / 评价等慢变高影响项、季度=全量基线重跑并更新 watchlist；跨源去重时保留最丰富版本并注「多源出现」。
+**节奏表**（来源仓库的做法，本套件口径）：周一晨=内容与社区情报、周五午后=趋势与 KOL 峰值、每月 1 日=定价 / 评价等慢变高影响项、季度=全量基线重跑并更新 watchlist；跨源去重时保留最丰富版本并注「多源出现」。
 
 **评价 / 口碑月报**（review-intelligence-digest）：证明点库（带数字优先）、痛点原话频次表、异议对照表（异议 / 频次 / 原话 / 应对）、竞品抱怨=替代内容素材、用户高频词汇表=文案与关键词素材；月更即可。

@@ -35,8 +35,8 @@
 用 --pages 的全部页面算;没有 --pages 时用查询行;给了 --brand 时,可见查询里品牌词展示 ≥ 50% 的页
 不进基线,避免品牌导航页拉高 CTR),报告头部列出各段 CTR。
 
-词覆盖率:查询切成「词」后,在目标文本里出现的比例。拉丁字母按单词(长度 ≥ 2,小写);
-汉字按相邻两字(bigram);混排时两者合并。这是本套件口径,只用来排序和提示,不是 Google 的算法。
+词覆盖率:查询切成「词」后,在目标文本里出现的比例。字母文字按 Unicode 字母连续段分词(长度 ≥ 2,
+小写;土耳其 İ 先折成 i);汉字与泰文按相邻两字(bigram;泰文以近似字素为单位);混排时合并。这是本套件口径,只用来排序和提示,不是 Google 的算法。
 
 退出码:0 正常;2 输入错误(文件缺失、列名不认识、参数不合法)。
 """
@@ -51,6 +51,7 @@ import os
 import re
 import socket
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -61,7 +62,6 @@ ANON_SHARE = 0.8        # 可见查询展示 < 20% → anonymized(本套件口�
 MIN_QUERY_IMPR = 3      # 主查询展示 < 3 时不判覆盖(本套件口径:1–2 次展示没有代表性)
 UA = "Mozilla/5.0 (compatible; seo-suite-question-align/1.0)"
 CJK_RE = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
-LATIN_WORD_RE = re.compile(r"[0-9a-zà-öø-ÿāăąćčďđēėęěğīįıķļľłńňōőœŕřśşšţťūůűųźżžа-яё]+", re.I)
 
 QUERY_COLS = ("query", "top queries", "queries", "consulta", "查询")
 PAGE_COLS = ("page", "top pages", "pages", "url", "landing page", "网页", "页面")
@@ -134,10 +134,66 @@ def read_rows(path: str, need_query: bool, page_override: str | None = None) -> 
 
 # ---------------------------------------------------------------- 分词与覆盖 --
 
+def _fold(text: str) -> str:
+    """NFC + 土耳其 İ→i 再小写(İ.lower() 会变 i+U+0307,组合点把词劈开或对不上)。"""
+    t = unicodedata.normalize("NFC", text or "").replace("İ", "i")
+    return t.lower().replace("i\u0307", "i")
+
+
+def _is_thai(c: str) -> bool:
+    return "\u0e00" <= c <= "\u0e7f"
+
+
+def _clusters(run: str) -> list[str]:
+    """泰文近似字素:组合符号(M*)与 SARA AM(U+0E33)并入前一字符。"""
+    out: list[str] = []
+    for c in run:
+        if out and (unicodedata.category(c)[0] == "M" or c == "\u0e33"):
+            out[-1] += c
+        else:
+            out.append(c)
+    return out
+
+
 def tokens(text: str) -> set[str]:
-    t = (text or "").lower()
-    toks = set(w for w in LATIN_WORD_RE.findall(t) if len(w) >= 2 and not CJK_RE.search(w))
-    han = "".join(CJK_RE.findall(t))
+    """按 Unicode 字母类分词(B51 修,2026-10-21):字母/数字连续段为词,组合符号附着在词内;
+    汉字与泰文(都不用空格分词)取相邻二元组。修前 ASCII+拉丁扩展字符表把越南 thế 截成 th、
+    丢 İ、泰文返回空集。"""
+    t = _fold(text)
+    toks: set[str] = set()
+    runs: list[str] = []
+    cur = ""
+    for c in t:
+        cat = unicodedata.category(c)[0]
+        if cat in ("L", "N") or (cat == "M" and cur):
+            cur += c
+        else:
+            if cur:
+                runs.append(cur)
+            cur = ""
+    if cur:
+        runs.append(cur)
+    han = ""
+    for r in runs:
+        # 同一连续段内按文字切换再分:拉丁/西里尔等成词,泰文取二元组,汉字并入 han
+        segs: list[list] = []
+        for c in r:
+            kind = "han" if CJK_RE.match(c) else ("thai" if _is_thai(c) else "word")
+            if segs and segs[-1][0] == kind:
+                segs[-1][1] += c
+            else:
+                segs.append([kind, c])
+        for kind, seg in segs:
+            if kind == "han":
+                han += seg
+            elif kind == "word":
+                if len(seg) >= 2:
+                    toks.add(seg)
+            else:
+                cl = _clusters(seg)
+                if len(cl) == 1:
+                    toks.add(cl[0])
+                toks.update(cl[i] + cl[i + 1] for i in range(len(cl) - 1))
     if len(han) == 1:
         toks.add(han)
     toks.update(han[i:i + 2] for i in range(len(han) - 1))
@@ -145,7 +201,7 @@ def tokens(text: str) -> set[str]:
 
 
 def missing_terms(query: str, target: str) -> list[str]:
-    tt = (target or "").lower()
+    tt = _fold(target)
     return sorted(x for x in tokens(query) if x not in tt)
 
 
@@ -176,7 +232,7 @@ def coverage(query: str, target: str) -> float | None:
     qt = tokens(query)
     if not qt:
         return None
-    tt = (target or "").lower()
+    tt = _fold(target)
     return round(sum(1 for x in qt if x in tt) / len(qt), 2)
 
 

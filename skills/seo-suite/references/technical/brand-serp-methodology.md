@@ -1,6 +1,6 @@
 # Brand SERP 方法论：八面 AI Résumé 与 Algorithmic Trinity
 
-> 建立于 2026-10-12，2026-10-18 对照原文复核。**框架来源：Kalicube《Brand SERP — Standalone Document》v1.0，2026-05-15，作者 Jason Barnard（术语 2012 年提出），[kalicube.pro/methodologies/brand-serp](https://kalicube.pro/methodologies/brand-serp)，许可 CC BY 4.0。本文转述并演绎其框架，须署名 Jason Barnard / Kalicube。** Kalicube 是第三方咨询公司：文中【Kalicube】标注的是它的方法论口径，不是搜索引擎的官方规则。工具接线表、与 brand.yaml 的映射、命令化流程是本套件口径。
+> 建立于 2026-10-12，2026-10-18 对照原文复核，2026-10-21 再核（Kalicube 原文、Microsoft Learn、Profound 博客）。**框架来源：Kalicube《Brand SERP — Standalone Document》v1.0，2026-05-15，作者 Jason Barnard（术语 2012 年提出），[kalicube.pro/methodologies/brand-serp](https://kalicube.pro/methodologies/brand-serp)，许可 CC BY 4.0。本文转述并演绎其框架，须署名 Jason Barnard / Kalicube。** Kalicube 是第三方咨询公司：文中【Kalicube】标注的是它的方法论口径，不是搜索引擎的官方规则。工具接线表、与 brand.yaml 的映射、命令化流程是本套件口径。
 > 引擎面行为按 3 个月、概念框架按 6 个月复查（本套件口径），随 intel-update 搭车核对。
 > 关联方法论：[search-everywhere-optimization.md](../research/search-everywhere-optimization.md)（非品牌词的全平台层）、[community-seo-playbook.md](../content/community-seo-playbook.md)（第三方口碑面）。
 
@@ -112,5 +112,5 @@ Google 和 Bing 两个 SERP 面的人工检查结论记进项目工作区，与�
 ## 八、证据边界与引用纪律
 
 - 本文框架性表述转述 Kalicube canonical v1.0（CC BY 4.0）：对外输出物复用这些框架时，按 CC BY 4.0 署名 Jason Barnard / Kalicube 并链原文。原文提到的 Kalicube Pro 看板是其商业产品，本套件不背书、不依赖。
-- 跨面不能互推是 Kalicube 的明确口径；第三方研究也指向同一方向：Profound 用自家平台跟踪 7 个 AI 搜索引擎上约 88.3 万个页面 12 个月，发现同一页面在不同引擎上的引用持续时间相关系数只有 0.03–0.09；只有 Google 的三个面（AI Overviews、AI Mode、Gemini）之间是 0.12–0.17（[Profound 博客](https://www.tryprofound.com/blog/the-half-life-of-an-ai-citation-is-11-days)，2026-09-30；转引见 borrow-specs.md）。分面独立判定是本套件的硬规则。
+- 跨面不能互推是 Kalicube 的明确口径；第三方研究也指向同一方向：Profound（第三方研究，用自家平台的 citation decay 指标，测了 ChatGPT、Perplexity、Claude、Google AI Overviews、Google AI Mode、Gemini、Microsoft Copilot 七个面上约 88.3 万个页面，12 个月，共 119 万个页面×引擎生命周期）发现同一页面在不同引擎上的引用持续时间相关系数只有 0.03–0.09；只有 Google 的三个面（AI Overviews、AI Mode、Gemini）之间是 0.12–0.17（[Profound 博客](https://www.tryprofound.com/blog/the-half-life-of-an-ai-citation-is-11-days)，2026-09-30；转引见 borrow-specs.md）。分面独立判定是本套件的硬规则。
 - 本文不承诺任何面的呈现结果（证据边界见 [geo-evidence.md](../content/geo-evidence.md)）。

@@ -70,6 +70,18 @@ def robots_meta_content(raw):
          or re.search(r"""<meta[^>]+content=["']([^"']*)["'][^>]+name=["']robots["']""", raw, re.I))
     return m.group(1) if m else None
 
+def fold_case(text, market=""):
+    """大小写折叠(B50 修,2026-10-21):先 NFC;tr/az 按 Unicode SpecialCasing 的土耳其条件映射
+    İ→i、I→ı 后再 casefold;其他市场把 İ 先换成 i(默认 casefold 会产生 i+U+0307,
+    `EN İYİ` 与营销词 `en iyi` 对不上)。"""
+    t = unicodedata.normalize("NFC", text)
+    if market in ("tr", "az"):
+        t = t.replace("İ", "i").replace("I", "ı")
+    else:
+        t = t.replace("İ", "i")
+    return t.casefold().replace("i\u0307", "i")
+
+
 def load_rules(market):
     with open(os.path.join(BASE, "markets.json"), encoding="utf-8") as f:
         data = json.load(f)
@@ -82,7 +94,9 @@ def unit_len(s, unit):
     if unit == "fullwidth":  # EAW W/F=1,A 与半角=0.5,向上取整
         return math.ceil(sum(1.0 if unicodedata.east_asian_width(c) in ("W", "F") else 0.5 for c in s))
     if unit == "grapheme":   # 泰文字素:非组合且非 Mn/Cf 的码点
-        return sum(1 for c in s if unicodedata.combining(c) == 0 and unicodedata.category(c) not in ("Mn", "Cf"))
+        # SARA AM(U+0E33/U+0EB3)是 SpacingMark,并入前字(与 Intl.Segmenter 一致,B53 同类修)
+        return sum(1 for c in s if unicodedata.combining(c) == 0 and unicodedata.category(c) not in ("Mn", "Mc", "Me", "Cf")
+                   and c not in "\u0e33\u0eb3")
     return len(s)
 
 def parse_src(text):
@@ -399,7 +413,7 @@ def r_tr_dotted_i(ctx):
     if susp:
         return "FAIL", "ASCII 大写 I+小写 %d 处: %s——土耳其语应为 İ(Istanbul→İstanbul)或 ı" % (len(susp), susp[:5])
     if "İ" in body or "ı" in body:
-        return "OK", "İ/ı 码点正确;关键词 İ/i 双码点归组前先做 İ→i̇ 替换再 casefold"
+        return "OK", "İ/ı 码点正确;关键词归组前先按土耳其大小写做 İ→i、I→ı 再 casefold(fold_case)"
     return "OK", "未见 İ/ı 与可疑 ASCII I——大写场景请人工复核"
 
 def r_vi_tones(ctx):
@@ -440,11 +454,32 @@ def r_hi_mix(ctx):
         return "FAIL", "Devanagari %.0f%%+罗马化 %d 词(%.0f%%)混排——Hinglish 三写变体归组需 GSC regex" % (dev * 100, len(latin_w), lr * 100)
     return "OK", "天城文 %.0f%%;拉丁词 %d(品牌/术语容忍)" % (dev * 100, len(latin_w))
 
+GROUPED_NUM_RE = re.compile(r"(?<![\d,])\d{1,3}(?:,\d{2,3})+(?:\.\d+)?(?![\d,])")
+INDIAN_GROUP_RE = re.compile(r"\d{1,2}(?:,\d{2})+,\d{3}")
+WESTERN_GROUP_RE = re.compile(r"\d{1,3}(?:,\d{3})+")
+
+
+def hi_number_groups(a):
+    """→ (indian, western):≥1 lakh(100000)的分组数字按写法分两类(B48 修,2026-10-21)。
+    印度写法末三位一组、其前两位一组(1,23,456 / 1,23,45,678);<1 lakh 两种写法相同,不判。
+    修前西式只认 7 位以上(三组三位),₹123,456 漏报。"""
+    indian, western = [], []
+    for m in GROUPED_NUM_RE.finditer(a):
+        tok = m.group(0)
+        intpart = tok.split(".")[0]
+        if int(intpart.replace(",", "")) < 100000:
+            continue
+        if INDIAN_GROUP_RE.fullmatch(intpart):
+            indian.append(tok)
+        elif WESTERN_GROUP_RE.fullmatch(intpart):
+            western.append(tok)
+    return indian, western
+
+
 def r_hi_num(ctx):
     a = ctx["alltext"]
-    indian = re.findall(r"\d{1,2},\d{2},\d{3}(?:\.\d+)?", a)
-    western = re.findall(r"\d{1,3},\d{3},\d{3}(?:\.\d+)?", a)
-    if western and not indian:
+    indian, western = hi_number_groups(a)
+    if western:
         return "FAIL", "西方分组 %s——lakh/crore 口径应为 1,23,456.78" % western[:3]
     if indian:
         return "OK", "lakh/crore 分组 %s" % indian[:3]
@@ -684,7 +719,7 @@ def r_it_estval(ctx):
     return "OK", "数字 %d 处(<3,声明判失活)" % nums
 
 def r_tr_tanitim(ctx):
-    if "tanıtım" not in ctx["alltext"].lower():
+    if "tanıtım" not in fold_case(ctx["alltext"], "tr"):   # TANITIM 大写也认(土耳其 I→ı)
         return "OK", "未见 tanıtım yazısı 标记词"
     if not ctx["is_html"]:
         return "MANUAL", "检出 tanıtım——链路披露须 HTML 机检"
@@ -1070,10 +1105,10 @@ def _lint():
 
     # ③ 营销词(命中>3 警告)
     mw = cfg.get("marketing_words", [])
-    folded = alltext.casefold()
+    folded = fold_case(alltext, market)
     hits = []
     for w in mw:
-        c = folded.count(w.casefold())
+        c = folded.count(fold_case(w, market))
         hits.extend([w] * c)
     ctx["mw_hits"] = len(hits)
     if len(hits) > 3:

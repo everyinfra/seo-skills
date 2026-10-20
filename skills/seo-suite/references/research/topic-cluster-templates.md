@@ -31,7 +31,7 @@
 
 1. **合并**：两页意图相同时，把有用内容并到更强的那页，旧 URL 做 301 到新页。
 2. **重新分工**：两页意图其实不同时，调整标题、H1 和正文重点，让每页只回答自己那组查询。
-3. **规范化**：只有内容确实重复或近似重复时（例如参数、打印版），才用 `rel="canonical"` 指向首选 URL；它不能替代合并。
+3. **规范化**：只有内容确实重复或近似重复时（例如参数、打印版），才用 `rel="canonical"` 指向首选 URL。Google 把 301 重定向和 `rel="canonical"` 都列为「strong signal」，把 sitemap 收录列为弱信号（[规范网址文档](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)，核对 2026-10-21）；canonical 只表达偏好，不能替代合并两页的内容。
 4. **内链统一**：站内提到这组查询时，锚文本一律指向负责它的那一页。
 
 预防办法是维护一张**查询 → URL 映射表**，每个查询只归一个 URL，新建页面前先查表。
@@ -70,6 +70,17 @@
 
 和上面八步的差别：收查询不靠 Search Console；多了「人工剔除薄内容页」这道闸；首批只上 5–10 页。
 
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 没有两个页面抢同一查询 | GSC 导出「查询 × 页面」，运行 `python3 scripts/gsc_mining.py matrix.csv --mode matrix`，看「蚕食」段 | 同一查询 ≥2 个页面且最大展示 ≥20 的条目已处理（合并或重新分工） |
+| 两组查询该不该共用一页 | `python3 scripts/serp_overlap.py input.csv`（`keyword,url1;url2;…`） | 共享 ≥4 条前 10 URL：并页或同簇；≤1 条：分页。阈值为来源仓约定 |
+| 没有孤儿页 | `python3 scripts/site_crawl.py <站点> --out crawl.json`，再 `python3 scripts/link_graph.py --crawl crawl.json` 看入链 0–1 清单 | 新建的 Pillar / Cluster 页都有至少一个站内入链 |
+| 孤儿页的修复建议 | `python3 scripts/orphan_fix.py --crawl crawl.json` 输出「源页 → 孤儿页 → 建议锚文本」 | 每个孤儿都有源页，或标明需导航级入口 |
+| 已有内容有处置结论 | `python3 scripts/content_inventory.py --crawl crawl.json --gsc <导出.csv>` 给 keep / update / consolidate / remove 四桶草稿 | 合并和下线的页面都有 301 目标 |
+| 每个查询只归一个 URL | 查询 → URL 映射表按查询列去重 | 无重复查询行 |
+
 ## 交付物
 
 1. 主题地图：Pillar 到各 Cluster 页的树状结构。
@@ -83,7 +94,7 @@
 
 ## 常见误区
 
-- 把关键词的每个变体都做成一页。批量生产价值很低的页面，可能落入 Google 垃圾内容政策里「门页」或「大规模滥用内容」的范围。
+- 把关键词的每个变体都做成一页。批量生产价值很低的页面，可能落入 Google 垃圾内容政策里 Doorway abuse（为排名相近查询而建的页面）或 Scaled content abuse 的范围（[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)，核对 2026-10-21）。
 - Pillar 只有一排链接，没有实质内容。
 - 链接全堆在页脚或侧栏，正文里没有。
 - 用 canonical 掩盖本该合并的重复页面。
@@ -102,6 +113,8 @@
 # (Affitor 深读 2026-10-09c)
 
 补充吸收 Affitor/affiliate-skills（52 技能，S1 研究 → S3 博客与 SEO 飞轮）中主题集群与内容规划的增量做法。此前已吸收其内容护城河公式（见 [keyword-intent-taxonomy.md](keyword-intent-taxonomy.md)），此处不重复。
+
+**本节所有权重、阈值、比例都是来源仓的约定值（2026-10-21 抽查其 `seo-strategy.md`、`niche-opportunity-finder`、`content-angle-ranker`、`purple-cow-audit`、`case-studies.md`，数字与来源一致），不是 Google 规则，没有外部校准。** 按「本套件口径」使用，首次使用先在自己的数据上试跑，再决定是否沿用。
 
 ## 选题先于建簇：利基四道闸
 
@@ -141,17 +154,16 @@ Pillar 写完后不是终点（content-pillar-atomizer）：抽出 5-8 个「原
 
 - **刷新优先级** = 收入影响 × 衰减严重度 × 修复容易度（反向计分） × 竞品威胁。分级：P0 本周（排名掉 + 高流量页）、P1 本月（过期定价/功能、竞品发了更好版本）、P2 排期（缓慢下滑）、P3 观察 2 周。
 - **刷新动作里含补内链**：上线后新增的相关页此时互链。月度节奏：第 1 周 P0、第 2 周 P1、第 3 周按衰减分析暴露的缺口写新内容、第 4 周内链复查。
-- **内链时效规则**：新页上线 **48 小时内**必须获得站内入链；**每季度**做孤儿页复查（孤儿页拿不到权重）；反链最多的老页要慷慨地链到你最想排的新页；任何页距首页 ≤3 次点击。
+- **内链时效规则**（来源仓约定；Google 文档没有给出入链时限或点击深度上限）：新页上线 48 小时内获得站内入链；每季度做孤儿页复查；反链最多的老页链到你最想排的新页；任何页距首页 ≤3 次点击。Google 对内链的要求见 [可抓取链接文档](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)。
 
 ## 飞轮闭环：规划是一次循环不是一张图
 
 - `seo-audit` 的 ranking_gaps 回流建簇技能 → 加词、加页填缺口；`performance-report` 的实际表现回流更新角度评分权重与格式偏好。
 - 工程做法：每步产出带 `chain_metadata.suggested_next`，且分析类技能的建议下一步必须指回研究类技能——保证闭环不断链。
 
-## 实证基准（Affitor case-studies，单一厂商口径，方向性参考）
+## 案例自述（Affitor case-studies，不作基准）
 
-- 对比文（"X vs Y"）转化约为单产品评测的 **3 倍**；money page 首选对比与 listicle，教程做信任与流量。
-- 博客联盟案例：5 篇文、6 个月排名稳定后约 $3,000/月；FAQ + schema 结构化带来精选摘要。时间预期 3-6 个月起步、点击转化 1-5% 属正常区间——排产计划按此校准，勿按月冲量承诺。
+来源仓 `case-studies.md` 的案例备注里写了：对比文（"Semrush vs Ahrefs"）转化约为单篇评测的 3 倍；5 篇文章约 $3,000/月；建议用实际转化率做基准，并称 1–5% 为典型值。这些是案例自述，没有样本量和方法，不能当通用基准，也不用来承诺排期。该案例还把精选摘要归因于 FAQ 加 schema：Google 文档写明精选摘要无法申请（见 [serp-feature-taxonomy.md](serp-feature-taxonomy.md)），FAQ 富结果也已在 2026-05-07 停止展示，这一条不采信。
 
 ### 来源（Affitor 深读 2026-10-09c）
 

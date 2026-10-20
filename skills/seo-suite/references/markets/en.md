@@ -1,175 +1,120 @@
 # 英文市场专项(基线层)
 
-> 英文是基线,本页收英文区独有增量。建立于 2026-10-09,增量研究窗口 2026-09~10。
-> 基线能力(协议层部署细节/爬虫分策/证据分级)在 [agent-readiness.md](../technical/agent-readiness.md)、[agent-protocols.md](../technical/agent-protocols.md)、[ai-crawler-policy.md](../technical/ai-crawler-policy.md)、[geo-evidence-bank.md](../content/geo-evidence-bank.md);本页只记 2026-10 复审发现的**新事实与口径修正**,不重复基线。冲突数字并记不择优。
+> 英文是基线,本页只收英文区独有的增量。建立于 2026-10-09,2026-10-21 逐条重核:每个数字都回到原始页面或官方文档重读,读不到的删除。
+> 基线能力在 [agent-readiness.md](../technical/agent-readiness.md)、[agent-protocols.md](../technical/agent-protocols.md)、[ai-crawler-policy.md](../technical/ai-crawler-policy.md)、[geo-evidence-bank.md](../content/geo-evidence-bank.md)。证据等级以 [geo-evidence.md](../content/geo-evidence.md) 为准;提问对齐见 [question-alignment.md](../content/question-alignment.md);句子写法见 [asd-ste100-web-writing.md](../content/asd-ste100-web-writing.md)。
+> 标注:【官】=官方页面或文档;【三方】=第三方研究(写机构、样本、时间);【本套件口径】=本套件约定。断言半衰期 3–6 个月(引用份额类 3 个月)。
 
 ## 一、引擎与 AI 格局
 
-### 1. AIO 品牌词覆盖 9 月末骤增(2026 最大的英文区事件)
+### 1. 品牌词的 AI Overviews 覆盖在 2026-09 下旬骤增
 
-- DemandSphere 日频 SERP 追踪:品牌词 AIO 出现率 9 月大部分时间稳在 ~27%,**9 月 28-29 日跳至 80.23%/82.06%,日内峰值 90.5%**;另一次 100 品牌词手测出现 93 次。Google 无官方说明。
-  - 来源:[demandsphere.com/blog/branded-ai-overviews-september-2026](https://www.demandsphere.com/blog/branded-ai-overviews-september-2026)、[Search Engine Land](https://searchengineland.com/google-ai-overviews-jump-branded-queries-september-492962),2026-10 读取。
-- Ahrefs 交叉印证:截至 2026-09-29,美国桌面品牌词 AIO 出现率 **82.91%**——双追踪器同向,非单源噪声。
-- 口径警示:这是**品牌词**口径,非全查询。全查询口径仍是各家并记(基线纪律不变):
-  - Comscore 2026-06:美国桌面 39.4%(同比 +13pp),零点击率 68%;
-  - SEMrush 13-14% / Terakeet 52% / SEL 峰值 25% 后回落——引用必须带追踪器名与查询集类型。
-- 实操含义:
-  1. 品牌词 SERP 审计从"季度"改"月度"——品牌词 AIO 由 Google 生成语义,负面/竞品内容混入的风险窗口随覆盖面放大;
-  2. 品牌词承载页(about/定价/对比/评价汇总)逐页按可引性四要素(主体+数字+as-of 日期+方法学)过检;
-  3. 品牌词负面出现的处置不再只是 PR 问题,是 GEO 一级工单。
-
-### 2. AI 格局其他增量
-
-- ChatGPT 周活 **12 亿**(2026-09-29 口径)——英文区 B2B 买家人工制品的第一入口假设成立。
-- 爬虫构成反转:Q3 2026 **GPTBot 降至 AI-bot 流量 8.05%,OpenAI 搜索索引爬虫翻倍**:
-  - 训练爬虫退潮、检索爬虫主导;robots"三类分策"基线不变,但**日志分析勿以 GPTBot 体积外推引用机会**;
-  - 反向警示同样成立:封训练爬虫连带封引用爬虫的误杀仍是最常见错误。
-- AIO 与 AI Mode 的社媒链接差:**67.66% AIO 响应带社媒链接 vs 32.39% AI Mode**(SE Ranking 10 万关键词研究,测量于 2026-10,来源:seranking.com;Social Media Today 2026-10-08 汇总报道)——社媒占位(Reddit/YouTube)对 AIO 的边际收益高于 AI Mode,分产品报告。
-
-### 3. Google 2026-09 spam 更新与更新节奏
-
-- 9/24 启动、**10/8 结束(13 天 16 小时,2025-08 以来最长)**,末段 10/4-7 波动峰值。
-- **2026 年已 4 轮 spam 更新(3/6/8/9 月)**,多于 2025 全年;同期 manual actions 上升(PPC Land 报道)。
-- Lily Ray 依节奏预测大 core update 临近——英文站监控以 [Google Search Status Dashboard](https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history) 官方时间戳对齐,勿以工具波动单方面定性。
-
-## 二、协议层进展(ARD/WebMCP 采用)
-
-基线(三级发现链/Web Bot Auth/Lighthouse AGENTIC_BROWSING 七审计)见 [agent-readiness.md](../technical/agent-readiness.md)。本轮增量是**采用现实的校准**:
-
-- **ARD 联署扩容**:
-  - SEJ 报道 ARD 于 2026-06-17 正式发布,Google 与 **Microsoft/Hugging Face/NVIDIA 等 11 厂商共同署名**,定位"运行时发现层,与 MCP 互补"(亦有"anti-MCP 联盟"的媒体解读);
-  - 与套件既有"2026-05 工作组公布"并记——5 月工作组、6 月正式发布,两个里程碑。[searchenginejournal.com](https://www.searchenginejournal.com/the-web-is-growing-a-second-layer-almost-a-third-head/581147)。
-- **WebMCP 采用现实核查**:
-  - Chrome M149-M156 origin trial 持续 + Edge 平行 trial;
-  - 2026-07 长读(Spronta《The State of WebMCP》)确认**规范仍在改、实际采用极低**——公开落地样本是"4 站点×3 个只读工具"级试点(nz365guy);
-  - 企业侧卡在治理/权限/审计层未到位(humandelta 观察口径)。
-  - 来源:[developer.chrome.com](https://developer.chrome.com/blog/ai-webmcp-origin-trial)、[nz365guy.com](https://nz365guy.com/blog/four-websites-agent-ready-webmcp)。
-- 套件立场不变但表述升级:
-  1. 协议层仍是"低成本期权",英文站全开的分叉决策不变;
-  2. **向客户汇报时应引用本节采用数据**——防止把 ARD/WebMCP 部署当交付成果夸大;
-  3. 唯一实证消费者仍是 ChatGPT 桌面浏览器(WebMCP)与零引擎(ARD)——写验收时不承诺引用收益。
-
-## 三、内容规范(可引用块/slop 防御)
-
-基线(段落四要素/句 15-20 词/hype 词 ≤3/页)见 multilingual-workflow.md 英文区专项。增量:
-
-### 1. Reddit 在 ChatGPT 的引用份额塌陷——本页最重要修正
-
-- **最新口径(2026-08,Semrush 数据/Search Engine Land 报道):ChatGPT 引用中 Reddit 份额已跌至 ~0.5%**——塌陷仍在加深,下列早期数字(~10%)是过程不是终点。
-- 5WPR《State of AI Citations 2026》:ChatGPT 的 Reddit 引用份额**从 ~60% 跌至 ~10%**。
-- Ahrefs Brand Radar 口径:ChatGPT 内 Reddit 引用**降 ~86%**。
-- Strivelabs 六研究汇总:**YouTube 已取代 Reddit 成 ChatGPT 第一大被引域**(滚动追踪 YouTube ~26.47% / Reddit ~17.39%)。
-- 与套件既有数字的关系:Profound"Reddit 占 Perplexity ~46.7%"**仍成立**——塌陷是 ChatGPT 引擎侧的,Gemini/Perplexity 的 Reddit 依赖未变。按引擎分列的纪律因此又多一条实证。
-
-### 2. YouTube 是被低估的引用面
-
-- Surfer《50 most-cited domains in Google AI Mode》:google.com ~662K / youtube.com ~324K / reddit.com ~151K / facebook 次之。
-- Slate 引用研究:YouTube+Reddit 合占社媒引用 ~86%,**YouTube 在全部研究垂类进 top-10**。
-- 英文区内容预算含义:视频转录页/YouTube 章节化描述是可引性资产,不只是品牌资产;转录文本按可引块规范(标题+结论句+数字口径)结构化。
-
-### 3. Reddit 高引格式定量
-
-- 万条 Reddit 引用分析(LinkedIn/Nicholas Dulait):被引最多的是**300-600 词长答评论、50+ 赞**——不是帖子本体。
-- Reddit 运营按"长答评论"为交付单元设计,而非发帖数;评论区首答的优先级高于自答时间线。
-
-### 4. 引用衰减是常态
-
-- GreenFlag 金融垂类:2025-10 的 215 个顶引页面,**一年后 50%(107 页)零引用**。
-- digitalapplied 口径:**57% 被引域不会再被引**。
-- 与基线"发布 <3 月内容被引概率 3×"(Kevin Indig)合并成时间纪律:**新鲜度是持续供给,不是一次性刷新**——支柱页配月度增量段(新数字+新 as-of)而非季度大改。
-
-### 5. slop 防御
-
-- 2026 年 4 轮 spam 更新 + manual actions 上升(见一)——AI 生成低增量内容的清理在加强。
-- AI 臭 lint(密度判据,方法同源见日区专项)英文站同样适用:英文判据本地化重标(对比构文 "not X but Y"、破折号密度、三段式排比),不直接搬日区阈值。
-
-## 四、外链生态(数字 PR/寄生平台)
-
-- **引用集中度按引擎分列**(Cloro《State of AI Search》):top-10 域名集中度——
-  - AI Mode **57.8%**(最集中:Google 生态自引+大站)、Perplexity 27.3%、ChatGPT 25.1%、Copilot 18.3%、Gemini **17.3%**(最分散:长尾机会)。
-  - [cloro.dev/research/state-of-ai-search](https://cloro.dev/research/state-of-ai-search)。
-- **规模锚点(三套口径并记,引用带出处与月份)**:
-  - Surfer 2026-09-01~28:**5.73M 条 ChatGPT 引用**(AI Search Analytics 口径);
-  - Ahrefs 2026-07(ChatGPT 全量):Reddit 16.7% / Wikipedia 8.9% / Forbes 3.3%;
-  - Resocial 加权(跨引擎):Wikipedia ~32% / Reddit ~21% / 一线编辑媒体 ~14%。
-- **引擎间引用集几乎不重叠**:13,184 条引用跨 4 LLM 追踪,**ChatGPT 与 Perplexity 被引域仅重合 5-8%**——"一次优化全网生效"在英文区被证伪;每引擎独立问题集从建议升级为硬约束。
-- **寄生平台格局(英文区)**:Reddit/YouTube/Wikipedia 三件套 + Quora/LinkedIn。
-- **数字 PR 新出口**:被 AI 高引的垂直媒体榜单化——Surfer top-50 类榜单成为 PR 投放地图:**先查目标域在目标引擎的在场率再投**,不按传统域名权重(DR)投。
-- **Reddit 代运营已成产业**(Posirank/Parse 2026 年度机构榜单)——商业化本身是风险信号,见六。
-
-## 五、AI-GEO 测量(fan-out/四级阶梯)
-
-基线(fan-out 三桶/四级阶梯+recommended-against 暗级/DevTools 提取)见 multilingual-workflow.md 与 [geo-platform-differences.md](../content/geo-platform-differences.md)。增量:
-
-- **GA4 内置 AI Assistant 流量渠道**(2026 新):
-  - AI 引荐不再混入 Referral,与既有"自定义 channel group"方案并存;
-  - **先迁移到内置渠道再对账历史**,避免双口径混报。
-- **归因漏损**:
-  - TapClicks 口径**~70% AI 引荐被记为 Direct**——AI 流量报告必须先修通道(source regex 含 chatgpt.com/gemini.google.com/perplexity.ai/copilot.microsoft.com 等),否则基线被系统性低估;
-  - ChatGPT 外链自带 `utm_source=chatgpt.com`(r/GoogleAnalytics 实证,非 bot);Perplexity/Gemini 无此待遇,勿假设对称。
-- **可见度天花板基准**:SearchScore 冻结 2026-07 的 **102,873 域指数**可作英文区横排对照(厂商口径,只作参照不作验收)。
-- **fan-out 的引擎侧新增观察**:AIO 品牌词骤增后,品牌词的 fan-out 更可能带修饰词(评测/价格/替代/缺点)——英文站做 fan-out 逆向时,品牌词问题集要单独建组,与品类词的增/删/留三桶分开统计;社媒链接差(一)提示 AIO 的 fan-out 更常落到社媒域,查"社媒占位是否被 fan-out 命中"加入诊断清单。
-- 四级阶梯(retrieved→cited→mentioned→recommended)不变;新增**衰减复测节奏**:
-  - 引用衰减数据(三)支持复测周期定为**月度**;
-  - 顶引页面流失 ≥30%/季即触发内容供给管线检查;
-  - 品牌词 AIO 覆盖(一)与引用份额(三)两指标每月随监控报告刷新。
-
-## 六、红旗(买提及/llms.txt 迷思)
-
-- **Reddit 引用代购 = inauthentic mentions 的具象化**:
-  - Reddit 代运营机构产业化(四)+ Google 2026 年 manual actions 上升(一)+ Google 官方点名"追逐不真实提及"是 spam 风险——三线交汇;
-  - **买赞/代发长答评论进红旗清单第一格**;Reddit 自身反 astroturfing 检测同向收紧,账号史与投放痕迹都是取证面。
-- **单平台独大策略的塌陷风险**:Reddit 份额 ~60%→~10% 用一年走完——任何"押注单一被引平台"的方案(含全押 YouTube)都应写进这一条风险对称性。
-- **llms.txt 迷思**(基线重申+升级):Google 官方三连(不需要新机器可读文件/无 AI 专用 schema/无独立资格门槛)未变;本页新增:WebMCP/ARD 采用极低(二)——**协议层交付物不得作为 KPI 或效果承诺出售**。
-- **数字冲突纪律**:同一指标多套口径(Reddit 份额 10%/16.7%/21%/46.7% 因引擎与月份而异)——客户材料引用任一数字必须带引擎名+月份+来源,缺一即删。
-- **品牌词 AIO 骤增的合规面**:品牌词 AI 概述中竞品/负面内容的管理只能走内容与实体信号,不存在"申诉删除 AIO"通道——承诺能删的供应商直接列黑。
-
-## 七、工具表
-
-| 工具 | 用途(英文区) | 口径备注 |
+| 追踪方 | 读数 | 口径 |
 |---|---|---|
-| DemandSphere 日频 SERP 追踪 | 品牌词 AIO 覆盖骤增监测 | 品牌词口径,月度重跑 |
-| Ahrefs(AI Overviews 研究/Brand Radar) | AIO 出现率交叉印证;引用域份额与品牌关联 | 与 DemandSphere 并记 |
-| Surfer AI Search Analytics | ChatGPT/AI Mode 被引域 top-50(5.73M 引用口径) | 厂商研究 |
-| Cloro State of AI Search | 各引擎 top-10 集中度对照 | 引擎分列输入 |
-| GA4 AI Assistant 渠道 + source regex | AI 引荐归因(先修 Direct 漏损 ~70%) | 与旧自定义组对账 |
-| Lighthouse 13.5+ AGENTIC_BROWSING(PSI API) | ARD/WebMCP/llms.txt 技术验收 | 免费标准化 |
-| Google Search Status Dashboard | spam/core 更新事件对齐(2026 已 4 轮 spam) | 官方时间戳 |
-| SearchScore 可见度指数 | 102,873 域横排对照 | 厂商,仅参照 |
-| r/SEO + Search Engine Roundtable | 英文圈一手讨论与更新风向 | 与 SEL/SEJ 交叉 |
-| Keywords Everywhere AIO 追踪 | 日常低成本 AIO 出现率抽查 | 非验收口径 |
+| DemandSphere【三方】 | 品牌词 AIO 出现率 2026-09-01 为 26.12%;9/1–9/17 在 26–35%;9/18 起波动(57.43%、46.62%、56.97%、55.81%);9/26 69.21%;**9/27 90.48%(月内峰值)**;9/28 80.23%;9/29 82.06% | 每天每词测一次,全市场全设备,出现 AIO 即计(不看是否引用品牌) |
+| Ahrefs【三方】 | 2026-09-29 当天美国桌面品牌词 82.91%;月均:7 月 61.3%、8 月 65.1%、9 月 73.3% | 2026-07 至 09 的 2.328 亿条美国桌面 Google 抓取(品牌词 9,250 万条) |
+| Chris Long / SerpApi【三方】 | 100 个企业品牌里 93 个出现 AIO | 单次抽测,没有测点击 |
 
-> 复审节奏:本页数字半衰期 6 个月内(引用份额类 3 个月)——AIO 覆盖率与 Reddit/YouTube 份额两指标建议每月随监控报告刷新;协议层采用状态(二)季度复核。
+- 来源:[DemandSphere 2026-10-01](https://www.demandsphere.com/blog/branded-ai-overviews-september-2026)、[Search Engine Land](https://searchengineland.com/google-ai-overviews-jump-branded-queries-september-492962)(2026-10)、[Ahrefs](https://ahrefs.com/blog/ai-overviews-on-branded-searches/)。核对 2026-10-21。
+- Google 没有公布相关变更。两家追踪器同向,但都不解释品牌词怎么定义,不当成 Google 官方数字。
+- 这是**品牌词**口径。全查询口径另有读数:Comscore 报告美国桌面搜索带 AIO 的比例 2025-07 为 25.8%,2026-06 为 39.4%(【三方】[Comscore Q2 2026 AI Intelligence Report](https://www.comscore.com/Insights/Press-Releases/2026/9/Comscores-Q2-2026-AI-Intelligence-Report))。引用任何 AIO 比例,都要写追踪器、月份和查询集。
+- 零点击:SparkToro 用 Similarweb 点击流面板,测得美国 Google 零点击搜索 2024 年为 60.45%,两年增加 7.5 个百分点,即约 68%(【三方】[SparkToro 2026-06](https://sparktoro.com/blog/in-2026-less-than-one-third-of-google-searches-still-send-a-click/))。这不是 Comscore 的数字。
+- 做法(本套件口径):品牌词 SERP 审计从季度改月度;品牌词承载页(关于、定价、对比、评价汇总)逐页写清主体、数字、日期和方法;品牌词里出现负面或竞品内容时,只能靠内容和实体信号处理,没有「申诉删除 AIO」的官方通道。
 
-## 来源(2026-10-09 读取)
+### 2. AI 格局的其他读数
 
-- DemandSphere:[branded-ai-overviews-september-2026](https://www.demandsphere.com/blog/branded-ai-overviews-september-2026);转述:[Search Engine Land](https://searchengineland.com/google-ai-overviews-jump-branded-queries-september-492962)、[Keywords Everywhere](https://keywordseverywhere.com/news/ai-overviews)、[Safari Digital](https://www.safaridigital.com.au/blog/ai-overview-aio-statistics)
-- 2026-09 spam 更新:[Search Engine Land](https://searchengineland.com/google-september-2026-spam-update-done-rolling-out-493550)、[PPC Land(manual actions)](https://ppc.land/googles-september-spam-update-ends-after-13-days-as-manual-actions-rise/)、[Search Engine Roundtable](https://www.seroundtable.com/google-september-2026-spam-update-done-42235.html)
-- 引用研究:Surfer [ChatGPT top-50](https://surferseo.com/blog/most-cited-domains-chatgpt) / [AI Mode top-50](https://surferseo.com/blog/most-cited-domains-ai-mode);Cloro [State of AI Search](https://cloro.dev/research/state-of-ai-search);GreenFlag [citation decay](https://greenflagdigital.com/chatgpt-citation-study);5WPR State of AI Citations 2026、Strivelabs 六研究汇总、Resocial(转述口径)
-- Reddit 格式:LinkedIn/Nicholas Dulait [Reddit GEO 2026](https://www.linkedin.com/pulse/reddit-geo-2026-5-steps-get-cited-nicholas-dulait-f37pe);机构榜单:[Posirank](https://posirank.com/blog/top-10-reddit-marketing-agencies-for-aeo-geo-2026-guide)、[Parse](https://parse.gl/blog/best-reddit-marketing-agencies-for-ai-visibility-2026)
-- 协议层:[Chrome WebMCP origin trial](https://developer.chrome.com/blog/ai-webmcp-origin-trial)、[SEJ/ARD 11 厂商](https://www.searchenginejournal.com/the-web-is-growing-a-second-layer-almost-a-third-head/581147)、[nz365guy 试点](https://nz365guy.com/blog/four-websites-agent-ready-webmcp)
-- 测量:GA4 AI Assistant 渠道([WebFX](https://www.webfx.com/blog/ai/google-analytics-ai-assistant-traffic))、Direct 漏损 ~70%([TapClicks](https://www.tapclicks.com/blog/how-to-track-ai-referral-traffic-and-fix-your-marketing-attribution-in-2026))、[SearchScore](https://searchscore.io/research/ai-search-visibility-ceiling-2026)
-- 格局:Comscore/零点击([Quartz](https://qz.com/google-zero-click-searches-rate))、社媒链接差(Social Media Today 转述)、GPTBot 8.05%([TechnologyChecker Q3](https://technologychecker.io/blog/chatgpt-statistics))
+- ChatGPT 每周 12 亿用户(OpenAI DevDay,2026-09-29;【官】[DevDay 2026 recap](https://openai.com/index/devday-2026-recap/))。
+- 爬虫构成:Cloudflare Radar 的 2026 Q3 读数经 TechnologyChecker 转引:GPTBot 占 AI 爬虫请求的 8.05%(一年前 12.21%),OAI-SearchBot 翻倍到 2.81%(【三方】[TechnologyChecker](https://technologychecker.io/blog/chatgpt-statistics),未读到 Radar 原始页)。含义:日志里不要用 GPTBot 体积推断引用机会;封训练爬虫时别连带封检索爬虫。
+- AIO 与 AI Mode 的社媒链接差:SE Ranking 10 万关键词研究,社媒平台链接出现在 67.66% 的 AIO 回答和 32.39% 的 AI Mode 回答里(【三方】[Social Media Today 2026-10-07](https://www.socialmediatoday.com/news/ai-favors-brands-with-an-active-social-media-presence/832450/) 转述;SE Ranking 原文未读)。
 
-## 八、本地实测(2026-10-09)
+### 3. Google 2026-09 spam 更新
 
-**跑了什么**:en.wikipedia.org(内容站)+ www.craigslist.org(分类信息/交易站)× `site_audit --market en` / `llmstxt check` / `head_check`;ebay.com、etsy.com 主页对审计 UA 403(见盲区 1)。
+- 【官】[Search Status Dashboard](https://status.search.google.com/incidents/XhUDXP7A67iHCD2kmbVu):2026-09-24 09:15 PDT 发布,2026-10-08 01:00 PDT 结束,全球、全语言。
+- 时长 13 天 16 小时,是 2025-08 以来最长(【三方】[PPC Land](https://ppc.land/googles-september-spam-update-ends-after-13-days-as-manual-actions-rise/))。2026 年已有 4 轮 spam 更新:3 月 24–25 日、6 月 24–26 日、8 月 18–21 日、9 月 24 日–10 月 8 日;[Search Engine Roundtable](https://www.seroundtable.com/google-september-2026-spam-update-done-42235.html) 列出的 2025 年只有 8 月 26 日–9 月 22 日一轮。
+- 工具侦测到的波动窗口:9/25–27、9/30、10/4–6(Search Engine Roundtable 汇总 14 个工具)。人工处罚增多是 SEO 从业者的反馈,不是 Google 数据。
+- 做法:用 Status Dashboard 的时间戳对齐,不用工具波动单方面定性。
 
-**输出摘要**:
+## 二、协议层进展(ARD / WebMCP)
 
-- **wikipedia**:desc 缺失 CRITICAL(首页确实无 meta description)、2 个 H1、669 链接>100、alt 缺 5/23;**四条 AI 检索爬虫全放行**——与"被引最多域名"地位自洽;llms.txt 404(判无,准确);head_check ERROR=`link rel=edituri` 弃用,og:image 绝对 URL 通过。
-- **craigslist**:title 83 chars **真实超限 60**、2 H1、h1→h4 跳级、html 无 lang、458 链接;AI 爬虫放行;llms.txt 404。
-- **etsy(403 站的例外)**:主页 403 挡掉 site_audit/head_check,但 **/llms.txt 200 且是真 llms.txt(首行"# Etsy: official reference for AI assistants")**——大型电商把 llms.txt 当一线实践;同一 UA 下静态文件可取、HTML 应用被墙,三工具中只有 llmstxt 探测穿透。
-- head_check 跨站规律:twitter:* 全套弃用 ERROR 在 naver/tistory/note/yahoo 等站也全中——2026 口径判定合理,但头部大站普遍不清理,审计报告须按"行业现状噪音"降档解读。
+基线见 [agent-readiness.md](../technical/agent-readiness.md)。这里只记 2026-10 核到的事实。
 
-**工具盲区(实测确认)**:
+- ARD(Agentic Resource Discovery):Google 于 2026-06-17 发布规范(【官】[Google Developers Blog](https://developers.googleblog.com/announcing-the-agentic-resource-discovery-specification/));Microsoft 的页面写明与 GoDaddy、Google、Hugging Face 等合作开发(【官】[Microsoft](https://commandline.microsoft.com/agentic-resource-discovery-specification-ard/))。机制是站点在 well-known 路径放 `ai-catalog.json`,客户端运行时发现并调用。之前写的「11 厂商共同署名」「NVIDIA」「anti-MCP 联盟」找不到来源,已删。
+- WebMCP:Chrome 149 起开放 origin trial(【官】[Chrome 博客 2026-06-09](https://developer.chrome.com/blog/ai-webmcp-origin-trial))。落地样本很少:一个团队在 2026-07 给 4 个生产站点加了只读工具、人工确认表单和机器可读内容索引(【三方】[nz365guy 2026-07-13](https://nz365guy.com/blog/four-websites-agent-ready-webmcp))。「M149–M156」「Edge 平行 trial」「唯一实证消费者是 ChatGPT 桌面浏览器」未找到来源,已删。
+- Lighthouse 有 Agentic Browsing 类别(【官】[Chrome 文档 2026-05-05](https://developer.chrome.com/docs/lighthouse/agentic-browsing/scoring)),可作技术验收。
+- 本套件口径:协议层是低成本期权;交付物不能当 KPI 或效果承诺;汇报时写采用现状,验收不承诺引用收益。
 
-1. **bot 墙盲区**:ebay/etsy(及 ko 市场 coupang)主页对 stdlib UA 一律 403,site_audit/head_check 完全失效——大站审计需浏览器口径,报告必须标注"未穿透";
-2. desc 下限 80 与 en 常规文案实践偏松紧不一(小 desc 常态 WARN),严重度需人工调档;
-3. GA/AI 归因类(第五节)不在任何本地工具覆盖内,维持月度手工口径。
+## 三、引用份额:先看分母
+
+同一个「Reddit 份额」,三家的分母不同,数字差 20 倍以上。引用前先写分母。
+
+| 来源 | 读数 | 分母 |
+|---|---|---|
+| Ahrefs Brand Radar,2026-09【三方】 | Reddit 16.8%、Wikipedia 7.0%、Consumer Reports 3.7%、Forbes 3.1% | 美国全主题,ChatGPT 的**头部来源**引用总和([Ahrefs](https://ahrefs.com/blog/most-cited-domains-in-chatgpt/));2026-07 读数 Reddit 16.7% |
+| Surfer AI Search Analytics,2026-09-01–28【三方】 | Reddit 占全部 ChatGPT 引用的 0.74%(占 top-50 的 8.82%);50 个头部域名合计只占 8.4% | 约 573 万条 ChatGPT 引用([Surfer](https://surferseo.com/blog/most-cited-domains-chatgpt/)) |
+| Promptwatch,2026-08【三方】 | Reddit 在 ChatGPT Search 引用中的份额 2026-07-18–08-07 为 3.83%,08-14–17 降到 0.52%(降 86%);OpenAI 称没有改过选源方式 | ChatGPT Search 全部引用([Search Engine Land 2026-08-19](https://searchengineland.com/reddit-chatgpt-search-citations-fall-report-485473)、[Semrush 转述](https://www.semrush.com/blog/reddits-citations-in-chatgpt-fall/)) |
+| 5WPR,2025【三方】 | ChatGPT 的 Reddit 引用份额约 60%→10%(2025-08 至 09 中旬) | 5WPR 报告口径,方法见原文([5WPR](https://www.5wpr.com/research/state-of-ai-citations-2026/)) |
+
+- 结论:Reddit 的 ChatGPT 引用在 2026-08 确有下降(Promptwatch),但「塌陷到 0.5%」「YouTube 取代 Reddit」不能和 Ahrefs 的 16.8% 放在一张表里比。早先文件里「Strivelabs 六研究汇总:YouTube 26.47% / Reddit 17.39%」找不到来源,已删;「Ahrefs 降 86%」是 Promptwatch 的数字,已更正。
+- Perplexity:Profound 报告 Reddit 占 Perplexity top-10 来源引用的 46.7%(2025-06 发布,数据区间 2024-08 至 2025-06)(【三方】[Profound](https://www.tryprofound.com/blog/ai-platform-citation-patterns))。这是一年多前的读数,不能写成「仍成立」。
+- Google AI Mode:Surfer 2026-09 约 479 万条引用里,google.com 占 13.82%、youtube.com 6.77%、reddit.com 3.17%、facebook.com 0.69%;Google 自有站点占前 50 域名引用的 67.8%(【三方】[Surfer](https://surferseo.com/blog/most-cited-domains-ai-mode/))。
+- 引用衰减:GreenFlag 追踪 2025-10 被 ChatGPT 引用最多的 215 个金融类页面,一年后 107 个(50%)零引用,整体只保留约 14% 的引用量(【三方】[GreenFlag 2026-09-21](https://greenflagdigital.com/chatgpt-citation-study/))。Cloro 的 735 条提示篮子里,ChatGPT 引用页面的年龄中位数约 150 天,67% 发布于近 12 个月内(【三方】[Cloro](https://cloro.dev/research/state-of-ai-search))。做法(本套件口径):新鲜度是持续供给,给支柱页排月度增量(新数据加新日期),不做一次性大改。
+- 已删:Reddit 高引格式「300–600 词、50+ 赞」(原文是 LinkedIn 文章,读不到方法)、「YouTube+Reddit 占社媒引用 86%」(Slate)、「57% 被引域不会再被引」(digitalapplied)、「发布 <3 个月被引概率 3×」(来源是一篇厂商博客,方法未读到)。
+
+## 四、外链与引用集中度
+
+- 各引擎 top-10 域名集中度(Cloro,735 条提示篮子,【三方】[Cloro](https://cloro.dev/research/state-of-ai-search)):Google AI Mode 25.4%、Perplexity 18.9%、ChatGPT 17.5%、Copilot 14.3%、Gemini 13.8%。Cloro 页面说明这版比早先偏商业的快照更分散,旧文件里的 57.8% / 27.3% / 25.1% / 18.3% / 17.3% 已被取代。
+- 大型 UGC 平台(固定 17 个平台名单)在各引擎引用里的占比:AI Mode 19.0%、Perplexity 11.8%、Gemini 5.0%、Copilot 2.4%、ChatGPT 1.7%(同上)。含义:Reddit 帖子、YouTube 视频对 AI Mode 和 Perplexity 有用,对 ChatGPT 几乎是死路。
+- 引擎间被引域名重合很低:Andy Crestodina 追踪 13,184 条 AI 引用、4 个 LLM,ChatGPT 与 Perplexity 在两个查询集上分别共享 7.6% 和 5.4% 的被引域名(【三方】[LinkedIn](https://www.linkedin.com/pulse/we-tracked-13184-ai-citations-across-4-llms-heres-what-crestodina-ivluc))。做法:每个引擎单独建问题集,单独汇报。
+- 数字 PR(本套件口径):先查目标域在目标引擎的在场率,再决定投放,不按传统域名权重(DR)投。
+- 已删:Resocial「Wikipedia 32% / Reddit 21%」加权、Posirank/Parse 的「Reddit 代运营机构榜」(两者都读不到方法或原文)。
+
+## 五、AI-GEO 测量
+
+- GA4 在 2026-05-13 公告把「AI Assistant」加进默认渠道组(【官】[What's new in Google Analytics](https://support.google.com/analytics/answer/9164320?hl=en);[SEJ 2026-05-14](https://www.searchenginejournal.com/google-analytics-adds-ai-assistant-as-default-channel-group/574974/))。第三方实测它认得 ChatGPT、Gemini、Claude,认不全 Perplexity 和无 referrer 的访问(【三方】[digitalapplied](https://www.digitalapplied.com/blog/ga4-ai-assistant-channel-2026-measure-ai-traffic-playbook))。做法(本套件口径):先看内置渠道,再和旧自定义渠道组对账,不并行混报两套口径。
+- 归因漏损:没有 referrer 的 AI 访问可能记成 Direct(TapClicks 指南原文),所以 AI 流量是下界。「~70% 记成 Direct」这个数字在 TapClicks 页面里读不到,已删。
+- ChatGPT 外链常带 `utm_source=chatgpt.com`(【三方】[Seer Interactive](https://www.seerinteractive.com/insights/are-ai-sites-like-chatgpt-sending-your-website-traffic));Perplexity、Gemini 没有对等行为的证据,不要假设对称。
+- 品牌词和品类词的 fan-out 分开建问题组(本套件口径)。四级阶梯(retrieved → cited → mentioned → recommended)不变,见 [geo-platform-differences.md](../content/geo-platform-differences.md)。
+- 已删:SearchScore「102,873 域指数」(来源页读不到)。
+
+## 六、红旗
+
+- **买「提及」**:Google 的生成式 AI 优化指南写明,寻求「不真实的提及」没有看上去那么有用:核心排名系统看高质量内容,其他系统拦 spam,AI 功能依赖这两者(【官】[AI 优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide),核对 2026-10-21)。原文没有用「spam 风险」这个词;「买赞、代发评论」属于本套件的风险判断。
+- **单平台押注**:5WPR 报告 ChatGPT 的 Reddit 引用份额在 2025-08 至 09 中旬约 6 周内从约 60% 降到约 10%;Promptwatch 报告 2026-08 又有一次下降。份额会在几周内变,押单一被引平台有风险,含 YouTube。
+- **llms.txt**:同一份指南写明 Google 不需要 llms.txt;可以为别的系统建,对 Google 可见性既无害也无益。ARD、WebMCP 同理,不当 KPI 卖。
+- **数字冲突纪律**:同一指标出现多套读数,客户材料引用任一数字都要带引擎名、月份、分母和来源。
+- **AIO 骤增的话术**:承诺能「删除」品牌词 AIO 的供应商,不采用。
+
+## 七、工具
+
+| 工具 | 用途 | 口径备注 |
+|---|---|---|
+| DemandSphere / Ahrefs | 品牌词 AIO 出现率 | 两家并记,月度重跑 |
+| Surfer AI Search Analytics / Cloro / Ahrefs Brand Radar | 各引擎被引域名 | 厂商研究,先看分母 |
+| GA4 AI Assistant 渠道 | AI 引荐 | 下界口径 |
+| Lighthouse Agentic Browsing | ARD、WebMCP、llms.txt 技术验收 | 免费 |
+| Google Search Status Dashboard | spam 与 core 更新时间戳 | 官方 |
+| `scripts/citation_panel.py` | 人工采样台账 | 见检查清单 |
+
+## 八、检查清单
+
+| # | 检查什么 | 怎么查 | 通过判据 |
+|---|---|---|---|
+| 1 | 品牌词 AIO | 列 20–50 个品牌词(品牌名、品牌+定价、品牌+对比、品牌+评价),每月同一天用美国英语无痕窗口查;`python3 scripts/citation_panel.py init --brand B --prompts brand_prompts.csv --engines chatgpt,perplexity,gemini`,每次采样后 `record --engine chatgpt --file run.csv`,`report --brand B` | 每词记 AIO 有无、引用域名、正负面;连续两月同口径可比;负面或竞品内容有处置工单 |
+| 2 | AI 检索爬虫放行 | `python3 scripts/robots_posture.py https://site/robots.txt --json` | `visibility_failures` 为空;训练爬虫封不封是授权决策,单独记 |
+| 3 | AI 引荐归因 | GA4「报告 → 获客 → 流量获取」,按默认渠道组看是否有 AI Assistant 行;日志侧 `python3 scripts/ai_referral_log.py access.log --classify` | AI Assistant 行存在;日志里 AI 引荐 UA 的失败率先剔除探测路径再算 |
+| 4 | 更新对齐 | 对照 Status Dashboard 的开始与结束时间,GSC 比较开始前 14 天与结束后 14 天 | 变化落在窗口内才归因更新;GSC 展示数据在 2025-05-13 至 2026-04-27 不可比,不跨这段比较 |
+| 5 | 引用衰减 | `python3 scripts/citation_panel.py decay --metric cited --engine chatgpt` 每月一次,每个引擎单独判定 | 顶引页面季度流失 ≥30%(本套件口径)时,检查内容更新管线 |
+| 6 | 协议层交付 | `python3 scripts/llmstxt.py check https://site`;Lighthouse Agentic Browsing | 交付文档写「已部署」,不写「会带来引用」 |
+| 7 | 英文变体 | `python3 scripts/hreflang_cluster.py https://site/en-us/x https://site/en-gb/x`;`python3 scripts/site_audit.py URL --market en` | 簇内互指;`en` 兜底加需要的国家码 |
+| 8 | Bing / Copilot 侧 | `python3 scripts/bing_wmt.py stats`(需 API key)与 `pagequery` | 品牌词在 Bing 有数据;GSC 之外的查询有补充 |
+
+## 九、本地实测(2026-10-09,本套件记录)
+
+- 跑了 en.wikipedia.org 与 www.craigslist.org × `site_audit --market en` / `llmstxt check` / `head_check`;ebay.com、etsy.com 主页对审计 UA 返回 403。
+- wikipedia:首页无 meta description、2 个 H1、alt 缺 5/23;四条 AI 检索爬虫放行;`/llms.txt` 404。craigslist:title 83 字符超出 60、2 个 H1、h1→h4 跳级、html 无 lang;AI 爬虫放行;`/llms.txt` 404。etsy:`/llms.txt` 返回 200 且首行是「# Etsy: official reference for AI assistants」(2026-10-09 读到;每季抽查)。
+- **脚本口径 2026-10-21 已改**:缺 H1、缺 description 记 WARN(不再是 CRITICAL);`head_check` 里 twitter:* 与 OG 重复只记 INFO(不是弃用),`edituri` 等旧标签记「可删旧标签」INFO;`desc` 下限取 `markets.json` 的 `desc_min`。上面两个站的 CRITICAL/ERROR 按旧口径,复跑以新口径为准。
+- 盲区:ebay、etsy(以及 ko 市场的 coupang)对 stdlib UA 返回 403,`site_audit` 与 `head_check` 失效,大站审计需要浏览器口径,报告标注「未穿透」;GA/AI 归因类不在本地工具覆盖内,维持月度手工口径。
 
 ## 维护
 
 - 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.en.review_cycle` 保持一致,以 json 为准。
-- 触发即复审的信号:Google Search Status Dashboard(spam/core 更新时间戳)、DemandSphere/Ahrefs 品牌词 AIO 覆盖月度研究、Chrome WebMCP origin trial/ARD 采用进展、GA4 AI Assistant 渠道口径变化、ChatGPT/Perplexity 引用池份额季度研究。
-- 断言半衰期 6 个月内(引用份额类 3 个月);etsy llms.txt 存在性与 403 墙组合属可变基础设施,每季抽查。
+- 触发即复审:Google Search Status Dashboard(spam 与 core)、DemandSphere / Ahrefs 品牌词 AIO 月度读数、Chrome WebMCP 与 ARD 采用进展、GA4 渠道口径变化、Ahrefs / Surfer / Cloro 月度引用研究(先核分母是否变)。

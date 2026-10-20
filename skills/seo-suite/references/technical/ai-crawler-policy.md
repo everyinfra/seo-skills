@@ -113,7 +113,7 @@ Disallow: /
 | 韩语区 | Naver `Yeti` | robots 要点见下；收录与报表见 [naver-searchadvisor.md](naver-searchadvisor.md) | 韩语流量的前提是被 Naver 收录 |
 | 日语区 | `Bingbot` | StatCounter 全平台：Bing 2026-01 至 2026-09 月度 24.3%–36.4%，2026-09 为 31.6%（第三方）；Bing 索引同时服务 Copilot（官方） | Bing Webmaster Tools 验证列为必做项 |
 | 越南 | Cốc Cốc | StatCounter：2026-09 为 5.96%（第三方）；2023-05-29 推出 AI Chat 与 AI Search（[官方新闻稿](https://press.coccoc.com/bai-viet/coc-coc-chinh-thuc-ra-mat-ai-chat-va-ai-search-toi-uu-hoa-cho-nguoi-viet/)） | 越南向站点把 Cốc Cốc 纳入可达性抽查 |
-| 中文 | `Baiduspider` / `Bytespider` | `Bytespider` 没有官方文档（第三方观察）；中文引擎细则见 [chinese-ai-search-guide.md](../content/chinese-ai-search-guide.md) | 中文站先确认 `Baiduspider` 没被禁 |
+| 中文 | `Baiduspider` / `Bytespider` | 百度官方：UA 含 `Baiduspider/2.0` 或 `Baiduspider-render/2.0`；不公布 IP 段（动态变化），验证靠双向 DNS——反向解析主机名必须是 `*.baidu.com` 或 `*.baidu.jp`，再正向解析回原 IP（[百度搜索资源平台，2022-02-08，核对 2026-10-21](https://ziyuan.baidu.com/college/articleinfo?id=3378)）。`Bytespider` 没有官方文档（第三方观察）；中文引擎细则见 [chinese-ai-search-guide.md](../content/chinese-ai-search-guide.md) | 中文站先确认 `Baiduspider` 没被禁；日志核真伪用 `host <IP>` 后再 `host <主机名>` |
 | 全局 | Mistral 三个爬虫 | User / Index / Training 三分工（Mistral 官方） | 放行 User 与 Index；Training 按战略定 |
 | 全局 | 过时 token | Anthropic 官方页只列三个 bot，OpenAI 只列四个；`anthropic-ai`、`Claude-Web`、`ChatGPT-Plugins` 不在官方页 | 审计先查死 token（`robots_posture.py` 的 `deprecated_tokens` 字段） |
 
@@ -132,7 +132,7 @@ Disallow: /
 ## 四、暗坑清单
 
 1. **WAF/CDN 拦截**：robots.txt 只表达意愿。CDN 的 WAF 或「你是人吗」验证页可能先拦下真 bot。Google 建议：临时拦截返回 503 或 429；对爬虫的验证页也改回 503；不要返回带 200 的错误页；网络超时会让 URL 被移出索引（[Google 2024-12-24](https://developers.google.com/search/blog/2024/12/crawling-december-cdns)）。
-2. **Cloudflare 托管 robots.txt**：开启后，Cloudflare 在源站 robots.txt 前面插入托管段（`# BEGIN Cloudflare Managed content`），内含 `Content-signal` 行和对 GPTBot、ClaudeBot、CCBot、Google-Extended、Amazonbot 等的 Disallow；源站没有 robots.txt 时由 Cloudflare 生成（[官方](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/)）。这段只在线上响应里。审计必须抓线上响应，不能只看源文件。
+2. **Cloudflare 托管 robots.txt**：官方称为 Bot Preference Sync。你在 Search、Agent、Training 三类策略里至少有一项设为 Block（或 Training 设为 Disallow）时，Cloudflare 生成托管指令。源站 robots.txt 返回 HTTP 200 时，托管段（`# BEGIN Cloudflare Managed content`）被插到源文件前面，合成一份响应；源站没有 robots.txt 时由 Cloudflare 生成。官方示例的托管段含 `Content-signal` 行和对 Amazonbot、Applebot-Extended、Bytespider、CCBot、ClaudeBot、Google-Extended、GPTBot、meta-externalagent 的 Disallow（[官方](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/)，核对 2026-10-21）。这段只在线上响应里。审计必须抓线上响应，不能只看源文件。
 3. **把 `Google-Extended` 当 AIO 开关，把 `GPTBot` 当 ChatGPT 引用开关**：两者都错，见第一节。
 4. **只按 IP 封 bot 来退出**：Anthropic 称这会妨碍它读 robots.txt，不能保证退出（官方）。
 5. **ai.txt 等非标准文件**：未见引擎公开承诺遵守（本套件口径）。有则无害，无则不扣分。
@@ -194,4 +194,4 @@ robots.txt 只有封和放两态。Cloudflare AI Crawl Control（原名 AI Audit
 
 **第三方**：StatCounter 搜索引擎份额（全平台月度 CSV，2026-01 至 2026-09）；[Mozilla Foundation 2024-02](https://www.mozillafoundation.org/en/research/library/generative-ai-training-data/common-crawl/)（Common Crawl 与生成式 AI 训练数据）。
 
-**已知偏差**：`scripts/robots_posture.py` 的 27 bot 名单与官方页有出入。它把 `Amazonbot` 记为搜索类（官方是训练/产品，搜索类是 `Amzn-SearchBot`），把 `PetalBot` 记为训练类（官方是搜索），把 `Google-CloudVertexBot` 记为训练类（官方是站长委托的 Vertex AI Agents 抓取）；`Google-Extended`、`Applebot-Extended` 只是控制 token，日志里不会出现。名单缺 `Amzn-SearchBot`、`Amzn-User`、`meta-webindexer`、`MistralAI-User`、`MistralAI-Index`、`MistralAI-Training`、`Google-Agent`、`OAI-AdsBot`、`YandexAdditional`。名单里的 `cohere-ai`、`YouBot`、`xAI-Bot`、`AI2Bot-Dolma` 截至 2026-10-18 未找到可读的运营方官方文档，只有第三方目录。读脚本结果时以第一节为准。
+**脚本名单（2026-10-21 已按本文件对齐）**：`scripts/robots_posture.py` 现为 37 个 bot、四层（search 15、training 11、user 8、other 3），每个带官方核实标记；`Amazonbot` 不再记为搜索类，`PetalBot` 记为搜索，`Google-CloudVertexBot`、`cohere-ai` 不再记为训练，补了 `Baiduspider`、`Amzn-SearchBot`、`Amzn-User`、`MistralAI-*` 等。`scripts/ai_referral_log.py` 把 `GoogleOther` 移出训练类，官方页没有的 `Claude-Web`、`AzureAI-SearchBot`、`DeepSeekBot`、`GrokBot`、`Manus-User`、`Gemini-Deep-Research` 标「未核」，补了 `meta-webindexer`、`Google-Agent`、`OAI-AdsBot`、`YandexAdditional`、`Baiduspider`。`YouBot`、`xAI-Bot`、`AI2Bot-Dolma` 仍未找到运营方官方 bot 文档（截至 2026-10-21）。名单变化时以第一节为准，并同步两个脚本。

@@ -591,7 +591,7 @@ def cmd_init(args):
             "canonical_ok(canonical 正确率)/healthy_pages(健康页率);diff 后从近 "
             "window 天快照算实际值,剩余错误预算<25% → slo_budget_low(warn,建议冻结发布);"
             "report 顶部出 SLO 条形;单模板回归另看 site_crawl(crawl.page 口径)",
-            "heartbeat: 配 healthchecks.io 类 ping URL 后,run 成功 ping /ok、失败 ping /fail;"
+            "heartbeat: 配 healthchecks.io 类 ping URL 后,run 成功 ping URL 本身、失败 ping URL/fail;"
             "grace 建议 ≈ cron 间隔×2+典型运行时长",
         ],
     }
@@ -605,7 +605,7 @@ def cmd_init(args):
     print("  config.json 站点=%s 市场=%s 关键页=%s" % (site, cfg["market"] or "-", ",".join(key_pages)))
     print("  runs/        每次 run 的 JSON 快照")
     if heartbeat:
-        print("  heartbeat    %s(成功 ping /ok,失败 ping /fail)" % _redact_url(heartbeat))
+        print("  heartbeat    %s(成功 ping URL 本身,失败 ping URL/fail)" % _redact_url(heartbeat))
     print("下一步: python3 %s run --checks daily(先建基线,再部署 cron)"
           % os.path.basename(sys.argv[0]))
     return 0
@@ -1644,11 +1644,13 @@ def prune(conn, mdir, keep=400):
 
 
 def ping_heartbeat(url, ok, timeout=10):
-    """dead man's switch(audit 18):run 成功 ping <url>/ok,失败 ping <url>/fail
-    (healthchecks.io 同款语义;失败 ping 不等超时立刻发出)。URL 来自管理员 config,不设 SSRF 限制。"""
+    """dead man's switch(audit 18):run 成功 ping <url>,失败 ping <url>/fail
+    (healthchecks.io Pinging API:Success=`https://hc-ping.com/<uuid>` 无后缀,Failure=`…/fail`,
+    https://healthchecks.io/docs/http_api/ 2026-10-21 核对;修前成功 ping `<url>/ok`,不是官方端点。
+    失败 ping 不等超时立刻发出)。URL 来自管理员 config,不设 SSRF 限制。"""
     if not url:
         return
-    target = url.rstrip("/") + ("/ok" if ok else "/fail")
+    target = url.rstrip("/") + ("" if ok else "/fail")
     try:
         req = urllib.request.Request(target, headers={"User-Agent": "seo-suite-monitor/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -3237,7 +3239,7 @@ def build_parser():
     p.add_argument("--market", default="")
     p.add_argument("--key-pages", default="/", help="逗号分隔路径,默认 /")
     p.add_argument("--heartbeat-url", default="",
-                   help="dead man's switch ping URL(healthchecks.io 类;成功 ping /ok 失败 ping /fail)")
+                   help="dead man's switch ping URL(healthchecks.io 类;成功 ping URL 本身,失败 ping URL/fail)")
     p.add_argument("--dir", default=DEFAULT_DIR)
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_init)

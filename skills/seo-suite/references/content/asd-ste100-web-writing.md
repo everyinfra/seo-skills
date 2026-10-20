@@ -1,6 +1,6 @@
 # ASD-STE100 网页写法：短句、一句一事、主动语态、术语一致
 
-> 建立于 2026-10-18；一手来源复核于 2026-10-18。
+> 建立于 2026-10-18；一手来源复核于 2026-10-21（官网 About／FAQ、TechScribe 规则表与分析页、SKYbrary、Wikipedia 重新打开读过）。
 > 规范版本：**ASD-STE100 Issue 9**，2025-01-15 发布。官方说明这一版从 specification 改为 international standard，
 > 副标题为 "Standard for Technical Documentation"；下一版 Issue 10 计划 2028-01 发布（[官网 About](https://asd-ste100.org/about_STE.html)、[官网 FAQ](https://asd-ste100.org/STE_faq.html)）。
 > 规范免费，但要在官网填表申请 PDF。本文没有取得规范全文。规则编号和数字用官网公开页与可信二手资料交叉核：
@@ -53,10 +53,10 @@
 
 ## 四、和 SEO/GEO 的关系：只写有依据的部分
 
-- Google 有用内容自查列出的问题包括：内容有没有拼写或文体问题；是不是写得草率；标题是否给出描述性摘要、是否夸张。质量评估员看主要内容时，「技能」一项举的例子包括清楚的写作（[有用内容文档](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)，核对 2026-10-18）。
-- Google 生成式 AI 功能指南要求内容写得好、容易读，用段落、小节和标题组织。同一份指南也说：**不需要为生成式 AI 搜索用特定写法改写内容**，也没有理想页长（[AI 功能优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)，2026-07-10 更新，核对 2026-10-18）。
+- Google 有用内容自查列出的问题包括：内容有没有拼写或文体问题；是不是写得草率；标题是否给出描述性摘要、是否夸张。质量评估员看主要内容时，「技能」一项举的例子包括清楚的写作（[有用内容文档](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)，核对 2026-10-21）。
+- Google 生成式 AI 功能指南要求内容写得好、容易读，用段落、小节和标题组织。同一份指南也说：**不需要为生成式 AI 搜索用特定写法改写内容**，也没有理想页长（[AI 功能优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)，2026-07-10 更新，核对 2026-10-21）。
 - STE 官方说受控文本更容易翻译，包括机器翻译和大模型翻译（官网 FAQ）。这是翻译上的收益，不是搜索上的收益。
-- **没有实证**：截至 2026-10-18，本组没有找到 STE 或其他受控语言提升 Google 排名或 AI 引用的对照研究。不要写「用 STE 能提升排名或 AI 引用」。STE 的价值是读者更快、更准确地理解，这是工程价值，与 geo-evidence.md 第三节的口径一致。
+- **没有实证**：截至 2026-10-21，没有找到 STE 或其他受控语言提升 Google 排名或 AI 引用的对照研究。不要写「用 STE 能提升排名或 AI 引用」。STE 的价值是读者更快、更准确地理解，这是工程价值，与 geo-evidence.md 第三节的口径一致。
 
 ## 五、检查清单
 
@@ -117,8 +117,6 @@
 - **非文本块跳过**：一块里有 3 个以上 ISO 日期（`YYYY-MM-DD`，例如状态时间线、更新日志），或字母词不到全部词的一半（例如表格里的数字、代码片段），整块不查。中文块：汉字少于 4 个或不到全块 30% 时不查。跳过的块数记在 JSON 的 `stats.skipped_non_prose_blocks`。HTML 表格的每个单元格各算一块。
 - **STE-TERM-VAR 的范围**：只看「词 + 连字符或空格 + 词」的两部分词组和它的连写形式（例：api-key、api key、apikey）。两部分都至少 3 个字符、以字母开头，且都不是 a、an、the、of、to、in、on、at、by、or、and、is、it、as 这类虚词。两部分都大写开头的连字符写法（Retry-After、X-Foo 这类 HTTP 头名）不算。只差大小写不算变体。变体组里至少一种写法带连字符才报。这是启发式，会漏报；没有连字符的同义写法（例如 sign in 与 log in）查不到，用 `--glossary` 管。
 
-**实测**（2026-10-18，一个真实英文 API 文档站，站名不公开）：单页 140–366 句；程序句超过 20 词的 2–18 句，描述句超过 25 词的 4–19 句，分号 5–41 处。这些数字只说明这类页面的常见命中量，不是通过标准。
-
 **不重复实现**：句长节奏（CV）和 slop 词留给 `text_metrics.py` 与 `market_lint.py`；不可见字符清理留给 `text_metrics.py --scrub`。
 
 **测试期望值的来源**：只用规则原文给出的条件构造用例，不按实现反推。至少包括：20 词程序句不报、21 词报 FAIL（5.1）；25 词描述句不报、26 词报 FAIL（6.3）；括号内多词算 1 词（8.5）；"built-in" 算 1 词（8.7）；"The wires are disconnected." 只报 WARN（3.3 歧义例）；术语表禁用变体报 FAIL。
@@ -148,7 +146,7 @@
 
 **例 3：中文 FAQ 答案（本套件口径，非 STE 规范）**
 
-- 改前（1 句，83 字；`market_lint.py --market zh` 实测超过 25 字上限）：如果您想要对账单进行导出的话，可以通过点击右上角的设置按钮，然后在弹出的菜单中选择导出功能，系统将会自动为您生成一份包含所有历史记录的 Excel 文件，非常方便快捷。
+- 改前（1 句，84 字；`ste_lint.py --lang zh` 实测报 STE-LEN-X：84 > 25）：如果您想要对账单进行导出的话，可以通过点击右上角的设置按钮，然后在弹出的菜单中选择导出功能，系统将会自动为您生成一份包含所有历史记录的 Excel 文件，非常方便快捷。
 - 改后：
 
   ```text
@@ -159,7 +157,7 @@
   系统生成一个 Excel 文件，包含全部历史账单。
   ```
 
-- 改了什么：一句四件事拆成一问、一答、两步、一句结果，5 句平均 12.8 字（同一脚本实测）；「然后」连接的两个动作拆开；界面标签加引号，与界面一字不差；删掉「非常方便快捷」这类无法核对的评价。
+- 改了什么：一句四件事拆成一问、一答、两步、一句结果，5 句，汉字数 7／7／8／4／16，`ste_lint.py --lang zh` 实测无命中；「然后」连接的两个动作拆开；界面标签加引号，与界面一字不差；删掉「非常方便快捷」这类无法核对的评价。
 
 ## 八、常见误区
 
@@ -171,7 +169,7 @@
 
 ## 来源
 
-核对日期均为 2026-10-18。
+核对日期均为 2026-10-21。
 
 - 官方：[ASD-STE100 官网首页](https://www.asd-ste100.org/)、[About STE](https://asd-ste100.org/about_STE.html)（Issue 9、53 条规则、约 900 个批准词）、[FAQ](https://asd-ste100.org/STE_faq.html)（适用范围、被动语态、条件句首、工具不认证、翻译收益、Issue 10 计划）、[Downloads](https://asd-ste100.org/STE_downloads.html)（申请方式）。
 - 二手（STE 工具厂商与行业资料）：[TechScribe Issue 9 规则表](https://simplified-english.co.uk/rules-ste9.html)、[TechScribe 分析页](https://simplified-english.co.uk/analysis.html)（5.1 的 20 词、6.3 的 25 词、计词规则、被动语态歧义）、[TechScribe Issue 8 规则表（存档）](https://simplified-english.co.uk/rules-ste8.html)、[SKYbrary](https://skybrary.aero/articles/simplified-technical-english-ste)、[Wikipedia](https://en.wikipedia.org/wiki/Simplified_Technical_English)、[tcworld：Issue 9 变化](https://www.tcworld.info/e-magazine/column/asd-ste100-issue-9-setting-a-standard-for-technical-documentation)。

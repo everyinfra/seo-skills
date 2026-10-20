@@ -26,7 +26,7 @@ NAP=Name/Address/Phone。每格填"该平台当前值+与主源一致?"。主源
 |---|---|---|---|---|---|---|---|
 | 官网 contact 页(主源) | — | — | — | — | 基准 |  |  |
 | 官网 footer |  |  |  |  | ✓/✗/缺失 |  |  |
-| Organization schema(JSON-LD) |  |  |  | {sameAs 列表} |  |  | {如缺 sameAs 指向社交} |
+| Organization schema(JSON-LD) |  |  |  | {sameAs 列表} |  |  | {如缺 sameAs 指向社交;Google 文档:Organization 没有必需属性,尽量填适用的推荐属性} |
 | Google 商家资料 |  |  |  | {类目/营业时间} |  |  | {需自己账号核} |
 | {行业目录/门户} |  |  |  |  |  |  |  |
 | {社交主页}×N |  |  |  | {bio 一致性} |  |  |  |
@@ -40,6 +40,17 @@ NAP=Name/Address/Phone。每格填"该平台当前值+与主源一致?"。主源
 | 官网↔社交 sameAs 互指 |  |  |  |  |  |
 | 权威第三方收录 | {Wikipedia/行业库有无} |  | {搜索 site: 查询+日期} |  |  |
 | 品牌词 SERP 现状 | {知识面板有无/谁占} |  | {SERP 快照} |  |  |
+
+## 检查清单(逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 主源 NAP 一致 | 在官网 contact 页抄下 Name/Address/Phone 作基准;有实体门店时跑 `python3 scripts/local_audit.py --url https://站点 --name "店名" --addr "地址" --phone 电话` 看 §1 NAP 一致性 | 通过:`nap.name`/`nap.address`/`nap.phone` 全为 ✓。失败:出现 ✗ 或 ⚠(电话缺位也算缺口) |
+| 2 | 官网内部 footer 与 contact 页一致 | `curl -s URL | rg -i "tel:|地址关键词"`,逐页比对 | 通过:每页 NAP 与主源逐字一致。失败:任一页不同 |
+| 3 | Organization JSON-LD 存在、可解析、与可见内容一致 | `python3 scripts/schema_lint.py https://站点/`(看「块数 / 有效对象」行与 WARN 行);Google 无必需属性,所以人工核对 name、logo、url、sameAs 是否填了 | 通过:块数 ≥1、有效对象 ≥1、无 WARN,所标信息页面上看得到。失败:无块、悬空 @id、占位符,或标记了页面上没有的内容 |
+| 4 | sameAs 指向的社交主页真实存在,且反向链回官网 | 逐个打开 sameAs 链接,看主页 bio 里的官网链接 | 通过:每个 sameAs 可打开且回链官网。失败:404、改名或互不指向 |
+| 5 | 品牌词 SERP 现状 | 在目标市场的引擎里搜品牌词(无痕窗口,记录日期、地域、设备),截图 | 通过:记录了谁占前 10、有无知识面板。失败:没有截图或日期 |
+| 6 | 知识面板归属(有面板时) | 在 Google 搜索里点面板底部的认领入口,按[官方步骤](https://support.google.com/knowledgepanel/answer/7534902)验证 | 通过:已认领,或确认当前无面板。失败:面板有错误且未认领 |
 
 ## Fix Priority(修复优先级)
 
@@ -64,5 +75,5 @@ NAP=Name/Address/Phone。每格填"该平台当前值+与主源一致?"。主源
 
 ## Method Notes
 
-- 数据源与抓取时间:{逐平台人工核对+页面源码+日期}。已知坑:{知识面板全自动不可申请,实体认领走 Google 验证流程;schema 标记不存在的信息即违规}。数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{逐平台人工核对+页面源码+日期}。已知坑:{知识面板没有「申请生成」入口,面板出现后实体本人可在 Google 搜索里点「Claim this knowledge panel」走验证([Get verified on Google](https://support.google.com/knowledgepanel/answer/7534902),核对 2026-10-21);JSON-LD 不得标记页面上看不到的内容([结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies),核对 2026-10-21)}。数字缺失写 [要追加: 数据源],禁编造。
 - 符号:✓/✗/缺失 三态;P0=2 周内,P1=本季度,P2=backlog。逐市场信号清单见 entity-signal-checklist.md,图谱机制见 knowledge-graph-guide.md。

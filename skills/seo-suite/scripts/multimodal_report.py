@@ -6,7 +6,7 @@
   python3 multimodal_report.py --gsc gsc.csv [--videos videos.csv]
       [--top 15] [--min-impr 100] [--ctr 0.03] [--json]
 
-诚实口径(GSC 不拆图片/视频流量——references/content/image-search-seo.md §4.5):
+诚实口径(本脚本按落地页目录特征代理图片/视频流量;Search Console 2026-09-24 起有 multimodal 筛选,能导出时优先用它——references/content/image-search-seo.md 第一节):
   * gsc.csv 含 Search Appearance 列 → 精确口径:appearance 命中 image|video|lens|
     circle|multimodal 的行按页聚合(2026-09-24 起 GSC Performance 有 multimodal 过滤器,
     用它导出可去 [est]);
@@ -18,8 +18,8 @@
 
 输出三节:
   §1 视觉流量代理总览(图片向/视频向页面数与 clicks/impressions 及全站占比)
-  §2 视觉搜索候选页——高曝光低点击(曝光 ≥ --min-impr 且 CTR < --ctr,默认 3%:
-     图搜常态 CTR ~3% 口径)的图床/产品目录页清单,按曝光排序
+  §2 视觉搜索候选页——高曝光低点击(曝光 ≥ --min-impr 且 CTR < --ctr,默认 3%,本套件口径,
+     建议换成本站同类页的 CTR)的图床/产品目录页清单,按曝光排序
   §3 video-geo-guide 接线建议(按数据形态生成:视频页在场→VideoObject/字幕/章节;
      videos.csv 孤儿视频→自建 watch page;无 Search Appearance→GSC multimodal 重导出)
 
@@ -239,7 +239,7 @@ def render(overview, candidates, tips, gsc_path):
     if overview["basis"] == "appearance":
         print("口径: Search Appearance 列在场 → 精确(appearance 过滤)")
     else:
-        print("口径: GSC 不拆图片/视频流量,按落地页目录特征代理——数字均 [est]")
+        print("口径: 按落地页目录特征代理图片/视频流量(能导出 Search Console multimodal 筛选时优先用它)——数字均 [est]")
     print("\n-- §1 视觉流量代理总览 --")
     est = "[est]" if overview["basis"] == "directory_est" else ""
     print("图片向页面%s: %d 页 | clicks %d(全站 %.1f%%)| impressions %d(%.1f%%)" % (
@@ -279,7 +279,7 @@ def main(argv=None):
     ap.add_argument("--videos", help="可选视频清单 CSV(url/video 列)——与 GSC 落地页 join 找孤儿")
     ap.add_argument("--top", type=int, default=15, help="候选页清单上限(默认 15)")
     ap.add_argument("--min-impr", type=int, default=100, help="候选曝光阈值(默认 100)")
-    ap.add_argument("--ctr", type=float, default=0.03, help="候选 CTR 上限(默认 0.03)")
+    ap.add_argument("--ctr", type=float, default=0.03, help="候选 CTR 上限(默认 0.03,本套件口径;建议换成本站同类页的 CTR)")
     ap.add_argument("--json", dest="as_json", action="store_true", help="结构化输出")
     args = ap.parse_args(argv)
 

@@ -1,13 +1,22 @@
 # SEO Suite Capability Appendix(深读追加笔记)
 
-> 本文件是 [capability-map.md](capability-map.md) 的附录:四段深读吸收笔记(rampstack / open-seo / ai-marketing-claude / Awesome-LLMOps Search 工具版图),按能力集合归位。
-> 主文件只保留地图;这里的笔记在需要对应能力的操作细节时再读。内容为百仓深扫改写,非复制代码;来源见 NOTICE。
+> 用途:[capability-map.md](capability-map.md) 的附录。收四份第三方技能仓库的阅读笔记(rampstack / open-seo / ai-marketing-claude / Awesome-LLMOps Search 工具版图),再加一张新子系统的设计依据速查表。
+> **性质:第三方仓库在 2026-10-09 的快照笔记。笔记里的数字、阈值和「必须」是那些仓库自己的口径,不是 Google 或 Bing 的规则,也不是本套件已验证的事实。** 和搜索引擎官方文档冲突时,以官方文档为准;和 [geo-evidence.md](../content/geo-evidence.md) 冲突时,以后者为准。内容为改写,非复制代码;来源见 NOTICE。仓库核对 2026-10-21:四个来源仓库都可打开,GitHub 许可证字段为 rampstackco/claude-skills MIT、every-app/open-seo MIT、zubair-trabzada/ai-marketing-claude MIT、tensorchord/Awesome-LLMOps CC0。
+>
+> **检查清单(引用本文件前)**
+>
+> | 检查什么 | 怎么查 | 通过 / 失败判据 |
+> |---|---|---|
+> | 要引用的数字是不是搜索引擎规则 | 在 Google Search Central / Bing 文档里搜原句 | 官方有原句 → 写官方链接。没有 → 只能写成「某仓库口径」或「本套件口径」 |
+> | 来源仓库还在、没改名 | `gh api repos/<owner>/<repo> --jq '[.full_name,.pushed_at,.license.spdx_id]'` | 返回的 full_name 与笔记一致。不一致(如改名)就在笔记里注明 |
+> | 结论是否与 GEO 证据分级冲突 | 对照 [geo-evidence.md](../content/geo-evidence.md) | 不把 schema 深度、字段数当 AI 引用杠杆 |
+> | 新子系统是否登记 | `python3 tests/test_capability_matrix.py` | 通过 |
 
 ---
 
-# (rampstack 深读 2026-10-09b) rampstack 审计技能增量
+# (rampstack 深读 2026-10-09b) rampstack 审计技能增量(第三方口径)
 
-来源：[rampstackco/claude-skills](https://github.com/rampstackco/claude-skills) 的 seo-\* 与 programmatic-seo 共 12 个 SKILL.md 深读（seo-traffic-diagnosis、seo-site-health-audit、seo-aeo-geo 已在先前批次吸收，不重复）。按本图五集合归位。
+来源：[rampstackco/claude-skills](https://github.com/rampstackco/claude-skills)(MIT,2026-04-28 创建;下面的数字都是该仓库 SKILL.md 的原文口径,2026-10-21 抽查 seo-onpage、seo-offpage、seo-rank-tracking、seo-backlink-audit、programmatic-seo 五份,标题 50–60、描述 150–160、70/20/10/0、四桶 140–480 词、50–200 页抽检、>5% 失败即停等均能对上) 的 seo-\* 与 programmatic-seo 共 12 个 SKILL.md 深读（seo-traffic-diagnosis、seo-site-health-audit、seo-aeo-geo 已在先前批次吸收，不重复）。按本图五集合归位。
 
 ## research 增量
 
@@ -19,13 +28,13 @@
 
 - **seo-content-audit（5 动作决策树）**：keep / update / merge / redirect / delete（有意删除用 410，处理快于 404）。判据：90 天会话/自然点击/平均位置/展示/CTR/引域/停留/24 个月未更新/<300 词/零入链。决策树：有流量→近期衰减？→update : keep；无流量→有外链？→有合适目标页？→redirect :（重建）update；无外链→在蚕食另一页？→merge : delete。合并目标按信号强（老 URL、外链多、排名好）选而非内容多；删除前必查引域；蚕食先合并再更新；季节性页不按会话量批量删。
 - **seo-content-gap-audit（4 类机会）**：缺主题（create）/ 覆盖过薄（deeper 或扩成簇）/ 过时（refresh 事实+例子+年份+截图，并重新分发求重爬）/ 衰减（先诊断：SERP 特性变化、竞品发布、意图迁移、内链稀释）。Ahrefs（词/主题缺口）+ Similarweb（页面级真实流量）+ Semrush（SERP 特性缺口）三源。反模式：只创建不更新（更新/合并常以更低成本跑起新建）、把发布日期当货币、季节性误判为衰减（同比不环比）、刷新不重新分发、路线图无工作量与流量预估（拿不到预算）。
-- **seo-offpage（4 策略组合）**：赢得媒体（数据驱动的数字 PR/专家引语/播客）/ 自有可链资产（原创研究、工具、行业数据追踪器——复利）/ 伙伴关系（案例互链、联合营销）/ 引用与目录（GBP、Wikidata——实体合法性地基）。新站首年约 70/20/10/0（资产/引用/伙伴/赢得），成熟站可偏向赢得媒体。锚文本自然分布序：品牌 > 裸链 > 通用 > 部分匹配 > 精确匹配；每月约 5% 丢链率会复利，建找回流程；先让站值得被链再做外链。
+- **seo-offpage（4 策略组合）**：赢得媒体（数据驱动的数字 PR/专家引语/播客）/ 自有可链资产（原创研究、工具、行业数据追踪器——复利）/ 伙伴关系（案例互链、联合营销）/ 引用与目录（GBP、Wikidata——实体合法性地基）。新站首年约 70/20/10/0（资产/引用/伙伴/赢得），成熟站可偏向赢得媒体。锚文本自然分布序：品牌 > 裸链 > 通用 > 部分匹配 > 精确匹配；丢链要建找回流程（比新建便宜）；先让站值得被链再做外链。
 
 ## technical 增量
 
-- **seo-onpage（8 维度打分）**：title（50–60 字符、主词前置、与 H1 不逐字相同）/ meta（150–160，当广告文案写、带软 CTA）/ 标题层级（唯一 H1、不跳级、可当目录导航）/ 正文（首段即答主意图、段落 3–5 行可扫、含相关实体）/ 内链（出入各 2–3 条、描述性锚文本、链规范 URL）/ 图片（alt、描述性文件名、WebP/AVIF、宽高属性防 CLS、懒加载）/ slug（小写连字符、<60 字符、无日期无参数）/ 页面 schema（类型对、必填全、可过富结果测试、不向爬虫撒谎）。推送反模式："加 5 次关键词"（密度不是信号）、给 noindex 页做优化、双页打同一查询（先走 content-audit 定 canonical）。
+- **seo-onpage（8 维度打分）**：title（rampstack 口径 50–60 字符、主词前置、与 H1 不逐字相同）/ meta（rampstack 口径 150–160，当广告文案写、带软 CTA）/ 标题层级（rampstack 口径:唯一 H1、不跳级、可当目录导航）。**Google 原文**:title 与 meta description 都没有长度上限,只是按设备宽度截断（[title link](https://developers.google.com/search/docs/appearance/title-link)、[snippet](https://developers.google.com/search/docs/appearance/snippet)，核对 2026-10-21）;标题顺序和数量对 Google 搜索没有影响（[SEO 起始指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)）。上面三项只能当工具提示阈值/ 正文（首段即答主意图、段落 3–5 行可扫、含相关实体）/ 内链（出入各 2–3 条、描述性锚文本、链规范 URL）/ 图片（alt、描述性文件名、WebP/AVIF、宽高属性防 CLS、懒加载）/ slug（小写连字符、<60 字符、无日期无参数）/ 页面 schema（类型对、必填全、可过富结果测试、不向爬虫撒谎）。推送反模式："加 5 次关键词"（密度不是信号）、给 noindex 页做优化、双页打同一查询（先走 content-audit 定 canonical）。
 - **seo-technical（6 层栈）**：可爬取（robots 不挡 CSS/JS、无限空间）→ 可索引（canonical 自引用、无混合信号）→ 渲染（关键内容无 JS 可见、SPA 用 URL 检查验证、无 hydrate 丢内容）→ 架构（重要页 3 点击内、面包屑带 schema、无孤儿、重定向最多一跳）→ 结构化数据（JSON-LD 优先、Organization/BreadcrumbList、llms.txt）→ 页面体验与安全（HTTPS/HSTS、CWV、软 404）。下层坏则上层全坏。经典陷阱：过度 robots 屏蔽弄坏渲染；canonical 当指令用（内容真搬家用 301）；无重定向图的迁移是迁移后掉量第一大因。
-- **programmatic-seo（12 条军规）**：先答"该不该做"——真底层数据（记录 10+ 字段，理想 20+）、长尾查询量真实存在、意图可被数据呈现、刷新节奏匹配查询波动、QC 有预算（1 万页 ≈ 0.5–1.0 FTE）；默认答案是不做，除非数据独特或一方专业让页面真有用。数据源即护城河（一方/授权/专家策划/合成；抓取+AI 改写不是）；schema 深度 15+ 字段起步、30+ 才有竞争力，计算字段（如每平方英尺均价）与跨记录字段（"最相似的 5 个"）驱动页面深度和兄弟链；模板首 200 词直答该页查询（AEO 引擎摘的就是它）；变量密度容纳稀疏/稠密记录；抽检每周期 50–200 页、分层抽样，>5% 失败即停生成先修模板/数据；hub-and-spoke + 每页 5–15 条兄弟链、锚文本按记录特征变化；sitemap 分段、薄页 noindex（不达标字段不给公开 URL）、X vs Y 与 Y vs X 规范化到一边；季度数据刷新 + 分批模板迁移（每批监控 30 天）；12–24 个月无流量页 noindex/410。AI 引擎对薄 pSEO 惩罚比传统搜索更快——pSEO 页走事实型查询车道（价格、统计、对比），不抢编辑内容的分析型查询。
+- **programmatic-seo（12 条军规）**：先答"该不该做"——真底层数据（记录 10+ 字段，理想 20+）、长尾查询量真实存在、意图可被数据呈现、刷新节奏匹配查询波动、QC 有预算（1 万页 ≈ 0.5–1.0 FTE）；默认答案是不做，除非数据独特或一方专业让页面真有用。数据源即护城河（一方/授权/专家策划/合成；抓取+AI 改写不是）；schema 深度 15+ 字段起步、30+ 才有竞争力，计算字段（如每平方英尺均价）与跨记录字段（"最相似的 5 个"）驱动页面深度和兄弟链；模板首 200 词直答该页查询（AEO 引擎摘的就是它）；变量密度容纳稀疏/稠密记录；抽检每周期 50–200 页、分层抽样，>5% 失败即停生成先修模板/数据；hub-and-spoke + 每页 5–15 条兄弟链、锚文本按记录特征变化；sitemap 分段、薄页 noindex（不达标字段不给公开 URL）、X vs Y 与 Y vs X 规范化到一边；季度数据刷新 + 分批模板迁移（每批监控 30 天）；12–24 个月无流量页 noindex/410。pSEO 页走事实型查询车道（价格、统计、对比），不抢编辑内容的分析型查询——这是 rampstack 的建议（原仓库另称带深 schema 的 pSEO 页更易被 AI 引用；本套件不采用这一条，见 [geo-evidence.md](../content/geo-evidence.md)）。「1 万页 ≈ 0.5–1.0 FTE」「schema 15+ 字段起步」也是 rampstack 经验值。
 
 ## monitoring 增量
 
@@ -51,7 +60,7 @@
 
 # (open-seo 深读 2026-10-09b) coach 分诊 / 项目上下文 / 可观测性
 
-来源：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/seo-coach/SKILL.md`、`seo-project-setup/SKILL.md`、`observability-triage/SKILL.md`（Apache-2.0）。SEO 数据工作流部分已在前批吸收，此处只取 overview 集合相关的三个：交互分诊模式、跨会话共享上下文模型、数据管线自身的运维纪律。
+来源：[every-app/open-seo](https://github.com/every-app/open-seo) `.agents/skills/seo-coach/SKILL.md`、`seo-project-setup/SKILL.md`、`observability-triage/SKILL.md`（GitHub 许可证字段 MIT，核对 2026-10-21）。SEO 数据工作流部分已在前批吸收，此处只取 overview 集合相关的三个：交互分诊模式、跨会话共享上下文模型、数据管线自身的运维纪律。
 
 ## overview 增量
 
@@ -133,11 +142,11 @@
 | market-funnel（转化路径+RPV） | monitoring（转化/归因面）+ overview |
 | market-report / market-report-pdf（汇编+PDF 契约渲染） | monitoring（报告） |
 
-## Search 工具版图:向量库/混合检索/RAG 调试类(tensorchord/Awesome-LLMOps 深读 2026-10-09d)
+## Search 工具版图:向量库/混合检索/RAG 调试类(tensorchord/Awesome-LLMOps 深读 2026-10-09d,CC0 清单)
 
-来源:[tensorchord/Awesome-LLMOps](https://github.com/tensorchord/Awesome-LLMOps) README `## Search` 段全条目(Hybrid search 2 项 + Vector search 23 项)。定位:本套件自身不做检索,但当审计对象/客户要建"站点内容被 AI 检索到"的自有基础设施(站内语义搜索、知识库 RAG、给 AI 爬虫供数的 API)时,从这张图里选型,并据此理解**客户站点的 AI 可见性最终跑在什么检索栈上**。
+来源:[tensorchord/Awesome-LLMOps](https://github.com/tensorchord/Awesome-LLMOps) README `## Search` 段(2026-10-21 重读:Hybrid search 3 项 + Vector search 24 项)。来源核对 2026-10-21:README「Search」段现为 Hybrid search 3 项（Airweave、MemorySync、Remio）+ Vector search 24 项，共 27 项；下文按旧读取的 25 项整理，缺 Pinecone（托管向量库）与 Remio（本地优先个人知识库），不影响用途。定位:本套件自身不做检索,但当审计对象/客户要建"站点内容被 AI 检索到"的自有基础设施(站内语义搜索、知识库 RAG、给 AI 爬虫供数的 API)时,从这张图里选型,并据此理解**客户站点的 AI 可见性最终跑在什么检索栈上**。
 
-**向量库(按部署形态分组,README 全 23 项)**:
+**向量库(按部署形态分组;Pinecone 为托管型,未列入下列分组)**:
 
 - **Postgres 系(复用现有 PG,运维最省)**:pgvector(开源向量相似搜索)、VectorChord(tensorchord 自家,pgvecto.rs 后继,磁盘友好)、pgvecto.rs(Rust 插件)、ParadeDB(PG 上的事务型 ES 替代)、Rivestack(托管 PG+pgvector,免费 2GB)。
 - **专用向量库**:Milvus(大规模相似检索)、Qdrant(引擎+云)、Weaviate(对象+向量同存,结构化过滤,GraphQL/REST)、Epsilla、Vald(分布式)、Vearch(分布式 embedding 检索)、Awadb(AI 原生 embedding 库)、AquilaDB(潜在向量+JSON 元数据 kNN)。
@@ -145,7 +154,7 @@
 - **图+向量一体(实体与关系同查)**:Omnigraph(类 Git 分支合并的 typed 图库,S3 原生 Rust,遍历+向量+BM25 同运行时)、SynapCores(自托管:向量+Cypher 图+内嵌 GGUF 推理+SQL;源码闭源仅社区二进制)。
 - **AI 原生全家桶**:Infinity(infiniflow,向量+全文)、Marqo(tensor search)。
 
-**混合检索(词法+语义,2 项)**:Airweave(把任意应用数据变成 LLM 可搜的统一入口——即 RAG 摄取层)、MemorySync(面向 AI 编码助手的多租户持久记忆层+MCP server,50ms 内混合召回)。向量清单内也含混合能力:Infino 的 RRF、Infinity 的全文+向量、Vellum(Vellum 检索:托管文档摄取+混合语义/关键词,自带 OCR、分块、embedding 模型实验、元数据过滤)。
+**混合检索(词法+语义,README 列 3 项,含 Remio)**:Airweave(把任意应用数据变成 LLM 可搜的统一入口——即 RAG 摄取层)、MemorySync(面向 AI 编码助手的多租户持久记忆层+MCP server,50ms 内混合召回)。向量清单内也含混合能力:Infino 的 RRF、Infinity 的全文+向量、Vellum(Vellum 检索:托管文档摄取+混合语义/关键词,自带 OCR、分块、embedding 模型实验、元数据过滤)。
 
 **RAG 调试/评估类(Search 段内无独立小节,可归入此类的条目)**:txtai(语义搜索应用框架,含 RAG 管道)、Vellum(embedding 模型实验+分块策略=检索质量调参面)、Airweave(摄取连通性即 RAG 数据面调试)。**版图缺口提示**:README 的 Search 段只覆盖"库与引擎",检索质量评估、坏例挖掘、引用归因类专用工具未收录——做 GEO 咨询时客户问"我的 RAG 为什么引不到官网内容",答案仍在本套件的引用采样与抽取块体检,不在 Awesome-LLMOps 这张图里。
 
@@ -153,9 +162,9 @@
 
 ---
 
-# (v0.34.0 新子系统设计依据速查)一行表
+# 新子系统设计依据速查(一行表)
 
-> v0.34.0 扩容(38→52 脚本)新增子系统的设计依据与口径来源,全部指向 [borrow-specs.md](../research/borrow-specs.md) 对应节(borrow-specs 内【官方】=一手口径,[推断]=我们自定并注明)。开发新脚本或扩展现有脚本前先查该库,公式/阈值/字段契约不要凭记忆写。
+> 扩容时新增子系统的设计依据与口径来源,全部指向 [borrow-specs.md](../research/borrow-specs.md) 对应节(borrow-specs 内【官方】=一手口径,[推断]=我们自定并注明)。开发新脚本或扩展现有脚本前先查该库,公式/阈值/字段契约不要凭记忆写。
 
 | 新能力(落点) | 设计依据与口径来源(borrow-specs.md 节) |
 |---|---|
@@ -170,15 +179,15 @@
 | prioritize.py 条件优先级 | E2:Botify 条件规则【官方阈值示例】(放大器/条件依赖型/segment 切换重算) |
 | changelog.py 页面变更审计 | D1:Conductor 事件 schema【官方】(5 枚举 change_type/字段白名单/14 天日粒度更早周粒度) |
 | doctor.py 环境自检 | E3:claude-seo detect_tier(T0 纯静态→T3 GA4)+redact 纪律(只探键名不读值/渠道名不打值) |
-| citation_panel decay 子命令 | B1:Profound citation decay 协议【官方】(中位半衰期 11 天——另一口径 SSRN 调研 4.5 周,双口径并记见 multilingual-workflow.md 12.1/资格闸门 4 道/重写队列/跨引擎相关仅 0.03-0.09) |
+| citation_panel decay 子命令 | B1:Profound citation decay 协议(厂商研究,2026-09-30 博文:12 个月、88.3 万页、中位半衰期 11 天,跨引擎相关 0.03–0.09,[原文](https://www.tryprofound.com/blog/the-half-life-of-an-ai-citation-is-11-days),核对 2026-10-21);另一口径 SSRN 调研 4.5 周,双口径并记见 multilingual-workflow.md 12.1;资格闸门 4 道/重写队列为本套件口径) |
 | citation_panel diff signals 与 SoV 指标族 | B4:Scrunch Signals(Δ≥5pp 且配对 n≥10 才报/fingerprint/url_movers)+Peec SoV·win_rate·citation_rate 公式【官方】 |
 | citation_gaps.py 引用缺口 | B2:geo-aeo-tracker 算法直译(hasCompetitorRun=唯一高优先判据;外联简报七字段) |
 | oracle_check.py 品牌事实核查 | B4:Athena Oracle 差异检测(KB≥25 条门槛/finding 状态机/Inaccuracy%·model_accuracy) |
 | ai_referral_log.py bot 四桶+归因 | B5:Profound/Otterly/Peec 三家四桶口径合并+锚定官方域名的归因正则(AIO 点击 referrer 不可分的下界声明) |
-| robots_posture.py 27 bot 两级评分 | C3:robots 27 bot 模板(三层 training 13/search 10/user 5;CITATION_BOTS 5 个两级评分,通配符只拿部分分) |
+| robots_posture.py bot 名单(2026-10-21 扩到 37 个四层)两级评分 | C3:robots 27 bot 模板(三层 training 13/search 10/user 5;CITATION_BOTS 5 个两级评分,通配符只拿部分分) |
 | monitor 页面级 noindex/canonical/segments | D1:Conductor 告警模型(头号触发器"Pages became non-indexable"/5 参数)与 monitor 缺口清单 P0-1/P0-2/P1 |
 | notify.py 分级+按类型路由 | D1:P0-3 channels route(codes→channel)+incident 生命周期(恢复发 resolved/24h 无新增自动关闭) |
-| sensor_volatility.py 波动分 | D1:P0-4 波动上下文(每词日均绝对位次变化均值→0-10,档 0-2/2-5/5-8/8-10【官方】;z30 疑似算法更新降级) |
+| sensor_volatility.py 波动分 | D1:P0-4 波动上下文(每词日均绝对位次变化均值→0-10,档 0-2 低/2-5 正常/5-8 高/8-10 很高,按 [Semrush Sensor 说明](https://www.semrush.com/kb/652-sensor);z30 疑似算法更新降级是本套件口径) |
 | grounding_page.py 事实页 | A4:Rankscale Grounding Page 11 条 checklist【官方】;E7:facts 页结构(volatile 独立区块/is-NOT 消歧) |
 | 新模板四批(prompt-bank/content-brief/pre-publish/report-modes/周月报/外联简报/forecast-report) | B3(prompt 对象化+stage 5+3+2 配方)/C2(content-brief 三段式 MarketMuse 官方字段)/B6(Scrunch 周报六段:>5pp 才点名)/E1(forecast-report 五级漏斗) |
 

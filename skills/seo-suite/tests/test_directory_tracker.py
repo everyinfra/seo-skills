@@ -210,8 +210,10 @@ class DirectoryVerifyTests(DirectoryCase):
         self.assertEqual(rc, 0)
         payload = json.loads(buf.getvalue())
         self.assertEqual(payload["result"], "verified")
+        # B60(2026-10-21):checks 新增 rel_qualifiers(sponsored/ugc/nofollow 全列),dofollow 页为空
         self.assertEqual(payload["checks"], {"reachable": True, "status_code": 200,
-                                             "anchor_found": True, "dofollow": "dofollow"})
+                                             "anchor_found": True, "dofollow": "dofollow",
+                                             "rel_qualifiers": []})
         self.assertEqual(payload["row"]["Dofollow"], "dofollow")
 
     def test_verify_missing_args_exit_2(self):

@@ -21,7 +21,7 @@ EveryInfra SEO Skills is version `0.35.0`, licensed under Apache-2.0. One SEO / 
 
 ## How it got here (0.5 → 0.34)
 
-One arc, compressed: the 0.5 series introduced the **market × capability dual-dimension architecture** — every task picks its market first, then routes by capability — with per-market deep-dives for all 18 markets and 23 cross-region fusion principles; 0.9 re-mined the 17 non-English markets in their own languages (a local community & information-source index, 14-market link-price bands, fusion principles grown to 27); 0.16–0.23 turned rules into code — stdlib-only scripts, the `markets.json` 18-market rule layer with dynamic `market_lint.py` checks, golden tests, the specialist modules and the 18 market portals; 0.24–0.30 added the monitoring daemon and the self-update loop; since 0.31 the executable layer has grown to **85 scripts and 1,604 golden tests** (self_check runs them all on every pass), plus the CI gates and the `project.py` orchestrator. Full history: [CHANGELOG.md](CHANGELOG.md).
+One arc, compressed: the 0.5 series introduced the **market × capability dual-dimension architecture** — every task picks its market first, then routes by capability — with per-market deep-dives for all 18 markets and 23 cross-region fusion principles; 0.9 re-mined the 17 non-English markets in their own languages (a local community & information-source index, fusion principles grown to 27); 0.16–0.23 turned rules into code — stdlib-only scripts, the `markets.json` 18-market rule layer with dynamic `market_lint.py` checks, golden tests, the specialist modules and the 18 market portals; 0.24–0.30 added the monitoring daemon and the self-update loop; since 0.31 the executable layer has grown to **87 scripts and 1,787 tests** (self_check runs them all on every pass), plus the CI gates and the `project.py` orchestrator. Full history: [CHANGELOG.md](CHANGELOG.md).
 
 **Install (one command):**
 
@@ -31,33 +31,30 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 ## Why now
 
-> All figures sourced; source register lives in `skills/seo-suite/references/content/geo-platform-differences.md`.
+> Figures come from public studies, vendor studies or forecasts; scope is in brackets. Sources and check results are registered in `skills/seo-suite/references/content/geo-platform-differences.md` section 5 (checked 2026-10-21). Correlation is not causation.
 
-| Metric | Value |
+| Metric | Value (scope) |
 |---|---|
-| GEO services market | $850M → $7.3B by 2031 |
-| AI-referred traffic growth | +527% YoY |
-| AI traffic conversion vs organic | 4.4x |
-| Gartner: traditional search traffic by 2028 | -50% |
-| Brand mentions vs backlinks correlation for AI ranking | ~3x |
-| GEO-optimized content visibility gain (KDD 2024, 10K queries) | +30-115% |
-| Marketers currently investing in GEO | only 23% |
+| GEO services market | $886M (2024) → $7.318B by 2031 (Valuates estimate; estimates vary widely) |
+| AI-referred sessions | +527% (Previsible, 19 GA4 sites, Jan–May 2025 vs 2024); update: 166 sites, monthly sessions 9.9x from Nov 2024 to May 2026 |
+| Value of AI traffic vs organic, by conversion rate | 4.4x (Semrush, Jun 2025, 500+ SEO topics, vendor study) |
+| Brands' organic search traffic by 2028 | −50% or more (Gartner forecast, Dec 2023; not a measurement) |
+| Web brand mentions vs backlinks, correlation with AIO brand mentions | Spearman 0.664 vs 0.218, ~3x (Ahrefs, 75K brands) |
+| Visibility gain of the three GEO rewrite methods | +30–40% (KDD 2024; gpt-3.5-turbo, fixed top-5 results) |
 
-Global-market why-now (0.4–0.5 series, source type noted):
+Global markets (checked 2026-10-21; unverified rows removed):
 
 | Metric | Value | Source |
 |---|---|---|
-| Yandex share of Russian search | ~70-73% (2026) | StatCounter (industry) |
-| AI answers covering RU informational queries | 68% | applabx (industry study) |
-| Naver share in Korea | ~63-64% on the domestic panel (statistical tie with Google on StatCounter) | InterAd/InternetTrend (industry) |
-| Korean AI Briefing citation pool | almost exclusively Naver-owned properties | Andgentic (industry) |
+| Yandex share of Russian search | 70.33% (Sep 2026) | StatCounter |
+| Naver share in Korea | 62.6% on the domestic panel (Apr 2026); StatCounter Sep 2026: Google 47.97%, Naver 43.06% | InternetTrend / StatCounter |
+| Korean AI Briefing citation pool | almost exclusively Naver-owned properties | Andgentic (vendor blog) |
 | AI Overviews appearing on Japanese queries | 76.9% (1,459 queries measured) | Itera (industry) |
-| Japan AI-search usage | 21.3% (May 2025) → 37.0% (Feb 2026) | CyberAgent GEO Lab |
-| Brazil ChatGPT adoption | 25.5% of the population uses the app (highest globally), ~50M monthly users | StatCounter/OpenAI |
-| Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources | Temso (industry study) |
-| Non-English SEO skill supply | top Spanish/Brazilian/French/Indonesian repos have 1-5 stars | GitHub API, Oct 2026 |
-| Yandex share in Turkey | ~26% (Sept 2026, up from ~13% in March; vs 3-5% in local measurement — conflicting calibers, both noted) — a second Yandex market | StatCounter (industry) |
-| India ChatGPT adoption | ~100M weekly active users, ChatGPT's #2 market | OpenAI (Altman, official) |
+| Japan AI-search usage | 21.3% (May 2025) → 37.0% (Feb 2026); 52.3% including AI Mode (Aug 2026) | CyberAgent |
+| Brazil ChatGPT app | ~54M monthly active users (Jul 2025) | Atlantico (as reported) |
+| Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources (Google AIO and Copilot only; Grok 55%+) | Temso (industry study) |
+| Yandex share in Turkey | 25.19% (Sep 2026) — a second Yandex market | StatCounter |
+| India ChatGPT adoption | ~100M weekly active users | Sam Altman (as reported by TechCrunch, Feb 2026) |
 
 ## What it does
 
@@ -69,9 +66,9 @@ A single entry point: unified intake (site, market, goals, known issues, availab
 | research | Keyword research and search intent (per-market toolchains + persona × intent SXO layer), SERP analysis (incl. per-market AI-Overview coverage and SERP occupancy), content gaps, competitors, directory-submission engine, backlink profile |
 | content | SEO content briefs and drafting, titles and meta descriptions, GEO / AI-search visibility (incl. regional AI platforms), Chinese AI search, video SEO/GEO (YouTube citation mechanics, manual-caption layer), the five-rung ecommerce GEO ladder + on-site SEO for seven marketplaces (incl. MercadoLibre, Trendyol, Allegro, bol, Shopee), content quality, content refresh |
 | technical | Technical SEO and single-page audits, robots.txt and AI-crawler policy (incl. regional crawlers, MistralAI, Bytespider), hreflang internationalization, structured data (incl. rich-result status), internal linking and site architecture, entity signals, programmatic SEO, Core Web Vitals, JS rendering and SPA SEO (five-engine rendering differences), Agent-Readiness protocol layer (ARD / WebMCP), server-log analysis (AI-visit measurement, a11y triage), attribution instrumentation |
-| monitoring | Rank tracking, backlinks (incl. 14-market local link-price bands and risk table), brand mentions (four-tier citation ladder + per-market monitoring channels), algorithm-update attribution (official timelines and data files), SEO drift monitoring, metrics and reporting |
+| monitoring | Rank tracking, backlinks (incl. per-market local directories and Google's link-spam policy boundary; link-price tables removed in Oct 2026), brand mentions (four-tier citation ladder + per-market monitoring channels), algorithm-update attribution (official timelines and data files), SEO drift monitoring, metrics and reporting |
 | **Specialist modules** | Domain strategy (selection, expired-domain due diligence, migration checklist, AI-citation inheritance), site-network spectrum and white-hat equivalents, 9-stage programmatic-SEO playbook, site-type playbooks (SaaS / ecommerce / media / local / docs / tools / marketplace / YMYL), CWV four metrics, mobile SEO, penalty recovery, redirects and canonicalization, UGC and site search |
-| **Executable layer** | 85 stdlib scripts + the `markets.json` 18-market data layer (150 special checks) + 1,604 golden tests — the AI runs the scripts to get facts first, then interprets them per the capability files |
+| **Executable layer** | 87 stdlib scripts + the `markets.json` 18-market data layer + 1,787 tests (Oct 2026) — the AI runs the scripts to get facts first, then interprets them per the capability files |
 
 Global capability is **woven into every capability set**, not a separate module: [multilingual-workflow.md](skills/seo-suite/references/overview/multilingual-workflow.md) is the spine (market table, per-market tool stacks, language conventions, compliance), and each capability file carries the regional knowledge relevant to it.
 
@@ -121,7 +118,7 @@ seo-skills/
 └── skills/seo-suite/
     ├── SKILL.md               Entry point: intake, routing, script map
     ├── scripts/               85 stdlib scripts + markets.json (18-market rule layer)
-    ├── tests/                 1,604 golden tests (self_check runs all)
+    ├── tests/                 1,787 tests (self_check runs all)
     ├── examples/              Golden-sample outputs
     ├── references/
     │   ├── overview/          Capability map, routing, intake, multilingual spine

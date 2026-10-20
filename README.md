@@ -12,7 +12,7 @@ EveryInfra SEO Skills 的版本为 `0.35.0`，采用 Apache-2.0 许可协议。�
 
 **0.5 系列:市场 × 能力双维度架构 + 18 市场逐一深挖。** 每个任务先定市场再进能力路由;`multilingual-workflow.md` 内含**十八市场独到方法索引**(每市场"只有在这里才需要做"的做法,如中文的搜一搜 Peoplerank/小红书 CES 分、韩国的 `nosourceinfo` 官方 AI 引用退出、巴西的 Reclame Aqui 22.3% 被引、日本的「AI 臭」密度检测、泰国的 `Intl.Segmenter` 分词定论)与**跨区融合 23 条原则**(断言半衰期、口径冲突并记、主权助手模式、语域双轨模板等)。
 
-**0.9 深挖轮:本地社区层。** 17 个市场逐一用本地语言挖了"圈内才知道的事"——主干新增「本地社区与信息源索引」(每市场信息源/圈内共识/国际圈误解纠偏),如俄罗斯的 76 条商业因子清单与区域 lr 码、韩国的发帖时刻表与保存市场、日本的内链数值惯例与 MEO 十倍价差、德语区的 Abmahnung 法律战、土耳其的 tanıtım yazısı 链接市场、泰国的"หลังบ้าน"灰链红线、法国 AIO 晚德一年=红利窗口;**外链市场价带表**(从越南 1,500 VND/条到西语大媒体 5,000€)、**七大 marketplace 站内 SEO 分叉**、融合原则扩至 27 条。
+**0.9 深挖轮:本地社区层。** 17 个市场逐一用本地语言挖了"圈内才知道的事"——主干新增「本地社区与信息源索引」(每市场信息源/圈内共识/国际圈误解纠偏),如俄罗斯的 76 条商业因子清单与区域 lr 码、韩国的发帖时刻表与保存市场、日本的内链数值惯例与 MEO 十倍价差、德语区的 Abmahnung 法律战、土耳其的 tanıtım yazısı 链接市场、泰国的"หลังบ้าน"灰链红线、法国 AIO 晚德一年=红利窗口;**七大 marketplace 站内 SEO 分叉**、融合原则扩至 27 条。
 
 **0.16–0.23 系列:实装化+全覆盖。** 规则变代码——**35 个 stdlib 零依赖脚本**(当时;单页审计/AI 爬虫姿势/CJK 文本度量/GSC 导出挖掘/sitemap 六坏桶/hreflang 簇矩阵/引用采样面板 Wilson CI/DiD 归因/网格排名 ARP·ATRP·SoLV…)+ `markets.json` 18 市场规则数据层(130 项市场特检)+ `market_lint.py` 24 条动态自动检查+**32 个 golden 测试**(self_check 每次全跑)。**8 个新专项模块**:agent 协议速查(14 卡)/审计规则目录(SEOmator 373 规则)/Naver 官方文档蒸馏/head 元素完整参考/SERP 数据模型/证据银行/域名策略(过期域滥用红线·AI 记品牌不记 URL)/站群光谱(白帽→泛站群·六目标灰帽→白帽等效)/pSEO 九章作战手册(四案例 sitemap 实测)/**站型打法手册(8 卡)**/CWV 完整手册/移动 SEO(2024-07 起只抓 smartphone UA)/惩罚恢复(11 类手动动作)/重定向 canonical 六场景/UGC+站内搜索。**18 个语区门户页**(`references/markets/` 每语区一份,2026-10 母语定向研究)。
 
@@ -20,33 +20,30 @@ EveryInfra SEO Skills 的版本为 `0.35.0`，采用 Apache-2.0 许可协议。�
 
 ## 为什么是现在 / Why now
 
-> 数字均来自公开研究或厂商文档;来源登记于 `skills/seo-suite/references/content/geo-platform-differences.md` 第五节。
+> 数字来自公开研究、厂商研究或预测,口径写在括号里;来源与核对结论登记于 `skills/seo-suite/references/content/geo-platform-differences.md` 第五节(核对 2026-10-21)。相关不等于因果。
 
-| 指标 | 数值 |
+| 指标 | 数值(口径) |
 |---|---|
-| GEO 服务市场 | 8.5 亿美元 → 2031 年预计 73 亿 |
-| AI 引荐流量年增速 | +527% |
-| AI 流量转化率 vs 自然搜索 | 4.4 倍 |
-| Gartner:传统搜索流量(到 2028) | -50% |
-| 品牌提及 vs 外链对 AI 排名的相关性 | 约 3 倍 |
-| GEO 优化内容的可见性提升(KDD 2024,10K 查询) | +30–115% |
-| 目前投入 GEO 的营销者 | 仅 23% |
+| GEO 服务市场 | 2024 年 8.86 亿美元 → 2031 年 73.18 亿(Valuates 估算,各家估算差异大) |
+| AI 引荐会话增长 | +527%(Previsible,19 个 GA4 站点,2025-01~05 对比 2024 同期);166 站更新值:2024-11~2026-05 月会话 9.9 倍 |
+| AI 流量转化价值 vs 自然搜索 | 4.4 倍(Semrush 2025-06,500 多个 SEO 话题,厂商研究) |
+| 品牌的自然搜索流量(到 2028) | −50% 或更多(Gartner 2023-12 预测,不是实测) |
+| 全网品牌提及 vs 外链数,与 AIO 品牌提及次数的相关 | Spearman 0.664 对 0.218,约 3 倍(Ahrefs 7.5 万品牌) |
+| GEO 论文三种改写方法的可见性提升 | +30–40%(KDD 2024,gpt-3.5-turbo、固定前 5 条结果) |
 
-**全球市场的"为什么"(0.4–0.5 系列,均注明来源类型):**
+**全球市场(核对 2026-10-21;未核的已删):**
 
 | 指标 | 数值 | 来源 |
 |---|---|---|
-| Yandex 在俄搜索份额 | ~70–73%(2026) | StatCounter(行业) |
-| AI 答案覆盖俄语信息查询 | 68% | applabx(行业研究) |
-| Naver 在韩份额 | 本土面板 ~63–64%(StatCounter 口径与 Google 并列) | InterAd/InternetTrend(行业) |
-| 韩国AI Briefing 引用来源 | 几乎全部为 Naver 自有生态 | Andgentic(行业) |
+| Yandex 在俄搜索份额 | 70.33%(2026-09) | StatCounter |
+| Naver 在韩份额 | 62.6%(本土面板,2026-04);StatCounter 2026-09 为 Google 47.97%、Naver 43.06% | InternetTrend / StatCounter |
+| 韩国 AI 브리핑 引用来源 | 几乎全部为 Naver 自有生态 | Andgentic(厂商博客) |
 | 日本 AIO 出现率 | 76.9% 日语查询(1,459 查询实测) | Itera(行业) |
-| 日本 AI 搜索使用率 | 21.3%(2025-05)→ 37.0%(2026-02) | CyberAgent GEO Lab |
-| 巴西 ChatGPT 采用 | 25.5% 人口用 App(全球最高)、~5,000 万月用户 | StatCounter/OpenAI |
-| 西语查询的 AI 引用语言绑定 | 83–84% 引西语源 | Temso(行业研究) |
-| 非英 SEO skill 供给 | 西/巴西/法/印尼语 top 仓库仅 1–5 星 | GitHub API 2026-10 实测 |
-| Yandex 在土耳其份额 | ~26%(2026-09;3 月还 ~13%,大反弹;vs 本地实测 3–5%,口径冲突并记)——俄语区之外第二个 Yandex 市场 | StatCounter(行业) |
-| 印度 ChatGPT 采用 | ~1 亿周活,ChatGPT 第二大市场 | OpenAI 官方(Altman) |
+| 日本 AI 搜索使用率 | 21.3%(2025-05)→ 37.0%(2026-02);含 AI Mode 52.3%(2026-08) | CyberAgent |
+| 巴西 ChatGPT App | 约 5,400 万月活(2025-07) | Atlantico(经转述) |
+| 西语查询的 AI 引用语言绑定 | 83–84% 引西语源(只是 Google AIO 和 Copilot;Grok 55% 以上) | Temso(行业研究) |
+| Yandex 在土耳其份额 | 25.19%(2026-09)——俄语区之外第二个 Yandex 市场 | StatCounter |
+| 印度 ChatGPT 采用 | 约 1 亿周活 | Sam Altman(TechCrunch 2026-02 转述) |
 
 
 
@@ -72,9 +69,9 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 | research | 关键词研究与搜索意图（各市场工具链+persona×意图 SXO 层）、SERP 分析（含各市场 AIO 覆盖与 SERP 占位层）、内容缺口、竞品、目录提交引擎、外链画像 |
 | content | SEO 内容 brief 与写作、标题与 meta 描述、GEO / AI 搜索可见度优化（含区域 AI 平台）、中文 AI 搜索、**视频 SEO/GEO**（YouTube 被引机制/人工字幕层）、**电商 GEO 五级阶梯+七大 marketplace 站内 SEO**（ML/Trendyol/Allegro/bol/Shopee）、内容质量、旧内容刷新 |
 | technical | 技术 SEO 与单页审计、robots.txt 与 AI 爬虫政策（含区域爬虫/MistralAI/Bytespider）、hreflang 国际化、结构化数据（含富结果状态速查）、内链与架构、实体、Programmatic SEO、Core Web Vitals、**JS 渲染与 SPA SEO**（五引擎渲染差异）、**Agent-Readiness 协议层**（ARD/WebMCP）、**服务器日志分析**（AI 到访测量/a11y 三分法）、归因埋点 |
-| monitoring | 排名追踪、外链（含 14 市场本地外链价带与风险表）、品牌提及（四级引用阶梯+各市场监控通道）、**算法更新归因**（官方时间线/数据文件）、SEO 漂移监控、指标与报告 |
+| monitoring | 排名追踪、外链（含各市场本地目录与 Google 链接垃圾政策边界；买链价格表已于 2026-10 删除）、品牌提及（四级引用阶梯+各市场监控通道）、**算法更新归因**（官方时间线/数据文件）、SEO 漂移监控、指标与报告 |
 | **专项模块** | 域名策略（选域/过期域尽调/迁移 checklist/AI 引用继承）、站群光谱与白帽替代、pSEO 九章手册、站型打法（SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL）、CWV 四指标、移动 SEO、惩罚恢复、重定向与 canonical、UGC 与站内搜索 |
-| **可执行层** | 59 个 stdlib 脚本+markets.json 数据层+907 golden tests——AI 用 skill 时直接跑脚本拿事实再按能力文件解读 |
+| **可执行层** | 87 个 stdlib 脚本+markets.json 数据层+1,787 个测试(2026-10-21)——AI 用 skill 时直接跑脚本拿事实再按能力文件解读 |
 
 **全球能力不是独立模块,而是融在每个能力集合里**：`overview/multilingual-workflow.md` 是全球主干（18 个市场的引擎格局、逐市场工具栈、语言规范、合规速查），各能力文件按需携带对应区域知识。
 
@@ -166,7 +163,7 @@ seo-skills/
     └── seo-suite/
         ├── SKILL.md       入口：intake、路由规则、输出结构、59 脚本路由
         ├── scripts/       59 个可执行脚本(审计/多语言/GSC/归因/网格排名/监控/信源检查…)+markets.json
-        ├── tests/         907 个 golden 测试(self_check 全跑)
+        ├── tests/         1,787 个测试(self_check 全跑)
         ├── examples/      金标准样例输出
         ├── references/
         │   ├── overview/     能力地图、路由规则、intake 清单(含目标市场闸门)、多语言工作流(全球主干:市场总表/工具栈/规范/合规)

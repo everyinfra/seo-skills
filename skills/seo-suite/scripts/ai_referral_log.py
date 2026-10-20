@@ -80,27 +80,39 @@ BOT_UA_RE = re.compile("|".join(re.escape(b) for b in BOT_UAS))
 # agent_visits:其余 AI agent UA 宽匹配;未知 UA 单列 unclassified
 BOT_TIERS = {
     "on_demand_fetcher": ("ChatGPT-User", "Claude-User", "Perplexity-User",
-                          "Gemini-Deep-Research", "MistralAI-User", "Manus-User",
-                          "Meta-ExternalFetcher"),
+                          "MistralAI-User", "Meta-ExternalFetcher", "Google-Agent"),
     "search_index": ("PerplexityBot", "OAI-SearchBot", "Claude-SearchBot",
-                     "AzureAI-SearchBot", "Amzn-SearchBot"),
-    "training": ("GPTBot", "ClaudeBot", "Claude-Web", "CCBot", "Google-Extended",
-                 "GoogleOther", "Bytespider", "DeepSeekBot", "GrokBot"),
+                     "Amzn-SearchBot", "meta-webindexer", "Baiduspider",
+                     "YandexAdditional"),
+    "training": ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "Bytespider"),
 }
+# 名单口径(B46,2026-10-21):按 references/technical/ai-crawler-policy.md 第七节与其链接的官方页改。
+# - GoogleOther 移出 training:Google 官方说它是产品团队通用抓取器,不影响任何具体产品(如一次性研发
+#   抓取)→ 宽匹配 agent_visits。
+# - 补 meta-webindexer(Meta AI 搜索)、Google-Agent(用户触发)、Baiduspider(百度搜索)、
+#   YandexAdditional(UA `YandexAdditional/1.0`,控制 Yandex AI 回答,归 search_index)、
+#   OAI-AdsBot(广告落地页审核,不训练 → agent_visits)。
+# - 官方页没有的 token(UNVERIFIED_UA_TOKENS)移出显式三桶,只按宽匹配进 agent_visits 并标「未核」。
+# - 匹配不分大小写:Meta 官方 UA 全小写(`meta-externalagent/1.1`、`meta-webindexer/1.1`)。
 TIER_ORDER = ("on_demand_fetcher", "search_index", "training",
               "agent_visits", "unclassified")
+# 官方 bot 页上找不到的 token:不进显式三桶,宽匹配记 agent_visits,输出标「未核」
+UNVERIFIED_UA_TOKENS = ("Claude-Web", "AzureAI-SearchBot", "DeepSeekBot", "GrokBot",
+                        "Manus-User", "Gemini-Deep-Research")
 # 其余 AI agent UA token(宽匹配,不在显式三桶名单内)→ agent_visits
 AGENT_UA_TOKENS = ("Meta-ExternalAgent", "MistralAI-Index", "MistralAI-Training",
                    "Amazonbot", "Applebot-Extended", "DuckAssistBot", "YouBot",
                    "cohere-ai", "AI2Bot", "Diffbot", "Timpibot", "iaskspider",
                    "omgili", "Google-CloudVertexBot", "Panscient",
-                   "VelenPublicWebCrawler", "Awakari")
+                   "VelenPublicWebCrawler", "Awakari", "GoogleOther", "OAI-AdsBot") \
+    + UNVERIFIED_UA_TOKENS
 
 _BOT_TIER_OF = {b: t for t, bs in BOT_TIERS.items() for b in bs}
+_CANON = {b.lower(): b for b in list(_BOT_TIER_OF) + list(AGENT_UA_TOKENS)}
 _BOT_TOKEN_RE = re.compile("|".join(re.escape(b) for b in
-                                    sorted(_BOT_TIER_OF, key=len, reverse=True)))
+                                    sorted(_BOT_TIER_OF, key=len, reverse=True)), re.I)
 _AGENT_UA_RE = re.compile("|".join(re.escape(a) for a in
-                                   sorted(AGENT_UA_TOKENS, key=len, reverse=True)))
+                                   sorted(AGENT_UA_TOKENS, key=len, reverse=True)), re.I)
 
 
 # ---- 漏洞扫描探测路径(B26):扫描器常冒充 AI 爬虫 UA,这些请求 404 不代表可见性被封 ----
@@ -127,10 +139,11 @@ def classify_ua(ua):
     if ua and ua != "-":
         m = _BOT_TOKEN_RE.search(ua)
         if m:
-            return m.group(0), _BOT_TIER_OF[m.group(0)]
+            tok = _CANON[m.group(0).lower()]
+            return tok, _BOT_TIER_OF[tok]
         m = _AGENT_UA_RE.search(ua)
         if m:
-            return m.group(0), "agent_visits"
+            return _CANON[m.group(0).lower()], "agent_visits"
     return None, "unclassified"
 
 
@@ -363,9 +376,10 @@ def render_classify(res, top=3):
     L.append("-- 按 bot 的 failure rate(4xx+5xx 占比) --")
     rows = sorted(res["bot_rows"].items(), key=lambda kv: (-kv[1]["hits"], kv[0]))
     for token, row in rows:
-        L.append("  %-22s [%s] hits=%-6d fail=%-5d failure=%5.1f%%"
+        L.append("  %-22s [%s] hits=%-6d fail=%-5d failure=%5.1f%%%s"
                  % (token, row["tier"], row["hits"], row["fail"],
-                    _rate(row["fail"], row["hits"])))
+                    _rate(row["fail"], row["hits"]),
+                    "  (未核:官方 bot 页无此 token)" if token in UNVERIFIED_UA_TOKENS else ""))
     if not rows:
         L.append("  [i] 未检出已知 AI bot UA(全部请求计入 unclassified)")
     L.append("-- bot×status 矩阵 --")
@@ -409,8 +423,7 @@ def render_policy(res):
     ret_fail = (res["tiers"]["on_demand_fetcher"]["fail"]
                 + res["tiers"]["search_index"]["fail"])
     L = ["-- retrieval vs training: 封禁立场分层(显式分开) --",
-         "  [i] training 桶(GPTBot/ClaudeBot/Claude-Web/CCBot/Google-Extended/"
-         "GoogleOther/Bytespider/DeepSeekBot/GrokBot): 封=授权决策,只提示不告警"
+         "  [i] training 桶(" + "/".join(BOT_TIERS["training"]) + "): 封=授权决策,只提示不告警"
          "(当前 failure rate %.1f%%)" % _rate(t_tr["fail"], t_tr["hits"]),
          "  [!] on_demand_fetcher + search_index 桶(AI 答案/引用直接取材源): "
          "封=可见性失败 WARN",
@@ -558,7 +571,7 @@ def _self_test():
     assert res2["ai_bot_total"] == 6 and res2["llms"] == {"hits": 1, "bot_hits": 1}
     assert res2["bot_rows"]["GPTBot"]["statuses"] == {"200": 1, "404": 1}
     assert classify_ua("x ChatGPT-User/1.0") == ("ChatGPT-User", "on_demand_fetcher")
-    assert classify_ua("x GrokBot/1.0") == ("GrokBot", "training")
+    assert classify_ua("x GrokBot/1.0") == ("GrokBot", "agent_visits")   # 官方页无此 token → 未核
     assert classify_ua("x Meta-ExternalFetcher/1.0") == ("Meta-ExternalFetcher", "on_demand_fetcher")
     assert classify_ua("x Meta-ExternalAgent/1.0") == ("Meta-ExternalAgent", "agent_visits")
     assert classify_ua("Mozilla/5.0") == (None, "unclassified")

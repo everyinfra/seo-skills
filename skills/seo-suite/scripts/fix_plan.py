@@ -25,7 +25,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 
 import site_audit as sa        # 只读复用:fetch(同一网络代码路径/守卫)/Page 解析/AI_HEALTH_WEIGHTS
-import robots_posture as rp    # 只读复用:AI_BOTS 27 bot 三层名单/analyze/fix_robots 三行格式
+import robots_posture as rp    # 只读复用:AI_BOTS 名单(条数与分层以 robots_posture 为准)/analyze/fix_robots 三行格式
 
 CATEGORIES = ("robots", "llms", "schema", "meta", "ai_discovery", "content")
 DEFAULT_ON = tuple(c for c in CATEGORIES if c != "ai_discovery")  # ai_discovery 可选类默认不生成
@@ -113,19 +113,28 @@ def _fix_block_body(raw):
 # ---------------------------------------------------------------------------
 # 6 类修复物生成器(纯函数:view → FixItem | None)
 # ---------------------------------------------------------------------------
+def _roster_summary():
+    """「N bot = training a/search b/user c/other d」——从 rp.AI_BOTS 现算,不写死条数。"""
+    cnt = {}
+    for b in rp.AI_BOTS:
+        cnt[b["tier"]] = cnt.get(b["tier"], 0) + 1
+    return "%d bot = " % len(rp.AI_BOTS) + "/".join(
+        "%s %d" % (t, cnt[t]) for t in rp.TIER_ORDER if t in cnt)
+
+
 def build_robots_fix(view):
     rep = view.get("robots_report")
-    if rep is None:  # robots.txt 不可达 → 按缺失处理,给 27 bot 三层全量模板
+    if rep is None:  # robots.txt 不可达 → 按缺失处理,给 AI_BOTS 全量分层模板
         synth = {"bots": [dict(b, state="missing", via_wildcard=False) for b in rp.AI_BOTS]}
         body = _fix_block_body(rp.fix_robots(synth))
         content = "\n".join([
             "# robots.txt 全量模板(fix_plan.py 生成——审计发现 /robots.txt 不可达,按缺失处理)。",
-            "# 三层名单与三行格式复用 robots_posture.py(27 bot = training 12/search 10/user 5);",
+            "# 分层名单与三行格式复用 robots_posture.py(%s);" % _roster_summary(),
             "# 引用 5 bot(OAI-SearchBot/Claude-SearchBot/PerplexityBot/Googlebot/Applebot)已有专属规则;",
             "# training 层是授权决策——不想喂训练可整组删除,不影响搜索可见性。",
             "Sitemap: " + view["root"] + "/sitemap.xml",
             ""]) + body
-        return FixItem("robots", "robots.txt 缺失 → 27 bot 三层模板(引用 5 bot 专属规则)",
+        return FixItem("robots", "robots.txt 缺失 → %d bot 分层模板(引用 5 bot 专属规则)" % len(rp.AI_BOTS),
                        content, "robots.txt", "create")
     failures = [b["token"] for b in rep["bots"]
                 if b["tier"] in ("search", "user") and b["state"] != "allowed"]
@@ -608,8 +617,8 @@ USAGE = f"""usage: fix_plan.py (--url URL | --audit audit.json) [--only CATS] [-
   --audit audit.json 读 site_audit --json 的输出文件(离线零网络)
 
 修复类别(--only 逗号过滤;合法值: {", ".join(CATEGORIES)};默认全选除 ai_discovery):
-  robots        robots.txt 缺失 → 27 bot 三层全量模板;引用/按需层 bot 被封 → 追加放行块
-                (复用 robots_posture 27 bot 名单与 --fix-robots 三行格式;封 training 是授权
+  robots        robots.txt 缺失 → AI bot 分层全量模板;引用/按需层 bot 被封 → 追加放行块
+                (复用 robots_posture AI_BOTS 名单与 --fix-robots 三行格式;封 training 是授权
                 决策不算失败,封 search/user 才触发)
   llms          /llms.txt 缺失或缺结构(缺 H1/摘要/链接<3) → llms.txt 骨架(llmstxt 同构)
   schema        无 JSON-LD → WebSite+Organization JSON-LD 片段。FAQPage 不生成——富结果

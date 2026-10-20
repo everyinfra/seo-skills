@@ -1,12 +1,12 @@
 # hreflang / 国际化校验（八检框架）
 
-> 2026-10-18 按 Google [本地化版本文档](https://developers.google.com/search/docs/specialty/international/localized-versions)（2026-09-21 更新）和 Yandex [本地化页面文档](https://yandex.com/support/webmaster/en/yandex-indexing/locale-pages) 逐条核对。框架思路参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）`skills/seo-hreflang/SKILL.md`。适用：多语言 / 多区域站。
+> 2026-10-21 按 Google [本地化版本文档](https://developers.google.com/search/docs/specialty/international/localized-versions)（2026-09-21 更新）和 Yandex [本地化页面文档](https://yandex.com/support/webmaster/en/yandex-indexing/locale-pages) 逐条核对。框架思路参考 [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo)（MIT）`skills/seo-hreflang/SKILL.md`。适用：多语言 / 多区域站。
 
 ## 一、八项校验
 
 | # | 检查 | 规则（Google 原文口径） | 违例严重度（本套件口径） |
 |---|---|---|---|
-| 1 | 自引用 | 每个语言版必须列出自己**和**所有其他语言版；每个版本上的整组链接相同 | High |
+| 1 | 自引用 | 每个语言版必须列出自己**和**所有其他语言版。文档也写明：难以维护完整双向链接时，可以在某些页面省略部分语言，Google 仍会处理互相指向的那些；新增语言页必须与源页双向链接 | High |
 | 2 | 双向返回 | A 指向 B，B 也要指回 A。两页没有互相指向时，这一对标注被忽略。只影响没互指的那一对，其余互指的照常处理 | Critical（对该对） |
 | 3 | x-default | 推荐，不强制；为语言选择页设计，也可用于任何页。回退页本身的语言无关紧要。每组只写一个（本套件口径，官方未写数量） | High |
 | 4 | 语言码 | ISO 639-1（`en`、`zh`、`ja`）；拒 `eng`、`jp`。文字可用 ISO 15924：`zh-Hant`、`zh-Hans`、`zh-Hans-US` 合法；`zh-TW` 这类按地区推导文字；`zh-CN` 合法 | High |
@@ -56,12 +56,12 @@ Google 定义：保留值，用户的语言 / 地区设置不匹配任何声明�
 **Shopify**（[Markets SEO 帮助](https://help.shopify.com/en/manual/markets/seo)）
 - Markets 默认自动生成 hreflang，带一个指向主域名的 `x-default`；每个市场版本自引用 canonical。
 - 只有拥有独立域名、子域或子目录的市场才会生成 hreflang。
-- 用主题或 app 自己输出 hreflang 时，在 Online Store > Preferences 关掉「Automatic hreflang tags」，避免重复。
+- 用主题或 app 自己输出 hreflang 时，在 Online Store > Preferences 的「Social sharing image and SEO」区块关掉「Automatic hreflang tags」，避免重复。官方提醒：关掉后要自己补全，否则会伤害 SEO。
 - 市场码要人工核对：英国写 `en-GB`（大小写都行，但 `UK` 无效）。
 
 **Next.js**
 - 框架不会凭空生成 hreflang。App Router 在 `metadata.alternates.languages` 里写，输出 `<link rel="alternate" hreflang>`；配合 `metadataBase` 得到完整 URL（[Next.js generateMetadata 文档](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)）。用这个方法时，`x-default` 要自己加进 `languages`。
-- next-intl 的中间件默认在响应头 `Link` 里输出各语言 alternate，并包含 `x-default`；基于域名的路由不输出 `x-default`；`localePrefix` 设为 `never` 时整个功能关闭（[next-intl 路由配置](https://next-intl.dev/docs/routing/configuration)）。
+- next-intl 的中间件默认在响应头 `Link` 里输出各语言 alternate，并包含 `x-default`；`localePrefix` 设为 `never` 时 alternate 链接关闭（官方原因：URL 可能不是每个语言唯一）；也可以设 `alternateLinks: false` 自己提供（[next-intl 路由配置](https://next-intl.dev/docs/routing/configuration)）。
 - 本套件口径：alternate 链接要走服务端 metadata，不要写在 Client Component 里；`trailingSlash` 配置要与 hreflang、canonical 的写法一致（`/en/` 与 `/en` 不能混用）。
 
 **CMS 无关：用 GTM 或其他 JS 注入**（本套件口径）。Google 会渲染 JS，但不渲染的爬虫看不到；渲染失败或标记未发布时没有任何报错。hreflang 由服务端模板或 sitemap 输出。审计时先 `curl`（见第六节）：curl 看不到、浏览器看得到的，就是这类问题。
@@ -92,7 +92,7 @@ curl -s https://example.com/sitemap.xml | grep -c 'xhtml:link'
 python3 scripts/hreflang_cluster.py https://example.com/en/page https://example.com/de/seite
 ```
 
-Google 文档「调试」节列出两个第三方工具（Google 不维护）：Aleyda Solis 的 hreflang 生成器、Merkle 的 hreflang 测试器。Search Console 的「国际定位」报告已弃用（2022-09 移除，[帮助中心说明](https://support.google.com/webmasters/answer/12474899)），不能再用它查返回链接错误。
+Google 文档「调试」节列出两个第三方工具（Google 不维护）：Aleyda Solis 的 hreflang 生成器、Merkle 的 hreflang 测试器。Search Console 的「国际定位」报告已弃用（[帮助中心说明](https://support.google.com/webmasters/answer/12474899)），不能再用它查返回链接错误。
 
 ## 七、批量审计流程与失效信号
 
@@ -111,7 +111,7 @@ Google 文档「调试」节列出两个第三方工具（Google 不维护）：
 ## 八、标签之外（常被漏掉的国际化实质）
 
 1. **内容平价**：各语言版主体内容要等价；某语言版字数明显偏少，常是截断或漏翻。长度比的合理区间因语言而异，套件没有可靠出处的统一数字，按市场文件和人工抽查判断。
-2. **本地格式**：按 CLDR 本地化数字、日期、地址、电话。例：`1000` 加两位小数，在 `de-DE` 写作 `1.000,00`，`fr-FR` 写作 `1 000,00`（Node/ICU 实测）。法语通常在 `: ; ! ?` 前加不换行空格（排版惯例，未核一手）。
+2. **本地格式**：按 CLDR 本地化数字、日期、地址、电话。例：`1000` 加两位小数，在 `de-DE` 写作 `1.000,00`，`fr-FR` 写作 `1 000,00`（千位分隔符是 U+202F 窄不换行空格；Node/ICU 实测 2026-10-21）。法语通常在 `: ; ! ?` 前加不换行空格（排版惯例，未核一手）。
 3. **过期翻译**：源语言改版后其他语言没跟上——对比各语言版的 `dateModified` 或最后修改时间。
 4. **未复核机翻**：大量机翻页面、没有人工审校，落入 Google「规模化内容滥用」政策的范围；Google 2025-06 删除了「用 robots.txt 屏蔽自动翻译页」的旧建议，理由是与该政策对齐（[文档更新记录](https://developers.google.com/search/updates)）。
 5. **文化适配**（软项）：示例、案例、货币、合规表述是否本地化，而不是字面翻译。
@@ -146,7 +146,7 @@ Google 文档「调试」节列出两个第三方工具（Google 不维护）：
 
 ## 十、来源
 
-- Google：[本地化版本](https://developers.google.com/search/docs/specialty/international/localized-versions)（三载体等价、自引用、返回链接、码规则、es-419 不支持、大小写不敏感、x-default、调试工具）、[规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)（canonical 指向同语言页、不在 hreflang 里写 HTTP 版本）、[移动优先索引](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)（media 注解、分离 URL 的 hreflang、Vary）、[x-default 发布博客（2013-04-10）](https://developers.google.com/search/blog/2013/04/x-default-hreflang-for-international-pages)、[国际定位报告弃用](https://support.google.com/webmasters/answer/12474899)、[文档更新记录](https://developers.google.com/search/updates)
+- Google：[本地化版本](https://developers.google.com/search/docs/specialty/international/localized-versions)（三载体等价、自引用、返回链接、码规则、es-419 不支持、大小写不敏感、x-default、调试工具）、[规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)（canonical 指向同语言页、不在 hreflang 里写 HTTP 版本）、[移动优先索引](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)（media 注解、分离 URL 的 hreflang、Vary）、[x-default 发布博客（2013-04）](https://developers.google.com/search/blog/2013/04/x-default-hreflang-for-international-pages)、[国际定位报告弃用](https://support.google.com/webmasters/answer/12474899)、[文档更新记录](https://developers.google.com/search/updates)
 - Yandex：[本地化页面](https://yandex.com/support/webmaster/en/yandex-indexing/locale-pages)（不再支持 sitemap 标注；ISO 639-1 + ISO 3166-1 Alpha-2 或 ISO 3166-2:RU；支持 x-default；支持的语言列表）
 - 平台：[Shopify Markets SEO](https://help.shopify.com/en/manual/markets/seo)、[Next.js generateMetadata](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)、[next-intl 路由配置](https://next-intl.dev/docs/routing/configuration)、[Polylang](https://polylang.pro/hreflang-tag-attributes-and-polylang-everything-you-need-to-know/)
 - 标准：[W3C 行内双向文本](https://www.w3.org/International/articles/inline-bidi-markup/)；Unicode 隔离符 U+2066–U+2069（LRI/RLI/FSI/PDI）

@@ -1,6 +1,6 @@
 # 移动 SEO 专项
 
-> 2026-10-18 按 Google 官方文档与 W3C、web.dev、Lighthouse 原文核对。分工：JS 渲染诊断见 [rendering-seo.md](rendering-seo.md)；CWV 指标与阈值见 [cwv-playbook.md](cwv-playbook.md) 和 [LCP.md](LCP.md)；viewport 写法与 head 顺序见 [head-elements.md](head-elements.md)；各市场移动占比见 [markets/](../markets/id.md) 各文件。本文件只做移动专项，不重复。
+> 2026-10-21 按 Google 官方文档与 W3C、web.dev、Lighthouse 原文核对。分工：JS 渲染诊断见 [rendering-seo.md](rendering-seo.md)；CWV 指标与阈值见 [cwv-playbook.md](cwv-playbook.md) 和 [LCP.md](LCP.md)；viewport 写法与 head 顺序见 [head-elements.md](head-elements.md)；各市场移动占比见 [markets/](../markets/id.md) 各文件。本文件只做移动专项，不重复。
 
 ## 一、移动优先索引的现状
 
@@ -10,9 +10,9 @@
 |---|---|---|
 | 2016-11 | Google 开始移动优先抓取与索引 | [Google 博客 2023-10-31](https://developers.google.com/search/blog/2023/10/mobile-first-is-here) |
 | 2023-10-31 | Google 宣布迁移完成；极少数移动端完全不可用的站点暂用桌面 Googlebot | 同上 |
-| 2024-07-05 起 | 剩余站点也只用 Googlebot Smartphone 抓取和索引；移动设备完全打不开的内容不再可索引 | [Google 博客 2024-06-03](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc) |
+| 2024-07-05 之后 | 剩余站点也只用 Googlebot Smartphone 抓取和索引；移动设备完全打不开的内容不再可索引 | [Google 博客 2024-06-03](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc) |
 
-- **核心含义**：Google 用智能手机 UA 抓取的移动版内容做索引和排名（[移动优先索引文档](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)）。官方原话是「只有移动版上显示的内容用于索引」。桌面版有、移动版没有的文案、内链、图片 alt、结构化数据、标题，按不存在处理。
+- **核心含义**：Google 用智能手机 UA 抓取的移动版内容做索引和排名（[移动优先索引文档](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)）。文档同时写明：移动版内容比桌面版少时，Google 取不到这些信息，可能损失流量。桌面版有、移动版没有的文案、内链、图片 alt、结构化数据、标题，Google 看不到。
 - 日志里仍可能看到桌面 Googlebot：商品信息、Google 招聘等少数功能有时用它抓取（2024-06-03 博客）。
 - 不是必须有移动版，但官方「强烈建议」。响应式设计是 Google 推荐的做法；下面 1.2、1.3 的要求只针对动态服务和分离 URL 两种配置。
 - 纠偏（本套件口径）：提案里写「做好移动适配以便进入移动优先索引」是过时说法；现在的正确表述是「移动版就是被索引的内容本体」。
@@ -21,7 +21,7 @@
 
 | 项 | 官方要求 | 常见踩坑 |
 |---|---|---|
-| robots meta | 移动版与桌面版用相同的 robots meta；移动版上的 `noindex`/`nofollow` 会让页面或图片不被收录 | 移动模板单独加了 noindex |
+| robots meta | 移动版与桌面版用相同的 robots meta；移动版上的 `noindex`/`nofollow` 可能让 Google 无法抓取或索引 | 移动模板单独加了 noindex |
 | 主内容 | 内容等价；可以把内容放进折叠面板或标签页，只要内容等价 | 移动版删减段落 |
 | 标题层级 | 使用相同、清楚的标题 | 移动版换了 H1 |
 | 懒加载 | 不要让主内容依赖滑动、点击、输入才加载 | 「展开更多」按钮后才请求正文 |
@@ -93,7 +93,7 @@
 - **2017 年的移动信号**：Google 2016-08-23 宣布，自 2017-01-10 起，从移动搜索结果点进来后不能轻松看到内容的页面，排名可能下降。博客列了三种做法：进入后或浏览中弹出遮住主内容的弹窗；必须先关闭才能看主内容的独立插页；首屏看起来像独立插页、原内容压在折叠线下。不受影响的情况（负责任地使用时）：法律要求的 Cookie 或年龄验证；内容本来不公开时的登录框（如邮件、付费墙后的内容）；占用合理空间、容易关闭的横幅（[Google 博客 2016-08-23](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on)）。
 - **现行文档**：侵扰性插页和弹窗让 Google 难以理解内容，可能导致搜索表现不佳。非法律要求的情况下不要遮住整页，也不要把用户跳到单独页面去同意或填写信息。法律强制的插页（如年龄门）不受此限，但建议覆盖在内容之上，不要把所有 URL 跳到同一个页面；成人内容年龄门可以在核实 Googlebot 后让它免过年龄门（[插页与弹窗文档](https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials)）。
 - 官方没有「占屏幕超过 X% 即违规」的数字阈值。
-- 检测工具现状：Search Console 移动可用性报告、Mobile-Friendly Test 工具与 API 已于 2023-12-01 退役（[Google 博客 2023-04-19](https://developers.google.com/search/blog/2023/04/page-experience-in-search)）。现在用 Lighthouse、PSI、CrUX 现场数据，加爬虫级 DOM 检查（弹窗类名、属性清单可参考 [audit-rule-catalog.md](audit-rule-catalog.md) 的 audit_negative 思路）。
+- 检测工具现状：Search Console 移动可用性报告、Mobile-Friendly Test 工具与 API 已于 2023-12 退役（[Google 博客注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)）。现在用 Lighthouse、PSI、CrUX 现场数据，加爬虫级 DOM 检查（弹窗类名、属性清单可参考 [audit-rule-catalog.md](audit-rule-catalog.md) 的 audit_negative 思路）。
 
 ## 三、AMP：已没有搜索特权
 
@@ -188,6 +188,6 @@ done
 
 ## 来源
 
-- Google：[移动优先索引最佳做法](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)、[Googlebot](https://developers.google.com/search/docs/crawling-indexing/googlebot)、[2023-10-31 移动优先完成](https://developers.google.com/search/blog/2023/10/mobile-first-is-here)、[2024-06-03 最后一步](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc)、[插页与弹窗](https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials)、[2016-08-23 插页信号](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on)、[2023-04-19 页面体验博客](https://developers.google.com/search/blog/2023/04/page-experience-in-search)、[2021-04-19 页面体验更新细节](https://developers.google.com/search/blog/2021/04/more-details-page-experience)、[2025-05-02 应用深度链接](https://developers.google.com/search/blog/2025/05/app-deep-links)、[文档更新记录](https://developers.google.com/search/updates)
+- Google：[移动优先索引最佳做法](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing)、[Googlebot](https://developers.google.com/search/docs/crawling-indexing/googlebot)、[2023-10-31 移动优先完成](https://developers.google.com/search/blog/2023/10/mobile-first-is-here)、[2024-06-03 最后一步](https://developers.google.com/search/blog/2024/06/mobile-indexing-vlast-final-final.doc)、[插页与弹窗](https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials)、[2016-08-23 插页信号](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on)、[Mobile-Friendly Test 退役注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)、[2021-04-19 页面体验更新细节](https://developers.google.com/search/blog/2021/04/more-details-page-experience)、[2025-05-02 应用深度链接](https://developers.google.com/search/blog/2025/05/app-deep-links)、[文档更新记录](https://developers.google.com/search/updates)
 - 标准与工具：[WCAG 2.2 SC 2.5.8](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)、[WCAG 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)、[web.dev 触摸目标](https://web.dev/articles/accessible-tap-targets)、[Lighthouse 节流](https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md)、[Lighthouse 12.0.0 发布说明](https://github.com/GoogleChrome/lighthouse/releases/tag/v12.0.0)、[Lighthouse 迁移到 insights](https://developer.chrome.com/blog/moving-lighthouse-to-insights)、[Firebase Dynamic Links FAQ](https://firebase.google.com/support/dynamic-links-faq)
 - 未核项：iOS 输入框 16px 聚焦放大（无 Apple 一手文档）；Apple HIG 触控尺寸未引用。

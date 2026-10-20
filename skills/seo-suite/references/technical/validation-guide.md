@@ -60,7 +60,21 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 
 每个受检 URL 的验证记录：检查时间、设备或 User-Agent、所用工具、是否基于渲染后内容；三层各自的结论；错误和警告清单；截图或工具导出作为证据；修复建议和复查日期。
 
+## 检查清单
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | JSON-LD 能解析 | 第二节的控制台代码，或 `python3 scripts/schema_lint.py <URL>` | 通过：全部块解析成功。失败：任何块解析失败（脚本输出 `[CRITICAL] JSON 解析失败`） |
+| 2 | 词汇合法 | [Schema Markup Validator](https://validator.schema.org/) | 失败：类型或属性不存在，值类型错 |
+| 3 | Google 资格 | 富媒体搜索结果测试（URL 模式）和 Search Console 富结果报告；先查 [deprecated-signals.md](deprecated-signals.md) 看该类型是否还有展示位 | 失败：必填属性缺失（error）。类型已退役时，工具不报也不代表合法 |
+| 4 | 与可见内容一致 | 渲染后 DOM 或截图逐字段对照 | 失败：价格、评分、问答在页面上找不到 |
+| 5 | 实体图与占位符 | `python3 scripts/schema_lint.py <URL>`（查 @id 是否绝对、引用是否悬空、同名实体是否分裂、占位符、aggregateRating 范围、FAQPage 空答案） | 失败：脚本输出任一 `[CRITICAL]` 行（退出码 1）；`[WARN]` 行人工判断 |
+| 6 | 没有重复输出 | 渲染后 DOM 里统计同一类型的 JSON-LD 块数 | 失败：多个插件各输出一份且内容矛盾 |
+| 7 | 上线后 | Search Console 对应富结果报告；修复后点"验证修复"并记日期 | 失败：修复后报告仍报同类错误 |
+
 ## 罕见判定法(seo-ops C 集,百仓扫描批 3;直接可落成检查规则)
+
+> 本节起到文末,凡标注来源仓库或工具名的条目,都是该第三方工具或清单的判定口径。本套件没有逐条复核其源码,阈值不是 Google 规则。引用时写"某工具判定",不写"排名事实"。Google 官方事实已在条目内附一手链接并标核对日期。
 
 - **C26 Accept-Language 跳转探测**:en-US 与 zh-CN 双语 fetch,对比 final_url——抓"自动语言跳转"导致的重复/错配;
 - **C9 无 JS 完整性**:禁 JS 抓取≥90% 渲染版内容才算服务端完整(量化 SPA 判定);
@@ -86,7 +100,7 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 ## 完全装载:Indexing API 状态机/hreflang 簇矩阵/staging 检查/SERP 类型(百仓深扫)
 
 **Indexing API 提交器规格**(goenning,源码级):9 态状态机=Submitted and indexed/Duplicate without canonical/Crawled-not indexed/Discovered-not indexed/Page with redirect/URL unknown/RateLimited/Forbidden/Error;**可提交集合=后 6 态**;复查条件=状态在可提交集且上次检查 >14 天;幂等规则=先 GET urlNotifications/metadata,**404 才 POST publish**(每 URL 永不重复提交);批量 50/块并发块间串行;429 读请求线性退避 (3-n+1)×60s,写请求遇 429 直接退出;sitemap 经 GSC sites/{siteUrl}/sitemaps 列表再解析去重。
-**hreflang 簇矩阵输出模板**(notfair):每簇输出矩阵(行=页面,列=自引用/return tag/代码合法/200 可索引/canonical)✅/❌ + 每错误的可直接粘贴 `<link>` 修复块;**单条 return tag 断裂→整簇被忽略(#1 错误,先查)**;经典错码:en-UK(应 en-GB)/下划线 en_US;三载体(head/Link 头/sitemap)只能用一种。
+**hreflang 簇矩阵输出模板**(notfair):每簇输出矩阵(行=页面,列=自引用/return tag/代码合法/200 可索引/canonical)✅/❌ + 每错误的可直接粘贴 `<link>` 修复块;**return tag 断裂(#1 错误,先查)→只有没互指的那一对被忽略,互指的照常处理**(Google 本地化文档原文:两页没有互相指向时,标注被忽略);经典错码:en-UK(应 en-GB)/下划线 en_US;三载体(head/Link 头/sitemap)等价,可同用但无额外收益、更难维护,选一种用到底([本地化版本](https://developers.google.com/search/docs/specialty/international/localized-versions),核对 2026-10-21)。
 **staging 子域暴露检查**(JeffLi):test./staging./dev./preview./beta./uat. 公开可访问且镜像生产=fail。**llm_review_required 边界标志**:脚本判确定性项,LLM 只在边界时介入(H1 partial 匹配/title 关键词位置>30 字符/meta 有内容即评写作质量)——防幻觉的双层架构。
 **统一 SERP ResultType 20 枚举**(openserp):organic/ad/featured_snippet/knowledge_panel/people_also_ask/video/image/news/shopping/local/answer_box/**ai_summary**/related_questions/related_searches/sitelinks/videos/images_inline/calculator/weather;非自然模块独立成 SerpFeature(带 confidence);**absolute 位次=跨页含广告的 1-based 绝对位**;domain_info 分类(gov/edu/news/forum/marketplace/social)。
 
@@ -109,7 +123,7 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-21。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · build/schema-markup-generator/references/validation-guide.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/build/schema-markup-generator/references/validation-guide.md)（Apache-2.0）
 - 一手资料：[结构化数据简介](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)、[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)、[结构化数据类型库](https://developers.google.com/search/docs/appearance/structured-data/search-gallery)、[用 JavaScript 生成结构化数据](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript)、[富媒体搜索结果测试](https://search.google.com/test/rich-results)、[Schema Markup Validator](https://validator.schema.org/)、[schema.org price](https://schema.org/price)
@@ -118,38 +132,38 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 
 ### 抓取与索引边界
 
-- **Googlebot 抓取上限**:HTML 只读前 **2MB**、PDF 前 **64MB**(未压缩)——内联 base64 图、超大内联 CSS/JS、膨胀导航可把关键内容/JSON-LD 推出上限;关键内容+结构化数据保持在 HTML 前 2MB。
-- 抓取速率**自动调节**(5xx/慢响应即退避),无手动控制(旧 SC 设置 2024-01 已移除);官方爬虫文档 2025-11-20 迁至 developers.google.com/crawling,`googlebot.json` 更名 `common-crawlers.json`(引用旧路径的资料要更新)。
+- **Googlebot 抓取上限**:每个受支持文件类型只读前 **2MB**、PDF 前 **64MB**(按解压后数据计;页面引用的每个 CSS/JS 单独计;[Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot))——内联 base64 图、超大内联 CSS/JS、膨胀导航可把关键内容/JSON-LD 推出上限;关键内容+结构化数据保持在 HTML 前 2MB。
+- 抓取速率**自动调节**(5xx/慢响应即退避),无手动控制(Search Console 的抓取速率限制工具 2024-01-08 下线,[公告](https://developers.google.com/search/blog/2023/11/sc-crawl-limiter-byebye);紧急降速见 [http-status-codes.md](http-status-codes.md) 第五节);官方爬虫文档 2025-11-20 迁至 developers.google.com/crawling,`googlebot.json` 更名 `common-crawlers.json`(引用旧路径的资料要更新)。
 - **AMP**:无独立排名优势;2026-07-01 起 Search 直接把用户送发布商自托管 AMP URL——勿再建议维护 AMP Cache/Viewer/signed exchange;AMP 页按普通页同等内容/动作奇偶/质量要求审计。
-- **返回按钮劫持**(`history.pushState/replaceState` 击退 Back,含第三方广告/库脚本注入):2026-04-13 入 spam policies,**2026-06-15 起执法**(手动处置+自动降权)——按 Critical 处理。
+- **返回按钮劫持**(`history.pushState/replaceState` 击退 Back,含第三方广告/库脚本注入):2026-04-13 入 spam policies,**2026-06-15 起执法**(手动处置+自动降权;[官方公告 2026-04-13](https://developers.google.com/search/blog/2026/04/back-button-hijacking))——按 Critical 处理。
 - canonical 修正后 Google 可在重复簇中保留**最多 2 周**再评估——修正后短期内 canonical 未变≠修复失败。
 - 分页:rel=next/prev 2019 起不再使用;每页**自引用 canonical**;load-more/无限滚动背后必须有可分页 URL。
-- **JS SEO 四条边界**(官方 2025-12 澄清):raw HTML 与 JS 注入的 canonical 不一致→Google 可能任选其一(两边必须一致);raw 带 noindex 而 JS 移除→可能仍按 raw 执行(noindex 必须在初始响应里就正确);**非 200 状态页 Google 不渲染 JS**(错误页上 JS 注入的内容/标记对爬虫不可见);JS 注入的时效型 schema(尤其 Product)处理延迟且 Shopping 抓取更不可靠。
+- **JS SEO 四条边界**(官方 2025-12 澄清):raw HTML 与 JS 注入的 canonical 不一致→Google 可能任选其一(两边必须一致);raw 带 noindex 而 JS 移除→可能仍按 raw 执行(noindex 必须在初始响应里就正确);**非 200 状态页 Google 可能不渲染 JS**(官方 2025-12-18 补充:错误页上 JS 注入的内容/标记不要指望被看到);JS 注入的时效型 schema(尤其 Product)处理延迟且 Shopping 抓取更不可靠。
 
 ### 移动与页面体验
 
 - 移动优先索引 2024 完成;移动版**非硬性要求**,真正风险是**内容奇偶损失**——五项对齐:等价主内容/robots meta 一致/标题描述一致/等价结构化数据/资源可爬;避免需要用户交互才出现的主内容懒加载。
 - 侵入式插屏(全页 interstitial、独立 consent 跳转页、持续阻断对话框)与过高广告密度是具名 page-experience 问题;可接受:小横幅、标准 CMS/法务对话框;"read more" 深链:关键内容**加载即可见**(手风琴/tab 后的内容更难入围),不劫持滚动、保留 URL hash。
-- **page experience 是指南非单一排名系统**:只有 CWV 直接进排名,HTTPS 轻量信号;SC 独立 Page Experience 报告已下线(用 CWV+HTTPS 报告监控)。
+- **page experience 没有单一的排名信号**:Google 文档写明 CWV 被核心排名系统使用,并建议检查 HTTPS;SC 独立 Page Experience 报告已下线(用 CWV+HTTPS 报告监控;[page experience 文档](https://developers.google.com/search/docs/appearance/page-experience))。
 
 ### CWV/CrUX 验证口径
 
-- 阈值(p75 真实用户):LCP≤2.5s / INP≤200ms / CLS≤0.1;辅助:FCP≤1.8s、TTFB≤800ms。**INP 2024-03-12 取代 FID(字段工具 2024-09-09 移除 FID)——任何输出中禁止再引用 FID**。
-- CrUX 工程陷阱:**CLS p75 是字符串编码**(须 parseFloat);404=流量不足非鉴权错;直方图末桶无 `end`;日更 ~04:00 UTC、滞后约 2 天;History 周一更、每期=止于周日的 28 天滚动,不合格期密度为 `"NaN"`(字符串)、分位为 `null`——数值运算前先检查;`round_trip_time` 2025-02 取代 effectiveConnectionType;**LCP 子部件指标**(image TTFB/load delay/load duration/render delay,2025-01 新增)用于定位 LCP 瓶颈;字段数据正从 PSI 迁出→字段数据直接查 CrUX API,PSI 主要拿 Lighthouse 实验室数据;报告输出里的 `lighthouse_version` 而非假设最新。
+- 阈值(p75 真实用户):LCP≤2.5s / INP≤200ms / CLS≤0.1;辅助:FCP≤1.8s、TTFB≤800ms。**INP 2024-03-12 取代 FID(CrUX 2024-09 移除 FID)——任何输出中禁止再引用 FID**。阈值出处:[LCP/INP/CLS](https://web.dev/articles/vitals)、[FCP](https://web.dev/articles/fcp)、[TTFB](https://web.dev/articles/ttfb)(good ≤0.8s)。
+- CrUX 工程陷阱:**CLS p75 是字符串编码**(须 parseFloat);404=流量不足非鉴权错;直方图末桶无 `end`;API 每日更新、滞后约 2 天;History API 每周一约 04:00 UTC 更新,含截至上周六的数据,每期是 28 天滚动、逐周重叠;不合格期密度为 `"NaN"`(字符串)、分位为 `null`——数值运算前先检查;effectiveConnectionType 2024-09 起从 CrUX 移除,RTT 指标(`round_trip_time`)2025-02 加入 API;**LCP 子部件指标**(image TTFB/load delay/load duration/render delay)2025-02 加入 API,用于定位 LCP 瓶颈([CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes));字段数据直接查 CrUX API,PSI 的 Lighthouse 部分是实验室数据;报告里记录实际的 `lighthouse_version`,不要假设最新。
 
 ### GSC/GA4 口径与陷阱
 
-- **GSC 记录错误窗口 2025-05-13~2026-04-27**:impressions/CTR/均位不可靠(**clicks 不受影响**;仅向前修复、无回填)——跨该窗口的趋势必须加注,修复后预期出现"展示下降"假象。
+- **GSC 记录错误窗口 2025-05-13~2026-04-27**:impressions/CTR/均位不可靠(**clicks 不受影响**;官方:错误已修复,效果报告里的展示数会下降,[数据异常页](https://support.google.com/webmasters/answer/6211453))——跨该窗口的趋势必须加注,修复后预期出现"展示下降"假象。
 - query 维度行会**省略匿名化低流量**,行加总≠全站总数——站点总数只认无维度聚合查询,且仅当 `totals_complete=true` 才可当权威;`discover`/`googleNews` 类型不支持 query 维度与 position 指标。
-- **multimodal 筛选**(Lens/Circle to Search/图搜,2026-09-24 起全球铺开)仅 UI+导出,**无已验证的 API type 值——不要编造**;AI Mode 流量已并入标准 Web totals,无法从 totals 拆"经典 vs AI"——AI 可见性看 Generative AI 性能报告(2026-06-03,仅 impressions 无点击/CTR/位次)。
+- **multimodal 筛选**:效果报告的搜索类型里有「Web: multimodal」(含 Google Lens、Circle to Search、上传图片、Chrome 图片搜索,[帮助中心](https://support.google.com/webmasters/answer/7576553)),**本轮没找到已验证的 API type 值——不要编造**;AI Mode 流量已并入标准 Web totals,无法从 totals 拆"经典 vs AI"——AI 可见性看 Generative AI 效果报告([2026-06-03 公告](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports):只报展示、页面、国家、设备、日期,没有点击;先向部分网站开放)。
 - **sitemap 报告的 submitted 数≠已索引**——逐 URL 的索引真相以 URL Inspection 为准;其 `pageFetchState` 有 11 态(SOFT_404/BLOCKED_ROBOTS_TXT/NOT_FOUND/SERVER_ERROR 等),`googleCanonical` vs `userCanonical` 分开看,`crawledAs` 看实际抓取设备;**`mobileUsabilityResult` 在 API 已弃用**,勿当移动可用性结论。
 - 快赢探测口径:**位次 4-10 且高曝光**的 query=优化优先级;SC 数据滞后 2-3 天、保留约 16 个月;SC 可把 TikTok/Instagram/X/YouTube 账号验证为独立属性(只用于 Google Search 表现,不替代平台自有分析)。
-- **GA4**:organic 过滤用 `sessionDefaultChannelGroup="Organic Search"`;**AI Assistants 渠道**(2026-05 起,`medium=ai-assistant`;认可源=ChatGPT/Gemini/Claude/Deepseek/Copilot/Grok;不含 Google AIO/AI Mode;Perplexity 未确认)——多数 AI 会话无 referrer 落 **Direct**,该渠道系统性低估,仅向前无回填。
+- **GA4**:organic 过滤用 `sessionDefaultChannelGroup="Organic Search"`;**默认渠道组里的 AI Assistant 渠道**([GA4 默认渠道组](https://support.google.com/analytics/answer/9756891)):referrer 命中 AI 助手名单时,medium 记为 `ai-assistant`;官方举例来源 ChatGPT、Gemini、Deepseek、Copilot、Grok,不含 Google AIO/AI Mode;其余来源是否在名单里以官方页为准(本轮未见 Claude、Perplexity 的明文)——无 referrer 的 AI 会话落 **Direct**,所以该渠道只能当下界(本套件推论)。
 - **DMA/Consent Mode v2**:2024-03-07 起欧盟 CTR 跨界对比不同口径;GA4 欧盟默认拒绝 consent 时计数保守(转化建模补差额);3P cookie 弃用 2024-07 已撤回——别再推"无 cookie 归因"为优先项;Privacy Sandbox 大批 API 2025-10-17 退役(CHIPS/FedCM/Private State Tokens 留存)。
 
 ### 配额与鉴权速查
 
-- PSI 240 QPM/25K QPD(API key);CrUX+History **共享** 150 QPM;GSC Search Analytics 1,200 QPM/站、30M QPD/项目;URL Inspection 600 QPM、**2,000 QPD/站**;Indexing API **200 publish/天**(太平洋午夜重置;batch 逐条计数,100 条 batch=100 配额);GA4 令牌制:25K/天、5K/时、10 并发(`returnPropertyQuota:true` 监控;简单报表 ~1-10 token、复杂 ~100)。
+- CrUX API 每项目 **150 QPM**(免费,[CrUX API](https://developer.chrome.com/docs/crux/api));GSC Search Analytics 每站 1,200 QPM、每项目 30M QPD;URL Inspection 每站 600 QPM、**2,000 QPD**([GSC API 限额](https://developers.google.com/webmaster-tools/limits));Indexing API **publish 200/天**(太平洋午夜重置;"batch 逐条计数"为社区口径);GA4 Data API 标准属性 Core 令牌 **200,000/天、40,000/时**、并发 10(`returnPropertyQuota:true` 监控;[GA4 配额](https://developers.google.com/analytics/devguides/reporting/data/v1/quotas));PSI 配额以 Google Cloud 控制台显示为准(本轮未在官方页读到固定数字)。
 - [2026-10-17 P1] **Indexing API 配额页 2026-10-16 改版**([官方配额页](https://developers.google.com/search/apis/indexing-api/v3/quota-pricing),[文档更新日志](https://developers.google.com/search/updates#updating-the-indexing-api-quota-page)):现行三项默认配额=**publish 200/天/项目**(含 URL_UPDATED 与 URL_DELETED,太平洋午夜重置,新配额最长 24 小时生效)、**getMetadata 只读 180/分钟/项目**、**全端点合计 380/分钟/项目**;旧的「默认配额仅供测试+填表申请审批」表述与申请表单已从文档删除,Quickstart 也删掉了「短期页用 Indexing API 而非 sitemap」那段([SER 2026-10-16 对比](https://www.seroundtable.com/google-updates-indexing-api-quota-information-42316.html))。**适用面不变**:Quickstart 仍写明只能用于 JobPosting 与嵌在 VideoObject 里的 BroadcastEvent;社区实测新服务账号默认仍为 200,提额入口转到 Cloud Console 配额页。审计口径:读请求限速按 180/分钟设计,不要再按旧文档给普通 URL 推荐「申请审批后可用」。
 - 429 处理:指数退避(1/2/4/8/16s)+随机抖动,最多 5 次;响应带 `Retry-After` 时优先用它。403=GSC/GA4 权限(SA 邮箱未加进属性;Indexing API 要求 SA 是 GSC **Owner**,只读分析 Full 即可);404 于 CrUX=流量不足非凭据问题。
 - Indexing API 官方适用面:仅 **JobPosting** 与 **BroadcastEvent(嵌 VideoObject)**——普通 URL 少量用 URL Inspection、大量用 sitemap;`URL_DELETED` 仅限永久下线(404/410)。
@@ -175,7 +189,7 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 - 分级带:FRE≥80 易(6 年级)/ 60–80 标准(7–8)/ 40–60 难(9–12)/ 20–40 很难(大学)/ <20 极难。
 - 触发阈值:均句长>25 词警告(目标 15–20);FRE<40 警告、<60 仅提示;复杂词(≥3 音节)占比>20% 警告;均段>5 句警告;<300 词标薄内容。
 - 长句改写器只取**前 5 条最长句**、输出前 3 条,且带导航噪声过滤器(nav 短语、≥2 换行、≥25 词且独特比>0.85 的关键词罗列)——防止把菜单/组件文本当改写对象。
-- 诚实条款(其自注):Flesch **不是**排名因子(Mueller 确认;Yoast v19.3 降权);词数下限是**选题覆盖地板**非目标(首页 500 / 服务页 800 / 博文 1500 / 产品 300+(复杂 400+) / 本地页 500–600)。
+- 诚实条款(其自注):Flesch **不是**排名因子(Mueller 确认;Yoast v19.3 降权);词数下限是该工具的**选题覆盖地板**,不是 Google 要求(Google 官方说没有偏好的字数,见 [Creating helpful content](https://developers.google.com/search/docs/fundamentals/creating-helpful-content));该工具的数字:(首页 500 / 服务页 800 / 博文 1500 / 产品 300+(复杂 400+) / 本地页 500–600)。
 
 ### eeat_signal_checker.py
 
@@ -210,14 +224,14 @@ JSON-LD 可能由前端框架、跟踪代码管理器或插件在渲染时注入
 
 - 地点页:≥30 页触发警告(要求 60%+ 独特内容)、≥50 页**硬停**(需人工论证);未审页 ≥100 警告、≥500 硬停;独特内容 <40% 标薄、建议 <30% 硬停;单页 <300 词复核。
 - 发布节奏:50–100 页一批,观察 2–4 周再扩;>60% 内容为共享模板即罚则风险画像(对照 2024-03 Scaled Content Abuse 并入核心算法、2025 手动处置浪潮)。
-- 图片分级阈值:缩略图目标<50KB/警>100/危>200;内容图<100/警>200/危>500;hero<200/警>300/危>700;alt 长度 10–125 字符;**首屏/LCP 图禁 lazy-load**,加 `fetchpriority="high"`。
+- 图片分级阈值(工具口径):缩略图目标<50KB/警>100/危>200;内容图<100/警>200/危>500;hero<200/警>300/危>700;alt 长度 10–125 字符;**首屏/LCP 图禁 lazy-load**,加 `fetchpriority="high"`。
 - sitemap:单文件 <50k URL(协议限);`priority`/`changefreq` 已被 Google 忽略(Info 级);lastmod 全同=低信号;含 noindex/重定向 URL=High。
 - 内链:孤儿=入链 ≤1;入链<3 的页面占爬取页 ≥10% 警告;单页出链>100 警告;内链 nofollow=Info(浪费权重);柱页目标入链 10+。
 - schema 状态表(口径更新 2026-10-10):**FAQPage 富结果 2026-05-07 全站退役**(存量标 Info 不标 Critical,不建议删除或为 SERP 新增,真问答页用 QAPage);HowTo(2023-09 移除)、SpecialAnnouncement(2025-07 弃用)、CourseInfo/EstimatedSalary/LearningVideo/ClaimReview/VehicleListing(2025-06 退役)、PracticeProblem(2026-01 起 GSC 移除)一律**不再推荐**;**Dataset 未退役**(仅被 Dataset Search 消费,勿当被杀);Book Actions 弃用又回滚(仍可用,历史注记);详见 deprecated-signals.md。
 
 ### GEO 判定口径(引用时标"行业研究,非官方")
 
-- 最优可引用段落 **134–167 词**;直接答案前置 40–60 词;AI 爬虫**不执行 JS**(SSR 是 GEO 前提);其引用的"品牌提及相关性≈外链 3 倍""YouTube 提及相关性 ~0.737 vs DR ~0.266"来自 Ahrefs 2025-12 7.5 万品牌研究——是单供应商相关性研究,写报告时须如此标注。
+- 第三方工具称最优可引用段落 134–167 词、直接答案前置 40–60 词——本套件没找到一手依据,**不作要求**(证据分级见 [geo-evidence.md](../content/geo-evidence.md));多数 AI 爬虫不执行 JS(本套件口径,见 [rendering-seo.md](rendering-seo.md));其引用的"品牌提及相关性≈外链 3 倍""YouTube 提及相关性 ~0.737 vs DR ~0.266"来自 Ahrefs 2025-12 7.5 万品牌研究——是单供应商相关性研究,写报告时须如此标注。
 
 ## 性能/安全与 SEO 交叉的爬虫审计阈值 (siteone-crawler 源码深读 2026-10-09b)
 

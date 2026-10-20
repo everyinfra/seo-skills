@@ -1,13 +1,13 @@
 # 深度研究写作协议(deep-research writing protocol)
 
-> 建立于 2026-10-11;复核于 2026-10-18:逐条核对来源,没有一手来源的数字已删除或改标「本套件口径」。
+> 建立于 2026-10-11;复核于 2026-10-21(首轮 2026-10-18):逐条打开来源核对,没有一手来源的数字已删除或改标「本套件口径」;脚本参数对照 `--help` 和源码。
 > 定位:把"多轮检索+深度思考 → 别处没有、可以核对的内容"写成 **agent 可执行的写作协议**——检索轮次、信息增益自检、引用纪律、反例与不确定性标注、答案前置,每条都可机检或可人工核验。
 > 证据约束:本文件的数字与收益说法受 [geo-evidence.md](geo-evidence.md) 约束(冲突时以它为准)。**本文所有阈值都是本套件口径,没有用站点数据校准过**;校准方法见文末。
 > 与既有文件的去重边界:单段可引性形态与 E-E-A-T 构件=[quotable-content-examples.md](quotable-content-examples.md);信息增益门槛的一句话版=[content-strategy-framework.md](../research/content-strategy-framework.md);施工简报=[content-brief.md](../../templates/content/content-brief.md);时效热点路线=[trend-jack-playbook.md](../../templates/content/trend-jack-playbook.md)(本协议做深度层,趋势协议做时效层);句子怎么写=[asd-ste100-web-writing.md](asd-ste100-web-writing.md)。本文件只写"研究过程怎么跑"。
 
 ## The answer
 
-本协议要写出**别处没有、读者可以核对**的内容。依据是 Google 的公开要求:生成式 AI 功能指南要求提供独特视角和非同质化内容,不要复述别人已经说过、或生成式 AI 很容易写出的东西([AI 功能优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide));有用内容自查问内容是否提供原创信息、报道、研究或分析,借用他人来源时是否增加实质价值([有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content))。过程固定五轮检索(本套件设计,总计 8–10 次检索封顶):R1 共识层测绘 → R2 缺口与信源溯源 → R3 数据与引语核实 → R4 反例与边界 → R5 交付前自检。写前先列共识层,只写缺口;每个断言带具名来源和日期;核心结论配反例或不确定性标注;答案放在首段。本协议不承诺 AI 引用:GEO 论文报告的写法增益没有在 C-SEO Bench 的更广设置里重现(见第四节)。
+本协议要写出**别处没有、读者可以核对**的内容。依据是 Google 的公开建议:生成式 AI 功能指南建议提供独特视角和「非同质化内容」(non-commodity content),不要只复述别人已经说过、或生成式 AI 很容易写出的东西([AI 功能优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide));有用内容自查问内容是否提供原创信息、报道、研究或分析,借用他人来源时是否增加实质价值([有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content))。过程固定五轮检索(本套件设计,总计 8–10 次检索封顶):R1 共识层测绘 → R2 缺口与信源溯源 → R3 数据与引语核实 → R4 反例与边界 → R5 交付前自检。写前先列共识层,只写缺口;每个断言带具名来源和日期;核心结论配反例或不确定性标注;答案放在首段。本协议不承诺 AI 引用:GEO 论文报告的写法增益没有在 C-SEO Bench 的更广设置里重现(见第四节)。
 
 ## 一、适用范围与触发条件
 
@@ -68,7 +68,7 @@
 ## 四、引用纪律
 
 1. **引语格式**:[姓名]([职务],[机构])在 [日期] 的 [出处] 指出……;引语必须能点开原始出处,不能编造(与 quotable-content-examples.md 引语规则一致)。
-2. **具名引语和带口径的数字是写法要求,不是收益承诺。** GEO 论文(Aggarwal 等,KDD 2024)在 GEO-bench 上用 gpt-3.5-turbo 生成答案,"引用来源""加引语""加统计数字"三种改写让位置加权词数相对提升 30–40%,主观印象指标提升 15–30%([arXiv 2311.09735](https://arxiv.org/abs/2311.09735))。C-SEO Bench(Puerto 等)在问答和商品推荐两类任务、各三个领域、多方同时采用的设置里发现,多数对话式 SEO 方法基本无效,还常常有负作用;提升来源在模型上下文里排序的传统 SEO 更有效;采用者越多,收益越小([arXiv 2506.11097](https://arxiv.org/abs/2506.11097))。两说并记,以 geo-evidence.md 第三节为准。
+2. **具名引语和带口径的数字是写法要求,不是收益承诺。** GEO 论文(Aggarwal 等,KDD 2024)在 GEO-bench 上用 gpt-3.5-turbo 生成答案(全部实验只用这一个模型),"引用来源""加引语""加统计数字"三种改写让位置加权词数相对提升 30–40%,主观印象指标提升 15–30%([arXiv 2311.09735](https://arxiv.org/abs/2311.09735))。C-SEO Bench(Puerto 等)在问答和商品推荐两类任务、各三个领域、多方同时采用的设置里发现,多数对话式 SEO 方法基本无效,还常常有负作用;提升来源在模型上下文里排序的传统 SEO 更有效;采用者越多,收益越小([arXiv 2506.11097](https://arxiv.org/abs/2506.11097))。两说并记,以 geo-evidence.md 第三节为准。
 3. **不只复述来源。** 有用内容自查问:借用他人来源时,有没有增加实质价值和原创性(见 The answer 的链接)。写法(本套件口径):先给对方的数字和出处,再给我们的口径修正、基准对照或更新数据。
 4. **外链指向一手来源**,方便读者核对。有用内容文档把清楚的来源列为让人信任的表现之一。不为多一条外链而稀释正文。
 5. **数字四件套**:每个数字同句或紧邻处给出来源、时间、样本、方法;测量值和估算值分开标;自算数据写"由 {数据} 自算,截至 {日期}"。
@@ -151,7 +151,7 @@
 
 ## Method Notes
 
-- 证据分级:**官方**=Google 文档(AI 功能优化指南、有用内容);**专利**=US11354342B2,只作专利描述;**论文**=GEO(arXiv 2311.09735)与 C-SEO Bench(arXiv 2506.11097);**第三方研究**=Profound 厂商研究、SSRN 7344201 预印本;其余阈值和流程都是**本套件口径**。核对日期均为 2026-10-18。
+- 证据分级:**官方**=Google 文档(AI 功能优化指南、有用内容);**专利**=US11354342B2,只作专利描述;**论文**=GEO(arXiv 2311.09735)与 C-SEO Bench(arXiv 2506.11097);**第三方研究**=Profound 厂商研究、SSRN 7344201 预印本;其余阈值和流程都是**本套件口径**。核对日期均为 2026-10-21。
 - 旧版标「【调研 2026-10】」的几项没有找到一手来源,已删除:IGS >0.5 与 5–7 个观点作为"已验证结论"、"内联具名引用 +30–40%"的出处归属、"出站链接不是引用凭证"、"38–40% 的 AI 引用来自前 100 词"、"被引历史是权威信号"(Profound 的研究结论正相反)。
 - 本文件是 references/ 文档:受 freshness.py 头部日期扫描;不受 self_check 七段式强制(只查 templates/),但保留 The answer / What could change this conclusion / Method Notes 结构。
 - 实施依赖:全部机检用现有脚本;若以后实现独立的 `igs_check.py`(草稿 × 竞品文集的重叠计算),按能力矩阵登记流程入仓,并只改第三节"机检路径"一行。

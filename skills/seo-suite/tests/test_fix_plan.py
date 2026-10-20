@@ -92,13 +92,15 @@ class LiveGenerationTests(unittest.TestCase):
         self.assertEqual(view["verdict"], "pass")
         self.assertEqual(fp.build_fixes(view), [])                   # 全部通过 → 零误报
 
-    def test_robots_missing_creates_27_bot_template(self):
+    def test_robots_missing_creates_full_bot_template(self):
         view = self._live_view(BROKEN_PAGES)                         # robots.txt 404
         fixes = fp.build_fixes(view, ("robots",))
         self.assertEqual(len(fixes), 1)
         f = fixes[0]
         self.assertEqual((f["action"], f["file_name"]), ("create", "robots.txt"))
-        self.assertEqual(f["content"].count("User-agent:"), 27)      # 27 bot 全量模板
+        # 全量模板=rp.AI_BOTS 每个 bot 一组。修前写死 27;2026-10-21 名单按 ai-crawler-policy.md
+        # 第七节与官方页改为 37 bot 四层(B42),条数改从名单取
+        self.assertEqual(f["content"].count("User-agent:"), len(fp.rp.AI_BOTS))
         self.assertIn("User-agent: OAI-SearchBot\nAllow: /", f["content"])   # 引用 bot 专属规则
         self.assertIn("Sitemap: https://unit.test/sitemap.xml", f["content"])
 

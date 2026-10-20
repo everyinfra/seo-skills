@@ -47,7 +47,7 @@
 
 ## 8. A2A agent cards(agent 互发现)— stable
 
-- **规范**:[A2A 1.0](https://a2a-protocol.org/latest/specification/)(v1.0.0 于 2026-03-12 发布);Google 2025-04 发起,2025-06-23 转入 Linux Foundation。
+- **规范**:[A2A 1.0](https://a2a-protocol.org/latest/specification/)(v1.0.0 于 2026-03-12 发布,v1.0.1 于 2026-05-28 发布,GitHub releases 核对 2026-10-21);Google 2025-04 发起,2025-06-23 转入 Linux Foundation。
 - **规则**:卡片在 `/.well-known/agent-card.json`。必填 `name`、`description`、`version`、`supportedInterfaces`(各含 `url`、`protocolBinding`=`JSONRPC`/`GRPC`/`HTTP+JSON`、`protocolVersion`)、`capabilities`、`defaultInputModes`、`defaultOutputModes`、`skills`(各含 `id`、`name`、`description`、`tags`)。1.0 的 JSON-RPC 方法是 `SendMessage`、`GetTask` 等(0.3 的 `message/send` 已改);REST 为 `POST /message:send`。核心操作都要实现;未声明 streaming 时,流式调用回 `UnsupportedOperationError`。可选 JWS `signatures`。
 - **常见错误**:卡片指向 404 端点;声称未实现的 streaming;沿用 0.3 方法名。
 

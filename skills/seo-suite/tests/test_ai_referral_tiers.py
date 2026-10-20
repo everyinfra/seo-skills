@@ -55,15 +55,16 @@ class TierClassificationTests(unittest.TestCase):
                           t["unclassified"]["hits"]), (1, 1, 1, 1, 1))
         self.assertEqual(res["ai_bot_total"], 4)
         # 规格名单抽查(三家口径合并的显式映射)
+        # 2026-10-21 改(B46):旧断言把 Gemini-Deep-Research/Manus-User/AzureAI-SearchBot/Claude-Web/
+        # DeepSeekBot/GrokBot 放进显式桶、GoogleOther 记训练;这些 token 官方 bot 页没有,或官方说
+        # GoogleOther 不影响任何具体产品(ai-crawler-policy.md 第七节)→ 移出显式桶,见 test_s3_bot_rosters
         for tok in ("ChatGPT-User", "Claude-User", "Perplexity-User",
-                    "Gemini-Deep-Research", "MistralAI-User", "Manus-User",
-                    "Meta-ExternalFetcher"):
+                    "MistralAI-User", "Meta-ExternalFetcher", "Google-Agent"):
             self.assertIn(tok, ar.BOT_TIERS["on_demand_fetcher"])
         for tok in ("PerplexityBot", "OAI-SearchBot", "Claude-SearchBot",
-                    "AzureAI-SearchBot", "Amzn-SearchBot"):
+                    "Amzn-SearchBot", "meta-webindexer", "Baiduspider"):
             self.assertIn(tok, ar.BOT_TIERS["search_index"])
-        for tok in ("GPTBot", "ClaudeBot", "Claude-Web", "CCBot", "Google-Extended",
-                    "GoogleOther", "Bytespider", "DeepSeekBot", "GrokBot"):
+        for tok in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "Bytespider"):
             self.assertIn(tok, ar.BOT_TIERS["training"])
         # 显式映射优先于宽匹配:Fetcher=on_demand,Agent=agent_visits
         self.assertEqual(ar.classify_ua("x Meta-ExternalFetcher/1.0"),

@@ -59,6 +59,17 @@
 4. **后段**：和替代方案的比较、价格说明、真实的常见问题。
 5. **全站一致**：首页、定价页、文档、对比页对同一件事的说法一致；结构化数据只描述页面上可见的内容。
 
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过/失败 |
+|---|---|---|
+| 四要素是否都填得出 | 把定位一句话的四个空逐个填上，每空附证据 URL | 任一空填不出＝定位未完成 |
+| 替换测试 | 把句中品牌名换成竞品名再读一遍 | 仍成立＝不是差异点 |
+| 标题和首段是否用买家的问法 | `python3 scripts/question_align.py --gsc <GSC导出.csv> --page <页面URL> --fetch`；规则见 [question-alignment](../content/question-alignment.md) | 标题或首段直接回答了真实提问；否则改 |
+| 句子是否短而一致 | `python3 scripts/ste_lint.py <页面正文.txt> --lang en`（`--lang` 取值见 `--help`）；规则见 [asd-ste100-web-writing](../content/asd-ste100-web-writing.md) | 无超长句、术语一致 |
+| 结构化数据与可见内容一致 | Rich Results Test，或 `python3 scripts/schema_lint.py <URL>`（提取 JSON-LD 并检查） | 标记的内容页面上都看得到 |
+| 搜索需求依据 | GSC 导出或关键词工具导出（你自己的账号） | 品类策略的选择附需求数字和取数日期 |
+
 ## 交付物
 
 1. 定位陈述，四个要素各附证据。
@@ -93,7 +104,7 @@
 ### 核心原则
 - 每页提供**该页独有的价值**，不是模板换变量；100 个好页好过 10000 个薄页。
 - 数据可防御性层级：自有原创 > 产品衍生（用户数据）> UGC > 独家授权 > 公共数据（最弱）。
-- URL 用**子目录不用子域名**（子目录聚合域权重，子域名拆分它）。
+- URL 用子目录还是子域：Google 起始指南说"按对你业务合理的方式做"，没有说哪种排名更好（[SEO 入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)，核对 2026-10-21）。程序化页面默认放主域子目录是本套件的运维选择（共用技术栈、共用内链），不是排名规则；上一版"子目录聚合域权重、子域拆分"已删。
 - 12 个 playbook：模板、策展（best X）、换算、对比、案例集、本地（X in Y）、人群（X for Y）、集成（A B integration）、术语表、翻译、目录、实体档案页。可叠层（"best coworking spaces in San Diego" = 策展+本地）。
 
 ### 执行框架
@@ -105,23 +116,23 @@
 ## 结构化数据（schema 2.0.2）
 
 - 首选 JSON-LD（Google 推荐，head 或 body 末尾）；一页多类型用 `@graph` 组合。
-- **schema.org 合法 ≠ Google 功能资格**：实现前查 Google 当前支持的富结果目录。按该库记载：FAQ 富结果 2026-05-07 起停展（6 月移除文档，政府/健康站例外通道也已关闭）；HowTo 富结果 2023-09 退役；sitelinks 搜索框 2024-11 退役（WebSite 类型仍支持站名）。已退役类型仍可做语义描述，但不要为获得已退役外观而实现，也不要把富结果测试测不出退役功能当作实现坏了。
+- **schema.org 合法 ≠ Google 功能资格**：实现前查 Google 当前支持的富结果目录。Google 更新日志（核对 2026-10-21）：FAQ 富结果自 2026-05-07 起不再出现在 Google 搜索，文档于 2026-06-15 移除；sitelinks 搜索框文档于 2024-11-29 移除（"该功能不再可用"）；HowTo 文档 2023-09 移除。逐项状态以 [deprecated-signals](../technical/deprecated-signals.md) 为准。WebSite 类型仍可用于站名。已退役类型仍可做语义描述，但不要为获得已退役外观而实现，也不要把富结果测试测不出退役功能当作实现坏了。
 - 常用类型速查：Organization（name/url）、Article（headline/image/datePublished/author）、Product（name/image/offers 含价格与库存）、SoftwareApplication、FAQPage（mainEntity 问答数组）、BreadcrumbList（itemListElement）、LocalBusiness、Event。
 - 校验：Rich Results Test（测 Google 当前支持项，会渲染 JS）、validator.schema.org、Search Console 增强报告。日期 ISO 8601、URL 绝对地址、枚举值精确；schema 必须与页面可见内容一致——标记不存在的内容是作弊。
 
 ## SEO 审计（seo-audit 2.2.0）
 
 ### 优先级顺序
-可爬可收 → 技术底座 → 页面优化 → 内容质量 → 权威与外链。基础打好后**最快收益在 8-20 位页面**（striking distance），推上首页比对新词从零做快。
+可爬可收 → 技术底座 → 页面优化 → 内容质量 → 权威与外链。基础打好后，先看排在 8–20 位的页面是常见做法（striking distance，本套件经验，无外部研究支撑）：已有排名的页面比对新词从零做更容易出结果。取数用 `scripts/gsc_mining.py` 或 GSC 导出。
 
 ### 工具陷阱：schema 检测
 `web_fetch`/curl 抓不到 JS 注入的 JSON-LD（Yoast/RankMath 等常客户端注入，转换时 script 被剥掉）。判断有无 schema 要用：浏览器渲染后跑 `document.querySelectorAll('script[type="application/ld+json"]')`、Rich Results Test（渲染 JS）、或 Screaming Frog 导出。**只凭静态抓取报「无 schema」是假发现**。
 
 ### 技术检查要点
-- CWV 阈值：LCP < 2.5s、INP < 200ms、CLS < 0.1。
+- CWV 阈值（[web.dev](https://web.dev/articles/vitals)，核对 2026-10-21）：LCP 在 2.5 秒内、INP 200 毫秒以内、CLS 0.1 以内，按第 75 百分位、分移动与桌面衡量。
 - 收录病：误 noindex、canonical 指错方向、重定向链/环、软 404、无 canonical 的重复。
-- hreflang（多语言）：每页含自引用、互为回链（单向则整对被弃）、代码 en-GB 不写 en-UK、有 x-default；10+ locale 优先 sitemap 方案。**canonical 与 hreflang 冲突时 canonical 赢**；跨语言 canonical（法语页 canonical 到英语页）会整站压制该语言收录。
-- 多语言内容：只翻导航模板不翻正文=重复页；大量薄 locale 页拖累全站 helpful content 信号；做不了真正有用的 locale 页就不做。
+- hreflang（多语言，[Google 本地化版本文档](https://developers.google.com/search/docs/specialty/international/localized-versions)，核对 2026-10-21）：每个语言版本必须列出自己和所有其他版本；两页没有互相指向时，这对标签被忽略（不是整簇作废）；备用 URL 要写完整（含 https）；多个同语言不同地区版本时建议给一个无地区的兜底页，可用 x-default；HTML、HTTP 头、sitemap 三种载体等价，同时用没有额外收益。区域码不要写 en-UK（英国是 GB，且 UK 为保留码，对 Google 无效果）。上一版"10+ locale 优先 sitemap"没有出处，已删；"canonical 与 hreflang 冲突时 canonical 赢""跨语言 canonical 会压制该语言收录"在 Google 这页没有逐字对应，按[推断]处理：canonical 指向另一个语言版本，等于告诉 Google 本页是那页的重复页，应避免。
+- 多语言内容：Google 写明本地化版本"只有在页面主要内容未翻译时才被视为重复"，只翻导航模板不翻正文会被当重复页；"大量薄 locale 页拖累全站信号"没有出处（K：做不了真正有用的 locale 页就不做）。
 - 分站点型常见病：SaaS（产品页太薄、缺对比/替代页、博客与产品页不联动）、电商（薄分类页、参数化导航重复、缺 product schema）、内容站（不刷新旧文、蚕食、无作者页）、本地（NAP 不一致、缺本地 schema、GBP 未优化）。
 
 ### 报告格式

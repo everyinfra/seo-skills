@@ -1,7 +1,7 @@
 {
   "_meta": {
     "version": "2026-10-09",
-    "sources": "seo-suite references/overview/multilingual-workflow.md 及各能力文件区域段(kseo 日语全角阈值 / t0mmy 越南 99 条 / 泰调可读性公式 / Naver description ≤80 全角 / 印尼 meta 前 120 字符安全区 / 阿文膨胀 ~20%)。断言半衰期 6-12 个月,随复审更新本文件。",
+    "sources": "seo-suite references/overview/multilingual-workflow.md 及各能力文件区域段(kseo 日语全角阈值 / t0mmy 越南 99 条 / 泰调可读性公式 / description ≤80 全角(Naver 官方出处未找到,本套件口径) / 印尼 meta 前 120 字符安全区 / 阿文膨胀 ~20%)。断言半衰期 6-12 个月,随复审更新本文件。",
     "units": {
       "chars": "len() 码点计数",
       "fullwidth": "全角字数:EAW W/F=1,A 与半角=0.5,总和向上取整(ja/ko 全角口径)",
@@ -26,7 +26,7 @@
       "desc_limit": {
         "value": 78,
         "unit": "fullwidth",
-        "note": "按显示宽度计:全角 1、半角 0.5(与标题同口径,拉丁字母不再按 1 个汉字算)。Google 对描述无长度上限,摘要按宽度截断(developers.google.com/search/docs/appearance/snippet);78 全角为本套件口径(参考百度摘要约 76-78 字)"
+        "note": "按显示宽度计:全角 1、半角 0.5(与标题同口径,拉丁字母不再按 1 个汉字算)。Google 对描述无长度上限,摘要按宽度截断(developers.google.com/search/docs/appearance/snippet);78 全角为本套件口径(未找到百度官方出处)"
       },
       "desc_min": 39,
       "sentence_ideal": {
@@ -81,18 +81,17 @@
         "zh-Hant-TW",
         "zh-Hant-HK"
       ],
-      "notes": "hreflang 写 zh-CN/zh-TW(ISO 639-1+ISO 3166-1 国家码)或 zh-Hans/zh-Hant(ISO 15924 文字码)都合法,按站点结构选一种并保持一致(Google localized-versions,核对 2026-10-21);百科/百家号/知道三件套是引用前提;中文比英文短 20-40%,大幅偏离提示未本地化",
+      "notes": "hreflang 写 zh-CN/zh-TW(ISO 639-1+ISO 3166-1 国家码)或 zh-Hans/zh-Hant(ISO 15924 文字码)都合法,按站点结构选一种并保持一致(Google localized-versions,核对 2026-10-21);百科/百家号/知道三件套是本套件口径下的引用前置项;中文比英文短 20-40%,大幅偏离提示未本地化",
       "special_checks": [
-        "百科/百家号/知道+公众号占位三件套(引用前提,缺即 FAIL)",
+        "百科/百家号/知道+公众号占位三件套(本套件口径,缺则 WARN)",
         "简繁不混检;hreflang 用 zh-CN/zh-TW 国家码或 zh-Hans/zh-Hant 文字码均合法",
         "营销词(创新领先/极致类)≤3/页",
         "证据阶梯六级分开记(eligible→retrieved→cited→mentioned→recommended→converted),禁合并成'AI 可见性提升'",
         "robots 对 Baiduspider/Bytespider 显式决策(勿套英文站语义)",
-        "小红书按搜索渠道做(搜索流量占比55%,引流话术即限流)",
+        "小红书按搜索渠道做(引流话术即限流)",
         "问一问双模型(混元T1/DeepSeek R1)分开采样",
-        "豆包GEO前提=抖音蓝V认证(2026-07信源分级)",
-        "企鹅号开通检查(元宝内环比翻倍)",
-        "空壳备案红旗(2026清理常态化)"
+        "豆包信源分级(2026-07)与抖音蓝V认证的关系:认证加权未见官方说明,当待测假设",
+        "企鹅号开通检查"
       ],
       "review_cycle": {
         "interval_days": 90,
@@ -164,16 +163,16 @@
         "en-AU",
         "en-CA"
       ],
-      "notes": "92% AIO 引用来自自然 top-10——经典排名即 AI 可见性前提;Wikidata 实体一致是引用层基础",
+      "notes": "AIO 引用与自然 top-10 的重合度各第三方研究口径分歧大(不取单一数字)——经典排名仍是本套件假设的 AI 可见性底座;Wikidata 实体一致是引用层基础",
       "special_checks": [
         "三类 AI 爬虫按目的分策(training/search-indexing/live-fetch)——封训练勿连带封引用",
         "协议层 agent-readiness(ARD/ai-catalog.json/WebMCP/Web Bot Auth)",
         "段落级可引性:主体+数字+as-of 日期+方法学四要素在场",
         "llms.txt 对 Google 无效标注(不帮不伤,勿当排名手段)",
         "inauthentic mentions/逐长尾建页=Scaled Content Abuse 风险标注",
-        "AIO 品牌词覆盖月度重跑(2026-09 27%→80%+,DemandSphere/Ahrefs 双源)",
-        "Reddit 份额塌陷核查:ChatGPT ~60%→~10%,YouTube 第一;Perplexity 不变",
-        "GA4 AI Assistant 渠道迁移+~70% AI 引荐误记 Direct 修正",
+        "AIO 品牌词覆盖月度重跑(DemandSphere 2026-09:26–35%→82%)",
+        "Reddit 份额塌陷核查:ChatGPT ~60%→~10%",
+        "GA4 AI Assistant 渠道迁移+AI 引荐误记 Direct 修正",
         "顶引页月度复测(流失≥30%/季)",
         "Reddit 代发/买赞=inauthentic mention 高危"
       ],
@@ -183,9 +182,9 @@
         "last": "2026-10-09",
         "signals": [
           "Google Search Status Dashboard(spam/core 更新时间戳)",
-          "DemandSphere/Ahrefs 品牌词 AIO 覆盖月度研究(2026-09 27%→80%+ 复测)",
+          "DemandSphere 品牌词 AIO 覆盖月度研究(2026-09 26–35%→82% 复测)",
           "Chrome WebMCP origin trial/ARD 采用进展",
-          "GA4 AI Assistant 渠道与 Direct 漏损(~70%)口径变化",
+          "GA4 AI Assistant 渠道与 Direct 漏损口径变化",
           "ChatGPT/Perplexity 引用池份额季度研究(Reddit 塌陷复测)"
         ],
         "note": "2026-10-09 本地实测轮建立(wikipedia/craigslist/etsy 真实站验证);etsy 有真 llms.txt、ebay/etsy 主页 403 bot 墙已记录 references/markets/en.md 本地实测节"
@@ -195,12 +194,12 @@
       "title_limit": {
         "value": 55,
         "unit": "chars",
-        "note": "Yandex ~50-55 字符截断"
+        "note": "本套件阈值,Yandex 不设字符上限(yandex.ru/support/webmaster/ru/search-results/title)"
       },
       "desc_limit": {
         "value": 160,
         "unit": "chars",
-        "note": "Yandex 摘要比 Google 宽"
+        "note": "本套件阈值,Yandex 不设字符上限(同上)"
       },
       "desc_min": 80,
       "sentence_ideal": {
@@ -228,7 +227,6 @@
         "yandex",
         "google",
         "alice",
-        "neuro",
         "dzen"
       ],
       "entity_sources": [
@@ -245,7 +243,7 @@
         "ru-KZ",
         "ru-BY"
       ],
-      "notes": "Yandex ~70-73%+Metrica(152-ФЗ,GA 实际不可用);Alice/Neuro 取源自然 top-10;原生西里尔+7 号电话是专家性信号;ё/е 变体归组",
+      "notes": "Yandex 70.33%(StatCounter 2026-09)+Metrica(152-ФЗ;Роскомнадзор 函件只要求按第 12 条第 3 款做跨境传输通知,GA 并非被禁,garant.ru);Алиса AI 取源偏高排名页,Ашманов 测得非 top-10 占 10%(Нейро 已由 Алиса AI 接替);原生西里尔+7 号电话是专家性信号;ё/е 变体归组",
       "special_checks": [
         "商业页法定透明层 6 类字段(оферта/реквизиты 类法定页)缺失即 WARN——IndexLift 口径",
         "行为质量代理:首屏清晰度/低空锚率/模板文本占比(Horosheff 行为近似)",
@@ -261,25 +259,25 @@
         "next": "2027-01-09",
         "last": "2026-10-09",
         "signals": [
-          "Yandex Webmaster 博客(算法/Алиса/Нейро 官方公告)",
+          "Yandex Webmaster 博客(算法/Алиса AI 官方公告)",
           "Яндекс 财报与 Вебмастер SoV-отчёт Алисы AI 口径更新",
           "searchengines.guru/habr/vc.ru 圈内风向",
           "152-ФЗ/Metrica 合规政策变化",
           "yandex.ru→dzen 门户重定向结构变化(实测靶站有效性)"
         ],
-        "note": "2026-10-09 本地实测轮建立(yandex/habr 真实站验证);robotparser 'Disallow: /?'→整站禁误报与门户 302 重定向盲区已记录 references/markets/ru.md 本地实测节"
+        "note": "2026-10-09 本地实测轮建立(yandex/habr 真实站验证);门户 302 重定向盲区已记录(robotparser 'Disallow: /?' 误报已修) references/markets/ru.md 本地实测节"
       }
     },
     "ko": {
       "title_limit": {
         "value": 30,
         "unit": "fullwidth",
-        "note": "Naver PC ~30 전각"
+        "note": "本套件口径(未找到 Naver 官方出处):~30 전각"
       },
       "desc_limit": {
         "value": 80,
         "unit": "fullwidth",
-        "note": "Naver description ≤80 전각"
+        "note": "本套件口径(未找到 Naver 官方出处):≤80 전각"
       },
       "desc_min": 40,
       "sentence_ideal": {
@@ -320,17 +318,17 @@
         "ko",
         "ko-KR"
       ],
-      "notes": "연관채널 sameAs 用官方域名清单(치지직/당근 포함);AI Briefing 几乎只引 Naver 生态;PIPA cookie 同意+跨境披露;nosourceinfo 是本市场独有的官方 AI 引用退出 meta",
+      "notes": "연관채널 sameAs 用官方域名清单(치지직/당근 포함);AI Briefing 引用多落在 Naver 生态(厂商博客口径,Andgentic);PIPA cookie 同意+跨境披露;nosourceinfo 用于关闭 AI 自动生成的出处说明",
       "special_checks": [
-        "nosourceinfo meta 决策记录(全球唯一官方 AI 引用退出)",
+        "nosourceinfo meta 决策记录(关闭 AI 自动生成的出处说明)",
         "AI Briefing 引用条件:标签-值网格>散文块+一手来源声明并链接原文+事实在移动首屏",
         "RSS 含最新文全文提交;robots 按 User-agent 管 Yeti、禁 IP 封禁(IP 段随时变)",
         "연관채널 channel markup 在场",
         "自动互邻/评论交换=spam 头号目标禁用;发布后频繁编辑-删除循环侵蚀文档信任分——修订节流",
         "별점 부활(2026-04):리뷰 수정限 3 个月——ORM 窗口月内",
         "메이트 인용수 2026-06-04 起프로필 표시",
-        "AI 광고 2026-07-15 出稿与自然引用同屏",
-        "가짜 영수증 1회=不可逆 제재"
+        "AI 광고 2026-07-15 广告主中心开放、07-21 展示,与自然引用同屏",
+        "가짜 영수증:一周内所有评价不显示,重复则更久(yna.co.kr 2026-01-28)"
       ],
       "review_cycle": {
         "interval_days": 90,
@@ -394,7 +392,7 @@
         "ja",
         "ja-JP"
       ],
-      "notes": "Bing 28-33% 喂 Copilot——单独验证可爬;Yahoo! Japan=Google 索引;ステマ規制限评价征集;日语版比英语短 10-25%",
+      "notes": "Bing 28.5–36.4%(2026-03~09 月度区间)喂 Copilot——单独验证可爬;Yahoo! Japan=Google 索引;ステマ規制限评价征集;日语版比英语短 10-25%",
       "special_checks": [
         "全角阈值 title 32/desc 120/正文 300(visible_length 口径:全角=1/半角=0.5)",
         "です/ます 敬语混检(常体落下即标;学术栏だ/である 除外)",
@@ -402,9 +400,9 @@
         "nosnippet 会把内容退出 AIO/AI Mode 输入——要进 AI 的页勿设",
         "全角英数字(ＳＥＯ/SEO)混在检查+charset/lang 声明",
         "换算通胀(月→年→日数)≤2 次/篇;无出处传闻逸话删除",
-        "桌面 Bing 51.8% 已反超(GSC 不计 Bing 流量=测量盲区)",
+        "桌面 Bing 曾有 51.8% 反超的单月读数(非趋势;GSC 不计 Bing 流量=测量盲区)",
         "ChatGPT 日本结构性孤立(引 Google 上位仅 19.9%)",
-        "星5つで 這句話本身違法(QR 王道)",
+        "星5つで 类文句:只有指定星级才算事业者表示(QR 王道;caa.go.jp Q&A Q6)",
         "はてな卫星站=链接 spam 高危"
       ],
       "review_cycle": {
@@ -413,7 +411,7 @@
         "last": "2026-10-09",
         "signals": [
           "四大媒体 RSS:webtan.impress.co.jp/suzukikenichi.com/life-from2020.com/news.yahoo.co.jp(Ahrefs 日本語月次)",
-          "Bing 28-33%→Copilot 引用面份额复测(桌面 51.8% 反超口径)",
+          "Bing 28.5–36.4%→Copilot 引用面份额复测(桌面 51.8% 为单月读数)",
           "ステマ規制/景表法 执法与 QR 王道判例动态",
           "GEO AIO Tracker/LLM Insight 月次引用数据",
           "ChatGPT 日本 引用孤立度(引 Google 上位仅 19.9%)复测"
@@ -447,11 +445,11 @@
         "increíble"
       ],
       "formats": {
-        "number": "1.234,56(es-ES)/1,234.56(es-419 部分国)",
+        "number": "1.234,56(es-ES;4 位数不加分隔符,写 1234,56,CLDR minimumGroupingDigits=2)/1,234.56(es-419 部分国)",
         "date": "09/10/2026",
         "phone_prefix": "+34"
       },
-      "formality": "tú/usted 按国别:es-419 偏 tú,正式 B2B usted",
+      "formality": "tú/usted 按国别:阿根廷/乌拉圭等用 voseo(vos)(rae.es/dpd/voseo),正式 B2B usted",
       "engines": [
         "google",
         "bing",
@@ -469,18 +467,18 @@
         "es-MX",
         "es-AR"
       ],
-      "notes": "Google hreflang 不支持 es-419(只认 ISO 639-1 语言码+ISO 3166-1 Alpha-2 区域码,原文「such as es-419, aren't supported」,localized-versions 核对 2026-10-21):拉美用 es 兜底,需要时加 es-MX/es-AR 等国家码,es-419 只作内容层的拉美西语写法;西语查询 83-84% 引西语源;半岛偏置要对抗;es-ES 与 es-419 词汇分流(coche/carro/auto);es-US 集体代搜(81% 受托)",
+      "notes": "Google hreflang 不支持 es-419(只认 ISO 639-1 语言码+ISO 3166-1 Alpha-2 区域码,原文「such as es-419, aren't supported」,localized-versions 核对 2026-10-21):拉美用 es 兜底,需要时加 es-MX/es-AR 等国家码,es-419 只作内容层的拉美西语写法;西语查询 83–84% 引西语源(仅 Google AIO 与 Copilot 口径,Temso);半岛偏置要对抗;es-ES 与 es-419 词汇分流(coche/carro/auto)",
       "special_checks": [
         "es-419 hreflang 检查(Google 不支持 es-419:改用 es 兜底+es-MX/es-AR 等国家码)",
         "coche/carro/auto 词汇分流按变体组",
         "¿...? 倒问号疑问式 H2 在场",
         "支付词层 OXXO/cuotas/contra entrega 进意图分类",
         "半岛偏置对抗:es-419 独立测 SERP;拉美托管欧洲→CDN 本地化前置",
-        "ML 六支柱:ficha técnica→catálogo 先行再五支柱",
-        "西班牙 AIO 引用碎片化(~15%=top10):长尾权威页单独做",
+        "ML 官方只发布竞争 listing 规则(sellers.mercadolibre.com「guide-to-your-listings-in-competition」),五支柱是 Base.com 厂商模型:ficha técnica→catálogo 先行",
+        "西班牙 AIO 引用碎片化(与自然 top10 重合 15–48%,mintec.co):长尾权威页单独做",
         "GSC 生成AI 报告为测量基线",
-        "wa.me 深链+预填消息审计(对话商务 45-60% vs 网站 2-4%)",
-        "外链按 DR 价带分档标注租链足迹"
+        "wa.me 深链+预填消息审计",
+        "外链标注租链足迹(按来源域分档)"
       ],
       "review_cycle": {
         "interval_days": 90,
@@ -492,9 +490,9 @@
           "Mercado Libre 算法/卖家中心公告",
           "Meta WA 计费与 Business Agent 政策",
           "AI Information Map Spain 年更",
-          "es-US 代搜(81% 受托)原始研究复现"
+          "es-US 代搜研究是否出现第二来源"
         ],
-        "note": "2026-10-09 本地实测轮建立(分国重核+真实站验证);81% 受托搜标单源降置信;头部大报 AI 爬虫封锁已记录 references/markets/es.md"
+        "note": "2026-10-09 本地实测轮建立(分国重核+真实站验证);es-US 代搜研究仅单源,降置信;头部大报 AI 爬虫封锁已记录 references/markets/es.md"
       }
     },
     "pt": {
@@ -542,17 +540,17 @@
         "pt-BR",
         "pt-PT"
       ],
-      "notes": "ChatGPT 最强市场(25.5% 人口,~5,000 万月用户);Reclame Aqui 三重角色=AI 引用源+语料+信任信号(SAC 即 GEO);LGPD 选择加入同意",
+      "notes": "ChatGPT 约 5,400 万月活(Atlantico 2025-07,StartSe 2025-09-10 第三方转述);Reclame Aqui 三重角色=AI 引用源+语料+信任信号(SAC 即 GEO);LGPD 选择加入同意",
       "special_checks": [
-        "Reclame Aqui 品牌词占位必查(22.3% ChatGPT 被引)",
+        "Reclame Aqui 品牌词占位必查(Promptado 2026-01 抽样:RA 出现中 22.3% 为显式引用)",
         "OAB/CRM 委员会号+CNPJ 执业凭证字段在场",
         "AO90 新旧拼法 Trends 对比后兼收决策记录",
-        "troca de links 环形链检查(无安全阈值,改三角链)",
-        "ML listing 60 字符标题+ficha técnica 全字段+投诉率<1% 门槛",
-        "AIO 86.8%:排名 vs 被引用分列",
+        "troca de links 互惠链接逐条查对端回链(Google spam policies 只列过量互换)",
+        "ML listing 标题≤60 字符(官方 API),不写颜色/运费/促销;ficha técnica 全字段;MercadoLíder 有问题订单<1%",
+        "AIO 86.8%(桌面、500 词、2026-07,SEONextbr):排名 vs 被引用分列",
         "仅收 PIX/boleto=骗局信号",
         "publieditorial=rel:sponsored+披露",
-        "ML 六信号:Full/ficha100%/60字/断货即掉/投诉<1%/CVR"
+        "ML 信号:官方可证的只有 ficha、标题 60 字符、信誉门槛;Full/库存/CVR 标待测假设"
       ],
       "review_cycle": {
         "interval_days": 90,
@@ -562,8 +560,8 @@
           "StatCounter BR 月度份额(Google 88.4%/Bing 9.63% 口径漂移)",
           "Conversion 博客与《Tendências de SEO》年更",
           "Reclame Aqui 官方研究与 Black Friday 年度报告",
-          "SEONextbr/Optimiza 报告(AIO 86.8% 口径复测)",
-          "Google blog pt-BR(Search I/O 巴西场);LGPD/CNPCD 执法动态"
+          "SEONextbr/Optimiza 报告(AIO 86.8% 桌面口径复测)",
+          "Google blog pt-BR(Search I/O 巴西场);LGPD/ANPD 执法与指南动态"
         ],
         "note": "2026-10-09 本地实测轮建立(g1+uol 真实站验证);g1 全放行/uol 禁 2/4、pt special_checks 零 AUTO 机检项已记录 references/markets/pt.md 本地实测节;next 2027-01-09 取代旧 2027-04 口径"
       }
@@ -572,12 +570,12 @@
       "title_limit": {
         "value": 60,
         "unit": "chars",
-        "note": "阿文文案比英文膨胀 ~20%——按 60 留余量防换行"
+        "note": "本套件口径,未核(以 parity_check 实测为准):阿文文案比英文膨胀 ~20%——按 60 留余量防换行"
       },
       "desc_limit": {
         "value": 155,
         "unit": "chars",
-        "note": "同膨胀 ~20% 预留"
+        "note": "本套件口径,未核:同膨胀 ~20% 预留"
       },
       "desc_min": 77,
       "sentence_ideal": {
@@ -615,7 +613,7 @@
         "ar-EG",
         "ar-AE"
       ],
-      "notes": "全链 RTL:dir=rtl+逻辑 CSS+镜像布局;裸 LTR 标点须 U+2066/U+2067 隔离;MSA 内容 LLM 处理好、方言显著退化;正字变体(أإا/ى/ة/tatweel)归组;COD=الدفع عند الاستلام 是信任资产",
+      "notes": "全链 RTL:dir=rtl+逻辑 CSS+镜像布局;裸 LTR 标点须 U+2066/U+2067 隔离;MSA 内容 LLM 处理好、方言显著退化;正字变体(أإا/ى/ة/tatweel)归组;COD=الدفع عند الاستلام 是信任资产;数字系统 CLDR 默认 ar/ar-AE=0-9、ar-SA/ar-EG=٠-٩(区域库默认值,不代表本国网站习惯);电话前缀本表只配沙特 +966,多国共用时补阿联酋 +971、埃及 +20;ar 为兜底,国码在内容分国时才加",
       "special_checks": [
         "RTL 方向位检查:dir=rtl+逻辑 CSS 属性+镜像布局全链",
         "裸 LTR 标点/数字 U+2066/U+2067 双向隔离",
@@ -623,10 +621,10 @@
         "Ramadan 内容弧与发布窗口闸门(Iftar/Taraweeh/Suhoor;海湾峰值 10-3 月)",
         "阿-印数字 ٠-٩ 与 0-9 全页统一不混",
         "3arabizi 罗马化变体音译聚类",
-        "阿英引用池近不相交(0.149)——GEO 必须阿语提示单独跑",
-        "Cloudflare 2026-09 默认封训练可连带封 Googlebot",
-        "Ramadan 2027≈02-08~03-08 对齐 54 天官方折扣季",
-        "UAE 广告主许可证 2026-01 强制(罚 AED 10,000)"
+        "阿英引用池近不相交(0.149;VOCTOS,沙特医疗,AI Mode,40 组,2026-09,中期结果)——GEO 必须阿语提示单独跑",
+        "选择封训练的 Cloudflare 客户会连带封多用途爬虫;2026-09-15 起新域名在广告页默认封训练与代理类",
+        "Ramadan 2027 ≈ 02-08 起;54 天是 2026 年季节长度,2027 年待商务部公告(2026-01-28 公告)",
+        "UAE Advertiser Permit:2026-02-01 起(截止 01-31);豁免:个人账号推广自有产品;罚款数额未核"
       ],
       "review_cycle": {
         "interval_days": 90,
@@ -675,7 +673,7 @@
       "engines": [
         "google",
         "bing",
-        "vibe-ex-lechat"
+        "vibe"
       ],
       "entity_sources": [
         "wikipedia(fr)",
@@ -689,17 +687,17 @@
         "fr-BE",
         "fr-CH"
       ],
-      "notes": "Bill 96:fr-CA 商务站法语义务(25+ 须 OQLF 注册,罚 ~3 万 CAD/日/项);魁北克 vs 法国词汇表(courriel/email);40-60 词实体简介全平台逐字重复",
+      "notes": "Bill 96:fr-CA 商务站法语义务(25+ 须 OQLF 注册,违反 OQLF 命令时罚 3,000–30,000 加元,累犯加倍,持续违法每日一次);魁北克 vs 法国词汇表(courriel/email);非洲法语区需要时 hreflang 加 fr-SN、fr-CI 等国家码,不得用 fr-AF;40-60 词实体简介全平台逐字重复",
       "special_checks": [
         ":;!? 前 U+202F 窄不换行空格(非普通空格)",
         "Bill 96 合规闸门:25+ 人 OQLF 注册;商标例外须配法语通用描述",
         "courriel/balado/magasinage 术语表按 fr-CA/fr-FR 分流",
         "Vibe(ex-Le Chat)三爬虫分工+AFP 系信源占位",
         "40-60 词实体简介全平台逐字一致检查",
-        "非洲法语区桌面 Bing 9.2%→Bing Places 必配",
+        "非洲法语区(塞内加尔样本)桌面 Bing 12.57%(StatCounter SN 2026-09,12 月区间 6.68–20.76%)→Bing Places 必配",
         "Vibe 三爬虫分态:MistralAI-User/-Index 放行,-Training 可封(IP JSON 公开)",
-        "AIO 疑问类覆盖 97.5%——月度跑疑问词面板",
-        "Bill 96 罚 3,000-30,000 CAD/项+私人诉权",
+        "AIO 疑问类覆盖 51.7%–97.5%(Hégo,按采样日期的区间)——月度跑疑问词面板",
+        "Bill 96 违反 OQLF 命令罚 3,000-30,000 CAD(Charte 第 205 条,累犯加倍)",
         "Bill 96 检查 fr-CA 等效可见性"
       ],
       "review_cycle": {
@@ -707,9 +705,9 @@
         "next": "2027-01-09",
         "last": "2026-10-09",
         "signals": [
-          "CNIL/Arcom 动态(Arcom 33-38% AIO 损失评估更新/CNIL AI·consent 新指引)",
-          "StatCounter FR 月度份额(桌面 Bing 10.92% 口径漂移)",
-          "Vincent Hego 观察站 AIO 覆盖率(疑问类 97.5% 复测)",
+          "CNIL/Arcom 动态(Arcom 33-38% AIO 损失评估更新[APIG 引用,已上线欧洲市场口径]/CNIL AI·consent 新指引)",
+          "StatCounter FR 月度份额(桌面 Bing 2026-06–08 为 10.98–11.79%、2026-09 为 15.83%,口径漂移)",
+          "Vincent Hego 观察站 AIO 覆盖率(疑问类 51.7–97.5% 区间复测)",
           "Mistral robots 文档与 IP JSON 变动(Vibe 三爬虫分态)",
           "OQLF Bill 96 执法公告;法国出版商 vs Google 诉讼进展"
         ],
@@ -721,7 +719,7 @@
         "value": 65,
         "unit": "chars",
         "ideal_min": 55,
-        "note": "Sistrix 口径 55-65 字符;德语词长,低于 55 浪费"
+        "note": "本套件口径 55-65 字符(Sistrix 公开页未读到该口径);德语词长,低于 55 浪费"
       },
       "desc_limit": {
         "value": 150,
@@ -736,14 +734,14 @@
       "sentence_split": "latin",
       "pillar_min": 2000,
       "pillar_unit": "words",
-      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数;原注:德语版比英语长 25-35%——大幅偏离提示截断/未本地化",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数;原注:本套件口径(未核),德语版比英语长 25-35%——大幅偏离提示截断/未本地化",
       "marketing_words": [
         "revolutionär",
         "führend",
         "bahnbrechend"
       ],
       "formats": {
-        "number": "1.000,00(千分点+逗号小数)",
+        "number": "1.000,00(千分点+逗号小数;de-AT 分组用 U+00A0,de-CH 用撇号分组+小数点,CLDR)",
         "date": "09.10.2026",
         "phone_prefix": "+49"
       },
@@ -765,17 +763,17 @@
         "de-AT",
         "de-CH"
       ],
-      "notes": "Google 87.8%(主要市场最低)+Bing 6.5%;GEO 引用源优先德国官方机构>德国 Tier-1 媒体;Consent Mode v2 纳入测量设计",
+      "notes": "Google 87.8%(主要市场最低)+Bing 6.5%(StatCounter DE 2026-09;月间波动大,12 月区间 80.05–90.18%);GEO 引用源优先德国官方机构>德国 Tier-1 媒体;Consent Mode v2 纳入测量设计",
       "special_checks": [
         "Sie/du 按国别+Ansprache/Tonalität 两字段全站一致性",
         "Impressum(§5 DDG)法定页在场",
-        "软文 Werbung 标注(Abmahnung 律师函风险先于 Google 惩罚);OLG Köln 2024 拒绝键同等醒目",
+        "软文 Werbung 标注(UWG § 5a(4);Abmahnung 律师函风险先于 Google 惩罚);OLG Köln 6 U 80/23 要旨:第一层须有拒绝选项",
         "租链(月租制)资产台账勿按永久入账",
         "GSC(免 consent)基准+GA4 consent rate 并列;德语版长度 +25-35% 平价带",
-        "AIO CTR 恢复信号(1.3%→2.4%)——跌后不恢复叙事需软化",
-        "Ecosia 已混自有索引(非纯 Google)",
-        "桌面 Bing 12.81% 泛口径低估",
-        "OLG Köln 判例:拒绝键同层同等醒目"
+        "AIO CTR 恢复信号(Seer,2025-12 至 2026-02:1.3%→2.4%)——跌后不恢复叙事需软化",
+        "Ecosia/Qwant 德国自有索引 2026-07 上线,逐步提高占比(heise 2026-07-30)",
+        "桌面 Bing 2026-05 至 09 为 12.81–19.44%,泛口径低估",
+        "OLG Köln 6 U 80/23 要旨:第一层不提供拒绝选项的 banner 不构成有效同意(拒绝与同意按钮应 gleichwertig)"
       ],
       "review_cycle": {
         "interval_days": 90,
@@ -783,7 +781,7 @@
         "last": "2026-10-09",
         "signals": [
           "SISTRIX 博客(AIO-DE 覆盖率破 40% 重排线/位置1 CTR 恢复曲线)",
-          "StatCounter DE 月度份额(桌面 Bing 12.81% 口径漂移)",
+          "StatCounter DE 月度份额(桌面 Bing 月间 12.81–19.44%,口径漂移)",
           "heise/Ecosia 博客(自有德语索引是否成默认结果源)",
           "IT-Recht-Kanzlei/ABAKUS(Abmahnung 波次与判例上行)",
           "SE Ranking DACH 报告(三口径并记第三源)"
@@ -839,28 +837,28 @@
         "id",
         "id-ID"
       ],
-      "notes": "AIO 触发率 37.2% 全球第一;移动 >82% 搜索流量——slow-4G 为测试基线;产品发现走 Tokopedia/Shopee/TikTok,Google 承担研究意图",
+      "notes": "AIO 触发率 37.2% 全球第一(Limadata 文章,方法未核);ChatGPT/TikTok Shop 的印尼份额未核;移动 >82% 搜索流量——slow-4G 为测试基线;产品发现走 Tokopedia/Shopee/TikTok,Google 承担研究意图",
       "special_checks": [
         "meta 前 120 字符安全区(关键信息前置)",
         "baku/gaul 双轨关键词层(关键词跟手指、正文跟词典)",
         "EYD V 正字法新旧拼法兼收决策记录",
         "marketplace(Tokopedia/Shopee/TikTok)占位审计先于 Google",
         "slow-4G 节流为测试基线;nulled 主题/PBN 供应链风险标注",
-        "Shopee 12h 回复率直接影响排名(聊天好转化+34%)",
-        "低端 jasa SEO Rp99k-500k=结构性 PBN",
+        "Shopee 官方:12 小时内回复才计入 Persentase Chat Dibalas;对排名权重官方未写",
+        "低价 jasa SEO 包要求交付物与链接来源清单",
         "Ivan Lanin 定调关键词跟手指正文跟词典",
-        "PBN×nulled 闭环($15/条 .id 域)"
+        "PBN×nulled 闭环(.id 域链接来源核查)"
       ],
       "review_cycle": {
         "interval_days": 90,
         "signals": [
-          "cube.asia/Momentum Works 季度 GMV 更新(TikTok Shop×Tokopedia 31-39% 带收敛或破带)",
+          "cube.asia 印尼页面季度 GMV 更新(31% 是东南亚六国合并口径,非印尼单国)",
           "kompas 类头部媒体 AI 爬虫立场反转(当前 4 爬虫全禁)",
           "cmlabs 新 playbook/AIO 触发率复测(37.2% 口径)",
-          "GSC AI Performance Report 印尼语数据开放度"
+          "Search Console 生成式 AI 表现报告(2026-06-03 上线)印尼语数据开放度"
         ],
         "next": "2027-01-09",
-        "note": "2026-10-09 深挖轮建立:GMV 32% 落多源 31-39 带;kompas 封 4 个 AI 爬虫为头条实测;详见 references/markets/id.md 本地实测节"
+        "note": "2026-10-09 深挖轮建立:GMV 份额多源 31-39 带(31% 为东南亚六国合并口径,非印尼单国);kompas 封 4 个 AI 爬虫为头条实测;详见 references/markets/id.md 本地实测节"
       }
     },
     "hi": {
@@ -907,9 +905,9 @@
         "hi-IN",
         "en-IN"
       ],
-      "notes": "真实查询量在 Hinglish/罗马化,不在纯印地语;hi-IN 与 en-IN 分开;语音查询助词词库(kaise/konsa/batao)×产品词;拼写漂移聚类",
+      "notes": "真实查询量在 Hinglish/罗马化,不在纯印地语;hi-IN 与 en-IN 分开;hi-Latn 仅用于 HTML lang,Google hreflang 不用;语音查询助词词库(kaise/konsa/batao)×产品词;拼写漂移聚类",
       "special_checks": [
-        "Hinglish 三写变体归组+GSC regex 快照缺口诊断(排名好但语言错配页)",
+        "Hinglish 三写变体归组+GSC regex 快照缺口诊断;GSC 正则是 RE2,天城体写 \\p{Devanagari},不写码点范围(排名好但语言错配页)",
         "lakh/crore 数字分组(1,23,456.78)",
         "hi-IN 与 en-IN 分开评分",
         "语音层关键词形态:助词词库×产品词",
@@ -923,11 +921,11 @@
           "StatCounter 印度月度份额(连续 2 月 >1pp 漂移触发)",
           "Google for India 年度发布(惯例 Q4)",
           "ChatGPT 印度 WAU 官方口径更新",
-          "IAMAI–Kantor 年报",
-          "Discover 依赖度行业口径(State of Indian Digital Publishing/Praman)",
+          "IAMAI–Kantar 年报",
+          "自家 GSC Discover 报告(行业口径未核)",
           "Sarvam/Krutrim 主权栈 API 与爬虫生态"
         ],
-        "note": "2026-10-09 本地实测轮建立(双源重核+真实站验证);Bain 80/60 已修正为美国样本外推;site_audit 天城文词数盲区已记录 references/markets/hi.md"
+        "note": "2026-10-09 本地实测轮建立(双源重核+真实站验证);Bain 80/60 已修正为美国样本外推;天城体词数已按词边界计(matra/virama 附着词内,修前逐码点约为词数的 5 倍),不再是盲区 references/markets/hi.md"
       }
     },
     "it": {
@@ -973,15 +971,15 @@
         "it-IT",
         "it-CH"
       ],
-      "notes": "it-CH 当独立 locale(.ch 域+瑞郎价+混德法语词),复制 it-IT 会被信号归并;4 星>5 星信任悖论;AIO 2025-03-26 与 DACH 同批",
+      "notes": "it-CH 当独立 locale(.ch 域+瑞郎价+混德法语词),复制 it-IT 会被信号归并;4 星>5 星信任悖论(本套件口径,来源未核);AIO 2025-03-25 与 DACH 同批(Google 博客日期)",
       "special_checks": [
         "it-CH 独立 locale 检查(.ch 域+CHF 价+混德法词,勿复制 it-IT)",
         "P.IVA→Registro Imprese(ATECO+省)竞品链",
         "测量值 vs 估算值声明降级标注(数据阶梯)",
-        "评分展示策略按 4 星>5 星信任校准",
+        "评分展示策略按 4 星>5 星信任校准(本套件口径,来源未核)",
         "it-CH 独立 locale(.ch+CHF+混德法词)",
         "P.IVA→Registro 竞品链",
-        "AIO 监测须 live SERP(缓存低估近半)",
+        "AIO 抽样记录日期/设备(live SERP 与缓存结果分开记)",
         "意英双轨关键词表禁直译"
       ],
       "review_cycle": {
@@ -989,11 +987,11 @@
         "signals": [
           "SEOZoom 新 AIO 采样窗/覆盖复测(2026-08-28 自动扩张后)",
           "FIEG-AGCOM/欧盟投诉程序性进展(新闻域名是否重返引用面)",
-          "StatCounter IT 桌面 Google 跌破 78% 或 Bing 桌面破 11%",
-          "Connect.gt/giorgiotave 圈内年度议题单更新"
+          "StatCounter IT 桌面 Google 跌破 70% 或 Bing 桌面破 15%(本套件口径)",
+          "Connect.gt/giorgiotave 圈内年度议题单更新(Connect.gt 注册数/大会未核)"
         ],
         "next": "2027-01-09",
-        "note": "2026-10-09 深挖轮建立:StatCounter 直核多源自洽(全平台 89-91 带/桌面 ~80);实测详见 references/markets/it.md 本地实测节"
+        "note": "2026-10-09 深挖轮建立:StatCounter 2026-09 直核:全设备 87.31%、桌面 73.04%;实测详见 references/markets/it.md 本地实测节"
       }
     },
     "tr": {
@@ -1025,7 +1023,7 @@
         "date": "09.10.2026",
         "phone_prefix": "+90"
       },
-      "formality": "siz 默认;sen 亲密;İ/i 大小写陷阱(İ→i̇ 双码点,归组前先 replace)",
+      "formality": "siz 默认;sen 亲密;İ/i 大小写陷阱(İ.lower()→i+U+0307 双码点,先 replace 再 casefold)",
       "engines": [
         "google",
         "yandex",
@@ -1041,27 +1039,27 @@
         "tr",
         "tr-TR"
       ],
-      "notes": "第二个 Yandex 市场(StatCounter ~26%,vs 本地实测 3-5% 口径冲突并记):Yandex Webmaster+Wordstat TR 双引擎;黏着语屈折形式研究(英文式头部词低估量);AIO 引用 75.3% 绑定自然前 10",
+      "notes": "第二个 Yandex 市场(StatCounter 2026-09 单月 25.53%、13 个月区间 10.88–50.51%;「3-5%」是从业者说法,口径冲突并记):Yandex Webmaster+Wordstat TR 双引擎;黏着语屈折形式研究(英文式头部词低估量);AIO 引用 75.3% 绑定自然前 10(Seobaz 2026-08,8,282 条搜索;AIO 2026-02-18 才在土耳其上线)",
       "special_checks": [
         "Yandex 双引擎投入按客群决策记录(本地实操几乎没人做)",
         "黏着语屈折形式关键词层(词干+格/数/领属后缀,Zemberek)",
-        "İ/i 双码点归组前先替换(İ→i̇)",
+        "İ/i 归组前先 replace 再 casefold(İ.lower()→i+U+0307)",
         "tanıtım yazısı 赞助文链路披露(非西式 guest post)",
-        "份额口径冲突并记(StatCounter 26% vs 本地 3-5%),建议本地实测",
-        "Yandex 三口径并记(26/16/3-5%),投放前本地实测",
+        "份额口径并记(StatCounter 2026-09 单月 25.53%,13 个月 10.88–50.51%;3-5% 为从业者说法),建议本地实测",
+        "Yandex 份额不取窗口均值,单月读数并记区间,3-5% 标从业者说法;投放前本地实测",
         "Trendyol 断货/开新卡=权重清零,救老卡优先",
         "r10 tanıtım 90₺+审计归付费占位"
       ],
       "review_cycle": {
         "interval_days": 90,
         "signals": [
-          "StatCounter TR 单月 Yandex 重上 25% 或跌破 8%(三口径裁决复核)",
+          "StatCounter TR Yandex 连续 3 个月同向变动 >10 个百分点(本套件口径;口径裁决复核)",
           "Yandex TR 官方份额/财报首次分国披露",
           "Yazeka 引用池/门槛公开数据出现",
           "Trendyol Akademi 算法口径更新(content score 公式等)"
         ],
         "next": "2027-01-09",
-        "note": "2026-10-09 裁决:26%=窗口均值已退役;16%=StatCounter 单月(13-16 带);预算按点击口径 3-5%;详见 references/markets/tr.md 本地实测节"
+        "note": "2026-10-09 裁决修订:不再用窗口均值;StatCounter 2026-09 单月 25.53%,13 个月区间 10.88–50.51%;3-5% 为从业者说法(点击口径);详见 references/markets/tr.md 本地实测节"
       }
     },
     "vi": {
@@ -1070,7 +1068,7 @@
         "unit": "chars",
         "ideal_min": 45,
         "keyword_first_chars": 30,
-        "note": "t0mmy:标题词进前 30 字符防 AI 改写;45-65 字符理想"
+        "note": "t0mmy:标题词进前 30 字符防 AI 改写;45-65 字符理想;本套件口径(t0mmy 业内规则),Google 无固定字符上限"
       },
       "desc_limit": {
         "value": 155,
@@ -1109,20 +1107,20 @@
         "vi",
         "vi-VN"
       ],
-      "notes": "有调/无调(không/khong)意图不同——归组研究但排名当独立词跟踪;Coc Cốc ~6% 偏好越南语+.vn 单独提交;提问式 H2≥50%;密度只设上限 1/150",
+      "notes": "有调/无调(không/khong)意图不同——归组研究但排名当独立词跟踪;Coc Cốc 2026-09 全设备 5.96%、桌面 11.26%(StatCounter),官方页:可逐个提交 URL;提问式 H2≥50%;密度只设上限 1/150",
       "special_checks": [
         "有调/无调双轨当独立词跟踪(移动端常不打入)",
         "标题词进前 30 字符防 AI 改写",
         "nonce 双层质量门防 agent 自评篡改(validator 达标∧独立评分 ≥85 才发布)",
         "句长方差检测反 AI 文风(mona-seo-check-vi 口径)",
-        "backlink báo 新闻域链披露(Google 链接垃圾政策范围)"
+        "backlink báo 新闻域链披露(加 rel=sponsored/nofollow 并披露的付费链接不违规;买卖传递排名权重的链接才属 Google 链接垃圾)"
       ],
       "review_cycle": {
         "interval_days": 90,
         "signals": [
           "https://gs.statcounter.com/search-engine-market-share/all/viet-nam",
           "Cốc Cốc qc.coccoc.com 季度/年度趋势报告(12 月年度版)",
-          "Decision Lab The State of Consumer AI in Vietnam(年度)",
+          "Microsoft AIEI《AI Diffusion Report》与 WIN World AI Index(年度)",
           "VNG 财报(Zalo MAU/收入拆分,季度)"
         ],
         "next": "2027-01-09"
@@ -1170,20 +1168,20 @@
         "th",
         "th-TH"
       ],
-      "notes": "分词须 Intl.Segmenter('th')——密度工具/精确匹配计数全失效;泰调可读性:句≤25 词/词均≤5 字符;PDPA 医疗明示同意;字体子集省 60-80%",
+      "notes": "分词须 Intl.Segmenter('th')——密度工具/精确匹配计数全失效;泰调可读性(本套件口径):句≤25 词/词均≤5 字符;PDPA 第 26 条医疗明示同意;字体子集省 60-80%",
       "special_checks": [
         "Intl.Segmenter('th') 分词验证为密度/匹配计数前置(主流工具栏全错)",
         "grapheme 字素计数(组合符号不计独立字符)",
         "meta 词中截断逐页检查(无空格文字)",
         "ครับ(男)/ค่ะ(女)礼貌尾词性别一致",
-        "佛历年日期格式(พ.ศ. 2569);PDPA 医疗明示同意"
+        "佛历年日期格式(พ.ศ. 2569);PDPA 第 26 条医疗明示同意"
       ],
       "review_cycle": {
         "interval_days": 90,
         "signals": [
           "https://gs.statcounter.com/search-engine-market-share/all/thailand",
           "Momentum Works Ecommerce in Southeast Asia(年度,5-6 月)",
-          "https://lineforbusiness.com/th/news(LINE 产品变动一手源,如 VOOM 关闭)",
+          "https://lineforbusiness.com/th/news(LINE for Business 新公告一手源;VOOM 已于 2026-09-28 关闭)",
           "ThaiPBS Policy Watch + Google 泰语 AI 功能官方文档(hl=th)"
         ],
         "next": "2027-01-09"
@@ -1231,11 +1229,11 @@
         "pl",
         "pl-PL"
       ],
-      "notes": "Bing 桌面 ~13.3%(全球 3 倍)必做 Bing WMT+IndexNow;内容带正确变音字母写(勿剥 ą/ę/ł——伤品牌与 AI 保真);sierotki 孤字排版",
+      "notes": "Bing 桌面 ~13.96%(StatCounter 2026-09)(全球 3 倍)必做 Bing WMT+IndexNow;内容带正确变音字母写(勿剥 ą/ę/ł——伤品牌与 AI 保真);sierotki 孤字排版",
       "special_checks": [
-        "Bing WMT+IndexNow 接入(桌面 13.3%)",
+        "Bing WMT+IndexNow 接入(桌面 13.96%,StatCounter 2026-09)",
         "变音字母保留检查(禁剥 ą/ę/ł)",
-        "sierotki 孤字排版规则(单双字母词不悬行尾)",
+        "sierotki 孤字排版建议(单双字母词尽量不悬行尾,标题宜移;PWN 规则允许行尾保留)",
         "品牌引用按引擎分列测量(ChatGPT vs Gemini 信源偏好不同)",
         "Allegro Trafność 参数逐月更新+新增参数跟踪"
       ],
@@ -1244,7 +1242,7 @@
         "signals": [
           "https://gs.statcounter.com/search-engine-market-share/all/poland",
           "Gemius/PBI Mediapanel 月报 + 年度 E-commerce w Polsce",
-          "planeta-seo.pl(月度聚合)+ Promptowy AI w Polsce 月报",
+          "planeta-seo.pl(月度聚合)+ Promptowy AI w Polsce 月报(存在性未核)",
           "Allegro 官方卖家公告(参数/广告政策变更)"
         ],
         "next": "2027-01-09"
@@ -1293,7 +1291,7 @@
         "nl-NL",
         "nl-BE"
       ],
-      "notes": "nl-NL/nl-BE 分流(auto's/wagen 词汇与正式度);[INVULLEN] 占位制,拒绝虚构;GBP 描述用满 750 字符+KvK 号;>60% 网民用 AI(欧洲最高档)",
+      "notes": "nl-NL/nl-BE 分流(auto's/wagen 词汇与正式度);[INVULLEN] 占位制,拒绝虚构;GBP 描述用满 750 字符+KvK 号",
       "special_checks": [
         "je/u tone 双轨(nl-NL=je 连 B2B;nl-BE=u 句中小写)",
         "[INVULLEN] 占位制+虚构拒绝 norm(锚文本不给比例、数字不编造)",
@@ -1302,15 +1300,15 @@
         "权威 .nl 链优先;批量进口链拒收风险标注",
         "bol 标题 70-100 字符纪律(勿套 Google 60)",
         "Marktplaats 品牌词可见性节点+二手定价锚",
-        "StatCounter Yandex 2.56%=疑机器人假信号",
-        "LinkedIn 口径标注(活跃 5.8M vs 账户 13-15M)",
+        "StatCounter Yandex 2.56% 疑似异常(13 个月 2.56–5.58%),不据此投入",
+        "LinkedIn 口径标注(Newcom 5.8M vs SearchLab 6.8M,标来源)",
         "交易层荷语强制"
       ],
       "review_cycle": {
         "interval_days": 90,
         "signals": [
           "https://gs.statcounter.com/search-engine-market-share/all/netherlands",
-          "https://seranking.com/nl/blog/ai-overviews-nederland/ + Frankwatching 转引",
+          "上线后 AIO 触发率含分类型拆分(seranking.com/nl/blog/ai-overviews-nederland/ 的 5.22% 是上线前快照)+ Frankwatching 转引",
           "Newcom Nationaal Social Media Onderzoek(每年 1 月)",
           "over.bol.com / Partnerplatform 公告 + Yoast 版本日志(llms.txt 行为)"
         ],

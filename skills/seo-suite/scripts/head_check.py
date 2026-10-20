@@ -46,11 +46,11 @@ SEV_ORDER = {"error": 0, "warn": 1, "info": 2, "ok": 3}
 DEPRECATED_META = {
     ("name", "skype_toolbar"): ("Skype 工具栏扩展已消亡", "无"),
     ("name", "msapplication-config"): ("Live Tiles 已从 Win11 移除,Edge 不再渲染", '<link rel="manifest">'),
-    ("name", "apple-mobile-web-app-capable"): ("iOS 17.4 弃用", 'mobile-web-app-capable;更推荐 manifest display'),
+    ("name", "apple-mobile-web-app-capable"): ("web.dev 列为弃用的 Apple 专有标签", 'mobile-web-app-capable;更推荐 manifest display'),
     ("name", "alexaverifyid"): ("Alexa Internet 2022-05-01 关停", "无"),
     ("name", "twitter:dnt"): ("X 不再实际遵守", "无"),
     ("http_equiv", "x-ua-compatible"): ("IE 已于 2022-06-15 退役", "无需替代"),
-    ("http_equiv", "x-dns-prefetch-control"): ("Firefox/IE 时代扩展,Chromium 从未实现", '<link rel="dns-prefetch">'),
+    ("http_equiv", "x-dns-prefetch-control"): ("非标准;Chrome/Firefox 支持、Safari 不支持(MDN)", '<link rel="dns-prefetch">'),
     ("http_equiv", "window-target"): ("IE 时代非标准,现代浏览器不支持", "无"),
 }
 # twitter:* → X 回落读取的 OG 属性(X Cards markup「Tag Reference」表)
@@ -61,7 +61,7 @@ TWITTER_OG_FALLBACK = {
     "twitter:image:alt": "og:image:alt",
 }
 DEPRECATED_REL = {
-    "mask-icon": ("Safari 17(2023)移除 Pinned Tabs", '标准 <link rel="icon">'),
+    "mask-icon": ("Safari 12 起固定标签页可用普通 favicon", '标准 <link rel="icon">'),
     "prerender": ("Chrome 已移除 prerender", 'Speculation Rules API(<script type="speculationrules"> 的 prerender/prefetch 规则)'),
     "edituri": ("XML-RPC 编辑器消亡", "无"),
     "pingback": ("pingback 因 DDoS 放大被默认禁用", "Webmention"),

@@ -2,9 +2,9 @@
 
 <!-- 数据纪律(与 ai-visibility-weekly.md 统一,违反任何一条即重写):
   1. 数据全部来自 scripts/citation_panel.py 的 report / diff 输出(Content Health 可补 gsc_mining.py --decay);禁引入脚本输出之外的数字。
-  2. 指标全平时(各引擎 |Δ|≤5pp 且配对 n≥10)直接写 "stable, no action needed"——不制造紧迫感(Scrunch 官方原则)。
+  2. 指标全平时(各引擎 |Δ|<5pp 且配对 n≥10)直接写 "stable, no action needed"——不制造紧迫感。5pp 与 n≥10 是 citation_panel.py diff 的 signals 节实现的本套件阈值(≥5pp 才报);借鉴 Scrunch Signals「只报有意义变化」的思路,厂商博客只说统计显著、没给这两个数。
   3. mention(Σmentioned,被提到)与 citation(brand_hits,被列为引用来源)是两个指标,分开呈现,禁合并成一个"曝光数"。
-  4. 分引擎呈现,不合并成总计下结论:跨引擎相关仅 0.03-0.09(Profound 官方),单引擎涨跌不可外推其他引擎。
+  4. 分引擎呈现,不合并成总计下结论:Profound 厂商研究(883,000 页、7 引擎)里,同一页面在不同引擎上的寿命相关仅 0.03-0.09(Google 三个面之间 0.12-0.17),单引擎涨跌不可外推其他引擎。
   5. 推算/人工归类的数字一律打 [est];数字缺失写 [要追加: 数据源],禁编造。
   6. 占位符约定:{{…}}=由 citation_panel.py 输出填充;{…}=人工填写。 -->
 
@@ -42,14 +42,14 @@ mention 与 citation 两条线分开(被提不被引=内容不被信任;被引�
 
 ## 3. Competitive Position(SOV)
 
-<!-- SOV 点名门槛(显式规则,不可省):|Δshare| > 5pp 且配对 n≥10 才点名;≤5pp 或 n<10 一律归"基本持平",不报数字细节、不制造紧迫感。 -->
+<!-- SOV 点名门槛(显式规则,不可省,本套件口径):|Δshare| ≥5pp 且配对 n≥10 才点名;<5pp 或 n<10 一律归"基本持平",不报数字细节、不制造紧迫感。 -->
 
 | 品牌/域 | 本月 share% | 上月 share% | Δpp | 判定 |
 |---|---|---|---|---|
 | {我方 domain} |  |  |  | {点名/基本持平} |
 | {同场竞品域,report co_cited top5} |  |  |  |  |
 
-- 月度点名(>5pp):{域+方向+pp 数;无人过门槛就写 "(无——全部基本持平)"}。
+- 月度点名(≥5pp):{域+方向+pp 数;无人过门槛就写 "(无——全部基本持平)"}。
 - 引用阵地:品牌被引集中在 {主题/引擎};竞品反超的主题 {列举} [est: 主题归类为人工映射]。
 - 上月值由上期 runs 重算;co_cited 域归入"竞品"为人工映射,打 [est]。
 
@@ -87,13 +87,25 @@ mention 与 citation 两条线分开(被提不被引=内容不被信任;被引�
 | 2 |  |  |  |
 | 3 |  |  |  |
 
-全月指标全平(各引擎 |Δ|≤5pp 且配对 n≥10)时,3 条全部为维持性动作(补采样至每 prompt n≥3、扩 prompts 至 ≥10、下月复查),禁造新动作。
+全月指标全平(各引擎 |Δ|<5pp 且配对 n≥10)时,3 条全部为维持性动作(补采样至每 prompt n≥3、扩 prompts 至 ≥10、下月复查),禁造新动作。
+
+## 检查清单(出报告前逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 面板规模与采样 | `python3 scripts/citation_panel.py report --panel panel.json`:头部 `prompts`、`runs`;「每 prompt 稳定性」节 | 通过:prompts ≥10,Top5/Bottom5 里的 prompt 都 ≥3 次有效采样。失败:不足 → 不进 Top5/Bottom5 |
+| 2 | 月初/月末可比 | `python3 scripts/citation_panel.py diff 月初RUN 月末RUN --panel panel.json`(每引擎一对) | 通过:「可比: 是」,配对 n ≥10。失败:不可比 → 不写 MoM |
+| 3 | 点名只来自 signals 节 | 同一输出「signals」节 | 通过:只点名 `[signal]` 行(|Δ|≥5pp 且 n≥10)。失败:出现门限外的点名 |
+| 4 | 引用来源三分之和等于 domain_total | `report` 的 `citation share` 节:`brand_hits / domain_total` 与 co-cited 列表 | 通过:brand + competitor + third-party = domain_total。失败:不等 |
+| 5 | 内容健康交叉 | `python3 scripts/gsc_mining.py cur.csv prev.csv --decay --json`(两期 GSC 导出;衰退判据:上期点击 ≥10 且降幅 ≥25%) | 通过:衰退页与 Bottom5 主题交叉并标 decay 来源。失败:混进面板输出 |
+| 6 | GSC 异常期 | 两期窗口是否含 2025-05-13 至 2026-04-27([官方记录](https://support.google.com/webmasters/answer/6211453)) | 通过:不含,或只比点击。失败:含该期却比较展示、CTR、平均排名 |
+| 7 | 恰 3 条建议,各带可复测判据 | 数第 5 节条数;每条「成功标准」含数值与配对 n | 通过:3 条且判据可复测。失败:缺判据 |
 
 ## What could change this conclusion
 
 - {数据缺口:sentiment 无脚本字段;citation share 依赖 --domain 已设;--decay 数据为 GSC 口径,与面板采样不可直接对表}
-- {仅相关非因果:主题修复与 coverage 回升的对齐是相关非因果,须前后对照 run 定案;单引擎结论不外推(跨引擎相关 0.03-0.09)}
-- {样本局限:prompts<10 或配对 cell<10 只当方向;单次引用检查=掷硬币,n<3 的 prompt 不进 Top5/Bottom5 判定}
+- {仅相关非因果:主题修复与 coverage 回升的对齐是相关非因果,须前后对照 run 定案;单引擎结论不外推(跨引擎寿命相关 0.03-0.09,Profound 厂商研究)}
+- {样本局限:prompts<10 或配对 cell<10 只当方向;单次引用检查=掷一次硬币(同一 prompt 重复采样结果会变,[Peec 2026-09-29](https://peec.ai/blog/the-key-to-prompt-tracking)),n<3 的 prompt 不进 Top5/Bottom5 判定}
 - {继承假设:主题归类、竞品域清单、别名与 domain 沿用本月口径;下月变更须在头部说明并回算}
 
 ## Method Notes

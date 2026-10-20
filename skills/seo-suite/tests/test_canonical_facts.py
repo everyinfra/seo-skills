@@ -117,10 +117,20 @@ PAT_SCHEMA_AI_UPLIFT = (
     r"(\d+ ?% more|\d+x more|more often|increase|boost|doubl)")
 
 
+# 已退役工具与功能(2026-10-21 并入,口径见 deprecated-signals.md 第四B节;NEG 排除「已下线/不再…」类否定语境)
+_NEG_RETIRED = '(?![^。\\n]{0,40}(下线|退役|已停|已弃|弃用|不再|已没有|没有了|失效|已移除|deprecated|retired|no longer|removed))'
+PAT_MOBILE_FRIENDLY_TEST_ALIVE = ('(用|使用|打开|运行|跑|去查|去测|run|use)[^。\\n]{0,8}(Mobile-Friendly Test|移动设备适合性测试|移动友好性测试|移动适合性测试)' + _NEG_RETIRED)
+PAT_URL_PARAMETERS_TOOL_ALIVE = ('(用|使用|打开|配置|设置|在|use|configure|open)[^。\\n]{0,10}(URL 参数工具|URL Parameters? tool|参数处理工具)' + _NEG_RETIRED)
+PAT_SITEMAP_PING_ALIVE = ('(ping|Ping)[^。\\n]{0,20}(sitemap|站点地图)[^。\\n]{0,15}(提交|通知|submit)' + _NEG_RETIRED + '|(?<![-\\w/])(sitemap|站点地图)[^。\\n]{0,10}ping(?:ing)?' + _NEG_RETIRED)
+PAT_CACHE_OPERATOR_ALIVE = ('(用|使用|输入|run|use)[^。\\n]{0,8}cache:[^。\\n]{0,20}(查看|看|检查|check|view)[^。\\n]{0,6}(缓存|快照|cached|cache)' + _NEG_RETIRED)
+PAT_ROBOTS_TXT_NOINDEX_WORKS = ('robots\\.txt[^。\\n]{0,12}(里|中|内)?(写|加|用|添加)[^。\\n]{0,6}noindex[^。\\n]{0,20}(去索引|移出索引|生效|有效|可以)' + _NEG_RETIRED)
+PAT_SITELINKS_SEARCHBOX_ALIVE = ('(添加|部署|加上|配置|实现|add|implement)[^。\\n]{0,10}(sitelinks? ?search ?box|SearchAction|站内搜索框)[^。\\n]{0,30}(获得|展示|出现|显示|get|show|appear)' + _NEG_RETIRED)
+
+
 # ------------------------------------------------- (正则, 为何错) 清单本体 --
 WRONG_STATEMENTS = [
     (PAT_FID,
-     "FID 已于 2024-03-12 被 INP 替代,2024-09-09 起从 CrUX/PSI 字段数据移除;"
+     "FID 已于 2024-03-12 被 INP 替代,2024-09-09 起从 CrUX/PSI 字段数据移除(CrUX 发布说明 2024-09-10 确认);"
      "把 FID 当现行指标优化/监测是过时口径(见 deprecated-signals.md 第二节)"),
     (PAT_FAQPAGE,
      "FAQPage 富结果 2026-05-07 起全站退役:不为 SERP 新增这类标记,"
@@ -160,12 +170,24 @@ WRONG_STATEMENTS = [
      "Indexing API 官方仅限 JobPosting 与 BroadcastEvent;"
      "拿它提交任意/全部 URL 无效果且耗配额(200 publish/天)"),
     (PAT_PAGE_EXP,
-     "GSC 的 Page Experience 报告已于 2024-11-18 移除;"
+     "GSC 的 Page Experience 报告已于 2024-11-18 宣布移除;"
      "看页面体验改用 CWV 报告+HTTPS 报告(信号本身仍在)"),
     (PAT_SCHEMA_AI_UPLIFT,
      "'加 Schema/FAQPage 能提升 AI 引用'无生产证据:域名固定效应观测(arXiv 2609.35077)、"
      "匹配双重差分(Ahrefs 2026-05,1,885 页)、按查询聚类 GEE(SSRN 6284518)均无独立效应;"
      "口径见 geo-evidence.md 第二节第 2 条与 geo-evidence-bank.md 第八节"),
+    (PAT_MOBILE_FRIENDLY_TEST_ALIVE,
+     'Mobile-Friendly Test 工具与 API 已于 2023-12 退役(Search Central 博客注记);移动适配改看 Lighthouse 与 URL 检查(见 deprecated-signals.md 第四B节)'),
+    (PAT_URL_PARAMETERS_TOOL_ALIVE,
+     'Search Console 的 URL 参数工具 2022 年已下线(见 deprecated-signals.md 第四B节)'),
+    (PAT_SITEMAP_PING_ALIVE,
+     'Google sitemap ping 端点 2023-06-26 宣布弃用,2023-12 起失效;提交 sitemap 用 robots.txt 的 Sitemap 指令或 Search Console(见 deprecated-signals.md 第四B节)'),
+    (PAT_CACHE_OPERATOR_ALIVE,
+     'cache: 搜索运算符已停用(见 deprecated-signals.md 第四B节)'),
+    (PAT_ROBOTS_TXT_NOINDEX_WORKS,
+     'robots.txt 里的 noindex 自 2019-09-01 起不再生效;用 meta robots 或 X-Robots-Tag(见 deprecated-signals.md 第四B节)'),
+    (PAT_SITELINKS_SEARCHBOX_ALIVE,
+     'sitelinks 搜索框已于 2024-11 下线,SearchAction 标记不再产生展示(见 deprecated-signals.md 第四B节)'),
 ]
 
 # 自检样例(keyed by 正则文本):(必须全部命中的 bad, 必须全部放过的 ok)
@@ -256,6 +278,30 @@ SELF_CHECK = {
          "部署 schema 并不会让 AI 引用提升", "堆 schema 不等于 E-E-A-T",
          "Adding schema didn't boost citations on any platform",
          "pages that added JSON-LD were not cited more often"],
+    ),
+    PAT_MOBILE_FRIENDLY_TEST_ALIVE: (
+        ['用 Mobile-Friendly Test 检查移动适配', 'run the Mobile-Friendly Test on the page'],
+        ['Mobile-Friendly Test 已于 2023-12 退役', 'Mobile-Friendly Test 工具与 API 已退役'],
+    ),
+    PAT_URL_PARAMETERS_TOOL_ALIVE: (
+        ['在 Search Console 用 URL 参数工具处理参数', 'use the URL Parameters tool to block sort params'],
+        ['URL 参数工具 2022 年已下线', '等 Search Console 的参数工具:该工具 2022 年已下线'],
+    ),
+    PAT_SITEMAP_PING_ALIVE: (
+        ['上线后 ping sitemap 通知 Google', '用 sitemap ping 提交新的站点地图'],
+        ['Sitemaps ping 端点已弃用,请求返回 404', 'sitemap ping 已停用'],
+    ),
+    PAT_CACHE_OPERATOR_ALIVE: (
+        ['用 cache: 运算符查看缓存快照', 'use cache: operator to check the cached version'],
+        ['cache: 运算符已不再有效', 'cache: 运算符已下线,不能查看缓存'],
+    ),
+    PAT_ROBOTS_TXT_NOINDEX_WORKS: (
+        ['在 robots.txt 里写 noindex 去索引', 'robots.txt 中加 noindex 就会生效'],
+        ['robots.txt 里的 noindex 自 2019-09-01 起不再生效', '不要在 robots.txt 里写 noindex:无效'],
+    ),
+    PAT_SITELINKS_SEARCHBOX_ALIVE: (
+        ['添加 SearchAction 标记以获得 sitelinks 搜索框', 'implement sitelinks search box markup to appear in results'],
+        ['sitelinks 搜索框已于 2024-11 下线', 'SearchAction 获得 sitelinks 搜索框的做法已失效'],
     ),
 }
 

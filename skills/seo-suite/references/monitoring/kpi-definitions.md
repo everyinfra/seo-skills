@@ -10,34 +10,61 @@
 
 ## 一、Search Console（只覆盖 Google 搜索）
 
-| 指标 | 含义 | 容易误读的地方 |
+核对 2026-10-21，来源：[效果报告概览](https://support.google.com/webmasters/answer/7576553)、[数据如何计数](https://support.google.com/webmasters/answer/17011364)、[维度与分组](https://support.google.com/webmasters/answer/17011259)、[数据差异排查](https://support.google.com/webmasters/answer/17010575)。
+
+| 指标 | Google 的定义 | 容易误读的地方 |
 |---|---|---|
-| 点击 | 从 Google 搜索结果点进本站的次数 | 不等于 GA4 会话数 |
-| 展示 | 本站链接出现在用户看到的结果里的次数 | 部分结果类型要滚动到或展开后才计数 |
-| CTR | 点击 ÷ 展示 | 新增大量靠后的展示会拉低 CTR，不一定是标题的问题 |
-| 平均排名 | 每次展示中本站最靠前那条结果的位置，再取平均 | 数值变大不一定是排名下降，可能是新增了靠后的长尾展示 |
+| 点击 | 用户从 Google 搜索结果点进本站的次数 | 不等于 GA4 会话数 |
+| 展示 | 本站出现在搜索结果里的次数 | 按网站聚合时，同一页结果里出现两条本站链接只算 1 次展示 |
+| CTR | 点击数 ÷ 展示数 | 新增大量靠后的展示会拉低 CTR，不一定是标题的问题 |
+| 平均排名 | 本站最靠前那条结果的平均位置（图表是全站最靠前；表格是该行 URL 或维度的平均位置） | 数值变大不一定是排名下降，可能是新增了靠后的长尾展示。官方建议多看展示和点击的趋势，少看位置本身 |
 
 口径要点：
 
-- 「按网站」和「按网页」聚合得到的数字不同；查询表各行相加小于总计，因为部分罕见查询出于隐私原因不显示。
-- 网页、图片、视频、新闻是不同的搜索类型；Discover 和 Google 新闻有单独的报告。
-- 按 Google 的 [AI 功能说明](https://developers.google.com/search/docs/appearance/ai-features)，AI 功能里的展示和点击计入「网页」搜索类型的总数；能否单独拆分，以 Search Console 当前界面为准。
-- 品牌 / 非品牌用查询正则筛选，正则写进报告附录，保证每期一致。
-- 界面导出有行数上限，大站用 [Search Console API](https://developers.google.com/webmaster-tools) 或批量导出。
+- **按网站 vs 按网页聚合**：图表永远按网站聚合；「网页」「搜索外观」维度的表格按网页聚合。多个页面同时出现时，按网页聚合的点击和展示更多，CTR 和平均排名更低（官方示例：3 个页面同时出现，网站级 CTR 100%、平均排名 1；网页级每页 CTR 33%、平均排名 2）。图表总数与表格总数不等是正常的。
+- **匿名查询**：罕见查询出于隐私被省略，不出现在查询表里；没加查询筛选时，它们仍计入图表总数。加了查询筛选后，「匹配」与「不匹配」两部分加起来可能小于不筛选的总数。
+- **行数上限**：界面表格最多显示 1,000 行；Search Console 只存储和显示最重要的数据行。要更全的查询列表，用[批量数据导出到 BigQuery](https://support.google.com/webmasters/answer/12917675)。
+- **时区与延迟**：日数据按太平洋时间（PT）；通常 2 到 3 天后数据才完整；最新数据可能是初步数据（图上显示虚线）。
+- **数据保留**：Search Console 保留最近 16 个月（[排查流量下降](https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops)里让你把日期设成「最近 16 个月」；[GA4 的 Search Console 关联说明](https://support.google.com/analytics/answer/10737381)写明 Search Console 保留最近 16 个月，GA4 里的 Search Console 报告也最多 16 个月）。要更久的历史，用 Search Analytics API 或批量导出自己存。批量导出从开通起累积，开通前的历史要靠 API 补（[官方](https://support.google.com/webmasters/answer/12917675)）。
+- **搜索类型**：网页（文本型 Web: text-based，或多模态 Web: multimodal——图片搜索如 Lens、Circle to Search，2026-09-24 起有这个筛选）、图片、视频、新闻是不同的搜索类型；多模态搜索没有文本查询，选它时查询维度不可用。Discover 和 Google 新闻有单独的报告。
+- **AI 功能**：按 Google 的 [AI 功能说明](https://developers.google.com/search/docs/appearance/ai-features)，AI Overviews 和 AI Mode 的数据计入效果报告的「网页」搜索类型。另有[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)：只报展示（按页面、国家、设备、日期），不报点击；2026-06-03 起分批开放，页面注明 2026-08-31 起对全球网站开放；展示太少的站点仍可能看不到该报告。
+- **品牌 / 非品牌**：效果报告有官方的品牌 / 非品牌查询筛选，从 2025-03-11 起有数据，历史最长 16 个月；展示太少的站点和子资源没有这个筛选；分类可能出错，仅供参考，不影响排名。要在 API 或批量导出里分品牌，自己用查询正则，并把正则写进报告附录，保证每期一致。
+- **数据异常期**：Google 在[数据异常页](https://support.google.com/webmasters/answer/6211453)记录：2025-05-13 至 2026-04-27 的展示、CTR、平均排名记录有误，点击不受影响，修复后展示数下降。跨这个期间的展示 / CTR / 排名对比不可信；这段期间只比点击。写报告前先读这个页面，看有没有新的异常。
+
+### API 与导出的限额（核对 2026-10-21）
+
+来源：[Search Console API 用量限制](https://developers.google.com/webmaster-tools/limits)、[获取效果数据](https://developers.google.com/webmaster-tools/v1/how-tos/all-your-data)、[帮助中心：用 API 导出](https://support.google.com/webmasters/answer/12919192)。
+
+| 项目 | 官方数值 |
+|---|---|
+| 每次请求最多行数 | 25,000 行；用 `startRow` 翻页，直到返回 0 行 |
+| 每天可取总行数 | 每个属性、每个搜索类型、每天最多 50,000 行（按点击排序） |
+| Search Analytics 查询频率 | 每站点 1,200 次/分钟；每用户 1,200 次/分钟；每项目 40,000 次/分钟、30,000,000 次/天 |
+| URL 检查 | 每站点 2,000 次/天、600 次/分钟；每项目 10,000,000 次/天、15,000 次/分钟 |
+| 其他资源 | 每用户 20 次/秒、200 次/分钟；每项目 100,000,000 次/天 |
+| 负载配额 | 另有 10 分钟短期配额和 1 天长期配额；按网页或查询分组、日期范围越长，负载越大；超限时报同一个 quotaExceeded 错误 |
+
+官方建议：每天只取一天的数据，既不容易超配额，也避免丢数据。按「网页」和「查询」一起分组时，系统会丢弃部分数据；要准确总数，就不带这两个维度单独取一次。
+
+- 本套件的 `gsc_api.py query` 默认每页 25,000 行（`--rows` 设总行数上限），用 `--dimensions` 选维度；匿名查询 API 不返回。
 
 ## 二、GA4（站内行为与转化）
 
-- **自然搜索会话**：会话级默认渠道组为「自然搜索」的会话。它包括所有搜索引擎，不只 Google。
-- **归因范围**：会话级渠道、首次用户渠道、转化归因报告的口径各不相同，同一个「自然搜索带来的转化」会得到不同的数。报告里写明用的是哪一种。
-- **关键事件率**：关键事件数 ÷ 会话数，或 ÷ 用户数，写明分母。
-- **和 Search Console 对不上是常态**：点击和会话的定义不同；用户拒绝统计或拦截脚本；referrer 丢失会记为直接流量；中间跳转、时区和数据延迟也会造成差异。看两边趋势是否同向，不追求数字相等。
-- **来自 AI 助手的访问**：默认渠道分组里通常归为「引荐」，没有 referrer 时记为「直接」。需要时建自定义渠道组，用来源正则单独列出。
+核对 2026-10-21，来源：[默认渠道组](https://support.google.com/analytics/answer/9756891)、[Data API 指标定义](https://developers.google.com/analytics/devguides/reporting/data/v1/api-schema)、[数据保留](https://support.google.com/analytics/answer/7667196)、[Data API 配额](https://developers.google.com/analytics/devguides/reporting/data/v1/quotas)。
+
+- **自然搜索会话**：会话默认渠道组为「Organic Search」的会话。官方定义：来自搜索结果里非广告链接的访问，**包括 Google 的 AI Overviews 和 AI Mode**，也包括所有其他搜索引擎，不只 Google。
+- **AI 助手渠道**：GA4 默认渠道组有「AI Assistant」渠道：来自 ChatGPT、Gemini、Deepseek、Copilot、Grok 等的访问，**不含** Google AI Overviews 和 AI Mode（后两者落在 Organic Search）。没有 referrer 的 AI 访问仍会落进 Direct。要看全貌，用自定义渠道组加来源正则，再和服务器日志对照。
+- **归因范围**：「默认渠道组」（事件级，用属性设置的归因模型）、「会话默认渠道组」和「首次用户默认渠道组」（后两者用付费和自然渠道末次点击）口径各不相同，同一个「自然搜索带来的转化」会得到不同的数。报告里写明用的是哪一种。
+- **关键事件率**：API 里有两个指标。`sessionKeyEventRate` 是「触发过任一关键事件的会话占比」；`userKeyEventRate` 是用户占比。报告里写明用哪个，也就是写明分母。
+- **和 Search Console 对不上是常态**：点击和会话的定义不同；GA 只统计启用了 JavaScript 的用户；用户拒绝统计或拦截脚本；referrer 丢失会记为直接流量；Search Console 日数据按太平洋时间，GA4 按属性时区；数据延迟也会造成差异。看两边趋势是否同向，不追求数字相等。
+- **数据保留**：标准 GA4 属性的用户级和事件级数据保留期只能选 2 个月或 14 个月；这个设置只影响探索和漏斗报告，不影响标准聚合报告。更长的保留期（26、38、50 个月）只有 360 属性才有。要超过 14 个月的探索数据，用 BigQuery 导出。
+- **Data API 配额（标准属性）**：Core 每属性每天 200,000 token、每小时 40,000 token、每项目每属性每小时 14,000 token，并发请求 10 个；360 属性是 10 倍（并发 50）。token 消耗随行数、列数、筛选复杂度和日期范围增加；请求里加 `"returnPropertyQuota": true` 可看剩余额度。
 
 ## 三、索引、抓取与性能
 
 - **已编入索引页数**：看页面索引报告，可按 sitemap 筛选，对比「已提交」和「已编入」。未编入的原因逐项看，不只看总数。
 - **抓取**：抓取统计报告给出请求数、平均响应时间，以及按状态码和抓取用途的分布；服务器日志能看到所有爬虫，更完整。
-- **Core Web Vitals**：按 [web.dev](https://web.dev/articles/vitals) 的定义，用字段数据的第 75 百分位评估，LCP ≤ 2.5 秒、INP ≤ 200 毫秒、CLS ≤ 0.1 为良好。Lighthouse 这类实验室数据用来诊断，不能代替字段数据；[CrUX](https://developer.chrome.com/docs/crux) 字段数据是 28 天滚动窗口。
+- **Core Web Vitals**（核对 2026-10-21）：按 [web.dev](https://web.dev/articles/vitals)，评估点是页面加载的第 75 百分位，分手机和桌面分别看；LCP 在 2.5 秒内、INP 200 毫秒或更低、CLS 0.1 或更低为良好。Lighthouse 这类实验室数据用来诊断，不能代替字段数据。[CrUX](https://developer.chrome.com/docs/crux/api) 的数据是过去 28 天的滚动汇总，改动上线后要等窗口滚过才能完全反映。
 
 ## 四、外链与竞争指标（第三方工具的估算）
 
@@ -68,11 +95,13 @@
 - 用工具的 DR 涨跌解释流量变化。
 - 凭某一次 AI 回答里有没有本站就下结论。
 
-## 完全装载:营销归因模型表+AI 流量盲区(百仓深扫)
+## 归因与对账（本套件口径，依据官方帮助）
 
-**归因模型表**(marketingskills attribution):first/last/last non-direct/linear/time-decay/position-based(40%首+40%末+20%中)/data-driven(Shapley);**Google Ads/GA4 已于 2023 弃用中间模型**只剩 DDA+last-click;DDA 门槛=200 转化+2,000 交互/30 天(低于此塌缩向 last-click);三范式:MTA(用户级)/MMM(需 2-3 年周度数据+真实预算波动)/Incrementality(geo holdout——"两个渠道争同一转化时的终审")。
-**对账五步**:单一真相源(CRM/backend)→**永不跨平台求和**("一次转化两个索赔人")→只读方向一致性→自报做 tiebreaker、**禁止乘数规则**(Meta 2× GA≠翻倍)→预算化 gap。
-**盲区四项**:direct(垃圾抽屉)/branded search(挪用上层功劳)/dark social/**AI 流量(经 branded search 或 direct 进入,AI touch 不可见)**——AI 归因只能靠 referrer 清单+日志三源下界估计。
+- **GA4 的归因模型**：首次点击、线性、时间衰减、位置加权这四种模型自 2023-11 起不可用；现在是数据驱动归因和「付费和自然渠道末次点击」两种（来源：[GA4 归因入门](https://support.google.com/analytics/answer/10596866)）。
+- **数据驱动归因的数据量**：这是 Google Ads 的说法。Google Ads 帮助建议 30 天内至少 200 个转化和 2,000 次广告互动，数据少时模型仍能运行，只是精度较低（来源：[Google Ads 数据驱动归因](https://support.google.com/google-ads/answer/6394265)）。这是建议值，不是开关门槛。
+- **三种测量范式**：多点触达归因（用户级路径）、营销组合模型（MMM，汇总层回归，需要足够长的历史和真实的预算波动）、增量实验（如按地区留出对照组）。当两个渠道争同一个转化时，增量实验是最可靠的判据。
+- **对账五步（本套件口径）**：①选一个业务真相源（CRM 或后端订单）；②不跨平台求和，同一个转化会被多个平台各认领一次；③只比较方向是否一致；④各平台自报的数只作参考，不用固定倍数换算；⑤把允许的差距预先写成预算。
+- **盲区四项**：直接流量（什么都往里放）、品牌词搜索（会吃掉上层渠道的功劳）、暗社交（私信和群里转发）、AI 流量（常经品牌词搜索或直接进入，AI 的触达看不见）。AI 归因只能用 referrer 清单、渠道组正则和服务器日志三个来源做下界估计。
 
 ## 来源
 
@@ -81,75 +110,90 @@
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · monitor/performance-reporter/references/kpi-definitions.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/monitor/performance-reporter/references/kpi-definitions.md)（Apache-2.0）
 - 一手资料：[Search Console 效果报告](https://support.google.com/webmasters/answer/7576553)、[Search Console API](https://developers.google.com/webmaster-tools)、[AI 功能与网站](https://developers.google.com/search/docs/appearance/ai-features)、[GA4 事件](https://support.google.com/analytics/answer/9322688)、[Web Vitals](https://web.dev/articles/vitals)、[CrUX](https://developer.chrome.com/docs/crux)
 
-## 机会挖掘与变更测量的口径细则(crawlseo/seo-monster/iannuttall/elmo/unifapi 源码深读,2026-10-09)
+## 机会挖掘与变更测量的口径（第三方工具做法与本套件口径）
 
-### 四类机会口径(crawlseo seo-opportunities.ts)
+以下数值来自第三方开源工具的源码默认值（crawlseo、seo-monster、iannuttall、elmo、unifapi，2026-10-09 读源码），**不是 Google 的规定**。读它们是为了看别人怎么入池和排序；阈值请用自己站的历史数据重新标定，并写进报告附录。
 
-expectedCtr 参考曲线(粗略行业均值,**只用于 gap 排序,不用于判断标题好坏**;更稳的做法是 seo-monster 式用本站各位置历史 CTR 自校准曲线):pos≤1=28%、≤2=15%、≤3=11%、≤4–5=7%、≤6–10=3%、≤11–20=1%、>20=0.5%。
+### 四类机会的入池条件（crawlseo 默认值，本套件借用为起点）
 
 | 机会 | 入池条件 | 口径要点 |
 |---|---|---|
-| striking distance | 位置 4–20 且 28 天展示 ≥20 | 按展示排序;**potential=impressions×expectedCtr(max(1, pos−3))**,即「推进 3 位」的估算 |
-| low CTR | 展示 ≥50 且位置 ≤15 | gap=expectedCtr−实际 CTR,须 >2pp;排序按 **展示×gap**(绝对量×差距,不是百分比优先) |
-| content decay | 前 28 天点击 ≥10 | 28 天 vs 前 28 天,变化 ≤−25% 才报;小基数页不入池 |
-| cannibalization | 同 query ≥2 个落地页且 top 页展示 ≥20 | 页面位置=Σ(pos×imp)/Σimp **展示加权位置**,不是简单平均 |
+| striking distance | 位置 4–20 且 28 天展示 ≥20 | 按展示排序，估算推进 3 位后的增量 |
+| low CTR | 展示 ≥50 且位置 ≤15 | 用「期望 CTR − 实际 CTR」排序，按展示×差距，不按百分比 |
+| content decay | 前 28 天点击 ≥10 | 28 天 vs 前 28 天，下降 25% 以上才报；小基数页不入池 |
+| cannibalization | 同一查询 ≥2 个落地页，且 top 页展示 ≥20 | 页面位置用展示加权平均，不是简单平均 |
 
-### GSC 对比与异常(seo-monster 工具目录)
+本套件自己的脚本 `python3 scripts/gsc_mining.py gsc.csv --mode matrix --json` 用的是另一组本套件口径阈值:striking distance = 排名 5–20 且展示 ≥20;低 CTR = 排名 1–10、展示 ≥50、比内置期望曲线低 2 个百分点以上(曲线是本套件口径，不是官方数据);蚕食 = 同一查询 ≥2 个页面且最大展示 ≥20;衰退 = 上期点击 ≥10 且本期下降 ≥25%。两组阈值不同，报告里写明用的是哪一组。
 
-`gsc_compare_periods` 支持按 delta 排序、min_delta_clicks/impressions/position 门槛、**anomalies_only + sigma_threshold(σ 阈值离群检测)**——一次调用出 movers/losers/outliers 报表;decaying/trending pages = 按 delta_impressions 降/升序的页面级包装器(rescue 清单)。多资产场景先看 portfolio_summary(每属性一行的多站 rollup)。
+「期望 CTR」不要用网上的通用曲线：第三方研究给出的各位置 CTR 差别很大，不是通用基准。做法是用本站同一批查询、各位置的历史 CTR 自己算一条曲线（seo-monster 的做法），只用它给 gap 排序，不用它判断标题好坏。
 
-### 变更测量口径(iannuttall measure-change)
+### 对比与异常
 
-- **equal-finalized-calendar-windows**:前后等长、只用 finalized 日历日,按 GSC 的 America/Los_Angeles 时区切日;after 窗被截或每窗 finalized 天 <7 → 指标标 provisional、**不给方向性判定**。
-- GSC position 一律是 impression-weighted 平均位置;query 级数据因隐私匿名化缺行≠零流量(retained-query-date-aggregates 口径要在报告里注明)。
-- GA4 交叉读用落地页过滤器,且注意 GA4 属性时区与 GSC 太平洋日的边界差异。
+- seo-monster 的 `gsc_compare_periods` 支持按差值排序、设最小变化门槛，以及用 σ 阈值找离群点。本套件对应的脚本是 `sensor_volatility.py`（`--gsc` 读导出 CSV，输出逐日波动分和 z30 异常日）。
+- 多站点先看每个属性一行的汇总，再钻进单站。
 
-### AI 可见度指标公式版(elmo/unifapi)
+### 变更前后对比（iannuttall measure-change 的做法，本套件口径）
 
-- visibility = 提及品牌的 run 数 ÷ 总 run 数;share of voice = brand ÷ (brand+Σcompetitors)(提及单位须一致,如「提及该实体的 run 数」)。
-- citation coverage = Σ C(b,i) ÷ 成功 cell 数(多品牌可同现,**跨品牌求和可 >100%**);citation share = Σ C(b,i) ÷ Σ_b Σ C(b,i)(非空时恒 =100%);加权版分母带 w_i,**不叫 share**;空分母=N/A 不是 0;valid no-answer 留在 coverage 分母。
-- stability = round((1−Bray–Curtis weighted volatility)×100),输入是逐日引用份额向量;fanout 的 avgPerExecution 分母只计发生 fanout 的 run。
+- 前后两个窗口等长，只用已完成的完整日历日；日界按 Search Console 的太平洋时间（PT）切。
+- 若后窗被截断，或某个窗口不足 7 个完整天，把结果标为「初步」，不下方向性结论（本套件口径）。
+- 平均排名是按展示加权的平均位置；查询级数据因匿名化会缺行，缺行不等于零流量，报告里注明。
+- GA4 交叉读用落地页筛选，并注意 GA4 属性时区与 PT 日界的差异。
+- 2025-05-13 至 2026-04-27 的展示 / CTR / 排名不可比，见上文。
 
-### 页内内容分参考公式(crawlseo parseHtml)
+### AI 可见度指标的公式版（elmo / unifapi 的写法）
 
-base 40 + title 在 15–65 字符 +15(有但不在区间 +5)+ description 在 50–160 +15(否则 +5)+ 恰好 1 个 H1 +15(多个 +5)+ 词数 ≥300 +15(≥100 得 +8)+ 有 schema +5 + 有 canonical +5,clamp 0–100。定位是**页内质量粗筛信号**,不是排名预测;配合 health score(100−8×CRITICAL−3×WARNING−1×INFO)分别看「这页写得如何」与「这站技术上如何」。
+- visibility = 提及品牌的 run 数 ÷ 总 run 数；share of voice = 本品牌 ÷（本品牌 + 竞品之和），提及单位要一致（如「提及该实体的 run 数」）。
+- citation coverage = 各品牌各来源的引用次数之和 ÷ 成功的 cell 数；多个品牌可同时被引用，跨品牌求和可以超过 100%。citation share = 单品牌引用次数 ÷ 全部品牌引用次数之和，分母非空时各品牌之和恒为 100%。带权重的版本不叫 share。分母为空记 N/A，不记 0；有效的「无回答」留在 coverage 的分母里。
+- 稳定性 = 用逐日引用份额向量的 Bray–Curtis 距离算波动，再换成 0–100 的分数；它是这些工具的自定义指标，换工具不可比。
 
-## AI 可见度指标的行业词汇层:IAB 4P 对齐(入库 2026-10-12)
+页内「内容分」和站点「健康分」这类公式各家工具都不同，权重没有公开依据，也不是 Google 指标。需要时用本套件的 `content_score.py` 与 `health_score.py`，并按脚本帮助里写的口径解读；不要把别家工具的分数当作排名预测。
 
-IAB《Measuring Visibility in the AI Era》(2026-08-03 发布,36 页,Project Eidos 产出;工作组含 Walmart/Acxiom/Microsoft/WPP Media/eMarketer/Tinuiti)给了行业第一套统一测量词汇。立项背景:IAB 盘点 20+ 家 AI 可见度测量厂商,方法互斥、同周同品牌可返回显著分歧的结果;仅 16% 品牌系统性追踪 AI 可见度(McKinsey CMO 调查)。写报告、选工具、与客户对齐口径时,套件指标应对到该词汇;**IAB 只定词汇与披露要求,不给厂商评级**。
+## AI 可见度指标的行业词汇层：IAB 4P 对齐
 
-### 4P 层级(自上而下)
+核对 2026-10-21，来源：[IAB《Measuring Visibility in the AI Era》指南页](https://www.iab.com/guidelines/measuring-visibility-in-the-ai-era/)与[PDF 全文](https://www.iab.com/wp-content/uploads/2026/07/IAB_Measuring_Visibility_in_the_AI_Era_August_2026-1.pdf)（2026-08 发布）。IAB 指出有 20 多家公司在卖 AI 可见度测量工具，方法不同，同一品牌会得到不同的结果。IAB 只定词汇和披露要求，不给厂商评级。
 
-| 层 | IAB 定义 | 该层指标 |
-|---|---|---|
-| **Presence**(在场) | 品牌/产品是否出现在 AI 回答里 | mention rate(提及率)、citation rate(引用率)、share of voice、visibility momentum(可见性动量) |
-| **Prominence**(突出) | 出现的位置与次序 | 回答内 placement、排序位置 |
-| **Portrayal**(表述) | 被怎样描述 | sentiment(情感)、framing(框架)、**hallucination rate(幻觉率)**、factual inaccuracy(事实失准) |
-| **Persuasion**(说服) | 是否推动行动 | recommendation strength(推荐强度)、post-citation CTR(引用后点击率) |
+### 4P 层级（IAB 原文）
 
-### 数据两级分类(选数据源/写报告前先定级别)
+| 层 | 该层指标 |
+|---|---|
+| Presence（在场） | Mention Rate（提及率）、Citation Rate（引用率）、Share of Voice、Visibility Momentum |
+| Prominence（突出） | Position（位置）；发布方侧另有 Content Utilization Rate |
+| Portrayal（表述） | Sentiment、Framing、Hallucination Rate、Factual Inaccuracy Rate；发布方侧另有 Attribution Clarity |
+| Persuasion（说服） | Recommendation Strength、Post-Citation CTR |
 
-- **Directional(方向级)**:够用于早期信号发现、内部简报、竞争感知;IAB 明确**不够格影响投放或战略决策**;
-- **Decision-grade(决策级)**:可用于预算分配与绩效评审。厂商须披露 **6 项**才够决策级:①样本量 ②查询量 ③prompt 类型覆盖 ④测试节奏(cadence) ⑤可复现性 ⑥数据验证。
+IAB 对 Post-Citation CTR 的定义：AI 引用中，把用户带到发布方网站的百分比。
 
-评估第三方工具时拿这 6 项当问卷,答不出的按方向级计;方向级数据进报告必须带"directional"标注,不进预算页。
+### 方向级与决策级（IAB 原文要点）
+
+- **Directional（方向级）**：看趋势和信号，用于早期发现、内部简报、竞争感知；不够用于预算分配或战略决策。
+- **Decision-Grade（决策级）**：用于预算调整、代理商评审和高管决策。IAB 要求在 8 个维度上达标：样本量（每个查询的回答数）、查询量、提示类型覆盖、测试频率、可复现性、数据验证、方法文档、平台覆盖。
+- IAB 给出的几个具体数：查询量低于 50 个，按「探索性」处理，连方向级都不算；决策级要求提示类型覆盖全部 4 类意图（信息、比较、推荐、交易）；决策级的可复现性要在 7 天窗口内定义可接受的波动范围。
+- 评估第三方工具时，拿这 8 个维度做问卷。答不出的按方向级用，进报告时标「directional」，不进预算页。
 
 ### 套件指标 → IAB 词汇映射
 
-| 套件口径(本文上节与 [agent-readiness](../technical/agent-readiness.md) 探针计分) | IAB 层·指标 | 备注 |
+| 套件口径（本文第五节与 [agent-readiness](../technical/agent-readiness.md) 探针计分） | IAB 层与指标 | 备注 |
 |---|---|---|
-| ai_views visibility(提及品牌 run 数÷总 run 数) | Presence · mention rate | |
-| citation_panel coverage(Σ C(b,i)÷成功 cell 数) | Presence · citation rate | 跨品牌求和可 >100%,非 share |
-| share of voice(brand÷(brand+Σ竞品)) | Presence · SoV | 提及单位一致是前提 |
-| stability((1−Bray–Curtis)×100) | Presence · momentum(对偶面:波动) | 动量与稳定性同层报告 |
-| 探针计分 cited-with-link/mentioned/absent | Presence(未记位次时只落此层) | 位次入记录后升 Prominence |
-| 表述准确率(本文第五节) | Portrayal · factual inaccuracy | 分母=已核查事实条数 |
-| misrepresented −5 罚分(逐条事实核查) | Portrayal · hallucination rate | IAB 已把幻觉率标准化——纠错汇报可直接用行业词汇 |
-| ai_referral_log 三源下界 | Persuasion · post-citation CTR 的近似 | AI 引荐流量是"引用后行为"的下界观测(App 无 referrer) |
-| **缺口**:回答内位置/次序原生指标 | Prominence | GSC AI 报告只有 impressions;位次靠探针自采 |
-| **缺口**:post-citation CTR 直接口径 | Persuasion | referrer 清单+渠道组+日志三源近似,标"下界" |
+| `citation_panel.py report` 的 mention coverage（提及数 ÷ 成功 cell 数；no_answer 计 0 并留在分母） | Presence · Mention Rate | 带 Wilson 区间的 mention_rate 见脚本 JSON |
+| `citation_panel.py` 的 source_visibility（引用本站域名的回答占比） | Presence · Citation Rate | 与 brand_visibility 的差距记为 visibility_gap_pp;跨品牌求和可超过 100%，不是 share |
+| share of voice | Presence · Share of Voice | 提及单位一致是前提 |
+| stability | Presence · Visibility Momentum 的对偶面 | 动量与稳定性同层报告 |
+| 探针计分 cited-with-link / mentioned / absent | Presence | 没记位次时只落此层 |
+| 表述准确率（本文第五节） | Portrayal · Factual Inaccuracy Rate | 分母 = 已核查的事实条数 |
+| 逐条事实核查的 misrepresented 罚分 | Portrayal · Hallucination Rate | 纠错汇报可直接用这个词 |
+| `ai_referral_log` 三源下界 | Persuasion · Post-Citation CTR 的近似 | AI 引荐流量是引用后行为的下界 |
+| 缺口：回答内位置 | Prominence · Position | Search Console 的 AI 报告只有展示；位次靠探针自采 |
+| 缺口：Post-Citation CTR 的直接口径 | Persuasion | 用 referrer 清单、渠道组、日志三源近似，标「下界」 |
 
-### 来源(核对于 2026-10-12)
+## 检查清单
 
-- 一手:[IAB Measuring Visibility in the AI Era 指南页](https://www.iab.com/guidelines/measuring-visibility-in-the-ai-era/)(2026-08-03)与 [发布说明](https://www.iab.com/news/iab-releases-measuring-visibility-in-the-ai-era/)(两级分类/披露要求的存在性);
-- 逐层解读核验:authoritytech.io(2026-08-05,4P 逐层指标+决策级 6 项原文:sample size/query volume/prompt type coverage/testing cadence/reproducibility/data validation)、meikai.ai(2026-08-10)、purposefulrelations.com(2026-08-04,与 AMEC GEO 原则/PRCA 指南对照)。
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 报告里每个指标都写了公式、数据源、日期与时区、筛选、聚合方式 | 对照本文开头一行；Search Console 日期按 PT | 缺任一项 = 失败 |
+| 对比期没有跨数据异常期 | 读[数据异常页](https://support.google.com/webmasters/answer/6211453)；跨 2025-05-13 至 2026-04-27 的展示 / CTR / 排名对比 | 跨了就只比点击，并在报告注明 |
+| 取数没有被行数上限截断 | 界面表格 1,000 行；API 每页 25,000 行、每天每类型 50,000 行。`python3 scripts/gsc_api.py query --site sc-domain:example.com --start 2026-10-01 --end 2026-10-01 --dimensions query,page --rows 25000 --out gsc.csv` 一天一次 | 行数恰好等于上限 = 可能被截断，改用批量导出 |
+| 点击与展示总数核对 | 不带 page / query 维度单独取一次总数，和明细求和比较 | 明细小于总数是匿名查询与截断造成的，报告里写差值占比 |
+| GA4 渠道口径一致 | 报告注明用的是默认渠道组、会话默认渠道组还是首次用户渠道组 | 混用 = 失败 |
+| AI 流量不只看 AI Assistant 渠道 | 同时看 Organic Search 里的 AI 功能展示（Search Console 生成式 AI 报告）和服务器日志 | 只用一个来源 = 降级为方向级 |
+| AI 可见度数据标了级别 | 用上文 IAB 8 个维度问卷；查询量 <50 记为探索性 | 未标级别的数不进预算页 |
+

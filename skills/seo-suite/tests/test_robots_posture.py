@@ -2,7 +2,7 @@
 """robots_posture.py 扩展测试(standalone,合成 robots.txt fixture,零网络;
 tests/run_tests.py 自动发现本文件)。覆盖:四态判定 / via_wildcard / 两级评分 /
 连续 UA 合并 / 最长匹配+Allow 平局 / BOM+500KB 截断 / crawl_delay+sitemap /
---fix-robots 输出格式 / --json 字段 / 27 bot 名单结构 / parse_groups 冻结契约。"""
+--fix-robots 输出格式 / --json 字段 / 37 bot 名单结构 / parse_groups 冻结契约。"""
 import json
 import os
 import shutil
@@ -132,35 +132,42 @@ class CitationScoringTests(unittest.TestCase):
 
 
 class RosterTests(unittest.TestCase):
-    """27 bot 三层名单结构"""
+    """37 bot 四层名单结构。
+    2026-10-21 改(B42/B46):旧版按 geo-optimizer 口径断言 27 bot 三层(12/10/5),其中 Amazonbot 记搜索、
+    PetalBot/Google-CloudVertexBot/cohere-ai 记训练、MistralAI-Training 不入名单——与
+    references/technical/ai-crawler-policy.md 第七节及各家官方页不符。新期望来自该节与官方页。"""
 
-    def test_27_bots_three_tiers(self):
-        self.assertEqual(len(rp.AI_BOTS), 27)
-        tiers = {"training": [], "search": [], "user": []}
+    def test_roster_four_tiers(self):
+        self.assertEqual(len(rp.AI_BOTS), 37)
+        tiers = {"training": [], "search": [], "user": [], "other": []}
         for b in rp.AI_BOTS:
-            self.assertEqual(set(b), {"token", "desc", "tier"})
+            self.assertEqual(set(b), {"token", "desc", "tier", "verified"})
             self.assertIn(b["tier"], tiers)
             self.assertTrue(b["desc"])
             tiers[b["tier"]].append(b["token"])
-        self.assertEqual(len(tiers["training"]), 12)
-        self.assertEqual(len(tiers["search"]), 10)
-        self.assertEqual(len(tiers["user"]), 5)
-        for must in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "Google-CloudVertexBot"):
+        self.assertEqual(len(tiers["training"]), 11)
+        self.assertEqual(len(tiers["search"]), 15)
+        self.assertEqual(len(tiers["user"]), 8)
+        self.assertEqual(len(tiers["other"]), 3)
+        for must in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "Amazonbot", "MistralAI-Training"):
             self.assertIn(must, tiers["training"])
-        self.assertNotIn("MistralAI-Training", tiers["training"])  # 法语区市场专属,不入 27 全局名单
-        for must in ("OAI-SearchBot", "Claude-SearchBot", "Bingbot", "xAI-Bot", "DuckAssistBot"):
+        for must in ("OAI-SearchBot", "Claude-SearchBot", "Bingbot", "xAI-Bot", "DuckAssistBot",
+                     "PetalBot", "Amzn-SearchBot", "Baiduspider"):
             self.assertIn(must, tiers["search"])
         for must in ("ChatGPT-User", "Claude-User", "Perplexity-User", "Meta-ExternalFetcher",
-                     "facebookexternalhit"):
+                     "facebookexternalhit", "Amzn-User"):
             self.assertIn(must, tiers["user"])
+        for must in ("Google-CloudVertexBot", "cohere-ai", "OAI-AdsBot"):
+            self.assertIn(must, tiers["other"])
 
     def test_analyze_buckets_and_tier_stats(self):
         rep = rp.analyze("User-agent: *\nDisallow: /\n\nUser-agent: Googlebot\nAllow: /\n")
-        self.assertEqual(len(rep["bots"]), 27)
+        self.assertEqual(len(rep["bots"]), len(rp.AI_BOTS))   # 修前写死 27(名单已按官方页改)
         self.assertEqual(set(rep["bots_blocked"]) & set(rp.CITATION_BOTS),
                          {"OAI-SearchBot", "Claude-SearchBot", "PerplexityBot", "Applebot"})
         self.assertIn("Googlebot", rep["bots_allowed"])
-        self.assertEqual(rep["tiers"]["search"]["allowed"], 1)
+        # Googlebot + YandexAdditional(Yandex 官方:不认 * 组,没点名=不受限;2026-10-21 加入名单)
+        self.assertEqual(rep["tiers"]["search"]["allowed"], 2)
         self.assertFalse(rep["citation"]["ok"])
         self.assertIn("OAI-SearchBot", rep["visibility_failures"])
         self.assertNotIn("GPTBot", rep["visibility_failures"])     # 封 training 不算可见性失败
@@ -197,7 +204,7 @@ class CliTests(unittest.TestCase):
                   "tiers", "citation", "crawl_delay", "sitemaps", "visibility_failures",
                   "content_signal", "cloudflare_injected", "deprecated_tokens"):
             self.assertIn(k, data)
-        self.assertEqual(len(data["bots"]), 27)
+        self.assertEqual(len(data["bots"]), len(rp.AI_BOTS))   # 修前写死 27(名单已按官方页改)
         self.assertTrue(data["citation"]["ok"])
         self.assertFalse(data["citation"]["explicit"])
         self.assertEqual(data["sitemaps"], ["https://s.com/x.xml"])

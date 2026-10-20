@@ -1,206 +1,224 @@
 # भारतीय बाज़ार(印度/印地语市场)
 
-> 建立于 2026-10-09;第一轮英/印双语增量研究(StatCounter/Statista/Google 官方博客/Google for India/TechCrunch/Bain 官方/IAMAI 口径转引/印度发行商与从业者 2026 指南)。断言半衰期 6–12 个月。配套:总纲见 [multilingual-workflow](../overview/multilingual-workflow.md),AI 平台差异见 [geo-platform-differences](../content/geo-platform-differences.md),阈值口径见 `scripts/markets.json` 的 `hi` 条目。
+> 建立于 2026-10-09;2026-10-21 逐条核对一手来源(StatCounter、Google 官方博客与 Search Central、Search Console 帮助、PIB、MeitY、IAMAI–Kantar、Bain)。二手研究标「第三方研究」。断言半衰期 6–12 个月。配套:总纲见 [multilingual-workflow](../overview/multilingual-workflow.md),AI 平台差异见 [geo-platform-differences](../content/geo-platform-differences.md),阈值口径见 `scripts/markets.json` 的 `hi` 条目。写法约定见 [asd-ste100-web-writing](../content/asd-ste100-web-writing.md);标题与首段怎么对齐买家提问见 [question-alignment](../content/question-alignment.md)。
 
-## 一、格局(एक Google、一个 ChatGPT、Discover 先于 Search)
+## 一、格局(एक Google、一个 ChatGPT、Discover 要单独看)
 
 ### 1.1 引擎
 
-- **Google ~96.7%**(StatCounter,2025-09→2026-09 窗口),移动端 **~99.2%**(Statista,2026-07)——比全球均值更极端的单引擎市场;Bing 1.9% 不构成第二面。
-- 本市场的"第二引擎"不是 Bing,是 **ChatGPT**:印度 **1 亿周活**(Altman 2026-02-15 官宣),**全球第二大市场**,且是 OpenAI **API 前五市场**——AI 答案层的份额比多数市场提前到位。
-- 搜索市场 **~75% 移动**;GEO 时间表按移动优先排。
+StatCounter 印度搜索引擎份额,2026-09 月值,取数 2026-10-21([页面](https://gs.statcounter.com/search-engine-market-share/all/india)):
 
-### 1.2 Discover>Search(印度发行商市场的结构性事实)
+| 口径 | Google | 第二名 |
+|---|---|---|
+| 全设备 | 96.69%(12 月区间 96.38–97.85) | Bing 1.89%、DuckDuckGo 0.62%、Yahoo 0.56% |
+| 桌面 | 88.29%(12 月区间 88.29–95.40) | Bing 8.57%、Yahoo 2.70% |
+| 移动 | 98.67%(12 月区间 98.41–99.17) | DuckDuckGo 0.70%、Bing 0.31% |
 
-- Google Discover 是**多数印度新闻站最大流量来源**(15–30% 流量;State of Indian Digital Publishing 2026)。
-- **区域/vernacular 发行商 Discover 占全部会话 80–90%**(Praman masterclass 口径)——对中部发行商,Discover 不是 Search 的补充,是主渠道。
-- 叠加 Search 自然流量普遍下滑(发行商自报 60–80% 区间)后,部分站 Discover 占有机引荐 **65–70%**。
-- Google 官方口径 Discover"比 Search 更不可预测,应作补充流量对待"——印度场景下该口径与实际依赖度**倒挂**,风险见六。
+- 旧稿的「移动 99.2%(Statista 2026-07)」本次未核;以 StatCounter 的 98.67% 为准。
+- 本市场的第二个答案入口是 ChatGPT:OpenAI CEO Altman 在 2026-02-15(India AI Impact Summit 前)说印度有 **1 亿周活**,美国之外最大、全球第二([NDTV 2026-02-15](https://www.ndtv.com/india-news/india-ai-impact-summit-2026-india-has-potential-to-lead-in-ai-sam-altman-ahead-of-ai-impact-summit-11006719)、[TechCrunch 2026-02-22](https://techcrunch.com/2026/02/22/all-the-important-news-from-the-ongoing-india-ai-summit/))。旧稿「OpenAI API 前五市场」找不到来源,已删。
+- 「搜索市场 ~75% 移动」未核,以本站 GSC 设备拆分为准。
+
+### 1.2 Discover 要单独看
+
+- Google 官方原文:「Traffic from Discover is less predictable or dependable when compared to keyword-driven search visits.」([Get on Discover](https://developers.google.com/search/docs/appearance/google-discover),更新 2026-03-09)。
+- 旧稿的「Discover 占多数印度新闻站流量 15–30%」「区域发行商 Discover 占会话 80–90%」「Discover 占有机引荐 65–70%」出自行业报告和讲座转述,没有可核原文,已删。**用自己站的 GSC Discover 报告判断依赖度**(见检查清单)。
+- 做法(本套件口径):Discover 占自然流量超过本套件设定的预警线(默认 50%)时,标红并平衡 Search、AI 引用和直接流量。
 
 ### 1.3 语言人口面
 
-- ~9.5 亿网民,农村占 55%;**~98% 用户消费 Indic 语言内容**(IAMAI 口径转引),57% 城市用户偏好区域语言内容。
-- **Hindi 是最大单一语种但不是全部**:泰米尔/泰卢固/孟加拉/马拉地构成独立增量市场(见 2.3)。
-- vernacular 内容市场 2026 年 **~$1.35B → 2031 ~$3.13B**(Ken Research,15% CAGR)。
-- 品牌预算普遍仍按"区域语言≈30% 市场"配置——**预算结构与人口结构倒挂**是本市场最大的套利空间。
+- IAMAI–Kantar《Internet in India 2024》原文:2024 年有 **8.7 亿**互联网用户(占互联网用户的 **98%**)访问过印度语言(Indic)内容;**57%** 的用户表示在印度城市地区偏好用印度语言获取互联网内容([IAMAI 报告 PDF](https://www.iamai.in/sites/default/files/research/Kantar_%20IAMAI%20report_2024_.pdf))。2025 年报告写互联网用户超过 9.5 亿(Scribd 上的报告页,未读原 PDF)。
+- 旧稿「农村占 55%」「vernacular 内容市场 $1.35B→$3.13B(Ken Research)」「品牌预算按区域语言≈30%配置」未核,已删。
+- 印地语是最大单一语种,但不是全部:Google 2025-10-08 的印度公告把 AI Mode 扩到孟加拉语、卡纳达语、马拉雅拉姆语、马拉地语、泰米尔语、泰卢固语、乌尔都语(见 4.1)。
 
 ### 1.4 就绪闸门
 
-- `hi-IN` 与 `en-IN` **分开评分**通过 + **Hinglish 三写决策记录**(见 3.1)落盘——未过不做增量投入。
-- 英文版 90 分掩盖 Hinglish/印地语版 40 分,是本市场最常见失败模式(同阿语区)。
+- `hi-IN` 与 `en-IN` 分开评分;Hinglish 三写决策记录落盘(见 3.1)。未过不做增量投入。
+- 英文版 90 分会掩盖印地语或 Hinglish 版 40 分(本套件口径)。
 
-## 二、चैनल(渠道:聚合器守门人、vernacular、语音)
+## 二、渠道
 
-### 2.1 聚合器守门人(JustDial/IndiaMART/Sulekha)
+### 2.1 聚合器(JustDial、IndiaMART、Sulekha)
 
-- **JustDial**:印度最高 DA 目录站,程序化 **城市×品类页覆盖 1000+ 城市**(技术面=页/城/品类 playbook)——在"城市+服务"类查询上系统性压制 SMB 自有站。
-- **IndiaMART** 垄断 B2B/工业品查询;**Sulekha** 覆盖本地服务;TradeIndia 次之。
-- 动态:聚合器靠 DA+程序化页在 Google 上**排在小企业前面**,再把这些曝光卖回给小企业(付费收录/线索)——**守门人经济**:审计时区分"在聚合器上占位"(必要,作实体与引用信号)与"只靠聚合器获客"(租金依赖)。
-- 实体一致性三件套:JustDial/IndiaMART/Sulekha 收录 + Wikipedia(en/hi)+ Google Business Profile;实体名、音译别名、印英双写统一计数。
+- JustDial 是印度大型本地目录,有大量「城市 × 品类」页(行业拆解称覆盖千余城市,来源是 LinkedIn 帖,未核)。IndiaMART 覆盖 B2B 与工业品查询;Sulekha 覆盖本地服务。
+- 聚合器在「城市+服务」类查询上常排在小企业前面,是本套件的观察(本套件口径)。审计时区分两件事:在聚合器上占位(实体与引用信号,必要);只靠聚合器获客(租金依赖)。
+- 实体一致性:JustDial/IndiaMART/Sulekha 收录 + Wikipedia(en/hi)+ Google Business Profile;实体名、音译别名、印英双写统一。
+- 大站对非浏览器 UA 常拦截(见本地实测)。
 
-### 2.2 语音:29 词问句市场
+### 2.2 语音与长查询
 
-- 语音查询均长 **~29 词(约为打字的 7 倍)**;对照印度打字查询均长 **3–4 词**——两个关键词形态学完全不同,不可共用词表。
-- 印度语音搜索增速 **~270% YoY**(Google 数据转引),语音用户 3 亿+;**~70% 新用户语音优先**(打字门槛高)。
-- 60% 印度 AI 用户以语音交互、59% 用过区域语言(Northstar 口径)。
-- 词形:**助词词库(kaise/kya/konsa/batao/karne/wala)× 产品词** 组态是语音层关键词的主形态(KB 继承,外部数据侧证)。
+- Google 官方(全球口径):AI Mode 用户提问长度约为传统搜索的近 3 倍([Google 印度博客 2025-10-08](https://blog.google/intl/en-in/products/supercharging-search-for-india-new-languages-in-ai-mode-search-live-debuts/))。
+- 旧稿的「语音查询均长 29 词」「语音增速 270%」「语音用户 3 亿+」「70% 新用户语音优先」「Northstar 60%/59%」全部找不到原文,已删。
+- 词形假设(本套件口径):助词词库(kaise、kya、konsa、batao、karne、wala)× 产品词,是口语化长查询的主形态。用自己 GSC 里的长查询验证。
 
-### 2.3 vernacular(泰米尔·泰卢固是独立市场)
+### 2.3 区域语言
 
-- 泰米尔/泰卢固内容消费与 YouTube 语音搜索增速**快于英语**;印地语站不可代替泰米尔/泰卢固站——hreflang 分层 `ta-IN`/`te-IN` 独立决策。
-- Vernacular 发行商是 Discover 依赖最深的群体(80–90% 会话)——技术 SEO 面弱 + 单渠道依赖,审计必查。
+- 泰米尔语、泰卢固语是独立的内容市场。印地语站不能代替它们。hreflang 另挂 `ta-IN`、`te-IN`,分别决策。
+- 旧稿中泰米尔纳德与泰卢固地区的人口数字(7,200 万、1.1 亿)和 YouTube 增速说法未核,已删。
 
-## 三、भाषा तंत्र(语言机制:Hinglish 三写是硬检查)
+## 三、语言机制
 
-### 3.1 Hinglish 三写(本市场最重要的语言事实)
+### 3.1 Hinglish 三写
 
-同一意图存在三种书写,查询量分布随人群/场景漂移:
+同一意图有三种书写,查询量分布随人群与场景漂移:
 
-| 书写 | 例(买笔记本) | 匹配页面语言 | 备注 |
-|---|---|---|---|
-| 罗马化 Hinglish | best laptop kharidna hai kaise | **英文页+Hinglish FAQ/标题** | 城市主力写法;Google 2021 起官方支持罗马化印地语 |
-| 天城体印地语 | बेस्ट लैपटॉप कैसे खरीदें | 印地语页 | 农村/语音转写偏好 |
-| 英语 | best laptop to buy | 英文页 | en-IN 站默认 |
+| 书写 | 例(买笔记本) | 承接页 |
+|---|---|---|
+| 罗马化 Hinglish | best laptop kharidna hai kaise | 英文页 + Hinglish FAQ/标题 |
+| 天城体印地语 | बेस्ट लैपटॉप कैसे खरीदें | 印地语页 |
+| 英语 | best laptop to buy | 英文页 |
 
-- Google 官方确认:拉丁字母打的印地语查询会映射到印地语结果(2023 multilingual search 博客)——**引擎已做跨书写匹配,你的页面没做就是纯损失**。
-- 战术:核心词按三写**归组追踪、分开落地**——罗马化 Hinglish 由英文页承接(标题/H2/FAQ 用 Hinglish),天城体由 hi 页承接;勿建三份镜像页。
-- aap/tu 语域分层:B2B/金融用 aap 级正式体,社交/娱乐可口语体。
+- **Google 官方**:Search Central 博客(2023-09,Sunny Nahar 等)写明:印度用户可能因键盘不便用拉丁字母搜印地语,Google 会给出两种书写的印地语结果,「want and receive Hindi results written either way」([How Google Search handles multilingual searches](https://developers.google.com/search/blog/2023/09/multilingual-searches))。更早的 2020-12-17 报道称 Google 搜索会对用英文字母键入的印度语言显示相应语言结果(Indian Express);旧稿「2021 年起」改为 2020-12。
+- 本套件口径:核心词按三写归组追踪、分开落地。罗马化 Hinglish 由英文页承接(标题、H2、FAQ 用 Hinglish),天城体由印地语页承接。不建三份镜像页。
+- hreflang:`hi`、`hi-IN`、`en-IN` 都是合法写法(ISO 639-1 + ISO 3166-1 Alpha-2,[Google 文档](https://developers.google.com/search/docs/specialty/international/localized-versions));Google 不靠 hreflang 或 lang 判断页面语言。`hi-Latn`(IANA 子标签表含 Latn 文字码)可用于 HTML `lang` 属性,Google 的 hreflang 文档没有列它,所以不把它写进 hreflang。
+- aap/tu 语域:B2B、金融用 aap 级正式体,社交、娱乐可口语体(本套件口径)。
 
-### 3.2 GSC regex 快照缺口诊断法(KB 方法,外部侧证)
+### 3.2 GSC 正则快照缺口诊断
 
-1. GSC Performance→Queries→**正则过滤天城体区段** `[\u0900-\u097F]` 截一版快照;
-2. 换罗马化 Hinglish 助词正则(`kaise|kya|konsa|hai|karo|batao`)再截一版;
-3. 对照两版快照的**承接页语言**:天城体查询落在英文页、或 Hinglish 查询零展示=**语言错配缺口**;
-4. 修复按 3.1 落地表执行(hreflang/独立段落/标题重写),**不做机翻镜像**(见六)。
-- 该方法的产出是"排名尚可但语言错配"的页清单——这是印度站最常见的隐性损失。
+1. Search Console → 效果 → 查询 → 筛选 → 自定义(正则),选「匹配」。
+2. 第一版:天城体。**GSC 的正则用 RE2 语法**([Search Console 帮助](https://support.google.com/webmasters/answer/17011165))。RE2 不支持 `ऀ` 写法(用 google-re2 实测:`invalid escape sequence: \u`)。用 `\p{Devanagari}` 或 `[\x{0900}-\x{097F}]`(两者在 google-re2 中编译并匹配成功)。旧稿的 `[ऀ-ॿ]` 在 GSC 里会报错或不匹配。
+3. 第二版:罗马化 Hinglish 助词正则,例如 `kaise|kya|konsa|hai|karo|batao`。
+4. 对照两版的承接页语言。天城体查询落在英文页,或 Hinglish 查询零展示,就是语言错配缺口。
+5. 修复按 3.1 落地,不做机翻镜像。
 
 ### 3.3 数字与格式
 
-- **lakh/crore 分组**:`1,23,456.78`(3-2-2 印度式),价格 ₹ + lakh/crore 口语单位;混用西式 `123,456` 在商业页是未本地化信号。
-- 日期 `9 अक्टूबर 2026`;电话前缀 **+91**;`+91` 出现在页面是本地实体信号。
+- 印度分组 `1,23,456.78`:Unicode CLDR 的 `hi` 与 `en-IN` 区域都用 `#,##,##0.###`(3-2-2 分组),货币格式 `¤#,##,##0.00`(cldr-json,取数 2026-10-21)。混用西式 `123,456` 在商业页是未本地化信号(本套件口径)。
+- 日期 `9 अक्टूबर 2026`;电话前缀 +91。
 
 ### 3.4 拼写漂移
 
-- 音译漂移(color/colour、kya/kia、sasta/sasta≤变体)按 **IndicXlit 类音译规范化聚类**,当变体归组研究;呈现侧保留主流写法。
+- 音译变体(color/colour、kya/kia)按音译规范化聚类。AI4Bharat 的 IndicXlit 是 21 种印度语言的音译模型(GitHub 仓库描述,最近一次提交 2023-10-13)。
 
 ### 3.5 长度
 
-- 印地语文案比英文**长约 10–15%**(KB 口径,弱于阿语 20%):title 60 字符/desc 155 字符留余量。
+- 旧稿称印地语文案比英文长约 10–15%,无来源。title 60、description 155 是本套件口径。用 `parity_check.py` 对一页英印版实测。
 
-## 四、AI-GEO(印度是全球 AI 搜索的压力测试场)
+## 四、AI-GEO
 
-### 4.1 时间线(官方)
+### 4.1 官方时间线
 
 | 事件 | 日期 | 来源 |
 |---|---|---|
-| AI Mode 进印度 Search Labs(**美国外首个市场**) | **2025-06-24** | Google |
-| AI Mode 加印地语(同期+日/印尼等) | **2025-09-08** | Google |
-| Search Live(印地语/英语)+ AI Mode 扩 9 种印度语言 | 2025-10 Google for India | Google 官方博客 |
-| ChatGPT 印度 1 亿周活(第二市场) | **2026-02-15** | OpenAI/Altman |
+| AI Mode 在印度以 Labs 实验推出(英语) | **2025-06-24** | [Google 印度博客](https://blog.google/intl/en-in/products/google-search-introducing-ai-mode-in-india/) |
+| AI Mode 向印度所有人推出(英语,无需 Labs) | **2025-07-08** | [Google 印度博客](https://blog.google/intl/en-in/feed/ai-mode-in-google-search-rolling-out-in-india/) |
+| AI Mode 新增印地语、印尼语、日语、韩语、巴西葡语 | **2025-09-08** | [Google 官方博客](https://blog.google/products-and-platforms/products/search/ai-mode-expands-more-languages/) |
+| AI Mode 再增 7 种印度语言(孟加拉、卡纳达、马拉雅拉姆、马拉地、泰米尔、泰卢固、乌尔都)+ Search Live(英语、印地语);印度是美国以外首个获得 Search Live 的国家 | **2025-10-08** | [Google 印度博客](https://blog.google/intl/en-in/products/supercharging-search-for-india-new-languages-in-ai-mode-search-live-debuts/) |
+| ChatGPT 印度 1 亿周活 | 2026-02-15 | Altman,NDTV 等转述 |
 
-### 4.2 依赖度基线
+- 旧稿写「AI Mode 进印度 Search Labs=美国外首个市场」:官方印度博客写「We first introduced AI Mode as an experiment in the U.S.」后在印度以 Labs 推出,没有写「美国外首个」。该说法来自 Seroundtable 等媒体,本次未在 Google 原文读到,已改为不带「首个」。
+- 旧稿「Search Live + AI Mode 扩 9 种印度语言」:官方写的是新增 7 种(加上已有的英语、印地语共 9 种)。
 
-- **~80% 搜索用户至少 40% 的时间依赖 AI 摘要;~60% 搜索零点击**(Bain–Dynata,2024-12,n≈1,100;**2026-10-09 重核修正:样本为美国消费者,非全球口径**——印度依赖度未单独测量,"移动+AI 渗透高于均值故只高不低"是外推假设,引用时须注明)。
-- 印度"下一代搜索市场"2025 ~$1.54B;**60% 印度搜索者以 AI 辅助搜索开启每日查询**(行业口径)。
-- 发行商侧:Google 传向 ~100 家出版商为 AI 答案付费(2026 报道)——引用经济学在印度提前进入"付费墙"阶段,watch 项。
+### 4.2 AI 摘要依赖度
 
-### 4.3 印度专属 GEO 纪律
+- Bain 2025-02-19:约 80% 的消费者在至少 40% 的搜索里依赖「零点击」结果,自然网络流量因此下降约 15–25%(Bain 的估计)([Bain](https://www.bain.com/insights/goodbye-clicks-hello-ai-zero-click-search-redefines-marketing/))。调查样本是**美国消费者**,不是印度。用到印度要写明「美国样本,外推」。旧稿「60% 搜索零点击」同属 Bain 的美国样本。
+- 「印度下一代搜索市场 2025 ~$1.54B」「60% 印度搜索者用 AI 开启每日查询」「Google 向约 100 家出版商为 AI 答案付费」未核,已删。
 
-- AI 引用审计**必须双提示跑**:罗马化 Hinglish 与天城体提示的结果分布不同(引擎跨书写匹配≠生成引擎同样跨书写);只用英语提示测印度市场=白测。
-- 语音层 GEO:29 词问句形态直接进 FAQ/schema(`Question` 文本用口语全句,不用关键词残片)。
-- ChatGPT 作为事实上的第二引擎:**1 亿周活**意味着 Perplexity/Gemini 之前先测 ChatGPT 印地语+Hinglish 提示的引用。
+### 4.3 印度专属 GEO 纪律(本套件口径)
 
-### 4.4 本土模型 watch
+- AI 引用审计用双提示:罗马化 Hinglish 与天城体提示分别跑。Google 官方只说搜索会跨书写给结果;生成式回答是否同样跨书写,没有官方说明,所以分开测。
+- FAQ 与 Question schema 用口语全句。
+- ChatGPT 在印度有 1 亿周活,先测 ChatGPT 的印地语与 Hinglish 提示。
 
-- **Sarvam AI**(印度 AI Mission 主权栈,22 种印度语言,见七)有独立 API/爬虫生态;Krutrim 等次之——watch 项非必做项;ChatGPT/Gemini 仍主导实际使用。
+### 4.4 本土模型(观察项)
 
-## 五、आउटसोर्सिंग की सच्चाई(外包真相:三层价格)
+- Sarvam AI 自述是印度全栈主权 AI 平台,提供 22 种印度语言的语音转文字、文字转语音、翻译、对话代理([sarvam.ai](https://www.sarvam.ai/))。旧稿的具体型号(Sarvam-M 24B 等)已过时,不再列。它是观察项,不是必做项。
 
-印度是 SEO 外包最大输出国——"在印度做 SEO"的报价分三层,混层比较是外行信号:
+## 五、外包报价
 
-| 层 | 价带(月) | 内容 | 风险 |
-|---|---|---|---|
-| **T1 商品层** | **₹6,000–15,000**(~$75–180) | 本地 SEO、目录提交、 GBP;按件计 | 目录群发/低质链接;iConnectDM ₹14,999 档等 |
-| **T2 中层** | **₹15,000–40,000**(~$180–480) | 全案 on-page+内容+基础链 | 模板化;Hinglish 决策通常缺位 |
-| **T3 全案层** | **₹75,000–2,00,000+**(~$900–2,400) | 含 AEO/GEO、技术债、编辑内容 | DigiStreet ₹75k–2L+GST 档等 |
+- 旧稿列出了印度 SEO 外包的三层月费价带与白牌转包链价格,来源是代理商页面和论坛帖,价格会变且无统一口径,已删。
+- 审计供应商的方法(本套件口径):要求每月交付物清单(页面、内容、链接来源),逐条核。外链类交付物对照 Google 垃圾政策(以排名为目的的买卖链接违规;付费链接标 `rel="sponsored"` 或 `nofollow`;[Spam policies](https://developers.google.com/search/docs/essentials/spam-policies),更新 2026-09-16)。
 
-- **白牌转包链**:西方 agency 以 **$300–1,000/月/客户**外包印度,再以 **$800–2,000** 收(WiseMonk/Reddit r/agency 口径)——审计客户供应链时按此价带识层。
-- 总带宽参考:**₹8,000–1,50,000/月**(Media Sathi)。
-- 判读规则:报价低于 T1 下限(~$75/月)≈ 链接农场;T2 报价但要 T3 交付(GEO/多语言)= 范围幻觉。
+## 六、红旗
 
-## 六、लाल झंडे(红旗)
+- **单一英语市场判断**:只做 en-IN 覆盖不了用印度语言上网的人群(IAMAI:98% 的用户用印度语言访问过互联网)。审计第一问:查询的三写分布测过吗?
+- **聚合器租金依赖**:在聚合器付费买线索不等于渠道策略。
+- **Discover 单点依赖**:Google 官方说 Discover 流量不如关键词搜索可预测。依赖度高时标红。
+- **机翻镜像**:直接机器翻译的印地语镜像页不会因翻译而获得引用(本套件口径,无对照实验)。用原生 Hinglish 或印地语写作。
+- **三写当三市场**:为同一意图建三份镜像页会造成重复内容和索引膨胀。
+- **lakh/crore 缺失**:商业页用西式分组是未本地化信号。
+- **只用英语提示测印度 GEO**:结果不能外推。
 
-- **单一英语市场误判**(最贵红旗):en-IN 单语策略覆盖不了 98% Indic 内容消费人群;品牌预算按"区域≈30%"配置与人口结构倒挂——审计第一问:query 三写分布测过吗?
-- **聚合器租金依赖**:在 JustDial/IndiaMART 付费买线索≠渠道策略;自有实体面(GBP+官网+维基)缺席时,聚合器占位只是给守门人交租。
-- **Discover 单点依赖**:区域发行商 80–90% 会话来自 Discover,且 Google 明示其不可预测——Discover 依赖度 >50% 即标红,需 Search/AI 引用/直接流量再平衡。
-- **机翻镜像无 AI 引用**:机器翻译印地语镜像页被 AI 引擎低信任;逐句改写不足以修复——须原生 Hinglish/印地语写作(同阿语区纪律)。
-- **三写当三市场**:为同一意图建三份镜像页(罗马化/天城体/英语)触发重复内容+索引膨胀;正确做法是归组追踪+按 3.1 分开落地。
-- **lakh/crore 缺失**:商业页出现西式 `123,456` 分组=未本地化硬信号。
-- **英语提示测印度 GEO**:跨书写提示分布不同,英语提示的引用审计结果不可外推。
+## 七、法规:DPDP
 
-## 七、औज़ार(工具栈)
+- **Digital Personal Data Protection Act, 2023**:2023-08-11 获总统批准([MeitY 页面](https://www.meity.gov.in/content/digital-personal-data-protection-act-2023)),按中央政府指定日期分阶段生效。
+- **DPDP Rules, 2025**:2025-11 由 MeitY 公布(PIB 新闻稿 2025-11-14;媒体写公告日 11-13 或 11-14),PIB 称有 **18 个月分阶段合规时间表**,要求数据受托人发出独立、清晰、简明的同意通知,同意管理者须为印度公司([PIB](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2190014))。主要义务按 18 个月推算约在 2027-05,具体日期以规则条文为准(本套件推算)。
+- 适用范围提示:处理印度境内个人数据的网站和应用要对照。这不是法律意见。
+
+## 八、工具
 
 | 功能 | 工具 | 注 |
 |---|---|---|
-| 印度语言 AI 栈 | **Sarvam AI API** | 主权栈 22 语言:Sarvam-M 24B(10 印度语言)/Saaras STT/Bulbul TTS/翻译;开发者免费层 |
-| 音译归一 | **IndicXlit** | 拼写漂移/三写变体聚类研究侧 |
-| 关键词 | Google KW Planner + suggest(印地语) | Ahrefs/Semrush 印地语数据薄;suggest 是免费 Hinglish 语料 |
-| 快照诊断 | GSC Performance regex(天城体区段+助词正则) | 3.2 缺口修复法 |
-| 语音词形 | 助词词库(kaise/konsa/batao)×产品词 | 29 词问句形态 |
-| 聚合器占位 | JustDial/IndiaMART/Sulekha/TradeIndia | 实体+引用信号;守门人经济审计 |
-| 本地实体 | GBP + Wikipedia(en/hi) | 实体一致性三件套 |
-| AI 测量 | GSC 生成式 AI 报告 + GA4 AI referrer 正则 + ChatGPT 印地语/Hinglish 双提示 | 引用审计双提示纪律 |
-| hreflang | `hi`+`hi-IN`+`en-IN`;vernacular 另挂 `ta-IN`/`te-IN` | 泰米尔/泰卢固独立决策 |
+| 印度语言 AI 栈 | Sarvam AI API | 观察项 |
+| 音译归一 | IndicXlit(AI4Bharat) | 21 种语言 |
+| 关键词 | Google Keyword Planner + 印地语 suggest | suggest 是免费 Hinglish 语料 |
+| 快照诊断 | GSC 正则 | 见 3.2 |
+| 聚合器占位 | JustDial、IndiaMART、Sulekha、TradeIndia | 实体与引用信号 |
+| AI 测量 | GSC 生成式 AI 表现报告 + GA4 来源正则 + ChatGPT 印地语/Hinglish 双提示 | 报告 2026-06-03 公布,2026-08-31 起全球开放([帮助页](https://support.google.com/webmasters/answer/16984139))([Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)) |
+| hreflang | `hi`、`hi-IN`、`en-IN`;`ta-IN`、`te-IN` | 泰米尔、泰卢固独立决策 |
 
-## 本地实测(2026-10-09,9.5 冲刺轮)
+## 上线检查清单
 
-### 重核(一手源双源核实)
+| # | 检查什么 | 怎么查 | 通过/失败判据 |
+|---|---|---|---|
+| 1 | hreflang 互指 | `python3 scripts/hreflang_cluster.py <hi-IN URL> <en-IN URL>`(有泰米尔/泰卢固版时一并传) | 互指完整;码合法 |
+| 2 | lakh/crore 分组 | `python3 scripts/market_lint.py --market hi <html文件> --url <URL> --report` | lakh 分组项 AUTO-OK。脚本只识别 7 位及以上的西式分组(实测 `₹1,234,567` 报 WARN;6 位的 `₹123,456` 不报),6 位数人工看 |
+| 3 | 天城体/罗马化检查 | 同上 | 天城体罗马化项无 AUTO-FAIL;语音助词项按提示处理 |
+| 4 | 电话与数字 | `python3 scripts/local_format.py --market hi "<页面样本文本>"` | `+91` 前缀 ✓(该脚本不查 lakh 分组,分组靠第 2 项) |
+| 5 | 头部元素 | `python3 scripts/head_check.py <URL> --market hi` | 无 ERROR |
+| 6 | title/description | `python3 scripts/site_audit.py <URL> --market hi --json` | 本套件口径:title ≤60、description 77–155 字符;天城体词数是**逐字计**(见本地实测),不当词数用 |
+| 7 | AI 检索爬虫放行 | `python3 scripts/robots_posture.py https://<域名>/robots.txt --signal visibility` | 搜索类与用户类 allowed |
+| 8 | 三写缺口 | 在 GSC 查询里先过滤 `\p{Devanagari}`,再过滤罗马化助词正则(见 3.2 第 3 步),对照承接页语言 | 天城体查询落在英文页、或 Hinglish 查询零展示的页清单为空,或已排期处理 |
+| 9 | Discover 依赖度 | GSC → 效果 → Discover 报告,对比 Search 点击 | Discover 占自然点击低于预警线(默认 50%,本套件口径) |
+| 10 | 双提示 GEO 测试 | 罗马化 Hinglish 与天城体各 20 个提示,在 ChatGPT 与 AI Mode 跑 | 两组结果分开存档,被引域名分开记 |
+| 11 | llms.txt(可选) | `python3 scripts/llmstxt.py check https://<域名>` | 看返回体是 markdown,不是 HTML 兜底页 |
+| 12 | 聚合器占位 | 搜 20 个「城市+服务」词,记录聚合器与自有站排名 | 记录;月度对比 |
 
-| 关键数字 | 重核结果(2026-10-09) | 判定 |
+## 本地实测(2026-10-09)
+
+> 脚本口径 2026-10-21 已改:twitter:* 与 OG 重复只记 INFO;缺 H1/描述为 WARN。下面的 ERROR 数是旧口径结果,复测会不同。
+
+### 重核表(2026-10-09)
+
+| 关键数字 | 当日结果 | 2026-10-21 复核 |
 |---|---|---|
-| Google ~96.7% | StatCounter 2026-09 印度 **96.63%**(Bing 1.92%) | ✓ 带内一致 |
-| AI Mode 进印度 Search Labs=美国外首个(2025-06-24) | Seroundtable+Search Engine Land 双源确认;**增量:印度也是美国外首个 AI Mode 全量开放市场**(Moneycontrol) | ✓ |
-| AI Mode 加印地语(2025-09-08) | Google 官方双帖:blog.google en-in 独立公告 + 2025-09-08 五语言扩展(Hema Budaraju 署名) | ✓ 官方 |
-| ChatGPT 1 亿周活/全球第二 | 母语多源:Navbharat Times/Amar Ujala/ETV Bharat(口径:美国外第二、亚洲最大,总 WAU ~8 亿);官宣 02-15 vs 报道 02-16/02-21 | ✓ 母语多源;日期口径并记 |
-| Bain 80%/60% | 数字双源确认(Bain 官方+Digiday),但**样本为美国消费者**(n≈1,100;另有 n≈3,000 转引);4.2 与来源标注已同步修正 | ⚠ 冲突已修正(全球口径→美国样本外推) |
-| IAMAI 98% Indic/9.5 亿网民 | 母语双源(Jagran/Dainik Bhaskar)+IAMAI–Kantar 原 PDF 在线;农村 51–57%(原 55% 在带内) | ✓ |
+| Google ~96.7% | StatCounter 2026-09 96.63% | 现数据 96.69%(StatCounter 修订) |
+| ChatGPT 1 亿周活 | 母语多源 | 英文多源(NDTV、TechCrunch)V |
+| Bain 80%/60% | 样本为美国消费者,已修正 | 同 |
+| IAMAI 98% Indic | 母语多源 + IAMAI–Kantar PDF | 2024 PDF V:870M 用户、98% |
 
-### 真实站验证(amarujala.com / bhaskar.com × 3 工具)
+### 真实站验证(amarujala.com / bhaskar.com)
 
-- `site_audit --market hi`:amarujala — title/desc 超限+跳级 h1→h3+262 链接;bhaskar — 同类+**4 个 AI 检索爬虫(OAI-SearchBot/ChatGPT-User/Claude-SearchBot/PerplexityBot)全被 robots.txt 禁**,退出全部 AI 答案池。`llmstxt check`:**amarujala /llms.txt 200 在场**(印度头部印地语站少见);bhaskar 无。`head_check`:两站均命中 twitter:* 全套/x-ua-compatible/fb:app_id 弃用 ERROR。
-- **结构性发现(印度头部双雄姿态两极)**:Amar Ujala=llms.txt 在场+AI 爬虫放行;Dainik Bhaskar=无 llms.txt+四爬虫全禁——天城体新闻的 AI 引用池正被头部主动收缩,做 hi 内容的品牌站 GEO 竞争反而小于英文市场。
-- 大站拦截实录:justdial.com 读超时、indiamart.com HTTP 429、hindi.news18.com 403——聚合器/大站对非浏览器 UA 激进拦截,审计先换浏览器 UA 重试再下结论。
-- **工具盲区(实测确认)**:
-  1. `site_audit.py` 词数对天城体计 **0**(wc() 只数 CJK+拉丁;实测 `wc("बेस्ट लैपटॉप कैसे खरीदें…")=0`)→ 纯印地语页必误报 "词数 <200 soft-thin";罗马化 Hinglish 正常计数——**印地天城文检测未触发,hi 审计的词数结论一律不可信,须人工复核**;
-  2. `--market hi` 无任何 hi 专属分支(market 仅 ja 特例 32/120;hi 落通用 60/160,lakh/crore/三写归组均无机检);
-  3. title 解析把 `<title>` 后 head 内 CSS/JS 全并入 title(amarujala 报 163,412 字符、bhaskar 234,387)——解析器缺陷,非站方问题;
-  4. head_check 微信/QQ itemprop WARN 在非中文市场同样触发(噪音);
-  5. 泰米尔(U+0B80–0BFF)/泰卢固(U+0C00–0C7F)同不在 wc() 覆盖内——vernacular 站盲区与天城体相同。
-
-### vernacular 深挖:泰米尔/泰卢固段落级展开(补 2.3 缺口)
-
-**(1) 规模与结构**:泰米尔纳德 ~7,200 万人口、邦级互联网用户第一梯队;泰卢固带(安得拉+特伦甘纳)~1.1 亿人口、海得拉巴科技走廊。母语人口均超多数欧盟国家——"vernacular 区域语言"是误称,实为**两个独立千万级增量市场**。Google AI Mode 九种印度语言清单同时含 ta/te:基础设施已就位而内容供给未跟上,是印度 GEO 的最大套利面。
-
-**(2) 文字与查询形态**:泰米尔正字浅层(音素一致),拼写漂移远低于印地;但英语借词用 Grantha 借音字母(ஸ/ஜ/ஷ)书写,同一借词存在"传统拼写 vs 简化音译"双写——关键词归组前先跑音译聚类(IndicXlit 支持 ta/te)。罗马化混码同样存在:Tanglish(epdi/enna/enga)、Telish(ela/emi/ekkadha)。三写纪律从 Hinglish 外推,**但词表必须按语言重建,不可翻译印地语助词词库**(kaise≠epdi≠ela)。
-
-**(3) 语音问句后缀**:泰米尔口语疑问靠句尾 ஆ?(aa)/வா?(vaa)承载,语音查询常以口语助词收尾——FAQ/Question schema 用口语全句,同 2.2 纪律;泰卢固疑问后缀 -ఆ/-కదా 同理。
-
-**(4) 数字与格式**:lakh/crore 同样适用(泰米尔 இலட்சம்/கோடி,泰卢固 లక్ష/కోటి);日期用本地月名(9 అక్టోబర్ 2026);电话 +91 不变。
-
-**(5) 渠道与风险**:两语发行商 Discover 依赖最深(80–90% 会话,见 1.2)+ 技术面普遍弱(模板 CMS、无 hreflang 层)。审计入口:先查 Discover 单点依赖,再查 `ta-IN`/`te-IN` hreflang 是否独立挂载(勿挂 hi 机翻镜像)。YouTube 是两语第一大内容消费场(泰卢固内容含美国侨民全球消费)——视频词表与站内词表分开做。
-
-**(6) 决策闸门**:泰米尔/泰卢固各自过就绪闸门(分开评分+音译决策记录落盘),任一未过则不做该语增量——与 hi/en 双评分同一纪律,不留"印地语覆盖南印"的幻觉。
+- `site_audit --market hi`(旧口径):amarujala — title/desc 超限、跳级 h1→h3、262 链接;bhaskar — 同类,且 4 个 AI 检索爬虫(OAI-SearchBot、ChatGPT-User、Claude-SearchBot、PerplexityBot)被 robots.txt 全禁。`llmstxt check`:amarujala `/llms.txt` 200 在场;bhaskar 无。`head_check`(旧口径):两站均命中 twitter:* 全套、x-ua-compatible、fb:app_id 弃用 ERROR。
+- 单次观察:Amar Ujala 放行 AI 爬虫并有 llms.txt;Dainik Bhaskar 四爬虫全禁。两站不能代表印度头部,「天城体 AI 引用池被头部收缩」的推论证据不足,已降为单次观察。
+- 大站拦截:justdial.com 读超时、indiamart.com HTTP 429、hindi.news18.com 403。聚合器与大站对非浏览器 UA 激进拦截,先换浏览器 UA 重试再下结论。
+- **工具盲区(2026-10-21 复核后更新)**:
+  1. 旧结论「`site_audit.py` 对天城体词数计 0」**已过期**:当前 `wc()`(scripts/site_audit.py)对天城体**逐字(码点)计数**。实测 `wc("बेस्ट लैपटॉप कैसे खरीदें")` 返回 21,而人工词数是 4;`wc("best laptop kharidna hai")` 返回 4。所以天城体页的「词数」实为码点数,约为词数的 5 倍。薄内容判断(<200 词)对印地语页偏松,不当词数引用。
+  2. `--market hi` 没有 hi 专属阈值分支(落通用阈值)。lakh/crore 的机检在 `market_lint.py`。
+  3. 旧结论「title 解析把 head 内 CSS/JS 并入 title(amarujala 163,412 字符)」是旧数据,本次未复测。
+  4. 微信/QQ itemprop 提示在非中文市场的噪声:本次未复测。
+  5. 泰米尔、泰卢固字符的词数:`wc()` 对它们按「连续字母段」计,与印地语的逐字计不同,不能互比。
 
 ## 来源类型标注
 
-- **官方**:Google 官方博客(Google for India:AI Mode 2025-06-24 首发/2025-09-08 印地语/Search Live;multilingual search 2023-09)、OpenAI/Altman(1 亿周活,2026-02-15)、StatCounter(96.63%,2026-09 复核)、Statista(移动 99.17%,2026-07)、Bain–Dynata(80%/60%,2024-12,n≈1,100,**美国样本**)。
-- **研究/行业**:IAMAI 口径转引(98% Indic 消费/9.5 亿网民)、Ken Research(vernacular 市场 $1.35B→$3.13B)、State of Indian Digital Publishing 2026(Discover 15–30%)、Praman(区域发行商 80–90% 会话)、Lumenario(AIO 对印度中部发行商冲击)。
-- **从业者共识/案例**:JustDial 1000 城程序化案例(LinkedIn 拆解)、BundledSEO(罗马化→英文页/天城体→印地语页)、Digital Applied(语音 29 词)、ET Travel×MakeMyTrip(打字 3–4 词)、WiseMonk/Media Sathi/DigiStreet/Kunal Dabi(三层外包价带)、Northstar(60% 语音 AI/59% 区域语言)。
-- **KB 继承**:Hinglish 三写归组、GSC regex 快照缺口法、助词词库×产品词、IndicXlit、lakh/crore、聚合器占位审计——见 multilingual-workflow.md 印度段与 `scripts/markets.json` 的 `hi` 条目。
+- **官方**:Google 官方博客与 Search Central(AI Mode 时间线、multilingual search、Discover 文档)、PIB 与 MeitY(DPDP)、StatCounter、IAMAI–Kantar 报告、OpenAI CEO 公开讲话(经媒体转述)。
+- **第三方研究**:Bain 零点击调查(美国样本)。
+- **本套件口径**:Hinglish 三写归组、GSC 正则缺口法、助词词库、聚合器占位审计、预警线。
 
 ## 维护
 
-- 复审周期 **90 天**,下一次 **2027-01-09**;signals 清单与 `scripts/markets.json` 的 `markets.hi.review_cycle` 保持一致,以 json 为准。
-- 触发即复审的信号:StatCounter 印度月度份额(连续 2 月 >1pp 漂移)、Google for India 年度发布(惯例 Q4)、ChatGPT 印度 WAU 官方口径更新、IAMAI–Kantar 年报、Discover 依赖度行业口径(State of Indian Digital Publishing/Praman)、Sarvam/Krutrim 主权栈动静。
-- 断言半衰期 6–12 个月;份额/WAU/价带类数字先于判断类断言过期。
-- 增量研究前先读「本地实测(2026-10-09)」的重核表——已修正口径(如 Bain 美国样本、tools 天城文盲区)勿当原始事实再引用。
+- 复审周期 **90 天**,下一次 **2027-01-09**(以 `scripts/markets.json` 的 `markets.hi.review_cycle` 为准)。
+- 触发即复审:StatCounter 印度月度份额;Google for India 年度发布(惯例 Q4);DPDP Rules 阶段生效日;IAMAI–Kantar 年报;Search Console 生成式 AI 报告的开放范围。
+- 份额、周活类数字先于判断类断言过期。
+
+## 建议(需要别处配合,本文件不改)
+
+| 键路径 | 现值 | 应改值 | 来源 |
+|---|---|---|---|
+| `scripts/markets.json` → `markets.hi.special_checks[0]` | 「Hinglish 三写变体归组+GSC regex 快照缺口诊断」 | 保留;在 `references` 说明正则须用 RE2 的 `\p{Devanagari}` 而非 `ऀ` | Search Console 帮助、google-re2 实测 |
+| `markets.hi.review_cycle.signals[3]` | 「IAMAI–Kantar 年报」 | 保留 | IAMAI 报告 |
+| `markets.hi.review_cycle.signals[4]` | 「Discover 依赖度行业口径(State of Indian Digital Publishing/Praman)」 | 改「自家 GSC Discover 报告」(行业口径未核) | Google Discover 文档 |
+| `markets.hi.review_cycle.note` | 「site_audit 天城文词数盲区已记录」 | 改「天城体词数已改为逐字计数(≈5×词数),不当词数用」 | scripts/site_audit.py wc() |
+| `scripts/site_audit.py` → `wc()`(S2a 组) | 天城体逐码点计数 | 天城体改为按空格/词边界计词(或另列「字符数」),使 `soft-thin` 判断对印地语页有意义 | 实测 wc("बेस्ट लैपटॉप कैसे खरीदें")=21,词数=4 |
+| `scripts/market_lint.py` → `hi_num`(约第 440–450 行) | 只对 7 位以上西式分组报 WARN | 加 6 位西式分组(如 `123,456`)的判定,或在输出里注明「6 位不判」 | 实测 `₹123,456` 无告警 |
+| `markets.hi.notes` | 「hi-IN 与 en-IN 分开」 | 保留;补「hi-Latn 仅用于 HTML lang,Google hreflang 不用」 | Google 多语言文档 |
+| `markets.hi.entity_sources` | `justdial.com, indiamart.com, sulekha.com` | 保留 | — |

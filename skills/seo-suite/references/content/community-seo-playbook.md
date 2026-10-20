@@ -1,6 +1,6 @@
 # 社区 SEO 操作手册（Community SEO Playbook）
 
-> 建立于 2026-10-12；2026-10-18 逐条核对来源（证据账本 C3）。参与方法主要依据 Search Engine Land 的 Reddit 系列文章【行业媒体】；引用占比数字全部是厂商或媒体研究，只作观察引用，不作收益承诺，分级见 [geo-evidence-bank.md](geo-evidence-bank.md)。「本套件口径」是本套件的做法约定。
+> 建立于 2026-10-12；2026-10-18 逐条核对来源（证据账本 C3），2026-10-21 重新打开第三方原文和脚本 `--help` 复核。参与方法主要依据 Search Engine Land 的 Reddit 系列文章【行业媒体】；引用占比数字全部是厂商或媒体研究，只作观察引用，不作收益承诺，分级见 [geo-evidence-bank.md](geo-evidence-bank.md)。「本套件口径」是本套件的做法约定。
 > 断言半衰期 3 至 6 个月：平台排名和引用占比按 3 个月复查，参与纪律按 6 个月复查。
 > 关联方法论：[search-everywhere-optimization.md](../research/search-everywhere-optimization.md)（社区是其中一个平台面）；[brand-serp-methodology.md](../technical/brand-serp-methodology.md)（第三方口碑决定 Brand SERP 的负面面）。
 
@@ -12,7 +12,7 @@
   - Profound，6.8 亿条引用，2024-08 至 2025-06（[研究](https://www.tryprofound.com/blog/ai-platform-citation-patterns)）：在 Perplexity 引用最多的前 10 个来源内部，Reddit 占 46.7%；按全部引用算，Reddit 占 Perplexity 的 6.6%。ChatGPT 前 10 来源内 Reddit 排第 2（占 11.3%）。
   - Peec AI，3,000 万条来源（[SEL 2026-03-31 转述](https://searchengineland.com/ai-search-engines-cite-reddit-youtube-and-linkedin-most-study-473138)）：Reddit 是 ChatGPT、Google AI Mode、Gemini、Perplexity、AI Overviews 中被引最多的域名。
   - Kevin Indig，3.5 万条 ChatGPT 引用，美国，2025-12，SaaS 类提示（[SEL 2026-08-12](https://searchengineland.com/community-signals-ai-largest-third-party-source-484606)）：去掉厂商自有域名后，UGC 平台占被引域名的 17.1%，出版商占 4.0%。
-- **对照口径并记**（总纲原则 23：口径冲突并记，见 [multilingual-workflow.md](../overview/multilingual-workflow.md)）：Yext 分析 680 万条引用（ChatGPT、Gemini、Perplexity，2025-07 至 08），86% 来自品牌自有或可管理的来源：官网 44%，商家信息类 42%，评价与社交 8%，论坛 2%（[SEL 2025-10-09](https://searchengineland.com/ai-search-citations-brand-controlled-sources-463166)）。结论：社区是重要语料源，不是唯一战场；品牌地基仍走 [brand-records.md](brand-records.md) 路线。
+- **对照口径并记**（总纲原则 23：口径冲突并记，见 [multilingual-workflow.md](../overview/multilingual-workflow.md)）：Yext 分析 680 万条引用（ChatGPT、Gemini、Perplexity；时间范围以[原文](https://searchengineland.com/ai-search-citations-brand-controlled-sources-463166)为准），86% 来自品牌自有或可管理的来源：官网 44%，商家信息类 42%，评价与社交 8%，论坛 2%（[SEL 2025-10-09](https://searchengineland.com/ai-search-citations-brand-controlled-sources-463166)）。结论：社区是重要语料源，不是唯一战场；品牌地基仍走 [brand-records.md](brand-records.md) 路线。
 - **训练、授权接入、引用是三件事**：模型训练用过 Reddit，不等于答案会引用某个帖子；Google 与 OpenAI 的授权让它们持续拿到新帖；引用只说明检索系统当时认为该来源有用（[SEL 2026-05-21](https://searchengineland.com/reddits-ai-search-influence-goes-beyond-training-data-478235)）。
 
 ## 二、社区选择：匹配度评估

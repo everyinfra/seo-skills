@@ -1,7 +1,7 @@
 # 品牌提及监控（AI 搜索时代的"外链"）
 
 > 建立于 2026-10-09。权重与平台分布参考 [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `geo-brand-mentions` 技能，按本套件证据约束改写。
-> 背景事实：AI 引擎排名中品牌提及与结果的相关性约为外链的 3 倍（行业研究，非官方算法声明）。监控品牌提及因此成为 GEO 监控域的自然延伸。
+> 背景事实（**第三方研究，相关不是因果**）:Ahrefs 2025-05-26 对 7.5 万个品牌的研究（[原文](https://ahrefs.com/blog/ai-overview-brand-correlation/)）里，网页品牌提及与 Google AI 概览中品牌出现的 Spearman 相关系数约 0.66，外链约 0.22，前者约为后者的 3 倍。2025-12-12 的续篇（[原文](https://ahrefs.com/blog/ai-brand-visibility-correlations/)）把范围扩到 ChatGPT 和 AI Mode：YouTube 提及相关性最高（约 0.737），品牌网页提及 0.66–0.71；ChatGPT 与 DR、品牌搜索量的相关性较弱（0.266、0.352）；网站页面数与 AI 可见度几乎无关（约 0.194）。作者自己写明相关不等于因果，这不是任何搜索引擎的官方算法声明。样本只含 DR > 40 且最高搜索量关键词月搜索量 ≥800 的域名，不代表所有站点。证据分级以 [geo-evidence](../content/geo-evidence.md) 为准。
 
 ## 一、五平台加权（0–100 品牌权威分）
 
@@ -13,7 +13,7 @@
 | LinkedIn | 15% | 公司页活跃度、员工提及 |
 | 其他（新闻/博客/论坛） | 15% | 独立第三方提及（非自发） |
 
-分档：Dominant 85+ / Strong 70–84 / Moderate 50–69 / Weak 30–49 / Minimal 0–29。
+分档：Dominant 85+ / Strong 70–84 / Moderate 50–69 / Weak 30–49 / Minimal 0–29。**权重和分档是 geo-seo-claude 工具的自定义评分，本套件口径，不是行业标准**；表里「~0.737」是上面 Ahrefs 研究里 YouTube 提及的相关系数，不是权重依据。
 
 ## 二、监控什么（区别于社交聆听）
 
@@ -36,48 +36,66 @@
 ## 四、实体建设清单（从监控推导的动作项）
 
 - Wikidata 实体：存在、描述准确、sameAs 完整（官网+社交+GBD）
-- Wikipedia：是否满足收录门槛（注意 COI 政策——自建词条有风险，被独立收录才有价值）
+- Wikipedia：是否满足收录门槛。维基百科有[利益冲突（COI）政策](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)，不鼓励为自己的组织直接编辑词条；自建词条有被删除的风险，被独立可靠来源收录才有价值
 - Crunchbase / LinkedIn / GitHub 组织页：信息一致
 - 各平台 sameAs 双向可解析、无死链
-- YouTube：品牌频道有实质内容（Gemini/ChatGPT 偏好的引用源）
+- YouTube：品牌频道有实质内容（Ahrefs 研究里 AI 概览和 AI Mode 引用 YouTube 最多，ChatGPT 中它是被引第六的域名；第三方数据，相关不是因果）
 
 ## 五、KPI 约束（沿用本套件的反虚荣原则）
 
 用：独立提及数、实体一致性得分、固定提示词下的出现率与位置、AI 引用中的品牌出现。
 **不用**：总提及数（含自发）、粉丝数、单次爆发帖。
 
-## 六、市场差异：各市场的监控通道与指标（2026-10-08 一波并入）
+## 六、市场差异：各市场的监控通道与指标
 
-**度量升级（源自英文区，全区适用）**：引用四级阶梯 Retrieved → Cited → Mentioned → **Recommended**——推荐主要由站外共识（评论站/分析师/论坛）决定，且有 "recommended against" 暗级（模型点名排除产品）；监控输出用 framing（有利/中立/含糊/负面）而非只计数。观察性基准（单家研究，带机构名引用）：真推荐后一周 +182% 品牌搜索、约 2.5× 新访客（SimilarWeb）；**69% 的自荐型榜单即使被 AIO 引用也不把自己放进推荐**（Amsive，100 条 B2B 查询）。引用≠阅读：AI 答案点击率 ~4%（Reuters Institute）、AIO 引用点击 ~1%（Pew）——KPI 用「AI 回答中出现率」，勿用「AI 流量」单腿。免费 DIY：DevTools Network 面板提取 ChatGPT 真实 fan-out 搜索词；**Perplexity Sonar 返回真实引用 URL，是最可验证的监测探针**（utsushi 的 Share of AI Voice 模式）。
+**度量升级（英文区的行业做法，本套件口径）**：引用四级阶梯 Retrieved → Cited → Mentioned → **Recommended**——推荐主要由站外共识（评论站、分析师、论坛）决定；监控输出用 framing（有利 / 中立 / 含糊 / 负面）而不只是计数。
+
+**点击率**：Pew Research 2025-07-22 的研究（[原文](https://www.pewresearch.org/short-reads/2025/07/22/google-users-are-less-likely-to-click-on-links-when-an-ai-summary-appears-in-the-results/)；900 名美国成年人，2025-03 的浏览数据，68,879 次 Google 搜索，其中 12,593 次出现 AI 摘要）显示：出现 AI 摘要时，用户点击普通结果链接的比例低于没有摘要时（报道数字约 8% 对 15%），点击摘要里引用链接的约 1%。样本只含美国用户和 Google。所以 KPI 用「AI 回答中的出现率」，不要把「AI 流量」当唯一指标。
+
+**监测探针**：Perplexity 的 Sonar API 响应里带 `citations` 和 `search_results` 字段（[官方文档](https://docs.perplexity.ai/guides/chat-completions-guide)，核对 2026-10-21），可以读到真实引用 URL。注意:API 返回的内容不一定等于网页版用户看到的答案，不要把两者混在同一条时间序列里。
+
+下表是各市场**可用的监控入口**。凡写「官方」的，见 [geo-evidence](../content/geo-evidence.md) 的核对；其余是从业者做法，未逐条核一手。
 
 | 市场 | 增补监控通道 |
 |---|---|
-| 中文 | 采样频控：DeepSeek ~30 问触发风控，分时段 ≤20 问/时段（一手）；指标五项：覆盖率/首屏推荐率/单篇月均被引/90 天留存/同词竞品对比（行业）；微信指数做品牌词趋势；知乎「引证」标记纳入实体一致性检查；参考实现 [DeepSeekGEO/deepseek-geo](https://github.com/DeepSeekGEO/deepseek-geo)（118★）、lymefun-ux/geo-monitor-skill |
-| 俄语区 | **Webmaster「Алиса AI 可见度」SoV 报告**（官方，3 个月数据/周更）——唯一官方 GEO 监测口径；Telegram：监控 t.me/s/ 镜像在 Yandex top-30（品牌+品类词）；VK：群名/状态/讨论页三处；红线：行为因素刷量（накрутка ПФ）自动罚 6–12 月 |
-| 韩语区 | **AI 브리핑 인용수**：本人可见（채널 홈 프로필：누적/당월/전월）；**竞品若为메이트当选者则公开可查**——韩区竞品 AI 引用监测的唯一官方数据源；`site:도메인`（Naver 搜索栏）=색인 수 基准；주말 하락=평일性 주제 信号 |
-| 日语区 | SC「生成AIパフォーマンス」报告（官方）；分引擎分开跟（ChatGPT→Reddit/PR TIMES、Perplexity→知恵袋、AIO→YouTube/note）；垂类词盯行业定番媒体 |
-| 英文 | 自托管免费替代栈：elmo/oneglanse/limelit-open；共识档案同步（G2/Capterra/Gartner/Crunchbase 描述与 About 页同段位同类目）；Comscore 2026-06：35% 桌面用户访问 AI 助手；ChatGPT AI referral 份额 89%→63%（Goodie 2026-05，发现渠道碎片化进行中） |
+| 中文 | 对国产 AI 助手提问时留意平台的频率限制，错开时段，不要批量；指标可用:覆盖率、首屏推荐率、单篇被引次数、留存天数、同词竞品对比（行业说法，无统一标准）；知乎的「引证」标记纳入实体一致性检查 |
+| 俄语区 | Yandex Webmaster 的「Видимость сайта в Алисе AI」报告（官方，见 geo-evidence）；Telegram 公开频道网页镜像（t.me/s/）是否被 Yandex 收录；红线:行为因素刷量会被惩罚 |
+| 韩语区 | Naver Search Advisor 的 AI 브리핑 인용수（官方，见 geo-evidence）；`site:` 查询看收录数 |
+| 日语区 | Search Console 的生成式 AI 效果报告（官方；2026-08-31 起对全球网站开放，只报展示，见 [kpi-definitions](kpi-definitions.md)）；分引擎分开跟，不同引擎偏好的来源不同（从业者观察） |
+| 英文 | 自托管替代栈:elmo、oneglanse、limelit-open（第三方开源）；G2、Capterra、Crunchbase 的描述与 About 页保持一致 |
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 提示词面板固定 | 按第三节建 7 + 5 + 3 条提示词，写入文件并加版本号；每期同一面板 | 面板变了就标断点，不与上期直接比较 |
+| 样本带 n | `python3 scripts/citation_panel.py init --brand 品牌名 --prompts prompts.csv --engines chatgpt,perplexity`，每次采样后 `record --engine chatgpt --file run.csv`，再 `report`；每条提示词每引擎重复采样几次，次数写进报告 | 报告里每个出现率都附分母和区间（脚本的 mention_rate 带 Wilson 区间） |
+| 引用与提及分开 | 引用只算答案 sources 里的 URL；提及只算答案可见文本（第十一条纪律 2、3） | 把检索到但未被答案使用的结果算成引用 = 失败 |
+| 有效无答案留在分母 | 采集失败单独报告，不算「可见度下降」 | 失败被算成 0 = 失败 |
+| 实体一致性 | 官网、Wikidata、LinkedIn、Crunchbase 的名称与描述逐项比对 | 任一平台名称或描述不一致 = 列入修复 |
+| 相关性数据标级别 | Ahrefs 一类相关系数只写「相关」，不写成「提升了 X%」 | 出现因果措辞 = 改写 |
+| 官方报告优先 | Search Console 生成式 AI 报告、Bing Webmaster 的 AI Performance、Yandex、Naver 的官方报告先于自己抽样 | 有官方报告却只用抽样 = 补官方数据 |
 
 ## 七、来源
 
 - 五平台权重与 0.737 相关性：[zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) `skills/geo-brand-mentions/SKILL.md`
 - 7/5/3 提示词分类法：[OranAi-Ltd/orangeo-ai-visibility-skill](https://github.com/OranAi-Ltd/orangeo-ai-visibility-skill) `references/prompt-taxonomy.md`
 - 品牌提及 3x 相关性主张：geo-seo-claude README 市场数据表
-- 第六节：coreyhaines31/marketingskills（四级阶梯/格式动荡）；Amsive、SimilarWeb、Scrunch（推荐基准，观察性）；Reuters Institute DNR 2026、Pew（点击率）；Comscore、Goodie（碎片化）；JingHao-Leon/geo-book（风控，一手）；incognito-54/utsushi（Share of AI Voice/Sonar 探针）；Yandex Webmaster 官方（SoV）；Naver 메이트 帮助页（인용수 公开）
+- 第六节：coreyhaines31/marketingskills（四级阶梯）；Pew Research（点击率，一手）；Perplexity 官方文档（Sonar 响应字段）；incognito-54/utsushi（Share of AI Voice 做法，第三方）；Yandex Webmaster、Naver Search Advisor（官方报告，见 geo-evidence）。2026-10-21 核对时，旧版引用的 Amsive、SimilarWeb、Reuters Institute、Comscore、Goodie 和 DeepSeek 风控数字没有找到一手出处，已删。
 
 ## 增量:AI 归因与 SEO×付费重叠(百仓扫描批 1/4)
 
 - 品牌提及归一化=名称+别名+域名统一计数;原始引擎输出全存底供事后重算(elmo 模式);
-- **SEO×Ads 四桶 join**(Ryze seo-vs-ads):GSC query 维度×Ads 搜索词报告 90 天——**double-paying**(自然≤3 位还付费,品牌词无竞价者时最浪费)/defensible(竞对在投)/paid-only winners(广告转化但无自然排名=被钱预验证的内容路线图)/organic-only;省额=花费×自然点击保留率(保守 50-70%,明示估计);缺一侧账户时明说缺什么。
+- **SEO×Ads 四桶 join**(Ryze seo-vs-ads，第三方做法):GSC query 维度×Ads 搜索词报告 90 天——**double-paying**(自然≤3 位还付费,品牌词无竞价者时最浪费)/defensible(竞对在投)/paid-only winners(广告转化但无自然排名=被钱预验证的内容路线图)/organic-only;省额要用「自然点击保留率」估算，保留率没有外部基准，要用本站做小范围暂停广告的实验得出，在此之前不写具体比例;缺一侧账户时明说缺什么。
 
 ## 完全装载:AI 引用面五层/prompt 六类/品牌答案监控闭环(百仓深扫)
 
-**AI 引用面 5 层模型**(seomachine ai-citation-targets):Tier1 软件评测目录(G2/Capterra/TrustRadius/Product Hunt/**AlternativeTo 对 "alternatives to" 类关键**/**Slant 对 "vs" 类关键**)/Tier2 行业目录/Tier3 "best X" listicle 外联(找作者,给更新数据换收录)/Tier4 Reddit(高赞老帖评论优于新帖,F5Bot 监控)+Medium/LinkedIn/Quora/YouTube(Perplexity 与 Gemini 交叉引视频)/Tier5 声誉平台(GBP/Trustpilot/应用商店)。监控 5 组 prompt 簇:通用/功能/场景/迁移切换/价格,季度复审。
+**AI 引用面 5 层模型**(seomachine ai-citation-targets，第三方做法，本套件口径，层级顺序不是引用概率排名):Tier1 软件评测目录(G2/Capterra/TrustRadius/Product Hunt/**AlternativeTo 对 "alternatives to" 类关键**/**Slant 对 "vs" 类关键**)/Tier2 行业目录/Tier3 "best X" listicle 外联(找作者,给更新数据换收录)/Tier4 Reddit(F5Bot 监控)+Medium/LinkedIn/Quora/YouTube/Tier5 声誉平台(GBP/Trustpilot/应用商店)。监控 5 组 prompt 簇:通用/功能/场景/迁移切换/价格,季度复审。
 **6 类商业意图 prompt 生成法**(research-ai-citations):直接推荐/对比/功能/场景/价格/迁移——每类 15-20 条聚成 5-10 簇,实跑 10-15 条关键 prompt;记录品牌是否提及+位置/被引 URL/竞品/**主导来源类型分布(目录/listicle/官网/Reddit)**。
 **citation-recipe 反推法**(Ryze):抓自己被引 top 2-3 页反推配方(答案靠前/统计定义/干净标题/schema),再让"有机强但零 AI 引荐"的页照方重构。
 **品牌答案监控闭环**(irinabuht):固定品牌 prompt 面板(what is X/X pricing/X vs Y/is X good for Z/X alternatives)按计划跑,**周对周 diff**:新主张/消失提及/情绪漂移;每条错误主张溯源到具体页面;修正三层=出版商外联+自有 FAQ 明示+**changelog 式页面供 AI 爬虫拾取**。
 
-## 测量口径源码级 + 纪律条款(elmohq/elmo、unifapi-agent/agents 源码深读,2026-10-09)
+## 测量口径源码级 + 纪律条款(elmohq/elmo、unifapi-agent/agents 源码深读,2026-10-09；第三方开源工具的做法，本套件口径)
 
 ### 波动率与稳定性(elmo visibility-stats.ts)
 

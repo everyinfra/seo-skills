@@ -4,7 +4,7 @@
 
 ## 基本认识
 
-以下依据 Google [知识面板帮助](https://support.google.com/knowledgepanel/answer/9163198)（核对 2026-10-18）：
+以下依据 Google [知识面板帮助](https://support.google.com/knowledgepanel/answer/9163198)（核对 2026-10-21）：
 
 - 知识面板是用户搜索知识图谱里的实体（人物、地点、组织、事物）时出现的信息框。
 - 知识面板自动生成，信息来自网络上的多种来源；某些主题 Google 会与提供权威数据的合作方合作；被描述的实体本人或官方代表也可以提供反馈。具体采用哪些来源、怎样合并，由 Google 决定。
@@ -15,7 +15,7 @@
 ## 查询现状
 
 1. 搜索品牌名、品牌名 + 行业词、创始人姓名，看是否有知识面板、内容是否正确。
-2. 用 Knowledge Graph Search API 查询实体 ID、类型和描述。需要你自己的 Google Cloud 项目和 API Key（[API 文档](https://developers.google.com/knowledge-graph)，核对 2026-10-18）：
+2. 用 Knowledge Graph Search API 查询实体 ID、类型和描述。需要你自己的 Google Cloud 项目和 API Key（[API 文档](https://developers.google.com/knowledge-graph)，核对 2026-10-21）：
 
    ```text
    GET https://kgsearch.googleapis.com/v1/entities:search?query=示例品牌&limit=5&languages=zh&key=YOUR_API_KEY
@@ -35,7 +35,7 @@
 ## Wikipedia
 
 - 关注度：主题获得独立于主题本身的可靠来源的显著报道（[Wikipedia:Notability](https://en.wikipedia.org/wiki/Wikipedia:Notability)）。
-- 利益冲突：有利益冲突的编辑被强烈劝阻直接编辑相关条目，应披露关联，并在讨论页提出修改；有偿编辑必须披露（[Wikipedia:Conflict of interest](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)，核对 2026-10-18）。
+- 利益冲突：有利益冲突的编辑被强烈劝阻直接编辑相关条目，应披露关联，并在讨论页提出修改；有偿编辑必须披露（[Wikipedia:Conflict of interest](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)，核对 2026-10-21）。
 - 条目是否存在由社区决定。把精力放在获得真实的独立报道上，比「做一个 Wikipedia 条目」更可靠（本套件口径）。
 
 ## 站内实体标记
@@ -43,7 +43,7 @@
 - Organization、Person、Product 等使用稳定的 `@id` 全站引用；`sameAs` 指向官方资料页和知识库条目（schema.org 定义：明确指明实体身份的参考网页）。
 - 标记内容与可见正文、关于页一致；最小示例见 [schema-templates.md](schema-templates.md)，多类型组合见 [schema-examples.md](schema-examples.md)。
 
-## 定期检查（本套件口径：每季度）
+## 检查清单（定期，本套件口径：每季度）
 
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
@@ -64,7 +64,7 @@
 
 ## 市场差异：各引擎的实体层
 
-Google 知识图谱之外，各市场引擎有自己的实体来源（核对 2026-10-18）：
+Google 知识图谱之外，各市场引擎有自己的实体来源（核对 2026-10-21）：
 
 - **Naver**：「사이트 연관채널」让网站在根页面用 `sameAs` 声明关联的 Naver 服务与社媒频道（[Naver Search Advisor](https://searchadvisor.naver.com/guide/structured-data-channel)）。
 - **Yandex**：Яндекс Бизнес 的公司卡片出现在 Яндекс Карты 和搜索中（[Яндекс Бизнес](https://yandex.ru/support/business-priority/ru/)）。
@@ -76,4 +76,4 @@ Google 知识图谱之外，各市场引擎有自己的实体来源（核对 202
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · cross-cutting/entity-optimizer/references/knowledge-graph-guide.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/cross-cutting/entity-optimizer/references/knowledge-graph-guide.md)（Apache-2.0）
-- 一手资料（核对 2026-10-18）：[Knowledge Graph Search API](https://developers.google.com/knowledge-graph)、[API 参考](https://developers.google.com/knowledge-graph/reference/rest/v1)、[About knowledge panels](https://support.google.com/knowledgepanel/answer/9163198)、[Get verified on Google](https://support.google.com/knowledgepanel/answer/7534902)、[Wikidata:Notability](https://www.wikidata.org/wiki/Wikidata:Notability)、[Wikipedia:Notability](https://en.wikipedia.org/wiki/Wikipedia:Notability)、[Wikipedia:Conflict of interest](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)、[schema.org/sameAs](https://schema.org/sameAs)
+- 一手资料（核对 2026-10-21）：[Knowledge Graph Search API](https://developers.google.com/knowledge-graph)、[API 参考](https://developers.google.com/knowledge-graph/reference/rest/v1)、[About knowledge panels](https://support.google.com/knowledgepanel/answer/9163198)、[Get verified on Google](https://support.google.com/knowledgepanel/answer/7534902)、[Wikidata:Notability](https://www.wikidata.org/wiki/Wikidata:Notability)、[Wikipedia:Notability](https://en.wikipedia.org/wiki/Wikipedia:Notability)、[Wikipedia:Conflict of interest](https://en.wikipedia.org/wiki/Wikipedia:Conflict_of_interest)、[schema.org/sameAs](https://schema.org/sameAs)

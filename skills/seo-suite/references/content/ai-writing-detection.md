@@ -1,6 +1,6 @@
 # 编辑质量检查：空话、套话与机械写法
 
-> 复核于 2026-10-18：Google 官方立场逐条核对；AI 检测器的准确率只保留有原始研究的数字。
+> 复核于 2026-10-21（首轮 2026-10-18）：Google 官方立场逐条对照原文；AI 检测器的准确率只保留有原始研究的数字。
 
 ## 用途与何时读
 
@@ -10,14 +10,14 @@
 
 ## Google 的立场：看质量，不看生产方式
 
-核对 2026-10-18：
+核对 2026-10-21：
 
 - **重点是质量。** Google 关注内容质量，而不是内容怎么生产；合理使用 AI 或自动化不违反其指南（[Search Central 博客 2023-02-08](https://developers.google.com/search/blog/2023/02/google-search-and-ai-content)）。
 - **红线是操纵排名。** 用自动化（包括 AI）生成内容，主要目的是操纵排名，违反垃圾内容政策；SpamBrain 等系统按模式和信号识别垃圾内容，不论它怎么生产（同上）。
 - **大规模滥用内容。** 为操纵排名、而不是帮助用户，大量生成页面，属于「大规模滥用内容」；例子之一是用生成式 AI 工具生成大量页面却不给用户增加价值（[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies#scaled-content)）。
 - **发布前人工核对。** 生成式模型会出错，发布前要人工核对全部 AI 生成内容的准确性，包括 `<title>`、meta description、结构化数据和图片替代文字（[生成式 AI 内容指南](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content)，2026-10-01 更新）。Merchant Center 另有规定：AI 生成的商品标题和描述要单独标注（同上）。
 - **Who、How、Why。** 读者可能想问「这是怎么做出来的」时，说明自动化或 AI 怎么参与；不要编造作者资料，例如 AI 生成的头像、假名字、假资历。质量评估员的「投入」一项把「用生成式 AI 产出大量文本、没有人工把关」视为几乎没有投入（[有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)）。
-- 把 AI 列为署名作者，「大概不是」说明 AI 参与方式的好办法（博客 FAQ）。
+- **不要把 AI 写成署名作者。** 博客 FAQ：给 AI 署名「probably not the best way」让读者知道 AI 参与了创作；应在读者会问「怎么做出来的」时另写说明。
 
 所以编辑检查的目标是信息密度、准确和可信，而不是「去 AI 味」本身。
 
@@ -64,7 +64,7 @@
 ## 检查清单
 
 1. **事实已人工核对** → 逐条核对正文、title、meta description、结构化数据、图片替代文字里的事实 → 通过：每个事实有来源或实测记录；失败：有 AI 生成而未核对的事实（Google 生成式 AI 内容指南的要求）。
-2. **空话和营销词** → `python3 scripts/text_metrics.py --market zh < page.txt`（英文用 `--market en`）：报中英 slop 词、无指涉声明、破折号 ≥3 次；`python3 scripts/market_lint.py --market zh page.txt`：`markets.json` 营销词 >3 处告警 → 通过：每个命中都换成事实或删除；失败：保留无法核对的夸张说法。
+2. **空话和营销词** → `python3 scripts/text_metrics.py --market zh < page.txt`（`--market` 可取 zh、en、ja）：报中英 slop 词、无指涉声明、破折号 ≥3 次；`python3 scripts/market_lint.py --market zh page.txt`：`markets.json` 营销词 >3 处告警 → 通过：每个命中都换成事实或删除；失败：保留无法核对的夸张说法。
 3. **句长节奏** → `text_metrics.py` 在句长标准差小于均值 25% 时报 metronomic；`market_lint.py` 的「句长 CV」一项同口径（本套件口径）→ 通过：没有告警，或告警句已改；失败：整篇句长一样且内容空。节奏只是提示，不是判定作者的依据。
 4. **来源完整** → 五步自查第 4 步 → 通过：没有「研究表明」类无主语句；失败：有。
 5. **AI 参与的说明** → 对照 Who、How、Why → 通过：读者会问「怎么做出来的」的页面有说明，作者信息真实；失败：编造作者，或把 AI 写成署名作者。
@@ -105,7 +105,7 @@ marketing-os 的判据可以借用：正式语域本身不是问题，问题是�
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-18。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-21。
 
 - 思路参考：[coreyhaines31/marketingskills · skills/seo-audit/references/ai-writing-detection.md](https://github.com/coreyhaines31/marketingskills/blob/v1.10.0/skills/seo-audit/references/ai-writing-detection.md)（MIT）
 - Google 一手资料：[Google 关于 AI 生成内容（2023-02-08）](https://developers.google.com/search/blog/2023/02/google-search-and-ai-content)、[生成式 AI 内容指南](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content)、[有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)

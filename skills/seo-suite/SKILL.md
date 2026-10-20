@@ -50,7 +50,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 - `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical;证据行 UTF-16 偏移核验+同形字/孤立代理风险标注(标注层,不改六维分数)
 - `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
 - `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威
-- `core_eeat.py FILE`:CORE-EEAT 机械化(GEO/SEO 双分+veto 封顶 59)
+- `core_eeat.py FILE`:CORE-EEAT 机械化(GEO/SEO 双分+1 项 veto 封顶 60,≥2 项标 BLOCKED 不出分)
 - `content_score.py --draft 文件 --competitors c1,c2,c3 --keyword 主词`:透明内容评分器——MarketMuse 公式(50 话题×min 提及,2)+Surfer 双轨(SEO 轨+AI 轨前三查)+意图系数;竞品<3 拒评;术语表(重要度/典型区间/缺失清单+observed-consensus 共识词筛:≥2 竞品正文精确定位才入推荐层,落选留排除码);`--facts` D/K 事实分级(行首 D: 点名声明/K: 中性观察,分报不混算)
 - `fix_plan.py --url|--audit audit.json`:审计→修复物生成器(6 类 FixItem:robots/llms/schema/meta/ai_discovery/content);默认 dry-run,--apply 只写 ./seo-fixes/;--estimate 收益预估
 - `grounding_page.py --facts brand.yaml`:品牌实体事实页生成(Rankscale 11 条:dl 事实/FAQ 含名/volatile 独立/is-NOT 消歧/JSON-LD 镜像);--check 校验已有页
@@ -71,7 +71,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 - `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
 - `hreflang_cluster.py URL...`:簇矩阵(ISO 639-1 + 可选 ISO 15924 文字码 + ISO 3166-1 区域码;es-419 这类数字区域码 Google 不支持;回链缺失只影响那一对,不是整簇作废;多载体同时声明只作维护提示)
 - `redirect_chain.py URL`:逐跳链/循环/301 检查
-- `robots_posture.py URL`:AI 爬虫矩阵——**27 bot 三层名单**(training/search/user)+CITATION_BOTS 5 个**两级评分**(通配符 Allow 只拿部分分,专属规则才满分)+RFC 9309 四态判定+Cloudflare 注入检测+Content-Signal;--fix-robots 打印可追加的修复块
+- `robots_posture.py URL`:AI 爬虫矩阵——**37 bot 四层名单(search 15/training 11/user 8/other 3,带官方核实标记)**+CITATION_BOTS 5 个**两级评分**(通配符 Allow 只拿部分分,专属规则才满分)+RFC 9309 四态判定+Cloudflare 注入检测+Content-Signal;--fix-robots 打印可追加的修复块
 - `llmstxt.py validate|check|generate`:v2 校验/线上探测/生成
 - `schema_lint.py URL`:@id/悬空引用/自评评分/占位符黑名单
 - `head_check.py URL|FILE`:head 元素检查——charset 须在前 1024 字节(ERROR)/og:image 绝对 URL;与 OG 重复的 twitter:*、可删旧标签(x-ua-compatible 等)、元素顺序只记 INFO;不发 Accept-Language,被重定向时打印最终 URL;显式 `--market zh` 才查微信/QQ itemprop
@@ -90,11 +90,11 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 - `market_lint.py --market XX FILE`:v3 检查注册表 64 条——special_checks 动态机检 52 条映射(全角可见长度(日 32)/泰文字素/句长/营销词 18 语/格式/敬语混用/简繁混检+ko nosourceinfo/ja 星5つ/en 可引性四要素/pt CNPIX骗局/de Werbung 双披露/id baku-gaul/EYD/th 佛历/pl 变音/sierotki/nl je-u·KvK 等)+ v3 常开机检 12 项(营销词密度/句长CV/FAQ问句密度/有源数字密度/H2 疑问式占比/列表密度/标题关键词位次/日期格式/电话前缀/货币符号/母语字符占比/noai·noimageai·nosnippet AI 退出 meta);--report 尾部打印该市场 AUTO 比例
 - `local_format.py --market de|fr|ar|zh`:数字/标点空格/RTL 数字/日期/电话
 - `ste_lint.py FILE [--lang en] [--glossary terms.csv] [--json]`:ASD-STE100 近似检查(程序句 ≤20 词、描述句 ≤25 词、段落 ≤6 句、一句一指令、被动、缩写、分号、术语一致);口径见 [asd-ste100-web-writing.md](references/content/asd-ste100-web-writing.md),不出「合规」结论
-- `text_metrics.py`:CJK 词数/metronomic 句长 AI 签名/slop/Unicode 水印(--scrub 清除)
+- `text_metrics.py`:多文字词数(拉丁/西里尔/天城体按词、CJK 按字)/metronomic 句长 AI 签名/slop/Unicode 水印(--scrub 清除)
 - `text_units.py`:按市场计量单位统计
 
 **AI/GEO 测量**
-- `citation_panel.py init|record|report|diff|decay|score`:采样面板(五状态/配对分母/Wilson CI);record `--answer-file` 自动提及检测(URL 掩码+实体词表自动填 mentioned/position);init 意图冻结分母(denominator_freeze 档案,分母不随答案漂移);report 按 branded·unbranded 分报(targeting 两栏各出全套指标+交叉错配计数);diff 配对差分(只对同 prompt×engine 且同指纹配对算 Δ,跨指纹强制标注"不可比");**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期双口径并记/重写队列——官方中位 11 天(2025-09 88.3 万页研究)与调研口径 ~4.5 周并记不选边,复测按短口径 W+2、刷新投入按长口径 8-12 周;两口径出处与分池规则见 multilingual-workflow.md);score=五维打分写回(硬 cap 机检+反通胀聚合);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
+- `citation_panel.py init|record|report|diff|decay|score`:采样面板(五状态/配对分母/Wilson CI);record `--answer-file` 自动提及检测(URL 掩码+实体词表自动填 mentioned/position);init 意图冻结分母(denominator_freeze 档案,分母不随答案漂移);report 按 branded·unbranded 分报(targeting 两栏各出全套指标+交叉错配计数);diff 配对差分(只对同 prompt×engine 且同指纹配对算 Δ,跨指纹强制标注"不可比");**decay 子命令**=Profound citation decay 协议(7 点平滑/4 道闸门/半衰期双口径并记/重写队列——Profound 厂商研究称中位 11 天(2026-09-30 博文,88.3 万页)与调研口径 ~4.5 周并记不选边,复测按短口径 W+2、刷新投入按长口径 8-12 周;两口径出处与分池规则见 multilingual-workflow.md);score=五维打分写回(硬 cap 机检+反通胀聚合);diff 带 signals(|Δ|≥5pp 且 n≥10/fingerprint/贡献排序);report 出 SoV/win_rate/citation_rate+brand vs source visibility;prompts 对象化(--prompts-file 吃 prompt-bank.md/--stage-mix 5+3+2/--persona-fanout)
 - `fanout_analysis.py 输入.csv`:query fan-out 三桶(added/dropped/preserved)
 - `ai_referral_log.py < access.log`:AI referrer 下界分析(+--bot-ua 先行指标);**bot 四桶分类**(on_demand/search_index/training/agent)+failure_rate 两级+llms.txt 双基线;--attribution 出 GA4 正则+归因纪律+自报问卷
 - `citation_gaps.py --panel panel.json --brand-domains a.com`:引用缺口(竞品被引你没被的 URL+外联简报;has_competitor_run 高优先)+来源五分类(Editorial/Corporate/UGC/Reference/Own,逐域定性+行动提示)+gapLabel 七叉决策树(逐 prompt 诊断标签,competitor_owned 最高优先)→ 配 citation-outreach-brief.md 模板,与 cite_domain.py 串联
@@ -116,7 +116,7 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 
 **套件自维护**
 - `self_check.py` / `link_check.py`
-- `intel_check.py init|check [--source 名]`:信源变更检测(18 源注册表:RSS top-item+页面 hash,与 [信源监控体系](references/overview/intel-sources.md) 同步维护)——check 拉全部源与 `.intel-state.json` 基线 diff,按 source→module 映射输出应更新的套件文件;退出码 1=有变更,按[自更新协议](references/overview/self-update-protocol.md)执行更新
+- `intel_check.py init|check [--source 名]`:信源变更检测(20 源注册表:RSS top-item+页面 hash,与 [信源监控体系](references/overview/intel-sources.md) 同步维护)——check 拉全部源与 `.intel-state.json` 基线 diff,按 source→module 映射输出应更新的套件文件;退出码 1=有变更,按[自更新协议](references/overview/self-update-protocol.md)执行更新
 
 来源方法论见 NOTICE(百仓深扫改写,非复制代码)。
 ### 4. 你需要自备什么
@@ -271,9 +271,9 @@ intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want s
 #### GEO / AI 搜索（llms.txt 与可引用性）
 - [llms.txt 指南](references/content/llms-txt-guide.md)：格式规范、校验严重度、生成规则
 - [AI 平台差异事实库](references/content/geo-platform-differences.md)：五引擎引用行为、爬虫分类、优化侧重
-- [图片与视觉搜索 SEO](references/content/image-search-seo.md):Lens 月 ~200 亿次、SC multimodal 过滤器已上线;**视觉搜索优化≈页面级 SEO(权威+主题+移动)非元数据游戏**(alt 匹配仅 11.4%);AIO 引用图只认 `<img src>`(CSS 背景图永不索引);EXIF 官方明确不用;拍立淘/Naver 购物 Lens;Getty 判例与 C2PA
+- [图片与视觉搜索 SEO](references/content/image-search-seo.md):Lens 月约 200 亿次视觉搜索(Google 2024-10 博客);Search Console 2026-09-24 起有 multimodal 筛选;Google 不索引 CSS 背景图,关键图用 `<img>`/`<picture>`;Lens 排名因素只有第三方相关性研究(Backlinko 2020,alt 匹配 11.4%);Merchant Center 主图要求;版权、C2PA 与抓取
 - [Discover 与新闻 SEO](references/content/discover-news-seo.md):Discover 官方定位"补充渠道";**2026-02 首个专属核心更新=本地化+反标题党**;大图 1280×720/16:9+max-image-preview:large;Publisher Center 已关(算法化收录);48h news sitemap;**日本新闻域名跌出 AI 引用总榜(百科压制)+Cloudflare Pay-Per-Crawl 杠杆反转**
-- [视频 SEO/GEO](references/content/video-geo-guide.md):AI 引用视频的机制(Gemini 进片内/ChatGPT 整片)、**播放量不是门槛文本可及性才是**、人工字幕是唯一可控层、key moments 两法、MLA 多音轨、五市场平台格局(韩 Naver TV 已关停/俄 VK Video·RuTube 反超)
+- [视频 SEO/GEO](references/content/video-geo-guide.md):AI 怎么用视频(厂商研究:播放量与被引几乎不相关,文本可及性更值得先做)、Google 视频索引与富结果官方要求、人工校对字幕是唯一可控的文本层、key moments、播客转录层、YouTube 站内算法的证据边界
 - [电商 GEO 阶梯](references/content/ecommerce-geo-ladder.md):五级阶梯(产品数据→评价→内容→marketplace 分工→agent 交互)、Product schema 七个高频错误、七市场分叉表、AI 购物现状、UCP/ACP 双协议
 - [可引用性打分](references/content/citability-scoring.md)：五维块级打分、AI 就绪度分层、方法纪律
 - [GEO 证据银行](references/content/geo-evidence-bank.md):可引用的案例数字/行业研究/论文——每条带链接与日期,按证据分级决定用法

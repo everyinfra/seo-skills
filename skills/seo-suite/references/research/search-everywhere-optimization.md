@@ -1,25 +1,27 @@
 # 全平台搜索优化(Search Everywhere Optimization)
 
-> 建立于 2026-10-12(R6 新方法论入库)。三方指南口径:Semrush《6 Ways to Build a Search
-> Everywhere Optimization Strategy for 2026》(2026-03-19,与商标持有人 Ashley Liddell 合作,
-> "Search Everywhere" 2023 年商标)【厂商指南】;Search Engine Land《7 focus areas as AI
-> transforms search》(2025-11-03)与 Search Everywhere Optimization guide(2026-09 更新)
-> 【行业媒体】;Adobe Express 消费者调查(2026)【机构调查】。**断言半衰期 3–6 个月**
+> 建立于 2026-10-12(R6 新方法论入库),2026-10-21 逐条重读来源。三方指南口径:Semrush《6 Ways to Build a Search
+> Everywhere Optimization Strategy for 2026》([原文](https://www.semrush.com/blog/search-everywhere-optimization/),2026-03-19,
+> 文中写明 Ashley Liddell 于 2023 年注册 "Search Everywhere" 商标)【厂商指南】;Search Engine Land《7 focus areas as AI
+> transforms search》([原文](https://searchengineland.com/7-focus-areas-as-ai-transforms-search-and-the-customer-journey-in-2026-464068),2025-11-03)
+> 【行业媒体】;Adobe Express 消费者调查(2026,[Adobe 博客](https://www.adobe.com/express/learn/blog/using-tiktok-as-a-search-engine))【机构调查】。
+> 原稿提到的「Search Engine Land 的 SEvO 指南(2026-09 更新)」本次没有找到对应页面,未核。**断言半衰期 3–6 个月**
 > (平台行为数字 3 个月/方法论框架 6 个月),引用数字前按半衰期复查,随 intel-update 搭车核对。
 > 关联方法论:[brand-serp-methodology.md](../technical/brand-serp-methodology.md)(品牌词侧诊断)、
 > [community-seo-playbook.md](../content/community-seo-playbook.md)(社区平台执行层)。
 
 ## 一、为什么"只优化 Google"不再够:研究行为的多平台化
 
-- **时间分配已经反转【厂商研究 2026-03】**:Semrush 引用的美区搜索面日均时长——TikTok 52 分钟居首,
-  Google 搜索 30 分钟列第八;用户日常接触 7+ 平台、合计 4+ 小时(样本口径见原文,趋势级而非精确值)。
-- **TikTok 正在被当搜索引擎用【机构调查 2026】**:Adobe Express 调查——49% 的美国消费者在 2026 年
-  用 TikTok 做过搜索(2024 年为 41%);Gen Z 中 25% 认为它"找信息有效"(千禧一代 17%、X 世代 12%、
+- **时间分配已经反转【厂商研究 2026-03】**:Semrush 文中图表的美区日均时长——TikTok 52 分钟(来源 eMarketer)、
+  YouTube 46 分钟,Google 搜索约 30 分钟。**Google 的 30 分钟不是实测值**:Semrush 用「单次会话 13 分钟 × 每天约 2 次访问」估算,
+  方法说明里写明「Direct "daily time spent" data not publicly reported」。文中称用户日常接触 7+ 平台、合计 4+ 小时(趋势级,不是精确值;原稿「Google 列第八」的排名在方法说明里看不出来,已删)。
+- **TikTok 正在被当搜索引擎用【机构调查 2026】**:Adobe Express 调查(转引报道称样本 800+ 位美国消费者)——49% 在 2026 年
+  用 TikTok 做过搜索(2024 年为 41%,见 [Global Dating Insights 转述](https://www.globaldatinginsights.com/featured/almost-50-of-us-consumers-use-tiktok-as-a-search-engine/));Adobe 博客原文:Gen Z 中 25% 认为它"找信息有效"(千禧一代 17%、X 世代 12%、
   婴儿潮 5%)。"用了"不等于"有效",两口径都要记。
-- **高风险决策跨平台研究【厂商研究引 Datos/Sparktoro 2025-Q4】**:评估 $10K 级 B2B 软件的买家,
-  研究触点可达 25 处(Google、YouTube、Facebook 等);$5 牙刷则几乎零研究——直接买。
-- **SEL 定性口径【行业媒体 2025-11】**:"目标不再是做一个单一目的地,而是出现在受众所在的任何地方";
-  AI 系统偏好清晰、一致、有模式的内容,渠道竖井须让位于整合的全渠道叙事。
+- **高风险决策跨平台研究【厂商研究转引 Datos/SparkToro,原始报告未核】**:Semrush 文中称评估 $10K 级软件的买家
+  会在 25 个地方搜索(Google、YouTube、Facebook 等);$5 的竹牙刷「快速搜一下,五分钟内搞定」,$150 的电动牙刷才跨平台研究数日。
+- **SEL 定性口径【行业媒体 2025-11】**:原文「the goal is no longer to be a single destination. It's to be present wherever your audience is」;
+  「AI systems prioritize clarity, consistency, and patterns」,渠道竖井须让位于整合的全渠道做法(行业评论,不是实验结论)。
 
 诊断含义:用户在平台上"研究你"而不只是"搜你"。SERP 功能只是意图旁证
 (见 [serp-feature-taxonomy.md](serp-feature-taxonomy.md)),研究行为的平台分布要另查。
@@ -39,7 +41,7 @@ Semrush 口径:研究投入与感知承诺成正比;感知风险在五个维度�
 | **低风险**(快消、冲动购买) | 只做 Google+AI 引擎基础面;社媒按转化逻辑投,不为搜索铺 | 不存在此格——低风险不会触发高投入 |
 | **高风险**(高客单、B2B、健康/金融) | 少见;常见于强品牌垄断心智 | **全平台主线**:7+ 平台按受众地图分配(下表) |
 
-落地入口(Semrush 口径,零工具可用):访谈 5–10 个近期成交客户,只问一句
+落地入口(Semrush 口径,零工具可用;原文写「Interview five recent customers」,即 5 位,原稿的 5–10 位不是原文):访谈近期成交客户,只问一句
 "讲讲你从发现我们到下单之间都怎么研究的"——回答就是平台地图(如"Reddit 帖→YouTube 对比→搜品牌名看评论")。
 工具数据(竞品引荐流量等)只用来**生成问题,不直接生成决策**。
 
@@ -50,7 +52,7 @@ Semrush 口径:研究投入与感知承诺成正比;感知风险在五个维度�
 | Google 搜索 | 收口与验证(几乎全类目) | 既有 SEO 全套:意图对齐、E-E-A-T、结构化数据 | 见 [geo-evidence.md](../content/geo-evidence.md) |
 | Bing | Copilot/部分 LLM 的索引底座 | IndexNow 提交、Bing WMT 收录面 | 引用结果不可控 |
 | AI 引擎(ChatGPT/Perplexity/Gemini 等) | 直接问"X 值不值得买" | 可抓取可摘要、事实可核、跨平台被印证;采样观测见 citation_panel | 不承诺引用;mention≠cited |
-| TikTok | 视觉类、体验类首查(Gen Z) | 搜索式选题(标题带查询词)、口播先给结论;搜索型内容有数月 shelf life | 病毒式内容≠搜索可见性 |
+| TikTok | 视觉类、体验类首查(Gen Z) | 搜索式选题(标题带查询词)、口播先给结论;Semrush 称搜索优化的社媒内容在平台内可被发现数月(厂商口径) | 病毒式内容≠搜索可见性 |
 | YouTube | 对比评测、教程、开箱 | 独立可索引观看页+VideoObject;章节能被直接引用 | 平台内结果占多数 |
 | Reddit | 真实口碑、"避坑"验证 | 只能参与不能发布;纪律见 [community-seo-playbook.md](../content/community-seo-playbook.md) | 营销号被识别即反噬 |
 | 社区/评论(G2、Quora、垂直论坛) | B2B 决策链、专业验证 | 真实档案、持续答疑、与官网事实一致 | 不自建评分 |
@@ -68,7 +70,7 @@ Semrush 口径:研究投入与感知承诺成正比;感知风险在五个维度�
 
 | 套件能力 | 覆盖框架的哪一块 | 用法 |
 |---|---|---|
-| `scripts/serp_occupancy.py` | **平台分布证据**:目标市场 SERP 上 UGC/比价/投诉/Q&A/目录平台占了多少位 | `--market tr "域名列表"` → 输出占位类别计数,反推受众在该市场的平台倾向(markets.json 内置 6 市场占位表) |
+| `scripts/serp_occupancy.py` | **平台分布证据**:目标市场 SERP 上 UGC/比价/投诉/Q&A/目录平台占了多少位 | `--market tr "域名列表"` → 输出占位类别计数,反推受众在该市场的平台倾向(markets.json 内置 tr/th/in/kr/jp/vn/ru 共 7 个市场的占位表) |
 | `scripts/market_lint.py` + markets.json **18 门户** | **多市场落地**:全平台内容在 18 个语言市场的本地合规与写法 | 内容出海到哪个平台/市场,先过 `--market XX` 的 special_checks |
 | `scripts/citation_panel.py` | **AI 引擎面**:六引擎(默认 chatgpt/perplexity/gemini/copilot/claude/grok)采样、mention coverage 与 citation share、SoV | 全平台优化的 AI 侧验收唯一口径;`--stage-mix` 配 awareness/consideration/decision 题 |
 | `scripts/trend_watch.py`(reddit_subs) | **社区面**:Reddit 各版块热点雷达与选题闸门 | `--config trend_watch.json` 配垂直版块;GO 信号进选题 |
@@ -114,6 +116,18 @@ GSC/SERP 人工检查(搜索面)。工具按层分工,不按平台分工。
   研究逻辑——按 pSEO/长尾逻辑走,不进本框架。
 - **复核方式**:反指标不是静态判断——每季用 GSC(品牌词展示趋势)、社媒引荐流量占比、
   citation_panel 首测三源复核一次;受众行为变了(如品类进入口碑敏感期)分配表要重画。
+
+## 检查清单
+
+| 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|
+| 平台选择来自受众研究 | 访谈 5 位近期成交客户，问「从发现我们到下单，你怎么研究的」，记录平台顺序 | 每个入选平台至少 2 位客户提到：通过。「听说某群体在那」：失败 |
+| 市场内的平台占位已量化 | `python3 scripts/serp_occupancy.py --market <tr/th/in/kr/jp/vn/ru> "<目标查询前 10 条域名，逗号分隔>"` | 输出 UGC / 比价 / 投诉站占位数并写进报告 |
+| 品牌词基线存在 | GSC「查询」报告筛品牌词，记近 3 个月展示（先确认不在 2025-05-13 至 2026-04-27 的不可比期间内做两期对比） | 品牌词展示 ≈0 且无社媒引荐：先做品牌地基，不铺平台 |
+| AI 面有可复测的基线 | `python3 scripts/citation_panel.py init --brand <品牌> --prompts-file <题库> --stage-mix`，每题 ≥3 次采样后 `report` | 有 mention coverage 与 citation share 基线 |
+| 各平台说同一套品牌事实 | 对照 [brand-records.md](../content/brand-records.md) 的六记录逐平台抽查 | 抽查平台的名称、定位、关键事实无冲突 |
+| 每个平台有可观测验收指标 | 对照下文验收表 | 无「发了几条」类过程指标 |
+| 多市场落地 | `python3 scripts/market_lint.py --market <市场码> <文案文件>`（也可用 `--url <页面>`）对该平台文案跑市场规则 | 无 [CRITICAL] 输出 |
 
 ## 七、证据边界
 

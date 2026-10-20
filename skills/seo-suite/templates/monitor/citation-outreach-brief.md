@@ -22,10 +22,11 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Data
 |---|---|---|
 | 域名 | {{domain}} | citation_gaps.py 域名分组 |
 | 优先级 | {{priority}}(High=竞品同场被引;Standard=仅我方缺席) | has_competitor_run |
+| 来源类型 | {{source_class}}(Editorial / Corporate / UGC / Reference / Own) | 脚本启发式,默认值标 [推断];用 `--domain-class overrides.json` 人工覆盖 |
 | 总引用 / 页面数 | {{count}} 次 / {{pages}} 个被引页面 | 域名分组聚合 |
-| cite_domain.py 评级 | {{total}} → band {{band}} | `python3 scripts/cite_domain.py --input answers.json`(数据项人工采集) |
+| cite_domain.py 评级 | {{total}} → band {{band}} | `python3 scripts/cite_domain.py --input answers.json --json rating.json`(数据项人工采集;`--template` 打印输入模板;band:A≥80、B≥60、C≥40、D<40,两个以上否决项即 `blocked`) |
 
-评级不达 B 的 High 域:不发起外联,只做内容侧动作(见第 5 节),并注明 {评级不达标的原因}。
+评级不达 B 的 High 域(band 为 C 或 D,或 `blocked`):不发起外联,只做内容侧动作(见第 5 节),并注明 {评级不达标的原因}。
 
 ## 2. 竞品在场证据(Competitors Cited)
 
@@ -64,6 +65,17 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Data
 - 竞品不在场(Standard):"AI 模型在 {{prompts_count}} 个追踪 prompt 引用 {{domain}},获得收录可提升 AI 可见性。"
 - 表述纪律:只承诺"争取同场/提升 AI 可见性",不承诺排名、流量或转化数字;收益复核以复查日 citation_gaps.py 的 count/prompts 增量为准,不凭单次采样下结论。
 
+## 检查清单(外联前逐项:检查什么 → 怎么查 → 通过/失败)
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 缺口数据来自够大的面板 | `python3 scripts/citation_gaps.py --panel panel.json --brand-domains 自有域 --csv gaps.csv --json gaps.json`,读 `stats.qualifying` 与 `stats.runs` | 通过:`qualifying` ≥10 且该域对应 prompt 各有 ≥3 次采样。失败:不足 → 本简报只当方向 |
+| 2 | 竞品关系是真的 | 对 `competitors` 里每个域,人工确认是真实竞品(脚本只记同 cell 共同被引的非自有域) | 通过:确认。失败:是评测站或媒体 → 改归「第三方」,不按 High 写 |
+| 3 | 目标域值得投入 | `python3 scripts/cite_domain.py --input answers.json --json rating.json`,读 `band` 与 `blocked` | 通过:band 为 A 或 B 且未 blocked。失败:C/D 或 blocked → 不外联 |
+| 4 | 页面类型已逐页确认 | 打开 `urls[]` 里该域每个 URL,判 listicle / 评测 / 教程 / 文档 | 通过:每页有类型,外联话术按类型选。失败:未打开就写话术 |
+| 5 | 收益表述不越线 | 搜简报里的「排名」「流量」「转化」 | 通过:只出现「争取同场」「提升 AI 可见性」。失败:承诺数字 |
+| 6 | 复查日已排 | 第 5 节第 3 条有日期与增量目标 | 通过:有。失败:无 → 补 |
+
 ## What could change this conclusion
 
 - {数据缺口:"竞品在场"以同 cell 共同被引的非自有域代理[推断],panel.json 无显式竞品名单;外联前须人工确认竞品关系}
@@ -74,4 +86,4 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Data
 ## Method Notes
 
 - 数据源与抓取时间:{citation_gaps.py 完整命令行 + panel.json 路径 + 生成日期};评级来自 cite_domain.py(answers.json 人工采集 + 采集日期)。已知坑:{qualifying=品牌未被引的 cell;cited_brand 不算缺口;failed/no_answer 不入;自有域(含面板 domain)被引不计}。数字缺失写 [要追加: 数据源],禁编造。
-- 符号:has_competitor_run=该 cell 有其他非自有域同场被引(唯一高优先判据);Priority=High/Standard;Prompts 列以 | 分隔;registrable domain=末两段(co.uk/com.cn 等双段后缀取三段);{{…}} 字段名与 citation_gaps.py --json 输出一一对应。
+- 符号:has_competitor_run=该 cell 有其他非自有域同场被引(唯一高优先判据);Priority=High/Standard;Prompts 列以 | 分隔;registrable domain=末两段(co.uk/com.cn 等双段后缀取三段)。`citation_gaps.py --json` 顶层键:`stats`(`runs`、`cells`、`qualifying`、`urls`、`domains`、`high_priority`、`own_cited`)、`domains[]`(`domain`、`count`、`pages`、`prompts`、`providers`、`has_competitor_run`、`competitors`、`priority`、`source_class`)、`urls[]`(`url`、`domain`、`count`、`prompts`、`providers`、`competitors`、`priority`)、`outreach_tips{域名: 提示}`、`gap_labels[]`;本模板的 {{…}} 字段按这些键填。

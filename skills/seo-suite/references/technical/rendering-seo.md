@@ -1,22 +1,22 @@
 # JS 渲染与 SPA SEO
 
-> 2026-10-18 按 Google、Bing、Naver、Yandex 官方文档核对。与 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md) 的「SPA 空壳=P0」条目呼应，本文件是系统版。移动端专项见 [mobile-seo.md](mobile-seo.md)。
+> 2026-10-21 按 Google、Bing、Naver、Yandex 官方文档核对。与 [中文 AI 搜索指南](../content/chinese-ai-search-guide.md) 的「SPA 空壳=P0」条目呼应，本文件是系统版。移动端专项见 [mobile-seo.md](mobile-seo.md)。
 
 ## 一、Google 渲染管线（现行口径）
 
 来源：[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)（2026-03-04 更新）、[修复与 JS 相关的搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)（2025-12-18 更新）、[文档更新记录](https://developers.google.com/search/updates)。
 
-- **三个阶段**：抓取 → 渲染 → 索引。Googlebot 把返回 200 的页面全部放进渲染队列，除非 robots meta 或响应头要求不索引。页面可能在队列里停几秒，也可能更久；资源允许时，无头 Chromium（常青版）执行 JS，渲染后的 HTML 用于索引和发现链接。
+- **三个阶段**：抓取 → 渲染 → 索引。被 robots.txt 屏蔽的页面和文件不会被渲染。Googlebot 把返回 200 的页面全部放进渲染队列，除非 robots meta 或响应头要求不索引。页面可能在队列里停几秒，也可能更久；资源允许时，无头 Chromium（常青版）执行 JS，渲染后的 HTML 用于索引和发现链接。
 - **非 200 页面**：200 的页面会送去渲染，非 200 的可能不会（2025-12-18 补充）。错误页上用 JS 注入的内容和标记，不要指望被看到。
 - **原始 HTML 里的 noindex**：Google 是否还会渲染这类页面没有明确定义，也可能变化。只要页面有可能需要被索引，原始 HTML 里就不要写 noindex，不要指望 JS 再把它删掉（2025-12-15 补充）。
 - **canonical**：规范化在渲染前后都会发生。原始 HTML 写了 canonical，JS 就不要改成别的值；HTML 里写不了时，HTML 里干脆不写，只用 JS 设置（2025-12-17 补充）。
-- **WRS 不保留状态**：每次页面加载都会清空 Local Storage、Session Storage 和 HTTP Cookie。依赖客户端存储才出现的内容（同意门后的正文、按 localStorage 分支的个性化）对 Google 不可见。
+- **WRS 不保留状态**（[修复与 JS 相关的搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)）：每次页面加载都会清空 Local Storage、Session Storage 和 HTTP Cookie。依赖客户端存储才出现的内容（同意门后的正文、按 localStorage 分支的个性化）对 Google 不可见。
 - **缓存**：WRS 可能忽略缓存头，用到旧的 JS/CSS。用内容指纹文件名（如 `main.2bb85551.js`），文件内容变了文件名才变。
 - **能力边界**：Googlebot 拒绝权限请求（摄像头等）；不支持 WebSocket、WebRTC，要有 HTTP 回退；不支持 WebGL 等特性时要做特性检测。Shadow DOM 会被展平，内容必须出现在渲染后的 HTML 里。
 - **路由与链接**：只发现带 `href` 的 `<a>` 链接；SPA 用 History API，不要用片段（`#/products`）加载不同内容。客户端路由的错误页要么 JS 跳到返回 404 的 URL，要么用 JS 加 `noindex`。
 - **懒加载**：内容进入视口就加载（原生 `loading="lazy"`、IntersectionObserver），不依赖滚动或点击——Google 不和页面交互；首屏立即可见的内容不要懒加载（[懒加载文档](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)）。
-- **抓取上限**：Googlebot 只抓每个资源的前 2MB（未压缩），PDF 前 64MB；页面引用的每个 CSS、JS 单独计算（[Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)）。
-- **检测工具**：Search Console 网址检查（渲染后 HTML、加载的资源、JS 控制台输出；截图只在实时测试里有）、富媒体搜索结果测试。Mobile-Friendly Test 工具与 API 已于 2023-12-01 退役（[Google 博客 2023-04-19](https://developers.google.com/search/blog/2023/04/page-experience-in-search)）。
+- **抓取上限**：Googlebot 只抓每个受支持文件类型的前 2MB（按解压后的数据计算），PDF 前 64MB；页面引用的每个 CSS、JS 单独计算（[Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)，核对 2026-10-21）。
+- **检测工具**：Search Console 网址检查（渲染后 HTML、加载的资源、JS 控制台输出；截图只在实时测试里有）、富媒体搜索结果测试。Mobile-Friendly Test 工具与 API 已于 2023-12 退役（[Google 博客注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)）；改用网址检查或 Lighthouse。
 
 > PDF：2026-10-13 Google Search Central 发布了一期讨论 PDF 转换、链接与 AI 结果的播客视频（第三方报道：[PPC Land](https://ppc.land/google-podcast-hosts-cant-name-the-pdf-crawl-limit-it-documents-as-64mb/)），不是新文档。核心内容仍应有 HTML 版本（本套件口径）。
 
@@ -81,7 +81,7 @@ print("raw=%d rendered=%d ratio=%.2f" % (r, d, r / d if d else 0))'
 
 ## 五、动态渲染与预渲染
 
-- Google 把动态渲染定位为**临时变通，不推荐**：它增加复杂度和资源消耗（[动态渲染文档](https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering)）。
+- Google 的动态渲染文档现用过去时：动态渲染曾是变通方案，不是长期方案，也不推荐，因为它增加复杂度和资源消耗（[动态渲染文档](https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering)）。
 - 只要动态渲染给爬虫的内容与用户看到的相似，Google 一般不视为伪装；给用户和爬虫完全不同的内容（例如用户看猫、爬虫看狗）才算伪装。
 - Google 的 Rendertron 仓库已归档（最后提交 2022-10）。能做 SSR/SSG 就不要长期挂预渲染；长期预渲染的主要风险是两个版本内容漂移（本套件口径）。
 - 按 UA 分流给非 Google 爬虫预渲染时：分流名单不要包含 Googlebot（Google 自己能渲染）；预渲染服务回头抓站点时要排除自身 UA，防止递归（本套件口径）。
@@ -96,7 +96,7 @@ print("raw=%d rendered=%d ratio=%.2f" % (r, d, r / d if d else 0))'
 
 ## 来源
 
-- Google：[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[修复与 JS 相关的搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)、[懒加载与无限滚动](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)、[动态渲染](https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering)、[Googlebot 抓取上限](https://developers.google.com/search/docs/crawling-indexing/googlebot)、[文档更新记录（2025-12 三条 JS 补充）](https://developers.google.com/search/updates)、[2023-04-19 页面体验博客（MFT 退役）](https://developers.google.com/search/blog/2023/04/page-experience-in-search)
+- Google：[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[修复与 JS 相关的搜索问题](https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript)、[懒加载与无限滚动](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)、[动态渲染](https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering)、[Googlebot 抓取上限](https://developers.google.com/search/docs/crawling-indexing/googlebot)、[文档更新记录（2025-12 三条 JS 补充）](https://developers.google.com/search/updates)、[Mobile-Friendly Test 退役注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)
 - 其他引擎：[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)、[Naver 자바스크립트 검색 최적화](https://searchadvisor.naver.com/guide/seo-advanced-javascript)、[Yandex JavaScript 页面渲染](https://yandex.com/support/webmaster/en/yandex-indexing/rendering)
 - 社交：[Meta Web Crawlers](https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers)
 - 工具状态：[GoogleChrome/rendertron](https://github.com/GoogleChrome/rendertron)（已归档）

@@ -1,6 +1,6 @@
 # niubigeo 深读(Albert-Weasker/niubigeo)
 
-> 建立 2026-10-11。竞品监控(intel-sources.md "5 周 6,140★ 黑马")命中后的**逐文件源码深读**;与 [borrow-specs.md](borrow-specs.md)(SaaS 竞品施工图)、[competitive-landscape.md](competitive-landscape.md)(全景)配套,本文是开源仓 niubigeo 的施工图。标注:【仓库】=该仓自己的文档/源码主张(一手),[推断]=我们自定并注明。深读基线:clone @ commit 014c649(v0.3.0 后,2026-10-10 push)。
+> 建立 2026-10-11,**2026-10-21 复核**。竞品监控命中后的**逐文件源码深读**;与 [borrow-specs.md](borrow-specs.md)(SaaS 竞品施工图)、[competitive-landscape.md](competitive-landscape.md)(全景)配套,本文是开源仓 niubigeo 的施工图。标注:【仓库】=该仓自己的文档/源码主张(一手,2026-10-21 重新 clone 抽查源码与文档均对得上),[推断]=我们自定并注明。深读基线:clone @ commit 014c649(2026-10-10 push;2026-10-21 仓库最新提交仍是它)。星数等会漂移的数字写取数日期。
 
 ## 1. 身份档案
 
@@ -8,17 +8,17 @@
 | --- | --- | --- |
 | 全名 | `Albert-Weasker/niubigeo`(监控记录无 org 名,作者个人名下) | GitHub API |
 | 定位 | 开源 GEO 研究工具:AI 品牌可见性+竞品报告+可复测+证据回溯;口号 "Refuse black-box GEO scores" | README.md |
-| Stars | **6,848**(监控时约 6,140 → 5 天后再看 +708;fork 684,watcher 120,open issues 91) | GitHub API 2026-10-11 |
-| 创建 | 2026-09-03;最近 push 2026-10-10。**约 5.5 周 6.8k 星** | GitHub API |
+| Stars | 2026-10-21:**8,439**;fork 804,watcher 127,open issues 132(2026-10-11 为 6,848★、fork 684) | GitHub API 2026-10-21 |
+| 创建 | 2026-09-03;最近 push 2026-10-10 | GitHub API |
 | 发布节奏 | v0.1.0-alpha 9/3 → v0.2.0 9/8 → v0.2.1 9/28 → v0.3.0 10/8(三周一版,机械稳定) | releases API |
-| 作者 | GitHub `Albert-Weasker`(账面:2024-10 建,27 公开仓,238 followers,无姓名/公司/地点;git 邮箱 herchejane@gmail.com)。贡献者 4 人:38/2/1/1 commits;另有 commit 作者署名 "An AI tool" | GitHub API + git log |
+| 作者 | GitHub `Albert-Weasker`(账面:2024-10 建,28 公开仓,276 followers,资料页无姓名/公司/地点)。贡献者 4 人:38/2/1/1 commits | GitHub API 2026-10-21 |
 | 商业闭环 | Apache-2.0 开源 + 官网 niubigeo.ai 付费服务(真人 AI 测试/GEO 优化/内容代发);赞助商 NiubiStar(niubistar.com)——同时是案例 R01 的被测域名(case.json 里 `sponsorDisclosure: true`) | README.md + examples/cases/R01 |
 | 形态 | **自托管 Web 应用**(Node 22+TypeScript,product-server :8787 + schedule-worker,文件存储无数据库,BYOK 走 OpenRouter/直连),不是 skill/CLI 库 | README.md + docs/ARCHITECTURE.md |
-| 曝光 | Product Hunt(post 1256676)+ Trendshift 每日榜(repo 212064)徽章;存在第三方镜像仓 ShijiuWei/niubigeo-mirror-479 | README.md + search API |
+| 曝光 | README 顶部有 Product Hunt 与 Trendshift(repo 212064)徽章;GitHub 搜索可见多个第三方镜像仓(如 Shijiuwei/niubigeo-mirror-479,4★) | README.md + search API 2026-10-21 |
 
 ## 2. 架构深读
 
-580 文件:`src/`(~150 个 TS 模块)、`docs/`(30+ 方法论文档)、`examples/`(20 个真实域名的全证据案例包)、`test/`(40 个)+ e2e Playwright、`scripts/`(发布门禁/验证器)。核心数据链【仓库】:
+580 个文件(2026-10-21 clone 统计):`src/` 下 184 个 `.ts`、`docs/` 38 个文件、`examples/cases/` 20 个案例(R01–R20)、`test/` 44 个文件、`e2e/` 13 个文件(Playwright)、`scripts/`(发布门禁/验证器)。核心数据链【仓库】:
 
 ```text
 ProductProject → Baseline(不可变配置快照) → RecognitionRun(D:域名认知)
@@ -34,7 +34,7 @@ MonitoringTask → ScheduledOccurrence(cron) → BudgetLedgerEntry(费用预约�
 
 它**没有**(差异化确认,见 §4):传统 SEO 任何一侧(技术审计/GSC/SERP/内容评分/修复物)、多市场规则层、归因、decay 建模、事实核查。README 自认 "Traditional search-engine rank tracking is not included";v0.3 也没有独立竞品检测 dashboard。
 
-## 3. 值得抄 Top 10(按 价值×stdlib+现有 52 脚本可行性 排序)
+## 3. 值得抄 Top 10(按 价值×纯标准库可行性 排序)
 
 ### N1. 提及检测算法:URL 掩码 + 实体词表(src/analyzer/response-analyzer.ts)
 我们 citation_panel.py 的 record 靠人/agent 填 mentioned;它把这一步机械化【仓库源码】:
@@ -69,7 +69,7 @@ MonitoringTask → ScheduledOccurrence(cron) → BudgetLedgerEntry(费用预约�
 0 条有效回答           → "No completed AI answers"
 提及=0 且竞品独现>0     → "Competitors own this AI answer space"(最高优先缺口)
 提及=0                → "Target absent from AI answers"
-ownedRelevance≥0.6 且提及率<0.5 → "Owned content is not reflected"(自有内容没进答案)
+ownedRelevance≥0.6 且提及率<0.5 → "Owned content is not reflected in AI answers"(自有内容没进答案)
 提及>0 且官方引用=0     → "Mentioned without official citation"
 竞品独现>0(偶发)       → "Competitors still appear without target"
 其余                  → "Covered in this audit"
@@ -109,7 +109,7 @@ ownedRelevance≥0.6 且提及率<0.5 → "Owned content is not reflected"(自�
 ## 4. 我们已有的它没有(差异化确认)
 
 - **传统 SEO 全链**:技术审计(site_audit/schema_lint/robots_posture 27 bot/llmstxt/hreflang/sitemap/redirect_chain)、GSC 挖矿、SERP 分析、内容评分与优化(content_score/quality_rater/above_fold/core_eeat)、grounding_page 生成、fix_plan 修复物——它对网站本身只抓 meta/heading/JSON-LD 做词种子(src/keywords/site-evidence.ts),不做任何技术侧
-- **18 市场多语言规则层**(markets.json 64 检查)——它 UI 仅 en/zh/pt-BR,协议有 language 字段但无市场规则
+- **18 个市场的规则层**(`scripts/markets.json`)——它提供英文与简体中文 README,案例有 language 字段(如 R01 为 zh),但没有按市场区分的检查规则
 - **归因侧**:ai_referral_log(access log 下界+bot 四桶)/did_attribution/seo_vs_ads——它只打模型 API,无自有站数据
 - **citation decay 半衰期协议**——它只有快照 Diff View,无 decay 建模(我们 decay 子命令独有的官方常数体系)
 - **oracle_check 事实核查**(brand facts KB vs AI 回答)——它存证据但无 KB 比对
@@ -118,7 +118,7 @@ ownedRelevance≥0.6 且提及率<0.5 → "Owned content is not reflected"(自�
 
 ## 5. 风险信号
 
-- **星速与工程规模不匹配(未确认推广手段)**:5.5 周 6,848★、fork 684,但贡献者仅 4 人(38/2/1/1 commits)、watcher 120(fork:watch≈5.7)、commit 署名含 "An AI tool";Product Hunt+Trendshift 双徽章+赞助商即案例 R01(sponsorDisclosure:true)+官网付费漏斗。高度像**营销驱动的 AI 生成代码仓**。星数 ≠ 方法论质量,方法论文档本身质量高(见下),但"6.8k 星社区"叙事不成立【未确认是否存在 star campaign,如实标注】
+- **星数增长与贡献者规模(只记事实,不推断原因)**:仓库 2026-09-03 创建,2026-10-21 为 8,439★、804 fork、127 watcher;贡献者 4 人(38/2/1/1 commits);README 顶部有 Product Hunt 与 Trendshift 徽章,官网有付费服务,赞助商 NiubiStar 同时是案例 R01 的被测域名(`case.json` 里 `sponsorDisclosure: true`)。这些事实不足以判断星数是怎么来的,本文不下结论。星数只当关注度,不当方法质量的证据。
 - **方法诚实度反而高(加分项)**:known-issues.md 公开 7 项 unique-first 结构化标签冲突(同一回答把 3-10 个对象都标"唯一第一");limitations.md 公开 L01-L20(统计可能混用首次与重试结果;检索结果可能被误读为已验证引用;UI 尚非完整双语)。**抄它规格时必须避开这些已声明的坑**:别抄它 provider_citation 资格判断(两入口不一致,L08);别信模型自报的 recommendation/first 标签(L06 未强制证据核验)——所以 N1(机械提及检测)+N9(偏移核验)才是安全底座
 - **它自己也是聚合仓**:CAPABILITY_MATRIX 自认核心思想借自 Elmo/Aperture/OneGlanse/AiCMO/Citatra——引用其规格时可顺手把这五个名字当线索,但溯源到源头再定【官方口径】
 - **许可证**:Apache-2.0 宽松,借规格无障碍;assets/providers/* 是各 AI 厂商商标 logo(另有 LICENSE),不要搬;我们只借思想+公式,不搬代码(与 NOTICE"百仓深扫改写"一致)
@@ -131,3 +131,30 @@ ownedRelevance≥0.6 且提及率<0.5 → "Owned content is not reflected"(自�
 - 方法论:docs/measurement-methodology.md(全 133 行)、docs/evidence-model.md(全 142 行)、docs/BRAND_QUESTION_TAXONOMY.md(全 73 行)、docs/INTENT_RESULT_LAYER.md(全 99 行)
 - 风险:docs/known-issues.md(冲突表)、docs/limitations.md(全 76 行)、docs/CAPABILITY_MATRIX.md(前 30 行)
 - 源码:src/analyzer/response-analyzer.ts(全 159 行)、src/providers/citation-extractors.ts(全 201 行)、src/metrics/metrics-engine.ts(全 326 行)、src/metrics/keyword-metrics-engine.ts(全)、src/keywords/keyword-analyzer.ts(全 301 行)、src/prompts/audit-category.ts(全)、src/prompts/brand-question.ts(结构)、src/prompts/monitoring-prompt-intent-classifier.ts(前 60 行)、src/monitoring/schedule-calculator.ts(前 100 行)、src/product/keyword-monitor-schema.ts(全)、examples/lib/study.mjs(共识筛选段)
+
+## 7. 落地状态与检查清单(2026-10-21)
+
+**落地状态**(用 grep 关键词粗查;命中只说明相关字样已出现,不等于该条规格已完整实现,实现程度以脚本 `--help` 和测试为准):
+
+| 条目 | 我们的落点 | 2026-10-21 状态 |
+|---|---|---|
+| N1 URL 掩码提及检测 | `citation_panel.py record --answer-file` | 已实现(`--help` 写明"URL 掩码提及检测自动填 mentioned/rank") |
+| N2 branded/unbranded 分报 | `citation_panel.py` | 文件中已有 targeting、branded 字样;交叉错配对未逐项核 |
+| N3 三类来源分离、payload 路径 | `citation_gaps.py` 有 `source_class`;`payload_path` 无命中 | 部分 |
+| N4 gapLabel 七叉 | `citation_gaps.py`、`citation_panel.py`、`report_build.py` 含 gap 字样 | 未逐项核 |
+| N5 意图冻结 | `citation_panel.py` 含 intents | 未逐项核 |
+| N6 配对门、指纹、预算 | `citation_panel.py` 含 fingerprint、`--budget-usd` 字样 | 未逐项核 |
+| N7 多模型共识筛词 | `--from-archive` 无命中 | 未做 |
+| N8 executionMode | `execution_mode` 无命中 | 未做 |
+| N9 证据定位核验、record hash | `quality_rater.py` 含 record_hash | 部分 |
+| N10 完成判据 | [capability-map.md](../overview/capability-map.md) | 未核 |
+
+**检查清单**(引用本文件的仓库事实前):
+
+| 检查什么 | 怎么查 | 通过/失败 |
+|---|---|---|
+| 仓库数字 | `gh api repos/Albert-Weasker/niubigeo --jq '[.stargazers_count,.forks_count,.subscribers_count,.pushed_at]'` | 写取数日期;与本文不符时以 API 为准 |
+| 基线 commit | `gh api repos/Albert-Weasker/niubigeo/commits --jq '.[0].sha[0:7]'` | 仍是 `014c649`＝本文源码引用有效;否则重读被引用的 `src/` 文件 |
+| 源码引用 | `git clone --depth 1 https://github.com/Albert-Weasker/niubigeo.git`,再 `grep -n "entityTerms\|gapLabel\|shareOfVoice" -r src` | 函数和字符串仍在 |
+| 文档引用 | 读 `docs/measurement-methodology.md`、`docs/evidence-model.md`、`docs/limitations.md` | 与第 3 节各条一致 |
+| 我们的落地 | `python3 scripts/citation_panel.py record --help` | 参数存在 |

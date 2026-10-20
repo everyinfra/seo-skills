@@ -394,7 +394,7 @@ KEY_MANIFEST = (
     ("PSI_API_KEY", "T1", "PageSpeed Insights API key(免费;GCP 控制台→凭据→API 密钥,约 5 分钟)"),
     ("CRUX_API_KEY", "T1", "Chrome UX Report API key(免费;与 PSI 同路径申请)"),
     ("GSC_SA_FILE", "T2", "GSC 服务账号 JSON 文件路径(gsc_api.py 寻径 --sa > --key > $GSC_SA_FILE > gsc.json)"),
-    ("BING_WMT_KEY", "T4", "Bing Webmaster Tools API key(免费;R2-5 规划中,暂无脚本消费)"),
+    ("BING_WMT_KEY", "T4", "Bing Webmaster Tools API key(免费;bing_wmt.py 读取)"),
     ("SEO_MONITOR_SLACK_WEBHOOK", "notify", "Slack 告警 webhook(notify.py 渠道)"),
     ("SEO_MONITOR_SLACK_CONTENT_WEBHOOK", "notify", "Slack 内容类告警第二 webhook(P0-3 建议路由用)"),
     ("SEO_MONITOR_DISCORD_WEBHOOK", "notify", "Discord 告警 webhook(notify.py 渠道)"),

@@ -358,7 +358,7 @@ class ErrorHandlingTests(GscApiCase):
     def test_http_error_hints_403_429(self):
         for code, body, needle in (
                 (403, '{"error":"PERMISSION_DENIED"}', "restricted"),
-                (429, '{"error":"RATE_LIMITED"}', "1200 qpm")):
+                (429, '{"error":"RATE_LIMITED"}', "1,200 QPM")):  # 2026-10-21 配额文案改为官方「每站点/每用户 1,200 QPM」
             msg = gsc_api.describe_http_error(http_error(code, body))[1]
             self.assertIn(needle, msg, "code=%d" % code)
         code, msg = gsc_api.describe_http_error(http_error(400, '{"error":"invalid_grant"}'))

@@ -6,7 +6,7 @@
 
 ## 一、前提：Google 靠链接发现页面
 
-以下引自 Google [链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) 和 [JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)（核对 2026-10-18）：
+以下引自 Google [链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable) 和 [JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)（核对 2026-10-21）：
 
 - Google 把链接用作判断相关性的信号，也用链接发现新页面。sitemap 帮助发现，但代替不了内链。
 - 通常只有带 `href` 的 `<a>` 元素能被抓取。没有 `href` 的 `<a>`、靠脚本事件跳转的元素，Google 无法可靠提取。`href="javascript:…"` 不推荐。
@@ -32,7 +32,7 @@
 
 ## 四、锚文本原则
 
-依据 Google [链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)（核对 2026-10-18）：
+依据 Google [链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)（核对 2026-10-21）：
 
 - 锚文本要描述目标页、简洁、与两端页面相关。自测方法：只读锚文本，脱离上下文也能大致知道目标页讲什么。
 - 避免「点击这里」「阅读更多」这类泛称，也不要写得过长。
@@ -52,11 +52,11 @@
 
 ## 六、分面导航与参数页
 
-以 Google [分面导航抓取管理](https://developers.google.com/crawling/docs/faceted-navigation) 为准（2024-12-17 成文，2025-12-18 迁到抓取基础设施站点，核对 2026-10-18）：
+以 Google [分面导航抓取管理](https://developers.google.com/crawling/docs/faceted-navigation) 为准（页面最后更新 2025-12-18，已迁到 Google 抓取基础设施站点，更新记录称内容未变、只改了位置和少量措辞；核对 2026-10-21）：
 
 - 参数化的分面会产生近乎无限的 URL 空间：爬虫过度抓取，新的有用 URL 发现变慢。
 - 不需要被索引的分面 URL：用 robots.txt 禁止抓取（只放行商品页和一个不带筛选的全量列表页），或用 URL 片段（`#`）实现筛选。
-- 需要被索引的组合（例如有真实搜索需求的「品类 + 品牌」，本套件口径）：参数分隔符用标准的 `&`；路径式筛选保持顺序固定、不出现重复筛选；无结果、重复或无意义的组合在原 URL 返回 404，不要重定向到通用错误页。
+- 需要被索引的组合（例如有真实搜索需求的「品类 + 品牌」，本套件口径）：参数分隔符用标准的 `&`（逗号、分号、方括号不容易被爬虫识别为分隔符）；路径式筛选保持顺序固定、不出现重复筛选；无结果、重复或无意义的组合在原 URL 返回 404，不要重定向到通用错误页。
 - canonical 和 nofollow 只是辅助：长期效果通常不如 robots.txt 和片段方案；nofollow 要所有指向该 URL 的锚点都加才有效。大型站点再对照[抓取预算](https://developers.google.com/crawling/docs/crawl-budget)文档（适用于 100 万以上页面且每周变化，或 1 万以上页面且每天变化的站点）。
 
 ## 七、交付时给出
@@ -97,4 +97,4 @@
 本文由 EveryInfra 自行编写，只保留要点，未复制原文。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/internal-linking-optimizer/references/link-architecture-patterns.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/internal-linking-optimizer/references/link-architecture-patterns.md)（Apache-2.0）
-- 一手资料（核对 2026-10-18）：[链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[分面导航](https://developers.google.com/crawling/docs/faceted-navigation)、[抓取预算](https://developers.google.com/crawling/docs/crawl-budget)、[网址结构](https://developers.google.com/search/docs/crawling-indexing/url-structure)、[站点地图](https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview)、[Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)、[分页与增量加载](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)、[文档更新记录](https://developers.google.com/search/updates)
+- 一手资料（核对 2026-10-21）：[链接最佳实践](https://developers.google.com/search/docs/crawling-indexing/links-crawlable)、[JavaScript SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[分面导航](https://developers.google.com/crawling/docs/faceted-navigation)、[抓取预算](https://developers.google.com/crawling/docs/crawl-budget)、[网址结构](https://developers.google.com/search/docs/crawling-indexing/url-structure)、[站点地图](https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview)、[Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)、[分页与增量加载](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)、[文档更新记录](https://developers.google.com/search/updates)

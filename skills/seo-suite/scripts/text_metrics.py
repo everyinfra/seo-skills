@@ -24,8 +24,23 @@ def sentences(text, market):
     return [p.strip() for p in parts if len(p.strip()) > 3]
 
 def wc(text):
-    cjk = sum(1 for c in text if is_cjk(c))
-    return cjk + len(re.findall(r"[A-Za-z0-9']+", text))
+    """CJK 感知词数。同 site_audit.wc(B47)口径(B61 修,2026-10-21):CJK 逐字计;其余文字字母/数字
+    连续段为一词,组合符号(Mn/Mc/Me,如天城体 matra/virama)附着在词内,空格与标点断词,
+    「बेस्ट लैपटॉप कैसे खरीदें」=4。不 import site_audit:本脚本保持零依赖单文件。修前只认 ASCII,印地语计 0。"""
+    text = text.replace("İ", "i").replace("I\u0307", "i").replace("\u0307", "")
+    perchar = words = 0
+    prev = False  # 前一字符是否处于词内
+    for c in text:
+        if is_cjk(c):
+            perchar += 1
+            prev = False
+            continue
+        cat = unicodedata.category(c)
+        is_l = cat[0] in ("L", "N")
+        if is_l and not prev:
+            words += 1
+        prev = is_l or ((c in "'’" or cat[0] == "M") and prev)
+    return perchar + words
 
 USAGE = """usage: cat page.txt | text_metrics.py [--market zh|en|ja] [--scrub]
 CJK 感知词数/句长节奏(metronomic AI 签名)/em-dash 密度/slop 词/Unicode 水印扫描;

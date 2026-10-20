@@ -15,8 +15,8 @@
 ## 示例一：定义
 
 - 改写前：「这其实是一个很重要的概念，很多站点都会用到它。」
-- 改写后：「**canonical 标签**是放在页面 `<head>` 中的 `<link rel="canonical">`，用来告诉搜索引擎一组重复或近似页面中哪个网址是首选版本。它是提示而不是指令，搜索引擎可能选用别的网址。」
-- 为什么：第一句给出类别和作用，第二句给出边界。事实依据见 Google 规范网址文档。
+- 改写后：「**canonical 标签**是放在页面 `<head>` 中的 `<link rel="canonical">`，用来告诉搜索引擎一组重复或近似页面中哪个网址是首选版本。它是强信号而不是强制指令，搜索引擎可能选用别的网址。」
+- 为什么：第一句给出类别和作用，第二句给出边界。事实依据：Google 规范网址文档把 `rel="canonical"` 列为「strong signal」。
 
 ## 示例二：数据
 
@@ -63,39 +63,44 @@
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · build/geo-content-optimizer/references/quotable-content-examples.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/build/geo-content-optimizer/references/quotable-content-examples.md)（Apache-2.0）
 - 一手资料：[Google：规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)、[Google：有用、可靠、以人为本的内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)
 
-## (kostja94 深读 2026-10-09b)精选摘要与 AI 引用的结构规格
+## 页面级可引用构件（参考 kostja94/marketing-skills，核对 2026-10-21）
 
-> 来源：[kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) 的 `seo/on-page/featured-snippet`、`content/article`、`seo/content/{eeat-signals,content-optimization}`、`content/copywriting`、`platforms/linkedin`。数字为该仓库口径（其 featured-snippet 数据引自 Semrush/SEJ，见其文末参考）。与本文件前半部分互补：前半讲"单段怎么写"，这里讲"页面级可引用构件"。
+> 前半讲"单段怎么写"，这里讲页面级构件。参考来源：[kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) 的 featured-snippet、article、eeat-signals、content-optimization 等技能。该仓库的数字多数没有一手出处，下面只留能核对的，其余标明本套件口径或已删除。
 
-### 段落被摘取的物理规格（featured-snippet）
+### 精选摘要（featured snippet）
 
-- 格式份额：段落 ~70% / 列表 ~19% / 表格 ~6% / 视频罕见；45 词是最常被摘的段落长度，目标区间 40-60 词，放 H2 后第一二句。
-- 列表：`<ol>`（步骤/排名）与 `<ul>`（无序项）用语义标签；**Google 可把整页 H2 拼装成列表摘要——H2 本身要能当列表项读**。
-- 表格：关键词进列/行头；语义 `<table>`；无空单元格、单位一致、数据现行。
-- 语气客观如词典条目：去观点、去情绪词，支持 E-A-T。
-- 争取条件：先排进前 ~20 蓝链，瞄准 2-5 位；长尾问式查询为主。Bing Q&A 有"记忆"：摘要一旦获得，蓝链下滑也可能保有。
-- 答案旁配优化图片（alt/文件名/图注齐全）可占缩略图位，CTR 最高翻倍。
-- 2025-26 现实（仓库口径）：AI Overviews 出现于 ~47% 美国搜索、取代 83%+ 精选摘要且 **AIO 查询**零点击 ~80–83%（Similarweb 口径：中位 ~80%/均值 ~83%，2026-03；全量搜索零点击 46.96%，两口径勿混）——**目标从 CTR 转为"被引用"**；摘要结构优化同时服务 AI 引用与 PAA。
+- Google 官方：不能手动标记页面成为精选摘要，由系统判断；不公布所需的最小长度，因为长度随信息、语言、平台变化（[精选摘要文档](https://developers.google.com/search/docs/appearance/featured-snippets)）。所以不设固定词数。
+- 第三方参考：[Semrush](https://www.semrush.com/blog/featured-snippets/) 说精选摘要有段落、列表、表格、视频四类，段落最常见；建议段落答案写 40–50 词、放在小标题后第一二句、语气像词典条目；Google 也会把页面里的多个标题拼成列表摘要，所以 H2 本身要能当列表项读。
+- 删除：「段落 70% / 列表 19% / 表格 6%」「45 词最常被摘」在 Semrush 该页和 Google 文档里都找不到；「AIO 出现在约 47% 的美国搜索、取代 83% 的精选摘要」与实测冲突（Semrush 2025-11 为 15.69%，见 [geo-evidence-bank.md](geo-evidence-bank.md) 第三节）。
+- AI Overviews 不是精选摘要：精选摘要摘自单一页面，AIO 是多来源生成摘要（Semrush 同页）。
 
-### 文章级可引用构件（article-content）
+### 文章级构件（本套件口径，不是规则）
 
-- **TL;DR（50-100 词加粗）或 Key Takeaways（5-7 条）二选一**，放导语后——AI 引擎更常引用带这些元素的内容。
-- **QAE 模式**：H2 问句 → 2 句答案 → 证据（数据/例子/列表）；答案块 100-200 词；每个 H2 后前 40-60 词给直接答案。
-- 段落 40-80 词；每 2-3 段插列表/H3/图/引注框打断长块。
-- **信息增益四源**（反"共识复读"）：反共识（须有证据支撑）/ 时效新鲜度（竞品内容与 LLM 截止之后的数据）/ 一线从业者（SME）引语 / 专有数据（自有调查、内部基准）。写前先审 SERP 列出"共识层"，只写缺口。
-- **内容密度 > 字数**：每 100 词的独特实体/数据点/洞见才是单位；800-1500 词含 3+ 独观点常胜长篇重述。
-- 意图词数基准：Validate 1200-2000 / Explore 2000-3500 / Compare 600-1200 / Do 900-1500 / Know 300-800。
+- **TL;DR 或要点列表二选一**，放导语后。证据很弱：2609.35077 里 TLDR/BLUF 块 β=+0.05，作者称效应很小。写它的理由是读者省时间，不是被引。
+- **问句小标题 → 直接答案 → 证据**：答案放在小标题后的头两句。答案块长度按题目定；Google 写明没有理想页长，不设「100–200 词」这类下限。
+- **信息增益**：写前先看现有结果的共识层，只写缺口——自有数据、新近数据、一线从业者的可核实引语、反共识但有证据的观点。依据：Google 生成式 AI 指南强调提供非同质化内容（non-commodity content）。
+- **内容密度比字数重要**：每段至少一个可核实的事实、数字或例子。Google 没有偏好的字数（[有用内容指南](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)）。已删除按意图给词数区间（如「Explore 2000–3500」）：找不到出处。
+- **关键词**：不设密度目标；只避免堆砌，Google 垃圾内容政策把关键词堆砌列为违规（[spam policies](https://developers.google.com/search/docs/essentials/spam-policies)）。已删除「0.5–1.5%」参考区间：找不到出处。
 
-### E-E-A-T 可验证构件（eeat-signals）
+### E-E-A-T 可验证构件
 
-- **体验信号**：案例研究（挑战→方案→结果）、原创研究、第一手测试（"我们实测了 X"）、真实用户证言。
-- **作者块**：真名 + 头衔照 + 与文章主题挂钩的资历 + 可验证链接（LinkedIn/个人站，对齐 Person schema `sameAs`）；位置默认文末，新闻/YMYL 可置顶，侧栏必须做移动端回退；多作者标 "Written by / Reviewed by"。资历不得夸大或虚构。
-- **引用**：数据统计内联引用；≥5 条引用时文末列 References；内联链接优先、学术风格用编号；外链指向权威源。
-- YMYL（健康/财经/法律/安全）抬高全部门槛；AI 辅助内容发布前人审、核实并加引用。
+- 体验信号：案例（挑战→方案→结果）、原创研究、第一手测试（"我们实测了 X"）、真实用户证言。
+- 作者块：真名、头衔、与主题相关的资历、可验证链接（LinkedIn 或个人站，对齐 Person 的 `sameAs`）。多作者标 Written by / Reviewed by。资历不得夸大或虚构。依据：Google 的 Who/How/Why 自查（有用内容指南）。
+- 引用：统计数字内联引用；引用多时文末列参考文献。
+- 健康、财经、法律、安全类（YMYL）门槛更高：AI 辅助的内容发布前要人审、核实并加引用。
 
-### 零散规格
+### 标题与简介
 
-- 关键词密度 0.5-1.5% 为参考区间、**非排名因子**——超 ~2-3% 且读感生硬才需要降；优先自然落位：标题、H1、前 100 词、1-2 个 H2。
-- **LinkedIn About 按 40-60 词 answer-first 块写**：公开可索引、可被 AI 直接摘引；headline 当 title tag 写（主词+价值主张）；短 feed 帖登录墙内对搜索与 AI 均不可见，勿指望其 GEO。
-- 标题公式（copywriting）：How to [outcome] / [Number] Ways to [benefit] / [Problem]? Here's [solution] / [Before]→[After]；≤60 字符；数字+力量词 CTR +~36%。
-- 引语规则与本文件"示例五"互证：观点=[姓名]（[职务]，[机构]）在 [日期] 的 [出处] 指出——两来源格式一致，不可编造。
+- Google 对标题和简介没有固定字符上限，按显示宽度截断；「≤60 字符」只是本套件的提示阈值（见 [title-formulas.md](title-formulas.md) 与 [meta-tag-formulas.md](meta-tag-formulas.md)）。已删除「数字加力量词使 CTR +36%」：找不到出处。
+- LinkedIn 个人简介：把「About」前 40–60 词写成先给结论的块，便于被读者和工具摘引（本套件口径）。已删除「登录墙内的短帖对搜索与 AI 都不可见」：未找到官方说明。
+
+## 检查清单
+
+| # | 检查什么 | 怎么查 | 通过 / 失败 |
+|---|---|---|---|
+| 1 | 段落脱离上下文仍成立 | 把段落单独复制出来读一遍；中文用 `python3 scripts/ste_lint.py 页面.md --lang zh --json` 看长句和指代 | 通过：不依赖「如上所述」「它」；无 fail 级问题。失败：靠上文才懂 |
+| 2 | 每个数字有来源、口径、日期 | 人工逐条点开来源 | 通过：数字与原文一致。失败：死链、数字漂移、只有「研究表明」 |
+| 3 | 术语全篇一致 | `python3 scripts/ste_lint.py 页面.md --glossary 术语表.csv` | 通过：无同义混用。失败：同一概念多种叫法 |
+| 4 | 标题、首段用买家的问法 | `python3 scripts/question_align.py --gsc 查询页面.csv --pages 页面.csv --json`，见 [question-alignment.md](question-alignment.md) | 通过：首段第一句含主要查询原词并直接作答。失败：先铺垫 |
+| 5 | 可见正文与结构化数据一致 | `python3 scripts/schema_lint.py URL`；`python3 scripts/ai_views.py --url URL --json` 看去噪后正文 | 通过：事实在可见文本里，标记与正文同源。失败：事实只在标记里 |
+| 6 | 空话套话 | `cat 页面.txt \| python3 scripts/text_metrics.py --market zh` | 通过：无成片 slop 词。失败：命中多处 |

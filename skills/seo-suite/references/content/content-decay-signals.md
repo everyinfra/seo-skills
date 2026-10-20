@@ -1,6 +1,6 @@
 # 内容衰退：信号、诊断与处置决策
 
-> 复核于 2026-10-18：Google 文档逐条核对，GSC 导出口径与 `gsc_mining.py`、`content_queue.py` 源码对齐。
+> 复核于 2026-10-21（首轮 2026-10-18）：Google 文档逐条对照原文，GSC 导出口径与 `gsc_mining.py`、`content_queue.py` 源码和实跑对齐。
 
 ## 用途与何时读
 
@@ -8,7 +8,7 @@
 
 ## 需要的数据
 
-| 数据 | 用来看什么 | 口径（官方文档，核对 2026-10-18） |
+| 数据 | 用来看什么 | 口径（官方文档，核对 2026-10-21） |
 |---|---|---|
 | Search Console 效果报告导出 | 按查询或页面看点击、展示、点击率、平均排名 | 表格最多显示 1,000 行；查询表不含匿名查询；数据通常 2–3 天后可用；按太平洋时间分日（[数据差异说明](https://support.google.com/webmasters/answer/17010575)）。导出时 "~" 和 "-" 变成 0（[报告概览](https://support.google.com/webmasters/answer/7576553)） |
 | Search Console 网址检查 | 是否已编入索引、上次抓取时间、Google 选定的规范网址 | 显示的是最近编入索引的版本，不是实时版本（[网址检查](https://support.google.com/webmasters/answer/9012289)） |
@@ -62,13 +62,14 @@
   - **流失**：上期 C0 ≥ 10，本期导出里没有这一行。
   - **被替代**：同一查询改由站内另一个 URL 承接（用查询×页面导出查）。
 - 比较模式导出里，罕见行可能显示 "~"，导出为 0。0 不一定是真的零，不要据此判「降到 0」。
+- **数据异常期。** Search Console 公告：一次日志错误让 2025-05-13 至 2026-04-27 的展示数据不准确，已修复；受影响的是展示、点击率和平均排名，点击不受影响（[数据异常说明](https://support.google.com/webmasters/answer/6211453)，核对 2026-10-21）。所以跨这个期间的 ΔI、ΔCTR、ΔP 不可比，只有 ΔC（点击）可信；要做同比，去年同期正好落在异常期内时，展示类分型改用点击和站内 GA4 自然会话交叉判断。
 
 **3. 单页确认（自身波动）。** 在效果报告里按页面筛选，导出「日期」表，按周汇总点击。取下滑前 12 周的均值 μ 和标准差 σ；最近 4 周都低于 μ − 2σ，判为超出正常波动（本套件口径）。
 
-**脚本现状**（读源码并实测，2026-10-18）：
+**脚本现状**（读源码并用两份小 CSV 实跑，2026-10-21）：
 
-- `python3 scripts/gsc_mining.py cur.csv prev.csv --decay [--json]`：只按查询比较点击，规则是上期 ≥10 次且降幅 ≤ −25%，按流失点击取前 30 行；只认英文表头（Query／Top queries、Clicks）；不报流失查询。**已知问题**：本期有、上期没有的查询会让脚本报 KeyError 退出。修复前改用下一条。
-- `python3 scripts/content_queue.py collect --gsc cur.csv --gsc prev.csv`：同一衰退口径，只统计两期都出现的查询，不会因新查询报错；结果写进 `contentops.json` 的选题队列。
+- `python3 scripts/gsc_mining.py cur.csv prev.csv --decay [--json]`：只按查询比较点击，规则是上期 ≥10 次且降幅 ≤ −25%；本期消失的查询按 0 计，会列为 −100%；按流失点击取前 30 行；只认英文表头（Query／Top queries、Clicks）。本期有、上期没有的查询不进衰退表，也不再报错（10-21 实测）。
+- `python3 scripts/content_queue.py collect --gsc cur.csv --gsc prev.csv`：同一衰退口径，但只统计两期都出现的查询，所以本期消失的查询不进队列；结果写进 `contentops.json` 的选题队列。要看流失查询，用上一条。
 - `python3 scripts/gsc_mining.py matrix.csv --mode matrix`：查询×页面导出，列出同一查询有 2 个以上页面的组（抢位）。
 - 页面级的 ΔI、ΔP、ΔCTR 分型和同比目前没有脚本，按上面公式在表格里算。
 
@@ -112,7 +113,7 @@
 
 1. **非内容原因已排除** → 网址检查（编入索引、canonical、抓取时间）+ `scripts/site_crawl.py` 爬虫导出 + 状态面板历史页 → 通过：五项（测量、技术、需求、SERP、更新）逐条有结论；失败：有一项没查就改内容。
 2. **衰退候选按公式算出** → `content_queue.py collect --gsc cur.csv --gsc prev.csv`（查询级），页面级按「衰退判据」公式 → 通过：每个候选有 C0、C1、ΔC、ΔI、ΔP 和分型；失败：只凭「流量掉了」下结论。
-3. **季节性已排除** → 去年同期 28 天导出，同口径算 ΔI → 通过：有同比数字；失败：只有环比。
+3. **季节性已排除** → 去年同期 28 天导出，同口径算 ΔI → 通过：有同比数字，且比较窗口没有跨 2025-05-13 至 2026-04-27（展示类指标不可比）；失败：只有环比，或跨了异常期还在比展示。
 4. **单页超出自身波动** → 按页面导出「日期」表，算 μ − 2σ → 通过：最近 4 周都低于下限；失败：仍在正常波动内。
 5. **抢位已检查** → `gsc_mining.py matrix.csv --mode matrix` → 通过：候选查询没有被站内别的 URL 承接，或已列入合并计划；失败：没查。
 6. **处置有依据** → `content_inventory.py`、`prune_gate.py` 的输出 + 上表 → 通过：每页一个决定和理由；下线页有重定向映射或 404/410；失败：有外链或有排名的页被直接下线。
@@ -138,7 +139,7 @@
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-18。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-21。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/content-refresher/references/content-decay-signals.md](https://github.com/aaron-he-zhu/seo-geo-claude-skills/blob/v9.9.12/optimize/content-refresher/references/content-decay-signals.md)（Apache-2.0）
 - Google 一手资料：[效果报告概览](https://support.google.com/webmasters/answer/7576553)、[维度与分组](https://support.google.com/webmasters/answer/17011259)、[筛选与比较](https://support.google.com/webmasters/answer/17011165)、[数据差异](https://support.google.com/webmasters/answer/17010575)、[网址检查](https://support.google.com/webmasters/answer/9012289)、[搜索状态面板说明](https://developers.google.com/search/help/status-dashboard)、[有用内容](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)、[署名日期](https://developers.google.com/search/docs/appearance/publication-dates)、[新闻文章页最佳做法](https://support.google.com/news/publisher-center/answer/9607104)、[构建站点地图](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)、[lastmod 说明](https://developers.google.com/search/blog/2023/06/sitemaps-lastmod-ping)、[HTTP 状态码](https://developers.google.com/search/docs/crawling-indexing/http-network-errors)、[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)、[GA 中的 Search Console 报告](https://support.google.com/analytics/answer/13682863)

@@ -299,8 +299,14 @@ class PromptObjectTests(unittest.TestCase):
                                    "stage": "awareness", "topic": "crm",
                                    "tags": ["b2b", "saas"]})
         texts = [o["text"] for o in objs]
-        self.assertIn("bullet style prompt", texts)
-        self.assertIn("plain style prompt", texts)
+        # B58(2026-10-21)改断言:旧断言要求表格与正文混排时正文行也收为 prompt,
+        # 正是整份 prompt-bank.md 被解析出 72 条的根因;新契约有带 prompt 列的表时只收表格。
+        self.assertEqual(texts, ["best crm for small business", "crm pricing compared"])
+        plain = os.path.join(tmp, "plain.txt")
+        with open(plain, "w", encoding="utf-8") as f:
+            f.write("- bullet style prompt\nplain style prompt\n")
+        self.assertEqual([o["text"] for o in cp.read_prompts_file(plain)],
+                         ["bullet style prompt", "plain style prompt"])
         csvf = os.path.join(tmp, "bank.csv")
         with open(csvf, "w", encoding="utf-8") as f:
             f.write("prompt,stage\nq1,awareness\nq2,decision\n")

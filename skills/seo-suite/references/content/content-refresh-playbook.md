@@ -1,6 +1,6 @@
 # Content Refresh Playbook
 
-> 复核于 2026-10-18：Google 文档逐条核对；第三方工具口径（seomachine）按源码核对后降级为参考；写法要求与 [asd-ste100-web-writing.md](asd-ste100-web-writing.md) 对齐。
+> 复核于 2026-10-21（首轮 2026-10-18）：Google 文档逐条对照原文；候选桶的阈值对照 `gsc_mining.py` 源码；第三方工具口径（seomachine）按源码核对后降级为参考；写法要求与 [asd-ste100-web-writing.md](asd-ste100-web-writing.md) 对齐。
 
 ## 适用场景
 
@@ -38,10 +38,10 @@
 |---|---|---|---|
 | 衰退 | 上期点击 ≥10 且降幅 ≤ −25%（查询级） | `python3 scripts/content_queue.py collect --gsc cur.csv --gsc prev.csv` | 按 decay-signals 分型后再定 |
 | 接近首页 | 排名 5–20 且展示 ≥20 | `python3 scripts/gsc_mining.py queries.csv --json`（`striking_distance`） | 补缺失的子问题、内链 |
-| 低点击率 | 排名 11–20、展示 ≥50，且实际点击率比脚本内置期望曲线低 2 个百分点以上 | 同上（`low_ctr`） | 先改标题和描述 |
+| 低点击率 | 排名 1–10、展示 ≥50，且实际点击率比脚本内置期望曲线低 2 个百分点以上（脚本注释：第二页的期望点击率只有 1%，低点击率只在前 10 名有意义） | 同上（`low_ctr`） | 先改标题和描述 |
 | 抢位 | 同一查询有 2 个以上页面 | `python3 scripts/gsc_mining.py matrix.csv --mode matrix` | 合并或调整内链 |
 
-- 「低点击率」用的是脚本里写死的通用点击率曲线。decay-signals 把「用通用曲线判断自己页面」列为误区，所以这一桶只当候选。确认时用自己站点的数据：从 GSC 导出非品牌查询，按排名分档算点击率中位数，再比较。同一条自有曲线可以喂给 `python3 scripts/forecast.py --kws kws.csv --ctr own_ctr.csv` 估算收益。
+- 「低点击率」用的是脚本里写死的通用点击率曲线。decay-signals 把「用通用曲线判断自己页面」列为误区，所以这一桶只当候选。确认时用自己站点的数据：从 GSC 导出非品牌查询，按排名分档算点击率中位数，再比较。同一条自有曲线可以喂给 `python3 scripts/forecast.py --kws kws.csv --ctr own_ctr.csv` 估算收益；`kws.csv` 列为 keyword、search_volume、current_position［、cpc］，`own_ctr.csv` 列为 position、ctr。
 - 错失点击估算（本套件口径）：展示 ×（自有曲线在该排名的点击率 − 实际点击率）。
 - 先改标题和描述，是因为改动小、可以回滚（本套件口径），不是因为有证据证明它回报最高。Google 主要用页面正文生成摘要，只在 meta description 比正文更准确时才用它（[摘要文档](https://developers.google.com/search/docs/appearance/snippet)），所以改了描述也可能不显示。
 
@@ -97,7 +97,7 @@ seomachine 的字数对标器用前 10 名正文字数的中位数和 75 分位�
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-18。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对日期均为 2026-10-21。
 
 - 思路参考：[aaron-he-zhu/seo-geo-claude-skills · optimize/content-refresher](https://github.com/aaron-he-zhu/seo-geo-claude-skills/tree/v9.9.12/optimize/content-refresher)（Apache-2.0）
 - 第三方工具源码（只作参考，不作规则）：[TheCraigHewitt/seomachine · data_sources/modules](https://github.com/TheCraigHewitt/seomachine/tree/main/data_sources/modules)（MIT；data_aggregator 的四桶、content_length_comparator 的中位数与 75 分位、content_scorer 的五维权重、section_writer 的写作规则）

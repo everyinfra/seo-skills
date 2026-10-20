@@ -1,6 +1,6 @@
 # 重定向与 Canonicalization 深度指南
 
-> 2026-10-18 按 Google 现行文档逐条核对。分工（只引用不复述）：状态码语义、soft 404、迁移步骤见 [http-status-codes](http-status-codes.md)；C3 四变体 host、C8 canonical 双通道、C20 跳数等检查编号与 JS SEO 边界见 [validation-guide](validation-guide.md)；整站迁移清单见 [domain-strategy](../research/domain-strategy.md)；robots 屏蔽后 canonical / noindex 不可见的原理见 [robots-txt-reference](robots-txt-reference.md)；canonical 标签语法见 [head-elements](head-elements.md)；hreflang 细节见 [hreflang-validation](hreflang-validation.md)。
+> 2026-10-21 按 Google 现行文档逐条核对。分工（只引用不复述）：状态码语义、soft 404、迁移步骤见 [http-status-codes](http-status-codes.md)；C3 四变体 host、C8 canonical 双通道、C20 跳数等检查编号与 JS SEO 边界见 [validation-guide](validation-guide.md)；整站迁移清单见 [domain-strategy](../research/domain-strategy.md)；robots 屏蔽后 canonical / noindex 不可见的原理见 [robots-txt-reference](robots-txt-reference.md)；canonical 标签语法见 [head-elements](head-elements.md)；hreflang 细节见 [hreflang-validation](hreflang-validation.md)。
 
 ## 一、重定向全类型
 
@@ -109,7 +109,7 @@ Google 的规范化方法按影响力排序：重定向（强）、`rel="canonic
 |---|---|
 | 内容源头（自己） | 自引用 canonical；先发布；sitemap 及时更新 |
 | 可控的转载伙伴 | 在转载页加 noindex；保留指向原文的可见链接 |
-| 不可控的抓取 / 洗稿站 | 加不了标记；原文被反超时按版权走 DMCA 投诉（Google 规范化排查文档提到此途径） |
+| 不可控的抓取 / 洗稿站 | 加不了标记；原文被反超时按版权规则向对方的托管方申请删除，也可向 Google 申请删除侵权页（规范化排查文档提到此途径） |
 
 - 多域同内容又没有 canonical 归属，是套件红线 R4（见 [validation-guide](validation-guide.md)）。
 
@@ -131,7 +131,7 @@ Google 的规范化方法按影响力排序：重定向（强）、`rel="canonic
 
 ## 四、分页、无限滚动与 Search Console 观察
 
-- **rel=prev/next**：Google 2011 年发布该标记的博客文章顶部现已注明「它不再是索引信号」。2019-03 Google 在官方社交账号公开此事（第三方报道：[Yoast 2019-03-22](https://yoast.com/google-doesnt-use-rel-prev-next-for-pagination/)）。已部署的保留无害，不再新增。
+- **rel=prev/next**：Google 2011 年发布该标记的博客文章顶部现已注明「它不再是索引信号」。Google 的分页文档现写「Google 不再使用这些标签」，其他搜索引擎可能仍在用；2019-03 Google 在官方社交账号公开此事（第三方报道：[Yoast 2019-03-22](https://yoast.com/google-doesnt-use-rel-prev-next-for-pagination/)）。已部署的保留无害，不再新增。
 - **无限滚动**：每块内容要有持久、唯一的 URL（用绝对页码，如 `?page=12`，不用 `?date=yesterday`）；按顺序链接各 URL；新块成为主要可见内容时，用 History API 更新地址栏（[懒加载文档](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)）。只靠「加载更多」按钮的内容，Google 发现不了：它不点击按钮。
 - **sitemap 策略**（本套件口径）：sitemap 是「希望出现在结果里的页面清单」。第 1 页和高价值组合页进 sitemap；第 2 页以后可以只靠内链发现。
 - **分页 URL 形态**：`?page=2` 与 `/page/2/` 只留一种做规范形态，另一种 301 过去。`page` 是参数白名单里最典型的合法成员，参数清理时别误伤。
@@ -235,7 +235,7 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$c"
 
 ## 来源
 
-本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-18。
+本文由 EveryInfra 自行编写，只保留要点，未复制原文。核对 2026-10-21。
 
 - Google：[规范网址](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls)、[规范化问题排查](https://developers.google.com/search/docs/crawling-indexing/canonicalization-troubleshooting)、[重定向](https://developers.google.com/search/docs/crawling-indexing/301-redirects)、[HTTP 状态码对抓取的影响](https://developers.google.com/crawling/docs/troubleshooting/http-status-codes)、[网站迁移](https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes)、[分面导航](https://developers.google.com/crawling/docs/faceted-navigation)、[分页最佳做法](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading)、[懒加载与无限滚动](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)、[JS SEO 基础](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)、[文档更新记录](https://developers.google.com/search/updates)、[URL 参数工具下线](https://developers.google.com/search/blog/2022/03/url-parameters-tool-deprecated)、[rel=next/prev 原文（含注记）](https://developers.google.com/search/blog/2011/09/pagination-with-relnext-and-relprev)
 - 标准与其他引擎：[RFC 9110 §15.4](https://www.rfc-editor.org/rfc/rfc9110.html#name-redirection-3xx)、[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)
