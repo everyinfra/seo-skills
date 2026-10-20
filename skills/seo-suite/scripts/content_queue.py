@@ -921,6 +921,9 @@ def build_parser():
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    # 子命令后的 --help 交给子命令自己的 argparse(列出该子命令的参数);只有总帮助在这里打印
+    if argv and argv[0] in COMMANDS:
+        return COMMANDS[argv[0]](argv[1:])
     if any(x in ("-h", "--help") for x in argv):
         build_parser().print_help()
         return 0
