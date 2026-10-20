@@ -5,6 +5,7 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+- **site_audit alt 判定(2026-10-21,真实站点重跑发现)**:`alt=""`(装饰图的正确写法,W3C WAI)不再算 alt 缺失,只有没有 alt 属性才算;回归测试 `tests/test_b63_alt_empty.py`。`gsc_api.py` 帮助里的配额说明改为每站点/每用户 1,200 QPM。
 - **深挖第二批完成(2026-10-21)**:129 份参考文件和 25 份模板全部逐条核一手来源,证据账本 5,499 条(V 3,164 / F 801 / D 557 / K 736 / 未核 241),每份文件都有检查清单;独立抽查 V 30/30、F/D 20/20 通过;文件里 905 处脚本参数全部在 `--help` 查到。核对记录在仓根 `audits/2026-10-21-reference-check/`(不随 skill 安装)。要点:hreflang 改按 Google 原文(es-419 不支持、zh-Hans 合法、缺回链只影响那一对);删掉全部买链价格表(Google 链接垃圾政策);GSC 生成式 AI 报告 2026-08-31 全球开放、只报展示,multimodal 筛选 2026-09-24 起;README「为什么是现在」两表按原文改口径或删除。
 - **脚本 bug 第三批(2026-10-21)**:`robots_posture.py` bot 名单扩到 37 个四层、带官方核实标记,`ai_referral_log.py` 名单按官方页修正;越南、泰、土耳其、印地语的分词、大小写与词数(`ste_lint`、`question_align`、`keyword_variants`、`text_units`、`market_lint`、`site_audit`、`content_score`、`text_metrics`、`pseo_batch_gate`);`llmstxt.py validate` 报相对链接、接受 BOM;`core_eeat.py` 1 项 veto 封顶 60、≥2 项 BLOCKED;`monitor.py` heartbeat 按 healthchecks.io 官方端点;`citation_panel.py --prompts-file` 只收模板列;`directory_tracker.py verify` 认 sponsored/ugc;`head_check`、`field_data`、`forecast`、`multimodal_report` 的说明按核对结果改;`test_canonical_facts.py` 新增 6 条已退役功能检查。`markets.json` 18 个市场的文字按核对结果更新。
   Deep-review batch 2 complete: all 129 references and 25 templates checked claim by claim (5,499-row evidence ledger, independent spot-check passed, every script flag mentioned exists); script bug batch 3 (bot rosters, non-Latin tokenization, llms.txt validation, and more).

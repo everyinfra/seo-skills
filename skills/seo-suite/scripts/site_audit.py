@@ -276,7 +276,8 @@ class Page(HTMLParser):
         if tag == "a" and a.get("href", "").startswith(("http", "/", "#")): self.links += 1
         if tag == "img":
             self.imgs += 1
-            if not a.get("alt"): self.img_noalt += 1
+            # 只有没有 alt 属性才算缺失;alt="" 是装饰图的正确写法(W3C WAI Decorative Images)
+            if "alt" not in a: self.img_noalt += 1
         if tag == "body": self.in_head = self.in_title = False
     def handle_endtag(self, tag):
         if tag == "title": self.in_title = False

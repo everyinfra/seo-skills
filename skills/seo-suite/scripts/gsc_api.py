@@ -117,7 +117,7 @@ USAGE_EPILOG = """
   可直接喂 gsc_mining / traffic_funnel --gsc / monitor(.seo-monitor/gsc.csv) /
   sensor_volatility --gsc / did_attribution;CTR 为小数(0.0317)非百分比串。
 诚实边界: 无 refresh 场景(SA token 自含);token 只进内存(50 分钟缓存,不落盘);
-  配额 1200 qpm;单页 25000 行,startRow 分页;匿名查询 API 不返回(与导出同口径)。
+  配额每站点/每用户 1,200 QPM;单页 25000 行,startRow 分页;匿名查询 API 不返回(与导出同口径)。
 退出码: 0 正常 / 1 运行错(auth/网络/HTTP/凭证) / 2 用法错(参数/SSRF 拒)"""
 
 
@@ -607,7 +607,7 @@ def cmd_query(args):
         n = write_csv(records, dimensions, out=args.out)
         print("已写 %d 行 × %d 列(%s)→ %s" % (n, len(csv_header(dimensions)),
                                               ",".join(csv_header(dimensions)), args.out))
-        print("API 请求 %d 页:%s(配额 1200 qpm;喂法见 --help CSV 契约)"
+        print("API 请求 %d 页:%s(配额每站点/每用户 1,200 QPM;喂法见 --help CSV 契约)"
               % (len(page_meta),
                  " ".join("+%d←%d" % (m["startRow"], m["got"]) for m in page_meta)))
         return 0
