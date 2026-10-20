@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-19T06:09:50.190435+00:00",
+ "checked_at": "2026-10-20T05:59:41.074141+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "4f529a772b7c4dde921ec9d05c518701",
-   "ts": "2026-10-19T06:09:35.377027+00:00"
+   "hash": "99a267134b1cfc78feae84270ceac680",
+   "ts": "2026-10-20T05:59:22.679076+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -75,8 +75,8 @@
    "ts": "2026-10-12T07:19:18.894548+00:00"
   },
   "anthropic-crawl": {
-   "hash": "d3e55aa4d72aba3076fd4b4f013da585",
-   "ts": "2026-10-17T05:33:41.281287+00:00"
+   "hash": "982b7af130345d7c10ac4facee796ffe",
+   "ts": "2026-10-20T05:59:24.802081+00:00"
   },
   "schema-org": {
    "hash": "c28ae2197ecacc4469ac00319b179a7f",
@@ -87,31 +87,31 @@
    "ts": "2026-10-15T05:52:26.249138+00:00"
   },
   "yandex-wm": {
-   "hash": "0eb71441e6b430dc42e672c19ba72ff5",
-   "ts": "2026-10-17T05:33:45.872307+00:00"
+   "hash": "42b50939d99e532f66533b58860c9098",
+   "ts": "2026-10-20T05:59:28.692012+00:00"
   },
   "naver-wm": {
-   "hash": "a26b9df40fce5e2a1b96978387faf90d",
-   "ts": "2026-10-16T05:49:07.161949+00:00"
+   "hash": "d3d2fbcf7e96faccb4061e25c07b0d73",
+   "ts": "2026-10-20T05:59:32.033235+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "a584630bd1e2595219138adb02bcb796",
-   "ts": "2026-10-19T06:09:48.060117+00:00"
+   "hash": "51b8c51b90677805cf5e407d3f742c4c",
+   "ts": "2026-10-20T05:59:38.297638+00:00"
   },
   "statcounter-ai": {
-   "hash": "2eef874bec8c608554030abc012bf791",
-   "ts": "2026-10-19T06:09:48.533129+00:00"
+   "hash": "2bcad96c7974cf1ee87ed799f4794740",
+   "ts": "2026-10-20T05:59:38.936944+00:00"
   },
   "semrush-sensor": {
-   "hash": "3e84638e76730e3cbc89569d59f815d0",
-   "ts": "2026-10-16T05:49:15.724368+00:00"
+   "hash": "dd96d47048057a2215b5b1cc194a5bb5",
+   "ts": "2026-10-20T05:59:39.547658+00:00"
   },
   "seroundtable": {
-   "top": "Daily Search Forum Recap: October 16, 2026",
+   "top": "Daily Search Forum Recap: October 19, 2026",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -143,9 +143,14 @@
     "Search News Buzz Video Recap: Google Poisoning Tracking Tools, Google AI Results Updates, Discover To Change, Google Ads, ChatGPT & SEO",
     "Google Search Ranking Volatility & Chatter Spike Today",
     "Google Ads To Allow Certification For Online Gambling Advertisers",
-    "Bing Tests Read More Links In Search Result Snippets"
+    "Bing Tests Read More Links In Search Result Snippets",
+    "Daily Search Forum Recap: October 19, 2026",
+    "Is It New? AI Scan Tool",
+    "Google Moves Google Posts Higher Up On Local Panel",
+    "Google Ads Now In AI Mode With Personal Intelligence",
+    "Google AI Mode Citations With Preferred Source Preferences"
    ],
-   "ts": "2026-10-17T05:33:56.358511+00:00"
+   "ts": "2026-10-20T05:59:41.073820+00:00"
   },
   "google-docs-rss": {
    "top": "Updating the Indexing API quota page",
