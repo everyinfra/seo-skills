@@ -61,5 +61,31 @@ class ProbeExclusionTests(unittest.TestCase):
         self.assertNotIn("事实上的可见性被封", out)
 
 
+
+class TrailingClientIpTests(unittest.TestCase):
+    """源站在隧道后:nginx log_format 在 combined 末尾追加 cip=<可信真实 IP>(EveryInfra CN2 2026-10-21 起的格式,
+    deploy/everyinfra-edge.conf 的 everyinfra_redacted)。期望值来源:那份 log_format 的字段定义——有值时是
+    Cloudflare/前置机给的访客地址,不可信或缺失时写 cip=-;旧行没有这个字段。"""
+
+    def test_cip_field_replaces_the_hop_address(self):
+        out = run([line("::1", "/pricing", 200, UA_CHATGPT) + " cip=179.239.17.179"])
+        self.assertIn("官方 IP 段", out)
+        self.assertNotIn("无法验证", out)
+
+    def test_cip_dash_and_old_lines_fall_back_to_the_first_column(self):
+        out = run([line("::1", "/pricing", 200, UA_CHATGPT) + " cip=-",
+                   line("127.0.0.1", "/docs", 200, UA_PPLX)])
+        self.assertIn("无法验证", out)
+
+    def test_parse_line_takes_cip_only_when_it_is_an_ip(self):
+        sys.path.insert(0, os.path.dirname(SCRIPT))
+        import ai_referral_log as arl
+        base = line("::1", "/p?key=REDACTED", 200, UA_CHATGPT)
+        self.assertEqual(arl.parse_line(base + " cip=2001:4860:4801:10::1")["ip"], "2001:4860:4801:10::1")
+        self.assertEqual(arl.parse_line(base + " cip=-")["ip"], "::1")
+        self.assertEqual(arl.parse_line(base + " cip=nope")["ip"], "::1")
+        self.assertEqual(arl.parse_line(base)["ip"], "::1")
+        self.assertEqual(arl.parse_line(base + " cip=1.2.3.4")["path"], "/p?key=REDACTED")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -29,6 +29,9 @@
 
 日志格式:combined(CLF)或每行一个 JSON 对象
   (path/uri/url、status/status_code、user_agent/ua、referer/referrer 等常见键名)。
+  源站在 CDN/隧道后时,combined 行尾可追加真实客户端 IP 字段 cip= / client_ip= / real_ip=(如 nginx
+  log_format 末尾 'cip=$某个只取可信 CF-Connecting-IP 的变量');值是合法 IP 时取代第一列的上一跳地址,
+  "-" 或不是 IP 时仍用第一列。没有这个字段的旧行照常解析。
 
 用法:
   cat access.log | python3 ai_referral_log.py
@@ -70,6 +73,8 @@ PANEL_IMPORT_SCOPE = ("下界证据(real): App 内打开常不带 referrer,真�
 LOG_RE = re.compile(
     r'^(\S+)\s+\S+\s+\S+\s+\[([^\]]+)\]\s+"([^"]*)"\s+(\d{3})\s+(\S+)'
     r'(?:\s+"([^"]*)"\s+"([^"]*)")?')
+# combined 之后行尾的真实客户端 IP 字段(源站在 CDN/隧道后,第一列只是上一跳)
+CLIENT_IP_FIELD_RE = re.compile(r'(?:^|\s)(?:cip|client_ip|real_ip)=(\S+)')
 
 BOT_UA_RE = re.compile("|".join(re.escape(b) for b in BOT_UAS))
 
@@ -124,6 +129,14 @@ PROBE_PATH_RE = re.compile(
 
 def is_probe_path(path):
     return bool(PROBE_PATH_RE.search(path or ""))
+
+
+def _valid_ip(ip):
+    try:
+        ipaddress.ip_address((ip or "").strip("[]"))
+        return True
+    except ValueError:
+        return False
 
 
 def _is_public_ip(ip):
@@ -207,6 +220,9 @@ def parse_line(line):
     if not m:
         return None
     ip, ts, request, status, _bytes, referer, ua = m.groups()
+    real = CLIENT_IP_FIELD_RE.search(line[m.end():])
+    if real and _valid_ip(real.group(1)):
+        ip = real.group(1).strip("[]")
     parts = (request or "").split(" ")
     path = parts[1] if len(parts) >= 2 else (parts[0] if parts else "-")
     return {"ip": ip, "ts": ts, "path": path, "status": status,
@@ -447,7 +463,7 @@ def render_policy(res):
                  % len(public))
     elif ips:
         L.append("  [i] UA 未验证且无法验证:bot 请求的 IP 只有 %s(环回/内网/缺失)——"
-                 "源站在 CDN/隧道后时让边缘回传真实客户端 IP(如 CF-Connecting-IP)再核"
+                 "源站在 CDN/隧道后时让边缘回传真实客户端 IP(如 CF-Connecting-IP),记在行尾 cip= 字段再核"
                  % ", ".join(sorted(ips)[:3]))
     L.append("  [i] 源站在 CDN 后时,边缘缓存命中的请求不进源站日志——bot 量以 CDN 的 bot 分析为准")
     return L
