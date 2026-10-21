@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-20T05:59:41.074141+00:00",
+ "checked_at": "2026-10-21T05:59:57.814872+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "99a267134b1cfc78feae84270ceac680",
-   "ts": "2026-10-20T05:59:22.679076+00:00"
+   "hash": "4b990c6d71fdf00bae7eb4cc79dae210",
+   "ts": "2026-10-21T05:59:45.134565+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -99,19 +99,19 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "51b8c51b90677805cf5e407d3f742c4c",
-   "ts": "2026-10-20T05:59:38.297638+00:00"
+   "hash": "da2f82ac9b90a787b38f99f078f27556",
+   "ts": "2026-10-21T05:59:56.602946+00:00"
   },
   "statcounter-ai": {
-   "hash": "2bcad96c7974cf1ee87ed799f4794740",
-   "ts": "2026-10-20T05:59:38.936944+00:00"
+   "hash": "0ce79cd2676fd3e6ac3674f5ac020880",
+   "ts": "2026-10-21T05:59:56.855991+00:00"
   },
   "semrush-sensor": {
-   "hash": "dd96d47048057a2215b5b1cc194a5bb5",
-   "ts": "2026-10-20T05:59:39.547658+00:00"
+   "hash": "43faa2b0d5702488401ed9275d0d39a6",
+   "ts": "2026-10-21T05:59:57.235567+00:00"
   },
   "seroundtable": {
-   "top": "Daily Search Forum Recap: October 19, 2026",
+   "top": "OpenAI Auto Enabling Creative Enhancements In ChatGPT Ads",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -148,9 +148,14 @@
     "Is It New? AI Scan Tool",
     "Google Moves Google Posts Higher Up On Local Panel",
     "Google Ads Now In AI Mode With Personal Intelligence",
-    "Google AI Mode Citations With Preferred Source Preferences"
+    "Google AI Mode Citations With Preferred Source Preferences",
+    "OpenAI Auto Enabling Creative Enhancements In ChatGPT Ads",
+    "Google Ads Expands Financial Services Verification To US & Canada",
+    "Daily Search Forum Recap: October 20, 2026",
+    "Google Removes AI Overviews Labels On Some AI Overviews",
+    "Google Business Profiles Verification With Government ID"
    ],
-   "ts": "2026-10-20T05:59:41.073820+00:00"
+   "ts": "2026-10-21T05:59:57.814592+00:00"
   },
   "google-docs-rss": {
    "top": "Updating the Indexing API quota page",
