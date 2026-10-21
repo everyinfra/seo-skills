@@ -161,7 +161,7 @@ seo-skills/
 ├── manifest.json          包信息
 └── skills/
     └── seo-suite/
-        ├── SKILL.md       入口：intake、路由规则、输出结构、59 脚本路由
+        ├── SKILL.md       入口：intake、能力路由表、输出结构(脚本说明在 references/overview/script-catalog.md)
         ├── scripts/       59 个可执行脚本(审计/多语言/GSC/归因/网格排名/监控/信源检查…)+markets.json
         ├── tests/         1,787 个测试(self_check 全跑)
         ├── examples/      金标准样例输出

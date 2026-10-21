@@ -123,7 +123,7 @@
 与报告纪律的衔接:报告**按 tier 声明数据覆盖范围**——T0 时绝不暗示能出 GSC/GA4 结论;
 估算逐个标 [est]、实测标 [real](合同表全局守则);降级执行的部分在报告开头一句话声明截断/代理口径。
 
-相关:[数据源合同表](data-source-contract.md)(逐脚本口径)· [intake 清单](intake-checklists.md)(市场与测量层闸门)· SKILL.md 第 4 节(你需要自备什么)
+相关:[数据源合同表](data-source-contract.md)(逐脚本口径)· [intake 清单](intake-checklists.md)(市场与测量层闸门)· 本文末节「你需要自备什么」(原 SKILL.md 第 4 节)
 
 复核说明:本文与合同表同周期复核(信源变更由 intel_check 提示);两表冲突时以合同表为准并回改本文。2026-10-21 按官方文档重核各数据源的接入条件与限额(GSC API Usage Limits、CrUX API / History API、PSI 入门页、GA4 Data API 配额、Bing Webmaster API 取 key 方式)。
 
@@ -138,3 +138,13 @@
 | 展示数据不跨异常期 | 对比窗口与 2025-05-13 至 2026-04-27 比对([Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453)) | 两期对比不跨这个期间;跨了就只比点击,不比展示/CTR/位置 |
 | Bing key 可用 | `python3 scripts/bing_wmt.py stats --site example.com --out bing.csv` | 返回 CSV(新验证站点历史不回填,空列表 ≠ 0 ≠ 错误);401/凭证错 → 重新生成 key |
 | 限额未触顶 | GSC:Cloud 控制台「配额」页;GA4:请求里加 `returnPropertyQuota`;CrUX:控制台配额页 | 日用量低于上文列出的限额;429 时降频,不重试风暴 |
+
+---
+
+## 4. 你需要自备什么
+
+> 2026-10-21 从 SKILL.md 第 4 节原样搬入。
+
+- 本 Skill 不附带数据。需要数据的任务，使用你自己的数据源：Google Search Console、GA4、Bing Webmaster Tools 的导出，或你自己账号下的排名追踪、外链、爬虫工具的导出。
+- 可选的外部 API（例如 PageSpeed Insights API、Knowledge Graph Search API）需要你自己的 Key，Skill 不提供任何 Key。
+- 需要看渲染后页面时，使用你的 AI 工具自带的浏览器能力，或由你提供渲染后的 HTML / 截图。

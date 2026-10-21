@@ -163,3 +163,28 @@
 | 展示数据时间窗 | 对照 [Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453) | 对比期不跨 2025-05-13 至 2026-04-27;跨了只比点击 |
 | 欧盟内容任务过合规卡 | 对照上文 EU AI Act 卡 | 写明自己是提供者还是使用者;AI 文本是否经人工审核/编辑控制;是否含 deepfake |
 | 算法事件只按 Dashboard | 打开上文 Dashboard 链接 | 归因的更新名与日期都在 Dashboard 列表里 |
+
+---
+
+## 附:数据接入三问与新站开局协议(2026-10-21 从 SKILL.md 搬入)
+
+> SKILL.md 留了短版 intake 和三问;下面是原文。
+
+#### 2. 统一 intake(市场先行)
+先确认——**目标市场是第一个必答字段**,市场决定用哪套引擎/工具/规范:
+- **目标市场 / 语言**(18 市场:中、英、俄、韩、日、西、葡、阿、法、德、印尼、印地、意、土、越、泰、波兰、荷;清单与锚点见 [多语言工作流](multilingual-workflow.md)。未指定时:单语言站按站点语言推断,多语言站逐市场分开跑)
+- 站点 / 域名 / 页面 URL
+- 站点类型（SaaS、电商、内容站、文档站、本地业务等）
+- 目标（流量、排名、CTR、转化、AI 引用、监控）
+- 当前已知问题 / 近期变更
+
+
+**数据接入三问(拿到新站必问,不等用户提)**:
+1. 你已有哪些数据源?(GSC/GA4/Bing WMT 账号/Ahrefs 等付费订阅/服务器日志——逐项问)
+2. 愿意配哪些免费 key?(Google PSI/CrUX 五分钟、Bing WMT 免费——按用户想做的分析用 `doctor.py --wizard --want X` 逐项给出需要什么/怎么配)
+3. 都没有?→ **明确告知降级口径**:"按零凭证模式执行,报告将声明数据覆盖范围(排名/流量结论基于抓取样而非你的一方数据)";绝不因缺数据拒跑,也绝不让用户误以为结论来自完整数据。
+
+详细清单(含逐市场闸门与资源四问)见 [references/overview/intake-checklists.md](intake-checklists.md);数据源矩阵与 T0-T4 阶梯见 [数据接入指南](data-onboarding.md)。
+
+**新站开局协议(用户给出新域名的默认动作序列)**:
+intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want seo-audit,rank,backlinks,cwv`(探测已配源)→ `project.py init <域名>` + `project.py run triage`(全站发现→体检→优先级→封套→"站型+该做三件事")→ 按 [strategy-fit](strategy-fit.md) 与对应站型卡的开局命令链推进 → CRITICAL 未清零前不做内容量产(原则 0)。

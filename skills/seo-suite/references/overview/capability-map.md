@@ -27,7 +27,7 @@ seo-suite
 
 ## 可执行层(87 个 stdlib 脚本 + markets.json 数据层)
 
-**唯一事实来源**:脚本清单看 [SKILL.md 第 3 节](../../SKILL.md);登记状态看 `data/capability-matrix.json`(每个脚本一行,含 `group`、`status`、`tests_file`);每个脚本的数据、降级和反编造规则看 [data-source-contract.md](data-source-contract.md)。**对应任务先跑脚本拿事实,再按能力文件解读。**
+**唯一事实来源**:脚本清单看 [script-catalog.md](script-catalog.md)(2026-10-21 从 SKILL.md 第 3 节搬出);登记状态看 `data/capability-matrix.json`(每个脚本一行,含 `group`、`status`、`tests_file`);每个脚本的数据、降级和反编造规则看 [data-source-contract.md](data-source-contract.md)。**对应任务先跑脚本拿事实,再按能力文件解读。**
 
 状态含义(本套件口径,定义在矩阵 `status_legend`):`stable` = 有测试守护;`beta` = 已实装、已入合同表、暂无测试守护;`draft` = 新增未对勘。脚本当前 stable 与 beta 的分布以 `python3 tests/test_capability_matrix.py` 通过的矩阵为准。
 

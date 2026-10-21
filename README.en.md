@@ -116,7 +116,7 @@ seo-skills/
 ├── action.yml                 CI composite action (PR SEO gate)
 ├── install.sh                 One-command installer
 └── skills/seo-suite/
-    ├── SKILL.md               Entry point: intake, routing, script map
+    ├── SKILL.md               Entry point: intake, routing table (script map: references/overview/script-catalog.md)
     ├── scripts/               85 stdlib scripts + markets.json (18-market rule layer)
     ├── tests/                 1,787 tests (self_check runs all)
     ├── examples/              Golden-sample outputs

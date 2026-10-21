@@ -132,7 +132,7 @@
 
 | 检查什么 | 怎么查 | 通过 / 失败判据 |
 |---|---|---|
-| 注册表与本文一致 | `python3 -c "import sys; sys.path.insert(0,'scripts'); import intel_check as i; print(len(i.SOURCES))"`(在 `skills/seo-suite/` 下跑) | 数字等于本文第一段写的 20。不等就同步改本文和 SKILL.md |
+| 注册表与本文一致 | `python3 -c "import sys; sys.path.insert(0,'scripts'); import intel_check as i; print(len(i.SOURCES))"`(在 `skills/seo-suite/` 下跑) | 数字等于本文第一段写的 20。不等就同步改本文和 [script-catalog.md](script-catalog.md) |
 | 链接没死 | `curl -sIL -m 20 -o /dev/null -w '%{http_code} %{url_effective}\n' <URL>` | 200 通过。403 先换浏览器或 `search MCP read` 复核;404 或连不上就删除或换源 |
 | 基线可用 | 首次用 `python3 scripts/intel_check.py init` 建基线;之后连续跑两次 `check` | 第二次无 `[CHANGED]`,退出码 0(1 = 有变更,2 = 错误) |
 | 观察名单没改名 | `gh api repos/<owner>/<repo> --jq '[.full_name,.pushed_at]'` | `full_name` 与表一致;不一致就更新表 |

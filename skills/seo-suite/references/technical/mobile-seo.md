@@ -93,7 +93,7 @@
 - **2017 年的移动信号**：Google 2016-08-23 宣布，自 2017-01-10 起，从移动搜索结果点进来后不能轻松看到内容的页面，排名可能下降。博客列了三种做法：进入后或浏览中弹出遮住主内容的弹窗；必须先关闭才能看主内容的独立插页；首屏看起来像独立插页、原内容压在折叠线下。不受影响的情况（负责任地使用时）：法律要求的 Cookie 或年龄验证；内容本来不公开时的登录框（如邮件、付费墙后的内容）；占用合理空间、容易关闭的横幅（[Google 博客 2016-08-23](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on)）。
 - **现行文档**：侵扰性插页和弹窗让 Google 难以理解内容，可能导致搜索表现不佳。非法律要求的情况下不要遮住整页，也不要把用户跳到单独页面去同意或填写信息。法律强制的插页（如年龄门）不受此限，但建议覆盖在内容之上，不要把所有 URL 跳到同一个页面；成人内容年龄门可以在核实 Googlebot 后让它免过年龄门（[插页与弹窗文档](https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials)）。
 - 官方没有「占屏幕超过 X% 即违规」的数字阈值。
-- 检测工具现状：Search Console 移动可用性报告、Mobile-Friendly Test 工具与 API 已于 2023-12 退役（[Google 博客注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)）。现在用 Lighthouse、PSI、CrUX 现场数据，加爬虫级 DOM 检查（弹窗类名、属性清单可参考 [audit-rule-catalog.md](audit-rule-catalog.md) 的 audit_negative 思路）。
+- 检测工具现状：Search Console 移动可用性报告、Mobile-Friendly Test 工具与 API 已于 2023-12 退役（[Google 博客注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)）。现在用 Lighthouse、PSI、CrUX 现场数据，加爬虫级 DOM 检查（弹窗类名、属性清单可参考 [audit-rules/mobile.md](audit-rules/mobile.md) 的 audit_negative 思路）。
 
 ## 三、AMP：已没有搜索特权
 

@@ -215,7 +215,7 @@
 
 ## 维护规则(强制)
 
-1. **新增脚本必须同步更新矩阵**:SKILL.md 第 3 节(唯一事实来源;其计数文本 59 落后于文件系统 85,已知漂移)+ data-source-contract.md 补行 + 本文件与 data/capability-matrix.json 各加一条(status 从 draft 起步)。漏更即 `test_capability_matrix.py` ① 变红(双向文件覆盖)。
+1. **新增脚本必须同步更新矩阵**:references/overview/script-catalog.md(原 SKILL.md 第 3 节,唯一事实来源;其计数文本 59 落后于文件系统 85,已知漂移)+ data-source-contract.md 补行 + 本文件与 data/capability-matrix.json 各加一条(status 从 draft 起步)。漏更即 `test_capability_matrix.py` ① 变红(双向文件覆盖)。
 2. **新增模板必须同步更新矩阵**:templates/ 落盘 + 两处矩阵各加一条。漏更即 ⑤ 变红(25 个数量与磁盘集合校验)。
 3. **删除/改名同理**:矩阵与文件系统双向对齐,任何一侧漂移都会红。
 4. **status 只升不跳**:draft→beta 需合同对勘行;beta→stable 需测试守护;降级(发现 beta 级问题)须在 PR 里说明原因。

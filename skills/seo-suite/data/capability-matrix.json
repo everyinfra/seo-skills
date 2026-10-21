@@ -5,7 +5,7 @@
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
   "source_of_truth": {
-   "scripts": "SKILL.md 第 3 节(唯一事实来源;脚本计数以文件系统为准)",
+   "scripts": "references/overview/script-catalog.md(唯一事实来源,2026-10-21 从 SKILL.md 第 3 节搬出;脚本计数以文件系统为准)",
    "data_contract": "references/overview/data-source-contract.md(数据/降级/反编造三列)",
    "capability_map": "references/overview/capability-map.md(能力地图,人读姊妹篇)"
   },
