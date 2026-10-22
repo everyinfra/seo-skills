@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-21T05:59:57.814872+00:00",
+ "checked_at": "2026-10-22T06:06:21.442582+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -13,8 +13,8 @@
    "ts": "2026-10-11T08:34:44.548408+00:00"
   },
   "google-updates": {
-   "hash": "b68402534749aaf12faa0e4893e610fd",
-   "ts": "2026-10-17T05:33:38.419606+00:00"
+   "hash": "cd295246218fcd1590981446bc854f50",
+   "ts": "2026-10-22T06:06:05.968724+00:00"
   },
   "gsc-announce": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "4b990c6d71fdf00bae7eb4cc79dae210",
-   "ts": "2026-10-21T05:59:45.134565+00:00"
+   "hash": "ccbbb247bddefd0f82531e091fdd96ef",
+   "ts": "2026-10-22T06:06:07.745252+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -88,7 +88,8 @@
   },
   "yandex-wm": {
    "hash": "42b50939d99e532f66533b58860c9098",
-   "ts": "2026-10-20T05:59:28.692012+00:00"
+   "ts": "2026-10-22T06:06:10.534827+00:00",
+   "unstable_streak": 1
   },
   "naver-wm": {
    "hash": "d3d2fbcf7e96faccb4061e25c07b0d73",
@@ -99,19 +100,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "da2f82ac9b90a787b38f99f078f27556",
-   "ts": "2026-10-21T05:59:56.602946+00:00"
+   "hash": "dfc94336076e91d3b4ec031c01b0a628",
+   "ts": "2026-10-22T06:06:20.474255+00:00"
   },
   "statcounter-ai": {
    "hash": "0ce79cd2676fd3e6ac3674f5ac020880",
-   "ts": "2026-10-21T05:59:56.855991+00:00"
+   "ts": "2026-10-22T06:06:20.717932+00:00",
+   "unstable_streak": 1
   },
   "semrush-sensor": {
    "hash": "43faa2b0d5702488401ed9275d0d39a6",
    "ts": "2026-10-21T05:59:57.235567+00:00"
   },
   "seroundtable": {
-   "top": "OpenAI Auto Enabling Creative Enhancements In ChatGPT Ads",
+   "top": "Google On robots.txt Rules For AI Crawlers, Emojis, International URLs & More",
    "seen": [
     "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
@@ -153,20 +155,26 @@
     "Google Ads Expands Financial Services Verification To US & Canada",
     "Daily Search Forum Recap: October 20, 2026",
     "Google Removes AI Overviews Labels On Some AI Overviews",
-    "Google Business Profiles Verification With Government ID"
+    "Google Business Profiles Verification With Government ID",
+    "Google On robots.txt Rules For AI Crawlers, Emojis, International URLs & More",
+    "Google On Taking Sites Down When Fixing The Emergency PHP Exploit - PHP2Shell",
+    "Daily Search Forum Recap: October 21, 2026",
+    "Google Updates Control What You Share With Google Search With Existing Options",
+    "Google Search Ranking Volatility & Chatter Heats Up October 20 & 21"
    ],
-   "ts": "2026-10-21T05:59:57.814592+00:00"
+   "ts": "2026-10-22T06:06:21.442351+00:00"
   },
   "google-docs-rss": {
-   "top": "Updating the Indexing API quota page",
+   "top": "Updated the control what you share with Google Search documentation",
    "seen": [
     "Updating the Indexing API quota page",
     "Added documentation on the UGC Fresh Data Program",
     "Updated guidance on using generative AI content",
     "Added creator property and updated interactionStatistic in VideoObject structured data",
-    "Added local business query support to the aggregator and supplier units"
+    "Added local business query support to the aggregator and supplier units",
+    "Updated the control what you share with Google Search documentation"
    ],
-   "ts": "2026-10-18T05:51:38.587704+00:00"
+   "ts": "2026-10-22T06:06:21.105454+00:00"
   },
   "openai-bots-rss": {
    "hash": "f237661cad613ae8cbd3da9f508b2565",
