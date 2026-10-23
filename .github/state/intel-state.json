@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-22T06:06:21.442582+00:00",
+ "checked_at": "2026-10-23T06:01:23.741968+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "ccbbb247bddefd0f82531e091fdd96ef",
-   "ts": "2026-10-22T06:06:07.745252+00:00"
+   "hash": "590f68853bf97dbea3698d7080456698",
+   "ts": "2026-10-23T06:01:09.731298+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #80 from eeee2345/spec/scan-vs-compliance-attestat\u2026",
@@ -87,35 +87,32 @@
    "ts": "2026-10-15T05:52:26.249138+00:00"
   },
   "yandex-wm": {
-   "hash": "42b50939d99e532f66533b58860c9098",
-   "ts": "2026-10-22T06:06:10.534827+00:00",
-   "unstable_streak": 1
+   "hash": "671cc063e2830b9b5870d28d61fa443d",
+   "ts": "2026-10-23T06:01:12.694337+00:00"
   },
   "naver-wm": {
-   "hash": "d3d2fbcf7e96faccb4061e25c07b0d73",
-   "ts": "2026-10-20T05:59:32.033235+00:00"
+   "hash": "7506826e8f0aa5eb6ef7483793e2be0c",
+   "ts": "2026-10-23T06:01:15.858611+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "dfc94336076e91d3b4ec031c01b0a628",
-   "ts": "2026-10-22T06:06:20.474255+00:00"
+   "hash": "85c4638e79328e1211bb563335a167af",
+   "ts": "2026-10-23T06:01:22.619949+00:00"
   },
   "statcounter-ai": {
-   "hash": "0ce79cd2676fd3e6ac3674f5ac020880",
-   "ts": "2026-10-22T06:06:20.717932+00:00",
-   "unstable_streak": 1
+   "hash": "73c242050d892c2a5c78b5ad538d201b",
+   "ts": "2026-10-23T06:01:22.926473+00:00"
   },
   "semrush-sensor": {
    "hash": "43faa2b0d5702488401ed9275d0d39a6",
    "ts": "2026-10-21T05:59:57.235567+00:00"
   },
   "seroundtable": {
-   "top": "Google On robots.txt Rules For AI Crawlers, Emojis, International URLs & More",
+   "top": "Google Business Home - New Google Business Profiles Home",
    "seen": [
-    "Daily Search Forum Recap: October 9, 2026",
     "Search News Buzz Video Recap: Google Spam Update Done, Penalties Rise, Factcheck AI, Content Quality, Fake Authors, Ads & So Much More",
     "Google Ads Enables Text Customization Asset Previews",
     "Bing Testing Local Pack Without Borders",
@@ -160,9 +157,14 @@
     "Google On Taking Sites Down When Fixing The Emergency PHP Exploit - PHP2Shell",
     "Daily Search Forum Recap: October 21, 2026",
     "Google Updates Control What You Share With Google Search With Existing Options",
-    "Google Search Ranking Volatility & Chatter Heats Up October 20 & 21"
+    "Google Search Ranking Volatility & Chatter Heats Up October 20 & 21",
+    "Google Business Home - New Google Business Profiles Home",
+    "Daily Search Forum Recap: October 22, 2026",
+    "Google Search Tests Layout Change For Local Knowledge Panel",
+    "Google Ads New Translation Tool",
+    "Google Ads Customer Lifecycle Goals: Value Mode, Retention Goals & Percentage Multipliers"
    ],
-   "ts": "2026-10-22T06:06:21.442351+00:00"
+   "ts": "2026-10-23T06:01:23.741764+00:00"
   },
   "google-docs-rss": {
    "top": "Updated the control what you share with Google Search documentation",
