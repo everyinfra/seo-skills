@@ -71,6 +71,18 @@ claude plugin install seo-suite@everyinfra-seo-skills
 
 **Cualquier entorno compatible con Agent Skills** (Codex, Cursor, Gemini CLI, Copilot, Windsurf, Goose, Amp…): el instalador de una línea de arriba detecta los entornos instalados y se adapta a cada uno; también puedes copiar `skills/seo-suite` en la carpeta de skills de la herramienta, por ejemplo `~/.agents/skills/`. Carpetas y forma de invocación por entorno: [HOSTS.md](HOSTS.md).
 
+## Actividad de desarrollo
+
+<!-- readme-stats: charts are regenerated daily, do not edit by hand -->
+
+Commits por día en todos los repositorios de EveryInfra, incluido el gateway privado (solo recuentos), y versiones por semana. El gráfico se regenera cada día y muestra su hora de actualización.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme-stats/activity-es-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/readme-stats/activity-es-light.svg">
+  <img alt="Commits por día en todos los repositorios de EveryInfra y versiones por semana" src="assets/readme-stats/activity-es-light.svg" width="100%">
+</picture>
+
 ## Más
 
 La descripción completa de capacidades, el apartado «Why now» con sus fuentes y la estructura del repositorio están en el [README en inglés](README.en.md) y en el [README en chino](README.md). Historial de versiones: [CHANGELOG.md](CHANGELOG.md).

@@ -122,6 +122,18 @@ claude plugin install seo-suite@everyinfra-seo-skills
 
 **Any Agent Skills host (Codex, Cursor, Gemini CLI, Copilot, Windsurf, Goose, Amp, …):** the `install.sh` one-liner above auto-detects installed hosts and adapts to each, or copy `skills/seo-suite` into the tool's skills directory, e.g. `~/.agents/skills/`. Per-host directories and invocation cheat sheet: [HOSTS.md](HOSTS.md). Form-factor analysis: [PACKAGING.md](PACKAGING.md).
 
+## Shipping activity
+
+<!-- readme-stats: charts are regenerated daily, do not edit by hand -->
+
+Commits per day across all EveryInfra repositories, including the private gateway (counts only), and releases per week. The chart is regenerated every day and prints its update time.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme-stats/activity-en-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/readme-stats/activity-en-light.svg">
+  <img alt="Commits per day across all EveryInfra repositories and releases per week" src="assets/readme-stats/activity-en-light.svg" width="100%">
+</picture>
+
 ## Repo layout
 
 ```text

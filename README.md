@@ -165,6 +165,18 @@ cp -R seo-skills/skills/seo-suite ~/.claude/skills/
 
 其他兼容 Skill 的工具（Cursor/VS Code Copilot/Gemini CLI/Windsurf/Goose/Amp/Kiro 等）的目录与调用对照见 [HOSTS.md](HOSTS.md)。参考：[Build skills — Codex](https://developers.openai.com/codex/build-skills) · [Extend Claude with skills](https://code.claude.com/docs/en/skills)
 
+## 提交活跃度
+
+<!-- readme-stats: charts are regenerated daily, do not edit by hand -->
+
+EveryInfra 全部仓库（含未公开的网关仓，只统计数量）每天的提交和每周的发版。图每天重新生成，图上写着更新时间。
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme-stats/activity-zh-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/readme-stats/activity-zh-light.svg">
+  <img alt="EveryInfra 全部仓库每天的提交和每周的发版" src="assets/readme-stats/activity-zh-light.svg" width="100%">
+</picture>
+
 ## 目录结构
 
 ```text
