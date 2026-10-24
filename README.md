@@ -1,14 +1,38 @@
 # EveryInfra SEO Skills
 
-[简体中文](README.md) · [English](README.en.md)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/hero-light.svg">
+    <img alt="18 个语言市场的方块依次点亮，同时这个 Skill 按韩国市场审计 example.com，列出真实跑出来的问题。" src="assets/hero-light.svg" width="100%">
+  </picture>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.35.0-brightgreen" alt="version 0.35.0">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-brightgreen" alt="Apache-2.0">
+  <img src="https://img.shields.io/badge/markets-18-brightgreen" alt="18 language markets">
+  <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Python standard library only">
+</p>
+
+<p align="center"><b>简体中文</b> · <a href="README.en.md">English</a> · <a href="README.es.md">Español</a></p>
 
 **免费下载，用你自己的 AI 工具和模型。**
 
+**一行安装**（自动识别本机已装的 Claude Code、Codex、Cursor 等宿主）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
+```
+
 > 由 [EveryInfra（万有引擎）](https://everyinfra.com/) 维护。需要实时数据时，可以接 EveryInfra 的[全网搜索 API](https://everyinfra.com/products/search)（17 种检索工具）和 [90 个平台的数据接口](https://everyinfra.com/market)（小红书、抖音、淘宝等）；本 Skill 不依赖它们。
 
-EveryInfra SEO Skills 的版本为 `0.35.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度由你自己的 AI 工具提供。
+EveryInfra SEO Skills 的版本为 `0.35.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度来自你自己的 AI 工具。
 
 **独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十几个单市场工具——本套件把 **18 个语言市场**放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、英文、俄语区（Yandex/Alice）、韩语区（Naver/AI Briefing）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）、印地语（Hinglish 三种书写）、意大利语（it-CH 独立 locale）、土耳其语（第二个 Yandex 市场，~26%）、越南语（有调/无调+Coc Cốc）、泰语（无空格分词）、波兰语（变音符规范化）、荷兰语（nl-NL/nl-BE 弗拉芒）。**全球能力不做成独立模块，而是融入五类能力文件的每一类**——主干是 `overview/multilingual-workflow.md`（市场总表、逐市场工具栈、语言规范、合规速查）。
+
+<details>
+<summary><b>版本演进：0.5 → 0.35</b></summary>
 
 **0.5 系列:市场 × 能力双维度架构 + 18 市场逐一深挖。** 每个任务先定市场再进能力路由;`multilingual-workflow.md` 内含**十八市场独到方法索引**(每市场"只有在这里才需要做"的做法,如中文的搜一搜 Peoplerank/小红书 CES 分、韩国的 `nosourceinfo` 官方 AI 引用退出、巴西的 Reclame Aqui 22.3% 被引、日本的「AI 臭」密度检测、泰国的 `Intl.Segmenter` 分词定论)与**跨区融合 23 条原则**(断言半衰期、口径冲突并记、主权助手模式、语域双轨模板等)。
 
@@ -17,6 +41,8 @@ EveryInfra SEO Skills 的版本为 `0.35.0`，采用 Apache-2.0 许可协议。�
 **0.16–0.23 系列:实装化+全覆盖。** 规则变代码——**35 个 stdlib 零依赖脚本**(当时;单页审计/AI 爬虫姿势/CJK 文本度量/GSC 导出挖掘/sitemap 六坏桶/hreflang 簇矩阵/引用采样面板 Wilson CI/DiD 归因/网格排名 ARP·ATRP·SoLV…)+ `markets.json` 18 市场规则数据层(130 项市场特检)+ `market_lint.py` 24 条动态自动检查+**32 个 golden 测试**(self_check 每次全跑)。**8 个新专项模块**:agent 协议速查(14 卡)/审计规则目录(SEOmator 373 规则)/Naver 官方文档蒸馏/head 元素完整参考/SERP 数据模型/证据银行/域名策略(过期域滥用红线·AI 记品牌不记 URL)/站群光谱(白帽→泛站群·六目标灰帽→白帽等效)/pSEO 九章作战手册(四案例 sitemap 实测)/**站型打法手册(8 卡)**/CWV 完整手册/移动 SEO(2024-07 起只抓 smartphone UA)/惩罚恢复(11 类手动动作)/重定向 canonical 六场景/UGC+站内搜索。**18 个语区门户页**(`references/markets/` 每语区一份,2026-10 母语定向研究)。
 
 **0.24–0.30 系列:持续监控与自更新闭环。** 从一次性审计升级为长期守护——`monitor.py` 持续监控守护(日检四问/周趋势/SQLite 快照/四级告警+冷却与防疲劳,SSRF/密钥守卫)+`notify.py` 四渠道分级通知+GitHub Actions 部署模板;`market_lint.py` 升至 64 条检查;**`intel_check.py`+自更新协议**(18 源信源监控,变更→受影响文件映射→P0-P3 分级更新);golden 测试增至 **71 个**;脚本总数增至 **38 个**。
+
+</details>
 
 ## 为什么是现在 / Why now
 
@@ -45,17 +71,7 @@ EveryInfra SEO Skills 的版本为 `0.35.0`，采用 Apache-2.0 许可协议。�
 | Yandex 在土耳其份额 | 25.19%(2026-09)——俄语区之外第二个 Yandex 市场 | StatCounter |
 | 印度 ChatGPT 采用 | 约 1 亿周活 | Sam Altman(TechCrunch 2026-02 转述) |
 
-
-
-**一行安装:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
-```
-
 ## 它是什么
-
-
 
 `seo-suite` 是一个统一的 SEO 入口：先做统一 intake（站点、市场、目标、已知问题、可用数据），再把任务路由到 overview、research、content、technical、monitoring 五类能力，最后按固定结构给出结论、优先级和验证方法。
 
@@ -155,6 +171,7 @@ cp -R seo-skills/skills/seo-suite ~/.claude/skills/
 seo-skills/
 ├── README.md              中文说明
 ├── README.en.md           English README
+├── README.es.md           README en español
 ├── LICENSE                Apache-2.0 全文
 ├── NOTICE                 署名与第三方资料说明
 ├── CHANGELOG.md           版本记录

@@ -1,8 +1,29 @@
 # EveryInfra SEO Skills
 
-[简体中文](README.md) · [English](README.en.md)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/hero-light.svg">
+    <img alt="Eighteen language-market tiles light up while the skill audits example.com for the Korean market and lists the real findings." src="assets/hero-light.svg" width="100%">
+  </picture>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.35.0-brightgreen" alt="version 0.35.0">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-brightgreen" alt="Apache-2.0">
+  <img src="https://img.shields.io/badge/markets-18-brightgreen" alt="18 language markets">
+  <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Python standard library only">
+</p>
+
+<p align="center"><a href="README.md">简体中文</a> · <b>English</b> · <a href="README.es.md">Español</a></p>
 
 **Free to download. Use your own AI tool and model.**
+
+**Install in one line** (detects Claude Code, Codex, Cursor and other hosts on your machine):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
+```
 
 > Maintained by [EveryInfra](https://everyinfra.com/en). When a task needs live data, EveryInfra offers a [web search API](https://everyinfra.com/en/products/search) (17 tools) and [data APIs for 90 platforms](https://everyinfra.com/en/market); this Skill does not depend on them.
 
@@ -22,12 +43,6 @@ EveryInfra SEO Skills is version `0.35.0`, licensed under Apache-2.0. One SEO / 
 ## How it got here (0.5 → 0.34)
 
 One arc, compressed: the 0.5 series introduced the **market × capability dual-dimension architecture** — every task picks its market first, then routes by capability — with per-market deep-dives for all 18 markets and 23 cross-region fusion principles; 0.9 re-mined the 17 non-English markets in their own languages (a local community & information-source index, fusion principles grown to 27); 0.16–0.23 turned rules into code — stdlib-only scripts, the `markets.json` 18-market rule layer with dynamic `market_lint.py` checks, golden tests, the specialist modules and the 18 market portals; 0.24–0.30 added the monitoring daemon and the self-update loop; since 0.31 the executable layer has grown to **87 scripts and 1,787 tests** (self_check runs them all on every pass), plus the CI gates and the `project.py` orchestrator. Full history: [CHANGELOG.md](CHANGELOG.md).
-
-**Install (one command):**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
-```
 
 ## Why now
 
@@ -111,7 +126,7 @@ claude plugin install seo-suite@everyinfra-seo-skills
 
 ```text
 seo-skills/
-├── README.md / README.en.md   Chinese original + this file
+├── README.md / README.en.md / README.es.md   Chinese original, this file, Spanish
 ├── LICENSE / NOTICE / CHANGELOG.md
 ├── action.yml                 CI composite action (PR SEO gate)
 ├── install.sh                 One-command installer
