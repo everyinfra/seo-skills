@@ -9,10 +9,10 @@
 **解释层(8 条;ID 未公布原文的按家族命名法推得并标 [待核];第四批补实体图六查 3 条,细则深读见 [entity-signal-checklist.md](../entity-signal-checklist.md))**
 
 #### sd-jsonld-missing
-- 名称/类型: 缺 JSON-LD(源表 ID `schema-present`) —— warning · 优先级 low · 输出 WARN(site_audit 现行 `[WARN] schema: 无 JSON-LD`;上游源表:三种载体都没有=fail,只有 microdata/RDFa=warn)
+- 名称/类型: 缺 JSON-LD(源表 ID `schema-present`) —— warning · 优先级 low · 输出 WARN(site_audit 现行 `[WARN] schema: 无 JSON-LD`;原版源表:三种载体都没有=fail,只有 microdata/RDFa=warn)
 **这意味(what)**: 页面没有任何 `<script type="application/ld+json">` 结构化数据。
 **为什么(why)**: 结构化数据帮助 Google 理解页面并带来富结果资格;没有证据表明它独立提升 AI 引用(口径见 [geo-evidence.md](../../content/geo-evidence.md))。缺信号类:不惩罚,只放弃一层机器可读性,故 low。
-**触发(trigger)**: 上游:无 JSON-LD、microdata、RDFa(`typeof`)任一即 fail;只有后两者 warn;Open Graph 不算。site_audit 只数 `ld+json` 节点,无则 warn。
+**触发(trigger)**: 原版:无 JSON-LD、microdata、RDFa(`typeof`)任一即 fail;只有后两者 warn;Open Graph 不算。site_audit 只数 `ld+json` 节点,无则 warn。
 **不修的条件(caveat)**: schema 不(直接)影响排名,然而决定富结果资格,所以一般建议至少配全站级 Organization+页面主类型。但登录墙内页/纯工具页可不配。
 **修复(fix)**: 按页面类型配最小集(全站 Organization,文章 Article,产品 Product——各类型必填见 sd-required-fields 家族);模板化生成,勿手拼 JSON。
 **关联(seealso)**: sd-json-syntax;[schema-templates.md](../schema-templates.md)、[validation-guide.md](../validation-guide.md)
@@ -47,8 +47,8 @@
 #### sd-searchaction
 - 名称/类型: WebSite SearchAction(源表 ID `schema-website-search`) —— opportunity · 优先级 insight · 输出 WARN(源表现行 warn、权重 8;target 须含 {search_term_string})
 **这意味(what)**: 站点缺 WebSite+SearchAction 标记,或 potentialAction 的 target 模板没含字面 {search_term_string} 占位符。
-**为什么(why)**: Google 自 2024-11-21 起在全球移除 sitelinks 搜索框;现存标记不报错、无需删除;WebSite 结构化数据仍用于站点名称([公告](https://developers.google.com/search/blog/2024/10/sitelinks-search-box),核对 2026-10-21)。本条只剩标记卫生意义,上游仍按 warn 计分,本套件排最低优先级。
-**触发(trigger)**: WebSite 类型的 potentialAction target URL 模板须含字面 {search_term_string};缺失或占位符变形即 warn(上游)。
+**为什么(why)**: Google 自 2024-11-21 起在全球移除 sitelinks 搜索框;现存标记不报错、无需删除;WebSite 结构化数据仍用于站点名称([公告](https://developers.google.com/search/blog/2024/10/sitelinks-search-box),核对 2026-10-21)。本条只剩标记卫生意义,原版仍按 warn 计分,本套件排最低优先级。
+**触发(trigger)**: WebSite 类型的 potentialAction target URL 模板须含字面 {search_term_string};缺失或占位符变形即 warn(原版)。
 **不修的条件(caveat)**: 对 Google 已无展示收益,不必新增;存量标记可留。注意与 url-search-indexed 不矛盾:搜索功能要真实可用,搜索**结果页**要 noindex——一个对用户,一个对索引。
 **修复(fix)**: WebSite schema 配 SearchAction,target 用真实搜索 URL+{search_term_string};搜索结果页模板加 noindex。
 **关联(seealso)**: url-search-indexed;[schema-templates.md](../schema-templates.md)

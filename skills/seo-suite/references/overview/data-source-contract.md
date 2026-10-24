@@ -37,7 +37,7 @@
 | `site_crawl.py` | 目标站实时爬取(robots/sitemap/BFS 四级发现链取到即止+子域 DNS/CT 日志探测;默认 1 req/s,robots Crawl-delay 更大时以其为准) | ① `--urls` 手工清单替代发现链;② `--max` 默认 500(上限 5000)超预算警告+截断;ct.sh 失败优雅跳过;③ 输入错 exit 2/全部起点失败 exit 3 | 孤儿判定只对实际抓到的 edges;`--strip-params` 开关两种口径的页数不可直接比较;不抓外链目标,`--check-external` 只抽样 HEAD 验活 |
 | `field_data.py` | Google PSI(key 可选,频繁调用建议加)+CrUX API(必须 key,150 次/分钟/项目)真实 API;官方阈值判定(LCP/INP/CLS 等)。PSI 文档写明计划停止返回 CrUX 现场数据,现场 p75 长期以 CrUX 源为准 | ② CrUX 无 key 整源跳过并告警(仅 PSI,不算失败);`--as-cwv-csv` 的 DCL 无现场对应→实验 FCP 近似、无数据留空;③ URL 非 http(s)/私网 SSRF 拒 exit 2;全源失败 exit 3 | 现场 p75 与实验数据分列(field/lab);阈值写死官方口径不引入自评;429/403 提示加 key 不硬跑 |
 | `ai_views.py` | URL 实时抓取或 `--html` 离线 | ③ fetch 被拒([SKIP])→停止并说明;无 `--apply` 只预览 | 不承诺引用提升;token 统计是 len//4 估算 `[est]` |
-| `envelope.py` | audit.json(必需)+health/priority(可选) | ② 可选源缺失→标 source_missing 继续;格式不符→exit 2 不静默 | 只聚合不改写上游数字;phases 分派是规则映射非承诺 |
+| `envelope.py` | audit.json(必需)+health/priority(可选) | ② 可选源缺失→标 source_missing 继续;格式不符→exit 2 不静默 | 只聚合不改写输入数字;phases 分派是规则映射非承诺 |
 | `benchmark_report.py` | 多个 audit json/monitor.db/scores.csv(可组合;每源=一站) | ③ 样本<`--min-sites`(默认 5)→拒绝出报告 exit 2 | 只输出聚合数字,绝不含域名(site 读取后即弃,URL 解析即弃);偏差自白照抄 geo-optimizer 纪律 |
 
 ## 二、技术 SEO(7)
@@ -112,7 +112,7 @@
 | `yt_outlier.py` | videos.csv(title,duration_s,views[,is_short][,channel])——YouTube 导出/采集 | ③ 文件/格式错误→exit 2 | 离群=组内均值 2×(频道×形态分基线,长短分开);只统计 CSV 内真实播放量,标题词频只对离群标题计算 |
 | `trend_scout.py` | HN topstories API + Reddit 6 sub hot(免 key 实时抓取);X/Twitter 需 key | ④ X/Twitter 无 key→明说跳过不猜;② 单源失败→warn 明说;③ 全源失败/无数据→exit 2 | 白名单门槛:HN+Reddit 相关条目合计 ≥15 才建议立项;相关性分只对 `--vertical` 词命中,不硬凑 |
 | `freshness.py` | 本地 *.md 头部日期标记(默认 references/) | ④ 文件无日期标记→按新鲜处理,不计 stale | 只读显式日期标记(Updated/verified_at/建于/复核于);不推测文件实际年龄;未来日期=error |
-| `report_build.py` | findings.json(上游脚本产出或 agent 组装) | ② summary>2500 字符→截断并警告;findings>20 条→警告"失败报告"并截断到 20 | 只渲染输入 findings,不补写结论;禁 script/外部资源;数字同时印在文字里,不靠图形暗示 |
+| `report_build.py` | findings.json(前置脚本产出或 agent 组装) | ② summary>2500 字符→截断并警告;findings>20 条→警告"失败报告"并截断到 20 | 只渲染输入 findings,不补写结论;禁 script/外部资源;数字同时印在文字里,不靠图形暗示 |
 | `self_check.py` | 本地 skill 文件(frontmatter/模板七段式/死链/golden 测试) | ③ 任一项失败→exit 1 | 工具脚本,无外部数据 |
 | `link_check.py` | 本地 markdown 文件树 | ③ 断链→exit 1 | 工具脚本,无外部数据 |
 | `intel_check.py` | `SOURCES` 注册的 20 源(见 intel-sources.md)实时拉取(RSS/hash)+ `.intel-state.json` 基线 | ③ 无基线→先 init;② hash 源二次确认:两次拉取不一致(动态页噪音)→按噪音跳过、不动基线;单源失败→明说 | 变更判定需两次拉取一致才算真变更;噪音不报变更;只输出"源变了→该更新哪些文件",不自动改 |
@@ -135,7 +135,7 @@
 | `pseo_pattern_mining.py` | GSC queries 导出 CSV(必需)+ 现有 URL 清单/sitemap(覆盖度;SSRF 防护) | ③ 缺 `--gsc`→usage 不可跑;② sitemap 抓取失败→覆盖度降级标注 | addressable 量只按 16 正则+CJK 变体表真实聚类;30/25/20/15/10 打分口径=gates §八固定;GO/WATCH/白空间三态有判据 |
 | `pseo_batch_gate.py` | 批次 JSONL(每行一条记录)+ 可选渲染产物目录(按 key.html 逐个读) | ② 缺 `--rendered`→按记录 body 计词数并声明;③ 任一 STOP/警告≥100/唯一度 30-40%→exit 1 阻断发布;用法错→exit 2 | 数据闸只剔除记录列清单非 fatal;爆炸预警只算组合空间与记录数差异;Simhash 唯一度/样板比/页型地板阈值写死可配 |
 | `pseo_cohort.py` | cohort 登记(init 冻结判读标准)+ 周喂 GSC 页面导出(Page/Clicks/Impressions/Position)+ 可选外链导出(prune 红线) | ② 索引口径=有曝光=已索引 `[est]`(非 URL Inspection,一律带标);③ GSC 缺列→exit 2;FAIL 判定/有处置工单→exit 1 | 预注册纪律:判读标准 init 写死入档、之后冻结(看完数据再挑标准=移动球门禁止);有外链/展示史的页 NO-GO 只标注;410 恒需人工确认 |
-| `prune_gate.py` | traffic_funnel JSON 或 URL 清单+GSC 导出(query 级供排名词红线)+crawl.json(入链)+外链导出,四源可组合 | ② 红线证据不全(外链或排名词不可查)/入链缺失→watch(缺证据不下刀);③ 漏斗截断(上游无 --gsc)→exit 2 | 外链>0 或排名词(Position≤20)>0→NO-GO 红线绝不退役;page 级 GSC 排名词不可查→watch 不猜;`--window-days` 只注明口径不参与计算 |
+| `prune_gate.py` | traffic_funnel JSON 或 URL 清单+GSC 导出(query 级供排名词红线)+crawl.json(入链)+外链导出,四源可组合 | ② 红线证据不全(外链或排名词不可查)/入链缺失→watch(缺证据不下刀);③ 漏斗截断(前置漏斗脚本未带 --gsc)→exit 2 | 外链>0 或排名词(Position≤20)>0→NO-GO 红线绝不退役;page 级 GSC 排名词不可查→watch 不猜;`--window-days` 只注明口径不参与计算 |
 | `content_inventory.py` | crawl.json(清点范围)+GSC 导出(流量轴)+panel.json(AI 引用轴)+外链导出(外链轴)+战略页清单,轴数据皆可选 | ② 轴数据缺失→该轴不可用逐条注明,不猜;③ 输入/参数错→exit 2 | 被引页绝不入 remove 桶(硬护栏,输出命中数恒 0);remove 桶恒为候选需人工复核;四轴证据逐页打印 |
 
 ## 十、内链架构(2)

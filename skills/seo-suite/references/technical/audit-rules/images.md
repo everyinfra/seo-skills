@@ -35,7 +35,7 @@ alt 缺失=fail;alt 泛化("image"/文件名)=warn;alt 长度 **>125 字符 warn
 **关联(seealso)**: images-modern-formats、perf-dom-size;[cwv-playbook.md](../cwv-playbook.md)
 
 #### images-modern-formats
-- 名称/类型: 老旧图片格式/传输体积 —— warning · 优先级 low · 输出 WARN(源表 ID `images-modern-format`,warn:建议 WebP/AVIF,上游未给节省比例;与 Performance 节 perf-image-encoding 同一事实的两面)
+- 名称/类型: 老旧图片格式/传输体积 —— warning · 优先级 low · 输出 WARN(源表 ID `images-modern-format`,warn:建议 WebP/AVIF,原版未给节省比例;与 Performance 节 perf-image-encoding 同一事实的两面)
 **这意味(what)**: 页面图片仍是 JPEG/PNG 老格式且未提供 WebP/AVIF(协商或 picture 回退),或单图传输体积过大。
 **为什么(why)**: Google 的对比研究:同等 SSIM 下 WebP 比 JPEG 小 25%-34%([WebP 研究](https://developers.google.com/speed/webp/docs/webp_study),核对 2026-10-21;AVIF 无本次回读的一手数字)。省下的字节改善 LCP 与传输量。perf 侧同源规则 perf-image-encoding(渲染专属)判**传输 >100KB=warn、BMP/TIFF=fail**——本条看"格式供给",那条看"实际传输",命中其一就该动手。
 **触发(trigger)**: 1) img src 无 .webp/.avif 且响应无格式协商(Accept/Vary)即 warn;2) 渲染口径:单图传输 >100KB=warn、BMP/TIFF=fail。

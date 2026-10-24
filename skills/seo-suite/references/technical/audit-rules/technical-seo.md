@@ -66,7 +66,7 @@ robots.txt 存在=fail、语法=warn/fail;sitemap 存在/格式=warn/fail;URL �
 - 名称/类型: sitemap 存在性与格式(源表 ID `technical-sitemap-exists`、`technical-sitemap-valid`) —— warning · 优先级 medium · 输出 WARN/CRITICAL(源表 warn/fail)
 **这意味(what)**: 站点没有可发现的 sitemap,或 sitemap 格式坏(XML 不合法/编码错/非 sitemap 结构)。
 **为什么(why)**: sitemap 是发现与再抓取的加速器:格式坏时 GSC 提交会报解析错误,该文件无法被处理。存在性按发现路径判:robots.txt Sitemap 行、/sitemap.xml 常规路径、GSC 声明。条数/体积/lastmod 质量/domain 一致性由 Crawlability 节 sitemap 家族分规则管,本条只立"有没有、能不能解析"。
-**触发(trigger)**: 1) 无任何可发现 sitemap → 缺失档;2) XML 解析失败/缺 urlset 命名空间 → 格式档;均 warn/fail(上游按条目问题轻重分档)。site_audit 只探 `/sitemap.xml`,不可达出 `[INFO] sitemap`。
+**触发(trigger)**: 1) 无任何可发现 sitemap → 缺失档;2) XML 解析失败/缺 urlset 命名空间 → 格式档;均 warn/fail(原版按条目问题轻重分档)。site_audit 只探 `/sitemap.xml`,不可达出 `[INFO] sitemap`。
 **不修的条件(caveat)**: sitemap 是推荐机制不是排名因素,内链完整的小站缺失损失有限,所以一般建议核心站必配、极小站可缓。但无 sitemap 时 GSC 的提交与覆盖率诊断面也少一半,通常仍值得配。
 **修复(fix)**: 生成器输出标准 XML(可选 gzip);robots.txt 声明+GSC 提交;校验命名空间与转义(& 用 &amp;)。
 **关联(seealso)**: crawl-sitemap-url-limit、crawl-sitemap-lastmod、crawl-sitemap-in-robotstxt;[validation-guide.md](../validation-guide.md)

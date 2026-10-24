@@ -4,13 +4,13 @@
 
 ### JavaScript Rendering(16 条,权重 5%)
 
-**raw-vs-rendered 实现要点已吸收于 [rendering-seo.md](../rendering-seo.md) 与 [validation-guide.md](../validation-guide.md)**(HTTP 抓原始→$;Playwright 二抓→rendered$;web-vitals 库 goto 前注入;INP 合成标记 inpSynthetic 不计分)。规则粒度(上游现行,多数需渲染):渲染后 DOM 里 title/description/H1/canonical 缺失或为空=fail(**JS 注入的元素算通过**);canonical 或 meta robots 的 noindex/nofollow 在源码与渲染 DOM 间不一致=fail(不比较 X-Robots-Tag);JS 事后改写 title/description/H1=warn;`js-rendered-content`(源码正文 <100 字符而渲染后 >500 字符=fail;渲染后文本多于源码 3 倍=warn);`js-rendered-links`(渲染后 `a[href]` 数超过源码 2 倍且多 10 个以上=warn);`js-blocked-resources`(只查同主机 script 是否被 `*` 组 Disallow,不查样式表、不读 Allow)=warn;SSR 检查=warn/fail;**console 未捕获异常=fail、console 错误=warn**;**子资源加载失败=warn/fail**(script/stylesheet/document/fetch/XHR 失败=fail);内联脚本用 `document.write()`=warn。site_audit 无渲染,只有 `rendering` 五项近似检查(CSR 空挂载点、noscript、JS 重量、服务端内容、H1/H2)。
+**raw-vs-rendered 实现要点已吸收于 [rendering-seo.md](../rendering-seo.md) 与 [validation-guide.md](../validation-guide.md)**(HTTP 抓原始→$;Playwright 二抓→rendered$;web-vitals 库 goto 前注入;INP 合成标记 inpSynthetic 不计分)。规则粒度(SEOmator 原版现行,多数需渲染):渲染后 DOM 里 title/description/H1/canonical 缺失或为空=fail(**JS 注入的元素算通过**);canonical 或 meta robots 的 noindex/nofollow 在源码与渲染 DOM 间不一致=fail(不比较 X-Robots-Tag);JS 事后改写 title/description/H1=warn;`js-rendered-content`(源码正文 <100 字符而渲染后 >500 字符=fail;渲染后文本多于源码 3 倍=warn);`js-rendered-links`(渲染后 `a[href]` 数超过源码 2 倍且多 10 个以上=warn);`js-blocked-resources`(只查同主机 script 是否被 `*` 组 Disallow,不查样式表、不读 Allow)=warn;SSR 检查=warn/fail;**console 未捕获异常=fail、console 错误=warn**;**子资源加载失败=warn/fail**(script/stylesheet/document/fetch/XHR 失败=fail);内联脚本用 `document.write()`=warn。site_audit 无渲染,只有 `rendering` 五项近似检查(CSR 空挂载点、noscript、JS 重量、服务端内容、H1/H2)。
 
 **解释层(4 条;ID 未公布原文的按家族命名法推得并标 [待核];双抓实现见 [rendering-seo.md](../rendering-seo.md))**
 
 #### js-initial-html [待核 ID]
-- 名称/类型: 关键注解不在初始 HTML(本套件要求;上游对应 `js-rendered-title/description/h1/canonical`、`js-ssr-check`) —— issue · 优先级 critical · 输出 CRITICAL(title/canonical)/WARN(description/H1)
-**这意味(what)**: title/canonical 等关键注解不在服务端返回的初始 HTML,要等 JS 渲染才出现。注意上游 `js-rendered-*` 查的是渲染后 DOM,JS 注入也算通过;「必须在初始 HTML」是本套件更严的口径(原稿把它写成源表分型,已更正)。
+- 名称/类型: 关键注解不在初始 HTML(本套件要求;原版对应 `js-rendered-title/description/h1/canonical`、`js-ssr-check`) —— issue · 优先级 critical · 输出 CRITICAL(title/canonical)/WARN(description/H1)
+**这意味(what)**: title/canonical 等关键注解不在服务端返回的初始 HTML,要等 JS 渲染才出现。注意原版 `js-rendered-*` 查的是渲染后 DOM,JS 注入也算通过;「必须在初始 HTML」是本套件更严的口径(原稿把它写成源表分型,已更正)。
 **为什么(why)**: 初始 HTML 是所有抓取方的公共层。Google 的渲染队列"may stay on this queue for a few seconds, but it can take longer"([JS SEO 文档](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics),核对 2026-10-21)。第三方研究(Vercel 与 MERJ,2024-12,样本为 nextjs.org 与两个招聘站的服务器日志):OpenAI、Anthropic、Meta、ByteDance、Perplexity 的爬虫会下载 JS 文件但不执行([文章](https://vercel.com/blog/the-rise-of-the-ai-crawler));该结论是 2024 年底的数据,需定期复测。社交预览抓取器是否执行 JS 本次未核,按「通常不执行」作工程假设。
 **触发(trigger)**: 1) HTTP 抓 raw HTML;2) 检查 title/description/H1/canonical 存在性;3) 缺失再查渲染 DOM——仅渲染后存在即按上列分型触发。
 **不修的条件(caveat)**: Google 终会渲染并读取 JS 注解,然而渲染延迟与非 Google 消费者的缺失是实打实的,所以一般建议 head 注解全部服务端输出。但客户端路由切换时的注解更新另归 js-meta-drift,不属本条。

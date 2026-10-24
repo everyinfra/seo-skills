@@ -1,6 +1,6 @@
 # 审计规则全目录(SEOmator 373 规则,源码深读)
 
-> 来源:SEOmator 开源审计器 [seo-skills/seo-audit-skill](https://github.com/seo-skills/seo-audit-skill) 的 `docs/SEO-AUDIT-RULES.md`。2026-10-09 吸收的是 e047a5e2(2026-09-22)快照。上游 2026-10-15 在 132d2384 按代码重写了该文档,多条规则的语义与严重度变了。**第一波 P0/P1 的 79 条已按 132d2384 复核(核对 2026-10-18),2026-10-21 又逐条回读 Google 文档原文并对齐 site_audit 现行行为;其余表格与条目仍是 09-22 快照,与现行版冲突时以现行版为准。**
+> 来源:SEOmator 开源审计器 [seo-skills/seo-audit-skill](https://github.com/seo-skills/seo-audit-skill) 的 `docs/SEO-AUDIT-RULES.md`。2026-10-09 吸收的是 e047a5e2(2026-09-22)快照。SEOmator 原仓库 2026-10-15 在 132d2384 按代码重写了该文档,多条规则的语义与严重度变了。**第一波 P0/P1 的 79 条已按 132d2384 复核(核对 2026-10-18),2026-10-21 又逐条回读 Google 文档原文并对齐 site_audit 现行行为;其余表格与条目仍是 09-22 快照,与现行版冲突时以现行版为准。**
 > 三态计分:Pass=100 / Warn=50 / Fail=0;总分=类别加权平均。现行档位 **90-100=A / 80-89=B / 70-79=C / 50-69=D / <50=F**;单页审计另有封顶(noindex 或 robots.txt 屏蔽封 20,无 title 封 69 等)。
 > **20 类权重表已吸收于 [scoring-rubric.md](scoring-rubric.md)「完全装载」节,不重抄**(Core 11%/Perf 10%/Links·Images·Security 各 8%/Tech·A11y 各 7%/Crawl·SD·Content·JS 各 5%/Social·E-E-A-T·URL·Redirects 各 3%/Mobile·i18n·HTMLval·AI-GEO 各 2%/Legal 1%)。
 > **严重度与阈值是 SEOmator 的工具约定,不是搜索引擎规则。** 搜索引擎的一手说法写在各条「依据」里;没有官方出处的写"无官方出处"。

@@ -107,7 +107,7 @@
 | yt_outlier.py | videos.csv(title,duration_s,views) | markdown | videos.csv(title,duration_s,views[,is_short][,channel])——YouTube 导出/采集 | ③ | — | beta |
 | trend_scout.py | --vertical(可选) | markdown | HN topstories API + Reddit 6 sub hot(免 key 实时抓取);X/Twitter 需 key | ④+②+③ | — | beta |
 | freshness.py | DIR(默认 references/) --fail-stale(可选) | markdown | 本地 *.md 头部日期标记(默认 references/) | ④ | — | beta |
-| report_build.py | --findings json --out html | markdown | findings.json(上游脚本产出或 agent 组装) | ② | — | beta |
+| report_build.py | --findings json --out html | markdown | findings.json(前置脚本产出或 agent 组装) | ② | — | beta |
 
 ## 七、持续监控守护(3)
 
@@ -122,7 +122,7 @@
 | 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
 |---|---|---|---|---|---|---|
 | trend_watch.py | Google News/Reddit rising/HN/微博/百度热搜(实时拉取) --topics 站点主题词表 gate: --angle 观点清单 --exclusive data\|quote\|access(403 源整源跳过;全源失败退出 2) | json | 六信号源实时拉取(Google News/Reddit rising/HN/微博/百度热搜;403 源整源跳过告警;--state 可指工作区) | ②+③ | test_trend_watch.py | beta |
-| remediation.py | envelope 的 audit-data.json(init) 两份 site_audit --json(verify) | json | 上游脚本产出(工单不自带数据) | ③ | test_remediation.py | beta |
+| remediation.py | envelope 的 audit-data.json(init) 两份 site_audit --json(verify) | json | 前置脚本产出(工单不自带数据) | ③ | test_remediation.py | beta |
 | project.py | --site URL(init) 子进程调既有脚本(run triage/next/status;编排不重实现) | json | 编排器只编排不重实现;任何步失败续跑其余 | ② | test_project.py | beta |
 
 ## 九、套件自维护(3)
@@ -193,7 +193,7 @@
 | templates/content(4) | ai-use-policy / content-brief / pre-publish-checklist / trend-jack-playbook(draft,规格已定待实装) |
 | templates/monitor(9) | ai-visibility-monthly / ai-visibility-weekly / alert-playbook / backlink-report / citation-outreach-brief / forecast-report / performance-report / postmortem / rank-report |
 
-模板不自带数据(data-source-contract 全局守则同样适用):inputs 列写明各自消费的上游脚本产出,逐条见 JSON 的 template 条目。
+模板不自带数据(data-source-contract 全局守则同样适用):inputs 列写明各自消费的前置脚本产出,逐条见 JSON 的 template 条目。
 
 ## references 主干(13)
 
@@ -226,5 +226,5 @@
 - **gsc_mining** 降级为「脚本侧 ③ + agent 层 ①」双写:脚本本身无 GSC 文件即 usage error,等价替代(serp_overlap 采样、标 `[est]`)是 agent 层策略(data-source-contract 差异第 4 条)。
 - **grid_rank** 的 run_tests.py 用例钉的是 references/monitoring/local-grid-ranking.md 的 3×3 算例(ARP/ATRP/SoLV 口径),不 import 脚本本体,故 status 记 beta、tests_file 留空。
 - **data-source-contract.md** 2026-10-12 已重生成对齐 85(修复 trend_watch/benchmark_report 行粘连并补齐 29 个新脚本行);SKILL.md 第 3 节计数文本仍写 59(非本波可写范围,已知漂移,以文件系统 85 为准)。
-- **2026-10-12 波次治理**:JSON 新条目组名去 `scripts/` 前缀并与合同表节名对齐(工作流与编排/数据接入/内容运营与 pSEO/内链架构/外链与数字 PR/归因实验/垂直场景);垂直三脚本(local_audit/news_sitemap_check/multimodal_report)与泛化占位 inputs(上游脚本 JSON/CSV)已按各自 --help 逐条改写;fallback_mode 与重生成后的合同降级列复核对齐。
+- **2026-10-12 波次治理**:JSON 新条目组名去 `scripts/` 前缀并与合同表节名对齐(工作流与编排/数据接入/内容运营与 pSEO/内链架构/外链与数字 PR/归因实验/垂直场景);垂直三脚本(local_audit/news_sitemap_check/multimodal_report)与泛化占位 inputs(前置脚本 JSON/CSV)已按各自 --help 逐条改写;fallback_mode 与重生成后的合同降级列复核对齐。
 

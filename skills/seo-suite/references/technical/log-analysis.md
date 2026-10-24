@@ -37,7 +37,7 @@ log_format combined '$remote_addr - $remote_user [$time_local] '
   1=IP 2=ident 3=user 4=时间 5=方法 6=URL 7=协议 8=状态码 9=字节 10=referer 11=UA
 ```
 
-- SEO 用的 nginx 格式（加响应耗时）：`$request_time` 是请求处理时间（秒，毫秒精度，从读到客户端第一个字节算起）；`$upstream_response_time` 是从上游收到响应的耗时（秒，毫秒精度，多个上游用逗号分隔）。
+- SEO 用的 nginx 格式（加响应耗时）：`$request_time` 是请求处理时间（秒，毫秒精度，从读到客户端第一个字节算起）；`$upstream_response_time` 是从源站收到响应的耗时（秒，毫秒精度，多个源站用逗号分隔）。
 
 ```nginx
 log_format seo '$remote_addr [$time_local] "$request" $status $body_bytes_sent '

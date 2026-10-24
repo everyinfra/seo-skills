@@ -110,14 +110,14 @@
 ## 文件产物总线（跨技能集成的唯一机制）
 
 - **固定大写文件名即接口**：每技能产出一个规范文件（MARKETING-AUDIT.md、SEO-AUDIT.md、LANDING-CRO.md、BRAND-VOICE.md、COMPETITOR-REPORT.md、FUNNEL-ANALYSIS.md、COPY-SUGGESTIONS.md、EMAIL-SEQUENCES.md、SOCIAL-CALENDAR.md、AD-CAMPAIGNS.md、LAUNCH-PLAYBOOK.md、CLIENT-PROPOSAL.md、MARKETING-REPORT.md），文件头固定 URL+日期+总分。
-- **"If X.md exists, consume"优雅降级**：每个技能尾部有 Cross-Skill Integration 节，显式列出消费哪些上游文件；文件不存在则自行取数或询问，不阻断。生成型技能同样消费（copy←brand 声音档案；emails←funnel 阶段映射；ads←competitor 角度+social 日历；proposal←audit 发现）。与 open-seo 的共享上下文模型对照：这里知识以**交付物文件**为载体而非项目上下文——两种总线可并用（上下文存偏好、文件存发现）。
+- **"If X.md exists, consume"优雅降级**：每个技能尾部有 Cross-Skill Integration 节，显式列出消费哪些前置文件；文件不存在则自行取数或询问，不阻断。生成型技能同样消费（copy←brand 声音档案；emails←funnel 阶段映射；ads←competitor 角度+social 日历；proposal←audit 发现）。与 open-seo 的共享上下文模型对照：这里知识以**交付物文件**为载体而非项目上下文——两种总线可并用（上下文存偏好、文件存发现）。
 - **文档化推荐管线**：report-pdf 明写装配顺序 audit→competitors→seo→landing→report-pdf；proposal 的关键原则："数据支撑的提案成交率高 2–3 倍"——诊断产物的终点是被销售侧技能复用为证据。
 
 ## 能力分域三分（诊断 → 生成 → 编译交付）
 
 - **诊断域**：audit（编排汇总）、seo（11 步）、landing（7 节 CRO+表单/移动/速度）、funnel（逐页 5 维+RPV 量化）、competitors（5 阶段+SWOT+偷师清单）、brand（4 维声音光谱+原型）。
 - **生成域**：copy（5 维评分+PAS/AIDA/BAB/4U 公式+swipe file）、emails（7 类序列+发送节奏表+合规节）、social（5 支柱 40/20/15/15/10 配比+1→10 复用框架）、ads（多平台字符规格+三段再营销 40/35/25 预算+落地页信息匹配分）、launch（8 周逐日编排）。
-- **编译交付域**：report（把所有上游文件汇编成另一套六类记分卡）、report-pdf（JSON schema 契约）、proposal（10 节提案+三层定价锚定+ROI 框架）。共同点：不产生新分析，只重组+补计算+换受众语言。
+- **编译交付域**：report（把所有前置文件汇编成另一套六类记分卡）、report-pdf（JSON schema 契约）、proposal（10 节提案+三层定价锚定+ROI 框架）。共同点：不产生新分析，只重组+补计算+换受众语言。
 - **"检测→分支"表驱动模式贯穿全库**：业务六型、页面八型、漏斗八型、邮件序列七型、launch 七型、社交平台六选——每个技能先查表定型再套该型的专属打分权重/文案结构/基准值。上下文一次检测全程复用，与本套件"市场×能力"同构。
 
 ## 脚本与技能的分工

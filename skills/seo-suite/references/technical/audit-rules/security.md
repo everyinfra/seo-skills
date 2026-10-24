@@ -21,7 +21,7 @@
 - 名称/类型: 安全响应头家族 —— warning · 优先级 medium · 输出 WARN(源表各=warn:HSTS `max-age=31536000; includeSubDomains`/CSP/X-Frame-Options(DENY/SAMEORIGIN)/nosniff/Permissions-Policy/Referrer-Policy(strict-origin-when-cross-origin)/COOP(`same-origin`,防 tabnabbing))
 **这意味(what)**: 七个安全响应头任一缺失:HSTS、CSP、X-Frame-Options、X-Content-Type-Options(nosniff)、Permissions-Policy、Referrer-Policy、COOP。
 **为什么(why)**: 每个头各管一面:HSTS 防协议降级剥离(缺了首访 http 可被中间人劫持);CSP 约束脚本注入面;X-Frame-Options 防 clickjacking 嵌套;nosniff 防 MIME 嗅探错配执行;Permissions-Policy 收 API 权限;Referrer-Policy 控引荐信息外泄;COOP(same-origin)防 tabnabbing 类跨窗引用。SEO 侧关联是间接的:可被任意嵌套/注入的页面不是引擎信任的展示形态。CSP 的有效性另由 security-csp-xss 深化('unsafe-inline' 无 nonce=不设防;无 CSP 时按权重 0 报,避免与缺失双重扣),security-trusted-types 仅对已设 CSP 的站评 `require-trusted-types-for 'script'`。
-**触发(trigger)**: 响应头逐一断言存在与推荐值(照抄源表:HSTS `max-age=31536000; includeSubDomains`;XFO DENY/SAMEORIGIN;RP strict-origin-when-cross-origin;COOP same-origin);缺失即 warn(上游里 HSTS、XFO 可到 fail,nosniff 缺失直接 fail;CSP 只发 Report-Only 也按缺失 warn)。
+**触发(trigger)**: 响应头逐一断言存在与推荐值(照抄源表:HSTS `max-age=31536000; includeSubDomains`;XFO DENY/SAMEORIGIN;RP strict-origin-when-cross-origin;COOP same-origin);缺失即 warn(原版里 HSTS、XFO 可到 fail,nosniff 缺失直接 fail;CSP 只发 Report-Only 也按缺失 warn)。
 **不修的条件(caveat)**: 安全头不(直接)影响排名,然而它们是站点治理质量的可见面与真实攻击面的闸门,所以一般建议按 C28 清单补齐。但 CSP 要灰度上线(先 Report-Only 观察),一次性 enforce 打挂第三方脚本反成事故。
 **修复(fix)**: 按 [validation-guide.md](../validation-guide.md) C28 五头起步(HSTS/CSP/nosniff/XFO/RP);CSP 走 Report-Only 灰度;CDN/网关层统一注入。
 **关联(seealso)**: security-https、technical-content-type;[validation-guide.md](../validation-guide.md)
@@ -47,7 +47,7 @@
 #### security-link-integrity [待核 ID]
 - 名称/类型: 链接与引用安全家族 —— warning · 优先级 medium · 输出 WARN(源表各=warn:target=_blank 缺 noopener/noreferrer;协议相对 URL `//`;跨域脚本/stylesheet 缺 SRI integrity;品牌登录链须指向品牌或本域)
 **这意味(what)**: 四项链接/引用卫生任一:`target=_blank` 的链接缺 rel=noopener/noreferrer;URL 用协议相对 `//example.com` 形态;跨域脚本与样式表没有 integrity(SRI)hash;登录/支付类品牌入口链接指向非品牌域。
-**为什么(why)**: noopener 防新窗口反向操纵 opener(tabnabbing 的页面侧防线);协议相对 URL 在 http 上下文解析成 http,与全站 https 化冲突且行为依赖上下文;SRI 缺失时第三方脚本被篡改即直接进你页面(供应链注入面);品牌登录链指向陌生域是常见钓鱼形态(本条是上游的安全启发式,非搜索引擎规则)。
+**为什么(why)**: noopener 防新窗口反向操纵 opener(tabnabbing 的页面侧防线);协议相对 URL 在 http 上下文解析成 http,与全站 https 化冲突且行为依赖上下文;SRI 缺失时第三方脚本被篡改即直接进你页面(供应链注入面);品牌登录链指向陌生域是常见钓鱼形态(本条是原版的安全启发式,非搜索引擎规则)。
 **触发(trigger)**: 1) `<a target="_blank">` 的 rel 不含 noopener 即 warn;2) href 以 `//` 开头即 warn;3) 跨域 `<script src>`/`<link rel="stylesheet">` 无 integrity 属性即 warn;4) 登录/账单类锚文本的 href 域 ∉ {本域,已知品牌域} 即 warn。
 **不修的条件(caveat)**: 家族单项不(直接)影响排名,然而 SRI 与登录链两项是真实攻击/钓鱼面,所以一般建议一次配齐。但第三方面向无版本化 URL 的脚本(内容随构建变)无法静态钉 SRI,先换版本化 URL 再上。
 **修复(fix)**: target=_blank 统一 `rel="noopener noreferrer"`;协议相对改 https 绝对 URL;第三方资源走版本化 URL+SRI(integrity+crossorigin);登录链收敛品牌域或已知 IdP 域并公示。

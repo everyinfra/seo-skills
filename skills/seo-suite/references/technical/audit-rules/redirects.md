@@ -42,16 +42,16 @@ meta refresh=warn;JS 重定向=warn;HTTP Refresh 头=warn;环=fail;301(永久/�
 
 #### redirects-static-resource [待核 ID]
 - 名称/类型: 静态资源被重定向(源表 ID `redirect-resource`) —— warning · 优先级 medium · 输出 WARN(源表现行:HTTPS 页的样式表、脚本、图片 URL 以 `http://` 开头即 warn,不发请求,这类 URL 通常会跳转到 HTTPS)
-**这意味(what)**: 页面引用的静态资源(CSS/JS/图)用了 `http://` 地址(上游判据);或其 URL 自身返回 3xx(本套件另查,需渲染)。
+**这意味(what)**: 页面引用的静态资源(CSS/JS/图)用了 `http://` 地址(原版判据);或其 URL 自身返回 3xx(本套件另查,需渲染)。
 **为什么(why)**: 每条资源重定向都是渲染瀑布里多出的一跳:握手与请求白付两次,渲染阻塞资源(同步 CSS)的重定向直接串行拖慢 FCP/LCP;抓取侧同样双倍成本。典型来源:资源改版后旧 URL 301 保底、CDN 规则把 /assets/ 整体跳新路径、http 资源在 https 页被协议跳转。
-**触发(trigger)**: 上游:HTTPS 页的子资源 URL 以 http:// 开头即 warn。本套件另查:子资源返回 3xx 即 warn(终点 4xx/5xx 或成环另归 redirects-resource-chain 的 fail 档)。
+**触发(trigger)**: 原版:HTTPS 页的子资源 URL 以 http:// 开头即 warn。本套件另查:子资源返回 3xx 即 warn(终点 4xx/5xx 或成环另归 redirects-resource-chain 的 fail 档)。
 **不修的条件(caveat)**: 单条资源重定向不影响排名,然而它在渲染关键路径上按毫秒计价,所以一般建议资源引用直指最终 URL。但迁移窗口期保留旧资源 URL 的 301 兜底是正当缓冲,发版后收直。
 **修复(fix)**: 模板/构建产物里资源引用写最终 URL;http 资源引用改 https 直连;CDN 层把跳转规则改写为内部重写。
 **关联(seealso)**: redirects-resource-chain、perf-render-blocking;[redirects-canonical.md](../redirects-canonical.md)
 
 #### redirects-case-normalization
 - 名称/类型: URL 大小写规范化(源表 ID `redirect-case-normalization`) —— warning · 优先级 low · 输出 WARN(源表现行:最终服务的 URL 与页面 canonical 仅大小写不同才 warn;请求大小写变体后被 301 到规范形式=通过)
-**这意味(what)**: 页面最终服务的 URL 与 canonical 仅大小写不同——大小写变体没有被收口到规范形式。(原稿把「大小写重定向本身」当问题,与上游现行相反,已更正:重定向到规范形式是正确做法。)
+**这意味(what)**: 页面最终服务的 URL 与 canonical 仅大小写不同——大小写变体没有被收口到规范形式。(原稿把「大小写重定向本身」当问题,与SEOmator 原版现行相反,已更正:重定向到规范形式是正确做法。)
 **为什么(why)**: host 之后的路径大小写是否敏感取决于服务器/CDN,两种策略混用时唯一安全的收口是统一小写+301;但"每条内链先写成大写再靠 301 兜底"意味着每次点击都付一跳——这是把规范化成本从模板层转嫁到运行时。与 url-shape/technical-url-consistency 同源:根因是 URL 生成不规范。
 **触发(trigger)**: 最终服务的 URL 与 canonical 仅大小写不同即 warn;大小写变体 301 到规范形式则通过。
 **不修的条件(caveat)**: 规范化重定向本身是正确收口(比双 200 好),然而它标记模板还在产大写 URL,所以一般建议源头改小写、301 只留兜底。但从大小写不敏感服务器迁到敏感服务器时,这批 301 是必要过渡,可长期保留。

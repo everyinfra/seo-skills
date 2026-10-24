@@ -17,7 +17,7 @@
 | 流量与转化 | GA4(免费) | GA4 报告导出 CSV。本套件**没有**脚本通过 GA4 Data API 拉数;gsc.json 里的 `ga4_property_id` 键只让 `doctor.py` 报 T3 徽章 | 转化侧只能声明 N/A;ai_referral_log `--attribution` 仍可产出 GA4 正则与归因纪律供手工配置 |
 | <a id="want-keywords"></a>关键词搜索量 | Keyword Planner(需 Google Ads 账号,基础功能要先完成账号设置并填账单信息)或 Ahrefs/Semrush/DataForSEO(付费) | Google Ads → 工具 → 关键字规划师导出量级;付费工具导 kws.csv(词+search_volume+position[+cpc]) | Never invent search volumes:forecast 对无量词不预测(缺列 N/A);不同工具的量级不同,用区间不用点值,并注明来源工具 |
 | <a id="want-backlinks"></a>外链画像 | Ahrefs/Semrush 导出(付费)或 GSC 链接报告(免费,覆盖不全) | 付费工具导 referring_domains/DR 分布/锚文本喂 cite_domain;GSC → 链接(Links)报告可出部分画像 | cite_domain 未观测字段=unknown 不当 0;竞品被引用 citation_gaps 同 cell 共同被引代理并标 [推断] |
-| 竞品排名与 SERP | SERP API 如 serper.dev(付费,首个付费包 $50 买 50,000 credits,约 $1.00/1k 次查询,大包降到约 $0.30/1k) | 注册充值后逐词抓 top10,拼 `keyword,top10(分号分隔)` CSV 喂 serp_overlap | 无 API 时人工抽词查 SERP 手工录 top10;serp_overlap 无 CSV 即 exit 2,绝不虚构 SERP |
+| 竞品排名与 SERP | SERP API(自带 Key,付费,首个付费包 $50 买 50,000 credits,约 $1.00/1k 次查询,大包降到约 $0.30/1k) | 注册充值后逐词抓 top10,拼 `keyword,top10(分号分隔)` CSV 喂 serp_overlap | 无 API 时人工抽词查 SERP 手工录 top10;serp_overlap 无 CSV 即 exit 2,绝不虚构 SERP |
 | <a id="want-geo"></a>AI 可见性(GEO) | citation_panel 人工采样(免费·零门槛)或厂商面板(付费) | `citation_panel init` 建 prompt 面板 → 各引擎真实提问 → `record` 粘贴真实回答(严禁生成模拟回答) | 采样 <3 次不下结论;面板 <10 prompts 只当方向性参考(本套件口径);GSC「生成式 AI 效果报告」(AI Overviews + AI Mode 的展示数,维度为页面/国家/日期/设备)和 Bing Webmaster Tools 的 AI Performance 可作第一方佐证 |
 | <a id="want-logs"></a>日志分析(AI 到访) | server access log(自带导出) | 从主机/CDN(Nginx/Cloudflare/AWS)拉 access log(combined 或 JSON 行)喂 ai_referral_log | 无日志则 AI 到访只能靠探针+GSC AI 报告侧写;日志口径本就是下界(App 内打开常不带 referrer) |
 | <a id="want-local"></a>本地商家 | Google Business Profile(免费,自带导出) | GBP 商家后台读绩效/导 CSV;网格排名用 Text Search API 手工采集 rank_data.csv(keyword,grid_point,rank) | grid_rank 无 CSV 不可跑(不补测不外推);GBP 无导出项则后台人工读数并在报告注明口径 |
@@ -63,7 +63,7 @@
   - 若你自己调 GA4 Data API:标准属性每天 200,000 个核心 token、每小时 40,000(Analytics 360 为 2,000,000 / 400,000);日配额太平洋时间午夜刷新([Data API 配额](https://developers.google.com/analytics/devguides/reporting/data/v1/quotas),页面日期 2026-10-13,核对 2026-10-21)。请求里加 `"returnPropertyQuota": true` 可读剩余 token。
   - 解锁什么:流量与转化侧分析;ai_referral_log `--attribution` 出 GA4 正则与 AI Assistant 通道归因纪律(测量层口径见 [intake 清单](intake-checklists.md))
 - **T4 商业 API(按量计费)与 Bing 免费 key**
-  - 典型单价:serper.dev 首个付费包 $50 / 50,000 credits(约 $1.00/1k 次查询),大包降到约 $0.30/1k([serper.dev](https://serper.dev/),核对 2026-10-21);Ahrefs/Semrush 按订阅;DataForSEO 按调用计费
+  - 典型单价:SERP API 首个付费包 $50 / 50,000 credits(约 $1.00/1k 次查询),大包降到约 $0.30/1k(核对 2026-10-21);Ahrefs/Semrush 按订阅;DataForSEO 按调用计费
   - Bing Webmaster Tools API key(免费):登录 Bing Webmaster Tools → 先添加并验证站点 → 右上角 Settings → API Access → 接受条款 → Generate API Key。每个用户只能生成一个 key,key 属于用户而不是站点,可用于该用户所有已验证站点。Microsoft 推荐 OAuth 2.0,API key 是第二种方式([Microsoft Learn](https://learn.microsoft.com/en-us/bingwebmaster/getting-access),页面日期 2022-10-13,核对 2026-10-21)。`bing_wmt.py` 读 `--key` 或环境变量 `BING_WMT_KEY`;子命令 `stats`(查询统计)、`pagequery`(单页的查询)、`urlstatus`、`submit`。
   - IndexNow(免费):`indexnow.py` 向 Bing、Yandex、Naver 等提交,Google 不在内([indexnow.org/faq](https://www.indexnow.org/faq))。
   - 解锁什么:竞品排名抓取(喂 serp_overlap)、搜索量与 KD(geo_difficulty `--kd` 输入)、外链结构化观测(cite_domain 输入)
@@ -100,7 +100,7 @@
 - **只想知道站健不健康**:T0 就够——体检链(site_crawl → site_audit → health_score → envelope)跑完即出封套,不配任何 key。
 - **想要"排名+点击+完整漏斗"**:T2 的 GSC CSV 导出(零门槛)即可上 gsc_mining+traffic_funnel;要日常自动化再加 OAuth 与 monitor。
 - **做 GEO/AI 可见性周报**:GEO 采样(T0)+ T3 GA4(AI Assistant 通道引流)+ 可选 T4 厂商面板做对照;报告分列探针/第一方两口径。
-- **竞品对标**:T4 serper.dev 小批量(10-50 词)抓 SERP → serp_overlap 聚类;竞品代表页用 site_audit+content_score 逐页审。
+- **竞品对标**:T4 自带 Key 的 SERP API 小批量(10-50 词)抓 SERP → serp_overlap 聚类;竞品代表页用 site_audit+content_score 逐页审。
 
 ## 六、intake 提示语模板(agent 接新任务先问三问)
 

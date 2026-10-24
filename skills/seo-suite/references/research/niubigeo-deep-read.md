@@ -84,7 +84,7 @@ ownedRelevance≥0.6 且提及率<0.5 → "Owned content is not reflected in AI 
 ### N6. 配对差分门 + 指纹 + 预算账本(docs/measurement-methodology.md + examples/lib/budget.mjs)
 【仓库】三件可独立抄的纪律:
 - **配对差**:目标 vs 竞品推荐率之差,仅当 runId/modelId/搜索配置/keywordId 相同、两侧分母相等且>0、样本数相同且**逐数组位置 probeRunId 相同**才计算,否则 null——不许拿两个独立百分比相减。落地:citation_panel.py `diff` 从"面板级对比"升级为"逐 prompt 配对对比"(我们已有 |Δ|≥5pp 且 n≥10 闸门,加同 prompt_id+同 engine+同 fingerprint 配对门)
-- **探针指纹**:provider/model+搜索模式+协议版本+语言+scenario+subject+repetitions+temperature/maxTokens+匹配规则版本;K 另加 keywordSetHash;同指纹≠范围一致(它诚实声明指纹不含别名/实际上游模型版本)。落地:panel 每条 record 存 fingerprint hash,diff 跨指纹时强制标注"不可比"
+- **探针指纹**:provider/model+搜索模式+协议版本+语言+scenario+subject+repetitions+temperature/maxTokens+匹配规则版本;K 另加 keywordSetHash;同指纹≠范围一致(它诚实声明指纹不含别名/实际后端模型版本)。落地:panel 每条 record 存 fingerprint hash,diff 跨指纹时强制标注"不可比"
 - **费用账本**:串行预约(先记账再调用)、`unknown_cost` 立即停止新增调用、HTTP 重试 attempts=1。落地:monitor.py `--budget-minutes` 旁加 `--budget-usd` 预约语义说明(我们有时间预算,缺费用纪律文档)
 
 ### N7. observed-consensus/v1 监测词筛选(examples/lib/study.mjs)

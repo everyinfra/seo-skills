@@ -12,7 +12,7 @@
 - 名称/类型: 正文字号 —— warning · 优先级 medium · 输出 WARN(中间档)/CRITICAL(<12px,源表败)(源表现行:只读内联 style 与 <style> 块;任何 <12px=fail;内联 12-16px、行高 <1.2、body/html 内联字号 <14px=warn)
 **这意味(what)**: 移动视口下正文主体字号低于 16px 建议值,<12px 进败档。
 **为什么(why)**: 小字号降低移动端可读性。Google 2016 年的博文把「文字无需缩放即可阅读」描述为移动友好标准之一([博文](https://developers.google.com/search/blog/2016/08/helping-users-easily-access-content-on),核对 2026-10-21);现行[页面体验文档](https://developers.google.com/search/docs/appearance/page-experience)仍把「内容在移动设备上是否显示良好」列为自评问题。字号阈值本身是工具约定。[mobile-seo.md](../mobile-seo.md) 审计口径:表单 input 字号 <16px 会触发 iOS Safari 聚焦自动放大(Safari 行为,本次未回读 Apple 文档),审计必报。rem/em 单位让用户的浏览器字号设置能生效。
-**触发(trigger)**: 上游:扫内联 style 和 <style> 块里的 font-size(em/rem/% 按 16px 换算):<12px → fail;内联 12-16px → warn。外部样式表里的字号用浏览器 DevTools 的 computed 值复核;input 字号 <16px 本套件单列必报。
+**触发(trigger)**: 原版:扫内联 style 和 <style> 块里的 font-size(em/rem/% 按 16px 换算):<12px → fail;内联 12-16px → warn。外部样式表里的字号用浏览器 DevTools 的 computed 值复核;input 字号 <16px 本套件单列必报。
 **不修的条件(caveat)**: 字号不(直接)影响排名,然而它影响移动可用性与移动优先索引下的页面评估,所以一般建议正文 ≥16px。但辅助信息(脚注/标签/法律小字)适度小一档是排版惯例,别一刀切拉平。
 **修复(fix)**: 正文基准 16px(1rem)+行高 ≥1.4;input 全部 ≥16px 防 iOS 聚焦放大;对比度配套 ≥4.5:1。
 **关联(seealso)**: mobile-viewport-config、mobile-overflow;[mobile-seo.md](../mobile-seo.md)

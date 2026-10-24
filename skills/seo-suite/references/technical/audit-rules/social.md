@@ -20,7 +20,7 @@ og:title/description/image 缺失或为空=**fail**(用 `name=` 代替 `property
 - 名称/类型: og 标签家族缺失(源表 ID `social-og-title`、`social-og-description`、`social-og-image`、`social-og-url`、`social-twitter-card`) —— warning · 优先级 low · 输出 CRITICAL/WARN(源表现行:缺失或为空=fail;`name=` 代替 `property=` 或 URL 非绝对=warn;本套件把建议优先级压到 low,因为只影响分享卡片)
 **这意味(what)**: 页面缺 og:title/og:description/og:image(og:url 缺失另计 warn,与 canonical 的冲突见 social-og-url-canonical);twitter:card 同构——缺=warn,推荐值 summary_large_image。
 **为什么(why)**: Open Graph 协议定义了这些标签,分享平台据此生成卡片([ogp.me](https://ogp.me/));缺了平台自行抓取页面,卡片图文不可控。各平台具体怎么用本次未逐个核对。对搜索排名没有已知影响,纯分享层缺信号,故 low。
-**触发(trigger)**: 逐一断言 og:title/og:description/og:image/og:url 存在且非空;twitter:card 为已知类型;任一缺失即上游 fail。site_audit 对缺 og:title/og:description/og:image 记 `[WARN] og`,不查 og:url 与 twitter:card。
+**触发(trigger)**: 逐一断言 og:title/og:description/og:image/og:url 存在且非空;twitter:card 为已知类型;任一缺失即原版 fail。site_audit 对缺 og:title/og:description/og:image 记 `[WARN] og`,不查 og:url 与 twitter:card。
 **不修的条件(caveat)**: og 标签不影响搜索排名,然而决定分享卡片完整度,所以一般建议核心模板页全配。但法律/结账流等不需要被分享的页面可豁免。
 **修复(fix)**: 模板用与 title/description 同源变量输出 og:title/og:description;og:image 用固定比例专图(见 social-og-image-dimensions);twitter:card 配 summary_large_image。
 **关联(seealso)**: social-og-url-canonical、social-og-image-dimensions;[head-elements.md](../head-elements.md) OG 消费矩阵
