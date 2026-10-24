@@ -118,6 +118,15 @@ jobs:
           restore-keys: |
             seo-monitor-${{ env.HOST }}-
 
+      # 基线真源在 seo-monitor-state 分支(2026-10-24 起不再提交到 main),这里取回本站点目录
+      - name: Restore monitor baseline (seo-monitor-state 分支)
+        run: |
+          if git fetch -q --depth=1 origin seo-monitor-state 2>/dev/null; then
+            git archive FETCH_HEAD "$MDIR" 2>/dev/null | tar -x || echo "状态分支里还没有 $MDIR"
+          else
+            echo "还没有 seo-monitor-state 分支,沿用 cache"
+          fi
+
       - name: init (首次自动建立监控目录)
         run: |
           python3 skills/seo-suite/scripts/monitor.py init \
@@ -204,24 +213,29 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       # 基线 commit-back(audit 02/05:cache 7 天即驱逐=基线静默重置/陈旧假风暴)。
-      # 只提交 monitor.db 与 runs/ 快照——config.json(secret env 引用虽无明文,
-      # 仍按最小面排除)、alerts.json、notify-state.json、gsc.csv 一律不进 git。
-      - name: Commit monitor baseline (commit-back;排除 secret/瞬时态)
+      # 只提交 monitor.db 与 runs/ 快照到 seo-monitor-state 分支,不进 main——config.json、
+      # alerts.json、notify-state.json、gsc.csv 一律不进 git。用临时 index 拼树,不动工作区和 main。
+      - name: Commit monitor baseline (commit-back 到 seo-monitor-state 分支)
         run: |
           git config user.name "seo-monitor-bot"
           git config user.email "bot@users.noreply.github.com"
-          # -f 显式白名单:.seo-monitor*/ 整体在 .gitignore,只有 monitor.db 与 runs/ 获准提交
-          git add -f "$MDIR/monitor.db" "$MDIR/runs" 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "基线无变化,不提交"
-          else
-            git commit -m "chore(seo-monitor): baseline update $SITE [skip ci]"
-            if ! git push; then
-              echo "::warning::基线 push 冲突(并发提交)——pull --rebase 后重试一次"
-              git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
-              git push || echo "::warning::重试后仍失败(下轮 run 会重试;cache 仍在)"
+          for attempt in 1 2 3; do
+            PARENT=""
+            if git fetch -q origin seo-monitor-state 2>/dev/null; then PARENT=$(git rev-parse FETCH_HEAD); fi
+            export GIT_INDEX_FILE="$RUNNER_TEMP/state-index"
+            rm -f "$GIT_INDEX_FILE"
+            if [ -n "$PARENT" ]; then git read-tree "$PARENT"; else git read-tree --empty; fi
+            git add -f "$MDIR/monitor.db" "$MDIR/runs" 2>/dev/null || true
+            TREE=$(git write-tree)
+            unset GIT_INDEX_FILE
+            if [ -n "$PARENT" ] && [ "$TREE" = "$(git rev-parse "$PARENT^{tree}")" ]; then
+              echo "基线无变化,不提交"; break
             fi
-          fi
+            COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "chore(seo-monitor): baseline update $SITE [skip ci]")
+            if git push origin "$COMMIT:refs/heads/seo-monitor-state"; then break; fi
+            echo "::warning::基线 push 冲突(第 $attempt 次),重取分支后重试"
+            sleep $((attempt * 5))
+          done
 
       # 安全网(audit 02 rec3):run 步骤崩溃/超时时,notify 被跳过=静默空窗——
       # 这里兜底把"workflow 自身失败"作为 critical 发往同渠道(heartbeat /fail 之外的双保险)
