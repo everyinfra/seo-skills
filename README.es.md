@@ -19,7 +19,7 @@
 
 **Descarga gratuita. Usa tu propia herramienta de IA y tu propio modelo.**
 
-**Instálala con una línea** (detecta Claude Code, Codex, Cursor y otros entornos que tengas instalados):
+**Instálala con una línea** (detecta <img src="assets/icons/claude.svg" width="16" height="16" alt=""> Claude Code, <img src="assets/icons/codex.svg" width="16" height="16" alt=""> Codex, <img src="assets/icons/cursor.svg" width="16" height="16" alt=""> Cursor y otros entornos que tengas instalados):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
@@ -29,7 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 EveryInfra SEO Skills va por la versión `0.36.0` y usa la licencia Apache-2.0. Es una sola skill de trabajo para SEO y GEO, `seo-suite`: instrucciones, notas de referencia y plantillas de salida. No llama a ningún modelo, no incluye proveedor, no necesita API key ni dependencias de ejecución. El modelo y su cuota son los de la herramienta de IA que ya usas.
 
-**Lo que la distingue: SEO y GEO global en un solo flujo.** Un equipo que vende en todo el mundo no quiere una docena de herramientas de un solo mercado. Esta suite reúne **18 mercados lingüísticos** en un mismo espacio de trabajo y puntúa cada uno por separado: chino, inglés, ruso (Yandex/Alice), coreano (Naver/AI Briefing), japonés (Yahoo! JAPAN + Bing + AI Overviews), español (las divisiones de es-419 en Latinoamérica), portugués (Brasil, el mercado más fuerte de ChatGPT), árabe (RTL y MSA frente a dialectos), francés (Ley 96), alemán (Sie/du en DACH), indonesio (baku frente a gaul), hindi (la realidad de Hinglish en tres escrituras), italiano (it-CH como locale propio), turco (un segundo mercado de Yandex, ~26 %), vietnamita (variantes con y sin diacríticos + Cốc Cốc), tailandés (segmentación de una escritura sin espacios), polaco (normalización de diacríticos) y neerlandés (nl-BE flamenco). Lo global no es un módulo aparte: está **dentro de cada conjunto de capacidades**, con [multilingual-workflow.md](skills/seo-suite/references/overview/multilingual-workflow.md) como columna vertebral.
+**Lo que la distingue: SEO y GEO global en un solo flujo.** Un equipo que vende en todo el mundo no quiere una docena de herramientas de un solo mercado. Esta suite reúne **18 mercados lingüísticos** en un mismo espacio de trabajo y puntúa cada uno por separado: chino, inglés, ruso (Yandex/Alice), coreano (<img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver/AI Briefing), japonés (Yahoo! JAPAN + Bing + AI Overviews), español (las divisiones de es-419 en Latinoamérica), portugués (Brasil, el mercado más fuerte de <img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT), árabe (RTL y MSA frente a dialectos), francés (Ley 96), alemán (Sie/du en DACH), indonesio (baku frente a gaul), hindi (la realidad de Hinglish en tres escrituras), italiano (it-CH como locale propio), turco (un segundo mercado de Yandex, ~26 %), vietnamita (variantes con y sin diacríticos + Cốc Cốc), tailandés (segmentación de una escritura sin espacios), polaco (normalización de diacríticos) y neerlandés (nl-BE flamenco). Lo global no es un módulo aparte: está **dentro de cada conjunto de capacidades**, con [multilingual-workflow.md](skills/seo-suite/references/overview/multilingual-workflow.md) como columna vertebral.
 
 ## Lo que solo trae esta suite
 
@@ -62,14 +62,14 @@ Para auditar con las reglas de un mercado concreto, añade `--market`, por ejemp
 
 ## Instalación
 
-**Claude Code / ZCode** (este repositorio trae manifiestos de plugin en `.claude-plugin/` y `.zcode-plugin/`):
+**<img src="assets/icons/claude.svg" width="16" height="16" alt=""> Claude Code / <img src="assets/icons/zcode.svg" width="16" height="16" alt=""> ZCode** (este repositorio trae manifiestos de plugin en `.claude-plugin/` y `.zcode-plugin/`):
 
 ```bash
 claude plugin marketplace add everyinfra/seo-skills
 claude plugin install seo-suite@everyinfra-seo-skills
 ```
 
-**Cualquier entorno compatible con Agent Skills** (Codex, Cursor, Gemini CLI, Copilot, Windsurf, Goose, Amp…): el instalador de una línea de arriba detecta los entornos instalados y se adapta a cada uno; también puedes copiar `skills/seo-suite` en la carpeta de skills de la herramienta, por ejemplo `~/.agents/skills/`. Carpetas y forma de invocación por entorno: [HOSTS.md](HOSTS.md).
+**Cualquier entorno compatible con Agent Skills** (<img src="assets/icons/codex.svg" width="16" height="16" alt=""> Codex, <img src="assets/icons/cursor.svg" width="16" height="16" alt=""> Cursor, <img src="assets/icons/gemini.svg" width="16" height="16" alt=""> Gemini CLI, <img src="assets/icons/copilot.svg" width="16" height="16" alt=""> Copilot, Windsurf, Goose, Amp…): el instalador de una línea de arriba detecta los entornos instalados y se adapta a cada uno; también puedes copiar `skills/seo-suite` en la carpeta de skills de la herramienta, por ejemplo `~/.agents/skills/`. Carpetas y forma de invocación por entorno: [HOSTS.md](HOSTS.md).
 
 ## Actividad de desarrollo
 

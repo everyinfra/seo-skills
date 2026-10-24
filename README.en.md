@@ -19,7 +19,7 @@
 
 **Free to download. Use your own AI tool and model.**
 
-**Install in one line** (detects Claude Code, Codex, Cursor and other hosts on your machine):
+**Install in one line** (detects <img src="assets/icons/claude.svg" width="16" height="16" alt=""> Claude Code, <img src="assets/icons/codex.svg" width="16" height="16" alt=""> Codex, <img src="assets/icons/cursor.svg" width="16" height="16" alt=""> Cursor and other hosts on your machine):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.sh | bash
@@ -29,7 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 EveryInfra SEO Skills is version `0.36.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency. The model and its quota are whatever AI tool you already use.
 
-**The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
+**The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (<img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = <img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
 
 ## What only this suite ships
 
@@ -62,14 +62,14 @@ Global markets (checked 2026-10-21; unverified rows removed):
 | Metric | Value | Source |
 |---|---|---|
 | Yandex share of Russian search | 70.33% (Sep 2026) | StatCounter |
-| Naver share in Korea | 62.6% on the domestic panel (Apr 2026); StatCounter Sep 2026: Google 47.97%, Naver 43.06% | InternetTrend / StatCounter |
+| <img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver share in Korea | 62.6% on the domestic panel (Apr 2026); StatCounter Sep 2026: Google 47.97%, <img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver 43.06% | InternetTrend / StatCounter |
 | Korean AI Briefing citation pool | almost exclusively Naver-owned properties | Andgentic (vendor blog) |
 | AI Overviews appearing on Japanese queries | 76.9% (1,459 queries measured) | Itera (industry) |
 | Japan AI-search usage | 21.3% (May 2025) → 37.0% (Feb 2026); 52.3% including AI Mode (Aug 2026) | CyberAgent |
-| Brazil ChatGPT app | ~54M monthly active users (Jul 2025) | Atlantico (as reported) |
-| Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources (Google AIO and Copilot only; Grok 55%+) | Temso (industry study) |
+| Brazil <img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT app | ~54M monthly active users (Jul 2025) | Atlantico (as reported) |
+| Language-bound AI citations for Spanish queries | 83-84% Spanish-language sources (Google AIO and <img src="assets/icons/copilot.svg" width="16" height="16" alt=""> Copilot only; Grok 55%+) | Temso (industry study) |
 | Yandex share in Turkey | 25.19% (Sep 2026) — a second Yandex market | StatCounter |
-| India ChatGPT adoption | ~100M weekly active users | Sam Altman (as reported by TechCrunch, Feb 2026) |
+| India <img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT adoption | ~100M weekly active users | Sam Altman (as reported by TechCrunch, Feb 2026) |
 
 ## What it does
 
@@ -79,7 +79,7 @@ A single entry point: unified intake (site, market, goals, known issues, availab
 |---|---|
 | overview | Site-wide SEO diagnosis, roadmap and prioritization, triage when you don't know where to start, target-market intake gates |
 | research | Keyword research and search intent (per-market toolchains + persona × intent SXO layer), SERP analysis (incl. per-market AI-Overview coverage and SERP occupancy), content gaps, competitors, directory-submission engine, backlink profile |
-| content | SEO content briefs and drafting, titles and meta descriptions, GEO / AI-search visibility (incl. regional AI platforms), Chinese AI search, video SEO/GEO (YouTube citation mechanics, manual-caption layer), the five-rung ecommerce GEO ladder + on-site SEO for seven marketplaces (incl. MercadoLibre, Trendyol, Allegro, bol, Shopee), content quality, content refresh |
+| content | SEO content briefs and drafting, titles and meta descriptions, GEO / AI-search visibility (incl. regional AI platforms), Chinese AI search, video SEO/GEO (<img src="assets/icons/youtube.svg" width="16" height="16" alt=""> YouTube citation mechanics, manual-caption layer), the five-rung ecommerce GEO ladder + on-site SEO for seven marketplaces (incl. MercadoLibre, Trendyol, Allegro, bol, <img src="assets/icons/shopee.svg" width="16" height="16" alt=""> Shopee), content quality, content refresh |
 | technical | Technical SEO and single-page audits, robots.txt and AI-crawler policy (incl. regional crawlers, MistralAI, Bytespider), hreflang internationalization, structured data (incl. rich-result status), internal linking and site architecture, entity signals, programmatic SEO, Core Web Vitals, JS rendering and SPA SEO (five-engine rendering differences), Agent-Readiness protocol layer (ARD / WebMCP), server-log analysis (AI-visit measurement, a11y triage), attribution instrumentation |
 | monitoring | Rank tracking, backlinks (incl. per-market local directories and Google's link-spam policy boundary; link-price tables removed in Oct 2026), brand mentions (four-tier citation ladder + per-market monitoring channels), algorithm-update attribution (official timelines and data files), SEO drift monitoring, metrics and reporting |
 | **Specialist modules** | Domain strategy (selection, expired-domain due diligence, migration checklist, AI-citation inheritance), site-network spectrum and white-hat equivalents, 9-stage programmatic-SEO playbook, site-type playbooks (SaaS / ecommerce / media / local / docs / tools / marketplace / YMYL), CWV four metrics, mobile SEO, penalty recovery, redirects and canonicalization, UGC and site search |
@@ -87,7 +87,7 @@ A single entry point: unified intake (site, market, goals, known issues, availab
 
 Global capability is **woven into every capability set**, not a separate module: [multilingual-workflow.md](skills/seo-suite/references/overview/multilingual-workflow.md) is the spine (market table, per-market tool stacks, language conventions, compliance), and each capability file carries the regional knowledge relevant to it.
 
-**Bilingual by design.** The skill answers in the user's language and scores each language version of a multilingual site separately. One flagship: the [Chinese AI-search guide](skills/seo-suite/references/content/chinese-ai-search-guide.md), built on a measured 187,818-citation dataset — brand sites take only 1.37% of citations, 28 ranking sites take 9.1% of earliest positions; engine moats for Baidu AI / Tencent Yuanbao / Doubao / Kimi / DeepSeek; CJK thresholds and a 15-item readiness checklist.
+**Bilingual by design.** The skill answers in the user's language and scores each language version of a multilingual site separately. One flagship: the [Chinese AI-search guide](skills/seo-suite/references/content/chinese-ai-search-guide.md), built on a measured 187,818-citation dataset — brand sites take only 1.37% of citations, 28 ranking sites take 9.1% of earliest positions; engine moats for <img src="assets/icons/baidu.svg" width="16" height="16" alt=""> Baidu AI / Tencent Yuanbao / Doubao / <img src="assets/icons/kimi.svg" width="16" height="16" alt=""> Kimi / DeepSeek; CJK thresholds and a 15-item readiness checklist.
 
 Evidence-first: it never reports signals that are not on the page, and never promises ranking, traffic or AI-citation gains. No bundled data — bring your own GSC/GA4 exports; optional free APIs are yours to configure.
 
@@ -113,14 +113,14 @@ Expected output, one line (measured): `main score 0.0 → Weak (example.com real
 
 ## Install
 
-**Claude Code / ZCode (one line, recommended)** — this repo ships plugin manifests (`.claude-plugin/`, `.zcode-plugin/`):
+**<img src="assets/icons/claude.svg" width="16" height="16" alt=""> Claude Code / <img src="assets/icons/zcode.svg" width="16" height="16" alt=""> ZCode (one line, recommended)** — this repo ships plugin manifests (`.claude-plugin/`, `.zcode-plugin/`):
 
 ```bash
 claude plugin marketplace add everyinfra/seo-skills
 claude plugin install seo-suite@everyinfra-seo-skills
 ```
 
-**Any Agent Skills host (Codex, Cursor, Gemini CLI, Copilot, Windsurf, Goose, Amp, …):** the `install.sh` one-liner above auto-detects installed hosts and adapts to each, or copy `skills/seo-suite` into the tool's skills directory, e.g. `~/.agents/skills/`. Per-host directories and invocation cheat sheet: [HOSTS.md](HOSTS.md). Form-factor analysis: [PACKAGING.md](PACKAGING.md).
+**Any Agent Skills host (<img src="assets/icons/codex.svg" width="16" height="16" alt=""> Codex, <img src="assets/icons/cursor.svg" width="16" height="16" alt=""> Cursor, <img src="assets/icons/gemini.svg" width="16" height="16" alt=""> Gemini CLI, <img src="assets/icons/copilot.svg" width="16" height="16" alt=""> Copilot, Windsurf, Goose, Amp, …):** the `install.sh` one-liner above auto-detects installed hosts and adapts to each, or copy `skills/seo-suite` into the tool's skills directory, e.g. `~/.agents/skills/`. Per-host directories and invocation cheat sheet: [HOSTS.md](HOSTS.md). Form-factor analysis: [PACKAGING.md](PACKAGING.md).
 
 ## Shipping activity
 
