@@ -92,7 +92,7 @@ _For: {复盘主持(incident commander)} · Date: {YYYY-MM-DD} · Incident: {编
 
 ## What could change this conclusion
 
-- {数据缺口:GSC 近几天的数据是临时的,影响面数字可能仍在变化;窗口含 2025-05-13 至 2026-04-27 时,展示、CTR、平均排名不可信,点击可用([官方记录](https://support.google.com/webmasters/answer/6211453));访问日志采样率}
+- {数据缺口:GSC 近几天的数据是临时的,影响面数字可能仍在变化;窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时,展示、CTR、平均排名不可信,点击可用;访问日志采样率}
 - {归因局限:同日 deploy 与下跌是强相关非证明;算法更新期归因噪声大}
 - {幸存者偏差:没响的告警不代表没出事,只代表没被看见;漏报检查只覆盖已知形态}
 

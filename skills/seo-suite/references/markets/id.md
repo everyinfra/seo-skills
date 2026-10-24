@@ -23,7 +23,7 @@ StatCounter 印尼搜索引擎份额,2026-09 月值,取数 2026-10-21([页面](h
 - 旧稿「Arfadia:信息类 CTR 从 1.41% 跌至 0.64%」:1.41%→0.64% 是 Seer Interactive 对有 AIO 查询的美国客户数据(2025 年初),不是印尼数据([Seer](https://www.seerinteractive.com/insights/aio-impact-on-google-ctr-september-2025-update))。已改。
 - Ahrefs(2026-02-04)称位置 1 的点击在有 AIO 时低 58%([Ahrefs](https://ahrefs.com/blog/ai-overviews-reduce-clicks-update/))。样本非印尼专属。
 - 「~65% 搜索零点击」「68% 零点击、48% AIO 出现率」来自本地帖转引,无原文,已删。
-- 做法(本套件口径):GEO 与排名同权交付;报价与 KPI 按「答案可见度」设计。用 Search Console 的生成式 AI 表现报告(2026-06-03 公布,2026-08-31 起全球开放;展示、页面、国家、设备、日期,无点击;[Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports))看印尼展示。
+- 做法(本套件口径):GEO 与排名同权交付;报价与 KPI 按「答案可见度」设计。用 Search Console 的生成式 AI 表现报告(已对全球开放,[日期](../overview/facts.md#gsc-genai);展示、页面、国家、设备、日期,无点击)看印尼展示。
 
 ### 1.2 AIO 引用格局
 
@@ -151,7 +151,7 @@ StatCounter 印尼搜索引擎份额,2026-09 月值,取数 2026-10-21([页面](h
 |---|---|---|
 | Google Keyword Planner | 印尼语月检索量 | 精度需用 GSC 校准 |
 | Google Trends(地区 ID) | Ramadan/THR 季节曲线 | 年度排期基准 |
-| Search Console 生成式 AI 报告 | 印尼展示 | 2026-08-31 起全球开放,只报展示 |
+| Search Console 生成式 AI 报告 | 印尼展示 | 已对全球开放([日期](../overview/facts.md#gsc-genai)),只报展示 |
 | Tokopedia Analisis Pencarian | 官方站内关键词工具 | 免费一手来源 |
 | Shopee 卖家教育后台 | 聊天回复率等指标 | 店内指标主控台 |
 | JNews(Jegtheme) | 印尼新闻站常见 WordPress 主题 | 接手存量站时先查授权;本次未核其功能列表 |
@@ -166,7 +166,7 @@ StatCounter 印尼搜索引擎份额,2026-09 月值,取数 2026-10-21([页面](h
 | 4 | title/description | `python3 scripts/site_audit.py <URL> --market id --json` | 本套件口径:title ≤60、description 77–155 字符,关键信息在前 120 字符 |
 | 5 | 市场 lint | `python3 scripts/market_lint.py --market id <html文件> --url <URL> --report` | CRITICAL=0;baku/gaul 项人工过 |
 | 6 | 数字与电话 | `python3 scripts/local_format.py --market id "<页面样本文本>"` | `1.234,56`、`+62` 全部 ✓ |
-| 7 | 真实用户 CWV | `python3 scripts/field_data.py --url <URL> --strategy mobile`(需 `PSI_API_KEY`) | LCP ≤2.5s、INP ≤200ms、CLS ≤0.1 为 good(官方阈值,脚本写死) |
+| 7 | 真实用户 CWV | `python3 scripts/field_data.py --url <URL> --strategy mobile`(需 `PSI_API_KEY`) | 三项都在[良好档](../overview/facts.md#cwv)为 good(官方阈值,脚本常量与事实表由测试核对) |
 | 8 | AI 检索爬虫放行 | `python3 scripts/robots_posture.py https://<域名>/robots.txt --signal visibility` | 搜索类与用户类 allowed |
 | 9 | llms.txt(可选) | `python3 scripts/llmstxt.py check https://<域名>` | 看返回体是 markdown,不是 HTML 兜底页 |
 | 10 | EYD V 词形 | 在内容里 `rg -n -i -e mesjid -e musholla -e ramadhan <文件>`(正文层) | 正文层命中为 0;关键词层保留属有意 |
@@ -208,6 +208,6 @@ StatCounter 印尼搜索引擎份额,2026-09 月值,取数 2026-10-21([页面](h
 | `markets.id.special_checks[6]` | 「低端 jasa SEO Rp99k-500k=结构性 PBN」 | 改「低价包要求交付物与链接来源清单」,删价带 | Google spam policies |
 | `markets.id.special_checks[8]` | 「PBN×nulled 闭环($15/条 .id 域)」 | 删价格 | 无公开来源 |
 | `markets.id.review_cycle.signals[0]` | 「cube.asia/Momentum Works 季度 GMV 更新(TikTok Shop×Tokopedia 31-39% 带…)」 | 改「cube.asia 印尼页面」,说明 31% 是东南亚六国合并口径 | cube.asia 2026-06-02 |
-| `markets.id.review_cycle.signals[3]` | 「GSC AI Performance Report 印尼语数据开放度」 | 改名「Search Console 生成式 AI 表现报告」(2026-06-03 上线) | Search Central 博客 |
+| `markets.id.review_cycle.signals[3]` | 「GSC AI Performance Report 印尼语数据开放度」 | 改名「Search Console 生成式 AI 表现报告」([上线日期](../overview/facts.md#gsc-genai)) | Search Central 博客 |
 | `markets.id.hreflang_codes` | `["id","id-ID"]` | 保留 | IANA 子标签表 |
 | `markets.id.engines` | `["google","chatgpt","tokopedia","shopee"]` | 保留;在 notes 说明「ChatGPT/TikTok Shop 的印尼份额未核」 | — |

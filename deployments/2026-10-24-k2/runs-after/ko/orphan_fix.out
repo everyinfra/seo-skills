@@ -1,0 +1,156 @@
+## orphan_fix: yna.co.kr
+
+- ⚠ 上游 site_crawl 被 --max 截断:孤儿只在已抓样本内判定,改内链前先全量抓取复核
+- 孤儿 30 个,处理 30(--max 50);每孤儿 ≤3 候选源页(同目录前缀聚类,入链降序)
+
+### https://www.yna.co.kr/view/AKR20261024050400007(title: '챔피언' 이창욱, 슈퍼레이스 7R '폴 투 윈'으로 시즌 6승 달성 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024050400007 → 建议锚文本 "'챔피언' 이창욱, 슈퍼레이스 7R '폴 투 윈'으로 시즌 6승 달성"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024050400007 → 建议锚文本 "'챔피언' 이창욱, 슈퍼레이스 7R '폴 투 윈'으로 시즌 6승 달성"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024050400007 → 建议锚文本 "'챔피언' 이창욱, 슈퍼레이스 7R '폴 투 윈'으로 시즌 6승 달성"
+
+### https://www.yna.co.kr/view/AKR20261024049600007(title: 아이치·나고야 장애인AG 폐막…성화는 꺼져도 꿈은 계속된다 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024049600007 → 建议锚文本 "아이치·나고야 장애인AG 폐막…성화는 꺼져도 꿈은 계속된다"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024049600007 → 建议锚文本 "아이치·나고야 장애인AG 폐막…성화는 꺼져도 꿈은 계속된다"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024049600007 → 建议锚文本 "아이치·나고야 장애인AG 폐막…성화는 꺼져도 꿈은 계속된다"
+
+### https://www.yna.co.kr/view/AKR20261024048100007(title: [프로농구 중간순위] 24일 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024048100007 → 建议锚文本 "[프로농구 중간순위] 24일"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024048100007 → 建议锚文本 "[프로농구 중간순위] 24일"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024048100007 → 建议锚文本 "[프로농구 중간순위] 24일"
+
+### https://www.yna.co.kr/view/AKR20261024038151007(title: 프로농구 삼성, 창단 최다 개막 7연승…칸터·맥컬러 48점 합작(종합) | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024038151007 → 建议锚文本 "프로농구 삼성, 창단 최다 개막 7연승…칸터·맥컬러 48점 합작(종합)"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024038151007 → 建议锚文本 "프로농구 삼성, 창단 최다 개막 7연승…칸터·맥컬러 48점 합작(종합)"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024038151007 → 建议锚文本 "프로농구 삼성, 창단 최다 개막 7연승…칸터·맥컬러 48점 합작(종합)"
+
+### https://www.yna.co.kr/view/AKR20261024035951007(title: 대한항공-현대캐피탈, 한국배구연맹컵 대회서 결승 격돌(종합) | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035951007 → 建议锚文本 "대한항공-현대캐피탈, 한국배구연맹컵 대회서 결승 격돌(종합)"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035951007 → 建议锚文本 "대한항공-현대캐피탈, 한국배구연맹컵 대회서 결승 격돌(종합)"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035951007 → 建议锚文本 "대한항공-현대캐피탈, 한국배구연맹컵 대회서 결승 격돌(종합)"
+
+### https://www.yna.co.kr/view/AKR20261024047800007(title: '승률 98.5％' 압도적 기세 안세영, 시즌 10번째 우승도 '눈앞' | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047800007 → 建议锚文本 "'승률 98.5％' 압도적 기세 안세영, 시즌 10번째 우승도 '눈앞'"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047800007 → 建议锚文本 "'승률 98.5％' 압도적 기세 안세영, 시즌 10번째 우승도 '눈앞'"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047800007 → 建议锚文本 "'승률 98.5％' 압도적 기세 안세영, 시즌 10번째 우승도 '눈앞'"
+
+### https://www.yna.co.kr/view/AKR20261024047700007(title: [프로농구 고양전적] 소노 97-96 KCC | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047700007 → 建议锚文本 "[프로농구 고양전적] 소노 97-96 KCC"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047700007 → 建议锚文本 "[프로농구 고양전적] 소노 97-96 KCC"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047700007 → 建议锚文本 "[프로농구 고양전적] 소노 97-96 KCC"
+
+### https://www.yna.co.kr/view/AKR20261024047500007(title: [프로농구 울산전적] 삼성 91-71 현대모비스 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047500007 → 建议锚文本 "[프로농구 울산전적] 삼성 91-71 현대모비스"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047500007 → 建议锚文本 "[프로농구 울산전적] 삼성 91-71 현대모비스"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047500007 → 建议锚文本 "[프로농구 울산전적] 삼성 91-71 현대모비스"
+
+### https://www.yna.co.kr/view/AKR20261024047100007(title: GS 허태수 회장 "'10년 만의 우승' FC서울 선수들 노고에 박수" | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047100007 → 建议锚文本 "GS 허태수 회장 "'10년 만의 우승' FC서울 선수들 노고에 박수""
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047100007 → 建议锚文本 "GS 허태수 회장 "'10년 만의 우승' FC서울 선수들 노고에 박수""
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024047100007 → 建议锚文本 "GS 허태수 회장 "'10년 만의 우승' FC서울 선수들 노고에 박수""
+
+### https://www.yna.co.kr/view/AKR20261024046800007(title: 우승 일군 FC서울 캡틴 김진수 "희생은 내가 하겠다는 마음으로" | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046800007 → 建议锚文本 "우승 일군 FC서울 캡틴 김진수 "희생은 내가 하겠다는 마음으로""
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046800007 → 建议锚文本 "우승 일군 FC서울 캡틴 김진수 "희생은 내가 하겠다는 마음으로""
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046800007 → 建议锚文本 "우승 일군 FC서울 캡틴 김진수 "희생은 내가 하겠다는 마음으로""
+
+### https://www.yna.co.kr/view/AKR20261024046500007(title: 프로야구 삼성, PO 엔트리서 김재윤 제외…KIA는 준PO와 동일 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046500007 → 建议锚文本 "프로야구 삼성, PO 엔트리서 김재윤 제외…KIA는 준PO와 동일"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046500007 → 建议锚文本 "프로야구 삼성, PO 엔트리서 김재윤 제외…KIA는 준PO와 동일"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046500007 → 建议锚文本 "프로야구 삼성, PO 엔트리서 김재윤 제외…KIA는 준PO와 동일"
+
+### https://www.yna.co.kr/view/AKR20261024046400007(title: 챔피언 FC서울, 이제 MVP '집안싸움'…정승원 "내가 받겠다" | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046400007 → 建议锚文本 "챔피언 FC서울, 이제 MVP '집안싸움'…정승원 "내가 받겠다""
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046400007 → 建议锚文本 "챔피언 FC서울, 이제 MVP '집안싸움'…정승원 "내가 받겠다""
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046400007 → 建议锚文本 "챔피언 FC서울, 이제 MVP '집안싸움'…정승원 "내가 받겠다""
+
+### https://www.yna.co.kr/view/AKR20261024046200005(title: 넷플릭스 10주년…이정재 "'한국인이라 자랑스럽다'는 말 뿌듯" | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046200005 → 建议锚文本 "넷플릭스 10주년…이정재 "'한국인이라 자랑스럽다'는 말 뿌듯""
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046200005 → 建议锚文本 "넷플릭스 10주년…이정재 "'한국인이라 자랑스럽다'는 말 뿌듯""
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024046200005 → 建议锚文本 "넷플릭스 10주년…이정재 "'한국인이라 자랑스럽다'는 말 뿌듯""
+
+### https://www.yna.co.kr/view/AKR20261024045000007(title: 김시우·신상훈, 제네시스 챔피언십 공동 3위…선두와 3타 차 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024045000007 → 建议锚文本 "김시우·신상훈, 제네시스 챔피언십 공동 3위…선두와 3타 차"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024045000007 → 建议锚文本 "김시우·신상훈, 제네시스 챔피언십 공동 3위…선두와 3타 차"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024045000007 → 建议锚文本 "김시우·신상훈, 제네시스 챔피언십 공동 3위…선두와 3타 차"
+
+### https://www.yna.co.kr/view/AKR20261024042500007(title: 전반과 후반 '10타 차'…롤러코스터 탔던 최혜진 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024042500007 → 建议锚文本 "전반과 후반 '10타 차'…롤러코스터 탔던 최혜진"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024042500007 → 建议锚文本 "전반과 후반 '10타 차'…롤러코스터 탔던 최혜진"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024042500007 → 建议锚文本 "전반과 후반 '10타 차'…롤러코스터 탔던 최혜진"
+
+### https://www.yna.co.kr/view/AKR20261024041500007(title: 서울 우승 지켜본 강원 정경호 "김기동 감독님 진심으로 축하" | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024041500007 → 建议锚文本 "서울 우승 지켜본 강원 정경호 "김기동 감독님 진심으로 축하""
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024041500007 → 建议锚文本 "서울 우승 지켜본 강원 정경호 "김기동 감독님 진심으로 축하""
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024041500007 → 建议锚文本 "서울 우승 지켜본 강원 정경호 "김기동 감독님 진심으로 축하""
+
+### https://www.yna.co.kr/view/AKR20261024040800007(title: 유해란, BMW 챔피언십 3R도 선두…LPGA 시즌 3승 보인다 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024040800007 → 建议锚文本 "유해란, BMW 챔피언십 3R도 선두…LPGA 시즌 3승 보인다"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024040800007 → 建议锚文本 "유해란, BMW 챔피언십 3R도 선두…LPGA 시즌 3승 보인다"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024040800007 → 建议锚文本 "유해란, BMW 챔피언십 3R도 선두…LPGA 시즌 3승 보인다"
+
+### https://www.yna.co.kr/view/AKR20261024040000007(title: [프로축구 중간순위] 24일 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024040000007 → 建议锚文本 "[프로축구 중간순위] 24일"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024040000007 → 建议锚文本 "[프로축구 중간순위] 24일"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024040000007 → 建议锚文本 "[프로축구 중간순위] 24일"
+
+### https://www.yna.co.kr/view/AKR20261024039000007(title: 프로야구 SSG, 2027 신인 입단식 '더 퍼스트 랜딩' 성료 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024039000007 → 建议锚文本 "프로야구 SSG, 2027 신인 입단식 '더 퍼스트 랜딩' 성료"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024039000007 → 建议锚文本 "프로야구 SSG, 2027 신인 입단식 '더 퍼스트 랜딩' 성료"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024039000007 → 建议锚文本 "프로야구 SSG, 2027 신인 입단식 '더 퍼스트 랜딩' 성료"
+
+### https://www.yna.co.kr/view/AKR20261024038100007(title: 프로농구 SK, 20점 차 뒤집고 LG 격파…김낙현 결승 3점포 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024038100007 → 建议锚文本 "프로농구 SK, 20점 차 뒤집고 LG 격파…김낙현 결승 3점포"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024038100007 → 建议锚文本 "프로농구 SK, 20점 차 뒤집고 LG 격파…김낙현 결승 3점포"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024038100007 → 建议锚文本 "프로농구 SK, 20점 차 뒤집고 LG 격파…김낙현 결승 3점포"
+
+### https://www.yna.co.kr/view/AKR20261024035800005(title: 1천300명 홀린 이자람 입담과 노래…흥겨운 소리판이 된 대극장 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035800005 → 建议锚文本 "1천300명 홀린 이자람 입담과 노래…흥겨운 소리판이 된 대극장"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035800005 → 建议锚文本 "1천300명 홀린 이자람 입담과 노래…흥겨운 소리판이 된 대극장"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035800005 → 建议锚文本 "1천300명 홀린 이자람 입담과 노래…흥겨운 소리판이 된 대극장"
+
+### https://www.yna.co.kr/view/AKR20261024037900007(title: [프로축구 안양전적] 안양 1-1 전북 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037900007 → 建议锚文本 "[프로축구 안양전적] 안양 1-1 전북"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037900007 → 建议锚文本 "[프로축구 안양전적] 안양 1-1 전북"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037900007 → 建议锚文本 "[프로축구 안양전적] 안양 1-1 전북"
+
+### https://www.yna.co.kr/view/AKR20261024037800007(title: [프로축구 부천전적] 광주 3-0 부천 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037800007 → 建议锚文本 "[프로축구 부천전적] 광주 3-0 부천"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037800007 → 建议锚文本 "[프로축구 부천전적] 광주 3-0 부천"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037800007 → 建议锚文本 "[프로축구 부천전적] 광주 3-0 부천"
+
+### https://www.yna.co.kr/view/AKR20261024037700007(title: [프로축구 김천전적] 대전 2-1 김천 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037700007 → 建议锚文本 "[프로축구 김천전적] 대전 2-1 김천"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037700007 → 建议锚文本 "[프로축구 김천전적] 대전 2-1 김천"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037700007 → 建议锚文本 "[프로축구 김천전적] 대전 2-1 김천"
+
+### https://www.yna.co.kr/view/AKR20261024037200007(title: FC서울, 강원과 비기고 우승 축포…10년 묵은 갈증 씻어낸 V7 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037200007 → 建议锚文本 "FC서울, 강원과 비기고 우승 축포…10년 묵은 갈증 씻어낸 V7"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037200007 → 建议锚文本 "FC서울, 강원과 비기고 우승 축포…10년 묵은 갈증 씻어낸 V7"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037200007 → 建议锚文本 "FC서울, 강원과 비기고 우승 축포…10년 묵은 갈증 씻어낸 V7"
+
+### https://www.yna.co.kr/view/AKR20261024037100007(title: [프로축구 인천전적] 인천 3-1 제주 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037100007 → 建议锚文本 "[프로축구 인천전적] 인천 3-1 제주"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037100007 → 建议锚文本 "[프로축구 인천전적] 인천 3-1 제주"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037100007 → 建议锚文本 "[프로축구 인천전적] 인천 3-1 제주"
+
+### https://www.yna.co.kr/view/AKR20261024037300007(title: [프로농구 서울전적] SK 86-85 LG | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037300007 → 建议锚文本 "[프로농구 서울전적] SK 86-85 LG"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037300007 → 建议锚文本 "[프로농구 서울전적] SK 86-85 LG"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037300007 → 建议锚文本 "[프로농구 서울전적] SK 86-85 LG"
+
+### https://www.yna.co.kr/view/AKR20261024037000007(title: [프로축구 서울전적] 서울 1-1 강원 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037000007 → 建议锚文本 "[프로축구 서울전적] 서울 1-1 강원"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037000007 → 建议锚文本 "[프로축구 서울전적] 서울 1-1 강원"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024037000007 → 建议锚文本 "[프로축구 서울전적] 서울 1-1 강원"
+
+### https://www.yna.co.kr/view/AKR20261024036800007(title: [프로축구 울산전적] 울산 2-2 포항 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024036800007 → 建议锚文本 "[프로축구 울산전적] 울산 2-2 포항"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024036800007 → 建议锚文本 "[프로축구 울산전적] 울산 2-2 포항"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024036800007 → 建议锚文本 "[프로축구 울산전적] 울산 2-2 포항"
+
+### https://www.yna.co.kr/view/AKR20261024035900007(title: 대한항공, 우리카드 꺾고 프로배구컵대회 결승 선착 | 연합뉴스)
+- 源页 https://www.yna.co.kr/view/AKR20261024038700007(入链 6)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035900007 → 建议锚文本 "대한항공, 우리카드 꺾고 프로배구컵대회 결승 선착"
+- 源页 https://www.yna.co.kr/view/AKR20261024037451007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035900007 → 建议锚文本 "대한항공, 우리카드 꺾고 프로배구컵대회 결승 선착"
+- 源页 https://www.yna.co.kr/view/AKR20261024042000007(入链 3)→ 孤儿 https://www.yna.co.kr/view/AKR20261024035900007 → 建议锚文本 "대한항공, 우리카드 꺾고 프로배구컵대회 결승 선착"
+
+- 汇总: 30/30 孤儿有同目录候选;0 个需导航/hub 级入口

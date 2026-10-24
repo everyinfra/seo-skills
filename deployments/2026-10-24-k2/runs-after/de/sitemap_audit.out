@@ -1,0 +1,32 @@
+==============================================================
+sitemap_audit | 入口: https://www.spiegel.de/robots.txt 声明的 4 个 sitemap
+sitemap 类型: sitemapindex | 累计抓取 3474259 字节 | loc 总数: 1907 (去重后)
+
+---- lastmod 三判定 ----
+Coverage     : 0.114  (有 lastmod 条目占比, 期望 1.0)
+Freshness    : 最新 lastmod 2026-10-01T15:51:00 距今 22 天 (<=30 天, OK)
+Truthfulness : 最大单日簇 2008-04-07 占 2.6% (未触发伪造特征)
+
+[范围] 逐条抓取检查了前 20/1907 个 loc (--check-limit 可调)
+
+---- 六坏桶 ----
+
+[桶1 非 200 / 抓取失败] 命中 0
+
+[桶2 3xx 重定向] 命中 0
+
+[桶3 noindex 页] 命中 0
+
+[桶4 canonical 指向他址] 命中 0
+
+[桶5 robots.txt 屏蔽 (Googlebot)] 命中 0
+
+[桶6 参数重复 URL (同 path 不同 query)] 命中 0
+
+---- 过程备注 ----
+   * 入口来自 robots.txt 的 4 条 Sitemap 声明(按 index 展开)
+   * https://www.spiegel.de/sitemaps/videos/sitemap.xml 含 419 个子 sitemap, 按位置均匀抽 5 个(含首尾)
+   * https://www.spiegel.de/plus/sitemap.xml 含 21 个子 sitemap, 按位置均匀抽 5 个(含首尾)
+   * https://www.spiegel.de/sitemap.xml 含 23707 个子 sitemap, 按位置均匀抽 5 个(含首尾)
+
+==== 结论: 坏桶命中 0 条, must-include 缺失 0 个 => PASS ====

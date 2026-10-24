@@ -59,6 +59,8 @@ UA = "Mozilla/5.0 (compatible; seo-suite-crawl/1.0)"   # 套件 UA 惯例:seo-su
 UA_TOKEN = "seo-suite-crawl"                            # robots.txt 自我标识 token
 SCHEMA_VERSION = 1
 MAX_BYTES = 2_000_000            # 单响应字节上限(site_audit 同款)
+SITEMAP_MAX_BYTES = 50 * 1024 * 1024 + 1   # sitemap / robots 类文本:Google 单个 sitemap 上限 50MB(未压缩)
+SITEMAP_EXT = (".xml", ".xml.gz", ".gz", ".txt")
 ROBOTS_MAX_BYTES = 500_000       # RFC 9309:robots.txt 至少按前 500KiB 处理
 RETRIES = 2                      # 每 URL 传输层失败重试 2 次(共 3 次尝试)
 REDIRECT_HOPS_MAX = 10
@@ -142,14 +144,39 @@ def _redact(u):
 # URL 归一
 # ---------------------------------------------------------------------------
 
+# 国家码顶级域下常见的二级注册后缀(co.jp、co.kr、or.kr、com.au、co.uk……)。
+# 不带它时 www.yna.co.kr 会被归成 "co.kr",整个 .co.kr 都被当成自家子域(2026-10-24 韩国实测)。
+_CC_SECOND_LEVEL = {"co", "or", "ne", "ac", "go", "gr", "ed", "lg", "re", "pe", "hs", "ms",
+                    "com", "net", "org", "edu", "gov", "mil", "ltd", "plc", "sch", "nhs",
+                    "gob", "gouv", "nom", "asso", "biz", "info"}
+
+
 def registrable(host):
-    """registrable domain 简化近似(取末两段,monitor.py 同源;co.uk 类公共后缀未特判)。"""
+    """registrable domain 近似:取末两段;国家码顶级域(两字母)前是常见二级后缀时取末三段。
+    不是完整的公共后缀表,覆盖 co.jp / co.kr / co.uk / com.au / com.br 这类常见情形。"""
     h = (host or "").lower().rstrip(".")
     if not h:
         return ""
-    if h.count(".") <= 1:
+    labels = h.split(".")
+    if len(labels) <= 2:
         return h
-    return ".".join(h.split(".")[-2:])
+    if len(labels[-1]) == 2 and labels[-2] in _CC_SECOND_LEVEL:
+        return ".".join(labels[-3:])
+    return ".".join(labels[-2:])
+
+
+def sample_children(children, k):
+    """子 sitemap 超过 k 个时按位置均匀抽 k 个,首尾都在(与 sitemap_audit 同口径)。index 常按
+    时间升序(spiegel.de 从 1947 年排到当月),只取前 k 个会只抓到最旧的归档。"""
+    n = len(children)
+    if k <= 0:
+        return []
+    if n <= k:
+        return list(children)
+    if k == 1:
+        return [children[-1]]
+    idx = sorted({round(i * (n - 1) / (k - 1)) for i in range(k)})
+    return [children[i] for i in idx]
 
 
 def normalize_url(u, base=None, strip_params=False):
@@ -237,9 +264,11 @@ def _single(url, method, timeout):
         "User-Agent": UA,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     })
+    # sitemap 可以远大于页面上限(spiegel.de 的 index 2.25MB),按 2MB 截断会让 XML 解析失败
+    cap = SITEMAP_MAX_BYTES if p.path.lower().endswith(SITEMAP_EXT) else MAX_BYTES
     try:
         with _OPENER.open(req, timeout=timeout) as r:
-            return int(r.status), r.headers, r.read(MAX_BYTES)
+            return int(r.status), r.headers, r.read(cap)
     except urllib.error.HTTPError as e:
         try:
             body = e.read(MAX_BYTES)
@@ -594,10 +623,11 @@ class Crawler:
             return urls
         if kind == "sitemapindex":
             out = []
+            picked = sample_children(children, SITEMAP_CHILD_CAP)
             if len(children) > SITEMAP_CHILD_CAP:
-                self.warnings.append("sitemapindex 含 %d 个子表,仅展开前 %d 个: %s"
-                                     % (len(children), SITEMAP_CHILD_CAP, url))
-            for child in children[:SITEMAP_CHILD_CAP]:
+                self.warnings.append("sitemapindex 含 %d 个子表,按位置均匀抽 %d 个(含首尾): %s"
+                                     % (len(children), len(picked), url))
+            for child in picked:
                 out.extend(self._parse_sitemap(urllib.parse.urljoin(url, child), depth + 1))
             return out
         self.warnings.append("根元素非 urlset/sitemapindex: %s" % url)
@@ -655,6 +685,11 @@ class Crawler:
         for u in locs:
             self.seen.add(u)
             self.queue.append((u, "sitemap"))
+        if self.mode in ("robots+sitemap", "sitemap") and self.seed not in self.seen:
+            # sitemap 模式也先抓首页:首页是站内最大的入链来源,不抓它孤儿判定全是假阳性
+            # (2026-10-24 asahi.com 实测:40 篇首页直链的文章全被判孤儿)
+            self.seen.add(self.seed)
+            self.queue.appendleft((self.seed, "seed"))
         if self.mode == "crawl":                 # 链④:BFS 从首页走
             self.seen.add(self.seed)
             self.queue.append((self.seed, "crawl"))
@@ -837,10 +872,27 @@ class Crawler:
     # ---- 汇总 ----
 
     def build_report(self, duration_s):
-        inlinks = Counter(dst for _src, dst in self.edges if dst in self.pages)
+        def _targets(dst):
+            """边的目标 → 计入入链的已抓页面:原样命中的页面,以及去掉查询参数后命中的页面
+            (站内链接常带 ?iref= 之类跟踪参数,sitemap 里是干净 URL;不认这种对应,
+            干净 URL 永远收不到入链。2026-10-24 asahi.com 实测)。"""
+            out = set()
+            if dst in self.pages:
+                out.add(dst)
+            sp = urllib.parse.urlsplit(dst)
+            if sp.query:
+                bare = urllib.parse.urlunsplit((sp.scheme, sp.netloc, sp.path, "", ""))
+                if bare in self.pages:
+                    out.add(bare)
+            return out
+        inlinks = Counter()
+        for src, dst in self.edges:
+            for t in _targets(dst):
+                if t != src or t == dst:          # 带参数的自链不算别人给的入链
+                    inlinks[t] += 1
         adjacency = {}
         for src, dst in self.edges:
-            adjacency.setdefault(src, []).append(dst)
+            adjacency.setdefault(src, []).extend(_targets(dst) or [dst])
         depths = {}
         if self.seed in self.pages:
             dq = deque([self.seed])
@@ -894,6 +946,9 @@ class Crawler:
             },
             "warnings": list(self.warnings),
         }
+        # 抓取被 --max 截断时,孤儿只在已抓样本内判定(入链来源页可能没抓到),不等于站内孤儿
+        # (追加在末尾,不改动既有输出契约的键序)
+        report["orphans_partial"] = bool(self.truncated)
         if self.skipped_robots:
             report["warnings"].append(
                 "robots Disallow 跳过 %d URL(如 %s);--ignore-robots 可显式关闭遵守"
@@ -956,6 +1011,9 @@ def render_markdown(report):
     if top:
         L.append("- Top 外链域: " + ", ".join("%s×%d" % (d, n) for d, n in top))
     orphans = report["orphans"]
+    if report.get("orphans_partial"):
+        L.append("- ⚠ 抓取被 --max 截断:下面的孤儿只表示「已抓样本内 0 入链」,入链来源页可能没抓到;"
+                 "要下孤儿结论,用 --max 覆盖全站,或用 --urls 给出栏目页再抓")
     L.append("- 孤儿页 %d(0 入链、非首页、未被重定向;重定向页 %d 个不计):%s"
              % (len(orphans), st.get("redirected_pages", 0),
                 ", ".join(orphans[:10]) if orphans else "无"))

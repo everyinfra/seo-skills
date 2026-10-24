@@ -69,6 +69,6 @@ Priority 按 [gap-analysis-frameworks.md](../../references/research/gap-analysis
 
 ## Method Notes
 
-- 数据源与抓取时间:{GSC 导出+第三方工具+SERP 快照+日期}。已知坑:{GSC 不显示匿名查询(罕见或含敏感信息的查询),也只存储排名靠前的数据行,所以查询表不完整([官方说明](https://support.google.com/webmasters/answer/96568),核对 2026-10-21);估算量非实测;窗口含 2025-05-13 至 2026-04-27 时展示、CTR 不可信([官方记录](https://support.google.com/webmasters/answer/6211453))}。数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{GSC 导出+第三方工具+SERP 快照+日期}。已知坑:{GSC 不显示匿名查询(罕见或含敏感信息的查询),也只存储排名靠前的数据行,所以查询表不完整([官方说明](https://support.google.com/webmasters/answer/96568),核对 2026-10-21);估算量非实测;窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时展示、CTR 不可信}。数字缺失写 [要追加: 数据源],禁编造。
 - 符号:KD=关键词难度(0–100,第三方模型,各工具算法不同);五因素 1–3 见上;P1=90 天内,P2=本季度,P3=backlog(本套件口径)。
 - 五类缺口定义与过滤打分规则见 references/research/gap-analysis-frameworks.md;SERP 功能缺口只计 Google 当前仍展示的功能(FAQ/HowTo 已停,不计入)。

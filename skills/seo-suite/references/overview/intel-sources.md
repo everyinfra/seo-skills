@@ -92,7 +92,7 @@
 新仓扫描(双周):GitHub 搜索 `q=seo+claude+skill+created:>YYYY-MM-DD&sort=stars`、`q=geo|aeo|ai-visibility in:name,description created:>`、topics `generative-engine-optimization` / `chatgpt-seo`。Awesome 清单订阅 `commits.atom`:[bmpi-dev/awesome-seo](https://github.com/bmpi-dev/awesome-seo)、[amplifying-ai/awesome-generative-engine-optimization](https://github.com/amplifying-ai/awesome-generative-engine-optimization)、[DavidHuji/Awesome-GEO](https://github.com/DavidHuji/Awesome-GEO)(旧文写 "amplifying-ai/bmpi-dev awesome-seo",仓库名不对,已改)。codex-seo 已改名为 [AgriciDaniel/chatgpt-seo](https://github.com/AgriciDaniel/chatgpt-seo)。
 
 **商业产品风向标**(官方公告 + 第三方):
-- Search Console 生成式 AI 效果报告:2026-06-03 公布,2026-08-31 起对全部站点开放;Search 报告含 AI Overviews 与 AI Mode,Discover 另有独立报告;默认只给展示数(impressions),维度有页面、国家、日期、设备([Search Central 博文](https://developers.google.com/search/blog),[帮助页](https://support.google.com/webmasters/answer/16984139))。
+- Search Console 生成式 AI 效果报告:先给部分站点,后对全部站点开放([日期](facts.md#gsc-genai));Search 报告含 AI Overviews 与 AI Mode,Discover 另有独立报告;默认只给展示数(impressions),维度有页面、国家、日期、设备([Search Central 博文](https://developers.google.com/search/blog),[帮助页](https://support.google.com/webmasters/answer/16984139))。
 - 2026-09-24 起,效果报告新增「Web: multimodal」搜索类型(Lens、Circle to Search、上传图片、Chrome 右键搜图)([博文](https://developers.google.com/search/blog/2026/09/web-multimodal-in-sc))。
 - Google 官方页面写明正在测试 AI Mode 里的广告([Ads in AI Mode](https://business.google.com/us/accelerate/announcements/ads-in-ai-mode/));这会改变 AI Mode 的点击构成,数据层面要关注。
 - 厂商 MCP 化:Profound 在 2025-10-15 发布 MCP 服务器([博文](https://www.tryprofound.com/blog/bring-profound-data-directly-into-your-ai-workflow-with-mcp));竞品重心从 SEO 审计转向 AI 可见性监测加 MCP,是第三方观察。

@@ -25,11 +25,11 @@
 - **匿名查询**：罕见查询出于隐私被省略，不出现在查询表里；没加查询筛选时，它们仍计入图表总数。加了查询筛选后，「匹配」与「不匹配」两部分加起来可能小于不筛选的总数。
 - **行数上限**：界面表格最多显示 1,000 行；Search Console 只存储和显示最重要的数据行。要更全的查询列表，用[批量数据导出到 BigQuery](https://support.google.com/webmasters/answer/12917675)。
 - **时区与延迟**：日数据按太平洋时间（PT）；通常 2 到 3 天后数据才完整；最新数据可能是初步数据（图上显示虚线）。
-- **数据保留**：Search Console 保留最近 16 个月（[排查流量下降](https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops)里让你把日期设成「最近 16 个月」；[GA4 的 Search Console 关联说明](https://support.google.com/analytics/answer/10737381)写明 Search Console 保留最近 16 个月，GA4 里的 Search Console 报告也最多 16 个月）。要更久的历史，用 Search Analytics API 或批量导出自己存。批量导出从开通起累积，开通前的历史要靠 API 补（[官方](https://support.google.com/webmasters/answer/12917675)）。
+- **数据保留**：Search Console 只保留有限的月数（[保留期](../overview/facts.md#gsc-retention)；GA4 里的 Search Console 报告同一上限，见 [GA4 关联说明](https://support.google.com/analytics/answer/10737381)）。要更久的历史，用 Search Analytics API 或批量导出自己存。批量导出从开通起累积，开通前的历史要靠 API 补（[官方](https://support.google.com/webmasters/answer/12917675)）。
 - **搜索类型**：网页（文本型 Web: text-based，或多模态 Web: multimodal——图片搜索如 Lens、Circle to Search，2026-09-24 起有这个筛选）、图片、视频、新闻是不同的搜索类型；多模态搜索没有文本查询，选它时查询维度不可用。Discover 和 Google 新闻有单独的报告。
-- **AI 功能**：按 Google 的 [AI 功能说明](https://developers.google.com/search/docs/appearance/ai-features)，AI Overviews 和 AI Mode 的数据计入效果报告的「网页」搜索类型。另有[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)：只报展示（按页面、国家、设备、日期），不报点击；2026-06-03 起分批开放，页面注明 2026-08-31 起对全球网站开放；展示太少的站点仍可能看不到该报告。
-- **品牌 / 非品牌**：效果报告有官方的品牌 / 非品牌查询筛选，从 2025-03-11 起有数据，历史最长 16 个月；展示太少的站点和子资源没有这个筛选；分类可能出错，仅供参考，不影响排名。要在 API 或批量导出里分品牌，自己用查询正则，并把正则写进报告附录，保证每期一致。
-- **数据异常期**：Google 在[数据异常页](https://support.google.com/webmasters/answer/6211453)记录：2025-05-13 至 2026-04-27 的展示、CTR、平均排名记录有误，点击不受影响，修复后展示数下降。跨这个期间的展示 / CTR / 排名对比不可信；这段期间只比点击。写报告前先读这个页面，看有没有新的异常。
+- **AI 功能**：按 Google 的 [AI 功能说明](https://developers.google.com/search/docs/appearance/ai-features)，AI Overviews 和 AI Mode 的数据计入效果报告的「网页」搜索类型。另有[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)：只报展示（按页面、国家、设备、日期），不报点击；先分批开放，后对全球网站开放（[日期](../overview/facts.md#gsc-genai)）；展示太少的站点仍可能看不到该报告。
+- **品牌 / 非品牌**：效果报告有官方的品牌 / 非品牌查询筛选，从 2025-03-11 起有数据，历史长度同效果报告保留期（[保留期](../overview/facts.md#gsc-retention)）；展示太少的站点和子资源没有这个筛选；分类可能出错，仅供参考，不影响排名。要在 API 或批量导出里分品牌，自己用查询正则，并把正则写进报告附录，保证每期一致。
+- **数据异常期**：Google 在[数据异常页](https://support.google.com/webmasters/answer/6211453)记录过一段展示、CTR、平均排名记录有误的时间（[GSC 数据异常期](../overview/facts.md#gsc-anomaly)），点击不受影响，修复后展示数下降。跨这个期间的展示 / CTR / 排名对比不可信；这段期间只比点击。写报告前先读这个页面，看有没有新的异常。
 
 ### API 与导出的限额（核对 2026-10-21）
 
@@ -37,16 +37,16 @@
 
 | 项目 | 官方数值 |
 |---|---|
-| 每次请求最多行数 | 25,000 行；用 `startRow` 翻页，直到返回 0 行 |
-| 每天可取总行数 | 每个属性、每个搜索类型、每天最多 50,000 行（按点击排序） |
-| Search Analytics 查询频率 | 每站点 1,200 次/分钟；每用户 1,200 次/分钟；每项目 40,000 次/分钟、30,000,000 次/天 |
-| URL 检查 | 每站点 2,000 次/天、600 次/分钟；每项目 10,000,000 次/天、15,000 次/分钟 |
-| 其他资源 | 每用户 20 次/秒、200 次/分钟；每项目 100,000,000 次/天 |
+| 每次请求最多行数 | 见[配额表](../overview/facts.md#api-quotas)；用 `startRow` 翻页，直到返回 0 行 |
+| 每天可取总行数 | 每个属性、每个搜索类型有每日上限（按点击排序，[配额表](../overview/facts.md#api-quotas)） |
+| Search Analytics 查询频率 | 按站点、用户、项目分别限额，见[配额表](../overview/facts.md#api-quotas) |
+| URL 检查 | 比 Search Analytics 紧，按站点、项目限额，见[配额表](../overview/facts.md#api-quotas) |
+| 其他资源 | 按用户、项目限额，见[配额表](../overview/facts.md#api-quotas) |
 | 负载配额 | 另有 10 分钟短期配额和 1 天长期配额；按网页或查询分组、日期范围越长，负载越大；超限时报同一个 quotaExceeded 错误 |
 
 官方建议：每天只取一天的数据，既不容易超配额，也避免丢数据。按「网页」和「查询」一起分组时，系统会丢弃部分数据；要准确总数，就不带这两个维度单独取一次。
 
-- 本套件的 `gsc_api.py query` 默认每页 25,000 行（`--rows` 设总行数上限），用 `--dimensions` 选维度；匿名查询 API 不返回。
+- 本套件的 `gsc_api.py query` 默认每页取单次请求上限（`--rows` 设总行数上限），用 `--dimensions` 选维度；匿名查询 API 不返回。
 
 ## 二、GA4（站内行为与转化）
 
@@ -64,7 +64,7 @@
 
 - **已编入索引页数**：看页面索引报告，可按 sitemap 筛选，对比「已提交」和「已编入」。未编入的原因逐项看，不只看总数。
 - **抓取**：抓取统计报告给出请求数、平均响应时间，以及按状态码和抓取用途的分布；服务器日志能看到所有爬虫，更完整。
-- **Core Web Vitals**（核对 2026-10-21）：按 [web.dev](https://web.dev/articles/vitals)，评估点是页面加载的第 75 百分位，分手机和桌面分别看；LCP 在 2.5 秒内、INP 200 毫秒或更低、CLS 0.1 或更低为良好。Lighthouse 这类实验室数据用来诊断，不能代替字段数据。[CrUX](https://developer.chrome.com/docs/crux/api) 的数据是过去 28 天的滚动汇总，改动上线后要等窗口滚过才能完全反映。
+- **Core Web Vitals**（核对 2026-10-21）：按 web.dev，评估点是页面加载的第 75 百分位，分手机和桌面分别看；良好档见[阈值表](../overview/facts.md#cwv)。Lighthouse 这类实验室数据用来诊断，不能代替字段数据。CrUX 的数据是滚动窗口汇总（[窗口长度](../overview/facts.md#crux-window)），改动上线后要等窗口滚过才能完全反映。
 
 ## 四、外链与竞争指标（第三方工具的估算）
 
@@ -138,7 +138,7 @@
 - 若后窗被截断，或某个窗口不足 7 个完整天，把结果标为「初步」，不下方向性结论（本套件口径）。
 - 平均排名是按展示加权的平均位置；查询级数据因匿名化会缺行，缺行不等于零流量，报告里注明。
 - GA4 交叉读用落地页筛选，并注意 GA4 属性时区与 PT 日界的差异。
-- 2025-05-13 至 2026-04-27 的展示 / CTR / 排名不可比，见上文。
+- [GSC 数据异常期](../overview/facts.md#gsc-anomaly)里的展示 / CTR / 排名不可比，见上文。
 
 ### AI 可见度指标的公式版（elmo / unifapi 的写法）
 
@@ -190,8 +190,8 @@ IAB 对 Post-Citation CTR 的定义：AI 引用中，把用户带到发布方网
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
 | 报告里每个指标都写了公式、数据源、日期与时区、筛选、聚合方式 | 对照本文开头一行；Search Console 日期按 PT | 缺任一项 = 失败 |
-| 对比期没有跨数据异常期 | 读[数据异常页](https://support.google.com/webmasters/answer/6211453)；跨 2025-05-13 至 2026-04-27 的展示 / CTR / 排名对比 | 跨了就只比点击，并在报告注明 |
-| 取数没有被行数上限截断 | 界面表格 1,000 行；API 每页 25,000 行、每天每类型 50,000 行。`python3 scripts/gsc_api.py query --site sc-domain:example.com --start 2026-10-01 --end 2026-10-01 --dimensions query,page --rows 25000 --out gsc.csv` 一天一次 | 行数恰好等于上限 = 可能被截断，改用批量导出 |
+| 对比期没有跨数据异常期 | 读[数据异常页](https://support.google.com/webmasters/answer/6211453)；跨[GSC 数据异常期](../overview/facts.md#gsc-anomaly)的展示 / CTR / 排名对比 | 跨了就只比点击，并在报告注明 |
+| 取数没有被行数上限截断 | 界面表格 1,000 行；API 单页和每天每类型的行数上限见[配额表](../overview/facts.md#api-quotas)。`python3 scripts/gsc_api.py query --site sc-domain:example.com --start 2026-10-01 --end 2026-10-01 --dimensions query,page --rows 25000 --out gsc.csv` 一天一次 | 行数恰好等于上限 = 可能被截断，改用批量导出 |
 | 点击与展示总数核对 | 不带 page / query 维度单独取一次总数，和明细求和比较 | 明细小于总数是匿名查询与截断造成的，报告里写差值占比 |
 | GA4 渠道口径一致 | 报告注明用的是默认渠道组、会话默认渠道组还是首次用户渠道组 | 混用 = 失败 |
 | AI 流量不只看 AI Assistant 渠道 | 同时看 Organic Search 里的 AI 功能展示（Search Console 生成式 AI 报告）和服务器日志 | 只用一个来源 = 降级为方向级 |

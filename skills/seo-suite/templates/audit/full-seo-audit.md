@@ -19,7 +19,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Scope: {域名/抽查页数/工具} �
 | 指标 | 当前 | 基准/阈值 | 判定 |
 |---|---|---|---|
 | 索引覆盖率(已编入/已提交) | {}% | ≥{}%(本站历史基线,不用行业平均) |  |
-| LCP / INP / CLS(字段数据 p75) | {}ms / {}ms / {} | ≤2500ms / ≤200ms / ≤0.1([web.dev 官方阈值](https://web.dev/articles/vitals),核对 2026-10-21) |  |
+| LCP / INP / CLS(字段数据 p75) | {}ms / {}ms / {} | 良好档([阈值表](../../references/overview/facts.md#cwv)) |  |
 | 修复项总数(P0/P1/P2) | {} |  |  |
 
 ## Findings
@@ -41,7 +41,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Scope: {域名/抽查页数/工具} �
 - {抽样局限:仅审计 {} 页,占全站 {}%}
 - {渲染依赖:基于 JS 渲染后 DOM;需 GSC URL Inspection 复核}
 - {因果模糊:排名下降与 {} 同期,无法排除算法更新/季节性;定案方式:{}(对照 seo-drift-monitoring 算法归因层)}
-- {数据坑:Search Console 的展示、CTR、平均排名在 2025-05-13 至 2026-04-27 记录有误,点击不受影响;含这段时间的两期展示对比不可信([官方记录](https://support.google.com/webmasters/answer/6211453),核对 2026-10-21)}
+- {数据坑:Search Console 的展示、CTR、平均排名在[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)里记录有误,点击不受影响;含这段时间的两期展示对比不可信}
 
 ## 检查清单(逐项:检查什么 → 怎么查 → 通过/失败)
 
@@ -50,7 +50,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Scope: {域名/抽查页数/工具} �
 | 1 | 抽样页逐页审计 | `python3 scripts/site_audit.py URL1 URL2 … --market XX --json > audit.json`(stdout 只有一个 JSON 对象;顶层有 `market`、`limits`、`results`) | 通过:`results` 里每个 URL 有 `verdict`,无 `[SKIP]` 拒审页。失败:有 CRITICAL(退出码 1)或拒审页未补抓 |
 | 2 | 健康分与影响排序 | `python3 scripts/health_score.py --input audit.json --json`,读 `main_score`、`band`、`impacts[]` | 通过:能列出 impact 降序的前 5 项。失败:`unmapped` 非空且未解释 |
 | 3 | 索引覆盖 | Search Console →「页面索引编制」报告(原 Coverage)+ 网址检查抽 N 页 | 通过:抽查页都「已编入」。失败:有「已抓取 - 尚未编入」或错误 canonical |
-| 4 | 字段 CWV | CrUX 或 Search Console「核心网页指标」报告,看 p75(28 天滑动窗口,[CrUX 文档](https://web.dev/articles/crux-and-rum-differences)) | 通过:LCP ≤2500ms、INP ≤200ms、CLS ≤0.1。失败:任一项在「需要改进」或「差」 |
+| 4 | 字段 CWV | CrUX 或 Search Console「核心网页指标」报告,看 p75(滑动窗口,[窗口长度](../../references/overview/facts.md#crux-window)) | 通过:LCP、INP、CLS 三项都在[良好档](../../references/overview/facts.md#cwv)。失败:任一项在「需要改进」或「差」 |
 | 5 | 渲染一致 | 浏览器看渲染后 DOM;`curl -s URL` 看初始 HTML,两者的 title、canonical、正文要点一致 | 通过:一致。失败:关键信息只在 JS 渲染后出现 |
 | 6 | 结构化数据 | `python3 scripts/schema_lint.py URL` + [Rich Results Test](https://search.google.com/test/rich-results) | 通过:无 WARN,所标内容页面上看得到。失败:悬空 @id、占位符、标记不可见内容 |
 

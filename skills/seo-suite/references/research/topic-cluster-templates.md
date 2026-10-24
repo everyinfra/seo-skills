@@ -163,7 +163,7 @@ Pillar 写完后不是终点（content-pillar-atomizer）：抽出 5-8 个「原
 
 ## 案例自述（Affitor case-studies，不作基准）
 
-来源仓 `case-studies.md` 的案例备注里写了：对比文（"Semrush vs Ahrefs"）转化约为单篇评测的 3 倍；5 篇文章约 $3,000/月；建议用实际转化率做基准，并称 1–5% 为典型值。这些是案例自述，没有样本量和方法，不能当通用基准，也不用来承诺排期。该案例还把精选摘要归因于 FAQ 加 schema：Google 文档写明精选摘要无法申请（见 [serp-feature-taxonomy.md](serp-feature-taxonomy.md)），FAQ 富结果也已在 2026-05-07 停止展示，这一条不采信。
+来源仓 `case-studies.md` 的案例备注里写了：对比文（"Semrush vs Ahrefs"）转化约为单篇评测的 3 倍；5 篇文章约 $3,000/月；建议用实际转化率做基准，并称 1–5% 为典型值。这些是案例自述，没有样本量和方法，不能当通用基准，也不用来承诺排期。该案例还把精选摘要归因于 FAQ 加 schema：Google 文档写明精选摘要无法申请（见 [serp-feature-taxonomy.md](serp-feature-taxonomy.md)），FAQ 富结果也已停止展示（[日期](../overview/facts.md#rich-results)），这一条不采信。
 
 ### 来源（Affitor 深读 2026-10-09c）
 

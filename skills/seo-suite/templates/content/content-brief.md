@@ -118,7 +118,7 @@ _For: {写手 · SME 复核人} · Date: {YYYY-MM-DD} · Market: {目标市场/�
 
 - H2–H4 用买家原词的自然变体,不强塞精确匹配(`content_score.py` 的 `keyword_variations` 维度,权重 0.10,本套件口径);
 - ≥{{n_images}} 张图,每张 alt 含术语表术语(images_alt 0.05);
-- schema 只标记页面上真实存在的内容(Google 的结构化数据[通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies));`content_score.py` 的 `schema_focused` 维度(1 种相关类型满分、>3 种扣分)是本套件口径,不是 Google 规则。选型先过 [deprecated-signals.md](../../references/technical/deprecated-signals.md) 替换决策表——FAQ 富结果 2026-05-07 起不再展示、HowTo 富结果已停展,不为展示位新增这类标记;
+- schema 只标记页面上真实存在的内容(Google 的结构化数据[通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies));`content_score.py` 的 `schema_focused` 维度(1 种相关类型满分、>3 种扣分)是本套件口径,不是 Google 规则。选型先过 [deprecated-signals.md](../../references/technical/deprecated-signals.md) 替换决策表——FAQ、HowTo 富结果都已停展([日期](../../references/overview/facts.md#rich-results)),不为展示位新增这类标记;
 - **加粗关键术语**:只加粗术语表内术语,不整句整段加粗(`bolded` 维度,权重 0.05,本套件口径)。
 
 ### 4.5 检查清单与复审频率

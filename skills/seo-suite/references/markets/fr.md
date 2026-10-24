@@ -132,7 +132,7 @@ StatCounter 2026-09 月值(取数 2026-10-21):
 
 - 证据阶梯(可见、被检索、被引用、被提及、被推荐、转化)分开记账(见 [geo-evidence](../content/geo-evidence.md))。
 - 测量协议(本套件口径):50 条法语查询 × 预期标注 × 14 天重测;fr-FR 与 fr-CA 样本分开跑。
-- Search Console 在 2026-06-03 上线「生成式 AI 表现报告」(2026-08-31 起全球开放;给展示、页面、国家、设备、日期,无点击)([Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports))。法国 AIO 自 07-22 起,看该报告里的法国展示。
+- Search Console 有「生成式 AI 表现报告」(已对全球开放,[日期](../overview/facts.md#gsc-genai);给展示、页面、国家、设备、日期,无点击)。法国 AIO 自 07-22 起,看该报告里的法国展示。
 - 信源优先级(假设,待用自己的 50 条查询验证):官方机构(insee.fr、service-public.fr)、AFP 系与 Tier-1 法媒、国际泛源。
 
 ## 五、魁北克法律:Bill 96 与相关

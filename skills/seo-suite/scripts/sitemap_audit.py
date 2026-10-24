@@ -194,6 +194,38 @@ def robots_for(url, timeout=10.0):
     return rp
 
 
+def robots_sitemaps(origin, timeout=10.0):
+    """读 {origin}/robots.txt 的 Sitemap: 行,返回绝对 URL 列表(保序去重);拉不到返回 []。"""
+    try:
+        status, headers, body = fetch(origin + "/robots.txt", timeout=timeout, max_bytes=1_000_000)
+    except Exception:
+        return []
+    if status != 200:
+        return []
+    out = []
+    for line in decode(body, headers).splitlines():
+        m = re.match(r"\s*sitemap\s*:\s*(\S+)", line, re.I)
+        if m:
+            u = urllib.parse.urljoin(origin + "/", m.group(1).strip())
+            if u not in out:
+                out.append(u)
+    return out
+
+
+def sample_children(children, k):
+    """子 sitemap 超过 k 个时按位置均匀抽 k 个,首尾都在。index 常按时间排序(spiegel.de 从
+    1947 年的归档排到当月),只取前 k 个会全是最旧的文件,Freshness 判成「过期」。"""
+    n = len(children)
+    if k <= 0:
+        return []
+    if n <= k:
+        return list(children)
+    if k == 1:
+        return [children[-1]]
+    idx = sorted({round(i * (n - 1) / (k - 1)) for i in range(k)})
+    return [children[i] for i in idx]
+
+
 def ln(tag):
     return tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
 
@@ -333,29 +365,43 @@ def main(argv=None):
         return 2
     origin = "{0}://{1}".format(parts.scheme, parts.netloc)
     path_l = (parts.path or "").lower()
-    sitemap_url = target if (path_l.endswith(".xml") or path_l.endswith(".gz")) else origin + "/sitemap.xml"
-
     notes = []
     entries = []
     total_bytes = 0
     oversize_files = 0
     over50k_files = 0
 
-    try:
-        kind, urls, children, nbytes = fetch_sitemap(sitemap_url, args.timeout)
-    except Exception as e:
-        print("[FATAL] 无法获取/解析 {0}: {1}".format(sitemap_url, e), file=sys.stderr)
-        return 2
+    if path_l.endswith(".xml") or path_l.endswith(".gz"):
+        sitemap_url = target
+        declared = []
+    else:
+        # 给的是站点:先读 robots.txt 的 Sitemap: 行(搜索引擎发现 sitemap 的标准入口),
+        # 没有声明才回退 /sitemap.xml。多条声明按一个虚拟 index 展开。
+        declared = robots_sitemaps(origin, args.timeout)
+        sitemap_url = declared[0] if len(declared) == 1 else origin + "/sitemap.xml"
+    if len(declared) > 1:
+        kind, urls, children, nbytes = "sitemapindex", [], declared, 0
+        sitemap_url = "{0}/robots.txt 声明的 {1} 个 sitemap".format(origin, len(declared))
+        notes.append("入口来自 robots.txt 的 {0} 条 Sitemap 声明(按 index 展开)".format(len(declared)))
+    else:
+        if declared:
+            notes.append("入口来自 robots.txt 的 Sitemap 声明: {0}".format(sitemap_url))
+        try:
+            kind, urls, children, nbytes = fetch_sitemap(sitemap_url, args.timeout)
+        except Exception as e:
+            print("[FATAL] 无法获取/解析 {0}: {1}".format(sitemap_url, e), file=sys.stderr)
+            return 2
     total_bytes += nbytes
     if nbytes > FIFTY_MB:
         oversize_files += 1
     if kind == "urlset":
         entries.extend(urls)
     elif kind == "sitemapindex":
+        picked = sample_children(children, args.max_child)
         if len(children) > args.max_child:
-            notes.append("sitemapindex 含 {0} 个子 sitemap, 超过 --max-child={1}, 仅展开前 {1} 个".format(
-                len(children), args.max_child))
-        for child in children[:args.max_child]:
+            notes.append("sitemapindex 含 {0} 个子 sitemap, 超过 --max-child={1}, 按位置均匀抽 {2} 个(含首尾;"
+                         "lastmod 与 Freshness 只代表样本)".format(len(children), args.max_child, len(picked)))
+        for child in picked:
             try:
                 k2, u2, c2, n2 = fetch_sitemap(child, args.timeout)
             except Exception as e:
@@ -366,6 +412,24 @@ def main(argv=None):
                 oversize_files += 1
             if k2 == "urlset":
                 entries.extend(u2)
+            elif k2 == "sitemapindex" and len(declared) > 1:
+                # 入口是 robots.txt 的多条声明(虚拟 index):声明里的 index 是真正的第一层,照常展开
+                # (2026-10-24 spiegel.de:robots 声明的 sitemap.xml 是 23,707 个子表的 index)
+                picked2 = sample_children(c2, args.max_child)
+                if len(c2) > args.max_child:
+                    notes.append("{0} 含 {1} 个子 sitemap, 按位置均匀抽 {2} 个(含首尾)".format(
+                        child, len(c2), len(picked2)))
+                for g in picked2:
+                    try:
+                        k3, u3, _c3, n3 = fetch_sitemap(g, args.timeout)
+                    except Exception as e:
+                        notes.append("子 sitemap 获取失败: {0}: {1}".format(g, e))
+                        continue
+                    total_bytes += n3
+                    if n3 > FIFTY_MB:
+                        oversize_files += 1
+                    if k3 == "urlset":
+                        entries.extend(u3)
             elif k2 == "sitemapindex":
                 notes.append("嵌套 sitemapindex 超过 1 层, 未继续下钻: {0} ({1} 个子)".format(child, len(c2)))
     else:

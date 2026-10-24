@@ -74,7 +74,7 @@ Pillar Topic
 | 标题和首段回答真实提问 | GSC 导出「查询 × 页面」，运行 `python3 scripts/question_align.py --gsc <导出.csv>`；方法见 [question-alignment.md](../content/question-alignment.md) | 页面进候选清单且已按建议改写：通过 |
 | 文案句子短而一句一事 | `python3 scripts/ste_lint.py <文件.md>`；规则见 [asd-ste100-web-writing.md](../content/asd-ste100-web-writing.md) | 无 FAIL 项：通过 |
 | 内容日历比例 | 统计排期里搜索型 / 传播型 / 实验的篇数 | 比例偏离 60/30/10 时写明理由（起点比例，不是规则） |
-| 衰退页进入刷新队列 | `python3 scripts/gsc_mining.py cur.csv prev.csv --decay`（两期同口径导出） | 点击降幅 ≥25% 的页面已有刷新结论。注意 GSC 2025-05-13 至 2026-04-27 的展示数据不可比，两期对比不要跨这个期间（见 [GSC 帮助](https://support.google.com/webmasters/answer/6211453)） |
+| 衰退页进入刷新队列 | `python3 scripts/gsc_mining.py cur.csv prev.csv --decay`（两期同口径导出） | 点击降幅 ≥25% 的页面已有刷新结论。注意[GSC 数据异常期](../overview/facts.md#gsc-anomaly)里的展示数据不可比，两期对比不要跨这个期间 |
 | 选题合并队列 | `python3 scripts/content_queue.py collect`，再 `plan` 出周排期 | 每周在制数不超过自设上限 |
 
 ## 输出要求

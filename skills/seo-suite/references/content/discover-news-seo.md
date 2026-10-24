@@ -70,7 +70,7 @@
 - `<news:language>` 用 ISO 639 代码；简体中文写 `zh-cn`，繁体写 `zh-tw`。
 - `<news:publication_date>` 用 W3C 格式。只写日期（`YYYY-MM-DD`）或写到时分秒带时区都可以。填文章首次发布时间，不填加入 sitemap 的时间。
 - 更新现有 sitemap，不要每次新建。Google News 抓 news sitemap 的频率与抓站点其他部分相同。
-- 通用 sitemap 规则同样适用：用绝对 URL；单文件不超过 50MB（未压缩）或 50,000 个 URL。来源：[Sitemaps 报告帮助](https://support.google.com/webmasters/answer/7451001)。
+- 通用 sitemap 规则同样适用：用绝对 URL；单文件大小和 URL 数不超过 [sitemap 上限](../overview/facts.md#sitemap-limits)。
 - 新闻站还需要常规 sitemap：news sitemap 只装两天内的文章，旧文靠常规 sitemap 被发现（本套件口径）。
 
 **常见错误对照**：
@@ -171,7 +171,7 @@ curl -sI https://example.com/news/article | grep -i 'x-robots-tag'; curl -s http
 
 ## 五、监测
 
-- **GSC Discover 效果报告**（[帮助](https://support.google.com/webmasters/answer/9216516)）：指标只有展示、点击、CTR；可按页面、国家、Discover 外观、日期分组；没有查询词和排名位置。数据覆盖近 16 个月；达到最低展示量才显示报告；包含 Chrome 上的 Discover 流量。表格最多 1,000 行；日期按太平洋时间；指标记在 canonical URL 上。数据延迟沿用效果报告的口径，一般 2 至 3 天（[数据差异说明](https://support.google.com/webmasters/answer/17010575)）。
+- **GSC Discover 效果报告**（[帮助](https://support.google.com/webmasters/answer/9216516)）：指标只有展示、点击、CTR；可按页面、国家、Discover 外观、日期分组；没有查询词和排名位置。数据覆盖期同效果报告保留期（[保留期](../overview/facts.md#gsc-retention)）；达到最低展示量才显示报告；包含 Chrome 上的 Discover 流量。表格最多 1,000 行；日期按太平洋时间；指标记在 canonical URL 上。数据延迟沿用效果报告的口径，一般 2 至 3 天（[数据差异说明](https://support.google.com/webmasters/answer/17010575)）。
 - **API**：Search Analytics API 的 `type` 参数支持 `discover` 和 `googleNews`（news.google.com 与 Google News App）；`news` 指 Search 的「新闻」标签。`discover` 和 `googleNews` 不支持 `aggregationType=byProperty`。来源：[searchanalytics.query](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)。套件的 `gsc_api.py query` 目前没有 `--type` 参数，Discover 数据要直接调 API 或在 GSC 导出：
 
 ```bash

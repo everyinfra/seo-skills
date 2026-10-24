@@ -4,7 +4,7 @@
 
 ### HTML Validation(11 条,权重 2%)
 
-缺 DOCTYPE=**fail**(任何 DOCTYPE 都过);缺 charset(utf-8 须 head 首位)=warn/fail;head 含非法元素=warn(白名单:meta/title/link/script/style/base/noscript;读的是served 源码,因为解析后的 DOM 已把它们挪进 body);head 内 noscript 仅当含 link/style/meta 以外元素时 warn;多 head=fail;**HTML 体积 >250KB 警、>500KB 败、~2MB 以上 Googlebot 可能只索引前段**;lorem ipsum=**fail**;多 title=**fail**;多 description=**fail**;title 在 head 外=fail;base 元素(href 空/畸形/非 HTTP(S)=fail,多条=warn,须 ≤1 条)。
+缺 DOCTYPE=**fail**(任何 DOCTYPE 都过);缺 charset(utf-8 须 head 首位)=warn/fail;head 含非法元素=warn(白名单:meta/title/link/script/style/base/noscript;读的是served 源码,因为解析后的 DOM 已把它们挪进 body);head 内 noscript 仅当含 link/style/meta 以外元素时 warn;多 head=fail;**HTML 体积 >250KB 警、>500KB 败、超过 [Googlebot 抓取上限](../../overview/facts.md#googlebot-size)只索引前段**;lorem ipsum=**fail**;多 title=**fail**;多 description=**fail**;title 在 head 外=fail;base 元素(href 空/畸形/非 HTTP(S)=fail,多条=warn,须 ≤1 条)。
 
 **解释层(5 条,第三批;ID 未公布原文的按家族命名法推得并标 [待核])**
 
@@ -46,8 +46,8 @@
 
 #### htmlval-html-size [待核 ID]
 - 名称/类型: HTML 体积与占位文本(源表 ID `htmlval-size-limit`、`htmlval-lorem-ipsum`) —— warning/issue · 优先级 medium · 输出 WARN(>250KB)/CRITICAL(>500KB、lorem ipsum)(源表:>250KB 警、>500KB 败;lorem ipsum=fail)
-**这意味(what)**: 未压缩 HTML 超过 250KB(500KB 进败档,~2MB 以上 Googlebot 可能只索引前段),或页面含 lorem ipsum 占位文本。
-**为什么(why)**: HTML 体积是解析与抓取预算的直接消耗:Googlebot 只抓文件前 2MB(解压后),之后的内容与链接不参与索引([Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot),核对 2026-10-21;与 perf-page-weight 同源);250/500KB 几乎总是内联数据 JSON/隐藏 DOM/注释未清的症状。lorem ipsum 则是模板没换真文案就上线的直接证据,对用户与引擎都是无意义内容(与 content-placeholder-text 的 {{ }} 占位符同族,此处并入陈述)。
+**这意味(what)**: 未压缩 HTML 超过 250KB(500KB 进败档,超过 [Googlebot 抓取上限](../../overview/facts.md#googlebot-size)只索引前段),或页面含 lorem ipsum 占位文本。
+**为什么(why)**: HTML 体积是解析与抓取预算的直接消耗:Googlebot 只抓文件前一段(解压后,[上限](../../overview/facts.md#googlebot-size)),之后的内容与链接不参与索引(与 perf-page-weight 同源);250/500KB 几乎总是内联数据 JSON/隐藏 DOM/注释未清的症状。lorem ipsum 则是模板没换真文案就上线的直接证据,对用户与引擎都是无意义内容(与 content-placeholder-text 的 {{ }} 占位符同族,此处并入陈述)。
 **触发(trigger)**: 1) HTML 响应体 >250KB 即警;>500KB 即败;2) 文本命中 lorem/ipsum 词表即 fail(源表现行)。
 **不修的条件(caveat)**: 体积阈值不是排名开关,然而它标记"尾部内容可能不被处理",所以一般建议压回 250KB 内并把关键内容与链接放前段。但合法的大文档(长表格/内联数据应用页)超线是形态属性,优先保证前段完整而非硬拆。
 **修复(fix)**: 内联 JSON 改按需接口拉取;注释/调试属性剥离;长列表服务端分页;lorem 命中直接换真文案或下线页面。

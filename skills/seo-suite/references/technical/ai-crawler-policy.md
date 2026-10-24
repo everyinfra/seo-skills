@@ -90,7 +90,7 @@ Disallow: /
 | 引擎 | 做法 | 官方说明（核对 2026-10-18） |
 |---|---|---|
 | ChatGPT 搜索 | `Disallow` `OAI-SearchBot` | 不出现在搜索答案；仍可能作为导航链接；约 24 小时生效 |
-| Google AI Overviews / AI Mode / Discover 生成式功能 | Search Console → 设置 → Search generative AI，选 Exclude；或页面级 `nosnippet`、`data-nosnippet`、`max-snippet` | 2026-08-31 起对所有网站开放；一般 1–2 天生效；不影响训练（训练用 `Google-Extended`）；不作为其他搜索排名信号（[帮助页](https://support.google.com/webmasters/answer/16908024)、[AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)） |
+| Google AI Overviews / AI Mode / Discover 生成式功能 | Search Console → 设置 → Search generative AI，选 Exclude；或页面级 `nosnippet`、`data-nosnippet`、`max-snippet` | 已对所有网站开放（[日期](../overview/facts.md#gsc-genai)）；一般 1–2 天生效；不影响训练（训练用 `Google-Extended`）；不作为其他搜索排名信号（[帮助页](https://support.google.com/webmasters/answer/16908024)、[AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features)） |
 | Perplexity | `Disallow` `PerplexityBot` | `Perplexity-User` 仍可能按用户请求抓取 |
 | Claude | `Disallow` `Claude-SearchBot`（索引）与 `Claude-User`（用户触发） | 两者都声明遵守 robots.txt |
 | Copilot | 页面 meta `NOARCHIVE`（或 `NOCACHE`，只给 URL/标题/摘要） | robots.txt 只管抓取，不管索引 |

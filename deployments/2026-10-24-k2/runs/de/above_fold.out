@@ -1,0 +1,16 @@
+============================================================================
+above_fold 5 秒测试 | https://www.spiegel.de/ (HTTP 200)
+首屏文本预览: Zum Inhalt springen Leider gibt es die von Ihnen gesuchte Seite nicht oder nicht mehr. Wir haben Sie daher auf unsere Startseite umgeleitet. Hier finden Sie uns...
+----------------------------------------------------------------------------
+元素               权重      得分      加权  说明
+headline       0.35     100   35.00  首个标题(h2): "Angeklagte im Mordfall Fabian Keine Schuldgefühle, Talent zu"
+value_prop     0.25       0    0.00  前 200 字符未见具体数字 (量化价值主张缺失)
+cta            0.25      40   10.00  前 300 字符无动作动词, 仅存在链接: "Zum Inhalt springen"
+trust          0.15       0    0.00  首屏 700 字符无风险反转/信任语
+----------------------------------------------------------------------------
+总分: 45.0 / 100 -> FAIL (阈值 70)
+
+建议:
+  - value_prop: 在前 200 字符内加入具体数字 (效果/规模/价格/时限)
+  - cta: 在前 300 字符或首个链接里放动作动词 (开始/免费试用/Get started/Book...)
+  - trust: 首屏写一条你真实提供的风险反转 (如免费额度/试用、失败不扣费、按成功计费、退款规则);做不到的承诺不要写

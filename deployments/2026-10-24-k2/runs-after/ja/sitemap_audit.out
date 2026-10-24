@@ -1,0 +1,30 @@
+==============================================================
+sitemap_audit | 入口: https://www.asahi.com/sitemap.xml
+sitemap 类型: sitemapindex | 累计抓取 67322 字节 | loc 总数: 138 (去重后)
+
+---- lastmod 三判定 ----
+Coverage     : 0.000  (有 lastmod 条目占比, 期望 1.0)
+Freshness    : 无任何可解析的 lastmod, 无法判定
+Truthfulness : 最大单日簇 - 占 0.0% (未触发伪造特征)
+
+[范围] 逐条抓取检查了前 20/138 个 loc (--check-limit 可调)
+
+---- 六坏桶 ----
+
+[桶1 非 200 / 抓取失败] 命中 0
+
+[桶2 3xx 重定向] 命中 0
+
+[桶3 noindex 页] 命中 0
+
+[桶4 canonical 指向他址] 命中 0
+
+[桶5 robots.txt 屏蔽 (Googlebot)] 命中 0
+
+[桶6 参数重复 URL (同 path 不同 query)] 命中 0
+
+---- 过程备注 ----
+   * 入口来自 robots.txt 的 Sitemap 声明: https://www.asahi.com/sitemap.xml
+   * sitemapindex 含 8 个子 sitemap, 超过 --max-child=5, 按位置均匀抽 5 个(含首尾;lastmod 与 Freshness 只代表样本)
+
+==== 结论: 坏桶命中 0 条, must-include 缺失 0 个 => PASS ====

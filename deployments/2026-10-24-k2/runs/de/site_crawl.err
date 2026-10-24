@@ -1,0 +1,3 @@
+[site_crawl] ⚠ sitemapindex 含 419 个子表,仅展开前 100 个: https://www.spiegel.de/sitemaps/videos/sitemap.xml
+[site_crawl] ⚠ sitemap XML 解析失败: unclosed token: line 63242, column 0
+[site_crawl] ⚠ 发现 541+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

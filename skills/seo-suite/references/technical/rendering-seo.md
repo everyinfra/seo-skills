@@ -15,7 +15,7 @@
 - **能力边界**：Googlebot 拒绝权限请求（摄像头等）；不支持 WebSocket、WebRTC，要有 HTTP 回退；不支持 WebGL 等特性时要做特性检测。Shadow DOM 会被展平，内容必须出现在渲染后的 HTML 里。
 - **路由与链接**：只发现带 `href` 的 `<a>` 链接；SPA 用 History API，不要用片段（`#/products`）加载不同内容。客户端路由的错误页要么 JS 跳到返回 404 的 URL，要么用 JS 加 `noindex`。
 - **懒加载**：内容进入视口就加载（原生 `loading="lazy"`、IntersectionObserver），不依赖滚动或点击——Google 不和页面交互；首屏立即可见的内容不要懒加载（[懒加载文档](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading)）。
-- **抓取上限**：Googlebot 只抓每个受支持文件类型的前 2MB（按解压后的数据计算），PDF 前 64MB；页面引用的每个 CSS、JS 单独计算（[Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)，核对 2026-10-21）。
+- **抓取上限**：Googlebot 每个文件只抓前一段（上限按解压后数据计，PDF 另有上限，见[事实表](../overview/facts.md#googlebot-size)）；页面引用的每个 CSS、JS 单独计算。
 - **检测工具**：Search Console 网址检查（渲染后 HTML、加载的资源、JS 控制台输出；截图只在实时测试里有）、富媒体搜索结果测试。Mobile-Friendly Test 工具与 API 已于 2023-12 退役（[Google 博客注记](https://developers.google.com/search/blog/2016/05/a-new-mobile-friendly-testing-tool)）；改用网址检查或 Lighthouse。
 
 > PDF：2026-10-13 Google Search Central 发布了一期讨论 PDF 转换、链接与 AI 结果的播客视频（第三方报道：[PPC Land](https://ppc.land/google-podcast-hosts-cant-name-the-pdf-crawl-limit-it-documents-as-64mb/)），不是新文档。核心内容仍应有 HTML 版本（本套件口径）。
@@ -89,7 +89,7 @@ print("raw=%d rendered=%d ratio=%.2f" % (r, d, r / d if d else 0))'
 
 ## 六、与 Core Web Vitals 的关联
 
-- 阈值与诊断以 [cwv-playbook.md](cwv-playbook.md) 为准（LCP ≤2.5s、INP ≤200ms、CLS ≤0.1，按 p75）。
+- 阈值与诊断以 [cwv-playbook.md](cwv-playbook.md) 为准（阈值见[事实表](../overview/facts.md#cwv)，按 p75）。
 - CSR 空壳要等 JS 下载执行完才有主内容，LCP 天然偏慢；SSR 或流式渲染改善首屏。
 - 水合期间的长任务拖慢 INP：拆分长任务、按需水合（岛屿架构）。
 - 水合重写 DOM 会引起 CLS；首屏 LCP 图不要懒加载。

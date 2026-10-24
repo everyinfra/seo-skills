@@ -1,0 +1,487 @@
+<!-- 截取:2026-10-24 https://www.spiegel.de/ 首页 HTML 的 <body> 开头约 36,294 字符(已去 script/style/svg 内容) -->
+<html><head><title>fixture</title></head>
+<body class="bg-shade-lightest dark:bg-black text-black dark:text-shade-lightest relative min-w-sm leading-normal static antialiased lining-nums lg:overflow-x-hidden lg:overflow-y-scroll" data-area="homepage">
+<div data-headerbar-height class="flex justify-end relative" style="top: var(--polygon-max-headerbar-height, 0);">
+<span class="relative w-full relative">
+<a href="#Inhalt" title="Zum Inhalt springen" class="absolute inline-block rounded z-overlay bg-white dark:bg-dm-shade-darkest font-bold font-sansUI text-primary-darker dark:text-shade-lightest text-s sm:mr-8 md:mr-24 lg:mr-24 sm:mt-8 md:mt-12 lg:mt-12 right-0 p-0 border-0 h-px w-px overflow-hidden pointer-events-none opacity-none focus:px-12 focus:py-8 focus:h-auto focus:w-auto focus:overflow-auto focus:pointer-events-auto focus:opacity-full">
+Zum Inhalt springen
+</a>
+</span>
+</div>
+<header role="banner" class="sticky print:absolute print:w-full top-0 -mt-8 z-30 pointer-events-none">
+<div data-app-hidden>
+<div class="relative z-max print:hidden" data-area="header-bar">
+<div class="bg-primary-base dark:bg-dm-primary-base top-0 w-full z-10 pointer-events-auto h-80 sm:h-48 transition-height duration-200 ease-linear" id="header-bar" x-data="{isInTopArea: true,isInOverlay: false,get isCollapsed() {return !this.isInTopArea && !this.isInOverlay;},}" x-init="isInTopArea = typeof $store.isInTopArea === 'undefined' || $store.isInTopArea;" x-subscribe.toparea_enter="isInTopArea = true" x-subscribe.toparea_leave="isInTopArea = false" x-subscribe.overlay_handler_active_overlay_changed="isInOverlay = !!$payload[0] && $payload[0].expandHeader" x-effect="$store.MediaQuery.breakpoint !== 'sm' && document.documentElement.classList.toggle('is-headerbar-collapsed', isCollapsed)" :class="{'lg:shadow lg:h-48 md:shadow md:h-48 iqdsticky': isCollapsed,}" x-lazyload>
+<div class="bg-primary-base dark:bg-dm-primary-base md:overflow-hidden lg:overflow-hidden">
+<div class="mx-auto flex items-center h-80 transition-height duration-200 ease-linear lg:px-32 lg:py-20 lg:max-w-lg md:px-24 md:py-20 sm:pb-12 sm:pl-16 sm:pr-12 sm:pt-12 sm:h-48" :class="{'lg:h-48 md:h-48': isCollapsed,}">
+<span class="flex flex-auto justify-between items-center md:order-1 lg:order-1 overflow-hidden text-white transition-transform duration-300 ease-out origin-left-center" :class="{'lg:translate-x-40 lg:scale-70 md:translate-x-40 md:scale-70': isCollapsed,}">
+<span class="shrink-0 text-white">
+<a href="https://www.spiegel.de/" target="_self" title="DER SPIEGEL" aria-label="DER SPIEGEL">
+<span class="hidden">DER SPIEGEL</span>
+<span class="block lg:hidden md:hidden leading-none">
+</span>
+<span class="block leading-none sm:hidden">
+</span>
+</a>
+</span>
+<div class="relative lg:h-56 md:h-56 sm:h-40 focus:outline-none">
+<div class="z-10 absolute right-0 bottom-0 lg:h-56 md:h-56 sm:h-40">
+<div class="flex items-center">
+<span class="bg-gradient-to-l from-primary-base dark:from-dm-primary-base w-24 lg:h-56 md:h-56 sm:h-40"></span>
+</div>
+</div>
+</div>
+</span>
+<div class="flex items-center gap-24 justify-end flex-auto md:order-2 lg:order-2 ml-6 transition-fade duration-300 ease-out" :class="{'lg:invisible lg:opacity-none md:invisible md:opacity-none': isCollapsed,}">
+<a href="https://gruppenkonto.spiegel.de/authenticate?requestAccessToken=true&targetUrl=https%3A%2F%2Fwww.spiegel.de%2F" title="Jetzt anmelden" class="font-bold bg-primary-base dark:bg-dm-primary-base inline-block text-white font-sansUI py-12 text-s md:hidden lg:hidden" data-logged-in-hidden data-sara-link="gruppenkonto">
+<span class="border-b">Anmelden</span>
+</a>
+<a href="https://abo.spiegel.de?b=SPOHNAVABO&requestAccessToken=true&sara_icid=disp_upd_JoH8Ct4kity9Jf0fVyMMOEmHGDQgM9&targetUrl=https%3A%2F%2Fwww.spiegel.de%2F" title="Abonnement" class="sm:hidden font-bold bg-primary-base dark:bg-dm-primary-base inline-block text-white font-sansUI py-12 text-s" target="_blank">
+<span class="border-b">Abonnement</span>
+</a>
+<span class="sm:hidden">
+<a href="https://gruppenkonto.spiegel.de/authenticate?requestAccessToken=true&targetUrl=https%3A%2F%2Fwww.spiegel.de%2F" class="inline-flex items-center font-bold font-sansUI rounded text-primary-base bg-white hover:text-primary-dark focus:text-primary-darker dark:text-primary-base px-16 min-h-44 gap-8" title="Jetzt anmelden" data-sara-link="gruppenkonto" data-logged-in-hidden>
+<span data-label class="text-s leading-18">Anmelden</span>
+<span class="leading-none">
+</span>
+</a>
+</span>
+<button @click="$publish('OPEN_ACCOUNT_MENU_DRAWER')" class="bg-white sm:h-32 md:h-40 lg:h-40 sm:w-32 md:w-40 lg:w-40 inline-flex items-center justify-center rounded-circle text-primary-base dark:text-dm-primary-base hover:opacity-distinct" data-not-logged-in-hidden title="Für Mich">
+</button>
+</div>
+<button class="text-white dark:text-shade-lightest leading-none outline-focus transition-fade duration-300 ease-out lg:absolute lg:h-full lg:top-0 lg:invisible lg:opacity-none lg:-ml-4 md:absolute md:h-full md:top-0 md:invisible md:opacity-none md:-ml-4 sm:ml-24" @click="setTimeout(() => $publish('OPEN_MENU_DRAWER'), 0)" data-sara-click-el="button" :class="{'lg:opacity-none lg:invisible md:opacity-none md:invisible': !isCollapsed,}">
+<span class="sr-only">Menü öffnen</span>
+</button>
+</div>
+</div>
+</div>
+<div class="absolute left-0 right-0 pointer-events-auto" data-notification-el="container" data-notification-position="default"></div>
+</div>
+<div class="hidden print:flex items-start p-20 pointer-events-auto mt-8 bg-white text-primary-base">
+<a href="https://www.spiegel.de/" target="_self" title="DER SPIEGEL" aria-label="DER SPIEGEL">
+<span class="block leading-none">
+</span>
+</a>
+</div>
+</div>
+</header>
+<nav role="navigation" class="z-10 mt-8 print:hidden">
+<span data-app-hidden x-data x-intersect:enter.margin.-48px.0.0.0="$store.isInTopArea = true; $publish('TOPAREA_ENTER');" x-intersect:leave.margin.-48px.0.0.0="$store.isInTopArea = false; $publish('TOPAREA_LEAVE');" x-init="Alpine.store('isInTopArea', true)"></span>
+<div class="z-10 relative bg-white dark:bg-dm-shade-darkest w-full shadow font-sans print:hidden" x-data x-init="document.fonts.ready.then(() => $swiper.update())" x-swiper="{freeMode: true,roundLengths: false,slidesPerView: 'auto',watchOverflow: true,}" @swiper-init="const activeIndex = $swiper.slides.findIndex((slide) => slide.dataset.itemActive);$swiper.slideTo(activeIndex - 1, 500, false);" data-area="nav-bar" x-lazyload>
+<div class="bg-white dark:bg-dm-shade-darkest">
+<div class="lg:max-w-lg mx-auto font-sansUI flex items-center lg:h-56 md:h-56 sm:h-48 lg:pl-12 lg:pr-16 md:pl-4">
+<div class="h-full sm:hidden" data-app-hidden>
+<button class="flex items-center h-full text-black dark:text-shade-lightest text-black dark:text-shade-lightest leading-none text-s px-16 outline-focus" @click="$publish('OPEN_MENU_DRAWER')" data-sara-click-el="button">
+<span>
+</span>
+<span class="sm:text-base md:text-s lg:text-s ml-8 leading-18 border-b border-transparent">Menü</span>
+</button>
+</div>
+<div class="sm:hidden h-full lg:py-16 md:py-16 sm:py-8" data-app-hidden>
+<div class="border-separator-secondary-r w-px h-full"></div>
+</div>
+<div class="polygon-swiper-button-prev relative focus:outline-none hidden select-none h-full">
+<div class="md:hidden sm:hidden absolute bottom-0 flex items-center left-0 lg:h-56 md:h-56 sm:h-40 z-10">
+<span class="bg-white dark:bg-dm-shade-darkest w-48 px-16 py-18 text-center cursor-pointer">
+</span>
+</div>
+</div>
+<nav role="navigation" class="polygon-swiper relative overflow-hidden h-full bottom-negative flex grow lg:mx-6 md:px-6">
+<ul class="polygon-swiper-wrapper flex items-center lg:h-56 md:h-56 sm:h-48 relative bottom-px leading-18 px-8">
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/schlagzeilen/" target="_self" title="Schlagzeilen" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Schlagzeilen
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full px-8" aria-hidden="true">
+<span class="border-separator-secondary-r w-px h-24"></span>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/plus/" target="_self" title="SPIEGEL+" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+SPIEGEL+
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/thema/nsdap-archiv/" target="_self" title="Die Nazi-Kartei" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Die Nazi-Kartei
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://sportdaten.spiegel.de/" target="_blank" title="Sportdaten" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Sportdaten
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/games/" target="_self" title="Games und Quiz" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Games und Quiz
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/debatten/" target="_self" title="Debatte" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Debatte
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/politik/deutschland/" target="_self" title="Politik" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Politik
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/ausland/" target="_self" title="Ausland" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Ausland
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/panorama/" target="_self" title="Panorama" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Panorama
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/sport/" target="_self" title="Sport" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Sport
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/wirtschaft/" target="_self" title="Wirtschaft" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Wirtschaft
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/wissenschaft/" target="_self" title="Wissenschaft" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Wissenschaft
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/kultur/" target="_self" title="Kultur" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Kultur
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/netzwelt/" target="_self" title="Netzwelt" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Netzwelt
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/thema/leben" target="_self" title="Leben" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Leben
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/effilee/" target="_self" title="Effilee" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Effilee
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/karriere/" target="_self" title="Job & Karriere" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Job & Karriere
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/start/" target="_self" title="Start" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Start
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/thema/daten-und-visualisierungen/" target="_self" title="Daten & Visualisierungen" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Daten & Visualisierungen
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/thema/reporter/" target="_self" title="Reporter" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Reporter
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/tests/" target="_self" title="Tests" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Tests
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/geschichte/" target="_self" title="Geschichte" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Geschichte
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/mobilitaet/" target="_self" title="Mobilität" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Mobilität
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/audio/" target="_self" title="Podcasts" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Podcasts
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/video/" target="_self" title="Video" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+Video
+</span>
+</a>
+</li>
+<li class="polygon-swiper-slide flex items-center h-full">
+<a href="https://www.spiegel.de/deinspiegel/" target="_self" title="DEIN SPIEGEL" class="focus:border-black dark:focus:border-white hover:border-shade-light border-transparent inline-flex items-center text-black dark:text-shade-lightest text-s h-full px-8">
+<span class="sm:text-base md:text-s lg:text-s border-b whitespace-nowrap border-inherit">
+DEIN SPIEGEL
+</span>
+</a>
+</li>
+</ul>
+</nav>
+<div class="polygon-swiper-button-next relative h-full focus:outline-none select-none">
+<div class="md:hidden sm:hidden absolute bottom-0 flex items-center lg:h-56 md:h-56 right-0 sm:h-40 z-10">
+<span class="bg-white dark:bg-dm-shade-darkest w-48 text-center cursor-pointer px-16 py-20 leading-none">
+</span>
+</div>
+</div>
+<div class="sm:hidden h-full lg:py-16 md:py-16 sm:py-8" data-app-hidden>
+<div class="border-separator-secondary-r w-px h-full"></div>
+</div>
+<div class="relative sm:hidden flex-none transition-all duration-300 ease-in-out w-56 h-40" data-app-hidden x-data="{isOpen: false,open() {this.isOpen = true;$focus($refs.input);setTimeout(() => $swiper.update(), 300);},close() {this.isOpen = false;setTimeout(() => $swiper.update(), 300);}}" @keyup.escape="if (!$event.defaultPrevented) {$event.preventDefault();close();$focus($refs.toggle);}" @mousedown.outside="close()" :class="{'lg:w-4/12': isOpen,'md:w-5/12': isOpen,}">
+<form action="https://www.spiegel.de/suche/" role="search" x-show="isOpen" x-transition.duration.300ms.opacity x-cloak>
+<div class="inline-flex flex-col ml-16 pr-20 w-full">
+<div class="group relative flex flex-col">
+<input id="search-input-field" name="suchbegriff" placeholder="Seite durchsuchen ..." x-ref="input" class="peer appearance-none rounded placeholder-shade-base dark:disabled:placeholder-shade-dark outline-focus disabled:cursor-not-allowed pl-12 pr-48 h-40 font-sansUI leading-normal text-black dark:text-shade-lightest text-s bg-white dark:bg-shade-darkest dark:disabled:bg-dm-shade-darkest read-only:bg-shade-lightest dark:read-only:bg-black border border-shade-base hover:border-black disabled:border-shade-lighter read-only:border-shade-lighter dark:read-only:border-shade-dark dark:border-shade-light dark:hover:border-shade-lightest dark:disabled:border-shade-dark autofill:transition-colors autofill:duration-max">
+<span class="absolute top-0 bottom-0 right-0 pr-12 pointer-events-none flex items-center text-shade-darker dark:text-shade-lightest group-hover:text-shade-darkest dark:group-hover:text-shade-lightest peer-disabled:text-shade-base dark:peer-disabled:text-shade-dark" data-input-el="icon">
+</span>
+</div>
+</div>
+<button class="absolute top-0 right-4 bottom-0 w-48" title="Suche starten" data-sara-click-el="button" x-show="isOpen">
+<span class="sr-only">Suche starten</span>
+</button>
+</form>
+<button class="absolute top-0 bottom-0 right-0 focus-outline flex items-center text-black dark:text-shade-lightest text-s px-16" data-sara-click-el="button" x-ref="toggle" x-show="!isOpen" x-transition.duration.300ms.opacity @click="open()">
+<span class="sr-only">Suche öffnen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<section class="relative pt-px" data-area="latest-news" data-has-breaking-news-hidden aria-label="Schlagzeilen">
+<div class="absolute top-0 right-0 left-0 bg-shade-lightest dark:bg-black" style="bottom: -8px;"></div>
+<div class="absolute top-0 right-0 left-0 h-10 bg-shade-lightest dark:bg-black"></div>
+<div class="w-full relative -mt-px pt-1 z-10 lg:rounded md:rounded shadow bg-white dark:bg-dm-shade-darkest">
+<div class="polygon-swiper lg:max-w-lg mx-auto lg:px-8 mt-px overflow-x-hidden font-sans" x-data x-swiper="{roundLengths: true,slidesPerView: 'auto',watchOverflow: false,}" x-lazyload>
+<div class="polygon-swiper-button-prev hidden absolute bottom-0 left-0 top-0 z-10 select-none">
+<span class="block bg-gradient-to-r from-white dark:from-dm-shade-darkest h-full w-24"></span>
+</div>
+<div class="polygon-swiper-button-next absolute bottom-0 right-0 top-0 z-10 select-none">
+<span class="block bg-gradient-to-l from-white dark:from-dm-shade-darkest h-full w-24"></span>
+</div>
+<div class="polygon-swiper-wrapper flex">
+<div class="polygon-swiper-slide relative lg:w-4/12 md:w-5/12 sm:w-10/12 shrink-0" data-area="article_teaser->news-s-latestnews" data-pos="1">
+<article aria-label="Er stand in einem WM-Halbfinale. Jetzt malt er abstrakte Kunst" data-sara-article-id="566e2a62-7536-4e9f-8884-4551f735c94a" class="py-16 lg:px-24 md:px-24 sm:px-16" data-target-teaser="s-news-latestnews">
+<h2>
+<a href="https://www.spiegel.de/sport/fussball/piotr-trochowski-ehemaliger-fussballnationalspieler-ist-jetzt-maler-a-566e2a62-7536-4e9f-8884-4551f735c94a" target="_self" class="group text-black dark:text-shade-lightest block" title="Er stand in einem WM-Halbfinale. Jetzt malt er abstrakte Kunst">
+<span class="block font-sansUI serifmode:font-serifUI font-bold text-base">
+<span class="inline-flex leading-none mr-4 relative top-2" data-contains-flags="plus-paid" data-flag-domain="spon">
+<span class="inline-block mr-4 text-primary-base dark:text-dm-primary-base" data-flag-name="plus-paid">
+</span>
+</span><span class="text-black dark:text-shade-lightest group-hover:opacity-moderate group-focus:opacity-moderate font-sansUI" data-target-teaser-el="topmark"></span><span class="group-hover:opacity-moderate group-focus:opacity-moderate"><span class="mr-6">Ex-Fußballnationalspieler Trochowski: Er stand in einem WM-Halbfinale. Jetzt malt er abstrakte Kunst</span>
+<span class="font-sansUI font-normal text-s text-shade-darker dark:text-shade-light whitespace-nowrap" data-target-teaser-el="meta">
+Vor 5 Min</span></span>
+</span>
+</a>
+</h2>
+</article>
+<div class="absolute right-0 top-0 bottom-0 w-px border-separator-secondary-r my-16"></div>
+</div>
+<div class="polygon-swiper-slide relative lg:w-4/12 md:w-5/12 sm:w-10/12 shrink-0" data-area="article_teaser->news-s-latestnews" data-pos="2">
+<article aria-label="US-Geheimdienstchef warnt vor Irans »tödlichen Planungen gegen US-Bürger«" data-sara-article-id="f4a935e7-a6f4-4881-9033-409754f894ea" class="py-16 lg:px-24 md:px-24 sm:px-16" data-target-teaser="s-news-latestnews">
+<h2>
+<a href="https://www.spiegel.de/ausland/jay-clayton-iran-hat-laut-us-geheimdienstchef-us-personal-verstaerkt-im-visier-a-f4a935e7-a6f4-4881-9033-409754f894ea" target="_self" class="group text-black dark:text-shade-lightest block" title="US-Geheimdienstchef warnt vor Irans »tödlichen Planungen gegen US-Bürger«">
+<span class="block font-sansUI serifmode:font-serifUI font-bold text-base"><span class="text-black dark:text-shade-lightest group-hover:opacity-moderate group-focus:opacity-moderate font-sansUI" data-target-teaser-el="topmark"></span><span class="group-hover:opacity-moderate group-focus:opacity-moderate"><span class="mr-6">Krieg in Nahost: US-Geheimdienstchef warnt vor Irans »tödlichen Planungen gegen US-Bürger«</span>
+<span class="font-sansUI font-normal text-s text-shade-darker dark:text-shade-light whitespace-nowrap" data-target-teaser-el="meta">
+Vor 18 Min</span></span>
+</span>
+</a>
+</h2>
+</article>
+<div class="absolute right-0 top-0 bottom-0 w-px border-separator-secondary-r my-16"></div>
+</div>
+<div class="polygon-swiper-slide relative lg:w-4/12 md:w-5/12 sm:w-10/12 shrink-0" data-area="article_teaser->news-s-latestnews" data-pos="3">
+<article aria-label="»Selbstliebe ist so ein Wort, da kriege ich Ausschlag«" data-sara-article-id="3aa6c56d-6730-4211-a73c-e4e95b66e0e3" class="py-16 lg:px-24 md:px-24 sm:px-16" data-target-teaser="s-news-latestnews">
+<h2>
+<a href="https://www.spiegel.de/psychologie/leon-windscheid-ueber-zuversicht-selbstliebe-ist-so-ein-wort-da-kriege-ich-ausschlag-a-3aa6c56d-6730-4211-a73c-e4e95b66e0e3" target="_self" class="group text-black dark:text-shade-lightest block" title="»Selbstliebe ist so ein Wort, da kriege ich Ausschlag«">
+<span class="block font-sansUI serifmode:font-serifUI font-bold text-base">
+<span class="inline-flex leading-none mr-4 relative top-2" data-contains-flags="audio" data-flag-domain="spon">
+<span class="inline-block mr-4 text-primary-base dark:text-dm-primary-base" data-flag-name="audio">
+</span>
+</span><span class="text-black dark:text-shade-lightest group-hover:opacity-moderate group-focus:opacity-moderate font-sansUI" data-target-teaser-el="topmark"></span><span class="group-hover:opacity-moderate group-focus:opacity-moderate"><span class="mr-6">Mehr Zuversicht, weniger Überforderung: »Selbstliebe ist so ein Wort, da kriege ich Ausschlag«</span>
+<span class="font-sansUI font-normal text-s text-shade-darker dark:text-shade-light whitespace-nowrap" data-target-teaser-el="meta">
+Vor 32 Min</span></span>
+</span>
+</a>
+</h2>
+</article>
+<div class="lg:hidden absolute right-0 top-0 bottom-0 w-px border-separator-secondary-r my-16"></div>
+</div>
+<div class="lg:hidden polygon-swiper-slide relative lg:w-4/12 md:w-5/12 sm:w-10/12 shrink-0" data-area="article_teaser->news-s-latestnews" data-pos="4">
+<article aria-label="Das Quiz des Tages vom SPIEGEL" data-sara-article-id="8a9692b2-4462-4192-942c-fd7809c7519c" class="py-16 lg:px-24 md:px-24 sm:px-16" data-target-teaser="s-news-latestnews">
+<h2>
+<a href="https://www.spiegel.de/games/taegliches-quiz-beim-spiegel-7-fragen-zum-allgemeinwissen-pro-tag-a-8a9692b2-4462-4192-942c-fd7809c7519c" target="_self" class="group text-black dark:text-shade-lightest block" title="Das Quiz des Tages vom SPIEGEL">
+<span class="block font-sansUI serifmode:font-serifUI font-bold text-base"><span class="text-black dark:text-shade-lightest group-hover:opacity-moderate group-focus:opacity-moderate font-sansUI" data-target-teaser-el="topmark"></span><span class="group-hover:opacity-moderate group-focus:opacity-moderate"><span class="mr-6">Was weiß ich?: Das Quiz des Tages vom SPIEGEL</span>
+<span class="font-sansUI font-normal text-s text-shade-darker dark:text-shade-light whitespace-nowrap" data-target-teaser-el="meta">
+Vor 1 Stunde</span></span>
+</span>
+</a>
+</h2>
+</article>
+<div class="lg:hidden absolute right-0 top-0 bottom-0 w-px border-separator-secondary-r my-16"></div>
+</div>
+<div class="lg:hidden polygon-swiper-slide relative lg:w-4/12 md:w-5/12 sm:w-10/12 shrink-0" data-area="article_teaser->news-s-latestnews" data-pos="5">
+<article aria-label="Warum Hendrik Wüst manchmal auf der Couch schläft" data-sara-article-id="b8b3f046-4efd-4dde-99fb-c8be9ba0f948" class="py-16 lg:px-24 md:px-24 sm:px-16" data-target-teaser="s-news-latestnews">
+<h2>
+<a href="https://www.spiegel.de/panorama/hendrik-wuest-warum-der-nrw-ministerpraesident-manchmal-auf-der-couch-schlaeft-a-b8b3f046-4efd-4dde-99fb-c8be9ba0f948" target="_self" class="group text-black dark:text-shade-lightest block" title="Warum Hendrik Wüst manchmal auf der Couch schläft">
+<span class="block font-sansUI serifmode:font-serifUI font-bold text-base"><span class="text-black dark:text-shade-lightest group-hover:opacity-moderate group-focus:opacity-moderate font-sansUI" data-target-teaser-el="topmark"></span><span class="group-hover:opacity-moderate group-focus:opacity-moderate"><span class="mr-6">NRW-Ministerpräsident: Warum Hendrik Wüst manchmal auf der Couch schläft</span>
+<span class="font-sansUI font-normal text-s text-shade-darker dark:text-shade-light whitespace-nowrap" data-target-teaser-el="meta">
+Vor 1 Stunde</span></span>
+</span>
+</a>
+</h2>
+</article>
+<div class="lg:hidden absolute right-0 top-0 bottom-0 w-px border-separator-secondary-r my-16"></div>
+</div>
+<div class="lg:hidden polygon-swiper-slide relative flex shrink-0 md:px-24 sm:px-16">
+<a href="https://www.spiegel.de/schlagzeilen/" class="inline-flex items-center text-black dark:text-shade-lightest w-full" title="Alle Schlagzeilen">
+<span class="font-sansUI md:text-base sm:text-s mr-8">
+Alle Schlagzeilen
+</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="hidden">
+</div>
+<section aria-label="Eilmeldungen" class="hidden relative z-20" data-breakingnews>
+<div class="absolute z-0 top-8 right-0 bottom-0 left-0 shadow"></div>
+<ul class="relative z-10 bg-attention" data-area="breaking-bar" data-breakingnews-el="list"></ul>
+<template id="prototype-breaking-news-default">
+<li class="w-full">
+<div class="sm:max-w-sm md:max-w-md md:mx-auto sm:mx-auto">
+<a data-proto-href="__proto_url__" title="__proto_headline__" class="text-black flex font-sansUI items-center justify-between lg:max-w-lg lg:px-32 lg:py-16 md:max-w-md md:px-24 md:py-16 mx-auto sm:max-w-sm sm:px-16 sm:py-12">
+<span class="lg:text-base md:text-base sm:text-s font-bold">
+<span class="uppercase pr-4">EILMELDUNG</span> —
+<span class="pl-4">__proto_headline__</span>
+</span>
+<span class="leading-none sm:hidden shrink-0 ml-8" aria-hidden="true">
+</span>
+<span class="leading-none lg:hidden md:hidden shrink-0 ml-8" aria-hidden="true">
+</span>
+</a>
+</div>
+</li>
+</template>
+<template id="prototype-breaking-news-textonly">
+<li class="w-full">
+<div class="sm:max-w-sm md:max-w-md md:mx-auto sm:mx-auto">
+<span class="text-black flex font-sansUI items-center justify-between lg:max-w-lg lg:px-32 lg:py-16 md:max-w-md md:px-24 md:py-16 mx-auto sm:max-w-sm sm:px-16 sm:py-12">
+<span class="lg:text-base md:text-base sm:text-s font-bold">
+<span class="uppercase pr-4">EILMELDUNG</span> —
+<span class="pl-4">__proto_headline__</span>
+</span>
+</span>
+</div>
+</li>
+</template>
+</section>
+</nav>
+
+<div class="print:mt-80 relative sm:bg-shade-lightest sm:dark:bg-black md:bg-shade-lightest md:dark:bg-black">
+<div class="lg:mt-16 md:mt-16 sm:mt-8 mx-auto lg:max-w-lg md:max-w-md sm:max-w-sm" x-data="{ isOpen: new URLSearchParams(location.search).get('from') === '404' }" x-show="isOpen" x-cloak>
+<div class="bg-white dark:bg-dm-shade-darkest lg:mx-6 lg:p-24 md:p-24 sm:p-16 shadow rounded">
+<section class="border rounded">
+<div class="flex relative sm:flex-col">
+<div class="absolute bg-shade-lighter dark:bg-shade-darker top-0 bottom-0 left-0 right-0"></div>
+<div class="flex justify-center lg:w-4/12 md:w-6/12 sm:w-full z-10">
+<img class="w-full h-full lazyload" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 949 534' width='949' height='534' %3E%3C/svg%3E" data-src="https://cdn.prod.www.spiegel.de/public/spon/images/errors/404.svg" width="949" height="534" alt="Fehler 404">
+</div>
+<div class="font-sansUI lg:w-8/12 md:w-6/12 pl-16 py-16 relative sm:w-full w-9/12">
+<span class="absolute cursor-pointer mr-16 right-0" @click="isOpen = false">
+</span>
+<header class="text-xl font-bold mb-4 lg:mr-40 lg:pr-6 md:mr-28 md:pr-px sm:mr-36 sm:pr-px">
+Es tut uns leid – hier ist etwas schiefgelaufen
+</header>
+<div class="text-s mb-12 lg:mr-40 lg:pr-6 md:mr-28 sm:mr-36">
+Leider gibt es die von Ihnen gesuchte Seite nicht oder nicht mehr. Wir haben Sie daher auf unsere Startseite umgeleitet. Hier finden Sie unsere aktuellen Top-Meldungen, Videos und Podcasts. Und unsere Suche.
+</div>
+<div class="flex items-center lg:mr-40 lg:pr-6 md:mr-28 sm:mr-36">
+<a href="https://www.spiegel.de/kontakt" class="text-black dark:text-shade-lightest hover:opacity-distinct font-bold font-sansUI text-s leading-normal" title="Wenn Sie den Fehler melden möchten, schreiben Sie uns gerne.">
+Wenn Sie den Fehler melden möchten, schreiben Sie uns gerne.
+</a>
+<span class="stroke-current ml-4 mt-2">
+</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<div class="relative z-20 w-full mx-auto sm:max-w-sm md:max-w-md lg:max-w-lg print:max-w-full">
+<div class="lg:h-8 md:h-8 sm:h-4 print:hidden"></div>
+<div class="iqdcontainer print:hidden md:advertisement-filled:overflow-hidden sm:advertisement-filled:overflow-hidden" data-placement="pos_header" data-device="desktop" data-advertisement="pos_header desktop pos_header:desktop lg md sm"></div>
+<div class="iqdcontainer print:hidden md:advertisement-filled:overflow-hidden sm:advertisement-filled:overflow-hidden" data-placement="pos_header" data-device="mobile" data-advertisement="pos_header mobile pos_header:mobile lg md sm"></div>
+<div class="iqdcontainer print:hidden md:advertisement-filled:overflow-hidden sm:advertisement-filled:overflow-hidden lg:advertisement-filled:py-8 md:advertisement-filled:py-8 sm:advertisement-filled:py-4" data-placement="pos_1" data-device="desktop" data-advertisement="pos_1 desktop pos_1:desktop lg md sm"></div>
+<div class="relative lg:pt-8 md:pt-8 sm:pt-4 lg:px-6 lg:bg-shade-lightest lg:dark:bg-black">
+<main id="Inhalt" class="z-20 relative">
+<div class="relative w-full" data-area="news-section">
+<section class="relative flex flex-wrap w-full rounded lg:bg-white lg:dark:bg-dm-shade-darkest lg:shadow md:bg-white md:dark:bg-dm-shade-darkest md:shadow sm:bg-white sm:dark:bg-dm-shade-darkest sm:shadow" data-size="full" data-first="true" data-area="block>topic" data-teaser-count="1" data-iq-interstitial>
+<div class="z-10 w-full" data-area="article_teaser>news-xl" data-pos="1:1" data-block-el="articleTeaser" data-sara-click-el="article_teaser">
+<article aria-label="Keine Schuldgefühle, Talent zu lügen, psychopathische Züge – die Abgründe der Gina H." class="lg:p-24 md:p-24 sm:pb-16" data-sara-article-id="1a7db03b-c1e1-4162-9b16-0c041bdef696" data-has-linked-author data-target-teaser="xl-news">
+<div class="flex lg:flex-row-reverse md:flex-col sm:flex-col lg:gap-x-24">
+<figure class="z-30 lg:w-9/12 md:mb-16 sm:mb-16 sm:shrink-0">
+<div class="relative">
+<a href="https://www.spiegel.de/panorama/fall-fabian-rostock-im-november-soll-das-urteil-gegen-gina-h-fallen-a-1a7db03b-c1e1-4162-9b16-0c041bdef696" target="_self" title="Keine Schuldgefühle, Talent zu lügen, psychopathische Züge – die Abgründe der Gina H.">
+<div class="relative bg-transparent">
+<picture>
+<source srcset="https://
+</body></html>

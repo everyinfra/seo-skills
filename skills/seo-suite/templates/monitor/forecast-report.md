@@ -57,12 +57,12 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Prepared by: {who} · Keywords: {N} �
 ## Recommended Actions
 
 1. {用 --actual {GA 月流量} 跑一次校准并保存 calibration.json(校准步骤对应 seoClarity 的「与实际 analytics 对比后调整 CTR 模型」),下次 --load-calibration 自动套用}
-2. {用自有 GSC 近 90 天(2026-04-27 之后)非品牌 CTR 曲线(--ctr)替换内置默认 [est]}
+2. {用自有 GSC 近 90 天([GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)结束之后)非品牌 CTR 曲线(--ctr)替换内置默认 [est]}
 3. {按 {选定情景} 排期内容/外链;月度复盘实际位次 vs 预测,偏差>{}% 重跑校准}
 
 ## Assumptions & 局限
 
-- CTR 模型是估算 [est]:默认曲线是脚本内置的估算锚点。seoClarity 建议分移动/桌面、品牌/非品牌各建 CTR 曲线;本套件口径是用自有 GSC 近 90 天的非品牌曲线(预测只用非品牌)。窗口必须在 2026-04-27 之后:Search Console 的展示、CTR、平均排名在 2025-05-13 至 2026-04-27 记录有误,这段时间的 CTR 曲线不可信([官方记录](https://support.google.com/webmasters/answer/6211453),核对 2026-10-21)。
+- CTR 模型是估算 [est]:默认曲线是脚本内置的估算锚点。seoClarity 建议分移动/桌面、品牌/非品牌各建 CTR 曲线;本套件口径是用自有 GSC 近 90 天的非品牌曲线(预测只用非品牌)。窗口必须在异常期结束之后:Search Console 的展示、CTR、平均排名在[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)里记录有误,这段时间的 CTR 曲线不可信。
 - >30 位的词不预测(见上)。
 - 位次提升是目标态假设,不是承诺;AI 概览/广告位占据的 SERP,实际 CTR 可能低于曲线。
 - 校准系数只修正总量级,不修正词间分布;CVR/AOV 为全局常数,未按意图分段。
@@ -72,7 +72,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Prepared by: {who} · Keywords: {N} �
 | # | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|---|
 | 1 | 输入表合格 | `kws.csv` 列为 keyword, search_volume, current_position[, cpc];`ctr.csv` 列为 position, ctr | 通过:脚本退出码 0。失败:退出码 2(文件、格式或参数错)。无 cpc 列时「等效付费成本」为 N/A,省钱结构不能写 |
-| 2 | CTR 曲线来源 | 看输出「步1 CTR 曲线」行 | 通过:`--ctr` 给了自有 GSC 非品牌曲线,窗口在 2026-04-27 之后。失败:仍是内置默认 [est] → 报告所有金额标 [est] |
+| 2 | CTR 曲线来源 | 看输出「步1 CTR 曲线」行 | 通过:`--ctr` 给了自有 GSC 非品牌曲线,窗口在[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)结束之后。失败:仍是内置默认 [est] → 报告所有金额标 [est] |
 | 3 | 已校准 | `python3 scripts/forecast.py --kws kws.csv --ctr gsc_ctr.csv --actual GA月流量 --save-calibration calibration.json`;之后用 `--load-calibration` | 通过:「步3 校准」行有 factor 且来源是 GA 自然渠道月流量。失败:「未校准(factor=1.00)」 → 数字只当量级 |
 | 4 | >30 位的词已排除并列出 | 输出「入榜 N 词(>30 位不预测,排除 M 词)」 | 通过:M 与你数的一致。失败:对不上 |
 | 5 | 数字可复算 | `python3 scripts/forecast.py … --json`,读 `baseline`、`scenarios`、`primary`、`proposal`、`calibration` | 通过:报告里每个数字都在 JSON 里。失败:手算或手改的数字 |

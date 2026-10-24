@@ -74,7 +74,7 @@
 | 3 | 每次记录完整 | `record --engine chatgpt --file run.csv`（列：prompt,mentioned,cited,cited_urls[,state][,rank]）；有回答原文时加 `--answer-file` | 通过：失败采集记 failed，不当成缺席。失败：只记「有/没有」 |
 | 4 | 三件事分开 | `python3 scripts/citation_panel.py report` 分列提及率与引用份额；`ai_referral_log.py` 看点击 | 通过：提及、引用、点击分别报告。失败：合成一个「可见度」 |
 | 5 | 重复取样看趋势 | 同一 prompt ≥3 次；改动前后用 `citation_panel.py diff RUN1 RUN2`；尽量设对照页面 | 通过：只报配对样本的变化，并带区间。失败：单次缺失就下结论 |
-| 6 | 辅助数据 | GSC 生成式 AI 效果报告（2026-06-03 起，只有展示；AI 功能的点击仍拆不出，包含在总体「网页」数据里）；Bing AI Performance；分析工具里的 AI 引荐（会漏掉不带 referrer 的访问） | 通过：标明是下界。失败：把引荐当全量 |
+| 6 | 辅助数据 | GSC 生成式 AI 效果报告（[上线日期](../overview/facts.md#gsc-genai)，只有展示；AI 功能的点击仍拆不出，包含在总体「网页」数据里）；Bing AI Performance；分析工具里的 AI 引荐（会漏掉不带 referrer 的访问） | 通过：标明是下界。失败：把引荐当全量 |
 
 这些都是自己观测的抽样指标，不是平台官方数据；报告里写明取样方法。
 

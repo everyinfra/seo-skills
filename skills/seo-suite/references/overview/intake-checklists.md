@@ -101,9 +101,9 @@
 
 ### GSC 生成式 AI 效果报告 事实卡(核对 2026-10-21)
 
-来源:[Search Central 博文 2026-06-03](https://developers.google.com/search/blog)、[帮助页](https://support.google.com/webmasters/answer/16984139)、[multimodal 博文 2026-09-24](https://developers.google.com/search/blog/2026/09/web-multimodal-in-sc)。
+来源:[Search Central 博文](https://developers.google.com/search/blog)、[帮助页](https://support.google.com/webmasters/answer/16984139)、[multimodal 博文 2026-09-24](https://developers.google.com/search/blog/2026/09/web-multimodal-in-sc)。
 
-- 2026-06-03 公布,先给一部分站点;**2026-08-31 起对全球所有站点开放**。Search 报告含 AI Overviews 和 AI Mode;Discover 另有一份独立报告。
+- 先给一部分站点,**后对全球所有站点开放**([日期](facts.md#gsc-genai))。Search 报告含 AI Overviews 和 AI Mode;Discover 另有一份独立报告。
 - 默认只给**展示(impressions)**;维度:页面、国家、日期、设备;日期粒度含小时、天、周、月。帮助页只写了导出按钮(图表与表格),没写 API。**2026-10-21 在官方页面找不到 API 说明;自动化前先复核 Search Console API 更新记录。**
 - 同一站点在一次生成式 AI 结果里出现多个链接,图表按属性只算一次展示;按页面分组时按页面聚合。和经典结果的展示口径不同,**不要一比一对比**(本套件口径)。
 - **2026-09-24 起**,效果报告和这份报告都多了「Web: multimodal」搜索类型(Lens、Circle to Search、上传图片、Chrome 右键搜图)。官方没说明历史数据是否回填,所以 9 月前后做环比,先分别按「Web: text-based」和「Web: multimodal」导出再比(本套件口径)。
@@ -160,7 +160,7 @@
 | 数据源与 tier 已声明 | `python3 scripts/doctor.py --wizard` | 报告开头写明 tier(T0–T3)与缺的数据源;缺数据走 [data-source-contract.md](data-source-contract.md) 的降级列 |
 | 资源四问有答案 | 看上文「资源与约束四问」四项 | 四项都有数(产能、风险三类、时间窗、业务目标口径);缺项在报告里写「未提供」,不替用户假设 |
 | GSC 报告可见性 | 问用户:属性里有没有「生成式 AI 效果报告」?首次见到数据日期? | 有答案并记录日期;没有就记原因 |
-| 展示数据时间窗 | 对照 [Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453) | 对比期不跨 2025-05-13 至 2026-04-27;跨了只比点击 |
+| 展示数据时间窗 | 对照 [Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453) | 对比期不跨[GSC 数据异常期](facts.md#gsc-anomaly);跨了只比点击 |
 | 欧盟内容任务过合规卡 | 对照上文 EU AI Act 卡 | 写明自己是提供者还是使用者;AI 文本是否经人工审核/编辑控制;是否含 deepfake |
 | 算法事件只按 Dashboard | 打开上文 Dashboard 链接 | 归因的更新名与日期都在 Dashboard 列表里 |
 

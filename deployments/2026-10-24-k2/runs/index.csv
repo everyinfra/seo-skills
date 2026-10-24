@@ -1,0 +1,32 @@
+market,script,exit,secs,command
+ja,above_fold,0,11s,python3 <repo>/skills/seo-suite/scripts/above_fold.py https://www.asahi.com/
+ja,trust_signals,1,10s,python3 <repo>/skills/seo-suite/scripts/trust_signals.py https://www.asahi.com/
+ja,schema_lint,0,10s,python3 <repo>/skills/seo-suite/scripts/schema_lint.py https://www.asahi.com/
+ja,redirect_chain,0,9s,python3 <repo>/skills/seo-suite/scripts/redirect_chain.py http://www.asahi.com/
+ja,sitemap_audit,2,10s,python3 <repo>/skills/seo-suite/scripts/sitemap_audit.py https://www.asahi.com/ --check-limit 20 --max-child 5
+ja,news_sitemap_check,0,39s,python3 <repo>/skills/seo-suite/scripts/news_sitemap_check.py --url https://www.asahi.com/sitemap/sitemap_national.xml --sample 3
+ja,site_crawl,0,64s,python3 <repo>/skills/seo-suite/scripts/site_crawl.py www.asahi.com --max 40 --delay 1 --same-host --out <repo>/deployments/2026-10-24-k2/runs/ja/crawl.json
+ja,link_graph,0,0s,python3 <repo>/skills/seo-suite/scripts/link_graph.py --crawl <repo>/deployments/2026-10-24-k2/runs/ja/crawl.json
+ja,orphan_fix,0,0s,python3 <repo>/skills/seo-suite/scripts/orphan_fix.py --crawl <repo>/deployments/2026-10-24-k2/runs/ja/crawl.json
+ja,field_data,3,0s,python3 <repo>/skills/seo-suite/scripts/field_data.py --url https://www.asahi.com/ --strategy mobile --timeout 90
+ko,above_fold,1,4s,python3 <repo>/skills/seo-suite/scripts/above_fold.py https://www.yna.co.kr/
+ko,trust_signals,1,4s,python3 <repo>/skills/seo-suite/scripts/trust_signals.py https://www.yna.co.kr/
+ko,schema_lint,0,6s,python3 <repo>/skills/seo-suite/scripts/schema_lint.py https://www.yna.co.kr/
+ko,redirect_chain,0,2s,python3 <repo>/skills/seo-suite/scripts/redirect_chain.py http://www.yna.co.kr/
+ko,sitemap_audit,2,2s,python3 <repo>/skills/seo-suite/scripts/sitemap_audit.py https://www.yna.co.kr/ --check-limit 20 --max-child 5
+ko,news_sitemap_check,1,24s,python3 <repo>/skills/seo-suite/scripts/news_sitemap_check.py --url https://www.yna.co.kr/news-sitemap3.xml --sample 3
+ko,site_crawl,0,386s,python3 <repo>/skills/seo-suite/scripts/site_crawl.py www.yna.co.kr --max 40 --delay 1 --same-host --out <repo>/deployments/2026-10-24-k2/runs/ko/crawl.json
+ko,link_graph,0,0s,python3 <repo>/skills/seo-suite/scripts/link_graph.py --crawl <repo>/deployments/2026-10-24-k2/runs/ko/crawl.json
+ko,orphan_fix,0,0s,python3 <repo>/skills/seo-suite/scripts/orphan_fix.py --crawl <repo>/deployments/2026-10-24-k2/runs/ko/crawl.json
+ko,field_data,3,0s,python3 <repo>/skills/seo-suite/scripts/field_data.py --url https://www.yna.co.kr/ --strategy mobile --timeout 90
+de,above_fold,1,3s,python3 <repo>/skills/seo-suite/scripts/above_fold.py https://www.spiegel.de/
+de,trust_signals,1,3s,python3 <repo>/skills/seo-suite/scripts/trust_signals.py https://www.spiegel.de/
+de,schema_lint,0,2s,python3 <repo>/skills/seo-suite/scripts/schema_lint.py https://www.spiegel.de/
+de,redirect_chain,0,1s,python3 <repo>/skills/seo-suite/scripts/redirect_chain.py http://www.spiegel.de/
+de,sitemap_audit,0,11s,python3 <repo>/skills/seo-suite/scripts/sitemap_audit.py https://www.spiegel.de/ --check-limit 20 --max-child 5
+de,news_sitemap_check,0,6s,python3 <repo>/skills/seo-suite/scripts/news_sitemap_check.py --url https://www.spiegel.de/sitemaps/news-de.xml --sample 3
+de,site_crawl,0,279s,python3 <repo>/skills/seo-suite/scripts/site_crawl.py www.spiegel.de --max 40 --delay 1 --same-host --out <repo>/deployments/2026-10-24-k2/runs/de/crawl.json
+de,link_graph,0,0s,python3 <repo>/skills/seo-suite/scripts/link_graph.py --crawl <repo>/deployments/2026-10-24-k2/runs/de/crawl.json
+de,orphan_fix,0,0s,python3 <repo>/skills/seo-suite/scripts/orphan_fix.py --crawl <repo>/deployments/2026-10-24-k2/runs/de/crawl.json
+de,field_data,3,0s,python3 <repo>/skills/seo-suite/scripts/field_data.py --url https://www.spiegel.de/ --strategy mobile --timeout 90
+DONE

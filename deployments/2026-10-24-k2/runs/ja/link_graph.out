@@ -1,0 +1,66 @@
+## link_graph: asahi.com
+
+- 页面 40 / 内链边 0(带锚 15326)/ 孤儿 40
+
+### PageRank(20 轮,d=0.85,归一 0-10;Σ=1.0000)
+
+Top 20:
+ 1. https://www.asahi.com/articles/ASVBJ00QWVBJIIPE008M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 2. https://www.asahi.com/articles/ASVBL7VXZVBLPITB00HM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 3. https://www.asahi.com/articles/ASVBP0GMFVBPUTIL001M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 4. https://www.asahi.com/articles/ASVBQ2T1CVBQUQIP033M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 5. https://www.asahi.com/articles/ASVBQ3191VBQUTIL006M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 6. https://www.asahi.com/articles/ASVBQ3CPPVBQUJHB006M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 7. https://www.asahi.com/articles/ASVBQ5KGWVBQTIPE00YM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 8. https://www.asahi.com/articles/ASVBQ5T81VBQDIFI00BM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 9. https://www.asahi.com/articles/ASVBR0JG3VBROXIE031M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+10. https://www.asahi.com/articles/ASVBR1HVZVBRUTFK00VM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+11. https://www.asahi.com/articles/ASVBR20GBVBRUTIL00VM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+12. https://www.asahi.com/articles/ASVBR20YZVBRUTIL011M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+13. https://www.asahi.com/articles/ASVBR249SVBRUDCB003M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+14. https://www.asahi.com/articles/ASVBR262KVBRUTIL00XM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+15. https://www.asahi.com/articles/ASVBR26DZVBRUTIL00XM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+16. https://www.asahi.com/articles/ASVBR2DQSVBRULFA00LM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+17. https://www.asahi.com/articles/ASVBR2H3XVBRUTIL00HM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+18. https://www.asahi.com/articles/ASVBR2JSYVBRTLTB001M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+19. https://www.asahi.com/articles/ASVBR2Q7HVBRUCVL02BM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+20. https://www.asahi.com/articles/ASVBR2RCMVBRUTIL010M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+
+Bottom 20(最低在前):
+ 1. https://www.asahi.com/articles/ASVBS334SVBSUTIL00MM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 2. https://www.asahi.com/articles/ASVBS2HBBVBSUJHB00CM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 3. https://www.asahi.com/articles/ASVBS2GH5VBSPTIL00QM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 4. https://www.asahi.com/articles/ASVBS2381VBSUTIL005M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 5. https://www.asahi.com/articles/ASVBS162PVBSUBNB00KM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 6. https://www.asahi.com/articles/ASVBS12XPVBSUTIL002M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 7. https://www.asahi.com/articles/ASVBS1130VBSUDCB001M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 8. https://www.asahi.com/articles/ASVBR4VP7VBRUTFL01MM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+ 9. https://www.asahi.com/articles/ASVBR46T2VBRIIPE01QM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+10. https://www.asahi.com/articles/ASVBR3TCGVBROIPE01FM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+11. https://www.asahi.com/articles/ASVBR3T7CVBROIPE006M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+12. https://www.asahi.com/articles/ASVBR3RLNVBRTIPE01FM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+13. https://www.asahi.com/articles/ASVBR3K08VBROXIE02VM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+14. https://www.asahi.com/articles/ASVBR3HFSVBRUTIL007M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+15. https://www.asahi.com/articles/ASVBR3H3SVBRPUUB002M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+16. https://www.asahi.com/articles/ASVBR3FPLVBRTNAB005M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+17. https://www.asahi.com/articles/ASVBR3CWSVBRTIPE00TM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+18. https://www.asahi.com/articles/ASVBR34VDVBRULFA00QM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+19. https://www.asahi.com/articles/ASVBR32PDVBRUTIL00VM.html pr=0.0250 归一=10.00 入链=0 深=不可达
+20. https://www.asahi.com/articles/ASVBR2VCGVBRTLVB004M.html pr=0.0250 归一=10.00 入链=0 深=不可达
+
+### 深度直方图
+- 0 层 0 / 1 层 0 / 2 层 0 / 3 层 0 / >3 层 0(0.0%)/ 不可达 40
+
+### 入链 0/1
+- 零入链 0 页(排除首页 0/sitemap-only 40/死页 0):无
+- 单入链(脆弱页)0 页:无
+
+### 锚文本审计
+- 带锚边 15326/0;精确匹配域名锚 0(0.0%,阈值 60%)
+- 锚分布 Top: 連載×482(3.1%), 宮内庁記者クラブに届けた覚悟 直筆で「私はお飾りになりたくない」×81(0.5%), Re:Ron×80(0.5%), アメリカ中間選挙×80(0.5%), サイトマップ×80(0.5%), 一覧×80(0.5%), 佳子さまが再び青森訪問 美術館で女性の彫刻作品鑑賞「目が合う」×80(0.5%), 社会×80(0.5%), 事件・事故・裁判×57(0.4%), 政治×48(0.3%)
+- 目标 http://www.asahi.com/gallery?iref=com_rnavi_photo_p ← "フォトギャラリー"×40
+- 目标 http://www.asahi.com/information/db?iref=com_footer ← "記事データベース案内"×40
+- 目标 http://www.asahi.com/multimedia?iref=com_rnavi_photo_p ← "写真"×40
+- 目标 http://www.asahi.com/news?iref=com_latestnews_p ← "一覧"×40
+- 目标 http://www.asahi.com/special/hataraku?iref=com_rnavi ← "働き方・就活"×40
+- ⚠ sitemap-only 爬取(爬虫兜底关闭):内链边可能欠采样,孤儿/入链结论按 --include-sitemap-only 复核

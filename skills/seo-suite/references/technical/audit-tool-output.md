@@ -123,7 +123,7 @@
 4. **时间与配置对齐**：多份导出的爬取时间差超过两周、或渲染设置不同，在结论注明，且不对同一指标做前后对比。
 5. **严重度重算**：所有工具等级只作输入，最终优先级按「是否影响索引 / 是否主流量页 / 影响面」重排（同上文「转成审计结论」）。
 6. **合并示例**：Lighthouse `audits.render-blocking-resources` + Screaming Frog `Response Time` 高 + PSI 现场数据 LCP 慢 → 合成一条「落地页性能」finding，evidence 分别指向三个导出，fix 按 [cwv-playbook.md](cwv-playbook.md) 给出。
-7. **合并后单条 finding 的样子**：`finding_id=perf-001 | url_or_template=/blog/* | issue=移动端 LCP > 2.5s | tools_reported=[lighthouse, psi-field, sf-response-time] | impact=全部博文模板（约 320 URL）| priority=P1 | fix=按 cwv-playbook 拆阻塞资源 | verify=28 天后 CWV 报告复测`。
+7. **合并后单条 finding 的样子**：`finding_id=perf-001 | url_or_template=/blog/* | issue=移动端 LCP 未达良好档 | tools_reported=[lighthouse, psi-field, sf-response-time] | impact=全部博文模板（约 320 URL）| priority=P1 | fix=按 cwv-playbook 拆阻塞资源 | verify=CrUX 窗口滚过后 CWV 报告复测`。
 8. **收尾核对清单**：每条 finding 都有样例 URL；同一问题没有在两条 finding 里重复出现；所有引用的工具名与爬取时间都写在 evidence 里；优先级与「影响索引 / 主流量页」排序一致。
 
 ### 跨工具字段映射（合并时的对照底表）

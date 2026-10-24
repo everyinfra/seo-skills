@@ -24,7 +24,7 @@
                        (错误清单 #6:名称漂移削弱 News 关联);
   时间戳精度     publication_date 只有日期(无时间/时区)→ WARN(错误清单 #5:
                        建议 ISO 8601 精确到秒含时区);
-  title 格式     news:title ≥100 字符 → WARN;标题呈「站名在前/后缀」逆序格式
+  title 格式     标题呈「站名在前/后缀」逆序格式 → WARN;≥100 字符只提示(Google 无长度上限)
                        (Site - 标题 / 标题 - Site)→ WARN——news:title 应为纯文章标题;
   loc 绝对 URL   <loc> 必须是含协议的绝对 URL(错误清单 #4);
   robots 声明一致 {origin}/robots.txt 的 Sitemap: 行是否声明本 sitemap
@@ -343,10 +343,13 @@ def build_items(entries, sitemap_status, sitemap_headers, sitemap_bytes,
     if long_titles or reversed_titles:
         d = []
         if long_titles:
-            d.append("%d 条 title ≥100 字符" % len(long_titles))
+            # Google news sitemap 文档对 <news:title> 只写「The title of the news article」,没有长度上限;
+            # 长标题只提示,不算问题(2026-10-24 spiegel.de 的 4 条长标题都是页面原标题)
+            d.append("%d 条 title ≥100 字符(Google 无长度上限,仅提示)" % len(long_titles))
         if reversed_titles:
             d.append("%d 条呈站名前/后缀逆序格式(news:title 应为纯文章标题)" % len(reversed_titles))
-        items.append(dict(id="title.format", status=WARN, detail=";".join(d)))
+        items.append(dict(id="title.format", status=WARN if reversed_titles else PASS,
+                          detail=";".join(d)))
     else:
         items.append(dict(id="title.format", status=PASS, detail="title 长度/格式无异常"))
     # ---- loc 绝对 URL ----
@@ -359,6 +362,27 @@ def build_items(entries, sitemap_status, sitemap_headers, sitemap_bytes,
     else:
         items.append(dict(id="loc.absolute", status=PASS, detail="loc 均为绝对 URL"))
     return items
+
+
+def _declared_via_index(declared, mine, args, limit=10):
+    """robots.txt 只声明 sitemap index 时,index 的 <sitemap><loc> 列着本 sitemap 也算可发现
+    (sitemaps.org:index 是声明多个 sitemap 的标准方式)。只展开前 limit 条声明,一层,不递归。"""
+    for d in declared[:limit]:
+        try:
+            st, hd, body = http_fetch(d, timeout=args.timeout)
+            if st != 200:
+                continue
+            if d.lower().endswith(".gz") or body[:2] == b"\x1f\x8b":
+                body = gzip.decompress(body)
+            root = ET.fromstring(body)
+        except Exception:
+            continue
+        if ln(root.tag) != "sitemapindex":
+            continue
+        for el in root.iter():
+            if ln(el.tag) == "loc" and norm_sitemap_url(el.text) == mine:
+                return d
+    return None
 
 
 def check_robots_declaration(sitemap_url, args, items):
@@ -379,6 +403,11 @@ def check_robots_declaration(sitemap_url, args, items):
     mine = norm_sitemap_url(sitemap_url)
     if any(norm_sitemap_url(d) == mine for d in declared):
         items.append(dict(id="robots.sitemap_decl", status=PASS, detail="robots.txt 已声明本 sitemap"))
+        return
+    via = _declared_via_index(declared, mine, args)
+    if via:
+        items.append(dict(id="robots.sitemap_decl", status=PASS,
+                          detail="robots.txt 声明的 sitemap index 收录了本 sitemap(%s)" % via[:80]))
     else:
         items.append(dict(id="robots.sitemap_decl", status=WARN,
                           detail="robots.txt 的 %d 条 Sitemap 声明均不含本 sitemap(非协议必需;影响发现速度)" % len(declared)))

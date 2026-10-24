@@ -4,7 +4,7 @@
 
 ### Performance(28 条,权重 10%)
 
-**CWV 阈值**(web.dev,核对 2026-10-21):LCP ≤2.5s、>4s 为差([vitals](https://web.dev/articles/vitals)、[阈值研究](https://web.dev/articles/defining-core-web-vitals-thresholds));INP ≤200ms、>500ms 为差([INP](https://web.dev/articles/inp));CLS ≤0.1、>0.25 为差([CLS](https://web.dev/articles/cls));TTFB ≤0.8s、>1.8s 为差([TTFB](https://web.dev/articles/ttfb));FCP ≤1.8s、>3.0s 为差([FCP](https://web.dev/articles/fcp))。详见 [LCP.md](../LCP.md)、[scoring-rubric.md](../scoring-rubric.md)。SEOmator 的 `cwv-inp` 不计分(审计没有真实输入)。
+**CWV 阈值**:LCP、INP、CLS 的良好与差档见[事实表](../../overview/facts.md#cwv);TTFB ≤0.8s、>1.8s 为差([TTFB](https://web.dev/articles/ttfb));FCP ≤1.8s、>3.0s 为差([FCP](https://web.dev/articles/fcp))。详见 [LCP.md](../LCP.md)、[scoring-rubric.md](../scoring-rubric.md)。SEOmator 的 `cwv-inp` 不计分(审计没有真实输入)。
 
 **静态项**(SEOmator 现行 132d2384,均为工具约定):`perf-dom-size` 节点 >800 warn、>1500 fail,嵌套 >32 warn、>48 fail,单元素子节点 >60 warn(Lighthouse 是 body 节点 ~800 警、~1,400 错,[文档](https://developer.chrome.com/docs/lighthouse/performance/dom-size));`perf-css-file-size`(外链样式表 >3 warn、>6 fail;内联 CSS >50KB warn、>100KB fail);`perf-js-file-size`(内联 JS 合计 >50KB warn、>150KB fail,外链脚本不量);`perf-page-weight` 只量 HTML 文档本身(>100KB warn、>300KB fail);`perf-cache-policy` 查页面自身响应有没有缓存头(Cache-Control、ETag、Last-Modified、Expires 任一即过);`perf-asset-cache-policy`(渲染专属,静态资源 max-age ≥1 小时,Expires 不读);`perf-text-compression`(页面响应须 gzip/br/deflate/zstd)、`perf-brotli`;`perf-asset-compression`(渲染专属,>2KB 文本资源须压缩,按 content-length,chunked 无长度不判);`perf-image-encoding`(渲染专属,传输 >100KB warn,BMP/TIFF fail);`perf-minify-css/js`(内联超 500 字节后,空白占比 >15% 或 JS 块注释=warn;外链 >2KB 且 URL 无 `.min.` 为启发式,恒 ≤warn);`perf-http2` 只看有无 `alt-svc` 头,不读协商协议;`perf-video-for-animations` 任何 GIF 都 warn(分不出是否动画,「省 90%」是原版说法);`perf-response-time`、`perf-render-blocking`(head 内脚本无 async/defer)、`perf-lazy-above-fold`(首屏图禁 lazy)、`perf-lcp-hints`(LCP 图须 preload 与 fetchpriority=high)、`perf-font-loading`(font-display:swap)、`perf-preconnect`、`perf-legacy-javascript`、`perf-duplicate-js`(同库多 URL)、`perf-source-maps`(不得暴露 sourceMappingURL)。
 
@@ -13,9 +13,9 @@
 #### perf-page-weight
 - 名称/类型: HTML 文档体积 —— warning · 优先级 medium · 输出 WARN/CRITICAL(源表现行 warn/fail:HTML 本身 >100KB warn、>300KB fail;图片、脚本、样式只在详情里计数,不参与判定;旧快照写的是「总重 <3MB」,已作废)
 **这意味(what)**: HTML 文档本身(未含子资源)超过 100KB(工具约定)。
-**为什么(why)**: Googlebot 抓取一个文件只取前 2MB,PDF 前 64MB,超出部分不参与索引,限制按解压后字节算([Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot),核对 2026-10-21)。100KB 与 300KB 远低于 2MB,标记的多是内联脚本、内联样式或嵌入数据(如整份 JSON 状态)撑大的文档。
+**为什么(why)**: Googlebot 抓取一个文件只取前一段,超出部分不参与索引,限制按解压后字节算([上限](../../overview/facts.md#googlebot-size))。100KB 与 300KB 远低于这个上限,标记的多是内联脚本、内联样式或嵌入数据(如整份 JSON 状态)撑大的文档。
 **触发(trigger)**: HTML 响应体 >100KB warn,>300KB fail(未压缩字节)。
-**不修的条件(caveat)**: 文档长度不直接影响排名;数据密集的长文档(手册、规格表)超线是内容属性。接近 2MB 才有索引截断风险。
+**不修的条件(caveat)**: 文档长度不直接影响排名;数据密集的长文档(手册、规格表)超线是内容属性。接近 [Googlebot 抓取上限](../../overview/facts.md#googlebot-size)才有索引截断风险。
 **修复(fix)**: 内联脚本、样式、状态数据移到可缓存的外部文件;超长页拆页。图片、视频走 images-* 规则。
 **关联(seealso)**: perf-asset-compression、images-modern-formats;[LCP.md](../LCP.md)
 
@@ -49,7 +49,7 @@
 #### perf-lcp-hints [待核 ID]
 - 名称/类型: LCP 图加载提示 —— warning · 优先级 high · 输出 WARN(源表 warn;LCP 图须 preload+fetchpriority=high)
 **这意味(what)**: 页面 LCP 元素是图,却没有 `<link rel=preload as=image>` 且缺 fetchpriority="high"。
-**为什么(why)**: fetchpriority="high" 告诉浏览器这张 LCP 图属于高 Fetch Priority 资源(这是资源加载提示,与 sitemap 的 priority 无关),让 LCP 更早发生;preload 让浏览器在发现前就开始加载([web.dev Fetch Priority](https://web.dev/articles/fetch-priority),核对 2026-10-21)。两者叠加是常见做法,「必须同时有」是 SEOmator 的工具约定。LCP Good 阈值 ≤2.5s(见 [LCP.md](../LCP.md))。
+**为什么(why)**: fetchpriority="high" 告诉浏览器这张 LCP 图属于高 Fetch Priority 资源(这是资源加载提示,与 sitemap 的 priority 无关),让 LCP 更早发生;preload 让浏览器在发现前就开始加载([web.dev Fetch Priority](https://web.dev/articles/fetch-priority),核对 2026-10-21)。两者叠加是常见做法,「必须同时有」是 SEOmator 的工具约定。LCP 良好档见[事实表](../../overview/facts.md#cwv)。
 **触发(trigger)**: 1) 渲染判定 LCP 元素;2) 为图且无 preload 或无 fetchpriority=high 即 warn。
 **不修的条件(caveat)**: 资源提示不影响排名,然而它们直接调度 LCP 资源的优先级,所以一般建议 LCP 图必配。但 LCP 元素是文字的页面不适用;preload 滥用(全页 preload)反而稀释优先级,只给这一张。
 **修复(fix)**: `<link rel="preload" as="image" href="…hero.webp" fetchpriority="high">`,img 同步加 fetchpriority="high";LCP 图禁 lazy(见 images-lazy)。

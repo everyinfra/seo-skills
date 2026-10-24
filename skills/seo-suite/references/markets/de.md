@@ -121,7 +121,7 @@ StatCounter 2026-09 月值(取数 2026-10-21):
 
 - 覆盖与损失见 1.2。AI Mode 德语:2025-10-07 官方博客宣布 35+ 新语言、40+ 新国家(含德语,见 [CNET 报道语言列表](https://www.cnet.com/tech/services-and-software/google-search-ai-mode-now-available-in-35-more-languages-and-40-more-countries/)),[官方博客](https://blog.google/products-and-platforms/products/search/ai-mode-expands-languages-locations/)。
 - 证据阶梯(可见、被检索、被引用、被提及、被推荐、转化)分开记账(见 [geo-evidence](../content/geo-evidence.md))。
-- Search Console 自 2026-06-03 提供「生成式 AI 表现报告」(2026-08-31 起全球开放;展示、页面、国家、设备、日期,无点击)([Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports))。
+- Search Console 提供「生成式 AI 表现报告」(已对全球开放,[日期](../overview/facts.md#gsc-genai);展示、页面、国家、设备、日期,无点击)。
 
 ### 4.2 引用源假设
 

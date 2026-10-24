@@ -1,0 +1,67 @@
+## link_graph: asahi.com
+
+- 页面 40 / 内链边 419(带锚 15387)/ 孤儿 21
+
+### PageRank(20 轮,d=0.85,归一 0-10;Σ=1.0000)
+
+Top 20:
+ 1. https://www.asahi.com/ pr=0.2114 归一=10.00 入链=117 深=0
+ 2. https://www.asahi.com/articles/ASVBS2381VBSUTIL005M.html pr=0.0937 归一=4.43 入链=42 深=1
+ 3. https://www.asahi.com/articles/ASVBS162PVBSUBNB00KM.html pr=0.0929 归一=4.40 入链=42 深=1
+ 4. https://www.asahi.com/articles/ASVBS12XPVBSUTIL002M.html pr=0.0878 归一=4.16 入链=41 深=1
+ 5. https://www.asahi.com/articles/ASVBS3HGSVBSOXIE008M.html pr=0.0864 归一=4.09 入链=41 深=1
+ 6. https://www.asahi.com/articles/ASVBQ2T1CVBQUQIP033M.html pr=0.0798 归一=3.78 入链=40 深=1
+ 7. https://www.asahi.com/articles/ASVBS334SVBSUTIL00MM.html pr=0.0798 归一=3.78 入链=40 深=1
+ 8. https://www.asahi.com/articles/ASVBR0JG3VBROXIE031M.html pr=0.0732 归一=3.46 入链=39 深=1
+ 9. https://www.asahi.com/articles/ASVBS2GH5VBSPTIL00QM.html pr=0.0253 归一=1.20 入链=3 深=1
+10. https://www.asahi.com/articles/ASVBJ00QWVBJIIPE008M.html pr=0.0181 归一=0.86 入链=2 深=1
+11. https://www.asahi.com/articles/ASVBR3H3SVBRPUUB002M.html pr=0.0181 归一=0.86 入链=2 深=1
+12. https://www.asahi.com/articles/ASVBS2HBBVBSUJHB00CM.html pr=0.0181 归一=0.86 入链=2 深=1
+13. https://www.asahi.com/articles/ASVBS1130VBSUDCB001M.html pr=0.0109 归一=0.52 入链=1 深=1
+14. https://www.asahi.com/articles/ASVBQ3CPPVBQUJHB006M.html pr=0.0052 归一=0.24 入链=1 深=2
+15. https://www.asahi.com/articles/ASVBQ3191VBQUTIL006M.html pr=0.0043 归一=0.20 入链=2 深=不可达
+16. https://www.asahi.com/articles/ASVBR2DQSVBRULFA00LM.html pr=0.0041 归一=0.19 入链=1 深=不可达
+17. https://www.asahi.com/articles/ASVBR2RCMVBRUTIL010M.html pr=0.0041 归一=0.19 入链=1 深=不可达
+18. https://www.asahi.com/articles/ASVBR2H3XVBRUTIL00HM.html pr=0.0040 归一=0.19 入链=1 深=不可达
+19. https://www.asahi.com/articles/ASVBR34VDVBRULFA00QM.html pr=0.0040 归一=0.19 入链=1 深=不可达
+20. https://www.asahi.com/articles/ASVBL7VXZVBLPITB00HM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+
+Bottom 20(最低在前):
+ 1. https://www.asahi.com/articles/ASVBR4VP7VBRUTFL01MM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 2. https://www.asahi.com/articles/ASVBR46T2VBRIIPE01QM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 3. https://www.asahi.com/articles/ASVBR3TCGVBROIPE01FM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 4. https://www.asahi.com/articles/ASVBR3T7CVBROIPE006M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 5. https://www.asahi.com/articles/ASVBR3RLNVBRTIPE01FM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 6. https://www.asahi.com/articles/ASVBR3K08VBROXIE02VM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 7. https://www.asahi.com/articles/ASVBR3HFSVBRUTIL007M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 8. https://www.asahi.com/articles/ASVBR3FPLVBRTNAB005M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+ 9. https://www.asahi.com/articles/ASVBR3CWSVBRTIPE00TM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+10. https://www.asahi.com/articles/ASVBR32PDVBRUTIL00VM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+11. https://www.asahi.com/articles/ASVBR2VCGVBRTLVB004M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+12. https://www.asahi.com/articles/ASVBR2Q7HVBRUCVL02BM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+13. https://www.asahi.com/articles/ASVBR2JSYVBRTLTB001M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+14. https://www.asahi.com/articles/ASVBR26DZVBRUTIL00XM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+15. https://www.asahi.com/articles/ASVBR262KVBRUTIL00XM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+16. https://www.asahi.com/articles/ASVBR249SVBRUDCB003M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+17. https://www.asahi.com/articles/ASVBR20YZVBRUTIL011M.html pr=0.0037 归一=0.18 入链=0 深=不可达
+18. https://www.asahi.com/articles/ASVBR20GBVBRUTIL00VM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+19. https://www.asahi.com/articles/ASVBR1HVZVBRUTFK00VM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+20. https://www.asahi.com/articles/ASVBQ5KGWVBQTIPE00YM.html pr=0.0037 归一=0.18 入链=0 深=不可达
+
+### 深度直方图
+- 0 层 1 / 1 层 12 / 2 层 1 / 3 层 0 / >3 层 0(0.0%)/ 不可达 26
+
+### 入链 0/1
+- 零入链 0 页(排除首页 0/sitemap-only 21/死页 0):无
+- 单入链(脆弱页)6 页:https://www.asahi.com/articles/ASVBS1130VBSUDCB001M.html, https://www.asahi.com/articles/ASVBR34VDVBRULFA00QM.html, https://www.asahi.com/articles/ASVBR2DQSVBRULFA00LM.html, https://www.asahi.com/articles/ASVBR2RCMVBRUTIL010M.html, https://www.asahi.com/articles/ASVBR2H3XVBRUTIL00HM.html, https://www.asahi.com/articles/ASVBQ3CPPVBQUJHB006M.html
+
+### 锚文本审计
+- 带锚边 15387/419;精确匹配域名锚 0(0.0%,阈值 60%)
+- 锚分布 Top: 連載×482(3.1%), Re:Ron×80(0.5%), アメリカ中間選挙×80(0.5%), サイトマップ×80(0.5%), 宮内庁記者クラブに届けた覚悟 直筆で「私はお飾りになりたくない」×80(0.5%), 社会×80(0.5%), 一覧×78(0.5%), 事件・事故・裁判×56(0.4%), 政治×49(0.3%), IT・科学×46(0.3%)
+- 目标 https://www.asahi.com/?iref=pc_gnavi ← "トップ"×40
+- 目标 https://www.asahi.com/and/m?iref=pc_gnavi ← "&M"×40
+- 目标 https://www.asahi.com/and/travel?iref=pc_gnavi ← "&Travel"×40
+- 目标 https://www.asahi.com/and/w?iref=pc_gnavi ← "&w"×40
+- 目标 https://www.asahi.com/apital/disease/cancer?iref=pc_gnavi ← "がん"×40
+- ⚠ sitemap-only 爬取(爬虫兜底关闭):内链边可能欠采样,孤儿/入链结论按 --include-sitemap-only 复核
+- ⚠ site_crawl 被 --max 截断:孤儿与入链只在已抓样本内计算,不等于站内结论

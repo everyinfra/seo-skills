@@ -1,0 +1,67 @@
+## link_graph: yna.co.kr
+
+- 页面 40 / 内链边 63(带锚 8006)/ 孤儿 30
+
+### PageRank(20 轮,d=0.85,归一 0-10;Σ=1.0000)
+
+Top 20:
+ 1. https://www.yna.co.kr/ pr=0.4821 归一=10.00 入链=40 深=0
+ 2. https://www.yna.co.kr/view/AKR20261024042000007 pr=0.1528 归一=3.17 入链=3 深=1
+ 3. https://www.yna.co.kr/view/AKR20261024046600007 pr=0.1073 归一=2.22 入链=2 深=1
+ 4. https://www.yna.co.kr/view/AKR20261024049200001 pr=0.1062 归一=2.20 入链=1 深=1
+ 5. https://www.yna.co.kr/view/AKR20261024038700007 pr=0.0102 归一=0.21 入链=6 深=不可达
+ 6. https://www.yna.co.kr/view/AKR20261024037400007 pr=0.0070 归一=0.15 入链=2 深=不可达
+ 7. https://www.yna.co.kr/view/AKR20261024037600007 pr=0.0063 归一=0.13 入链=3 深=不可达
+ 8. https://www.yna.co.kr/view/AKR20261024037451007 pr=0.0061 归一=0.13 入链=3 深=不可达
+ 9. https://www.yna.co.kr/view/AKR20261024037651007 pr=0.0052 归一=0.11 入链=2 深=不可达
+10. https://www.yna.co.kr/view/AKR20261024044600007 pr=0.0044 归一=0.09 入链=1 深=不可达
+11. https://www.yna.co.kr/view/AKR20261024035800005 pr=0.0037 归一=0.08 入链=0 深=不可达
+12. https://www.yna.co.kr/view/AKR20261024035900007 pr=0.0037 归一=0.08 入链=0 深=不可达
+13. https://www.yna.co.kr/view/AKR20261024035951007 pr=0.0037 归一=0.08 入链=0 深=不可达
+14. https://www.yna.co.kr/view/AKR20261024036800007 pr=0.0037 归一=0.08 入链=0 深=不可达
+15. https://www.yna.co.kr/view/AKR20261024037000007 pr=0.0037 归一=0.08 入链=0 深=不可达
+16. https://www.yna.co.kr/view/AKR20261024037100007 pr=0.0037 归一=0.08 入链=0 深=不可达
+17. https://www.yna.co.kr/view/AKR20261024037200007 pr=0.0037 归一=0.08 入链=0 深=不可达
+18. https://www.yna.co.kr/view/AKR20261024037300007 pr=0.0037 归一=0.08 入链=0 深=不可达
+19. https://www.yna.co.kr/view/AKR20261024037700007 pr=0.0037 归一=0.08 入链=0 深=不可达
+20. https://www.yna.co.kr/view/AKR20261024037800007 pr=0.0037 归一=0.08 入链=0 深=不可达
+
+Bottom 20(最低在前):
+ 1. https://www.yna.co.kr/view/AKR20261024050400007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 2. https://www.yna.co.kr/view/AKR20261024049600007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 3. https://www.yna.co.kr/view/AKR20261024048100007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 4. https://www.yna.co.kr/view/AKR20261024047800007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 5. https://www.yna.co.kr/view/AKR20261024047700007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 6. https://www.yna.co.kr/view/AKR20261024047500007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 7. https://www.yna.co.kr/view/AKR20261024047100007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 8. https://www.yna.co.kr/view/AKR20261024046800007 pr=0.0037 归一=0.08 入链=0 深=不可达
+ 9. https://www.yna.co.kr/view/AKR20261024046500007 pr=0.0037 归一=0.08 入链=0 深=不可达
+10. https://www.yna.co.kr/view/AKR20261024046400007 pr=0.0037 归一=0.08 入链=0 深=不可达
+11. https://www.yna.co.kr/view/AKR20261024046200005 pr=0.0037 归一=0.08 入链=0 深=不可达
+12. https://www.yna.co.kr/view/AKR20261024045000007 pr=0.0037 归一=0.08 入链=0 深=不可达
+13. https://www.yna.co.kr/view/AKR20261024042500007 pr=0.0037 归一=0.08 入链=0 深=不可达
+14. https://www.yna.co.kr/view/AKR20261024041500007 pr=0.0037 归一=0.08 入链=0 深=不可达
+15. https://www.yna.co.kr/view/AKR20261024040800007 pr=0.0037 归一=0.08 入链=0 深=不可达
+16. https://www.yna.co.kr/view/AKR20261024040000007 pr=0.0037 归一=0.08 入链=0 深=不可达
+17. https://www.yna.co.kr/view/AKR20261024039000007 pr=0.0037 归一=0.08 入链=0 深=不可达
+18. https://www.yna.co.kr/view/AKR20261024038151007 pr=0.0037 归一=0.08 入链=0 深=不可达
+19. https://www.yna.co.kr/view/AKR20261024038100007 pr=0.0037 归一=0.08 入链=0 深=不可达
+20. https://www.yna.co.kr/view/AKR20261024037900007 pr=0.0037 归一=0.08 入链=0 深=不可达
+
+### 深度直方图
+- 0 层 1 / 1 层 3 / 2 层 0 / 3 层 0 / >3 层 0(0.0%)/ 不可达 36
+
+### 入链 0/1
+- 零入链 0 页(排除首页 0/sitemap-only 30/死页 0):无
+- 单入链(脆弱页)2 页:https://www.yna.co.kr/view/AKR20261024049200001, https://www.yna.co.kr/view/AKR20261024044600007
+
+### 锚文本审计
+- 带锚边 8006/63;精确匹配域名锚 0(0.0%,阈值 60%)
+- 锚分布 Top: 비주얼×79(1.0%), 더보기×78(1.0%), "맛난 먹이라도 친구 것인데…" 침팬지도 우정 앞에선 망설인다×40(0.5%), '0칼로리' 믿고 마셨는데… 당뇨병부터 뇌 건강까지 '경고등'×40(0.5%), 1:1 문의×40(0.5%), AI 활용 준칙×40(0.5%), AI프리즘×40(0.5%), AREX 공항철도×40(0.5%), CEO×40(0.5%), IT/과학×40(0.5%)
+- 目标 https://www.yna.co.kr/ ← "연합뉴스"×40
+- 目标 https://www.yna.co.kr/aboutus/company/index ← "회사소개"×40
+- 目标 https://www.yna.co.kr/aboutus/partner ← "계약사/제휴문의"×40
+- 目标 https://www.yna.co.kr/advertisement/arex ← "AREX 공항철도"×40
+- 目标 https://www.yna.co.kr/advertisement/index ← "광고안내"×40
+- ⚠ sitemap-only 爬取(爬虫兜底关闭):内链边可能欠采样,孤儿/入链结论按 --include-sitemap-only 复核
+- ⚠ site_crawl 被 --max 截断:孤儿与入链只在已抓样本内计算,不等于站内结论

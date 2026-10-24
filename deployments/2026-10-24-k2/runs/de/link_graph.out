@@ -1,0 +1,66 @@
+## link_graph: spiegel.de
+
+- 页面 40 / 内链边 48(带锚 2196)/ 孤儿 30
+
+### PageRank(20 轮,d=0.85,归一 0-10;Σ=1.0000)
+
+Top 20:
+ 1. https://www.spiegel.de/games/taegliches-quiz-beim-spiegel-7-fragen-zum-allgemeinwissen-pro-tag-a-8a9692b2-4462-4192-942c-fd7809c7519c pr=0.8363 归一=10.00 入链=38 深=不可达
+ 2. https://www.spiegel.de/sport/fussball/bayern-trainer-vincent-kompany-nach-zusammenbruch-in-stabilem-zustand-a-b59318c4-ee92-46f7-b8c3-ed13f34aedf0 pr=0.0072 归一=0.09 入链=2 深=不可达
+ 3. https://www.spiegel.de/ausland/frankreich-emmanuel-macron-besucht-pariser-vorort-nach-toedlichen-schuessen-a-6c372ae1-9ccd-46f4-9182-43603bf2ec40 pr=0.0056 归一=0.07 入链=1 深=不可达
+ 4. https://www.spiegel.de/ausland/suedtirol-das-zerrissene-land-podcastserie-a-a622a53f-25a4-4300-996b-19ff1d86e133 pr=0.0056 归一=0.07 入链=1 深=不可达
+ 5. https://www.spiegel.de/sport/vincent-kompany-internationale-fussballszene-schickt-genesungswuensche-fuer-fc-bayern-trainer-a-e06ea208-92f8-460c-999d-88cdbae3c89f pr=0.0050 归一=0.06 入链=1 深=不可达
+ 6. https://www.spiegel.de/ausland/israel-startet-anti-terror-operation-im-westjordanland-a-8cbc7e56-580a-48a8-a316-03807df8852d pr=0.0045 归一=0.05 入链=1 深=不可达
+ 7. https://www.spiegel.de/panorama/kehlsteinhaus-in-berchtesgaden-festnahme-nach-brand-in-einstigem-nazi-berghaus-a-2d859afc-c44c-4c2f-8009-f1e83b21df01 pr=0.0045 归一=0.05 入链=1 深=不可达
+ 8. https://www.spiegel.de/politik/bremens-buergermeister-andreas-bovenschulte-warnt-vor-extremismusklausel-im-laenderfinanzausgleich-a-ed5140cb-bb24-4758-b4da-25299bafb3db pr=0.0045 归一=0.05 入链=1 深=不可达
+ 9. https://www.spiegel.de/politik/deutschland/markus-soeder-wie-das-aigner-dilemma-seine-kanzlertraeume-gefaehrden-koennte-a-13dc7479-31aa-4131-a449-28c22a4aef6d pr=0.0045 归一=0.05 入链=1 深=不可达
+10. https://www.spiegel.de/reise/urlaub-mit-freunden-mit-diesen-23-tipps-wird-die-reise-schoen-und-nicht-schrecklich-a-027fc1f9-94fa-4097-8227-c1b25958b70b pr=0.0045 归一=0.05 入链=1 深=不可达
+11. https://www.spiegel.de/ausland/die-lage-inside-austria-suedtirols-schmerzhafter-weg-zur-autonomie-a-1e9f15c4-6475-4d38-9392-d3f97e663b1a pr=0.0039 归一=0.05 入链=0 深=不可达
+12. https://www.spiegel.de/ausland/frankreich-70-000-polizisten-verbotene-demos-geschlossene-museen-angespannte-lage-vor-erneutem-protesttag-a-0890d667-ab5f-4b7e-aa92-244e0c72e9ca pr=0.0039 归一=0.05 入链=0 深=不可达
+13. https://www.spiegel.de/ausland/handelsstreit-mit-kanada-usa-lockern-zoelle-gegen-landwirtschaftliche-produkte-a-c66bc640-e823-4737-a389-326b0cb5f4ac pr=0.0039 归一=0.05 入链=0 深=不可达
+14. https://www.spiegel.de/ausland/israel-vor-der-wahl-kommt-jetzt-das-ende-der-aera-benjamin-netanyahu-podcast-a-90a5d94a-fcbc-4a3c-971d-7a415bb10180 pr=0.0039 归一=0.05 入链=0 深=不可达
+15. https://www.spiegel.de/ausland/jay-clayton-iran-hat-laut-us-geheimdienstchef-us-personal-verstaerkt-im-visier-a-f4a935e7-a6f4-4881-9033-409754f894ea pr=0.0039 归一=0.05 入链=0 深=不可达
+16. https://www.spiegel.de/ausland/kenia-mehrere-vermisste-nach-einsturz-von-hochhaus-in-nairobi-a-69e9c617-1c64-4858-bfcf-91506e7df4ee pr=0.0039 归一=0.05 入链=0 深=不可达
+17. https://www.spiegel.de/ausland/norbert-roettgen-cdu-trump-steht-aktuell-auf-der-seite-russlands-a-18dce848-6af9-4f65-9a27-5704ac8c2da1 pr=0.0039 归一=0.05 入链=0 深=不可达
+18. https://www.spiegel.de/ausland/nordkorea-kim-jong-un-besucht-china-ueber-neu-eingeweihte-bruecke-a-28c0c951-22fd-42ea-94b7-dc5eb0c898cb pr=0.0039 归一=0.05 入链=0 深=不可达
+19. https://www.spiegel.de/ausland/us-midterms-wie-dubiose-umfrageinstitute-mit-fake-daten-den-demokraten-schaden-wollen-a-a1a73e75-e004-4b8c-98cf-1b5f94878f00 pr=0.0039 归一=0.05 入链=0 深=不可达
+20. https://www.spiegel.de/karriere/auswandern-nach-kanada-eine-deutsche-familie-zieht-nach-sechs-jahren-ein-fazit-a-660a768d-95a2-4c03-90d5-18f769adfc1d pr=0.0039 归一=0.05 入链=0 深=不可达
+
+Bottom 20(最低在前):
+ 1. https://www.spiegel.de/wirtschaft/service/kfz-versicherung-mit-diesen-schritten-senken-sie-ihre-beitraege-a-bdb3f4fa-5982-4748-918a-d48d7bb09814 pr=0.0039 归一=0.05 入链=0 深=不可达
+ 2. https://www.spiegel.de/wirtschaft/atomenergie-iaea-rechnet-mit-deutlichem-anstieg-der-kernkraftkapazitaeten-a-4c999f58-c806-4387-8392-5409080ace79 pr=0.0039 归一=0.05 入链=0 深=不可达
+ 3. https://www.spiegel.de/sport/wintersport/beginn-der-wintersportsaison-nach-rekordsommer-planen-selbst-oesterreicher-eine-skihalle-a-83dc2f9a-4f77-4b4a-90ae-62ede9a9d38e pr=0.0039 归一=0.05 入链=0 深=不可达
+ 4. https://www.spiegel.de/sport/fussball/vincent-kompany-trainer-des-fc-bayern-muenchen-soll-weitere-tage-in-klinik-bleiben-a-a0c188a1-37cd-4a85-9dd8-5b199ec74f68 pr=0.0039 归一=0.05 入链=0 深=不可达
+ 5. https://www.spiegel.de/sport/fussball/piotr-trochowski-ehemaliger-fussballnationalspieler-ist-jetzt-maler-a-566e2a62-7536-4e9f-8884-4551f735c94a pr=0.0039 归一=0.05 入链=0 深=不可达
+ 6. https://www.spiegel.de/sport/american-football/atlanta-falcons-neues-retro-logo-des-nfl-teams-erinnert-fans-an-nazi-symbolik-a-f8129154-01c0-44bf-9da8-664a07d906e8 pr=0.0039 归一=0.05 入链=0 深=不可达
+ 7. https://www.spiegel.de/reise/reisen-so-klaeren-sie-im-urlaub-mit-freunden-heikle-geldfragen-a-9e2e0701-7a86-4afa-b91e-d66b10eeb1d8 pr=0.0039 归一=0.05 入链=0 深=不可达
+ 8. https://www.spiegel.de/psychologie/leon-windscheid-ueber-zuversicht-selbstliebe-ist-so-ein-wort-da-kriege-ich-ausschlag-a-3aa6c56d-6730-4211-a73c-e4e95b66e0e3 pr=0.0039 归一=0.05 入链=0 深=不可达
+ 9. https://www.spiegel.de/politik/verkehrsminister-steffen-bilger-nennt-deutschlandticket-fuer-gelegenheitsfahrer-spannende-idee-a-47cd5579-0a22-4298-a839-5eafd7495352 pr=0.0039 归一=0.05 入链=0 深=不可达
+10. https://www.spiegel.de/politik/deutschland/wolfgang-thierse-ex-bundestagspraesident-von-der-spd-raet-zu-unabhaengigem-regierungschef-in-berlin-a-78d4f98f-e83d-49bb-9e8c-a3e1beb9b50e pr=0.0039 归一=0.05 入链=0 深=不可达
+11. https://www.spiegel.de/politik/deutschland/news-friedrich-merz-auf-csu-parteitag-wahl-in-serbien-anhaenger-feiern-le-pen-stevie-wonder-in-hannover-a-e736fff7-b460-45fb-8a48-f718685789e3 pr=0.0039 归一=0.05 入链=0 深=不可达
+12. https://www.spiegel.de/panorama/taiwan-ein-toter-viele-verletzte-taifun-champi-richtet-schwere-schaeden-an-a-3f4301ee-057b-4efc-b43c-cba852601349 pr=0.0039 归一=0.05 入链=0 深=不可达
+13. https://www.spiegel.de/panorama/mehrsprachige-erziehung-lern-deutsch-wenn-sprache-zur-belastung-wird-a-0611ec48-316a-4c4c-bcab-fc387623a3f5 pr=0.0039 归一=0.05 入链=0 深=不可达
+14. https://www.spiegel.de/panorama/leute/tv-ermittler-oliver-wnuk-junge-schauspieler-sollten-lernen-mit-geld-umzugehen-a-eb7571d8-9413-414c-a9f1-6874fbb9347f pr=0.0039 归一=0.05 入链=0 深=不可达
+15. https://www.spiegel.de/panorama/leute/prinz-william-royal-polizist-dj-auch-der-britische-thronfolger-hatte-berufstraeume-a-ea3d45f1-ad78-46ed-8214-e62a6f66010c pr=0.0039 归一=0.05 入链=0 深=不可达
+16. https://www.spiegel.de/panorama/justiz/arizona-maenner-mit-fake-schwangerschaften-terrorisiert-laura-owens-muss-ins-gefaengnis-a-7a31b7a0-f061-49c3-8b6c-694bae5774d2 pr=0.0039 归一=0.05 入链=0 深=不可达
+17. https://www.spiegel.de/panorama/herbstwetter-in-deutschland-verletzte-und-bahnchaos-wegen-sturm-sonntag-drohen-orkanboeen-a-65d85963-3487-4e10-9466-c9cfa5c6c3e6 pr=0.0039 归一=0.05 入链=0 深=不可达
+18. https://www.spiegel.de/panorama/hendrik-wuest-warum-der-nrw-ministerpraesident-manchmal-auf-der-couch-schlaeft-a-b8b3f046-4efd-4dde-99fb-c8be9ba0f948 pr=0.0039 归一=0.05 入链=0 深=不可达
+19. https://www.spiegel.de/panorama/fall-fabian-rostock-im-november-soll-das-urteil-gegen-gina-h-fallen-a-1a7db03b-c1e1-4162-9b16-0c041bdef696 pr=0.0039 归一=0.05 入链=0 深=不可达
+20. https://www.spiegel.de/karriere/auswandern-nach-kanada-was-deutsche-beim-uebersiedeln-wissen-muessen-a-d95292d3-5499-4a2d-aceb-ff3420a68fe4 pr=0.0039 归一=0.05 入链=0 深=不可达
+
+### 深度直方图
+- 0 层 0 / 1 层 0 / 2 层 0 / 3 层 0 / >3 层 0(0.0%)/ 不可达 40
+
+### 入链 0/1
+- 零入链 0 页(排除首页 0/sitemap-only 30/死页 0):无
+- 单入链(脆弱页)8 页:https://www.spiegel.de/ausland/suedtirol-das-zerrissene-land-podcastserie-a-a622a53f-25a4-4300-996b-19ff1d86e133, https://www.spiegel.de/sport/vincent-kompany-internationale-fussballszene-schickt-genesungswuensche-fuer-fc-bayern-trainer-a-e06ea208-92f8-460c-999d-88cdbae3c89f, https://www.spiegel.de/ausland/israel-startet-anti-terror-operation-im-westjordanland-a-8cbc7e56-580a-48a8-a316-03807df8852d, https://www.spiegel.de/reise/urlaub-mit-freunden-mit-diesen-23-tipps-wird-die-reise-schoen-und-nicht-schrecklich-a-027fc1f9-94fa-4097-8227-c1b25958b70b, https://www.spiegel.de/politik/bremens-buergermeister-andreas-bovenschulte-warnt-vor-extremismusklausel-im-laenderfinanzausgleich-a-ed5140cb-bb24-4758-b4da-25299bafb3db, https://www.spiegel.de/panorama/kehlsteinhaus-in-berchtesgaden-festnahme-nach-brand-in-einstigem-nazi-berghaus-a-2d859afc-c44c-4c2f-8009-f1e83b21df01, https://www.spiegel.de/politik/deutschland/markus-soeder-wie-das-aigner-dilemma-seine-kanzlertraeume-gefaehrden-koennte-a-13dc7479-31aa-4131-a449-28c22a4aef6d, https://www.spiegel.de/ausland/frankreich-emmanuel-macron-besucht-pariser-vorort-nach-toedlichen-schuessen-a-6c372ae1-9ccd-46f4-9182-43603bf2ec40
+
+### 锚文本审计
+- 带锚边 2196/48;精确匹配域名锚 0(0.0%,阈值 60%)
+- 锚分布 Top: DER SPIEGEL×76(3.5%), Barrierefreiheit×40(1.8%), Hilfe & Service×40(1.8%), Impressum×40(1.8%), Kontakt×40(1.8%), Newsletter×40(1.8%), Redaktionellen Fehler melden×40(1.8%), Technisches Problem melden×40(1.8%), Teilnahmebedingungen×40(1.8%), Utiq verwalten×40(1.8%)
+- 目标 https://www.spiegel.de/ ← "DER SPIEGEL"×38, "Startseite"×2
+- 目标 https://www.spiegel.de/backstage/bei-diesen-diensten-koennen-sie-dem-spiegel-folgen-a-a68cce85-8be8-4707-bd6e-0706090cbbbe ← "Wo Sie uns noch folgen können"×40
+- 目标 https://www.spiegel.de/barrierefreiheit ← "Barrierefreiheit"×40
+- 目标 https://www.spiegel.de/datenschutz-spiegel ← "Datenschutz"×21, "Datenschutzerklärung"×13, "Mehr dazu in unserer Datenschutzerklärung."×6
+- 目标 https://www.spiegel.de/impressum ← "Impressum"×40
+- ⚠ sitemap-only 爬取(爬虫兜底关闭):内链边可能欠采样,孤儿/入链结论按 --include-sitemap-only 复核

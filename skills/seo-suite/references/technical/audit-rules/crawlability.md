@@ -15,7 +15,7 @@
 | `crawl-indexability-conflict` | 索引性冲突 | warn | Googlebot 组(无则 `*` 组)Disallow 本页即 warn,有无 noindex 都报 |
 | `crawl-canonical-redirect` | canonical 指向重定向 | warn/fail | 1-2 跳=warn,≥3 跳或目标 4xx/5xx=fail;无 canonical=warn |
 | `crawl-sitemap-url-limit` | Sitemap 条数上限 | warn/fail | 逐文件:>40,000=warn,>50,000=fail |
-| `crawl-sitemap-size-limit` | Sitemap 体积上限 | warn/fail | 逐文件按未压缩:>40MB=warn,>50MB=fail |
+| `crawl-sitemap-size-limit` | Sitemap 体积上限 | warn/fail | 逐文件按未压缩:>40MB=warn,超过[体积上限](../../overview/facts.md#sitemap-limits)=fail |
 | `crawl-sitemap-duplicate-urls` | sitemap 内重复 URL | warn | 同一 URL 在全部已取 sitemap 中出现 >1 次 |
 | `crawl-sitemap-orphan-urls` ⛏ | Sitemap 孤儿 URL | warn | sitemap 列出、已爬页面无一链向它 |
 | `crawl-blocked-resources` | 屏蔽 CSS/JS | warn | robots.txt Disallow 挡住渲染资源 |
@@ -253,17 +253,17 @@
 
 ### crawl-sitemap-url-limit
 - 源表:warn/fail · 权重 6。逐文件:>40,000 URL=warn,>50,000=fail;index 下每个文件单独判。工具约定。建议优先级 medium。
-**依据**: "All formats limit a single sitemap to 50MB (uncompressed) or 50,000 URLs ... you must break your sitemap into multiple sitemaps"([sitemap 文档](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap))。40,000 预警线是工具约定。核对 2026-10-18。
-**判据**: 通过=每个文件 ≤50,000 条 `<loc>`。失败=任一文件 >50,000。
+**依据**: Google 规定单个 sitemap 有 URL 数和体积上限,超了必须拆成多个 sitemap(原文和数值见[事实表](../../overview/facts.md#sitemap-limits))。40,000 预警线是工具约定。
+**判据**: 通过=每个文件的 `<loc>` 条数不超过[上限](../../overview/facts.md#sitemap-limits)。失败=任一文件超过。
 **执行**: 单文件计数 `curl -s 子sitemapURL | grep -c '<loc>'`(.gz 先 `gunzip -c`)。`SITEMAP` 的规模提示按去重后全部 loc 总数判,index 下多文件会误报,只作粗筛。
-**修复**: 拆成多个 ≤50,000 条的文件,用 sitemap index 汇总提交;lastmod 留在各分片。
+**修复**: 拆成多个不超上限的文件,用 sitemap index 汇总提交;lastmod 留在各分片。
 **关联**: crawl-sitemap-size-limit
 
 ### crawl-sitemap-size-limit
-- 源表:warn/fail · 权重 5。逐文件按未压缩:>40MB=warn,>50MB=fail。工具约定。建议优先级 medium。
-**依据**: 50MB 指解压后体积(52,428,800 字节),gzip 只省带宽不放宽上限([协议](https://www.sitemaps.org/protocol.html));Google 同口径([sitemap 文档](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap))。核对 2026-10-18。
-**判据**: 通过=每个文件解压后 ≤50MB。失败=任一文件 >50MB。
-**执行**: `SITEMAP` 逐文件解压后判 50MB(规模提示行);单文件 `curl -s URL | gunzip -c | wc -c`(未压缩文件去掉 gunzip)。
+- 源表:warn/fail · 权重 5。逐文件按未压缩:>40MB=warn,超过体积上限=fail。40MB 是工具约定。建议优先级 medium。
+**依据**: 体积上限按解压后算,gzip 只省带宽不放宽上限(数值与来源见[事实表](../../overview/facts.md#sitemap-limits))。
+**判据**: 通过=每个文件解压后不超过体积上限。失败=任一文件超过。
+**执行**: `SITEMAP` 逐文件解压后判体积上限(规模提示行);单文件 `curl -s URL | gunzip -c | wc -c`(未压缩文件去掉 gunzip)。
 **修复**: 先按条数拆分,再 gzip;同步更新 robots.txt 与 GSC 里的引用。
 **关联**: crawl-sitemap-url-limit
 
@@ -344,7 +344,7 @@
 ### crawl-pdf-size
 - 名称/类型: 链接 PDF 体积 —— warning · 优先级 low · 输出 WARN(源表 warn;Content-Length **>10MB** 警;HEAD 最多查 **8 个** PDF)
 **这意味(what)**: 页面链接的 PDF 传输体积超过 10MB(工具约定)。
-**为什么(why)**: 大 PDF 对用户是下载等待;Google 抓 PDF 只取前 64MB([Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)),10MB 线远低于此,它标记的多是未压缩的扫描件。
+**为什么(why)**: 大 PDF 对用户是下载等待;Google 抓 PDF 只取前一段([上限](../../overview/facts.md#googlebot-size)),10MB 线远低于此,它标记的多是未压缩的扫描件。
 **触发(trigger)**: 1) 提取 PDF 链接;2) HEAD 取 Content-Length(最多 8 个);3) >10MB 即 warn;4) 无长度跳过;5) 无 PDF 链接通过。
 **不修的条件(caveat)**: 需要原始分辨率的图纸/画册,可另出压缩版供在线阅读。
 **修复(fix)**: 扫描件重压缩+OCR;降图片分辨率;超大的按章节拆分;正文改用 HTML 承载。

@@ -1,0 +1,11 @@
+## site_crawl: spiegel.de
+
+- 发现模式: robots+sitemap(链② robots Sitemap 指令 4 条 → 链③ sitemap loc 28496)
+- 子域 0 个: -
+- 页面 40:错误 0(错误率 0.0%),重定向 0,出链:内链 2211,外链 791,总出链 3002;已抓页面收到的入链 104,耗时 479.4s
+- Top 外链域: abo.spiegel.de×40, gruppenkonto.spiegel.de×40, facebook.com×39, instagram.com×39, spiegelgruppe.de×39, twitter.com×39, 11freunde.de×38, akademie.spiegel.de×37, ed.spiegel.de×37, gluecksspirale.spiegel.de×37
+- ⚠ 抓取被 --max 截断:下面的孤儿只表示「已抓样本内 0 入链」,入链来源页可能没抓到;要下孤儿结论,用 --max 覆盖全站,或用 --urls 给出栏目页再抓
+- 孤儿页 14(0 入链、非首页、未被重定向;重定向页 0 个不计):https://www.spiegel.de/panorama/hendrik-wuest-warum-der-nrw-ministerpraesident-manchmal-auf-der-couch-schlaeft-a-b8b3f046-4efd-4dde-99fb-c8be9ba0f948, https://www.spiegel.de/panorama/leute/prinz-william-royal-polizist-dj-auch-der-britische-thronfolger-hatte-berufstraeume-a-ea3d45f1-ad78-46ed-8214-e62a6f66010c, https://www.spiegel.de/sport/wintersport/beginn-der-wintersportsaison-nach-rekordsommer-planen-selbst-oesterreicher-eine-skihalle-a-83dc2f9a-4f77-4b4a-90ae-62ede9a9d38e, https://www.spiegel.de/panorama/leute/tv-ermittler-oliver-wnuk-junge-schauspieler-sollten-lernen-mit-geld-umzugehen-a-eb7571d8-9413-414c-a9f1-6874fbb9347f, https://www.spiegel.de/ausland/die-lage-inside-austria-suedtirols-schmerzhafter-weg-zur-autonomie-a-1e9f15c4-6475-4d38-9392-d3f97e663b1a, https://www.spiegel.de/panorama/taiwan-ein-toter-viele-verletzte-taifun-champi-richtet-schwere-schaeden-an-a-3f4301ee-057b-4efc-b43c-cba852601349, https://www.spiegel.de/ausland/israel-vor-der-wahl-kommt-jetzt-das-ende-der-aera-benjamin-netanyahu-podcast-a-90a5d94a-fcbc-4a3c-971d-7a415bb10180, https://www.spiegel.de/politik/deutschland/news-friedrich-merz-auf-csu-parteitag-wahl-in-serbien-anhaenger-feiern-le-pen-stevie-wonder-in-hannover-a-e736fff7-b460-45fb-8a48-f718685789e3, https://www.spiegel.de/reise/reisen-so-klaeren-sie-im-urlaub-mit-freunden-heikle-geldfragen-a-9e2e0701-7a86-4afa-b91e-d66b10eeb1d8, https://www.spiegel.de/politik/verkehrsminister-steffen-bilger-nennt-deutschlandticket-fuer-gelegenheitsfahrer-spannende-idee-a-47cd5579-0a22-4298-a839-5eafd7495352
+- ⚠ sitemapindex 含 419 个子表,按位置均匀抽 100 个(含首尾): https://www.spiegel.de/sitemaps/videos/sitemap.xml
+- ⚠ sitemapindex 含 23707 个子表,按位置均匀抽 100 个(含首尾): https://www.spiegel.de/sitemap.xml
+- ⚠ 发现 28497+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

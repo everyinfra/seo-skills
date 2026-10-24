@@ -1,0 +1,15 @@
+================================================================
+news_sitemap_check | https://www.yna.co.kr/news-sitemap3.xml
+✓ curl4  200 直返无重定向                            HTTP 200 直返(157119 bytes)
+✓ curl2  条数上限                                  375 条(≤1000 最佳实践)
+✓ ext    <news:news> 存在率 / 混入非新闻 URL           <news:news> 存在率 100%(375/375)
+✓ curl3  必填三件套(publication/date/title)         publication(name+language)/publication_date/title 375/375 齐
+✗ curl1  48h 窗口(协议红线)                          协议红线:超 48h/不可解析 156 条——逐条: https://www.yna.co.kr/view/AKR20261022124351007(48.4h 前); https://www.yna.co.kr/view/AKR20261022189200054(48.5h 前); https://www.yna.co.kr/view/AKR20261022188000007(48.9h 前); https://www.yna.co.kr/view/AKR20261022182151007(49.0h 前); https://www.yna.co.kr/view/AKR20261022186400007(49.2h 前); https://www.yna.co.kr/view/AKR20261022128900005(49.2h 前); https://www.yna.co.kr/view/AKR20261022172151007(49.2h 前); https://www.yna.co.kr/view/AKR20261022186500007(49.2h 前); https://www.yna.co.kr/view/AKR20261022172100007(49.7h 前); https://www.yna.co.kr/view/AKR20261022182200007(49.8h 前)…
+✓ ext    时间戳精度                                 时间戳均带时间(部分 date-only 属错误清单 #5)
+✓ ext    publication name 一致性                  站内一致: 연합뉴스
+✓ ext    title 格式(长度/站名逆序)                     title 长度/格式无异常
+✓ ext    loc 绝对 URL                            loc 均为绝对 URL
+✓ curl5  引用页 noindex 抽查                        抽查 3/3 条可索引(0 条不可达未计)
+✓ ext    robots.txt Sitemap 声明一致               robots.txt 已声明本 sitemap
+
+==== 结果: 10 ✓ / 0 ⚠ / 1 ✗ / 0 unverified => FAIL(退出码 1) ====

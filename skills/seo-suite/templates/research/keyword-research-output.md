@@ -62,4 +62,4 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Data
 
 - 数据源与抓取时间:{GKP/第三方 API + 日期}。KD 是各工具自己的模型估计,算法不同,数值不可跨工具比较;搜索量同理是估算。
 - 符号:KD=关键词难度(0–100);Intent 按 keyword-intent-taxonomy.md 分类。
-- 已知坑:{如 GSC 近几天的数据是临时的;含 2025-05-13 至 2026-04-27 的窗口里展示、CTR、平均排名不可信,点击可用([官方记录](https://support.google.com/webmasters/answer/6211453));AI 引用类查询无公开量}。数字缺失写 [要追加: 数据源],禁编造。
+- 已知坑:{如 GSC 近几天的数据是临时的;窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时展示、CTR、平均排名不可信,点击可用;AI 引用类查询无公开量}。数字缺失写 [要追加: 数据源],禁编造。

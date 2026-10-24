@@ -101,7 +101,7 @@
 | 数据源已知 | `python3 scripts/doctor.py --wizard`(只看键名,不读值) | 报告写明当前 tier(T0–T3)。缺数据走合同表降级列,不编数 |
 | 路由对应的脚本真实存在 | `python3 scripts/<名>.py --help` | help 能打开,文中写的参数都在 help 里 |
 | 症状先分层 | 点击降/展示降/位置降/收录降/分析工具降,见下文「事故问题按症状形态路由」 | 每个症状只进一条先查的路径,不五个集合同时展开 |
-| 日期口径 | GSC 展示数据涉及 2025-05-13 至 2026-04-27 时,两期对比不跨这个期间([Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453),核对 2026-10-21) | 对比期不跨异常期,或报告里注明展示不可比 |
+| 日期口径 | GSC 展示数据涉及[GSC 数据异常期](facts.md#gsc-anomaly)时,两期对比不跨这个期间 | 对比期不跨异常期,或报告里注明展示不可比 |
 
 ## 输出优先级规则
 
@@ -179,8 +179,8 @@ REQUIRED_FILES 硬契约(22 个必在文件,含 evals/trigger_cases.json、schem
 |---|---|---|---|
 | 产品页 | `Product` | name + (review \| aggregateRating \| offers) 三选一 | [Product snippet](https://developers.google.com/search/docs/appearance/structured-data/product-snippet)(2026-09-08) |
 | 文章/博客 | `Article` | 无必填;推荐 headline、image、datePublished、dateModified、author | [Article](https://developers.google.com/search/docs/appearance/structured-data/article)(2026-09-08) |
-| FAQ 页 | `FAQPage` | Google 自 2026-05-07 起不再展示 FAQ 富结果,文档已移除;只在别的系统需要时保留 | [Search 文档更新记录](https://developers.google.com/search/updates) |
-| 指南/教程 | `HowTo` | Google 已不展示 How-to 富结果,结构化数据文档已移除(2023-09 记录) | [Search 文档更新记录](https://developers.google.com/search/updates) |
+| FAQ 页 | `FAQPage` | Google 已不再展示 FAQ 富结果,文档已移除;只在别的系统需要时保留 | [事实表](facts.md#rich-results) |
+| 指南/教程 | `HowTo` | Google 已不展示 How-to 富结果,结构化数据文档已移除 | [事实表](facts.md#rich-results) |
 | 组织 | `Organization` | 无必填 | [Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)(2026-09-08) |
 | 本地商家 | `LocalBusiness` | name、address | [Local business](https://developers.google.com/search/docs/appearance/structured-data/local-business)(2026-09-08) |
 | 活动 | `Event` | name、startDate、location | [Event](https://developers.google.com/search/docs/appearance/structured-data/event)(2026-09-08) |
@@ -237,6 +237,7 @@ REQUIRED_FILES 硬契约(22 个必在文件,含 evals/trigger_cases.json、schem
 参考：
 - [references/overview/capability-map.md](capability-map.md)
 - [references/overview/routing-rules.md](routing-rules.md)
+- [事实表](facts.md):跨文件反复引用的外部事实(CWV 阈值、GSC 异常期、富结果退役日期、API 配额、sitemap 与 Googlebot 上限、搜索引擎份额)的唯一出处
 - [站型打法手册](site-type-playbooks.md):八张站型卡(SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL)——开局先认站型再取 KPI/渠道/防死清单
 
 #### research
@@ -288,7 +289,7 @@ REQUIRED_FILES 硬契约(22 个必在文件,含 evals/trigger_cases.json、schem
   - [references/markets/id.md](../markets/id.md):印尼语区——baku/gaul 语域分流、EYD V 规范、低价机型/slow-4G 性能基线
   - [references/markets/hi.md](../markets/hi.md):印地语区(印度)——Hinglish 三种书写现实、罗马化文本 AI 处理损耗、语音查询、lakh 分组
   - [references/markets/it.md](../markets/it.md):意大利语区——it-CH 独立 locale、P.IVA/估算声明、it 市场工具栈
-  - [references/markets/tr.md](../markets/tr.md):土耳其语区——第二个 Yandex 市场(份额双口径必并记:StatCounter ~26% vs 本地点击实测 3-5%,交付以 Google 为主战场、Yandex 仅桌面重度受众作次级审计)、İ/ı 大小写陷阱、tanıtım yazısı 披露、Trendyol 站内搜索
+  - [references/markets/tr.md](../markets/tr.md):土耳其语区——第二个 Yandex 市场(份额双口径必并记:StatCounter 读数([事实表](facts.md#search-share))远高于本地点击实测,交付以 Google 为主战场、Yandex 仅桌面重度受众作次级审计)、İ/ı 大小写陷阱、tanıtım yazısı 披露、Trendyol 站内搜索
   - [references/markets/vi.md](../markets/vi.md):越南语区——有调/无调变体跟踪、标题词前 30 字符规则、Coc Cốc 本土引擎
   - [references/markets/th.md](../markets/th.md):泰语区——无空格分词(Intl.Segmenter 定论)、字素计长、佛历日期、ครับ/ค่ะ 语体
   - [references/markets/pl.md](../markets/pl.md):波兰语区——变音符规范化归组、sierotki 行首禁则、本地论坛生态

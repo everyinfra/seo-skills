@@ -12,10 +12,10 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Peri
 
 | 指标 | 本期 | 上期 | Δ | Δ% | 口径 |
 |---|---|---|---|---|---|
-| 点击(GSC,非品牌) |  |  |  |  | 品牌正则入附录;点击不受 2025-05-13 至 2026-04-27 的记录错误影响 |
+| 点击(GSC,非品牌) |  |  |  |  | 品牌正则入附录;点击不受[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)的记录错误影响 |
 | 点击(GSC,品牌) |  |  |  |  | 同上 |
 | 自然会话(GA4) |  |  |  |  | 默认渠道组 |
-| 展示(GSC) |  |  |  |  | 窗口含 2025-05-13 至 2026-04-27 时不可比 |
+| 展示(GSC) |  |  |  |  | 窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时不可比 |
 | CTR |  |  |  |  | 点击÷展示(官方定义);同上受展示记录错误影响 |
 | 平均排名 |  |  |  |  | 官方定义:站点最靠前那条结果的平均位置;新增靠后展示会让数字变大,变大≠变差,看分布;同上受记录错误影响 |
 | 关键事件(organic) |  |  |  |  | 归因口径写明 |
@@ -37,7 +37,7 @@ YoY 对照:{本期 vs 去年同期,一句话——季节性判断}。
 |---|---|---|---|---|
 | {ChatGPT/Claude/Perplexity/Gemini…} |  |  |  | {无 referrer 记直接,样本低估} |
 
-口径注记:AI 概览和 AI 模式的点击计入 Search Console 效果报告的「网页」搜索类型,拆不出来([AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features))。Google 另有「生成式 AI 效果报告」(2026-08-31 起全球开放,[帮助页](https://support.google.com/webmasters/answer/16984139)),**只报展示次数**,维度是页面、国家、日期、设备,不报点击;这些展示同时计入总体效果报告。效果报告的搜索类型筛选还区分文字网页搜索与多模态网页搜索(图片搜索、Google 镜头等,[帮助页](https://support.google.com/webmasters/answer/7576553);筛选上线日 2026-09-24 取自总控核对记录)。GA4 侧建自定义渠道组观测 AI 引荐。趋势同向即有效,数字绝对值只作内部跨期比较。
+口径注记:AI 概览和 AI 模式的点击计入 Search Console 效果报告的「网页」搜索类型,拆不出来([AI 功能文档](https://developers.google.com/search/docs/appearance/ai-features))。Google 另有「生成式 AI 效果报告」(已全球开放,[日期与帮助页](../../references/overview/facts.md#gsc-genai)),**只报展示次数**,维度是页面、国家、日期、设备,不报点击;这些展示同时计入总体效果报告。效果报告的搜索类型筛选还区分文字网页搜索与多模态网页搜索(图片搜索、Google 镜头等,[帮助页](https://support.google.com/webmasters/answer/7576553);筛选上线日 2026-09-24 取自总控核对记录)。GA4 侧建自定义渠道组观测 AI 引荐。趋势同向即有效,数字绝对值只作内部跨期比较。
 
 ## Winners / Losers
 
@@ -55,7 +55,7 @@ YoY 对照:{本期 vs 去年同期,一句话——季节性判断}。
 - {GSC 点击 ≠ GA4 会话:定义差异,看同向不看相等(kpi-definitions.md)}
 - {展示暴涨拉低 CTR ≠ 标题变差;新增长尾展示会稀释}
 - {改版/发布与变化的对应是相关非因果,附验证计划}
-- {数据窗口:{GSC 延迟/时区};展示、CTR、平均排名在 2025-05-13 至 2026-04-27 记录有误,点击不受影响,含这段时间的两期对比只比点击([官方记录](https://support.google.com/webmasters/answer/6211453),核对 2026-10-21)}
+- {数据窗口:{GSC 延迟/时区};展示、CTR、平均排名在[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)里记录有误,点击不受影响,含这段时间的两期对比只比点击}
 
 ## Recommended Actions
 
@@ -67,7 +67,7 @@ YoY 对照:{本期 vs 去年同期,一句话——季节性判断}。
 
 | # | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|---|
-| 1 | 本期与上期窗口不含 GSC 异常期,或只比点击 | 对照 2025-05-13 至 2026-04-27 | 通过:不含,或展示、CTR、排名类指标未跨期比较。失败:跨期比较了这三项 |
+| 1 | 本期与上期窗口不含 GSC 异常期,或只比点击 | 对照[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly) | 通过:不含,或展示、CTR、排名类指标未跨期比较。失败:跨期比较了这三项 |
 | 2 | 品牌/非品牌拆分可复现 | `python3 scripts/gsc_mining.py 本期.csv --brand '品牌正则' --json`(命中的查询不参与挖掘);品牌正则写进附录 | 通过:正则与上期相同。失败:正则变了未说明 |
 | 3 | GSC 导出可程序化复核 | `python3 scripts/gsc_api.py query` 拉规范化 CSV(`gsc_api.py --help` 看参数) | 通过:CSV 数字与后台一致。失败:不一致 → 查聚合方式(按网站/按网页) |
 | 4 | Winners/Losers 有门槛 | 数每行的 |Δ| 是否 ≥ 报告里写的会话阈值,且不是单日抖动 | 通过:都达标。失败:有单日尖峰入选 |

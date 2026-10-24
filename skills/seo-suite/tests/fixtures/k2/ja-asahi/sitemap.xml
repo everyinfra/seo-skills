@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_national.xml</loc>
+<lastmod>2026-10-24T19:40:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_business.xml</loc>
+<lastmod>2026-10-24T11:00:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_politics.xml</loc>
+<lastmod>2026-10-24T17:00:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_sports.xml</loc>
+<lastmod>2026-10-24T17:30:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_international.xml</loc>
+<lastmod>2026-10-24T19:00:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_culture.xml</loc>
+<lastmod>2026-10-24T15:30:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_science.xml</loc>
+<lastmod>2026-10-24T16:00:00+09:00</lastmod>
+</sitemap>
+<sitemap>
+<loc>https://www.asahi.com/sitemap/sitemap_obituaries.xml</loc>
+<lastmod>2026-10-23T18:00:08+09:00</lastmod>
+</sitemap>
+</sitemapindex>

@@ -60,7 +60,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Rend
 
 ## What could change this conclusion
 
-- {数据缺口:GSC 28 天窗口含波动;个性化 SERP 与追踪工具位置可差 ±;窗口若含 2025-05-13 至 2026-04-27,展示、CTR、平均排名不可信,点击可用([官方记录](https://support.google.com/webmasters/answer/6211453))}
+- {数据缺口:GSC 28 天窗口含波动;个性化 SERP 与追踪工具位置可差 ±;窗口若含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly),展示、CTR、平均排名不可信,点击可用}
 - {仅相关非因果:元素达标≠排名;能定案的验证:改版后 14/28 天同页 GSC 对比,一次只改一组元素}
 - {样本局限:单页审计,模板级问题需抽同模板 {} 页复核}
 - {继承假设:意图判定基于 {} 条 SERP 快照}

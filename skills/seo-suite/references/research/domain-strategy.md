@@ -201,7 +201,7 @@ ccTLD、子目录、子域的优缺点对照和"升级 ccTLD 的三个理由"见
 |---|---|---|
 | 巴西（.com.br） | registro.br 规则：.br 下的域名对个人（CPF）和企业（CNPJ）开放；外国企业需有在巴西合法设立的代理人（[规则](https://registro.br/dominio/regras/)、[新域注册](https://registro.br/ajuda/registro-de-novos-dominios/)，核对 2026-10-21） | 无本土主体需走代理；策略层见 [markets/pt](../markets/pt.md) |
 | 俄语区（.ru） | Yandex 为主要引擎。个人数据本地化（152-ФЗ）是否使 .ru 成为合规选择，上一版有说法但无来源，未核 | 见 [markets/ru](../markets/ru.md) |
-| 韩国（.co.kr） | StatCounter 2026-09：Google 47.97%，Naver 43.06%（[StatCounter](https://gs.statcounter.com/search-engine-market-share/all/south-korea)）。上一版"Naver ~62.86%（2025）"已过时，已改 | Naver 收录走 Search Advisor；见 [markets/ko](../markets/ko.md) |
+| 韩国（.co.kr） | StatCounter 页面浏览口径 Google 略高于 Naver（[读数](../overview/facts.md#search-share)）；来路构成口径 Naver 领先，两种口径见 [markets/ko](../markets/ko.md) | Naver 收录走 Search Advisor；见 [markets/ko](../markets/ko.md) |
 | 日本（.co.jp） | co.jp 是属性型 JP 域名，面向在日本登记的企业（经销商说明，[jpdirect](https://jpdirect.jp/domain/register/cojp/)）；一般 .jp 面向在日本有住所的个人和组织（[JPRS](https://jprs.jp/about/jp-dom/spec/)） | 无本土主体用 .com；见 [markets/ja](../markets/ja.md) |
 | 中国（.cn、备案） | 备案是中国大陆主机的合规要求；备案对百度收录的具体影响上一版"优先级明显更低"无来源，已删 | 见 [markets/zh](../markets/zh.md) |
 

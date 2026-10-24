@@ -13,7 +13,7 @@
 | ChatGPT | 搜索使用「第三方搜索提供商」和合作方直接提供的内容；官方没有写明是哪家索引 | [OpenAI 2024-10-31](https://openai.com/index/introducing-chatgpt-search/) |
 | Perplexity | `PerplexityBot` 用于在搜索结果中展示和链接网站，不用于训练基础模型；`Perplexity-User` 由用户请求触发，「generally ignores robots.txt rules」；变更最长 24 小时生效 | [Perplexity bots](https://docs.perplexity.ai/guides/bots) |
 | Claude | `ClaudeBot` 用于训练；`Claude-SearchBot` 用于搜索索引；`Claude-User` 是用户触发的访问。三者都遵守 robots.txt；封 IP 可能让爬虫读不到 robots.txt；IP 清单在 claude.com/crawling/bots.json | [Anthropic 帮助](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler) |
-| Google | AI Overviews / AI Mode 的资格 = 已索引且可带摘要展示；控制入口是 Googlebot 的 robots.txt 与 `nosnippet` 等指令；Search Console 有「Search generative AI」纳入/排除开关（2026-08-31 全球上线） | [AI features](https://developers.google.com/search/docs/appearance/ai-features)、[SC 帮助](https://support.google.com/webmasters/answer/16908024) |
+| Google | AI Overviews / AI Mode 的资格 = 已索引且可带摘要展示；控制入口是 Googlebot 的 robots.txt 与 `nosnippet` 等指令；Search Console 有「Search generative AI」纳入/排除开关（[全球开放日期](../overview/facts.md#gsc-genai)） | [AI features](https://developers.google.com/search/docs/appearance/ai-features)、[SC 帮助](https://support.google.com/webmasters/answer/16908024) |
 | Google | `Google-Extended` 是控制 token，不单独抓取：管未来 Gemini 模型（Gemini Apps、Vertex AI API）的训练，以及 Gemini Apps 和 Vertex AI 的 grounding；不影响 Google 搜索收录与排名。SC 帮助页另写明：它也限制「搜索生成式 AI 功能所用模型」的训练 | [Google 常见爬虫](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers)、[SC 帮助](https://support.google.com/webmasters/answer/16908024) |
 | Google | `Google-Agent` 是 Google 托管的 agent 按用户请求访问网页时用的 UA；用户触发类抓取「generally ignore robots.txt rules」 | [Google 用户触发抓取](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers) |
 | Copilot | Bing 与 Copilot 共用抓取、索引、排名基础；指南要求放行 Bingbot，没有列出单独的 Copilot 爬虫。用 IndexNow 通知增删改；`NOARCHIVE` 不进 Copilot 回答与 grounding；`NOCACHE` 只用网址、标题、摘要；GEO「does not guarantee grounding or citations」 | [Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a) |
@@ -94,15 +94,15 @@ README 里的数字以本表为准。结论列：V＝原文读到；F＝原文�
 
 | 条目 | 结论 | 原文与口径 |
 |---|---|---|
-| Yandex 在俄份额约 70–73% | V | [StatCounter](https://gs.statcounter.com/search-engine-market-share/all/russian-federation) 2026-09：Yandex 70.33% |
+| Yandex 是俄罗斯第一搜索引擎 | V | StatCounter 读数见[事实表](../overview/facts.md#search-share)，三套口径见 [ru.md](../markets/ru.md) |
 | 俄语信息查询 68% 有 AI 答案（applabx） | 未核 | 只找到 AppLabx 的统计汇编帖，找不到 68% 的原句 |
-| Naver 在韩份额约 63–64% | V | [InternetTrend](https://internettrend.co.kr/insights/2026-04-search-engine) 面板：2025 年均 62.86%，2026-04 为 62.6%。StatCounter 2026-09 是 Google 47.97%、Naver 43.06%，不是「并列」，两种口径都写 |
+| Naver 在韩国的份额 | V | 口径不同读数不同：InternetTrend 来路构成里 Naver 领先，StatCounter 页面浏览里 Google 略高（[事实表](../overview/facts.md#search-share)）。两种口径都写，见 [ko.md](../markets/ko.md) |
 | 韩国 AI 브리핑引用几乎全是 Naver 自有生态 | V | [Andgentic](https://andgentic.com/insights/what-is-naver-ai-briefing/)（2026-07-24，厂商博客）原句 "almost exclusively" |
 | 日本 AIO 出现率 76.9% | V | 见第六节 Itera 行 |
 | 日本 AI 搜索使用率 21.3% → 37.0% | V | [CyberAgent](https://www.cyberagent.co.jp/news/detail/id=33041)（2026-03-05）；更新值：[2026-08 调查](https://www.cyberagent.co.jp/news/detail/id=33787)含 AI Mode 为 52.3% |
 | 巴西 ChatGPT 25.5%、约 5,000 万月用户 | F | 数字出自 Atlantico（2025-07，约 5,400 万月活 App 用户，经 LinkedIn 帖转述），不是 StatCounter/OpenAI，来源标注要改 |
 | 西语查询 83–84% 引西语源（Temso） | V | [Temso](https://www.temso.ai/data/-Lost-in-Translation-How-AI-Models-Handle-Local-Language-Sources)（2026-04，700 万条引用，4 个模型）：83–84% 只是 Google AIO 和 Copilot 的数；Grok 为 55% 以上；ChatGPT 本语言源 70.2%、英语源 23.7% |
-| Yandex 在土耳其约 26% | F | StatCounter 2026-09 为 25.19%；「3 月约 13%」未核 |
+| Yandex 在土耳其的份额 | F | StatCounter 读数见[事实表](../overview/facts.md#search-share)，月间波动大，见 [tr.md](../markets/tr.md)；「3 月约 13%」未核 |
 | 印度 ChatGPT 约 1 亿周活 | V | [TechCrunch](https://techcrunch.com/2026/02/15/india-has-100m-weekly-active-chatgpt-users-sam-altman-says/)（2026-02-15）转述 Altman |
 | 非英语 SEO skill top 仓库 1–5 星 | 未核 | GitHub API 实测值，本轮没有重跑 |
 
@@ -126,7 +126,7 @@ Google 系之外的 AI 搜索入口行为不同，不套用同一套 GEO 假设�
 
 ## 七、测量口径（防误读）
 
-- **GSC 生成式 AI 效果报告**（[Search Central 博客 2026-06-03](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)起先对部分站点开放，2026-08-31 全球上线）只有展示，没有点击、CTR、查询维度；维度只有页面、国家、日期、设备。这些数据同时计入总体效果报告，所以 AI 功能带来的点击仍然拆不出来。
+- **GSC 生成式 AI 效果报告**（先对部分站点开放，后对全球开放，[日期](../overview/facts.md#gsc-genai)）只有展示，没有点击、CTR、查询维度；维度只有页面、国家、日期、设备。这些数据同时计入总体效果报告，所以 AI 功能带来的点击仍然拆不出来。
 - **Bing AI Performance**：Total Citations、Average Cited Pages、Grounding queries（抽样）、页面级引用数；2026-02 公测（[Bing 博客](https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/)）。
 - **引荐流量是下界**：Ahrefs 测试发现 Copilot、Mistral、Jasper 的访问在分析工具里显示为「Direct」（[Ahrefs](https://ahrefs.com/blog/ai-traffic-study/)）。用 referrer 清单 + 服务器日志 + 分析工具三源对账，按平台分列。
 - **抽样面板的五状态**（本套件口径，实现见 `scripts/citation_panel.py`）：no_answer / failed / brand_absent / name_only_mention / cited_brand。采集失败不等于内容缺口；提及不等于引用。

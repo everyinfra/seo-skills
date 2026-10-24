@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+	<url>
+		<loc>https://www.yna.co.kr/view/AKR20261024049200001</loc>
+		<news:news>
+			<news:publication>
+				<news:name>연합뉴스</news:name>
+				<news:language>ko</news:language>
+			</news:publication>
+			<news:publication_date>2026-10-24T19:09:56+09:00</news:publication_date>
+			<news:title><![CDATA["엄혹한 시절 민주주의 수호 투신"…故최형우 빈소에 조문행렬]]></news:title>
+		</news:news>
+	</url>
+<url>
+		<loc>https://www.yna.co.kr/view/AKR20261024048100007</loc>
+		<news:news>
+			<news:publication>
+				<news:name>연합뉴스</news:name>
+				<news:language>ko</news:language>
+			</news:publication>
+			<news:publication_date>2026-10-24T18:47:35+09:00</news:publication_date>
+			<news:title><![CDATA[[프로농구 중간순위] 24일]]></news:title>
+		</news:news>
+	</url>
+<url>
+		<loc>https://www.yna.co.kr/view/AKR20261024038151007</loc>
+		<news:news>
+			<news:publication>
+				<news:name>연합뉴스</news:name>
+				<news:language>ko</news:language>
+			</news:publication>
+			<news:publication_date>2026-10-24T18:47:02+09:00</news:publication_date>
+			<news:title><![CDATA[프로농구 삼성, 창단 최다 개막 7연승…칸터·맥컬러 48점 합작(종합)]]></news:title>
+		</news:news>
+	</url>
+</urlset>
+<!-- 截取:2026-10-24 https://www.yna.co.kr/news-sitemap3.xml 的头部和前 3 条 url(原文 373 条) -->

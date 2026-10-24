@@ -89,7 +89,7 @@ POST https://www.google-analytics.com/mp/collect?measurement_id=G-XXXXXXX&api_se
 
 - **对账资源级 clicks/impressions 时去掉 `query` 维度拉总数**——匿名化查询(只有少数用户搜过的词)不出现在 query 行里,按 query 加总会少于总数([官方深度解读](https://developers.google.com/search/blog/2022/10/performance-data-deep-dive))。
 - API 的 `dataState` 设为 `all` 时包含未定稿的新数据,省略或设为 `final` 只返回定稿数据([query 文档](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)),`all` 的结果标临时;**不要对已聚合的 CTR/position 行做朴素平均**(本套件口径);API 不保证返回全部行,只返回靠前的行,`rowLimit` 取值 1–25,000,默认 1,000,所以结果要声明"top 行而非完整导出"。
-- URL Inspection 配额比 Search Analytics 紧:每个站点每天 2,000 次、每分钟 600 次;Search Analytics 每个站点每分钟 1,200 次([使用限制](https://developers.google.com/webmaster-tools/limits))。**按需用**。它只返回 Google 索引里那个版本的索引状态,不能测试实时网址,**不会请求索引**([index.inspect](https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect));排名波动是证据,不是某次算法更新的证明(本套件口径)。
+- URL Inspection 配额比 Search Analytics 紧(两者数字见[配额表](../overview/facts.md#api-quotas))。**按需用**。它只返回 Google 索引里那个版本的索引状态,不能测试实时网址,**不会请求索引**([index.inspect](https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect));排名波动是证据,不是某次算法更新的证明(本套件口径)。
 - 结论以"最大实质性增/减→受影响词/页→有证据的假设→置信度→下一步 SEO 动作"开头。
 
 ### 测量配置变更安全(与上面必查设置互补)

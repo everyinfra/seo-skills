@@ -34,7 +34,7 @@ _For: {值班人/决策人} · Date: {YYYY-MM-DD} · Alert type: {ranking drop /
 
 按 seo-drift-monitoring.md 五层根因顺序逐层推进,每层写"查什么/判据/通过则进下一层":
 
-1. **L1 变化是否真实**:tracking 断档/bot/口径/季节性(要 YoY 不要 MoM;GSC clicks 与 GA4 sessions 应同向,差别大先查口径——本套件口径)。窗口含 2025-05-13 至 2026-04-27 时,展示、CTR、平均排名不可信,点击可用([官方记录](https://support.google.com/webmasters/answer/6211453),核对 2026-10-21)
+1. **L1 变化是否真实**:tracking 断档/bot/口径/季节性(要 YoY 不要 MoM;GSC clicks 与 GA4 sessions 应同向,差别大先查口径——本套件口径)。窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时,展示、CTR、平均排名不可信,点击可用
 2. **L2 定位**:国家/设备/区块/品牌 vs 非品牌/落地页(单国跌=本地算法;仅移动跌=移动可用性;非品牌跌=算法…)
 3. **L3 页面级**:位置跌+SERP 不变=质量;位置稳+CTR 跌=SERP 特性变化;同日 deploy+drop=强相关非证明
 4. **L4 技术**:Recent deploys are the prime suspect(重定向 1 跳/4xx 5xx/sitemap/hreflang/抓取率)

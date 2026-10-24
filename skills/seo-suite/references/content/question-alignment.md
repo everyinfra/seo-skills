@@ -55,7 +55,7 @@ python3 scripts/gsc_api.py query --site sc-domain:example.com \
 ```
 
 - 两条命令的窗口都是 28 天。输出列：`Query,Page,Clicks,Impressions,CTR,Position`，CTR 是小数。
-- API 每次最多返回 25,000 行；脚本用 startRow 分页，`--rows` 是总行数上限（默认 25,000）。
+- API 每次请求有行数上限（[配额表](../overview/facts.md#api-quotas)）；脚本用 startRow 分页，`--rows` 是总行数上限（默认取单次上限）。
 - API 只返回排在前面的行，不保证全量；匿名查询不返回（[Search Analytics API](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)，核对 2026-10-18）。
 - 结束日至少留 3 天：数据通常 2–3 天后可用。日期按太平洋时间计（[数据差异说明](https://support.google.com/webmasters/answer/17010575)）。
 
@@ -181,7 +181,7 @@ GROUP BY query, page
 
 **改后怎么量**
 
-1. 先查 Search Console 的[已知数据异常](https://support.google.com/webmasters/answer/6211453)。两期窗口都不能跨过异常期。例：2025-05-13 至 2026-04-27 的展示、CTR 和平均排名受日志错误影响，点击不受影响（官方，核对 2026-10-18）。
+1. 先查 Search Console 的[已知数据异常](https://support.google.com/webmasters/answer/6211453)。两期窗口都不能跨过异常期。例：[GSC 数据异常期](../overview/facts.md#gsc-anomaly)里展示、CTR 和平均排名受日志错误影响，点击不受影响。
 2. 确认 Google 已显示新标题：搜目标查询看结果；或在网址检查里看 Last crawl 晚于改写日期（[网址检查](https://support.google.com/webmasters/answer/9012289)）。
 3. 从新标题显示那天起，取同样长度的窗口（28 天）。Google 入门指南也建议等几周再评估（[入门指南](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)）。
 4. 在效果报告的图表上加自定义注解，记改写日期。每个资源最多 200 条，每条最多 120 个字符；对比模式里不显示注解（[注解](https://support.google.com/webmasters/answer/16530728)，核对 2026-10-18）。

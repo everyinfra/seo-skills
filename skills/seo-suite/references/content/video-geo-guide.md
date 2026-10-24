@@ -28,7 +28,7 @@
 - **文件类型**:Google 能处理 3GP、3G2、ASF、AVI、DivX、M2V、M3U、M3U8、M4V、MKV、MOV、MP4、MPEG、OGV、QVT、RAM、RM、VOB、WebM、WMV、XAP;不支持 data URL。要进入 key moments、视频预览,视频文件也要有稳定 URL。
 - **元数据**:Google 支持结构化数据、视频 sitemap 和 Open Graph。为每个视频建独立 watch page(只有一个视频是页面主旨)。
 - **Key moments 两种做法**:`Clip` 结构化数据(精确起止时间和标签,所有 Google 搜索支持的语言);`SeekToAction`(告诉 Google 时间戳在 URL 里怎么写,仅限英、西、葡、意、中、法、日、德、土、韩、荷、俄语);YouTube 托管的视频,在 YouTube 描述里写时间戳。你设定的 key moments 优先于 Google 自动识别的。
-- **视频 sitemap**:sitemap 里引用的所有 URL 必须允许 Googlebot 抓取(不被 robots.txt 禁止、不需要登录、不被防火墙拦);不要列与宿主页内容无关的视频;`<video:content_loc>` 等价于 `VideoObject.contentUrl`,`<video:player_loc>` 用于 YouTube、Vimeo 等 iframe 嵌入,对应 `embedUrl`(官方 sitemap 文档标明等价关系);官方推荐优先提供 `content_loc`;单个 sitemap 文件最多 50,000 个 URL(通用 sitemap 限制)。同一信息写在 sitemap 里或结构化数据里都行,不会因为写两份而叠加权重(本套件口径)。
+- **视频 sitemap**:sitemap 里引用的所有 URL 必须允许 Googlebot 抓取(不被 robots.txt 禁止、不需要登录、不被防火墙拦);不要列与宿主页内容无关的视频;`<video:content_loc>` 等价于 `VideoObject.contentUrl`,`<video:player_loc>` 用于 YouTube、Vimeo 等 iframe 嵌入,对应 `embedUrl`(官方 sitemap 文档标明等价关系);官方推荐优先提供 `content_loc`;单个 sitemap 文件受通用 [sitemap 上限](../overview/facts.md#sitemap-limits)约束。同一信息写在 sitemap 里或结构化数据里都行,不会因为写两份而叠加权重(本套件口径)。
 - **地域限制**:用 `<video:restriction>`(sitemap)或 `regionsAllowed`(结构化数据)。没有国家限制的视频不要写,误写会让视频在其他地区消失。
 - **决策口诀(本套件口径)**:只嵌 YouTube → 做 VideoObject(`embedUrl`);自托管视频 → VideoObject(`contentUrl`)加视频 sitemap;视频在 JS 弹层或无限滚动里 → sitemap 是更可靠的发现通道。
 

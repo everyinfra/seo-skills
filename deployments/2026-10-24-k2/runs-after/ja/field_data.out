@@ -1,0 +1,25 @@
+# CWV 现场数据(field:CrUX 28 天真实用户 p75)× 实验数据(lab:Lighthouse)
+
+> PSI 无 key 低配额模式(共享池,易 429;批量/正式使用设 PSI_API_KEY)
+> crux 源跳过:未提供 API key(--key 或 CRUX_API_KEY/PSI_API_KEY)——CrUX API 必须 key,本次降级仅 PSI(跳过不算失败)
+
+## https://www.asahi.com/ [mobile] — 源: none
+
+### 现场 field(真实用户 p75,CrUX 口径)
+
+| 指标 | p75 | 判定 | 站内类别 | 来源 |
+|---|---|---|---|---|
+| (无现场数据) | - | - | - | - |
+
+### 实验 lab(Lighthouse 单次合成环境,非真实用户)
+
+| 指标 | 数值 | 评分 | 判定(参考) |
+|---|---|---|---|
+| (无实验数据) | - | - | - |
+
+- [error:psi] HTTP 429 {
+  "error": {
+    "code": 429,
+    "message": "Quota exceeded for quota metric 'Queries' and limit 'Queries per day' of service 'pagespeedonline.googleapis.com' for consumer 'project_number:583797351(配额/权限受限:加 key(PSI_API_KEY / CRUX_API_KEY,Google Cloud 同一 key 可同时启用两 API)或降频(--delay 调大))
+- note: 现场无数据:URL 不在 CrUX 数据集(流量/样本不足)或该 formFactor 无记录
+

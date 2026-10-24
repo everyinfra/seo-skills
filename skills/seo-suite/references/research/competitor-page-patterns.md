@@ -43,7 +43,7 @@
 - 建立 competitor 数据单一事实源，统一维护定价、功能、优缺点、迁移信息。
 - individual page 与 hub page 双向内链。
 - 从 feature pages、solution pages、footer 向高优先级 comparison pages 分发内部链接。
-- 页面上有真实问答时可以用 FAQPage 描述，但 Google 自 2026-05-07 起不再展示 FAQ 富结果（[更新日志](https://developers.google.com/search/updates)，核对 2026-10-21；另见 [geo-evidence.md](../content/geo-evidence.md)），不要把它当作流量手段。
+- 页面上有真实问答时可以用 FAQPage 描述，但 Google 已不再展示 FAQ 富结果（[日期与来源](../overview/facts.md#rich-results)；另见 [geo-evidence.md](../content/geo-evidence.md)），不要把它当作流量手段。
 
 ## 输出要求
 默认应输出：

@@ -8,13 +8,13 @@
 **审计与页面质量**
 - `field_data.py --url U [--strategy mobile] [--as-cwv-csv out.csv]`:CWV 现场数据真实 API 客户端——PSI(无 key 低配额)现场 p75 vs 实验数据分开呈现+CrUX(需 key)双源;官方阈值判定;--as-cwv-csv 直喂 traffic_funnel 的 good_ux 阶段
 - `doctor.py --wizard [--want cwv,rank,...]`:数据接入向导——逐项列需要的数据源/当前已配否/获取方式/降级路径(配 references/overview/data-onboarding.md)
-- `site_crawl.py example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
+- `site_crawl.py example.com`:**全站发现与爬取(体检第 0 步)**——四级发现链(urls→robots→sitemap[≥50 条关爬虫]→首页 BFS);子域发现(DNS 探测+可选 crt.sh);内外链图(edges/孤儿页/外链域聚合;sitemap 模式也先抓首页,带跟踪参数的内链计入干净 URL 的入链,截断时孤儿只代表已抓样本);遵守 robots+crawl-delay,默认 500 页;--urls-out 直接喂 site_audit/traffic_funnel
 - `site_audit.py URL [--market]`:单页全项审计(CRITICAL 退出码 1);--market 接线 markets.json 18 市场阈值(chars/fullwidth/grapheme 单位),词数 CJK·天城文·泰文字素·全字母文字感知;含 **AI Search Health 独立子分**(Semrush 口径 8 bot+Last-Modified 183 天+语义 HTML 比值+llms.txt+BLUF 密度+rendering 5 检查,--json 出 ai_search_health 节;--export-dir 出每规则具名受影响 URL 清单+summary.json+报告受影响面% 列)
 - `health_score.py --input audit.json`:分层健康分——Ahrefs 主分(仅 CRITICAL 扣分,Weak/Fair/Good/Excellent 分档)+Lumar 六大类树(缺数据源 N/A 不计入)+Ryte impact 排序(立即处理/值得探索两栏);--ignore/--severity/--config rules.json 规则开关
 - `traffic_funnel.py --audit audit.json --gsc gsc.csv`:六阶段页面流失漏斗(available⊃indexable⊃uniqueness[Simhash+DeepRank]⊃in_serps⊃with_clicks⊃good_ux);无 GSC 自动截断+coverage 声明
 - `quality_rater.py FILE`:六维内容评分,publishing_ready=≥80 且 0 critical;证据行 UTF-16 偏移核验+同形字/孤立代理风险标注(标注层,不改六维分数)
-- `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70)
-- `trust_signals.py URL`:证言/社会证明/风险反转(4 类取 3 满分)/权威
+- `above_fold.py URL`:首屏 700 字符"5 秒测试"(四元素加权 ≥70;跳过导航、Cookie 横幅、「跳到正文」链接和 x-cloak / display:none 的隐藏块;为落地页设计,新闻首页等站型的 CTA / 信任分不适用)
+- `trust_signals.py URL`:证言/社会证明/风险反转(6 类中 ≥3 类满分)/权威(为商业落地页设计:新闻、媒体首页里的引语和百分比会被当成证言和社会证明,这类站型不用它打分)
 - `core_eeat.py FILE`:CORE-EEAT 机械化(GEO/SEO 双分+1 项 veto 封顶 60,≥2 项标 BLOCKED 不出分)
 - `content_score.py --draft 文件 --competitors c1,c2,c3 --keyword 主词`:透明内容评分器——MarketMuse 公式(50 话题×min 提及,2)+Surfer 双轨(SEO 轨+AI 轨前三查)+意图系数;竞品<3 拒评;术语表(重要度/典型区间/缺失清单+observed-consensus 共识词筛:≥2 竞品正文精确定位才入推荐层,落选留排除码);`--facts` D/K 事实分级(行首 D: 点名声明/K: 中性观察,分报不混算)
 - `fix_plan.py --url|--audit audit.json`:审计→修复物生成器(6 类 FixItem:robots/llms/schema/meta/ai_discovery/content);默认 dry-run,--apply 只写 ./seo-fixes/;--estimate 收益预估
@@ -33,7 +33,7 @@
 - `benchmark_report.py --audits dir|--monitor-db|--scores`:匿名基准聚合(State of GEO 式):P25/50/75 分布+Top 失败规则频次;偏差自白首尾强制;只聚合数字绝不含域名 
 
 **技术 SEO**
-- `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测)
+- `sitemap_audit.py URL`:六坏桶+lastmod 三判定(伪造检测);给站点 URL 时先读 robots.txt 的 Sitemap 声明;子 sitemap 超过 --max-child 时按位置均匀抽样(含最新的末尾)
 - `hreflang_cluster.py URL...`:簇矩阵(ISO 639-1 + 可选 ISO 15924 文字码 + ISO 3166-1 区域码;es-419 这类数字区域码 Google 不支持;回链缺失只影响那一对,不是整簇作废;多载体同时声明只作维护提示)
 - `redirect_chain.py URL`:逐跳链/循环/301 检查
 - `robots_posture.py URL`:AI 爬虫矩阵——**37 bot 四层名单(search 15/training 11/user 8/other 3,带官方核实标记)**+CITATION_BOTS 5 个**两级评分**(通配符 Allow 只拿部分分,专属规则才满分)+RFC 9309 四态判定+Cloudflare 注入检测+Content-Signal;--fix-robots 打印可追加的修复块

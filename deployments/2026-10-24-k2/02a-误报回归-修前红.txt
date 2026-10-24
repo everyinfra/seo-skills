@@ -1,0 +1,169 @@
+FFFFFFFFFFFFFF
+======================================================================
+FAIL: test_x_cloak_block_not_in_fold (__main__.AboveFoldHiddenNoticeTests.test_x_cloak_block_not_in_fold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 228, in test_x_cloak_block_not_in_fold
+    self.assertNotIn("Leider gibt es die von Ihnen gesuchte Seite", fold)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Leider gibt es die von Ihnen gesuchte Seite' unexpectedly found in '\n\n\n\n\n\n\nZum Inhalt springen\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLeider gibt es die von Ihnen gesuchte Seite nicht oder nicht mehr. Wir haben Sie daher auf unsere Startseite umgeleitet. Hier finden Sie unsere aktuellen Top-Meldungen, Videos und Podcasts. Und unsere Suche.\n\n\n\n\nWenn Sie den Fehler melden möchten, schreiben Sie uns gerne.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
+
+======================================================================
+FAIL: test_skip_links_not_in_fold_text_or_links (__main__.AboveFoldSkipLinkTests.test_skip_links_not_in_fold_text_or_links)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 83, in test_skip_links_not_in_fold_text_or_links
+    self.assertNotIn(txt, fold[:700], site)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'メインメニューをとばして' unexpectedly found in '\n\n\n\n\n\n\n\n\n\nメインメニューをとばして、このページの本文エリアへ\n\n\n10月24日朝日新聞朝刊記事一覧へ（朝5時更新）\n\n新着記事一覧へ\n\n\n\n\n\n\n\n    \n    \n\n        \n    \n\n\n\n\n    \n\n\n        \n        \n\n        \n\n        \n\n            \n            \n\n                \n            \n        \n\n    \n\n\n\n\n\n\n\n\n\n\n\n\n\n臨時国会\n\nアメリカ中間選挙\n\n速報\n\n\n\t朝刊\n\t\n\n\t\n\n\t記事一覧\n\t\n\t\n\n\t紙面ビューアー\n\t\n\t\n\n\n\n\t夕刊\n\t\n\n\t\n\n\t記事一覧\n\t\n\t\n\n\t紙面ビューアー\n\t\n\t\n\n\n連載\n\nランキング\n\nGAMES\n\n\n\nその他\n\n\n\nGAMES\n\nコメントプラス\n\nニュースの要点\n\n特集\n\n動画\n\n音声・ポッドキャスト\n\n記者タイムライン\n\n記者イベント\n\n天気\n\n数独\n\nレシピ\n\n12星座占い\n\nやさしい朝日新聞\n\nサイトマップ\n\n\n\n\n\n\n検索\n\n\nヘルプ\n\n\n\nQ&A（よくある質問）\n\n総合ガイド\n\n\n\n\n\n\n\nお申し込み\n\n\nログイン\n\n\n\nマイページ\n\n\n\n有料会員紙面ビューアーコース登録済み\n\n無料会員（クーポン適用中）紙面ビューアーコース登録済み\n\n無料会員紙面ビューアーコース登録済み\n\n朝日ID会員\n\n紙面ビューアーコース\n\nお客様サポート（個人設定）\n\nお客様サポート（個人設定）\n\nお客様サポート（個人設定）\n\nメール設定\n\n保存済みの記事\n\nマイキーワード\n\n会員特典・プレゼント\n' : ja-asahi
+
+======================================================================
+FAIL: test_param_variant_edges_reach_clean_pages (__main__.LinkGraphParamVariantTests.test_param_variant_edges_reach_clean_pages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 213, in test_param_variant_edges_reach_clean_pages
+    self.assertEqual(sorted(d for _s, d in edges), sorted(clean))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != ['https://www.asahi.com/articles/ASVBS162P[133 chars]tml']
+
+Second list contains 3 additional elements.
+First extra element 0:
+'https://www.asahi.com/articles/ASVBS162PVBSUBNB00KM.html'
+
+- []
++ ['https://www.asahi.com/articles/ASVBS162PVBSUBNB00KM.html',
++  'https://www.asahi.com/articles/ASVBS2HBBVBSUJHB00CM.html',
++  'https://www.asahi.com/articles/ASVBS334SVBSUTIL00MM.html']
+
+======================================================================
+FAIL: test_long_real_titles_not_warned (__main__.NewsSitemapLongTitleTests.test_long_real_titles_not_warned)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 288, in test_long_real_titles_not_warned
+    self.assertIsNone(re.search(r"⚠\s+ext\s+title", out), out)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: <re.Match object; span=(649, 663), match='⚠ ext    title'> is not None : ================================================================
+news_sitemap_check | https://www.spiegel.de/sitemaps/news-de.xml
+✓ curl4  200 直返无重定向                            HTTP 200 直返(4009 bytes)
+✓ curl2  条数上限                                  5 条(≤1000 最佳实践)
+✓ ext    <news:news> 存在率 / 混入非新闻 URL           <news:news> 存在率 100%(5/5)
+✓ curl3  必填三件套(publication/date/title)         publication(name+language)/publication_date/title 5/5 齐
+✓ curl1  48h 窗口(协议红线)                          全部 ≤48h(最新 0.7h 前)
+✓ ext    时间戳精度                                 时间戳均带时间(部分 date-only 属错误清单 #5)
+✓ ext    publication name 一致性                  站内一致: DER SPIEGEL
+⚠ ext    title 格式(长度/站名逆序)                     4 条 title ≥100 字符
+✓ ext    loc 绝对 URL                            loc 均为绝对 URL
+－ curl5  引用页 noindex 抽查                        --sample 0 已关闭抽查
+✓ ext    robots.txt Sitemap 声明一致               robots.txt 已声明本 sitemap
+
+==== 结果: 9 ✓ / 1 ⚠ / 0 ✗ / 1 unverified => PASS(退出码 0) ====
+
+
+======================================================================
+FAIL: test_declared_via_sitemap_index_is_not_warned (__main__.NewsSitemapRobotsIndexTests.test_declared_via_sitemap_index_is_not_warned)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 61, in test_declared_via_sitemap_index_is_not_warned
+    self.assertNotIn("均不含本 sitemap", out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '均不含本 sitemap' unexpectedly found in '================================================================\nnews_sitemap_check | https://www.asahi.com/sitemap/sitemap_national.xml\n✓ curl4  200 直返无重定向                            HTTP 200 直返(1654 bytes)\n✓ curl2  条数上限                                  3 条(≤1000 最佳实践)\n✓ ext    <news:news> 存在率 / 混入非新闻 URL           <news:news> 存在率 100%(3/3)\n✓ curl3  必填三件套(publication/date/title)         publication(name+language)/publication_date/title 3/3 齐\n✓ curl1  48h 窗口(协议红线)                          全部 ≤48h(最新 0.7h 前)\n✓ ext    时间戳精度                                 时间戳均带时间(部分 date-only 属错误清单 #5)\n✓ ext    publication name 一致性                  站内一致: 朝日新聞デジタル\n✓ ext    title 格式(长度/站名逆序)                     title 长度/格式无异常\n✓ ext    loc 绝对 URL                            loc 均为绝对 URL\n－ curl5  引用页 noindex 抽查                        --sample 0 已关闭抽查\n⚠ ext    robots.txt Sitemap 声明一致               robots.txt 的 1 条 Sitemap 声明均不含本 sitemap(非协议必需;影响发现速度)\n\n==== 结果: 9 ✓ / 1 ⚠ / 0 ✗ / 1 unverified => PASS(退出码 0) ====\n'
+
+======================================================================
+FAIL: test_other_co_kr_sites_are_external (__main__.SiteCrawlCcSldTests.test_other_co_kr_sites_are_external)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 142, in test_other_co_kr_sites_are_external
+    self.assertFalse(c.is_internal("yhitf.co.kr"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_registrable_keeps_cc_second_level (__main__.SiteCrawlCcSldTests.test_registrable_keeps_cc_second_level)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 126, in test_registrable_keeps_cc_second_level
+    self.assertEqual(sc.registrable("www.yna.co.kr"), "yna.co.kr")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'co.kr' != 'yna.co.kr'
+- co.kr
++ yna.co.kr
+? ++++
+
+
+======================================================================
+FAIL: test_child_cap_sample_includes_newest (__main__.SiteCrawlIndexSamplingTests.test_child_cap_sample_includes_newest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 334, in test_child_cap_sample_includes_newest
+    self.assertIn("https://www.spiegel.de/sitemaps/article/sitemap-2026-10_44.xml", kids)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'https://www.spiegel.de/sitemaps/article/sitemap-2026-10_44.xml' not found in ['https://www.spiegel.de/sitemaps/article/sitemap-1957-03_1.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1961-08_1.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1973-10_1.xml']
+
+======================================================================
+FAIL: test_homepage_links_count_as_inlinks (__main__.SiteCrawlOrphanTests.test_homepage_links_count_as_inlinks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 194, in test_homepage_links_count_as_inlinks
+    self.assertEqual([u for u in report["orphans"] if u in clean], [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['https://www.asahi.com/articles/ASVBS334S[133 chars]tml'] != []
+
+First list contains 3 additional elements.
+First extra element 0:
+'https://www.asahi.com/articles/ASVBS334SVBSUTIL00MM.html'
+
++ []
+- ['https://www.asahi.com/articles/ASVBS334SVBSUTIL00MM.html',
+-  'https://www.asahi.com/articles/ASVBS162PVBSUBNB00KM.html',
+-  'https://www.asahi.com/articles/ASVBS2HBBVBSUJHB00CM.html']
+
+======================================================================
+FAIL: test_large_sitemap_not_truncated (__main__.SiteCrawlSitemapByteCapTests.test_large_sitemap_not_truncated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 372, in test_large_sitemap_not_truncated
+    self.assertEqual(len(body), len(raw))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2000000 != 2249195
+
+======================================================================
+FAIL: test_truncated_crawl_marks_orphans_partial (__main__.SiteCrawlTruncatedOrphanTests.test_truncated_crawl_marks_orphans_partial)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 414, in test_truncated_crawl_marks_orphans_partial
+    self.assertTrue(report.get("orphans_partial"), report.get("stats"))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: None is not true : {'pages': 2, 'total_inlinks': 0, 'total_outlinks': 0, 'total_out_internal': 0, 'total_out_external': 0, 'redirected_pages': 0, 'errors': 0, 'redirects': 0, 'duration_s': 0.0}
+
+======================================================================
+FAIL: test_truncated_index_sample_includes_newest_end (__main__.SitemapAuditIndexSamplingTests.test_truncated_index_sample_includes_newest_end)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 262, in test_truncated_index_sample_includes_newest_end
+    self.assertIn("https://www.spiegel.de/sitemaps/article/sitemap-2026-10_44.xml", kids)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'https://www.spiegel.de/sitemaps/article/sitemap-2026-10_44.xml' not found in ['https://www.spiegel.de/sitemaps/article/sitemap-1957-03_1.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1961-08_1.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1973-10_1.xml']
+
+======================================================================
+FAIL: test_site_url_uses_robots_sitemaps_when_default_missing (__main__.SitemapAuditRobotsDiscoveryTests.test_site_url_uses_robots_sitemaps_when_default_missing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 115, in test_site_url_uses_robots_sitemaps_when_default_missing
+    self.assertNotEqual(rc, 2, err)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 2 == 2 : [FATAL] 无法获取/解析 https://www.yna.co.kr/sitemap.xml: HTTP 404
+
+
+======================================================================
+FAIL: test_declared_index_children_are_sampled (__main__.SitemapAuditRobotsNestedIndexTests.test_declared_index_children_are_sampled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<改动前的树>/skills/seo-suite/tests/test_k2_field_fixes.py", line 456, in test_declared_index_children_are_sampled
+    self.assertIn("https://www.spiegel.de/sitemaps/article/sitemap-2026-10_44.xml", fetched)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'https://www.spiegel.de/sitemaps/article/sitemap-2026-10_44.xml' not found in ['https://www.spiegel.de/sitemap.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1957-03_1.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1961-08_1.xml', 'https://www.spiegel.de/sitemaps/article/sitemap-1973-10_1.xml', 'https://www.spiegel.de/wirtschaft/service/zuckersteuer-kanzleramt-stoppt-umstrittene-reform-von-lars-klingbeil-a-472cafb2-cd18-471a-b43a-d933f28202b1', 'https://www.spiegel.de/ausland/christa-pike-zeugen-schildern-verstoerende-szenen-bei-hinrichtung-in-tennessee-a-6803d8e0-b5c3-4c88-85f5-7b798bd843d3']
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.161s
+
+FAILED (failures=14)

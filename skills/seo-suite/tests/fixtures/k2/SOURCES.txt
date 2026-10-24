@@ -1,0 +1,4 @@
+2026-10-24(SGT)三市场实战的真实响应,供 tests/test_k2_field_fixes.py 使用。
+原样保存:各站 robots.txt;asahi sitemap.xml(sitemap index 全文);spiegel sitemap-index-full.xml.gz(https://www.spiegel.de/sitemap.xml 全文 2,249,195 字节的 gzip)。
+截取:文件头部注释写明截取范围(首页 HTML 开头、sitemap 前几条 url、spiegel index 首尾各 5 条)。
+来源:https://www.asahi.com/  https://www.yna.co.kr/  https://www.spiegel.de/

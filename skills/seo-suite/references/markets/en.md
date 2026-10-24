@@ -101,7 +101,7 @@
 | 1 | 品牌词 AIO | 列 20–50 个品牌词(品牌名、品牌+定价、品牌+对比、品牌+评价),每月同一天用美国英语无痕窗口查;`python3 scripts/citation_panel.py init --brand B --prompts brand_prompts.csv --engines chatgpt,perplexity,gemini`,每次采样后 `record --engine chatgpt --file run.csv`,`report --brand B` | 每词记 AIO 有无、引用域名、正负面;连续两月同口径可比;负面或竞品内容有处置工单 |
 | 2 | AI 检索爬虫放行 | `python3 scripts/robots_posture.py https://site/robots.txt --json` | `visibility_failures` 为空;训练爬虫封不封是授权决策,单独记 |
 | 3 | AI 引荐归因 | GA4「报告 → 获客 → 流量获取」,按默认渠道组看是否有 AI Assistant 行;日志侧 `python3 scripts/ai_referral_log.py access.log --classify` | AI Assistant 行存在;日志里 AI 引荐 UA 的失败率先剔除探测路径再算 |
-| 4 | 更新对齐 | 对照 Status Dashboard 的开始与结束时间,GSC 比较开始前 14 天与结束后 14 天 | 变化落在窗口内才归因更新;GSC 展示数据在 2025-05-13 至 2026-04-27 不可比,不跨这段比较 |
+| 4 | 更新对齐 | 对照 Status Dashboard 的开始与结束时间,GSC 比较开始前 14 天与结束后 14 天 | 变化落在窗口内才归因更新;GSC 展示数据在[GSC 数据异常期](../overview/facts.md#gsc-anomaly)里不可比,不跨这段比较 |
 | 5 | 引用衰减 | `python3 scripts/citation_panel.py decay --metric cited --engine chatgpt` 每月一次,每个引擎单独判定 | 顶引页面季度流失 ≥30%(本套件口径)时,检查内容更新管线 |
 | 6 | 协议层交付 | `python3 scripts/llmstxt.py check https://site`;Lighthouse Agentic Browsing | 交付文档写「已部署」,不写「会带来引用」 |
 | 7 | 英文变体 | `python3 scripts/hreflang_cluster.py https://site/en-us/x https://site/en-gb/x`;`python3 scripts/site_audit.py URL --market en` | 簇内互指;`en` 兜底加需要的国家码 |

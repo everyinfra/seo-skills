@@ -9,7 +9,7 @@
 | 口径 | 读数 | 它到底量什么 |
 |---|---|---|
 | 인터넷트렌드(BizSpring)搜索**来路构成** | 2025 年 Naver 均值 62.86%(2024 年 58.14%);2026-04 Naver 62.6% / Google 30.0%;2026 上半年 Naver 64.39% / Google 28.27%;2026-09 Naver 66.8% / Google 27.6% | 装了其分析代码的站点,收到的搜索来路比例(【三方】[Yonhap 2026-01-02](https://www.yna.co.kr/view/AKR20260102129700017)、[2026-04 页](https://internettrend.co.kr/insights/2026-04-search-engine)、[月度汇总](https://internettrend.co.kr/insights/topic/search-engine)、[引用案例](https://internettrend.co.kr/citations)) |
-| StatCounter 页面浏览 | 2026-09 全设备 Google 47.97% / Naver 43.06%;桌面 Google 62.5% / Naver 23.31%;移动 Naver 59.56% / Google 35.77% | 样本里的搜索引擎页面浏览(【三方】[StatCounter 韩国](https://gs.statcounter.com/search-engine-market-share/all/south-korea),取数 2026-10-21) |
+| StatCounter 页面浏览 | 2026-09 全设备 Google 47.97% / Naver 43.06%(CSV 导出 47.97 / 43.05,取数 2026-10-24);桌面 Google 62.5% / Naver 23.31%;移动 Naver 59.56% / Google 35.77% | 样本里的搜索引擎页面浏览(【三方】[StatCounter 韩国](https://gs.statcounter.com/search-engine-market-share/all/south-korea),取数 2026-10-21) |
 | 应用 MAU(IGAWorks Mobile Index) | 2026-07 应用 MAU:Google 4,702 万、Naver 4,684 万,Google 首次超过 Naver | 手机应用的月活,不是搜索次数(【三方】经 Chosun 报道,转引自 [wiztheplanning](https://wiztheplanning.com/guide/naver-google-share),原报道未读) |
 | 使用率调查(Nasmedia 类) | 「最近 3 个月使用 Naver」85.3% → 81.6%(调查期 2025 年内)| 受访者自报使用过,不是份额(【三方】[aimatters 2026-01-27](https://aimatters.co.kr/news-report/ai-report/37299/)) |
 
@@ -98,7 +98,7 @@
 
 下面几条回到 Naver 官方页面核过:
 
-- **IndexNow**:一次 POST 最多 10,000 个 URL(【官】[페이지 갱신 요청하기](https://searchadvisor.naver.com/guide/indexnow-request));总请求数无限制,短时间大量请求时会限流(【官】[IndexNow FAQ](https://searchadvisor.naver.com/guide/indexnow-faq))。
+- **IndexNow**:一次 POST 的 URL 数上限同协议([事实表](../overview/facts.md#indexnow-batch);【官】[페이지 갱신 요청하기](https://searchadvisor.naver.com/guide/indexnow-request));总请求数无限制,短时间大量请求时会限流(【官】[IndexNow FAQ](https://searchadvisor.naver.com/guide/indexnow-faq))。
 - **수집요청 API(제휴)**:合作方式提交的 URL,在全网抓取队列中优先级「相对更高」(【官】[수집요청 API](https://searchadvisor.naver.com/guide/crawl-request-api))。「单次 ≤1,000 URL」本次未在页面读到,以官方页为准。
 - **robots 元标签 `nosourceinfo`**:官方原文只写「使用 nosourceinfo 时,该站点不提供 AI 自动生成的**출처설명**」(【官】[선호 URL 및 로봇 메타 태그](https://searchadvisor.naver.com/guide/markup-structure))。它能不能让页面退出 AI 브리핑 引用,文档没写。原先写的「全球唯一官方 AI 引用退出 meta」不成立(Google 有 nosnippet、Google-Extended 等),已改;要退出引用先小范围测。
 - **垃圾内容**(【官】[웹 콘텐츠 스팸사례](https://searchadvisor.naver.com/guide/content-abusing)):「低质量内容大量生成」指为占据结果,用相同或相似模板大量发布(改几个句子的页面数十个以上);页面写明 AI 或自动化程序可能涉及,但「不以是否使用某项技术本身为判断」。被判垃圾的站点或文档可能被排除或降权。

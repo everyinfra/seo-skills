@@ -65,7 +65,7 @@
 ### 常见问题（可选）
 
 - 只收真实被问到的问题，答案与正文一致。
-- 如需标记，FAQPage 只描述页面上可见的问答。Google 自 2026-05-07 起不再展示 FAQ 富结果（[更新日志](https://developers.google.com/search/updates)，核对 2026-10-21），不把它当作获取展示的手段，见 [geo-evidence.md](../content/geo-evidence.md)。
+- 如需标记，FAQPage 只描述页面上可见的问答。Google 已不再展示 FAQ 富结果（[日期与来源](../overview/facts.md#rich-results)），不把它当作获取展示的手段，见 [geo-evidence.md](../content/geo-evidence.md)。
 
 ### 行动引导
 

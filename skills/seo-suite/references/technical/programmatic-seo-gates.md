@@ -58,7 +58,7 @@
 
 - URL（本套件口径）：小写连字符 slug，生成时强制唯一，**<100 字符**，主内容 URL 不带 query 参数，尾斜杠一致。反例：Wise 把 `?amount=` 变体放进了 sitemap（playbook 第九章）。
 - 内链（本套件口径）：3–5 条/千词；每页自动关联 3–5 个相关页；hub/spoke 配 BreadcrumbList。
-- Sitemap（[Google 原文](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)）：单文件上限 **50,000 URL 或 50MB（未压缩）**，超了必须拆分。Google 只采用一贯且可验证的 `<lastmod>`。Google 忽略 `<priority>` 和 `<changefreq>`。URL 排列顺序对 Google 没有作用。noindex 页不入 sitemap。
+- Sitemap：单文件有 URL 数和体积两个上限（[事实表](../overview/facts.md#sitemap-limits)），超了必须拆分。Google 只采用一贯且可验证的 `<lastmod>`。Google 忽略 `<priority>` 和 `<changefreq>`。URL 排列顺序对 Google 没有作用。noindex 页不入 sitemap。
 
 ## 六、索引膨胀控制
 
@@ -75,7 +75,7 @@
 | 人工抽检 | 随机抽 ≥5–10%，逐页答上方自检问题和独立价值测试 | 任一页答出警示答案 → 该模式退回 |
 | AI 元数据 | 抽检页对照数据源核 title、description、结构化数据、alt | 有事实错误 → 整批停 |
 | 标题长度按市场 | `python3 scripts/market_lint.py --market ja page.html` | 无 CRITICAL（exit 0） |
-| sitemap | `python3 scripts/sitemap_audit.py https://example.com --max-child 200` | exit 0；单文件 ≤50,000 URL；lastmod 不报伪造 |
+| sitemap | `python3 scripts/sitemap_audit.py https://example.com --max-child 200` | exit 0；单文件不超 [URL 数上限](../overview/facts.md#sitemap-limits)；lastmod 不报伪造 |
 | 位置页数量 | 按 URL 模式计数 | <30 通过；30–49 唯一度 ≥60%；≥50 需正当理由 |
 | 发布后：已索引 vs 应索引 | GSC Page indexing 报告，按该批 sitemap 筛选 | 8 周内已编入索引 ÷ 已提交 ≥60%（本套件口径，同 `pseo_cohort.py` 默认） |
 
@@ -101,7 +101,7 @@
 
 **四分类**：Programmatic（URL 一致 + 标题同构 + 页数多）/ Semi（模板 + 大量手工）/ Editorial（单篇手写）/ Auto-generated thin（标签页、归档页）。只分析前两类；thin 类直接记风险。
 
-**模板质量 7 维打分**（每维 1–5；每模式抽 3–5 页，高、低、中变体各一）：内容深度 / 每页独有价值 / 数据丰富度 / 新鲜度信号 / 内链 / CTA 融合 / schema（FAQ 富结果 2026-05-07 起停展，此维只评标记是否正确）。均分 4–5 = 难撼动；3–4 = 可用更好模板打赢；1–3 = 薄，易超越。
+**模板质量 7 维打分**（每维 1–5；每模式抽 3–5 页，高、低、中变体各一）：内容深度 / 每页独有价值 / 数据丰富度 / 新鲜度信号 / 内链 / CTA 融合 / schema（FAQ 富结果已停展，[日期](../overview/facts.md#rich-results)，此维只评标记是否正确）。均分 4–5 = 难撼动；3–4 = 可用更好模板打赢；1–3 = 薄，易超越。
 
 **缺口四型**：① 白空间（没有竞品做，先验证需求）② 变体缺口（竞品没做满，快赢）③ 质量缺口（竞品页 <500 词、无独有数据、过时、无 schema）④ 正面强攻（硬撼 4–5 分模板，成本高）。
 

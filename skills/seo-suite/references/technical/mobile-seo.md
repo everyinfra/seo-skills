@@ -144,7 +144,7 @@
 
 ## 六、移动内容策略（本套件口径）
 
-- **语音查询**：多发生在手机和智能助手上，查询更长、更口语、常带本地意图。不需要为语音单独建页（见 [content-patterns.md](../content/content-patterns.md)）；落点是自然问句做标题、首句给结论、段落短。FAQ 富结果已于 2026-05-07 起不再在 Google 搜索中显示（见 [deprecated-signals.md](deprecated-signals.md)），不要为语音或富结果堆 FAQ 标记。
+- **语音查询**：多发生在手机和智能助手上，查询更长、更口语、常带本地意图。不需要为语音单独建页（见 [content-patterns.md](../content/content-patterns.md)）；落点是自然问句做标题、首句给结论、段落短。FAQ 富结果已不再在 Google 搜索中显示（[日期](../overview/facts.md#rich-results)），不要为语音或富结果堆 FAQ 标记。
 - **本地意图**：「附近」「营业中」类查询以移动为主；click-to-call、路线、营业时间放在移动版首屏可达的位置。网格化追踪见 [local-grid-ranking.md](../monitoring/local-grid-ranking.md)。移动版的地址、电话与商家资料保持一致。
 - **移动先写**：既然索引看移动版，写作和排版以移动版为初稿：答案前置；折叠区可放补充内容，主结论放在展开区之上；横向滚动的表格在 360px 下改成卡片或定义列表。
 

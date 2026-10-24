@@ -69,7 +69,7 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 
 **归因流程([官方《Debugging drops》](https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops)核对 2026-10-21 + 行业实践)**:
 1. 先排除数据假象(GSC data anomalies 页;clicks-only 还是 clicks+impressions 同降);
-2. 下降形态:断崖全站→算法/spam/安全;逐年重复波形→季节性（官方做法:Performance 报告日期选「最近 16 个月」，并用 Google Trends 对比查询需求）;单页/单模板→技术;缓慢下滑→内容相关性（后两条是本套件经验）;
+2. 下降形态:断崖全站→算法/spam/安全;逐年重复波形→季节性（官方做法:Performance 报告日期选最长范围（[保留期](../overview/facts.md#gsc-retention)），并用 Google Trends 对比查询需求）;单页/单模板→技术;缓慢下滑→内容相关性（后两条是本套件经验）;
 3. 时间对齐:下降首日 vs 官方更新窗口,**同时对照自家发布日历**——区分技术事故最硬的信号;
 4. 类目级传感器旁证;
 5. GSC 分层(query/page/device/国家);**impressions 平+clicks 降→不是算法,是 SERP 特性/竞品截流(如 AIO)**;
@@ -95,7 +95,7 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 | 发版后对比 | `monitor.py run` 后 `monitor.py diff --format text` | 无 critical；canonical 变更、noindex 新增、H1 消失、title 消失、状态码 2xx→4xx/5xx 一律升 critical 处理 |
 | 查「那天页面改了什么」 | `python3 scripts/changelog.py --db .seo-monitor/monitor.db --from 2026-10-01 --to 2026-10-15 --summary` | 下降日前后有字段变更 = 先查发版；没有 = 转外部因素 |
 | 下降是否对齐更新 | 在 [Search Status Dashboard](https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history) 记更新起止；更新结束后至少等满一周（官方），本套件取 10–14 天 | 下降首日在窗口内 = 疑似算法；窗口外且有发版 = 先查技术 |
-| 数据是否可比 | 对照[数据异常页](https://support.google.com/webmasters/answer/6211453)；跨 2025-05-13 至 2026-04-27 的展示 / CTR / 排名只比点击 | 跨期未处理 = 结论不可信 |
+| 数据是否可比 | 对照[数据异常页](https://support.google.com/webmasters/answer/6211453)；跨[GSC 数据异常期](../overview/facts.md#gsc-anomaly)的展示 / CTR / 排名只比点击 | 跨期未处理 = 结论不可信 |
 | 页面改动是否有效 | `python3 scripts/did_attribution.py --help` 看参数；处理组与对照组各自满足最小点击地板（本套件口径：处理组 pre ≥5、对照页 ≥3 个且各 pre ≥5） | 数据不足时 verdict 写 insufficient，不给方向 |
 | 第三方排名数据可信 | 与 Search Console 一方数据交叉；Nozzle 等报告的异常期内不单独引用第三方排名 | 只有第三方读数异常 = 标「可能受数据污染」，不下结论 |
 
@@ -116,8 +116,8 @@ URL 归一化：scheme/host 小写、去默认端口 80/443、query 参数排序
 **L3 判读**:位置跌+SERP 不变=质量/新鲜度;**位置稳+CTR 跌=SERP 特性变化(AIO/广告)——页面可以不掉排名而掉流量**;去索引=技术;同日 deploy+drop=强相关非证明,要找机制。
 **九条失败模式**(照抄要点):跳到算法归因是懒惰答案;无正常基线则一切波动皆警报;**品牌 vs 非品牌由不同团队负责**;四源并用(GSC+Ahrefs+analytics+日志)单源诊断禁止;不许提前安抚"算法会恢复"。
 **假设单句模板**:"[Property] lost [magnitude] starting [date] because [cause], evidenced by [data], recovery requires [actions], timeline [duration]"。
-**DiD 对照参数**(seo-monster):pre=56 天(≥2× post)/post=28/gap=7 天 washout;闸门=控制页≥3、treated pre 点击≥5、控制页 pre 点击≥5;lift CI(±1.96 SE)三态判定;**第三方排名追踪不可靠期(第三方报告，Google 未在本次检索中官方确认)**:排名追踪公司 Nozzle 的研究（[Poisoned Google SERPs](https://nozzle.io/research/poisoned-google-serps/)，2026-10-10 发布、10-19 更新）称，2026-09-13 之后的 2,700 万个已判定 SERP 中平均 8.4% 是「被调包」的页面（页面正常，但结果换了），9-29 达到峰值 28.6%，10-14 后降到每天 3% 至 7%；多数在三天内恢复。[SER 2026-10-12](https://www.seroundtable.com/third-party-google-rank-tracking-broken-42272.html) 转述了同样的三类现象（大范围封 IP、验证码增多、可疑 SERP 数据异常）。**归因纪律:第三方排名工具的异常读数在排除自家问题前,先怀疑数据被污染(交叉 GSC 一方数据核对);本套件 monitor 的 SERP 源(bing/ddg)不受直接影响,但引用任何第三方排名数据时须标注 [est·可能受 poisoned SERPs 影响]**;GSC 断代检测:Google 官方记录 2025-05-13 至 2026-04-27 展示 / CTR / 平均排名记录有误，点击不受影响（[数据异常页](https://support.google.com/webmasters/answer/6211453)）;窗口重叠时 clicks 为唯一可信指标。Google 在 2025 年移除 `num=100` 参数一事来自行业媒体报道（[SER](https://www.seroundtable.com/google-search-drops-100-results-parameter-40097.html)），不是 Google 官方公告，日期本次未核。**报告延迟事件:行业媒体称 2026-10-11 Search Console 效果报告延迟超 64 小时（[SER](https://www.seroundtable.com/google-search-console-performance-report-delayed-42271.html)，第三方，未核）——监控告警归因前先查报告新鲜度（报告页的「最后更新」日期），延迟期内不要把数据缺口当流量下跌**;**"server-side page-level split test 是唯一真因果检验"**。
-**告警矩阵默认值**(crawlseo 的源码默认值，**本套件口径，不是 Google 规定**):TRAFFIC_DROP 7 天点击 ≤−20%(当期≥5);POSITION_CHANGE 28 天均位恶化 ≥2 位;CRAWL_ISSUES 健康分 <70;VITALS 最近 5 份报告 ≥2 份 LCP>2.5s 或 CLS>0.1（LCP 2.5 秒、CLS 0.1 是 [web.dev](https://web.dev/articles/vitals) 的「良好」阈值）;健康分=100−8×CRITICAL−3×WARNING−1×INFO（crawlseo 自定义公式）。
+**DiD 对照参数**(seo-monster):pre=56 天(≥2× post)/post=28/gap=7 天 washout;闸门=控制页≥3、treated pre 点击≥5、控制页 pre 点击≥5;lift CI(±1.96 SE)三态判定;**第三方排名追踪不可靠期(第三方报告，Google 未在本次检索中官方确认)**:排名追踪公司 Nozzle 的研究（[Poisoned Google SERPs](https://nozzle.io/research/poisoned-google-serps/)，2026-10-10 发布、10-19 更新）称，2026-09-13 之后的 2,700 万个已判定 SERP 中平均 8.4% 是「被调包」的页面（页面正常，但结果换了），9-29 达到峰值 28.6%，10-14 后降到每天 3% 至 7%；多数在三天内恢复。[SER 2026-10-12](https://www.seroundtable.com/third-party-google-rank-tracking-broken-42272.html) 转述了同样的三类现象（大范围封 IP、验证码增多、可疑 SERP 数据异常）。**归因纪律:第三方排名工具的异常读数在排除自家问题前,先怀疑数据被污染(交叉 GSC 一方数据核对);本套件 monitor 的 SERP 源(bing/ddg)不受直接影响,但引用任何第三方排名数据时须标注 [est·可能受 poisoned SERPs 影响]**;GSC 断代检测:Google 官方记录过一段展示 / CTR / 平均排名记录有误的时间（[GSC 数据异常期](../overview/facts.md#gsc-anomaly)），点击不受影响;窗口重叠时 clicks 为唯一可信指标。Google 在 2025 年移除 `num=100` 参数一事来自行业媒体报道（[SER](https://www.seroundtable.com/google-search-drops-100-results-parameter-40097.html)），不是 Google 官方公告，日期本次未核。**报告延迟事件:行业媒体称 2026-10-11 Search Console 效果报告延迟超 64 小时（[SER](https://www.seroundtable.com/google-search-console-performance-report-delayed-42271.html)，第三方，未核）——监控告警归因前先查报告新鲜度（报告页的「最后更新」日期），延迟期内不要把数据缺口当流量下跌**;**"server-side page-level split test 是唯一真因果检验"**。
+**告警矩阵默认值**(crawlseo 的源码默认值，**本套件口径，不是 Google 规定**):TRAFFIC_DROP 7 天点击 ≤−20%(当期≥5);POSITION_CHANGE 28 天均位恶化 ≥2 位;CRAWL_ISSUES 健康分 <70;VITALS 最近 5 份报告 ≥2 份 LCP 或 CLS 超出 web.dev「良好」档（[阈值表](../overview/facts.md#cwv)）;健康分=100−8×CRITICAL−3×WARNING−1×INFO（crawlseo 自定义公式）。
 
 ## 诊断清单细化 + 回归四件套 + DiD 实现细节(rampstack/iannuttall/seo-monster 源码深读,2026-10-09)
 
@@ -149,7 +149,7 @@ L4 校验项补:重定向须 1 跳且 301;受影响 URL 无 4xx/5xx 尖峰;sitem
 | 组件 | 口径 |
 |---|---|
 | crawl-diff | BFS 抓取→与上一 run 快照 diff,**7 字段**:status/title/meta_description/canonical/h1/indexable/contentHash;变更分 added/changed/removed 三类;**newErrors=after≥400 且 before<200**;indexabilityFlips 单列;快照入库供下次对比 |
-| index-watch | URL Inspection 逐 URL:单次 ≤100 个（iannuttall 工具设定）、dailyLimit ≤2000（官方每站点 2,000 次/天、600 次/分钟，见 [API 用量限制](https://developers.google.com/webmaster-tools/limits)）;每 URL 保留最近 20 次尝试(拿到成功后修剪);**quota 被限或属性错误后,剩余 URL 全部标 deferred、不再发请求**;产出 changed/regressions/recoveries/alerts 四分类 |
+| index-watch | URL Inspection 逐 URL:单次 ≤100 个（iannuttall 工具设定）、dailyLimit 设为官方每站点每日上限（[配额表](../overview/facts.md#api-quotas)）;每 URL 保留最近 20 次尝试(拿到成功后修剪);**quota 被限或属性错误后,剩余 URL 全部标 deferred、不再发请求**;产出 changed/regressions/recoveries/alerts 四分类 |
 | index-monitor | sitemap 驱动的同能力(有 sitemap 时替代逐 URL) |
 | link-recover | 找有搜索价值(点击/展示下限可配)的可恢复 URL |
 
@@ -160,7 +160,7 @@ L4 校验项补:重定向须 1 跳且 301;受影响 URL 无 4xx/5xx 尖峰;sitem
 - **控制组构造**:默认 section(URL 首路径段)池;section 池 <3 页自动回退 site-wide 并注记;控制页 pre 点击 ≥5 才入池。
 - **公式**:peer_trend_ratio = mean(各控制页 post/pre 点击比);counterfactual = treated_pre × ratio;lift = treated_post − counterfactual;CI 由 ratio 的 ±1.96 SE 推出 lift_lo/lift_hi。
 - **判定五态**:lift_lo>0→likely_positive;lift_hi<0→likely_negative;跨零→inconclusive;**treated pre<5→insufficient_data;控制页<3→insufficient_control——数据不足本身就是一种 verdict,不许硬给方向**。
-- **confounders 块**(每次必返):data_regime_breaks(GSC 展示记录错误 2025-05-13~2026-04-27（官方）、num=100 参数移除（行业媒体报道，日期未核）,窗口重叠即检出)→position_reliable 标志;parallel_trends_assumption;algo_update_note——"查 Search Status Dashboard change_date 前后 ~2 周的 core/spam 更新;DiD 经控制组吸收全站性更新,吸收不了页面类型特定的更新"。
+- **confounders 块**(每次必返):data_regime_breaks(GSC 展示记录错误（官方，[GSC 数据异常期](../overview/facts.md#gsc-anomaly)）、num=100 参数移除（行业媒体报道，日期未核）,窗口重叠即检出)→position_reliable 标志;parallel_trends_assumption;algo_update_note——"查 Search Status Dashboard change_date 前后 ~2 周的 core/spam 更新;DiD 经控制组吸收全站性更新,吸收不了页面类型特定的更新"。
 - **iannuttall 变体**(equal-finalized-calendar-windows-v1):前后等长 finalized 日历窗(GSC 日数据按太平洋时间 PT，[官方](https://support.google.com/webmasters/answer/17011259)),可选 controlScope/controlTarget;adjusted delta = control-ratio counterfactual;**置信度纪律:GSC 证据 partial→confidence 降一档;每窗 finalized 天 <7 或 after 窗被截→verdict=not-enough-data,不给方向**;caveats:position 是 impression-weighted;query 匿名化缺行≠零流量。
 
 ## 操作参数与规则边界增量(claude-seo 深读 2026-10-09b)

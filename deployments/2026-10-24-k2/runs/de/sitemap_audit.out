@@ -1,0 +1,27 @@
+==============================================================
+sitemap_audit | 入口: https://www.spiegel.de/sitemap.xml
+sitemap 类型: sitemapindex | 累计抓取 2250383 字节 | loc 总数: 4 (去重后)
+
+---- lastmod 三判定 ----
+Coverage     : 1.000  (有 lastmod 条目占比, 期望 1.0)
+Freshness    : 最新 lastmod 1978-05-29T00:00:00 距今 17680 天 (>30 天, 过期)
+Truthfulness : 最大单日簇 1957-03-05 占 25.0% (未触发伪造特征)
+
+---- 六坏桶 ----
+
+[桶1 非 200 / 抓取失败] 命中 0
+
+[桶2 3xx 重定向] 命中 0
+
+[桶3 noindex 页] 命中 0
+
+[桶4 canonical 指向他址] 命中 0
+
+[桶5 robots.txt 屏蔽 (Googlebot)] 命中 0
+
+[桶6 参数重复 URL (同 path 不同 query)] 命中 0
+
+---- 过程备注 ----
+   * sitemapindex 含 23707 个子 sitemap, 超过 --max-child=5, 仅展开前 5 个
+
+==== 结论: 坏桶命中 0 条, must-include 缺失 0 个 => PASS ====

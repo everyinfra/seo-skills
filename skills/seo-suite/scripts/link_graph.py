@@ -98,8 +98,19 @@ def build_graph(report):
     pages = report["pages"]
     urls = [p["url"] for p in pages if p.get("url")]
     known = set(urls)
-    edges = [(e.get("src"), e.get("dst")) for e in report["edges"]
-             if e.get("src") in known and e.get("dst") in known]
+    edges = []
+    for e in report["edges"]:
+        s, d = e.get("src"), e.get("dst")
+        if s not in known:
+            continue
+        if d not in known and d and "?" in d:
+            # 站内链接带跟踪参数(?iref= 等)、页面集是 sitemap 干净 URL 时,按去参数后的页面计
+            # (与 site_crawl 孤儿判定同口径;2026-10-24 asahi.com 实测修前边数为 0)
+            bare = urllib.parse.urlunsplit(urllib.parse.urlsplit(d)._replace(query="", fragment=""))
+            if bare in known and bare != s:
+                d = bare
+        if d in known:
+            edges.append((s, d))
     return pages, urls, edges
 
 
@@ -283,6 +294,8 @@ def build_payload(report, top_n=DEFAULT_TOP, exact_threshold=EXACT_WARN_RATIO,
             and report.get("orphans"):
         warnings.append("sitemap-only 爬取(爬虫兜底关闭):内链边可能欠采样,"
                         "孤儿/入链结论按 --include-sitemap-only 复核")
+    if report.get("orphans_partial"):
+        warnings.append("site_crawl 被 --max 截断:孤儿与入链只在已抓样本内计算,不等于站内结论")
     return {
         "schema_version": SCHEMA_VERSION,
         "site": domain,

@@ -1,0 +1,9 @@
+## site_crawl: asahi.com
+
+- 发现模式: robots+sitemap(链② robots Sitemap 指令 1 条 → 链③ sitemap loc 213)
+- 子域 0 个: -
+- 页面 40:错误 0(错误率 0.0%),重定向 0,出链:内链 16356,外链 815,总出链 17171;已抓页面收到的入链 419,耗时 65.1s
+- Top 外链域: adv.asahi.com×40, asahishimbun-saiyou.com×40, asm.asahi.com×40, book.asahi.com×40, cnn.co.jp×40, digital.asahi.com×40, dot.asahi.com×40, globe.asahi.com×40, huffingtonpost.jp×40, id.asahi.com×40
+- ⚠ 抓取被 --max 截断:下面的孤儿只表示「已抓样本内 0 入链」,入链来源页可能没抓到;要下孤儿结论,用 --max 覆盖全站,或用 --urls 给出栏目页再抓
+- 孤儿页 21(0 入链、非首页、未被重定向;重定向页 0 个不计):https://www.asahi.com/articles/ASVBL7VXZVBLPITB00HM.html, https://www.asahi.com/articles/ASVBR3K08VBROXIE02VM.html, https://www.asahi.com/articles/ASVBR1HVZVBRUTFK00VM.html, https://www.asahi.com/articles/ASVBR4VP7VBRUTFL01MM.html, https://www.asahi.com/articles/ASVBR20GBVBRUTIL00VM.html, https://www.asahi.com/articles/ASVBR46T2VBRIIPE01QM.html, https://www.asahi.com/articles/ASVBR3T7CVBROIPE006M.html, https://www.asahi.com/articles/ASVBR3TCGVBROIPE01FM.html, https://www.asahi.com/articles/ASVBR3RLNVBRTIPE01FM.html, https://www.asahi.com/articles/ASVBR3FPLVBRTNAB005M.html
+- ⚠ 发现 214+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

@@ -1,0 +1,8 @@
+## site_crawl: co.kr
+
+- 发现模式: robots+sitemap(链② robots Sitemap 指令 7 条 → 链③ sitemap loc 3854)
+- 子域 0 个: -
+- 页面 40:错误 0(错误率 0.0%),重定向 0,出链:内链 7897,外链 960,总出链 8857;已抓页面收到的入链 18,耗时 386.1s
+- Top 外链域: ar.yna.co.kr×40, cn.yna.co.kr×40, dable.io×40, en.yna.co.kr×40, facebook.com×40, fr.yna.co.kr×40, games.yna.co.kr×40, google.com×40, helloarchive.co.kr×40, instagram.com×40
+- 孤儿页 33(0 入链、非首页、未被重定向;重定向页 0 个不计):https://www.yna.co.kr/view/AKR20261024049200001, https://www.yna.co.kr/view/AKR20261024048100007, https://www.yna.co.kr/view/AKR20261024038151007, https://www.yna.co.kr/view/AKR20261024035951007, https://www.yna.co.kr/view/AKR20261024047800007, https://www.yna.co.kr/view/AKR20261024047700007, https://www.yna.co.kr/view/AKR20261024047500007, https://www.yna.co.kr/view/AKR20261024047100007, https://www.yna.co.kr/view/AKR20261024046800007, https://www.yna.co.kr/view/AKR20261024046600007
+- ⚠ 发现 3854+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

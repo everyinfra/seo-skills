@@ -49,14 +49,14 @@
   - 工具:doctor / report_build / changelog(读 monitor.db)/ freshness / self_check
 - **T1 PSI/CrUX key(免费,约 5 分钟)**
   - 在哪申请:Google Cloud 控制台 → API 和服务 → 凭据 → 创建凭据 → API 密钥。CrUX API 要求为「Chrome UX Report API」开通的 key([CrUX API 文档](https://developer.chrome.com/docs/crux/api),页面日期 2026-10-13,核对 2026-10-21);PSI API 可以不带 key 调用,频繁或自动化调用才建议加 key([PSI 入门](https://developers.google.com/speed/docs/insights/v5/get-started),页面日期 2025-08-28)。同一个 key 可同时启用两个 API。
-  - 限额:CrUX API 每个 Google Cloud 项目 150 次/分钟,免费([CrUX API 文档](https://developer.chrome.com/docs/crux/api))。CrUX History API 与日常 API 用同一个 key;它每周一更新,保留最近 40 周数据,默认返回 25 个采集期([CrUX History API 文档](https://developer.chrome.com/docs/crux/history-api),页面日期 2025-04-11)。PSI 的限额以你 Cloud 控制台「配额」页显示为准。
+  - 限额:CrUX API 按 Google Cloud 项目限速,免费([配额表](facts.md#api-quotas))。CrUX History API 与日常 API 用同一个 key;它每周一更新,保留最近 40 周数据,默认返回 25 个采集期([CrUX History API 文档](https://developer.chrome.com/docs/crux/history-api),页面日期 2025-04-11)。PSI 的限额以你 Cloud 控制台「配额」页显示为准。
   - 口径变化:PSI 文档写明「计划停止在该 API 中提供 CrUX 现场数据,建议改用 CrUX API 或 CrUX History API」([PSI 入门](https://developers.google.com/speed/docs/insights/v5/get-started))。所以现场数据(LCP/INP/CLS 的 p75)以 CrUX API 为主,PSI 只取 Lighthouse 实验数据。
   - 怎么配:`export PSI_API_KEY=…`(CrUX 用 `CRUX_API_KEY`;`field_data.py` 在没有 `CRUX_API_KEY` 时回退用 `PSI_API_KEY`),写进 shell profile 或密钥管理器,不进 git
   - 解锁什么:CWV 现场数据拉取 → `field_data.py --as-cwv-csv` 生成 CSV 喂 traffic_funnel `--cwv`(good_ux 段);doctor 徽章 psi/crux
 - **T2 GSC(免费:导出 CSV 零门槛;API 走服务账号)**
   - 导出路径(零门槛):Search Console → 效果 → 导出;链接报告 → 链接(Links)。新的搜索类型过滤器含「Web: multimodal」(2026-09-24 起,[博文](https://developers.google.com/search/blog/2026/09/web-multimodal-in-sc))。
   - API 自动化:`gsc_api.py` 用**服务账号** JSON(RS256 签名),不是用户 OAuth 弹窗。凭证放 ~/.config/seo-suite/gsc.json(服务账号原生 JSON,或包一层 `credentials` 键),doctor 徽章 gsc。先 `python3 scripts/gsc_api.py auth`,再 `sites` 看有权限的属性,再 `query`。
-  - API 限额(Search Analytics,[Usage Limits](https://developers.google.com/webmaster-tools/limits),页面日期 2025-08-28,核对 2026-10-21):每个站点 1,200 次/分钟,每个用户 1,200 次/分钟,每个项目 40,000 次/分钟、30,000,000 次/天;另有 10 分钟短期负载配额和 1 天长期负载配额(按页面或按查询分组、日期范围越长,单次越贵)。URL Inspection:每站点 2,000 次/天、600 次/分钟。
+  - API 限额:Search Analytics 按站点、用户、项目限 QPM/QPD,URL Inspection 更紧,数字见[配额表](facts.md#api-quotas);另有 10 分钟短期负载配额和 1 天长期负载配额(按页面或按查询分组、日期范围越长,单次越贵)。
   - 解锁什么:gsc_mining(striking distance/低 CTR/蚕食/衰退)、traffic_funnel 完整六段漏斗、sensor_volatility、did_attribution、seo_vs_ads、monitor 流量问(.seo-monitor/gsc.csv)
 - **T3 GA4(免费)**
   - 怎么配:GA4 报告导出 CSV 随时可用(零配置)。gsc.json 补 `ga4_property_id` 键只会让 `doctor.py` 报 T3 徽章,当前没有脚本调用 GA4 Data API。
@@ -135,7 +135,7 @@
 | CrUX / PSI key 可用 | `python3 scripts/field_data.py --url https://example.com/ --strategy mobile --json` | JSON 里同时有 `field`(CrUX p75)和 `lab`;只有 `lab` 且告警「CrUX 无 key」→ 补 `CRUX_API_KEY`。退出码 3 = 两源全失败 |
 | GSC 服务账号能登录 | `python3 scripts/gsc_api.py auth`,再 `python3 scripts/gsc_api.py sites` | `auth` 成功;`sites` 列出目标属性。列不出 → 服务账号邮箱没加进该属性 |
 | GSC 拉取列齐全 | `python3 scripts/gsc_api.py query --site sc-domain:example.com --start 2026-09-01 --end 2026-09-28 --dimensions query,page --out gsc.csv`,再 `head -1 gsc.csv` | 表头含 `Query,Page,Clicks,Impressions,CTR,Position`;CTR 是小数(0.0317) |
-| 展示数据不跨异常期 | 对比窗口与 2025-05-13 至 2026-04-27 比对([Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453)) | 两期对比不跨这个期间;跨了就只比点击,不比展示/CTR/位置 |
+| 展示数据不跨异常期 | 对比窗口与[GSC 数据异常期](facts.md#gsc-anomaly)比对 | 两期对比不跨这个期间;跨了就只比点击,不比展示/CTR/位置 |
 | Bing key 可用 | `python3 scripts/bing_wmt.py stats --site example.com --out bing.csv` | 返回 CSV(新验证站点历史不回填,空列表 ≠ 0 ≠ 错误);401/凭证错 → 重新生成 key |
 | 限额未触顶 | GSC:Cloud 控制台「配额」页;GA4:请求里加 `returnPropertyQuota`;CrUX:控制台配额页 | 日用量低于上文列出的限额;429 时降频,不重试风暴 |
 

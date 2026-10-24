@@ -61,7 +61,7 @@ ASSUMPTIONS = [
     "功效/样本量用双样本 t 检验的正态近似(z 法);判读用 Welch t(不要求两臂方差齐)",
     "crossover 减模板/目录层混杂,不改变本方差口径;周期切换前后各留 1 周洗脱更稳",
     "季节性/算法更新未被排除:判读窗口撞算法 rollout 时冻结顺延(seo-drift-monitoring 第五节)",
-    "GSC 窗口若与 2025-05-13~2026-04-30 断代重叠,只信 Clicks(did_attribution 同口径)",
+    "GSC 窗口若与 2025-05-13~2026-04-27 断代重叠,只信 Clicks(did_attribution 同口径)",
 ]
 
 

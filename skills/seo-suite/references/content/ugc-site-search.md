@@ -102,7 +102,7 @@
 
 **反面清单**：
 
-- UGC 问答不用 FAQPage。FAQ 富结果 2026-05-07 起不再展示（[文档更新日志](https://developers.google.com/search/updates)）；真实用户提交的问答用 QAPage（分界见 [geo-evidence.md](geo-evidence.md)）。
+- UGC 问答不用 FAQPage。FAQ 富结果已不再展示（[日期与来源](../overview/facts.md#rich-results)）；真实用户提交的问答用 QAPage（分界见 [geo-evidence.md](geo-evidence.md)）。
 - 2026-07-24 起评价摘要指南禁止虚假评价和未披露的激励评价（换取金钱、折扣、代金券、免费产品而未醒目披露）。审计评论类结构化数据时加这条检查。
 - 结构化数据只描述页面上可见的内容（[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。投票数、回复数要与页面展示一致。
 - Google 能处理渲染后 DOM 里的 JS 生成结构化数据（[文档](https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript)），但多数 AI 爬虫不执行 JS。本套件口径：结构化数据放在初始 HTML（降权规则见 [citability-scoring.md](citability-scoring.md)）。

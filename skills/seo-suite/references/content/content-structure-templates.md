@@ -20,7 +20,7 @@
 - **步骤和比较用真实元素。** 用 `<ol>`、`<ul>`、`<table>`，不用图片或样式模拟。Bing 指南第 13 条要求语义 HTML 元素。
 - **写出信任信息。** Google 有用内容的 Who / How / Why：署名、作者介绍、内容怎么做出来（评测写测了多少产品、怎么测、附证据）。
 - **链接**（本套件口径）：内链指向上下游页面；外链优先指向一手来源。
-- **FAQ 只收真实问题。** FAQ 富结果自 2026-05-07 起不再显示（[Search Console 数据异常页](https://support.google.com/webmasters/answer/6211453)）。问题来源见 question-alignment.md 第二节。
+- **FAQ 只收真实问题。** FAQ 富结果已不再显示（[日期与来源](../overview/facts.md#rich-results)）。问题来源见 question-alignment.md 第二节。
 - **结构化数据与可见内容一致。** 不要标记读者看不到的内容；类型选最具体的（[结构化数据通用指南](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)）。
 
 ## 改版页：IST/SOLL 对比骨架

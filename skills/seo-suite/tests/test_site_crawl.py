@@ -258,12 +258,14 @@ class DiscoveryChainTests(unittest.TestCase):
         web.add("https://example.com/sm-c.xml", body=urlset_xml(["https://example.com/p3"]))
         for u in ("p1", "p2", "p3"):
             web.add("https://example.com/" + u, body=html_links(u, []))
+        web.add("https://example.com/", body=html_links("Home", []))
         rep, rc = crawl(make_ns(), web)
         self.assertEqual(rep["discovery"]["mode"], "sitemap")
         self.assertEqual(rep["discovery"]["counts"]["sitemap"], 3)
         self.assertEqual({pg["url"] for pg in rep["pages"]}
                          - {"https://example.com/p1", "https://example.com/p2",
-                            "https://example.com/p3"}, set())
+                            "https://example.com/p3", "https://example.com/"}, set())
+        # sitemap 模式也先抓首页(2026-10-24 asahi 实测:不抓首页时孤儿判定全是假阳性)
         self.assertEqual(rc, 0)
 
     def test_50_sitemap_locs_close_crawl_fallback(self):
@@ -278,7 +280,7 @@ class DiscoveryChainTests(unittest.TestCase):
         self.assertNotIn("https://example.com/hidden", {pg["url"] for pg in rep["pages"]})
         self.assertIn({"src": "https://example.com/p01", "dst": "https://example.com/hidden"},
                       rep["edges"])                                        # 图仍记边
-        self.assertEqual(len(rep["pages"]), 50)
+        self.assertEqual(len(rep["pages"]), 51)                          # 50 条 loc + 首页
 
     def test_under_50_locs_crawl_supplement(self):
         """<50 条 loc:爬虫兜底开着,sitemap 页上的新内链被补抓(source=crawl)。"""

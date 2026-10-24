@@ -1,0 +1,3 @@
+[warn] crux 源跳过:未提供 API key(--key 或 CRUX_API_KEY/PSI_API_KEY)——CrUX API 必须 key,本次降级仅 PSI(跳过不算失败)
+[fail] 全源失败:1/1 个 URL×策略 现场+实验均无数据
+[hint] 配额/权限受限:加 key(PSI_API_KEY / CRUX_API_KEY,Google Cloud 同一 key 可同时启用两 API)或降频(--delay 调大)

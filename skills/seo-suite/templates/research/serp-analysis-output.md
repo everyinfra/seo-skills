@@ -73,7 +73,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {市场/语言/locale} · Que
 |---|---|---|---|
 | 1 | 抓取条件已记录 | 无痕窗口,目标市场的 locale 与设备,保存截图和日期 | 通过:每个查询有 locale、设备、日期、截图。失败:缺任一项 |
 | 2 | 意图判定有旁证 | 对照 [keyword-intent-taxonomy.md](../../references/research/keyword-intent-taxonomy.md),在 Query 表「Intent」列写前 10 条结果的页面形态 | 通过:每个查询有旁证。失败:只凭词面 |
-| 3 | 特征矩阵逐查询逐项打 √/— | 在截图上逐项核对九个特征;FAQ/HowTo 富结果不计入(FAQ 2026-05-07 起不再展示) | 通过:矩阵无空格。失败:有空格 |
+| 3 | 特征矩阵逐查询逐项打 √/— | 在截图上逐项核对九个特征;FAQ/HowTo 富结果不计入(都已不再展示,[日期](../../references/overview/facts.md#rich-results)) | 通过:矩阵无空格。失败:有空格 |
 | 4 | 竞争格局卡只收反复出现的域名 | 数每个域名在 N 个查询里出现几次;市场有 UGC、比价、投诉站占位时 `python3 scripts/serp_occupancy.py --market XX "域名1,域名2"` | 通过:每张卡有「出现 N/总」。失败:按业务而非 SERP 选对手 |
 | 5 | 同簇查询合并前先看 SERP 重合 | `python3 scripts/serp_overlap.py input.csv`(CSV:`keyword,前 10 条 URL 以分号分隔`) | 通过:同簇词重合 ≥4 条(四档:7–10 同文 / 4–6 同簇 / 2–3 互链 / 0–1 分开)。失败:重合 0–1 → 分开分析 |
 | 6 | 动作只承诺资格与可理解性 | 搜 Recommended Actions 里的「保证」「一定」「排名」 | 通过:零命中。失败:承诺展示位 |
@@ -82,12 +82,12 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {市场/语言/locale} · Que
 ## What could change this conclusion
 
 - {数据缺口:SERP 为时点快照,不同地域/设备/个性化下功能组合会变}
-- {仅相关非因果:特征出现≠点击分流成立;能定案的验证:GSC 搜索外观筛选看该查询点击变化(窗口含 2025-05-13 至 2026-04-27 时 CTR 不可信,只看点击,[官方记录](https://support.google.com/webmasters/answer/6211453))}
+- {仅相关非因果:特征出现≠点击分流成立;能定案的验证:GSC 搜索外观筛选看该查询点击变化(窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时 CTR 不可信,只看点击)}
 - {样本局限:仅 {} 查询×1 次抓取;小众查询波动大}
 - {继承假设:意图分类基于 {} 规则;AIO 覆盖口径随 Google 界面调整}
 
 ## Method Notes
 
-- 数据源与抓取时间:{工具+日期};记录地域、语言、设备、个性化状态,最好附截图。已知坑:{AI 概览和 AI 模式的点击计入 Search Console 效果报告的「网页」类型,拆不出来;Google 的生成式 AI 效果报告(2026-08-31 起全球开放)只报展示次数([帮助页](https://support.google.com/webmasters/answer/16984139))}。数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{工具+日期};记录地域、语言、设备、个性化状态,最好附截图。已知坑:{AI 概览和 AI 模式的点击计入 Search Console 效果报告的「网页」类型,拆不出来;Google 的生成式 AI 效果报告(已全球开放,[日期](../../references/overview/facts.md#gsc-genai))只报展示次数([帮助页](https://support.google.com/webmasters/answer/16984139))}。数字缺失写 [要追加: 数据源],禁编造。
 - 符号:特征计数=该查询出现的功能种类数;意图按 keyword-intent-taxonomy.md 分类,FAQ/HowTo 不计入缺口(见 serp-feature-taxonomy.md)。
 - 展示由搜索引擎自动决定:本报告的「可做的动作」只影响资格与可理解性,不保证出现。

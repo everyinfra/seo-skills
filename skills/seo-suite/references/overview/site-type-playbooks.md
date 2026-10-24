@@ -5,7 +5,7 @@
 基准数据均标注来源级别与日期(官方/报告/观察/共识);报告级数字用于对标,不用作对客承诺。2026-10-21 重核:第三方博客的数字已逐个打开原页面核对,核不到的已删;每卡的 URL 型谱、占比阈值(如 >30%、>60%)是本套件的判型启发式,不是外部统计。
 ⑨招聘/⑩房产(2026-10-12 增补)是⑦ Marketplace 的**垂直变体卡**:共用⑦的供需底盘与「库存密度先行」纪律,各叠垂直红线——判型命中⑦且供给为职位/房源时,升级取对应扩展卡。
 
-**Schema 提示(各卡通用)**:各卡 Schema 组合里的 FAQPage 与 HowTo——Google 的 FAQ 富结果自 2026-05-07 起不再展示,How-to 富结果也已不展示(文档 2023-09 移除,[Search 文档更新记录](https://developers.google.com/search/updates));这两种标记只在要给其它系统用时保留,Google 没有专门的 AI Schema,Schema 对 AI 引用没有独立效应的证据见 [geo-evidence.md](../content/geo-evidence.md)。Article 在 Google 文档里没有必填属性,Organization 也没有([Article](https://developers.google.com/search/docs/appearance/structured-data/article)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization),页面日期 2026-09-08)。
+**Schema 提示(各卡通用)**:各卡 Schema 组合里的 FAQPage 与 HowTo——Google 的 FAQ 和 How-to 富结果都已不再展示([日期与来源](facts.md#rich-results));这两种标记只在要给其它系统用时保留,Google 没有专门的 AI Schema,Schema 对 AI 引用没有独立效应的证据见 [geo-evidence.md](../content/geo-evidence.md)。Article 在 Google 文档里没有必填属性,Organization 也没有([Article](https://developers.google.com/search/docs/appearance/structured-data/article)、[Organization](https://developers.google.com/search/docs/appearance/structured-data/organization),页面日期 2026-09-08)。
 
 ## 站型识别判别法(R1-4,识别结果喂给 [strategy-fit.md](strategy-fit.md))
 
@@ -33,7 +33,7 @@
 **Schema 组合**
 
 - SoftwareApplication(name/applicationCategory/operatingSystem)+ Organization;有真实用户评分才加 aggregateRating,禁止编造。
-- pricing/vs/alternatives 页的常见问题写成可见正文;Google 的 FAQ 富结果自 2026-05-07 起不再展示,FAQPage 标记没有富结果收益,是否保留看内容理解需要;博客 Article/BlogPosting 带作者(Article 无必填属性,作者为推荐属性)。
+- pricing/vs/alternatives 页的常见问题写成可见正文;Google 的 FAQ 富结果已不再展示([日期](facts.md#rich-results)),FAQPage 标记没有富结果收益,是否保留看内容理解需要;博客 Article/BlogPosting 带作者(Article 无必填属性,作者为推荐属性)。
 - 全站 BreadcrumbList;完整映射见 [schema-templates.md](../technical/schema-templates.md)。
 
 **核心 KPI**

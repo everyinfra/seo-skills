@@ -146,6 +146,8 @@ def build_plan(report, max_orphans=DEFAULT_MAX):
 
 def render_markdown(payload):
     L = ["## orphan_fix: %s" % payload["site"], ""]
+    if payload.get("orphans_partial"):
+        L.append("- ⚠ 上游 site_crawl 被 --max 截断:孤儿只在已抓样本内判定,改内链前先全量抓取复核")
     L.append("- 孤儿 %d 个,处理 %d(--max %d);每孤儿 ≤%d 候选源页(同目录前缀聚类,"
              "入链降序)" % (payload["orphans_total"], payload["processed"],
                             payload["max"], payload["max_candidates"]))
@@ -215,6 +217,7 @@ def main(argv=None):
         "max": args.max,
         "max_candidates": MAX_CANDIDATES,
         "plans": plans,
+        "orphans_partial": bool(report.get("orphans_partial")),
     }
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=1))

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:n="http://www.google.com/schemas/sitemap-news/0.9">
+<url>
+<loc>https://www.spiegel.de/ausland/frankreich-70-000-polizisten-verbotene-demos-geschlossene-museen-angespannte-lage-vor-erneutem-protesttag-a-0890d667-ab5f-4b7e-aa92-244e0c72e9ca</loc>
+<n:news>
+<n:publication>
+<n:name>DER SPIEGEL</n:name>
+<n:language>de</n:language>
+</n:publication>
+<n:keywords>Ausland,Frankreich,Paris,Sébastien Lecornu,Emmanuel Macron</n:keywords>
+<n:publication_date>2026-10-24T11:35:00+02:00</n:publication_date>
+<n:title>Frankreich: 70.000 Polizisten, verbotene Demos, geschlossene Museen – angespannte Lage vor erneutem Protesttag</n:title>
+</n:news>
+<image:image>
+<image:loc>https://cdn.prod.www.spiegel.de/images/5159a7a5-9c9c-4d00-9d76-b10e37db9516_w520_r2.08_fpx65.33_fpy50.jpg</image:loc>
+</image:image>
+</url>
+<url>
+<loc>https://www.spiegel.de/politik/deutschland/news-friedrich-merz-auf-csu-parteitag-wahl-in-serbien-anhaenger-feiern-le-pen-stevie-wonder-in-hannover-a-e736fff7-b460-45fb-8a48-f718685789e3</loc>
+<n:news>
+<n:publication>
+<n:name>DER SPIEGEL</n:name>
+<n:language>de</n:language>
+</n:publication>
+<n:keywords>Politik,Deutschland,Die Lage am Morgen</n:keywords>
+<n:publication_date>2026-10-24T05:53:00+02:00</n:publication_date>
+<n:title>News: Friedrich Merz auf CSU-Parteitag, Wahl in Serbien, Anhänger feiern Le Pen, Stevie Wonder in Hannover</n:title>
+</n:news>
+<image:image>
+<image:loc>https://cdn.prod.www.spiegel.de/images/dd17189a-707c-4b57-af32-bf59855d3d25_w520_r2.08_fpx28.09_fpy49.93.png</image:loc>
+</image:image>
+</url>
+<url>
+<loc>https://www.spiegel.de/effilee/johann-lafer-mohamed-amjahid-und-stefanie-hiekmann-unsere-drei-kochprofis-beantworten-ihre-leserfragen-a-b5a88ed4-b058-4757-bf40-2663a32cac01</loc>
+<n:news>
+<n:publication>
+<n:name>DER SPIEGEL</n:name>
+<n:language>de</n:language>
+</n:publication>
+<n:keywords>Effilee,Kochen,Küchenkabinett,Leben,Johann Lafer,Weihnachtsessen</n:keywords>
+<n:publication_date>2026-10-23T05:30:00+02:00</n:publication_date>
+<n:title>Johann Lafer, Mohamed Amjahid und Stefanie Hiekmann: Unsere drei Kochprofis beantworten Ihre Leserfragen</n:title>
+</n:news>
+<image:image>
+<image:loc>https://cdn.prod.www.spiegel.de/images/25ec2bd3-23ff-4b5a-b4c7-69bc5a45074b_w520_r2.08_fpx48_fpy50.jpg</image:loc>
+</image:image>
+</url>
+<url>
+<loc>https://www.spiegel.de/wissenschaft/die-sternennacht-von-vincent-van-gogh-forschende-rekonstruieren-wann-der-himmel-aussah-wie-auf-dem-gemaelde-a-c909971f-11b1-493b-bde4-7d8e4aaa70ed</loc>
+<n:news>
+<n:publication>
+<n:name>DER SPIEGEL</n:name>
+<n:language>de</n:language>
+</n:publication>
+<n:keywords>Wissenschaft,Vincent van Gogh,Niederlande,Venus,Mond</n:keywords>
+<n:publication_date>2026-10-22T17:29:00+02:00</n:publication_date>
+<n:title>»Die Sternennacht« von Vincent van Gogh: Forschende rekonstruieren, wann der Himmel aussah wie auf dem Gemälde</n:title>
+</n:news>
+<image:image>
+<image:loc>https://cdn.prod.www.spiegel.de/images/ed176b34-2e2c-41db-aeab-199c5060d339_w520_r2.08_fpx39.57_fpy49.98.jpg</image:loc>
+</image:image>
+</url>
+<url>
+<loc>https://www.spiegel.de/sport/fussball/piotr-trochowski-ehemaliger-fussballnationalspieler-ist-jetzt-maler-a-566e2a62-7536-4e9f-8884-4551f735c94a</loc>
+<n:news>
+<n:publication>
+<n:name>DER SPIEGEL</n:name>
+<n:language>de</n:language>
+</n:publication>
+<n:keywords>Sport,Fußball-News</n:keywords>
+<n:publication_date>2026-10-24T12:41:00+02:00</n:publication_date>
+<n:title>Piotr Trochowski: Ehemaliger Fußballnationalspieler ist jetzt Maler</n:title>
+</n:news>
+<image:image>
+<image:loc>https://cdn.prod.www.spiegel.de/images/f26b9bb9-c19f-458e-a208-f15bbadc1b84_w520_r2.08_fpx67.35_fpy55.jpg</image:loc>
+</image:image>
+</url>
+</urlset>
+<!-- 截取:2026-10-24 https://www.spiegel.de/sitemaps/news-de.xml 中 title ≥100 字符的 4 条和 1 条普通条目(原文 185 条) -->

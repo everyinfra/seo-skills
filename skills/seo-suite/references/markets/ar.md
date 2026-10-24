@@ -128,7 +128,7 @@ W3C 国际化文档([Structural markup and right-to-left text in HTML](https://w
 | AI Overviews 扩到 200+ 国家与地区、40+ 语言,新增阿拉伯语 | **2025-05-20**(Google I/O) | [Google 官方博客](https://blog.google/products-and-platforms/products/search/ai-overview-expansion-may-2025-update/) |
 | AI Mode 以英语扩到 180+ 国家与地区 | 2025-08-21 | 第三方报道([SEJ](https://www.searchenginejournal.com/google-ai-mode-adds-agentic-booking-expands-to-more-countries/554345/));具体国家以 Google 可用地区页为准 |
 | AI Mode 新增 35+ 语言、40+ 国家与地区,总计 200+ | **2025-10-07** | [Google 官方博客](https://blog.google/products-and-platforms/products/search/ai-mode-expands-languages-locations/);阿拉伯语在新增语言内([Arab News](https://www.arabnews.com/media/google-expands-ai-mode-to-arabic-and-35-other-languages-2618104),称 Modern Standard Arabic) |
-| Search Console 生成式 AI 表现报告 | 2026-06-03 | [Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports);先给部分站点,2026-08-31 起全球开放([帮助页](https://support.google.com/webmasters/answer/16984139));给展示、页面、国家、设备、日期,不含点击 |
+| Search Console 生成式 AI 表现报告 | [日期见事实表](../overview/facts.md#gsc-genai) | 先给部分站点,后对全球开放;给展示、页面、国家、设备、日期,不含点击 |
 
 - 旧稿写 AI Mode 阿语上线为 2025-10-08。官方博客页是 2025-10-07;CNET 等按时区报 10-08。
 - AIO 触发率:Ahrefs 研究称 AIO 出现在 20.5% 的 SERP(29,991,998 / 146,122,391),数据为 **2025-09 桌面端**,页面未写国家与语言([Ahrefs,2025-11-10](https://ahrefs.com/blog/ai-overview-triggers/))。旧稿写「全球口径」,页面无此说明,改为「桌面、2025-09、地区未注明」。这个数字不能代表阿语 SERP。

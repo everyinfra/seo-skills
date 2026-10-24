@@ -8,12 +8,12 @@
 
 | 指标 | 衡量对象 | 良好 | 需改进 | 差 |
 |---|---|---|---|---|
-| LCP | 最大内容元素完成渲染（加载） | ≤2.5s | 2.5–4s | >4s |
-| INP | 交互到下一帧绘制（响应性） | ≤200ms | 200–500ms | >500ms |
-| CLS | 最大一次布局偏移突发（视觉稳定性） | ≤0.1 | 0.1–0.25 | >0.25 |
+| LCP | 最大内容元素完成渲染（加载） | 见[阈值表](../overview/facts.md#cwv) | 同左 | 同左 |
+| INP | 交互到下一帧绘制（响应性） | 见[阈值表](../overview/facts.md#cwv) | 同左 | 同左 |
+| CLS | 最大一次布局偏移突发（视觉稳定性） | 见[阈值表](../overview/facts.md#cwv) | 同左 | 同左 |
 | TTFB | 首字节（诊断指标，不是 Core Web Vital） | ≤0.8s | 0.8–1.8s | >1.8s |
 
-阈值依据：[web.dev LCP](https://web.dev/articles/lcp)、[INP](https://web.dev/articles/inp)、[CLS](https://web.dev/articles/cls)、[TTFB](https://web.dev/articles/ttfb)；「差」的界线（LCP >4000 ms、INP >500 ms、CLS >0.25）见[阈值方法说明](https://web.dev/articles/defining-core-web-vitals-thresholds)的表格（核对 2026-10-21）。INP 于 2024-03-12 取代 FID 成为 Core Web Vital（[web.dev 公告](https://web.dev/blog/inp-cwv-march-12)）；FID 从 CrUX API 移除、BigQuery 的 2024-08 数据集是最后一份含 FID 的数据（[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)，2024-09-10 公告）。
+阈值依据：三项 Core Web Vitals 的数值和来源只写在[事实表](../overview/facts.md#cwv)；TTFB 见 [web.dev TTFB](https://web.dev/articles/ttfb)（核对 2026-10-21）。INP 于 2024-03-12 取代 FID 成为 Core Web Vital（[web.dev 公告](https://web.dev/blog/inp-cwv-march-12)）；FID 从 CrUX API 移除、BigQuery 的 2024-08 数据集是最后一份含 FID 的数据（[CrUX 发布说明](https://developer.chrome.com/docs/crux/release-notes)，2024-09-10 公告）。
 
 - **评估口径**：真实用户第 75 百分位，移动端和桌面端分开（[web.dev Web Vitals](https://web.dev/articles/vitals)）。web.dev：三项都达到良好才算页面通过。
 - **Search Console 分组规则**：一个 URL 组的状态取三项里最差的那一项（例如 CLS 差、INP 良好 → 整组为「差」）；LCP 和 CLS 都有足够数据的组才会出现在报告里；数值是最近 28 天的 p75（[Search Console 帮助](https://support.google.com/webmasters/answer/9205520)，核对 2026-10-21）。因此只修最差的一项，组的状态就能上升一级；三项都良好才全绿。
@@ -26,7 +26,7 @@
 | 数据源 | 类型 | 粒度与归因 | 适用 |
 |---|---|---|---|
 | Search Console CWV 报告 | 现场（CrUX） | URL 组级，无归因 | 定位哪类页面、哪个指标差 |
-| CrUX API / BigQuery | 现场 | origin/URL 级；API 是 28 天滚动、每天约 04:00 UTC 更新；BigQuery 按月 | 竞品对比、改动前后验证 |
+| CrUX API / BigQuery | 现场 | origin/URL 级；API 是滚动窗口、每天更新（[窗口与更新时间](../overview/facts.md#crux-window)）；BigQuery 按月 | 竞品对比、改动前后验证 |
 | PageSpeed Insights | 实验室（Lighthouse）；页面界面仍显示现场数据，但 PSI API 计划停止返回 CrUX 数据（[PSI API 文档](https://developers.google.com/speed/docs/insights/v5/get-started)） | 单 URL | 单页快速诊断；现场数据改走 CrUX API |
 | web-vitals 自建 RUM | 现场（自采） | URL、元素、交互级归因 | 决定修什么、验证修没修好 |
 | Lighthouse / DevTools | 实验室 | 单次模拟 | 本地复现与 CI 回归 |
@@ -253,7 +253,7 @@ Link: </img/hero.webp>; rel=preload; as=image; fetchpriority=high
 三项都是「需改进」→ 先修成本最低的一项；三项都良好才算整组良好
 ```
 
-纪律：一次只改一类；改完等 CrUX 28 天窗口滚动满再评估，不被单日波动带偏。
+纪律：一次只改一类；改完等 CrUX 窗口（[长度](../overview/facts.md#crux-window)）滚动满再评估，不被单日波动带偏。
 
 ## 检查清单
 

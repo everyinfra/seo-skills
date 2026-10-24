@@ -92,8 +92,8 @@ WebPage 节点（`isPartOf`、`breadcrumb` 等关系）可以表达页面结构�
 
 | 功能 | 关键日期 |
 |---|---|
-| FAQ | 2023-08 只给权威政府、健康网站；2026-05-07 起停展；2026-06-15 删文档 |
-| HowTo | 2023-08 移动端停展；2023-09-13 桌面停展 |
+| FAQ | 先只给权威政府、健康网站，后停展，文档已删（[日期](../overview/facts.md#rich-results)） |
+| HowTo | 先移动端停展，后桌面停展（[日期](../overview/facts.md#rich-results)） |
 | 站点链接搜索框 | 2024-11-21 起停展；2024-11-29 删文档 |
 | Home activities | 2024-06-11 删文档 |
 | Course info、Claim review、Estimated salary、Learning video、Special announcement、Vehicle listing | 2025-06-12 公告逐步停用；Special announcement 2025-07-31 起停用；2025-09-09 删除 Course info、Estimated salary、Learning video、Special announcement、Vehicle listing 的文档 |

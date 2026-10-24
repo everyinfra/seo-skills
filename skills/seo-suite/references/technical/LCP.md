@@ -5,8 +5,8 @@
 ## 定义与阈值
 
 - LCP 衡量视口内最大的图片、文本块或视频完成渲染的时间（从页面开始加载算起）。候选元素：`<img>`、`<svg>` 内的 `<image>`、`<video>`（取封面图加载和首帧呈现中较早的一个）、用 `url()` 加载背景图的元素、包含文本节点的块级元素（[web.dev：LCP](https://web.dev/articles/lcp)，核对 2026-10-21）。
-- 阈值：≤2.5 秒为良好，2.5–4 秒需要改进，>4 秒为差；按真实用户第 75 百分位，移动端和桌面端分开看（[LCP](https://web.dev/articles/lcp) 给出 2.5 秒和 p75，[阈值方法说明](https://web.dev/articles/defining-core-web-vitals-thresholds)的表格给出 >4000 ms 为差）。
-- Search Console 的 Core Web Vitals 报告数据来自 CrUX（真实 Chrome 用户），按最近 28 天的 p75 计算（[Search Console 帮助](https://support.google.com/webmasters/answer/9205520)）。实验室工具的一次测量不能代替它。
+- 阈值：良好、需要改进、差三档见[阈值表](../overview/facts.md#cwv)；按真实用户第 75 百分位，移动端和桌面端分开看。
+- Search Console 的 Core Web Vitals 报告数据来自 CrUX（真实 Chrome 用户），按 CrUX 滚动窗口（[窗口长度](../overview/facts.md#crux-window)）的 p75 计算（[Search Console 帮助](https://support.google.com/webmasters/answer/9205520)）。实验室工具的一次测量不能代替它。
 
 ## 把 LCP 拆成四段
 
@@ -57,11 +57,11 @@ onLCP(({ name, value, rating, attribution }) => {
 
 ## 诊断顺序
 
-1. **看真实用户数据**：`python3 scripts/field_data.py --url URL --strategy both`（CrUX 28 天 p75 + Lighthouse 实验数据，按官方阈值判定；`--crux-scope origin` 看全站；批量用 `--urls 清单文件`）。退出码 1 表示 LCP/INP/CLS 任一现场值为差。也可看 Search Console 的 Core Web Vitals 报告，确认是哪类页面、哪种设备的问题。
+1. **看真实用户数据**：`python3 scripts/field_data.py --url URL --strategy both`（CrUX 现场 p75 + Lighthouse 实验数据，按官方阈值判定；`--crux-scope origin` 看全站；批量用 `--urls 清单文件`）。退出码 1 表示 LCP/INP/CLS 任一现场值为差。也可看 Search Console 的 Core Web Vitals 报告，确认是哪类页面、哪种设备的问题。
 2. **看现场的四段数据**：CrUX API 直接提供 LCP 分段指标 `largest_contentful_paint_image_time_to_first_byte`、`..._resource_load_delay`、`..._resource_load_duration`、`..._element_render_delay` 和 `largest_contentful_paint_resource_type`（[CrUX API](https://developer.chrome.com/docs/crux/api)）。
 3. **在实验室复现**：Chrome DevTools 性能面板或 Lighthouse，找出 LCP 元素和四段耗时。
 4. **按上表处理占比最大的阶段**，一次改一类，改完重新测量。
-5. **上线后回看现场数据**：CrUX 是 28 天滚动平均、每天更新，改善要在窗口滚动后才完整体现。
+5. **上线后回看现场数据**：CrUX 是滚动平均、每天更新（[窗口](../overview/facts.md#crux-window)），改善要在窗口滚动后才完整体现。
 
 PageSpeed Insights API 可以不带 key 调用；频繁的自动化调用建议用 API key（[PSI API](https://developers.google.com/speed/docs/insights/v5/get-started)）。该文档同时写明：PSI API 计划停止返回 CrUX 现场数据，官方建议改用 CrUX API 或 CrUX History API；现场数据以 CrUX API 为准，PSI 只当实验室数据入口。CrUX API 必须带 key。
 
@@ -69,7 +69,7 @@ PageSpeed Insights API 可以不带 key 调用；频繁的自动化调用建议�
 
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
-| 现场 LCP | `python3 scripts/field_data.py --url URL --strategy both --json`，读 `field` 里 LCP 的 p75（需要 `--key` 或环境变量 `PSI_API_KEY`/`CRUX_API_KEY`，CrUX 无 key 会被跳过） | 两种设备 p75 ≤2.5s → 通过；2.5–4s → 需改进；>4s → 差；CrUX 无数据（流量不够）→ 记「无现场数据」，改用自建 RUM |
+| 现场 LCP | `python3 scripts/field_data.py --url URL --strategy both --json`，读 `field` 里 LCP 的 p75（需要 `--key` 或环境变量 `PSI_API_KEY`/`CRUX_API_KEY`，CrUX 无 key 会被跳过） | 两种设备 p75 在[良好档](../overview/facts.md#cwv) → 通过；需改进档 → 需改进；差档 → 差；CrUX 无数据（流量不够）→ 记「无现场数据」，改用自建 RUM |
 | 最长分段 | CrUX API 四个 `largest_contentful_paint_image_*` 分段，或 RUM 里 attribution 四段 | 找出超出参考占比最多的一段，作为第一修复项 |
 | LCP 资源可发现 | `curl -s URL \| grep -io '<img[^>]*fetchpriority="high"[^>]*>'`；对照 DevTools 识别出的 LCP 元素 | LCP 图片出现在初始 HTML 且没有 `loading="lazy"` → 通过 |
 | 懒加载误用 | DevTools Elements 选中 LCP 元素看属性 | 带 `loading="lazy"` → 失败 |

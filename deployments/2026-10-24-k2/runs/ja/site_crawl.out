@@ -1,0 +1,8 @@
+## site_crawl: asahi.com
+
+- 发现模式: robots+sitemap(链② robots Sitemap 指令 1 条 → 链③ sitemap loc 218)
+- 子域 0 个: -
+- 页面 40:错误 0(错误率 0.0%),重定向 0,出链:内链 16307,外链 800,总出链 17107;已抓页面收到的入链 0,耗时 63.6s
+- Top 外链域: 4x-corp.com×40, adv.asahi.com×40, alfasado.net×40, asagaku.com×40, asahishimbun-saiyou.com×40, asm.asahi.com×40, book.asahi.com×40, co.jp×40, digital.asahi.com×40, dot.asahi.com×40
+- 孤儿页 40(0 入链、非首页、未被重定向;重定向页 0 个不计):https://www.asahi.com/articles/ASVBS334SVBSUTIL00MM.html, https://www.asahi.com/articles/ASVBS162PVBSUBNB00KM.html, https://www.asahi.com/articles/ASVBS2HBBVBSUJHB00CM.html, https://www.asahi.com/articles/ASVBS2GH5VBSPTIL00QM.html, https://www.asahi.com/articles/ASVBS2381VBSUTIL005M.html, https://www.asahi.com/articles/ASVBS12XPVBSUTIL002M.html, https://www.asahi.com/articles/ASVBS1130VBSUDCB001M.html, https://www.asahi.com/articles/ASVBR3H3SVBRPUUB002M.html, https://www.asahi.com/articles/ASVBL7VXZVBLPITB00HM.html, https://www.asahi.com/articles/ASVBJ00QWVBJIIPE008M.html
+- ⚠ 发现 218+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

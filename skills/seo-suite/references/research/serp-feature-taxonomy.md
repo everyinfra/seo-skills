@@ -26,20 +26,20 @@
 | 本地结果 | 显性或隐性的本地需求 | 维护商家资料（需要你自己的 Google 商家资料账号），各处名称、地址、电话一致 | 距离等因素不受网站控制 |
 | 购物结果 | 明确的购买意图 | Product 结构化数据与页面价格、库存一致；商品数据经 Merchant Center 提交（需要你自己的账号） | 页面和数据源不一致会被拒 |
 | 评分星级等富结果 | 用户在比较品质 | 只为 Google 支持的类型、真实存在的评分加标记 | 没有真实评分就不写 aggregateRating |
-| FAQ / HowTo 富结果 | 均已停止展示 | FAQPage 只描述页面上真实存在的问答；步骤照常用有序列表写清楚 | FAQ：2026-05-07 起不再展示；HowTo：2023-09 起桌面和移动端都不再展示。时间和原文见下表。都不当争取目标 |
+| FAQ / HowTo 富结果 | 均已停止展示 | FAQPage 只描述页面上真实存在的问答；步骤照常用有序列表写清楚 | FAQ、HowTo 都已不再展示（[日期与来源](../overview/facts.md#rich-results)）。都不当争取目标 |
 | 相关搜索 | 用户的后续探索方向 | 作为选题和内链线索 | 无优化位 |
 
 ### Google 已收缩或移除的功能（官方时间线，核对 2026-10-21）
 
 | 日期 | 变化 | 一手来源 |
 |---|---|---|
-| 2023-08-08 | FAQ 富结果只对「well-known, authoritative government and health websites」展示；HowTo 富结果只在桌面展示 | [博客](https://developers.google.com/search/blog/2023/08/howto-faq-changes) |
-| 2023-09-14 | 删除 HowTo 文档，原因：「no longer shown in search results, on both desktop and mobile devices」 | [更新记录](https://developers.google.com/search/updates) |
+| 2023-08 | FAQ 富结果只对「well-known, authoritative government and health websites」展示；HowTo 富结果只在桌面展示（准确日期见[事实表](../overview/facts.md#rich-results)） | [博客](https://developers.google.com/search/blog/2023/08/howto-faq-changes) |
+| 2023-09 | 删除 HowTo 文档（准确日期见[事实表](../overview/facts.md#rich-results)），原因：「no longer shown in search results, on both desktop and mobile devices」 | [更新记录](https://developers.google.com/search/updates) |
 | 2024-11-21 | 站内搜索框（sitelinks search box）不再显示；2024-11-29 删文档 | [博客](https://developers.google.com/search/blog/2024/10/sitelinks-search-box) |
 | 2025-01-22 | 面包屑富结果只在桌面端展示 | [更新记录](https://developers.google.com/search/updates) |
 | 2025-06-12 | 逐步停止 Book Actions、Course Info、Claim Review、Estimated Salary、Learning Video、Special Announcement、Vehicle Listing；2025-09-09 起这些类型从 Search Console 报告和 Rich Result Test 移除（Book Actions 的横幅后在 2025-11 撤回，仍有功能使用该标记） | [博客](https://developers.google.com/search/blog/2025/06/simplifying-search-results) |
 | 2025-11 | 停止 Practice Problem 和 Dataset 在 Google Search 展示（Dataset 标记仅用于 Dataset Search） | [更新记录](https://developers.google.com/search/updates) |
-| 2026-05-07 | FAQ 富结果不再展示（弃用通知 2026-05-08），文档 2026-06 删除 | [更新记录](https://developers.google.com/search/updates) |
+| 2026-05 | FAQ 富结果不再展示，随后文档删除（准确日期见[事实表](../overview/facts.md#rich-results)） | [更新记录](https://developers.google.com/search/updates) |
 
 读法：这些变化「won't affect how pages are ranked」（2025-06 博客原文），只是少了展示样式。不必为此删标记；2023 年博客原文也说「Structured data that's not being used does not cause problems for Search」。
 

@@ -1,0 +1,9 @@
+## site_crawl: yna.co.kr
+
+- 发现模式: robots+sitemap(链② robots Sitemap 指令 7 条 → 链③ sitemap loc 3861)
+- 子域 0 个: -
+- 页面 40:错误 0(错误率 0.0%),重定向 0,出链:内链 8006,外链 961,总出链 8967;已抓页面收到的入链 63,耗时 379.9s
+- Top 外链域: ar.yna.co.kr×40, cn.yna.co.kr×40, einfomax.co.kr×40, en.yna.co.kr×40, facebook.com×40, fr.yna.co.kr×40, games.yna.co.kr×40, helloarchive.co.kr×40, instagram.com×40, join.yna.co.kr×40
+- ⚠ 抓取被 --max 截断:下面的孤儿只表示「已抓样本内 0 入链」,入链来源页可能没抓到;要下孤儿结论,用 --max 覆盖全站,或用 --urls 给出栏目页再抓
+- 孤儿页 30(0 入链、非首页、未被重定向;重定向页 0 个不计):https://www.yna.co.kr/view/AKR20261024050400007, https://www.yna.co.kr/view/AKR20261024049600007, https://www.yna.co.kr/view/AKR20261024048100007, https://www.yna.co.kr/view/AKR20261024038151007, https://www.yna.co.kr/view/AKR20261024035951007, https://www.yna.co.kr/view/AKR20261024047800007, https://www.yna.co.kr/view/AKR20261024047700007, https://www.yna.co.kr/view/AKR20261024047500007, https://www.yna.co.kr/view/AKR20261024047100007, https://www.yna.co.kr/view/AKR20261024046800007
+- ⚠ 发现 3862+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

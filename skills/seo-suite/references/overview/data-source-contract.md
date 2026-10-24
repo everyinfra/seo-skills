@@ -107,7 +107,7 @@
 | `project.py` | project.yaml 站点实体(站点+市场+站型)+ `<slug>.seo/` history/ 快照;重活全部子进程调既有脚本(site_crawl/site_audit/health_score/prioritize/envelope/remediation/monitor) | ② 单步失败续跑其余并汇总(triage exit 1);③ 输入/用法错 exit 2 | 编排器只编排不重实现;next/status 只报告五阶段状态机的真实产物位置,不虚构阶段完成 |
 | `trend_watch.py` | 六信号源实时拉取(Google News/Reddit rising/HN/微博/百度热搜;`--config` vertical_tokens 配**产品垂直**三层词表:品类+品牌+竞品;gate 另需 `--angle`/`--exclusive`) | ② 403 源整源跳过告警;③ 全源失败→exit 2;GO 级信号→exit 1(cron 接 notify) | 判定只报闸门分数不预测流量;时效窗口是 24-72h 经验带;`--state` 可指工作区(R0-7 口径) |
 | `remediation.py` | envelope audit-data.json(init)/两份 site_audit `--json`(verify);工单库 remediations.json(原子写+flock) | ③ 输入/结构不符→exit 2;verify 发现新 finding→列"建议 init 增补"清单 exit 1 | verify 只按 audit diff 白名单核销;部分 URL 仍命中→保持 implemented 附 partial 明细;wontfix 必须带 note(接受≠消失,report 单独计数) |
-| `did_attribution.py` | GSC 页面级两期 CSV(`--pre`/`--post`:Page,Clicks[,Date])+ treated/control 页分组 | ② 控制页 <3 或控制组 pre 点击 <5→自动回退 site 级对照并注明;③ treated pre 点击 <5→exit 2"基线流量不足以归因";controlBefore≤0→结果 null | DiD 是**观测估计不是因果**——server-side A/B 才是真因果检验,报告必须声明;窗口与 GSC 展示数据异常期(2025-05-13 至 2026-04-27,[Search Console 数据异常记录](https://support.google.com/webmasters/answer/6211453),核对 2026-10-21;只影响展示/CTR/位置,点击不受影响)重叠→impressions 不可靠警告 |
+| `did_attribution.py` | GSC 页面级两期 CSV(`--pre`/`--post`:Page,Clicks[,Date])+ treated/control 页分组 | ② 控制页 <3 或控制组 pre 点击 <5→自动回退 site 级对照并注明;③ treated pre 点击 <5→exit 2"基线流量不足以归因";controlBefore≤0→结果 null | DiD 是**观测估计不是因果**——server-side A/B 才是真因果检验,报告必须声明;窗口与[GSC 数据异常期](facts.md#gsc-anomaly)(只影响展示/CTR/位置,点击不受影响)重叠→impressions 不可靠警告 |
 | `seo_vs_ads.py` | `--gsc`(GSC queries 导出)+ `--ads`(Google Ads search terms 导出,可选)+ `--competitors` 列表(可选) | ② 缺 Ads 侧→明确列出缺什么,只输出 GSC 侧概览,organic_only 桶不定义、不猜;defensible 桶无 `--competitors`→明说跳过 | 自己的 search terms 报告**看不到竞对竞价**——double_paying 判 HIGH 时注明需 auction insights 复核;省额是 50%~70% 保留率**估算区间**非实测 |
 | `yt_outlier.py` | videos.csv(title,duration_s,views[,is_short][,channel])——YouTube 导出/采集 | ③ 文件/格式错误→exit 2 | 离群=组内均值 2×(频道×形态分基线,长短分开);只统计 CSV 内真实播放量,标题词频只对离群标题计算 |
 | `trend_scout.py` | HN topstories API + Reddit 6 sub hot(免 key 实时抓取);X/Twitter 需 key | ④ X/Twitter 无 key→明说跳过不猜;② 单源失败→warn 明说;③ 全源失败/无数据→exit 2 | 白名单门槛:HN+Reddit 相关条目合计 ≥15 才建议立项;相关性分只对 `--vertical` 词命中,不硬凑 |
@@ -121,7 +121,7 @@
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
-| `gsc_api.py` | GSC Search Analytics API 真实拉取(服务账号 RS256 JWT,纯 stdlib 手写 RSA 签名;凭证寻径 `--sa`>`--key`>`GSC_SA_FILE`>`~/.config/seo-suite/gsc.json`;服务账号邮箱要先加为该属性的用户;`--dimensions` 可选 date/hour/query/page/country/device/searchAppearance) | ③ 凭证缺失/坏 PEM/auth 失败/网络/HTTP→exit 1 指名;参数/维度/日期/SSRF 拒→exit 2 | 规范化 CSV 列契约固定(CTR 小数);token 只进内存 50 分钟缓存不落盘;匿名查询 API 不返回(与导出同口径,不补数);限额以官方为准:Search Analytics 每站点、每用户各 1,200 次/分钟,每项目 40,000 次/分钟、30,000,000 次/天,另有 10 分钟/1 天负载配额([Usage Limits](https://developers.google.com/webmaster-tools/limits),页面日期 2025-08-28;脚本里写的"1200 qpm 按项目计"与官方不符,以官方为准) |
+| `gsc_api.py` | GSC Search Analytics API 真实拉取(服务账号 RS256 JWT,纯 stdlib 手写 RSA 签名;凭证寻径 `--sa`>`--key`>`GSC_SA_FILE`>`~/.config/seo-suite/gsc.json`;服务账号邮箱要先加为该属性的用户;`--dimensions` 可选 date/hour/query/page/country/device/searchAppearance) | ③ 凭证缺失/坏 PEM/auth 失败/网络/HTTP→exit 1 指名;参数/维度/日期/SSRF 拒→exit 2 | 规范化 CSV 列契约固定(CTR 小数);token 只进内存 50 分钟缓存不落盘;匿名查询 API 不返回(与导出同口径,不补数);限额以官方为准,见[配额表](facts.md#api-quotas)(另有 10 分钟/1 天负载配额) |
 | `backlink_import.py` | Ahrefs/Semrush/GSC Links 三格式外链导出 CSV(列头特征自动嗅探;`--format` 显式指定) | ③ 嗅探不出格式/读不了/无有效行→exit 2(数据错误,不猜) | dofollow 列缺失→unknown 不猜(GSC "Text" 只能反推 nofollow);解不出日期的行不计新链;`anchor_exact_ratio` 需 `--brand` 才计,缺省 null |
 | `indexnow.py` | IndexNow 协议 POST(Bing/Yandex/Naver 端点;key 文件自部署 `{host}/{key}.txt`;Google 不支持) | ② 单批 >10000 自动分批(IndexNow 每次 POST 至多 10,000 个 URL,[文档](https://www.indexnow.org/documentation));429→提示退避降频;③ 有批次失败→exit 1;用法/SSRF 拒→exit 2 | 只按引擎真实响应码判读(200/202=ok,422=key 未部署或 URL 不属 host,403=key 无效);提交≠收录,不承诺索引时点 |
 | `bing_wmt.py` | Bing Webmaster Tools API(免费;key 取法:Bing Webmaster Tools → Settings → API Access → Generate API Key,每用户一个、不分站点,[Microsoft Learn](https://learn.microsoft.com/en-us/bingwebmaster/getting-access);需先验证站点;子命令 urlstatus/submit/stats/pagequery,对应 GetUrlInfo/SubmitUrl/GetQueryStats/GetPageQueryStats) | ③ 凭证缺失/网络/HTTP/API 错→exit 1;用法/SSRF 拒→exit 2;空查询列表≠0≠错(历史不回填,输出声明) | QueryStats CSV 对齐 gsc_mining 契约(CTR 小数;-1 点击哨兵值不用);配额以 GetUrlSubmissionQuota 实读为准不硬编 |
@@ -188,14 +188,14 @@
 
 | 数据源 | 接入条件 | 限额或口径 | 官方来源(页面日期) |
 |---|---|---|---|
-| Search Console API · Search Analytics | 服务账号邮箱加为属性用户;启用 Search Console API | 每站点 1,200 次/分钟;每用户 1,200 次/分钟;每项目 40,000 次/分钟、30,000,000 次/天;另有 10 分钟与 1 天的负载配额 | [Usage Limits](https://developers.google.com/webmaster-tools/limits)(2025-08-28) |
-| Search Console API · URL Inspection | 同上 | 每站点 2,000 次/天、600 次/分钟;每项目 10,000,000 次/天、15,000 次/分钟 | 同上 |
-| CrUX API | Google Cloud API key(为 Chrome UX Report API 开通) | 每项目 150 次/分钟,免费 | [CrUX API](https://developer.chrome.com/docs/crux/api)(2026-10-13) |
+| Search Console API · Search Analytics | 服务账号邮箱加为属性用户;启用 Search Console API | 按站点、用户、项目限 QPM/QPD;另有 10 分钟与 1 天的负载配额 | [配额表](facts.md#api-quotas) |
+| Search Console API · URL Inspection | 同上 | 按站点、项目限 QPM/QPD,比 Search Analytics 紧 | 同上 |
+| CrUX API | Google Cloud API key(为 Chrome UX Report API 开通) | 按项目限速,免费 | [配额表](facts.md#api-quotas) |
 | CrUX History API | 同一个 key | 每周一更新;保留 40 周;默认返回 25 个采集期 | [History API](https://developer.chrome.com/docs/crux/history-api)(2025-04-11) |
 | PageSpeed Insights API | key 可选;频繁调用建议加 | 文档写明计划停止返回 CrUX 现场数据;限额看 Cloud 控制台配额页 | [PSI 入门](https://developers.google.com/speed/docs/insights/v5/get-started)(2025-08-28) |
 | GA4 Data API | GA4 属性 + 授权 | 标准属性:核心 200,000 token/天、40,000 token/小时;Analytics 360:2,000,000 / 400,000;太平洋时间午夜刷新 | [Data API 配额](https://developers.google.com/analytics/devguides/reporting/data/v1/quotas)(2026-10-13) |
 | Bing Webmaster API | 验证站点;Settings → API Access 生成 key(每用户一个);Microsoft 推荐 OAuth 2.0 | 提交配额以 `GetUrlSubmissionQuota` 实读为准 | [Getting access](https://learn.microsoft.com/en-us/bingwebmaster/getting-access)(2022-10-13) |
-| IndexNow | 站点自部署 key 文件 | 每次 POST 至多 10,000 个 URL;各引擎自定每日阈值;参与引擎不含 Google | [文档](https://www.indexnow.org/documentation)、[FAQ](https://www.indexnow.org/faq) |
+| IndexNow | 站点自部署 key 文件 | 单次 POST 上限见[事实表](facts.md#indexnow-batch);各引擎自定每日阈值;参与引擎不含 Google | [文档](https://www.indexnow.org/documentation)、[FAQ](https://www.indexnow.org/faq) |
 
 ## 检查清单
 

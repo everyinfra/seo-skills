@@ -77,7 +77,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Trac
 ## What could change this conclusion
 
 - {数据缺口:排名工具为采样(地域/个性化/时点),与真实用户位置可差 ±;不同工具不可比}
-- {仅相关非因果:升幅与 {} 同期发生非证明;定案:GSC 同词 CTR/点击同向确认(窗口含 2025-05-13 至 2026-04-27 时 CTR 不可信,只看点击,[官方记录](https://support.google.com/webmasters/answer/6211453))}
+- {仅相关非因果:升幅与 {} 同期发生非证明;定案:GSC 同词 CTR/点击同向确认(窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时 CTR 不可信,只看点击)}
 - {样本局限:追踪集 {} 词,长尾未覆盖;AIO 出现为时点观测}
 - {继承假设:桶界与 winner/loser 阈值沿用 {日期} 校准}
 

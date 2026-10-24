@@ -116,7 +116,7 @@ StatCounter 搜索引擎份额,2026-09,全设备(页面表读数;同月 CSV 导�
 
 ### 4.2 测量
 
-- 【官】Search Console 的「Generative AI performance」报告(2026-06-03 公布,[Google 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports);2026-08-31 起覆盖所有站点,[SEJ](https://www.searchenginejournal.com/google-search-console-ai-reports-rolled-out-worldwide/587836/))只给**展示**,涵盖 AI Overviews 和 AI Mode,按页面、国家、日期、设备拆分,没有点击(【官】[帮助页](https://support.google.com/webmasters/answer/16984139?hl=en))。原先写的「曝光/点击」不对,已改。
+- 【官】Search Console 的「Generative AI performance」报告(公布与全球开放日期见[事实表](../overview/facts.md#gsc-genai))只给**展示**,涵盖 AI Overviews 和 AI Mode,按页面、国家、日期、设备拆分,没有点击(【官】[帮助页](https://support.google.com/webmasters/answer/16984139?hl=en))。原先写的「曝光/点击」不对,已改。
 - 站点没有足够展示时看不到这份报告。西语站的 AI 可见性以它为第一数据源,第三方 AIO 抽样只作补充。
 
 ### 4.3 西语 LLM 偏见

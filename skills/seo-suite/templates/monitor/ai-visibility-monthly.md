@@ -98,7 +98,7 @@ mention 与 citation 两条线分开(被提不被引=内容不被信任;被引�
 | 3 | 点名只来自 signals 节 | 同一输出「signals」节 | 通过:只点名 `[signal]` 行(|Δ|≥5pp 且 n≥10)。失败:出现门限外的点名 |
 | 4 | 引用来源三分之和等于 domain_total | `report` 的 `citation share` 节:`brand_hits / domain_total` 与 co-cited 列表 | 通过:brand + competitor + third-party = domain_total。失败:不等 |
 | 5 | 内容健康交叉 | `python3 scripts/gsc_mining.py cur.csv prev.csv --decay --json`(两期 GSC 导出;衰退判据:上期点击 ≥10 且降幅 ≥25%) | 通过:衰退页与 Bottom5 主题交叉并标 decay 来源。失败:混进面板输出 |
-| 6 | GSC 异常期 | 两期窗口是否含 2025-05-13 至 2026-04-27([官方记录](https://support.google.com/webmasters/answer/6211453)) | 通过:不含,或只比点击。失败:含该期却比较展示、CTR、平均排名 |
+| 6 | GSC 异常期 | 两期窗口是否含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly) | 通过:不含,或只比点击。失败:含该期却比较展示、CTR、平均排名 |
 | 7 | 恰 3 条建议,各带可复测判据 | 数第 5 节条数;每条「成功标准」含数值与配对 n | 通过:3 条且判据可复测。失败:缺判据 |
 
 ## What could change this conclusion

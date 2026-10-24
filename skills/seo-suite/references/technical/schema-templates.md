@@ -32,8 +32,8 @@
 | BreadcrumbList | 显示了面包屑的页面 | 至少 2 个 ListItem；每项 `name`、`position`、`item`（最后一项可省 `item`） | 2025-01-22 起只在桌面结果显示；Google 建议写典型用户路径，不必照搬 URL 层级（[Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)） |
 | SoftwareApplication | 软件或 App 介绍页 | `name`、`offers.price`（免费写 0）、`aggregateRating` 或 `review` 二选一 | 没有真实评分就拿不到该富结果；可以只作词汇描述，绝不编造（[软件应用](https://developers.google.com/search/docs/appearance/structured-data/software-app)） |
 | LocalBusiness 及其子类型 | 门店页，一店一页 | `name`、`address` | 可影响知识面板里的营业时间等信息和商家轮播；用最具体的子类型（[本地商家](https://developers.google.com/search/docs/appearance/structured-data/local-business)） |
-| FAQPage | 页面上真实存在的问答区 | 富结果 2026-05-07 起停展，文档 2026-06-15 删除（[更新记录](https://developers.google.com/search/updates)） | 不当作获得富结果或 AI 引用的手段；用户提交问答的页面用 QAPage |
-| HowTo | — | 2023-09-13 起桌面也停展（[公告](https://developers.google.com/search/blog/2023/08/howto-faq-changes)） | 步骤用有序列表写清楚 |
+| FAQPage | 页面上真实存在的问答区 | 富结果已停展，文档已删除（[日期](../overview/facts.md#rich-results)） | 不当作获得富结果或 AI 引用的手段；用户提交问答的页面用 QAPage |
+| HowTo | — | 桌面和移动端都已停展（[日期](../overview/facts.md#rich-results)） | 步骤用有序列表写清楚 |
 
 ## 三、最小示例（自写）
 

@@ -39,7 +39,7 @@ _For: {作者 / 审核人} · Date: {YYYY-MM-DD} · Market: {市场/语言} · �
 9. **标题层级不跳级** [机检] — 怎么查:`site_audit.py` 的 `headings` 类「跳级」发现。通过:无跳级 WARN。失败:把跳级标题改成相邻层级。这是可读性和无障碍口径,Google 说标题顺序对搜索没有影响。
 10. **段落不过长** [人工] — 怎么查:拉丁文 `awk 'BEGIN{RS=""} {n=split($0,w," "); if(n>150) print "段"NR": "n"词"}' 稿件.md`;CJK 用 `cat 稿件.txt | python3 scripts/text_metrics.py --market zh` 看句长节奏后目测段落。通过:每段 ≤150 词(CJK ≤250 字,本套件提示阈值)。失败:切分段落或转列表。
 11. **首段三查** [机检] — 怎么查:`content_score.py` 的 `upfront_intent` 维度(三查:首句点名主题;前 100 词含数字或具体事实;先答案后展开)。通过:三查都过。失败:重写首段,结论句提到第一句。这是读者口径;Google 说不需要为 AI 功能专门改写([AI 功能](https://developers.google.com/search/docs/appearance/ai-features))。
-12. **有一组真问答** [人工,market_lint 问句密度仅供参考] — 怎么查:读页面,问题来自 PAA、评论或工单原话,答案可单独读懂。通过:页面可见 ≥1 组真问答(答 ≤3 句)。失败:从 PAA/评论/工单补 1 组。FAQ 富结果自 2026-05-07 起不再展示([更新记录](https://developers.google.com/search/updates#faq-deprecation)),不为展示位新增问答类标记。
+12. **有一组真问答** [人工,market_lint 问句密度仅供参考] — 怎么查:读页面,问题来自 PAA、评论或工单原话,答案可单独读懂。通过:页面可见 ≥1 组真问答(答 ≤3 句)。失败:从 PAA/评论/工单补 1 组。FAQ 富结果已不再展示([日期](../../references/overview/facts.md#rich-results)),不为展示位新增问答类标记。
 
 ## C. 内容组(13-21)
 

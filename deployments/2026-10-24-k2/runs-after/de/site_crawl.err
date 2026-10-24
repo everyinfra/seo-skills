@@ -1,0 +1,3 @@
+[site_crawl] ⚠ sitemapindex 含 419 个子表,按位置均匀抽 100 个(含首尾): https://www.spiegel.de/sitemaps/videos/sitemap.xml
+[site_crawl] ⚠ sitemapindex 含 23707 个子表,按位置均匀抽 100 个(含首尾): https://www.spiegel.de/sitemap.xml
+[site_crawl] ⚠ 发现 28497+ URL 超过 --max 40,已截断——大站建议采样(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)

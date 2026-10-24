@@ -92,5 +92,5 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Market: {目标市场/语言} · Prod
 
 ## Method Notes
 
-- 数据源与抓取时间:{关键词工具+GSC+日期}。已知坑:{新页收录和排名需要时间,用 Search Console 网址检查看收录状态;90 天目标按保守 CTR 假设;含 2025-05-13 至 2026-04-27 的窗口里展示、CTR 不可信,基线只用点击或此后的数据([官方记录](https://support.google.com/webmasters/answer/6211453))}。数字缺失写 [要追加: 数据源],禁编造。
+- 数据源与抓取时间:{关键词工具+GSC+日期}。已知坑:{新页收录和排名需要时间,用 Search Console 网址检查看收录状态;90 天目标按保守 CTR 假设;窗口含[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)时展示、CTR 不可信,基线只用点击或此后的数据}。数字缺失写 [要追加: 数据源],禁编造。
 - 符号:P1=90 天内必做,P2=本季度,P3=backlog(本套件口径);目标值全部为本站历史基线外推,不用行业平均。

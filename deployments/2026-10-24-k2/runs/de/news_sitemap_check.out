@@ -1,0 +1,15 @@
+================================================================
+news_sitemap_check | https://www.spiegel.de/sitemaps/news-de.xml
+✓ curl4  200 直返无重定向                            HTTP 200 直返(128473 bytes)
+✓ curl2  条数上限                                  185 条(≤1000 最佳实践)
+✓ ext    <news:news> 存在率 / 混入非新闻 URL           <news:news> 存在率 100%(185/185)
+✓ curl3  必填三件套(publication/date/title)         publication(name+language)/publication_date/title 185/185 齐
+✓ curl1  48h 窗口(协议红线)                          全部 ≤48h(最新 0.0h 前)
+✓ ext    时间戳精度                                 时间戳均带时间(部分 date-only 属错误清单 #5)
+✓ ext    publication name 一致性                  站内一致: DER SPIEGEL
+⚠ ext    title 格式(长度/站名逆序)                     4 条 title ≥100 字符
+✓ ext    loc 绝对 URL                            loc 均为绝对 URL
+✓ curl5  引用页 noindex 抽查                        抽查 3/3 条可索引(0 条不可达未计)
+✓ ext    robots.txt Sitemap 声明一致               robots.txt 已声明本 sitemap
+
+==== 结果: 10 ✓ / 1 ⚠ / 0 ✗ / 0 unverified => PASS(退出码 0) ====

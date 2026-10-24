@@ -103,7 +103,7 @@
 ### content-writer(编辑标准)
 
 - 插件要求标题 **hook 驱动**(数字/反共识/点名受众/好奇缺口)+关键词前置+≤60 字符，裸关键词标题判 fail。60 字符是插件的内置阈值：Google 对标题没有固定字符上限，按显示宽度截断。
-- 插件的博客要求:目录镜像全部 H2、featured 图+**≥3 内联图且每图有角色**(图表/截图/比较/数据可视化;装饰性库存图=fail)、FAQ 3-5 题、开头是钩子不是铺垫。它还设了「≥1000 词」地板——本套件不采用：Google 明确说没有偏好的字数（Creating helpful content 页）。FAQ 题数同理只是插件习惯；FAQ 富结果已于 2026-05-07 停展。
+- 插件的博客要求:目录镜像全部 H2、featured 图+**≥3 内联图且每图有角色**(图表/截图/比较/数据可视化;装饰性库存图=fail)、FAQ 3-5 题、开头是钩子不是铺垫。它还设了「≥1000 词」地板——本套件不采用：Google 明确说没有偏好的字数（Creating helpful content 页）。FAQ 题数同理只是插件习惯；FAQ 富结果已停展（[日期](../overview/facts.md#rich-results)）。
 - **intent 定格式**:transactional→landing 不是博客,informational→博客不是销售页;反模式清单:关键词堆砌/填充段/"it depends"式 AI 骑墙/文字墙/与站内既有页意图重复。
 - E-E-A-T 落地=只有亲历者才写得出的细节+原创分析+数据背书;**"Last Click 测试"**:读者读完还需再搜一次→没写完。
 - 合规敏感话题(旅行规则/政府手续/健康安全/报销/管制产品/截止期)必须引官方规则源、写明时限与例外;计算器/清单要把同样的 caveat 编进去。
@@ -152,7 +152,7 @@
 
 多类型同页=单个 `<script type="application/ld+json">` 内包 JSON 数组;校验底线:绝对 URL、ISO 8601 日期、**与页面可见内容一致**、无尾逗号。
 
-过时部分（2026-10-21 复核）：表里的 FAQ、HowTo 来自插件的旧映射——FAQ 富结果 2026-05-07 停展、HowTo 2023-09 起不再展示，见 [schema-examples.md](schema-examples.md)「富结果状态速查」；「Comparison*」不是 schema.org 词汇（词汇表里没有 Comparison 和 ComparisonTable），替代品对比页用 Article 或 WebPage。
+过时部分（2026-10-21 复核）：表里的 FAQ、HowTo 来自插件的旧映射——FAQ、HowTo 富结果都已不再展示（[日期](../overview/facts.md#rich-results)），见 [schema-examples.md](schema-examples.md)「富结果状态速查」；「Comparison*」不是 schema.org 词汇（词汇表里没有 Comparison 和 ComparisonTable），替代品对比页用 Article 或 WebPage。
 
 ### 单页评分(seo-page)
 

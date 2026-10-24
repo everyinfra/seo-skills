@@ -60,7 +60,7 @@
 子目录还是子域：默认子目录。Google 抓取预算按主机名计，子域单独计算（[crawl budget](https://developers.google.com/crawling/docs/crawl-budget)）。想用子域时，先问"该不该做这个模式"。
 
 **2. sitemap 分片**：
-- 单文件上限 50,000 URL / 50MB，见 gates 第五节。
+- 单文件上限见[事实表](../overview/facts.md#sitemap-limits)，拆分规则见 gates 第五节。
 - 按页型分片，不按序号分片：GSC Page indexing 报告能按单个 sitemap 筛选，分片后就能分页型看索引（[原文](https://support.google.com/webmasters/answer/7440203)）。
 - 不必按优先级排序：Google 说 URL 顺序没有作用（[原文](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)）。
 - `<lastmod>` 写数据更新时间；`sitemap_audit.py` 查"构建日单日簇"类伪造。
@@ -91,7 +91,7 @@
 **2. IndexNow**（[indexnow.org](https://www.indexnow.org/)，核对 2026-10-18）：
 - 参与方：首页列 Microsoft Bing、Naver、Seznam.cz、Yandex、Yep；[FAQ](https://www.indexnow.org/faq) 的提交端点多一个 Amazon（`indexnow.amazonbot.amazon`），另有全局端点 `api.indexnow.org`；登记表 [searchengines.json](https://www.indexnow.org/searchengines.json) 还列 Internet Archive，但它设了 `unsubscribe: true`。
 - Google 不在以上任何名单里，本套件按"Google 不支持"处理；Google 侧靠准确的 lastmod、内链和 GSC 提交 sitemap。
-- 规则：key 8–128 个字符（字母、数字、连字符），放站根 `/{key}.txt`；每次 POST 最多 10,000 个 URL；提交新增、实质更新、删除（404/410）和重定向的 URL，不重复提交没变的 URL；提交计入抓取配额，不保证收录。
+- 规则：key 8–128 个字符（字母、数字、连字符），放站根 `/{key}.txt`；单次 POST 的 URL 数有上限（[事实表](../overview/facts.md#indexnow-batch)）；提交新增、实质更新、删除（404/410）和重定向的 URL，不重复提交没变的 URL；提交计入抓取配额，不保证收录。
 - 工具：`indexnow.py key --out public/`；`indexnow.py submit --host example.com --key KEY --urls changed.txt`（自动按 10,000 分批）。多市场站对 Naver、Yandex 市场尤其值得配。
 
 **3. 抓取监控**（程序化页 >10k 的站，方法见 [log-analysis.md](log-analysis.md)）：按目录切 Googlebot 抓取量，对比流量占比；抓得多、流量少 = 低价值页烧预算。看重复抓取集中在哪些页；抓取后 noindex 比例高就改为不生成。GSC 的 Settings → Crawl stats 看请求数、响应码、主机状态（Google 说不足 1,000 页的站不必看）。
@@ -142,12 +142,12 @@
 
 | 站 | URL 模式 | sitemap 实测 |
 |---|---|---|
-| Wise | `/{locale}/currency-converter/{from}-to-{to}-rate`，另有 `?amount=N`、`/history`、`/chart` | 索引 27 项：15 个按内容类型拆的子 sitemap（send-money、currency-converter、swift-codes、iban、routing-number、compare、cost-of-living、airport-in-city 等）+ 12 个帮助中心语言 sitemap。currency-converter 170 片：169 片各 50,000 条，末片 47,695，共 8,497,695 条 |
+| Wise | `/{locale}/currency-converter/{from}-to-{to}-rate`，另有 `?amount=N`、`/history`、`/chart` | 索引 27 项：15 个按内容类型拆的子 sitemap（send-money、currency-converter、swift-codes、iban、routing-number、compare、cost-of-living、airport-in-city 等）+ 12 个帮助中心语言 sitemap。currency-converter 170 片：169 片各自填满单文件 URL 上限，末片 47,695，共 8,497,695 条 |
 | Zapier | `/apps/{a}/integrations` → `/apps/{a}/integrations/{b}` → `/apps/{a}/integrations/{b}/{id}/{zap-slug}` | zap-templates 336 片（每片 1,000，共 335,260）；双应用页 58 片（每片 2,500，共 144,065）；单应用页 4 片（9,910）；`/templates/details/` 500 片（499,999） |
 | Nextdoor | `/find-neighborhood/` → `/find-neighborhood/{州}/` → `/city/{市}--{州}/` → `/neighborhood/{社区}--{市}--{州}/` | robots.txt 不声明 sitemap；层级靠页内链接（找社区页链 51 个州级页，加州页链 1,155 个城市页） |
 | Webflow | `/made-in-webflow/website/{slug}`、`/made-in-webflow/{tag}`、`/templates/html/{slug}` | `webflow.com/sitemap.xml` 302 到 CloudFront；6 个子 sitemap 按实体拆：showcase 2 片（50,000 + 45,160）、tags 8,739、profiles 14,226、apps 345、manual 8,568（含 1,178 个模板详情页） |
 
-- **Wise**：护城河是自有实时汇率和费用对比，页内有换算器、走势图、汇率提醒。robots.txt 注释说明要避免爬虫在参数上浪费抓取预算，屏蔽 `*redirectUrl=*`、`*/send-money/?sourceCurrency=*` 等；但 `?amount=` 变体进了 sitemap（抽样一片 50,000 条中 37,772 条）。流量估算差异大：[practicalprogrammatic](https://practicalprogrammatic.com/examples/wise) 6,050 万/月，[daydream](https://www.withdaydream.com/library/playbooks/wise)（引 Ahrefs）5,440 万/月，[OMNIUS](https://www.omnius.so/blog/wise-case-study) 1,600 万+/月，均未注明测量日期。"24 个月内索引页 7K→1.7M"出自 daydream，未见 Wise 一手出处。
+- **Wise**：护城河是自有实时汇率和费用对比，页内有换算器、走势图、汇率提醒。robots.txt 注释说明要避免爬虫在参数上浪费抓取预算，屏蔽 `*redirectUrl=*`、`*/send-money/?sourceCurrency=*` 等；但 `?amount=` 变体进了 sitemap（抽样一个满额分片，其中 37,772 条，约 76%）。流量估算差异大：[practicalprogrammatic](https://practicalprogrammatic.com/examples/wise) 6,050 万/月，[daydream](https://www.withdaydream.com/library/playbooks/wise)（引 Ahrefs）5,440 万/月，[OMNIUS](https://www.omnius.so/blog/wise-case-study) 1,600 万+/月，均未注明测量日期。"24 个月内索引页 7K→1.7M"出自 daydream，未见 Wise 一手出处。
 - **Zapier**：护城河是平台真实的 trigger/action 数据和用户建的 zap 模板。分片远小于 50,000 上限；"便于增量更新"是本套件推断，Zapier 未说明。流量：[practicalprogrammatic](https://practicalprogrammatic.com/examples/zapier) 称 260 万/月（未注明日期）。
 - **Nextdoor**：邻里页汇总会员帖子话题、公开活动、公共机构公告和人口普查数据；会员对话只对认证会员可见（[官方帮助](https://help.nextdoor.com/s/article/About-neighborhood-pages)）。标题按页型公式且随季节变，实测 `San Jose, CA | Trick or Treat Map and News, Crime, Lost Pets, Free Stuff`；描述由该城事实生成。Nextdoor 自述覆盖 35 万+ 社区（[2026-03-09 新闻稿](https://about.nextdoor.com/press-releases/nextdoor-publishes-2025-transparency-report)），这是网络覆盖数，不是可索引页数。
 - **Webflow**：护城河是用户提交的作品和模板（创作者要曝光，站要内容）。模板页 title 自称 "7000+" 模板，sitemap 只列 1,178 个详情页。CMS 限额见 gates 第八节。[Kisi 案例](https://webflow.com/blog/kisi-and-webflow-seo)是 Webflow 博客上的客户自述：3 个月自然会话 12K→50K（标题称 +300%），图表为 2018 年数据；做法是按内容类型建模板、用 Collection 自动出相关链接。

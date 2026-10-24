@@ -15,7 +15,7 @@ _For: {决策人} · Date: {YYYY-MM-DD} · Domain/section: {} · Main issue cate
 |---|---|---|---|
 | 抽查页数(占全站) | {} ({}%) | 首页+N 模板页+N 随机页 |  |
 | 索引覆盖率(已编入/已提交) | {}% | ≥{}% |  |
-| LCP p75 / INP p75 / CLS p75 | {}ms / {}ms / {} | ≤2500ms / ≤200ms / ≤0.1(字段数据,[web.dev 官方阈值](https://web.dev/articles/vitals),核对 2026-10-21) |  |
+| LCP p75 / INP p75 / CLS p75 | {}ms / {}ms / {} | 良好档(字段数据,[阈值表](../../references/overview/facts.md#cwv)) |  |
 | 可索引性阻断页数 | {} | noindex/robots/canonical 吸走 |  |
 | 修复项 P0/P1/P2 | {}/{}/{} |  |  |
 
@@ -46,7 +46,7 @@ Evidence 必须可复查;不得报告页面上不存在的信号。爬取与状�
 | 2 | 页面可索引 | `python3 scripts/site_audit.py URL … --market XX --json`;Search Console 网址检查抽 {} 页 | 通过:无 `robots`(noindex)CRITICAL,网址检查「已编入」。失败:noindex、被 canonical 吸走或「已抓取 - 尚未编入」 |
 | 3 | 重定向链 | `python3 scripts/redirect_chain.py URL` | 通过:无循环,≤1 跳(本套件口径;脚本默认超过 5 跳判 CRITICAL)。失败:循环或多跳 |
 | 4 | sitemap | `python3 scripts/sitemap_audit.py https://站点` | 通过:六坏桶(非 200、3xx、noindex、canonical 他指、robots 屏蔽、参数重复)全空,退出码 0。失败:任一桶非空(退出码 1) |
-| 5 | 字段 CWV | `python3 scripts/field_data.py --url URL --strategy both --json`(需 CrUX key;CrUX 为 28 天滑动窗口) | 通过:p75 的 LCP ≤2500ms、INP ≤200ms、CLS ≤0.1。失败:任一项超阈。只有实验室数据时写「未验证字段」,不判通过 |
+| 5 | 字段 CWV | `python3 scripts/field_data.py --url URL --strategy both --json`(需 CrUX key;CrUX 为滑动窗口,[长度](../../references/overview/facts.md#crux-window)) | 通过:p75 的 LCP、INP、CLS 都在[良好档](../../references/overview/facts.md#cwv)。失败:任一项超阈。只有实验室数据时写「未验证字段」,不判通过 |
 | 6 | 渲染一致 | 浏览器看渲染后 DOM;`curl -s URL` 看初始 HTML | 通过:title、canonical、正文要点一致。失败:关键信息只在 JS 渲染后出现 |
 | 7 | 结构化数据 | `python3 scripts/schema_lint.py URL`;Rich Results Test | 通过:无 WARN,标记内容页面上看得到。失败:悬空 @id、占位符、标记不可见内容 |
 | 8 | 爬取行为(有日志时) | `python3 scripts/log_session.py --log access.log --ua Googlebot --json` | 通过:无 `param_loop`(同路径参数请求 >10)、`deep_crawl`(深度 >8)。失败:出现陷阱特征 |
@@ -68,7 +68,7 @@ Evidence 必须可复查;不得报告页面上不存在的信号。爬取与状�
 - {抽样局限:仅审计 {} 页,占全站 {}%,模板级外推需复核}
 - {渲染依赖:基于 JS 渲染后 DOM;水合类 bug 需 GSC 复核}
 - {因果模糊:流量下降与 {} 同期,无法排除算法/季节性;定案:L1-L5 归因链}
-- {数据坑:CrUX 是 28 天滑动窗口,修复后数字要等几周才全部反映([web.dev](https://web.dev/articles/crux-and-rum-differences));Search Console 展示、CTR、平均排名在 2025-05-13 至 2026-04-27 记录有误,点击不受影响([官方记录](https://support.google.com/webmasters/answer/6211453))}
+- {数据坑:CrUX 是滑动窗口([长度](../../references/overview/facts.md#crux-window)),修复后数字要等几周才全部反映;Search Console 展示、CTR、平均排名在[GSC 数据异常期](../../references/overview/facts.md#gsc-anomaly)里记录有误,点击不受影响}
 
 ## Method Notes
 

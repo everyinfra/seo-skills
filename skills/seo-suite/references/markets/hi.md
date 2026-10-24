@@ -153,7 +153,7 @@ StatCounter 印度搜索引擎份额,2026-09 月值,取数 2026-10-21([页面](h
 | 关键词 | Google Keyword Planner + 印地语 suggest | suggest 是免费 Hinglish 语料 |
 | 快照诊断 | GSC 正则 | 见 3.2 |
 | 聚合器占位 | JustDial、IndiaMART、Sulekha、TradeIndia | 实体与引用信号 |
-| AI 测量 | GSC 生成式 AI 表现报告 + GA4 来源正则 + ChatGPT 印地语/Hinglish 双提示 | 报告 2026-06-03 公布,2026-08-31 起全球开放([帮助页](https://support.google.com/webmasters/answer/16984139))([Search Central 博客](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)) |
+| AI 测量 | GSC 生成式 AI 表现报告 + GA4 来源正则 + ChatGPT 印地语/Hinglish 双提示 | 报告已对全球开放([日期](../overview/facts.md#gsc-genai)) |
 | hreflang | `hi`、`hi-IN`、`en-IN`;`ta-IN`、`te-IN` | 泰米尔、泰卢固独立决策 |
 
 ## 上线检查清单

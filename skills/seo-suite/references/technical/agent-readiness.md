@@ -105,7 +105,7 @@
 
 - Search 内的 AI 功能:robots.txt 管 Googlebot;`nosnippet`、`data-nosnippet`、`max-snippet`、`noindex` 限制展示([文档](https://developers.google.com/search/docs/appearance/ai-features))。没有 AI 专用 robots 或 meta 指令。
 - `Google-Extended`(robots.txt 产品 token):管 Gemini 模型训练,以及 Gemini Apps 和 Vertex AI「Grounding with Google Search」的 grounding;不影响 Search 收录和排名([文档](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers))。
-- Search Console「Search generative AI」控制:2026-06-03 [宣布](https://blog.google/products-and-platforms/products/search/new-controls-website-owners/)并在英国测试,2026-08-31 起全球开放([帮助](https://support.google.com/webmasters/answer/16908024))。覆盖 AI Overviews、AI Mode、Discover 的生成式 AI 功能;排除后不出链接、不作 grounding 输入;不影响训练;约 1–2 天生效;子属性默认继承父属性。何时考虑排除(本套件口径):AI 呈现直接伤漏斗的内容(付费墙摘要、进行中的声誉事件);先用 GSC 生成式 AI 报告估算会丢的展示。
+- Search Console「Search generative AI」控制:先[宣布](https://blog.google/products-and-platforms/products/search/new-controls-website-owners/)并在英国测试,后全球开放([日期](../overview/facts.md#gsc-genai))。覆盖 AI Overviews、AI Mode、Discover 的生成式 AI 功能;排除后不出链接、不作 grounding 输入;不影响训练;约 1–2 天生效;子属性默认继承父属性。何时考虑排除(本套件口径):AI 呈现直接伤漏斗的内容(付费墙摘要、进行中的声誉事件);先用 GSC 生成式 AI 报告估算会丢的展示。
 
 ### 3. 六规范表面与探针计分(本套件口径,取自第三方仓库)
 

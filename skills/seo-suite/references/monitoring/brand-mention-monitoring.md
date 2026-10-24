@@ -61,7 +61,7 @@
 | 中文 | 对国产 AI 助手提问时留意平台的频率限制，错开时段，不要批量；指标可用:覆盖率、首屏推荐率、单篇被引次数、留存天数、同词竞品对比（行业说法，无统一标准）；知乎的「引证」标记纳入实体一致性检查 |
 | 俄语区 | Yandex Webmaster 的「Видимость сайта в Алисе AI」报告（官方，见 geo-evidence）；Telegram 公开频道网页镜像（t.me/s/）是否被 Yandex 收录；红线:行为因素刷量会被惩罚 |
 | 韩语区 | Naver Search Advisor 的 AI 브리핑 인용수（官方，见 geo-evidence）；`site:` 查询看收录数 |
-| 日语区 | Search Console 的生成式 AI 效果报告（官方；2026-08-31 起对全球网站开放，只报展示，见 [kpi-definitions](kpi-definitions.md)）；分引擎分开跟，不同引擎偏好的来源不同（从业者观察） |
+| 日语区 | Search Console 的生成式 AI 效果报告（官方；已对全球网站开放，只报展示，[日期](../overview/facts.md#gsc-genai)）；分引擎分开跟，不同引擎偏好的来源不同（从业者观察） |
 | 英文 | 自托管替代栈:elmo、oneglanse、limelit-open（第三方开源）；G2、Capterra、Crunchbase 的描述与 About 页保持一致 |
 
 ## 检查清单

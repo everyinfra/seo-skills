@@ -5,6 +5,20 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+(暂无)
+
+## 0.36.0 - 2026-10-24
+
+- **事实单一来源(2026-10-24)**:新增 `references/overview/facts.md`,收 11 类在多个文件里反复出现的外部事实(CWV 阈值、CrUX 窗口、Search Console 数据异常期、FAQ / HowTo 富结果退役日期、生成式 AI 效果报告日期、Search Console 保留期、sitemap 上限、Googlebot 抓取上限、API 配额、IndexNow 单批上限、搜索引擎份额),每条写值、一手来源和核对日期(2026-10-24 逐条重读原文)。74 个文件里 204 处硬写改成链接事实表。新看门 `tests/test_fact_single_source.py`:有人在别处重新硬写这些值就红(修前在改动前的树上实测 204 处 + 2 条一致性失败);事实表的值与脚本常量(`field_data`、`did_attribution`、`sitemap_audit`、`indexnow`、`gsc_api`)和市场文件份额自动核对。顺带修:`split_test.py` 写的 GSC 异常期结束日 2026-04-30 → 2026-04-27。记录在仓根 `deployments/2026-10-24-k2/`。
+  Single source of truth for 11 repeated external facts (`references/overview/facts.md`); 204 hardcoded copies in 74 files now link to it; a new guard test fails when a value is hardcoded again and checks the table against script constants.
+- **三个非中英西市场实战(2026-10-24)**:10 个 beta 脚本在日本 asahi.com、韩国 yna.co.kr、德国 spiegel.de 各跑一次(30 次),逐条对照站点原始响应判定;修了 14 处误报(另有 3 处真问题、field_data 因无 key 跑不了),每个带用真实响应做 fixture 的回归测试(`tests/test_k2_field_fixes.py`,修前红、修后绿):
+  - `site_crawl.py`:sitemap 模式也先抓首页;带 `?iref=` 等跟踪参数的内链计入干净 URL 的入链(修前 asahi 40 篇首页直链文章全被判孤儿);`co.jp`、`co.kr` 等国家码二级后缀按三段算可注册域(修前 `www.yna.co.kr` 被归成 `co.kr`,默认模式会把别家 .co.kr 站当自家子域);sitemap 按 50MB 上限读取(修前 2MB 截断,spiegel 2.25MB 的 index 解析失败);子 sitemap 超上限时按位置均匀抽样(修前只取最前面的 1947 年起归档);被 `--max` 截断时孤儿标为「只在样本内判定」(`orphans_partial`),`orphan_fix`、`link_graph` 同步提示。
+  - `link_graph.py`:带参数的内链边对到干净 URL(修前 asahi「内链边 0」,PageRank 全是 10.00)。
+  - `sitemap_audit.py`:给站点 URL 时先读 robots.txt 的 Sitemap 声明(修前 yna /sitemap.xml 404 直接 FATAL),声明里的 index 照常展开;子 sitemap 超 `--max-child` 时均匀抽样(修前 spiegel 判「最新 lastmod 1978 年,过期」)。
+  - `above_fold.py`:不把「跳到正文」链接(asahi、yna、spiegel 三站都有)和 `x-cloak` / `display:none` 的隐藏块当首屏文本。
+  - `news_sitemap_check.py`:robots.txt 只声明 sitemap index、index 里列着本 sitemap 时不再报「未声明」;news:title ≥100 字符只提示(Google 文档没有长度上限)。
+  Field run on Japanese, Korean and German news sites: 14 false positives fixed in site_crawl, link_graph, sitemap_audit, above_fold and news_sitemap_check, each with a regression test built from the real responses.
+
 - **seo-suite 瘦身(2026-10-21)**:SKILL.md 从 47KB 压到 9.3KB,只留 intake、能力路由表和输出结构;87 个脚本的说明搬到 `references/overview/script-catalog.md`,原路由正文搬到 `routing-rules.md` 附节;`audit-rule-catalog.md`(307KB)按 20 个规则类别拆到 `references/technical/audit-rules/`,原文件改为索引页;使用原则 0 改为按任务大小决定是否先跑全站体检。内容只搬不改,搬运前后逐行核对无丢失。
   Slimmed seo-suite: SKILL.md cut from 47KB to 9.3KB as a pure router, script docs moved to `script-catalog.md`, and the 307KB audit rule catalog split into 20 per-category files with an index page; content moved verbatim.
 - **site_audit alt 判定(2026-10-21,真实站点重跑发现)**:`alt=""`(装饰图的正确写法,W3C WAI)不再算 alt 缺失,只有没有 alt 属性才算;回归测试 `tests/test_b63_alt_empty.py`。`gsc_api.py` 帮助里的配额说明改为每站点/每用户 1,200 QPM。

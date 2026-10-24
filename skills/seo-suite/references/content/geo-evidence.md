@@ -19,7 +19,7 @@
 - **Google AI 功能**（[AI features](https://developers.google.com/search/docs/appearance/ai-features)）：页面要作为 AI Overviews / AI Mode 的链接出现，只需已被索引、且可以带摘要展示；没有额外技术要求。控制入口是 Googlebot 的 robots.txt，以及 `nosnippet`、`data-nosnippet`、`max-snippet`、`noindex`。这些流量计入 Search Console 效果报告的「网页」类型。
 - **Google 生成式 AI 优化指南**（[ai-optimization-guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)，2026-05-15 发布，2026-07-10 更新）：Google Search 不使用 llms.txt、AI 文本文件或特殊标记；不要求切块；没有理想页长；不需要为 AI 改写；追逐不真实的提及作用有限；结构化数据不是必需项，也没有专用 schema。为每个 fan-out 变体批量建页、以操纵排名或 AI 回答，违反规模化内容滥用政策。站点还必须在 Search Console 中处于「纳入生成式 AI 功能」状态。
 - **Google 政策**：2026-05-15 起，垃圾内容政策明确适用于生成式 AI 回答；2026-06-15 起，指南补充 llms.txt 不会正面或负面影响 Google 可见性（[文档更新记录](https://developers.google.com/search/updates)）。
-- **Search Console**：[Search generative AI 控制](https://support.google.com/webmasters/answer/16908024)（2026-08-31 全球上线，路径「设置 → Search generative AI」）可纳入或排除 AI Overviews、AI Mode 和 Discover 的生成式功能。排除通常 1–2 天生效。它不管训练；训练控制用 Google-Extended。[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)（[2026-06-03 发布](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)，先对部分站点开放，2026-08-31 全球）只有展示次数，维度是页面、国家、日期、设备；这些数据同时计入总体效果报告，AI 功能带来的点击仍拆不出来。
+- **Search Console**：[Search generative AI 控制](https://support.google.com/webmasters/answer/16908024)（全球开放日期见[事实表](../overview/facts.md#gsc-genai)，路径「设置 → Search generative AI」）可纳入或排除 AI Overviews、AI Mode 和 Discover 的生成式功能。排除通常 1–2 天生效。它不管训练；训练控制用 Google-Extended。[生成式 AI 效果报告](https://support.google.com/webmasters/answer/16984139)（先对部分站点开放，后对全球开放，[日期](../overview/facts.md#gsc-genai)）只有展示次数，维度是页面、国家、日期、设备；这些数据同时计入总体效果报告，AI 功能带来的点击仍拆不出来。
 - **Bing / Copilot**（[Bing Webmaster Guidelines](https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a)）：Bing 与 Copilot 共用抓取、索引、排名基础。指南原话：GEO「does not guarantee grounding or citations」。`NOARCHIVE` 让内容不进 Copilot 回答和 grounding；`NOCACHE` 只允许使用网址、标题和摘要。结构化数据不保证可见性。面向语言模型的 prompt injection 会被降权或移除。
 - **第三方工具**（[Google 指南](https://developers.google.com/search/docs/fundamentals/third-party-seo)，2026-06-05）：第三方工具拿不到 Google 内部排名数据；Google 不评估第三方服务；用工具不保证排名。本套件的评分器一律标注为「启发式」。
 - **内容自查**：Google [有用内容指南](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) 用「Who / How / Why」自查：署名能否链到作者背景；AI 辅助过程是否该披露；内容是否为人而写。指南明确：Google 没有偏好的字数（原文「No, we don't.」）；自查问题里把「改页面日期装作新鲜」列为不该做的事。
@@ -39,7 +39,7 @@ Google 指南不要求切块；它建议语义 HTML 的理由是帮助读者和�
 
 **不采用。** 有真实 FAQ 时，可保留一份与可见正文一致的声明。不扩成隐藏答案库，不把参数、促销语或段落标成 Question。schema.org 词汇存在，不等于搜索产品支持。
 
-- FAQ 富结果自 **2026-05-07** 起不再展示（[2026-05-08 更新记录](https://developers.google.com/search/updates#faq-deprecation)）；2026-06-15 文档下线。旧的「仅医疗/政府站可展示」已不是现行规则。
+- FAQ 富结果已不再展示，文档已下线（[日期与来源](../overview/facts.md#rich-results)）。旧的「仅医疗/政府站可展示」已不是现行规则。
 - [FAQPage 词汇](https://schema.org/FAQPage)仍可描述真实问答；它不带来 AI 优先读取资格。
 - [JSON-LD 说明](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)：script 可放 head 或 body；Google 也能读 JS 注入的 JSON-LD。不渲染 JS 的爬虫只读初始 HTML。位置不是权重开关。
 - 生产引用研究三条，设计不同，结论同向（明细见 [geo-evidence-bank.md](geo-evidence-bank.md) 第七节第 1 条与第八节）：

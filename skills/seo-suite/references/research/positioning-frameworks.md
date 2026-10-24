@@ -116,7 +116,7 @@
 ## 结构化数据（schema 2.0.2）
 
 - 首选 JSON-LD（Google 推荐，head 或 body 末尾）；一页多类型用 `@graph` 组合。
-- **schema.org 合法 ≠ Google 功能资格**：实现前查 Google 当前支持的富结果目录。Google 更新日志（核对 2026-10-21）：FAQ 富结果自 2026-05-07 起不再出现在 Google 搜索，文档于 2026-06-15 移除；sitelinks 搜索框文档于 2024-11-29 移除（"该功能不再可用"）；HowTo 文档 2023-09 移除。逐项状态以 [deprecated-signals](../technical/deprecated-signals.md) 为准。WebSite 类型仍可用于站名。已退役类型仍可做语义描述，但不要为获得已退役外观而实现，也不要把富结果测试测不出退役功能当作实现坏了。
+- **schema.org 合法 ≠ Google 功能资格**：实现前查 Google 当前支持的富结果目录。Google 更新日志（核对 2026-10-21）：FAQ 富结果已不再出现在 Google 搜索，文档已移除（[日期](../overview/facts.md#rich-results)）；sitelinks 搜索框文档于 2024-11-29 移除（"该功能不再可用"）；HowTo 文档也已移除。逐项状态以 [deprecated-signals](../technical/deprecated-signals.md) 为准。WebSite 类型仍可用于站名。已退役类型仍可做语义描述，但不要为获得已退役外观而实现，也不要把富结果测试测不出退役功能当作实现坏了。
 - 常用类型速查：Organization（name/url）、Article（headline/image/datePublished/author）、Product（name/image/offers 含价格与库存）、SoftwareApplication、FAQPage（mainEntity 问答数组）、BreadcrumbList（itemListElement）、LocalBusiness、Event。
 - 校验：Rich Results Test（测 Google 当前支持项，会渲染 JS）、validator.schema.org、Search Console 增强报告。日期 ISO 8601、URL 绝对地址、枚举值精确；schema 必须与页面可见内容一致——标记不存在的内容是作弊。
 
@@ -129,7 +129,7 @@
 `web_fetch`/curl 抓不到 JS 注入的 JSON-LD（Yoast/RankMath 等常客户端注入，转换时 script 被剥掉）。判断有无 schema 要用：浏览器渲染后跑 `document.querySelectorAll('script[type="application/ld+json"]')`、Rich Results Test（渲染 JS）、或 Screaming Frog 导出。**只凭静态抓取报「无 schema」是假发现**。
 
 ### 技术检查要点
-- CWV 阈值（[web.dev](https://web.dev/articles/vitals)，核对 2026-10-21）：LCP 在 2.5 秒内、INP 200 毫秒以内、CLS 0.1 以内，按第 75 百分位、分移动与桌面衡量。
+- CWV 阈值见[事实表](../overview/facts.md#cwv)：按第 75 百分位、分移动与桌面衡量。
 - 收录病：误 noindex、canonical 指错方向、重定向链/环、软 404、无 canonical 的重复。
 - hreflang（多语言，[Google 本地化版本文档](https://developers.google.com/search/docs/specialty/international/localized-versions)，核对 2026-10-21）：每个语言版本必须列出自己和所有其他版本；两页没有互相指向时，这对标签被忽略（不是整簇作废）；备用 URL 要写完整（含 https）；多个同语言不同地区版本时建议给一个无地区的兜底页，可用 x-default；HTML、HTTP 头、sitemap 三种载体等价，同时用没有额外收益。区域码不要写 en-UK（英国是 GB，且 UK 为保留码，对 Google 无效果）。上一版"10+ locale 优先 sitemap"没有出处，已删；"canonical 与 hreflang 冲突时 canonical 赢""跨语言 canonical 会压制该语言收录"在 Google 这页没有逐字对应，按[推断]处理：canonical 指向另一个语言版本，等于告诉 Google 本页是那页的重复页，应避免。
 - 多语言内容：Google 写明本地化版本"只有在页面主要内容未翻译时才被视为重复"，只翻导航模板不翻正文会被当重复页；"大量薄 locale 页拖累全站信号"没有出处（K：做不了真正有用的 locale 页就不做）。
@@ -177,4 +177,4 @@
 
 ### 来源（marketingskills 深读 2026-10-09b）
 - [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) `skills/programmatic-seo/SKILL.md`（v2.1.0）、`skills/schema/SKILL.md`（v2.0.2）、`skills/seo-audit/SKILL.md`（v2.2.0）、`skills/competitor-profiling/SKILL.md`（v2.1.3）、`skills/competitors/SKILL.md`（v2.3.0）（MIT）
-- FAQ 富结果停展（2026-05-07）等 Google 功能状态为该库记载，实操前以 [Google 功能更新日志](https://developers.google.com/search/updates) 当日状态为准
+- FAQ 富结果停展（[日期](../overview/facts.md#rich-results)）等 Google 功能状态为该库记载，实操前以 [Google 功能更新日志](https://developers.google.com/search/updates) 当日状态为准

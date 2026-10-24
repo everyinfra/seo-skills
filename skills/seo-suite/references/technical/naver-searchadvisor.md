@@ -4,7 +4,7 @@
 
 ## 用途
 
-韩语区做收录诊断、robots/sitemap/RSS、IndexNow、结构化数据、제휴（合作）API 评估时读。[ai-crawler-policy.md](ai-crawler-policy.md) 第三节是摘要，这里是规范层。韩国搜索份额有两个第三方口径（核对 2026-10-18）：[InternetTrend 2026-09](https://www.internettrend.co.kr/insights/2026-09-search-engine) Naver 66.75%、Google 27.57%（装了其 Logger 的韩国网站的实际引荐访问，样本统计，不是面板）；[StatCounter 韩国全平台](https://gs.statcounter.com/search-engine-market-share/all/south-korea) 2026-09 Google 47.97%、Naver 43.05%（2026 年只有 1 月 Naver 领先）。
+韩语区做收录诊断、robots/sitemap/RSS、IndexNow、结构化数据、제휴（合作）API 评估时读。[ai-crawler-policy.md](ai-crawler-policy.md) 第三节是摘要，这里是规范层。韩国搜索份额有两个第三方口径（核对 2026-10-18）：[InternetTrend](https://www.internettrend.co.kr/insights/2026-09-search-engine) 来路构成里 Naver 领先（装了其 Logger 的韩国网站的实际引荐访问，样本统计，不是面板）；StatCounter 页面浏览里 Google 略高（[读数](../overview/facts.md#search-share)）。两套口径的数字见 [ko.md](../markets/ko.md)。
 
 ## 一、收录机制：수집요청 与优先级队列（官方文档蒸馏）
 
@@ -157,7 +157,7 @@ Mozilla/5.0 (compatible; Yeti/1.1; +https://naver.me/spd)
 2. **Yeti 组与资源放行**（seo-basic-robots、RFC 9309）→ `curl -s https://<host>/robots.txt | grep -n -i -E '^\s*user-agent\s*:\s*(yeti|\*)'`（容忍冒号前空格）；再用 robots.txt 도구「수집 및 검증」测关键页及其 JS/CSS/favicon → 通过：全部允许。失败：任一被 Disallow。
 3. **Yeti UA 能否访问**（seo-basic-firewall）→ `curl -s -o /dev/null -w '%{http_code}\n' -A 'Mozilla/5.0 (compatible; Yeti/1.1; +https://naver.me/spd)' https://<host>/`，再用浏览器 UA 跑一次 → 通过：两次都是 2xx。失败：只有 Yeti UA 得 403/429/5xx，要查 WAF。WAF 按 IP 验真爬虫时会拦伪造 UA，这时改用 사이트 간단 체크 复核（本套件口径）。
 4. **日志里 Yeti 的真伪**（seo-basic-firewall）→ `python3 $S/scripts/log_session.py --log access.log --ua Yeti` 取 IP；`host <IP>`，再 `host <返回的域名>`；或下载 naverbot.json 后跑 `python3 -c "import json,ipaddress,sys;n=[ipaddress.ip_network(p['ipv4Prefix']) for p in json.load(open('naverbot.json'))['prefixes']];print(any(ipaddress.ip_address(sys.argv[1]) in x for x in n))" <IP>` → 通过：域名以 `.naver.com` 结尾且正向解析回原 IP，或输出 True。失败：两项都不符。
-5. **sitemap 与 RSS**（request-feed）→ `curl -s -o sm.xml -w '%{size_download}\n' <sitemap URL>`；`grep -o '<loc>' sm.xml | wc -l`；`python3 $S/scripts/sitemap_audit.py <sitemap URL>`；RSS 用 `grep -c '<item>'` 并抽查 `<description>` → 通过：<10MB、<50,000 条、全部是同域绝对 URL；RSS ≥1 个 item 且是全文。失败：任一不符。
+5. **sitemap 与 RSS**（request-feed）→ `curl -s -o sm.xml -w '%{size_download}\n' <sitemap URL>`；`grep -o '<loc>' sm.xml | wc -l`；`python3 $S/scripts/sitemap_audit.py <sitemap URL>`；RSS 用 `grep -c '<item>'` 并抽查 `<description>` → 通过：<10MB、条数低于 Naver 上限（见上文「提交校验」）、全部是同域绝对 URL；RSS ≥1 个 item 且是全文。失败：任一不符。
 6. **IndexNow**（indexnow-*）→ `python3 $S/scripts/indexnow.py key --out .`，把 `{key}.txt` 放根目录；`python3 $S/scripts/indexnow.py submit --host <host> --key <key> --urls urls.txt --endpoint naver` → 通过：200 或 202。失败：403、422、429。
 7. **重定向链**（seo-basic-redirect）→ `python3 $S/scripts/redirect_chain.py <旧 URL> --max 5` → 通过：≤5 次、永久迁移用 301、终点 200 且可抓。失败：超限、循环、链中有 Disallow 的 URL。
 8. **noindex 与 nosourceinfo**（markup-structure、faq-serpmissing）→ `curl -sI <URL> | grep -i x-robots-tag`；`curl -s <URL> | grep -i -o '<meta[^>]*name="robots"[^>]*>'` → 通过：要收录的页在响应头和 meta 里都没有 noindex；出现 nosourceinfo 时有书面决策（本套件口径）。失败：要收录的页带 noindex。

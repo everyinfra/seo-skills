@@ -58,6 +58,11 @@ BLOCK_TAGS = {"p", "div", "br", "li", "tr", "section", "article", "header", "foo
 
 CHROME_ROLES = {"navigation", "menu", "menubar", "menuitem", "alertdialog"}
 CONSENT_RE = re.compile(r"cookie|consent|gdpr|onetrust|cookiebot|\bcmp\b|cmp[-_]|cc[-_]banner|privacy[-_]banner", re.I)
+# 「跳到正文」链接(WCAG 2.4.1 Bypass Blocks):页内锚点 + 跳过类措辞。平时视觉隐藏,不是首屏内容。
+SKIP_LINK_RE = re.compile(
+    r"skip\b|jump to|跳过|跳到|跳至|略过|とばして|飛ばして|本文へ|본문|바로가기|"
+    r"zum inhalt|inhalt springen|zur navigation|aller au contenu|passer au contenu|"
+    r"saltar al|ir al contenido|pular para|vai al contenuto|перейти к", re.I)
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
              "source", "track", "wbr", "param"}
 
@@ -70,6 +75,10 @@ def is_chrome(tag, attrs):
     if d.get("role", "").strip().lower() in CHROME_ROLES:
         return True
     if d.get("aria-hidden", "").strip().lower() == "true" or "hidden" in d:
+        return True
+    # 初始隐藏、靠脚本按条件显示的块(Alpine.js x-cloak;内联 display:none):不是首屏内容
+    # (2026-10-24 spiegel.de:x-cloak 的 404 提示被当成首屏文本)
+    if "x-cloak" in d or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden", d.get("style", ""), re.I):
         return True
     ident = " ".join(d.get(k, "") for k in ("id", "class", "aria-label", "data-testid"))
     return bool(CONSENT_RE.search(ident))
@@ -129,6 +138,11 @@ class FoldParser(HTMLParser):
                 self._enter_header()
         if tag == "a":
             self._link_buf = []
+            d = {k.lower(): (v or "") for k, v in attrs}
+            href = d.get("href", "").strip()
+            self._link_start = len(self.text_parts)
+            self._link_skip_hint = href.startswith("#") and len(href) > 1
+            self._link_title = d.get("title", "") + " " + d.get("aria-label", "")
         elif tag in ("h1", "h2", "h3", "h4"):
             self._heading_buf = [tag, []]
         elif tag in BLOCK_TAGS:
@@ -155,9 +169,13 @@ class FoldParser(HTMLParser):
             return
         if tag == "a" and self._link_buf is not None:
             txt = re.sub(r"\s+", " ", "".join(self._link_buf)).strip()
-            if txt:
+            if getattr(self, "_link_skip_hint", False) and SKIP_LINK_RE.search(
+                    txt + " " + getattr(self, "_link_title", "")):
+                del self.text_parts[self._link_start:]      # 跳转链接:文本与链接都不计
+            elif txt:
                 self.links.append(txt)
             self._link_buf = None
+            self._link_skip_hint = False
         elif tag in ("h1", "h2", "h3", "h4") and self._heading_buf is not None:
             txt = re.sub(r"\s+", " ", "".join(self._heading_buf[1])).strip()
             if txt:
