@@ -112,7 +112,9 @@ python3 scripts/health_score.py --input /tmp/audit.json
 python3 scripts/fix_plan.py --audit /tmp/audit.json --estimate
 ```
 
-预期输出一行示意(实测):`主分 0.0 → Weak(example.com 缺 meta description/H1,命中属实) · Lumar 六类合成分 94.3 · AI Search Health 70/100 · fix_plan dry-run 预览逐类修复物+收益预估(默认不写盘)`。
+实测输出(2026-10-27):`主分 100.0 → Excellent(无 CRITICAL;example.com 缺 meta description/H1 记为 WARN,单列不扣主分) · Lumar 六类合成分 97.2 · AI Search Health 70/100 · fix_plan dry-run 预览逐类修复物+收益预估(默认不写盘)`。
+
+<p align="center"><img alt="真实运行:对 example.com 依次跑 site_audit、health_score、fix_plan 三个脚本的终端输出(2026-10-27)" src="assets/real-run-example-com.png" width="100%"></p>
 
 ## 安装
 

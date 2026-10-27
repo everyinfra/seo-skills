@@ -112,7 +112,9 @@ python3 scripts/health_score.py --input /tmp/audit.json
 python3 scripts/fix_plan.py --audit /tmp/audit.json --estimate
 ```
 
-Expected output, one line (measured): `main score 0.0 → Weak (example.com really lacks meta description/H1) · Lumar six-category composite 94.3 · AI Search Health 70/100 · fix_plan dry-run previews per-category fix artifacts + benefit estimate (writes nothing by default)`.
+Measured output (2026-10-27): `main score 100.0 → Excellent (no CRITICAL; the missing meta description/H1 on example.com are WARN, listed apart and not deducted from the main score) · Lumar six-category composite 97.2 · AI Search Health 70/100 · fix_plan dry-run previews per-category fix artifacts + benefit estimate (writes nothing by default)`.
+
+<p align="center"><img alt="Real run: terminal output of site_audit, health_score and fix_plan on example.com (2026-10-27)" src="assets/real-run-example-com.png" width="100%"></p>
 
 ## Install
 

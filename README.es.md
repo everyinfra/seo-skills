@@ -61,6 +61,8 @@ python3 scripts/health_score.py --input /tmp/audit.json
 python3 scripts/fix_plan.py --audit /tmp/audit.json --estimate
 ```
 
+<p align="center"><img alt="Ejecución real: salida de terminal de site_audit, health_score y fix_plan sobre example.com (2026-10-27)" src="assets/real-run-example-com.png" width="100%"></p>
+
 Para auditar con las reglas de un mercado concreto, añade `--market`, por ejemplo `--market ko` (límites de título y descripción en caracteres de ancho completo para coreano).
 
 ## Instalación
