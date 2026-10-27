@@ -1,5 +1,8 @@
 # EveryInfra SEO Skills
 
+<!-- rq223-banner -->
+<p align="center"><img alt="EveryInfra SEO Skills — Skills gratuitas de SEO y GEO global para Claude Code, Codex y 10 hosts" src="assets/banner-es.jpg" width="100%"></p>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">

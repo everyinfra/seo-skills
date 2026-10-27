@@ -1,5 +1,8 @@
 # EveryInfra SEO Skills
 
+<!-- rq223-banner -->
+<p align="center"><img alt="EveryInfra SEO Skills：免费的全球 SEO / GEO 技能，Claude Code、Codex 等 10 个宿主可用" src="assets/banner-zh.jpg" width="100%"></p>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
