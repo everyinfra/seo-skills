@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-26T06:08:04.455019+00:00",
+ "checked_at": "2026-10-27T06:14:35.937101+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -13,8 +13,8 @@
    "ts": "2026-10-11T08:34:44.548408+00:00"
   },
   "google-updates": {
-   "hash": "1e25bf4d3dc95c3b78b37ff243c59b3f",
-   "ts": "2026-10-24T05:47:30.998736+00:00"
+   "hash": "df099ee4f9e049233f25fd9c94f8c128",
+   "ts": "2026-10-27T06:14:11.996881+00:00"
   },
   "gsc-announce": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -55,8 +55,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "a51e704d9d135deda4283a17b8aed4f9",
-   "ts": "2026-10-26T06:07:48.549583+00:00"
+   "hash": "fd8a9038c0a98ce8caa9bc1c9237f75d",
+   "ts": "2026-10-27T06:14:14.654810+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -77,8 +77,8 @@
    "ts": "2026-10-26T06:07:48.821620+00:00"
   },
   "anthropic-crawl": {
-   "hash": "3c2957bd4550dec9752de37a8c0b9750",
-   "ts": "2026-10-25T06:03:29.832687+00:00"
+   "hash": "3e85b0426ec864a1a73b4a075c70aba7",
+   "ts": "2026-10-27T06:14:15.361672+00:00"
   },
   "schema-org": {
    "hash": "c28ae2197ecacc4469ac00319b179a7f",
@@ -89,37 +89,32 @@
    "ts": "2026-10-24T05:47:34.196453+00:00"
   },
   "yandex-wm": {
-   "hash": "49365ec3ab9455d40facd8dbc0fb3fd5",
-   "ts": "2026-10-24T05:47:36.045491+00:00"
+   "hash": "4bd6f47f1005eb46b08c56cfcd354277",
+   "ts": "2026-10-27T06:14:18.626638+00:00"
   },
   "naver-wm": {
-   "hash": "7506826e8f0aa5eb6ef7483793e2be0c",
-   "ts": "2026-10-23T06:01:15.858611+00:00"
+   "hash": "c75dc230d313d1df548bfd2c6076b5c2",
+   "ts": "2026-10-27T06:14:21.947349+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "d21eb7dcc507515062e0d3e67c4afa51",
-   "ts": "2026-10-26T06:08:03.067408+00:00"
+   "hash": "54a1532c1778cfa0eba110604ddac458",
+   "ts": "2026-10-27T06:14:33.133428+00:00"
   },
   "statcounter-ai": {
-   "hash": "1edd789ec796b18ed9a2f874a67bbb60",
-   "ts": "2026-10-26T06:08:03.575263+00:00"
+   "hash": "c31a8cf1b5556f6c77d9b50134fce109",
+   "ts": "2026-10-27T06:14:33.788649+00:00"
   },
   "semrush-sensor": {
-   "hash": "43faa2b0d5702488401ed9275d0d39a6",
-   "ts": "2026-10-21T05:59:57.235567+00:00"
+   "hash": "8092de241f3d4d6ebac604e0ae7adc61",
+   "ts": "2026-10-27T06:14:34.693541+00:00"
   },
   "seroundtable": {
-   "top": "Google Search Ranking Volatility Gets Heated October 24th",
+   "top": "Google Warns Tools On User-Generated Spam Guidance & More",
    "seen": [
-    "Daily Search Forum Recap: October 12, 2026",
-    "Third-Party Google Rank Tracking Struggling Now",
-    "Google Ads Tests Using Google AI For Goals & Assets",
-    "Bing & Copilot Experimenting With Microsoft-Decision-1",
-    "Google Search On PDFs: Conversion, Links, HTML, Ranking, Limits, Crawling...",
     "Gemini 4 Argon In Google Search Via AI Mode",
     "Topics Portfolio In Bing Webmaster Tools AI Reports",
     "Daily Search Forum Recap: October 13, 2026",
@@ -164,9 +159,14 @@
     "Google AI Overview Citation Cards With AI-Generated Summary Snippets",
     "JPEG XL Image Format Not Supported By Google Images & Google Discover",
     "Google Business Profiles Tests New Advanced Performance Reports",
-    "Google Search Ranking Volatility Gets Heated October 24th"
+    "Google Search Ranking Volatility Gets Heated October 24th",
+    "Google Warns Tools On User-Generated Spam Guidance & More",
+    "Daily Search Forum Recap: October 26, 2026",
+    "Over 80% Of Google Searches Have AI Overviews & Growing",
+    "Google Ads AI-Generated Review Summaries Help Doc",
+    "ChatGPT Ads With Learn More Arrow Link; Some Served Through Amazon DSP"
    ],
-   "ts": "2026-10-26T06:08:04.454695+00:00"
+   "ts": "2026-10-27T06:14:35.936865+00:00"
   },
   "google-docs-rss": {
    "top": "Updated guidance on crawlable URL structures",
