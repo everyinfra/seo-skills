@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-27T06:14:35.937101+00:00",
+ "checked_at": "2026-10-28T06:50:35.519263+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -32,15 +32,16 @@
    "ts": "2026-10-11T08:34:46.994868+00:00"
   },
   "lighthouse": {
-   "top": "Lantern Test Data",
+   "top": "v13.6.0",
    "seen": [
     "Lantern Test Data",
     "v13.5.0",
     "v13.4.1",
     "v13.4.0",
-    "v13.3.0"
+    "v13.3.0",
+    "v13.6.0"
    ],
-   "ts": "2026-10-11T08:34:47.823438+00:00"
+   "ts": "2026-10-28T06:50:15.365076+00:00"
   },
   "bing-wm": {
    "top": "Introducing Topics Portfolio (Beta) in AI Performance",
@@ -55,8 +56,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "fd8a9038c0a98ce8caa9bc1c9237f75d",
-   "ts": "2026-10-27T06:14:14.654810+00:00"
+   "hash": "0909045043c5327ea6228afbebf2b973",
+   "ts": "2026-10-28T06:50:16.159033+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -89,37 +90,32 @@
    "ts": "2026-10-24T05:47:34.196453+00:00"
   },
   "yandex-wm": {
-   "hash": "4bd6f47f1005eb46b08c56cfcd354277",
-   "ts": "2026-10-27T06:14:18.626638+00:00"
+   "hash": "570a5d5e3dea1c0839eb476f5cf1663d",
+   "ts": "2026-10-28T06:50:19.997465+00:00"
   },
   "naver-wm": {
-   "hash": "c75dc230d313d1df548bfd2c6076b5c2",
-   "ts": "2026-10-27T06:14:21.947349+00:00"
+   "hash": "695d287aaa33805bf867dec36cbbbbe6",
+   "ts": "2026-10-28T06:50:23.163643+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "54a1532c1778cfa0eba110604ddac458",
-   "ts": "2026-10-27T06:14:33.133428+00:00"
+   "hash": "199abca52af15b1bd1f6e22ab5d3df8b",
+   "ts": "2026-10-28T06:50:33.857386+00:00"
   },
   "statcounter-ai": {
-   "hash": "c31a8cf1b5556f6c77d9b50134fce109",
-   "ts": "2026-10-27T06:14:33.788649+00:00"
+   "hash": "a1db680f6ba273385a32149dae3f7106",
+   "ts": "2026-10-28T06:50:34.243899+00:00"
   },
   "semrush-sensor": {
    "hash": "8092de241f3d4d6ebac604e0ae7adc61",
    "ts": "2026-10-27T06:14:34.693541+00:00"
   },
   "seroundtable": {
-   "top": "Google Warns Tools On User-Generated Spam Guidance & More",
+   "top": "Googlebot Must Follow Redirects From Homepage To Favicon, Updated Doc Say",
    "seen": [
-    "Gemini 4 Argon In Google Search Via AI Mode",
-    "Topics Portfolio In Bing Webmaster Tools AI Reports",
-    "Daily Search Forum Recap: October 13, 2026",
-    "Google Search Showing Sites Old Domain Fourth Months After Domain Move?",
-    "New Google Ads Controls: Channel Prioritization & Budget Allocation",
     "Google Search On URLs: Ranking Factor, Hyphens vs Underscores & Emojis",
     "Daily Search Forum Recap: October 14, 2026",
     "Google Ads Search Terms & Ad Combinations As One Report",
@@ -164,12 +160,17 @@
     "Daily Search Forum Recap: October 26, 2026",
     "Over 80% Of Google Searches Have AI Overviews & Growing",
     "Google Ads AI-Generated Review Summaries Help Doc",
-    "ChatGPT Ads With Learn More Arrow Link; Some Served Through Amazon DSP"
+    "ChatGPT Ads With Learn More Arrow Link; Some Served Through Amazon DSP",
+    "Googlebot Must Follow Redirects From Homepage To Favicon, Updated Doc Say",
+    "Daily Search Forum Recap: October 27, 2026",
+    "Unconfirmed Google Search Ranking Update: Volatility & Chatter Spike",
+    "Google Downplays The Importance Of Fresh Index Reporting",
+    "Advertisers Can't Figure Out If An Ad Is A Google Local Service Ad Or Not"
    ],
-   "ts": "2026-10-27T06:14:35.936865+00:00"
+   "ts": "2026-10-28T06:50:35.519100+00:00"
   },
   "google-docs-rss": {
-   "top": "Updated guidance on crawlable URL structures",
+   "top": "Updated guidance on preventing user-generated spam",
    "seen": [
     "Updating the Indexing API quota page",
     "Added documentation on the UGC Fresh Data Program",
@@ -177,9 +178,10 @@
     "Added creator property and updated interactionStatistic in VideoObject structured data",
     "Added local business query support to the aggregator and supplier units",
     "Updated the control what you share with Google Search documentation",
-    "Updated guidance on crawlable URL structures"
+    "Updated guidance on crawlable URL structures",
+    "Updated guidance on preventing user-generated spam"
    ],
-   "ts": "2026-10-24T05:47:48.175090+00:00"
+   "ts": "2026-10-28T06:50:34.902893+00:00"
   },
   "openai-bots-rss": {
    "hash": "f237661cad613ae8cbd3da9f508b2565",
