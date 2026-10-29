@@ -220,6 +220,10 @@ seo-skills/
 
 问题和建议请提交到 [GitHub Issues](https://github.com/everyinfra/seo-skills/issues)。请勿在 Issue 中粘贴 API Key、凭据、客户数据或其他机密信息。
 
+## 一起共创
+
+没有哪个团队能从内部看清 18 个市场。你熟悉某个市场的搜索，或者发现哪条建议过时了，欢迎写进来：补一个市场门户、修正一条规则、加一个脚本或模板，都看[共创指南](CONTRIBUTING.zh-CN.md)。每份贡献都由维护者手动审核，贡献者署名在 [CONTRIBUTORS.md](CONTRIBUTORS.md)。想法和提问到 [Discussions](https://github.com/everyinfra/seo-skills/discussions)。
+
 ## 许可证
 
 Apache-2.0，见 [LICENSE](LICENSE)。

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ideas and questions · 想法和提问
+    url: https://github.com/everyinfra/seo-skills/discussions
+    about: Talk through an idea before writing it up · 先聊聊想法，不用一开始就写完整

@@ -1,0 +1,26 @@
+name: Propose a market, playbook or capability · 提议新市场、打法或能力
+description: A market we don't cover well, or an SEO / GEO job the Skill can't do yet · 还没覆盖好的市场，或 Skill 还做不了的 SEO / GEO 工作
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should the Skill be able to do? · 希望 Skill 能做什么？
+      description: The market or task, and who needs it · 哪个市场或什么任务、谁需要
+    validations:
+      required: true
+  - type: textarea
+    id: know
+    attributes:
+      label: What you know that others don't · 你知道而别人不知道的
+      description: Engines, platforms, local practices, common mistakes. Add sources with dates if you have them · 搜索引擎、平台、本地做法、常见误区；有出处请附上日期
+  - type: dropdown
+    id: build
+    attributes:
+      label: Do you want to write it? · 你想自己写吗？
+      options:
+        - I'd like to write it · 我想自己写
+        - I'd like to write it with help · 想写，但需要帮忙
+        - Just an idea for now · 先提个想法
+    validations:
+      required: true

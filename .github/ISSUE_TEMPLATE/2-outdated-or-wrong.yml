@@ -1,0 +1,31 @@
+name: Wrong or outdated advice · 建议有误或过时
+description: Something in the Skill no longer matches how search works · Skill 里有内容和现在的搜索规则对不上
+labels: [bug]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Where in the Skill · 在 Skill 的哪里
+      description: File path or the sentence you mean · 文件路径或你说的那句话
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: What is true now · 现在实际是怎样
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source and date · 出处和日期
+      description: A link to the official announcement, documentation or data, and when you checked it · 官方公告、文档或数据的链接，以及你核对的日期
+    validations:
+      required: true
+  - type: checkboxes
+    id: safe
+    attributes:
+      label: Safety · 安全
+      options:
+        - label: I removed API keys, credentials and client data · 已去掉 API Key、凭据和客户数据
+          required: true

@@ -1,0 +1,18 @@
+name: Improve the Skill · 改进 Skill
+description: A better step, check, script, template or example · 更好的步骤、检查、脚本、模板或示例
+labels: [enhancement]
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: What to change, and why · 改什么、为什么
+      description: If it comes from your own practice or a source, say which · 来自你的实践或某个出处的话，写一下
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Do you want to send the change? · 你想自己提改动吗？
+      options:
+        - Yes, I'll send a pull request · 我来提 PR
+        - Please make the change · 请维护者来改

@@ -88,6 +88,10 @@ Commits por día en todos los repositorios de EveryInfra, incluido el gateway pr
   <img alt="Commits por día en todos los repositorios de EveryInfra y versiones por semana" src="assets/readme-stats/activity-es-light.svg" width="100%">
 </picture>
 
+## Constrúyela con nosotros
+
+Ningún equipo conoce por dentro los 18 mercados. Si sabes cómo funciona la búsqueda en tu mercado, o ves un consejo desactualizado, añádelo: un portal de mercado, una regla corregida, un script o una plantilla. Consulta [CONTRIBUTING.md](CONTRIBUTING.md). Los mantenedores revisan cada contribución a mano y la acreditan en [CONTRIBUTORS.md](CONTRIBUTORS.md). Ideas y preguntas en [Discussions](https://github.com/everyinfra/seo-skills/discussions).
+
 ## Más
 
 La descripción completa de capacidades, el apartado «Why now» con sus fuentes y la estructura del repositorio están en el [README en inglés](README.en.md) y en el [README en chino](README.md). Historial de versiones: [CHANGELOG.md](CHANGELOG.md).

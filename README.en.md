@@ -159,6 +159,10 @@ seo-skills/
     └── templates/             Research / audit / monitor output templates
 ```
 
+## Build it with us
+
+No single team knows all 18 markets from the inside. If you know how search works in your market, or spot advice that is out of date, add it: a market portal, a corrected rule, a script or a template. See [CONTRIBUTING.md](CONTRIBUTING.md). Maintainers review every contribution by hand, and contributors are credited in [CONTRIBUTORS.md](CONTRIBUTORS.md). Ideas and questions go to [Discussions](https://github.com/everyinfra/seo-skills/discussions).
+
 ## License & attribution
 
 Apache-2.0. Framework points borrowed (summary + link, per NOTICE) from: AgriciDaniel/claude-seo, zubair-trabzada/geo-seo-claude, jianruntech/geo-score, Auriti-Labs/geo-optimizer-skill, coreyhaines31/marketingskills, flaqai/backlink_skills, alvinunreal/awesome-submitlist, indie-hacking/Awesome-SEO-Backlinks, OranAi-Ltd/orangeo-ai-visibility-skill, liangdabiao/GEO-Content-Optimizer-Skill, Ryze-AI-Adgent/open-seo-mcp-skills.
