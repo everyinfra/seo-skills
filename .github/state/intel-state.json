@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-29T07:01:49.627553+00:00",
+ "checked_at": "2026-10-30T07:03:47.321953+00:00",
  "sources": {
   "google-blog": {
    "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
@@ -56,8 +56,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "6dbc70ba0427e524390ad9ac1c9f9d47",
-   "ts": "2026-10-29T07:01:31.058695+00:00"
+   "hash": "1db9a290b82f1670bfefd622e90f10c7",
+   "ts": "2026-10-30T07:03:27.198625+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -90,8 +90,8 @@
    "ts": "2026-10-29T07:01:33.284131+00:00"
   },
   "yandex-wm": {
-   "hash": "b7070f77bcc8ab59bb23ff5339e15698",
-   "ts": "2026-10-29T07:01:35.906904+00:00"
+   "hash": "5fde123287dae51378402ef6fef44d94",
+   "ts": "2026-10-30T07:03:31.025971+00:00"
   },
   "naver-wm": {
    "hash": "f8ad1f11a667647ee207cb9bdd2c10ca",
@@ -102,26 +102,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "199abca52af15b1bd1f6e22ab5d3df8b",
-   "ts": "2026-10-29T07:01:47.666795+00:00",
-   "unstable_streak": 1
+   "hash": "9560c0a6ff34874936b6f925287622ef",
+   "ts": "2026-10-30T07:03:45.292691+00:00"
   },
   "statcounter-ai": {
-   "hash": "288b44b651036d73c2bfdc7c58eccb16",
-   "ts": "2026-10-29T07:01:48.441427+00:00"
+   "hash": "dd58794a109f3e4cfcf299c99eb60ba7",
+   "ts": "2026-10-30T07:03:45.642213+00:00"
   },
   "semrush-sensor": {
-   "hash": "8092de241f3d4d6ebac604e0ae7adc61",
-   "ts": "2026-10-27T06:14:34.693541+00:00"
+   "hash": "ee87f46692a150537caf32c78672b066",
+   "ts": "2026-10-30T07:03:46.191355+00:00"
   },
   "seroundtable": {
-   "top": "Google Business Profiles Finally Adds Third-Party Ordering Controls",
+   "top": "Google's John Mueller: Eventually Systems Will Catch The AI Spam & Tricks",
    "seen": [
-    "Google Updates Links In AI Mode & AI Overviews Again, Won't Show Click Data",
-    "Daily Search Forum Recap: October 15, 2026",
-    "Universal Cart Launches In Google Search (U.S.)",
-    "Google Automotive Model Feeds On Search Ads (Vehicle Top Ads)",
-    "Daily Search Forum Recap: October 16, 2026",
     "Search News Buzz Video Recap: Google Poisoning Tracking Tools, Google AI Results Updates, Discover To Change, Google Ads, ChatGPT & SEO",
     "Google Search Ranking Volatility & Chatter Spike Today",
     "Google Ads To Allow Certification For Online Gambling Advertisers",
@@ -166,9 +160,14 @@
     "Google Expands Ads In AI Mode To More Countries & Multiturn Ads In U.S.",
     "Bing Ads Revenue Up 12% With Overall Revenue Up 19%",
     "Google Ad Revenue Up 10.5% With Overall Revenue Up 25%",
-    "Google Ads API Version 26.1 Now Out Available"
+    "Google Ads API Version 26.1 Now Out Available",
+    "Google's John Mueller: Eventually Systems Will Catch The AI Spam & Tricks",
+    "Google Business Profiles AI-Powered Messaging Expands",
+    "Google: Ads In AI Mode Earning Less Than Traditional Search Ads",
+    "Daily Search Forum Recap: October 29, 2026",
+    "Google Does Not Show All Spammy Links In Search Console"
    ],
-   "ts": "2026-10-29T07:01:49.627324+00:00"
+   "ts": "2026-10-30T07:03:47.321759+00:00"
   },
   "google-docs-rss": {
    "top": "Updated guidance on preventing user-generated spam",
