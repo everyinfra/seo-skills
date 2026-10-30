@@ -41,6 +41,7 @@ def _scrub_env(home=None):
     env["PYTHONIOENCODING"] = "utf-8"
     if home is not None:
         env["HOME"] = home
+        env["USERPROFILE"] = home       # Windows 的 expanduser("~") 读这个
     return env
 
 
@@ -105,7 +106,7 @@ class RedactTests(unittest.TestCase):
              "ops@example.com api_key: \"sk-xyz\"" % os.path.join(home, "gsc.json"))
         r = D.redact(s, home=home)
         self.assertNotIn(home, r)
-        self.assertIn("<home>/gsc.json", r)                   # 1) home 路径
+        self.assertIn(os.path.join("<home>", "gsc.json"), r)  # 1) home 路径
         self.assertNotIn("ops@example.com", r)
         self.assertIn("<redacted-email>", r)                  # 2) email
         for leak in ("abc123", "hunter2", "sk-xyz"):          # 3) token/password/api_key 值
