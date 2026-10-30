@@ -21,7 +21,8 @@ def run_cli(facts, responses, extra=()):
     out = os.path.join(tempfile.mkdtemp(prefix="oracle_fix_"), "findings.json")
     r = subprocess.run([sys.executable, os.path.join(SCRIPTS, "oracle_check.py"),
                         "--facts", fp, "--responses", rp, "--json", "--out", out, *extra],
-                       capture_output=True, text=True, encoding="utf-8", timeout=60)
+                       capture_output=True, text=True, encoding="utf-8", timeout=60,
+                       env=dict(os.environ, PYTHONIOENCODING="utf-8"))
     d = {}
     i = r.stdout.find("{")
     if i >= 0:
