@@ -295,7 +295,7 @@ class GuardAndUsageTests(unittest.TestCase):
             self.assertIn(frag, r.stdout, frag)
         # 互斥参数与缺参:exit 2
         r2 = subprocess.run([sys.executable, os.path.join(SCRIPTS, "ai_views.py")],
-                            capture_output=True, text=True, encoding="utf-8", timeout=60)
+                            capture_output=True, text=True, encoding="utf-8", env=env, timeout=60)
         self.assertEqual(r2.returncode, 2)
 
 

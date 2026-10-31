@@ -139,12 +139,12 @@ def canonicalize(text):
 
 def load_state():
     if os.path.exists(STATE_FILE):
-        return json.load(open(STATE_FILE))
+        return json.load(open(STATE_FILE, encoding="utf-8"))
     return {"checked_at": None, "sources": {}}
 
 def save_state(state):
     state["checked_at"] = datetime.now(timezone.utc).isoformat()
-    json.dump(state, open(STATE_FILE, "w"), indent=1)
+    json.dump(state, open(STATE_FILE, "w", encoding="utf-8"), indent=1)
 
 def check_source(name, cfg, prev):
     """返回 (changed:bool, detail:str, new_state)。new_state 用本次同一 body 建,

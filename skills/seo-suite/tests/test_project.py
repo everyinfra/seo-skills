@@ -463,7 +463,7 @@ class StatusTests(ProjectTestCase):
         for stage in ("① 体检", "② 优先级", "③ 修复", "④ 验证", "⑤ 监控"):
             self.assertIn(stage, r.stdout)
         self.assertIn("audit.json(2 URL)", r.stdout)
-        self.assertIn("envelope/audit-data.json", r.stdout)
+        self.assertIn(os.path.join("envelope", "audit-data.json"), r.stdout)
         self.assertIn("开 1 / 闭 1", r.stdout)
         self.assertIn("待核销 1 / 已核销 1", r.stdout)
         self.assertIn("72(Good) → 68(Fair)", r.stdout)           # 主分趋势按 history 轮序
@@ -476,7 +476,8 @@ class StatusTests(ProjectTestCase):
         self.assertEqual(r.returncode, 0)
         d = json.loads(r.stdout)
         self.assertEqual(d["site"], SITE)
-        self.assertEqual(d["stages"]["体检"], "history/20261012-080000/audit.json(2 URL)")
+        self.assertEqual(d["stages"]["体检"],
+                         os.path.join("history", "20261012-080000", "audit.json") + "(2 URL)")
         self.assertEqual(d["score_trend"], ["72(Good)"])
 
 

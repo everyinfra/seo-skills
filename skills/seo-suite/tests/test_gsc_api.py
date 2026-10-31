@@ -634,7 +634,8 @@ class CliAndGuardTests(GscApiCase):
         self.assertIn("规范化 CSV", r.stdout)
         for sub in ("auth", "sites", "query"):
             r2 = subprocess.run([sys.executable, os.path.join(SCRIPTS, "gsc_api.py"), sub, "--help"],
-                                capture_output=True, text=True, encoding="utf-8", timeout=60)
+                                capture_output=True, text=True, encoding="utf-8", timeout=60,
+                                env=dict(os.environ, PYTHONIOENCODING="utf-8"))
             self.assertEqual(r2.returncode, 0, sub)
 
     def test_usage_errors_exit_2(self):
