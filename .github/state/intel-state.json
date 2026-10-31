@@ -1,31 +1,33 @@
 {
- "checked_at": "2026-10-30T07:03:47.321953+00:00",
+ "checked_at": "2026-10-31T06:57:36.844016+00:00",
  "sources": {
   "google-blog": {
-   "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
+   "top": "Supporting a shared AI training control for websites",
    "seen": [
     "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
     "Announcing web multimodal Search performance reporting in Search Console",
     "Search Central Live Deep Dive Europe 2026: Meet the community speakers",
     "Search Central Live India 2026: Bengaluru, We're Coming (For Real This Time)",
-    "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico"
+    "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico",
+    "Supporting a shared AI training control for websites"
    ],
-   "ts": "2026-10-11T08:34:44.548408+00:00"
+   "ts": "2026-10-31T06:57:10.096278+00:00"
   },
   "google-updates": {
-   "hash": "3f805f1b5caf660bf1fa2a802ea47ac9",
-   "ts": "2026-10-29T07:01:26.293180+00:00"
+   "hash": "ab8c45fd4138b547610cc6ebfb424797",
+   "ts": "2026-10-31T06:57:11.148054+00:00"
   },
   "gsc-announce": {
-   "top": "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
+   "top": "Supporting a shared AI training control for websites",
    "seen": [
     "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
     "Announcing web multimodal Search performance reporting in Search Console",
     "Search Central Live Deep Dive Europe 2026: Meet the community speakers",
     "Search Central Live India 2026: Bengaluru, We're Coming (For Real This Time)",
-    "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico"
+    "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico",
+    "Supporting a shared AI training control for websites"
    ],
-   "ts": "2026-10-11T08:34:45.596590+00:00"
+   "ts": "2026-10-31T06:57:11.888512+00:00"
   },
   "status-dashboard": {
    "hash": "fa46baff2e7076ca5eaacdcb2f52f7b9",
@@ -56,8 +58,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "1db9a290b82f1670bfefd622e90f10c7",
-   "ts": "2026-10-30T07:03:27.198625+00:00"
+   "hash": "34e066079d6cfa423181d2eea8dfeee4",
+   "ts": "2026-10-31T06:57:14.615909+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -86,8 +88,8 @@
    "ts": "2026-10-29T07:01:32.608145+00:00"
   },
   "crux": {
-   "hash": "2b3d084bd722ec22b7870afa0bb6c3c8",
-   "ts": "2026-10-29T07:01:33.284131+00:00"
+   "hash": "e9f17c2b8a7526ef2bba3dc71bb6bae3",
+   "ts": "2026-10-31T06:57:17.468089+00:00"
   },
   "yandex-wm": {
    "hash": "5fde123287dae51378402ef6fef44d94",
@@ -102,25 +104,21 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "9560c0a6ff34874936b6f925287622ef",
-   "ts": "2026-10-30T07:03:45.292691+00:00"
+   "hash": "e40a4efe2e81a2bee8f897270fcc39c3",
+   "ts": "2026-10-31T06:57:32.248308+00:00"
   },
   "statcounter-ai": {
    "hash": "dd58794a109f3e4cfcf299c99eb60ba7",
-   "ts": "2026-10-30T07:03:45.642213+00:00"
+   "ts": "2026-10-31T06:57:33.687726+00:00",
+   "unstable_streak": 1
   },
   "semrush-sensor": {
    "hash": "ee87f46692a150537caf32c78672b066",
    "ts": "2026-10-30T07:03:46.191355+00:00"
   },
   "seroundtable": {
-   "top": "Google's John Mueller: Eventually Systems Will Catch The AI Spam & Tricks",
+   "top": "Google Adopts New AI Training Control",
    "seen": [
-    "Search News Buzz Video Recap: Google Poisoning Tracking Tools, Google AI Results Updates, Discover To Change, Google Ads, ChatGPT & SEO",
-    "Google Search Ranking Volatility & Chatter Spike Today",
-    "Google Ads To Allow Certification For Online Gambling Advertisers",
-    "Bing Tests Read More Links In Search Result Snippets",
-    "Daily Search Forum Recap: October 19, 2026",
     "Is It New? AI Scan Tool",
     "Google Moves Google Posts Higher Up On Local Panel",
     "Google Ads Now In AI Mode With Personal Intelligence",
@@ -165,9 +163,14 @@
     "Google Business Profiles AI-Powered Messaging Expands",
     "Google: Ads In AI Mode Earning Less Than Traditional Search Ads",
     "Daily Search Forum Recap: October 29, 2026",
-    "Google Does Not Show All Spammy Links In Search Console"
+    "Google Does Not Show All Spammy Links In Search Console",
+    "Google Adopts New AI Training Control",
+    "Microsoft Bing New AI New Controls With AI Training From AI Search Grounding",
+    "ChatGPT Gets Wider Ads, Multi-Image Ads Expands, Expansion & More",
+    "Daily Search Forum Recap: October 30, 2026",
+    "Search News Buzz Video Recap: Google Volatility X2, Spam Updates, AI Overviews Everywhere, Blending Ads & Organic, Google & Microsoft Earnings"
    ],
-   "ts": "2026-10-30T07:03:47.321759+00:00"
+   "ts": "2026-10-31T06:57:36.843810+00:00"
   },
   "google-docs-rss": {
    "top": "Updated guidance on preventing user-generated spam",
