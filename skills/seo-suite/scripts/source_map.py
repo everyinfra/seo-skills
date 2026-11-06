@@ -11,6 +11,11 @@
 找真源的办法——标题写在哪个文件,就改哪个文件。页面抓不到、原文在仓库里一条都搜不到(标题是模板拼的)时,
 退回下面的路由 + 动态段办法。
 
+模板拼的标题(「{平台}{能力}爬虫 API」)要先把原文拆成「措辞 + 数据值」:路由 import 链里的模板固定部分和写死的
+字面量(含 `${...}` 表达式里的)是措辞;URL 实体词、生成物里的表值、模板空位里填的短名字是数据值。只撞上数据值的
+文件(正文里恰好提到这个名字的指南、博客)不算证据;解释措辞最多的模板文件得分。第一名给模板,名字所在数据表的
+真源(生成器、上游数据文件)列为 data-value 候选,并在结果里给出 combo = {template, data}。
+
 动态页还要找「数据从哪来」:在仓库里按动态段的值(及去掉 -api / -scraper 等尾巴的词根)搜数据文件。
 搜到的文件开头写着「自动生成 / generated / DO NOT EDIT」时,它是生成物,改它会被覆盖:顺着头部注释里提到的
 脚本路径找生成器,把生成器列为真源。
@@ -60,6 +65,14 @@ FRAG_MAX_FILES = 8         # 一个片段命中超过这么多文件,算模板/�
 LOCALES = {"en", "es", "zh", "zh-cn", "zh-CN", "ja", "ko", "de", "fr", "pt", "pt-br", "ru", "it", "ar", "id", "vi",
            "th", "tr", "nl", "pl"}
 UA = "Mozilla/5.0 (compatible; seo-suite source_map; +https://github.com/everyinfra/seo-skills)"
+CODE_EXT = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json")
+LIT_MIN = 6                # 写死的字面量至少这么长,才算「这段措辞是它写的」(「识别 API」= 8)
+DATA_LIT_MIN = 4           # 生成物里的字面量至少这么长,才算页面上的数据值(「微博」= 4)
+FILL_MAX = 40              # 模板空位填进去的文字不超过这么长,才当实体名字(更长的是另一层模板拼的句子)
+LOOSE_MIN = 8              # 模板固定部分合计这么长,才允许只套上原文的一段
+OWNER_GAIN = 1.5           # 「措辞由它写」的证据比片段命中更硬:同权重下乘这个系数
+LIT_FULL = 0.9             # 只靠写死的字面量(没有模板套上)时,要解释这么多措辞才算
+OWNER_MIN = 0.3            # 至少解释三成措辞,才算这段原文的模板
 
 
 class Repo:
@@ -67,6 +80,19 @@ class Repo:
         self.path, self.rev = path, rev
         self._files = None
         self._corpus = {}
+        self._strings = {}
+        self._gen = {}
+
+    def strings(self, path):
+        """→ (字面量, 模板):文件里写死的文字和带空位的模板字符串,按文件缓存。"""
+        if path not in self._strings:
+            self._strings[path] = js_strings(self.read(path)) if path.endswith(CODE_EXT) else ([], [])
+        return self._strings[path]
+
+    def generated(self, path):
+        if path not in self._gen:
+            self._gen[path] = bool(GEN_MARK.search(self.head(path)))
+        return self._gen[path]
 
     def git(self, *args):
         p = subprocess.run(["git", "-C", self.path, *args], capture_output=True, text=True, encoding="utf-8",
@@ -325,85 +351,205 @@ def site_root(route_file):
     return root + "/" if root else ""
 
 
-def entity_only(frag, words):
+def entity_only(frag, words, data=()):
+    """片段去掉实体词和数据值(平台名、能力名这类表值)以后几乎不剩:它只说明「名字对上了」,不说明措辞是谁写的。"""
     rest = frag.lower()
+    for d in data:
+        dl = d.lower()
+        if rest.strip() and rest.strip() in dl:
+            return True
+        rest = rest.replace(dl, " ")
     for w in words:
         rest = rest.replace(w.lower(), " ")
     rest = re.sub(r"\b(api|apis|data|scraper|the|of|and|for)\b", " ", rest)
     return wlen(re.sub(r"[\W_]+", "", rest)) < 4
 
 
-def _skip_str(src, i):
-    q, i = src[i], i + 1
-    while i < len(src) and src[i] != q and src[i] != "\n":
-        i += 2 if src[i] == "\\" else 1
-    return i + 1
+def js_strings(src):
+    """JS/TS/JSON 源码 → (字面量列表, 模板列表)。
+    字面量:每个引号字符串和模板字符串的每段固定文字,包括 `${...}` 表达式里面的(`${n.includes("识别") ? "API" :
+    "识别 API"}` 里的「识别 API」也是这份文件写的措辞)。模板:带空位的模板字符串,给出固定片段列表(len ≥ 2)。"""
+    lits, tpls, n = [], [], len(src)
+    esc = {"n": "\n", "t": "\t"}
+
+    def quoted(i):
+        q, j, buf = src[i], i + 1, []
+        while j < n and src[j] != q and src[j] != "\n":
+            if src[j] == "\\":
+                buf.append(esc.get(src[j + 1:j + 2], src[j + 1:j + 2]))
+                j += 2
+            else:
+                buf.append(src[j])
+                j += 1
+        lits.append("".join(buf))
+        return j + 1
+
+    def template(i):
+        parts, buf = [], []
+        while i < n:
+            c = src[i]
+            if c == "\\":
+                buf.append(esc.get(src[i + 1:i + 2], src[i + 1:i + 2]))
+                i += 2
+            elif c == "`":
+                i += 1
+                break
+            elif src.startswith("${", i):
+                parts.append("".join(buf))
+                buf = []
+                i = code(i + 2, True)
+            else:
+                buf.append(c)
+                i += 1
+        parts.append("".join(buf))
+        lits.extend(p for p in parts if p.strip())
+        if len(parts) > 1:
+            tpls.append(parts)
+        return i
+
+    def code(i, nested):
+        depth = 0
+        while i < n:
+            c = src[i]
+            if c == "`":
+                i = template(i + 1)
+            elif c in "\"'":
+                i = quoted(i)
+            elif src.startswith("//", i):
+                j = src.find("\n", i)
+                i = n if j < 0 else j
+            elif src.startswith("/*", i):
+                j = src.find("*/", i + 2)
+                i = n if j < 0 else j + 2
+            elif nested and c == "{":
+                depth += 1
+                i += 1
+            elif nested and c == "}":
+                if not depth:
+                    return i + 1
+                depth -= 1
+                i += 1
+            else:
+                i += 1
+        return i
+
+    code(0, False)
+    return lits, tpls
 
 
-def _skip_expr(src, i):
-    """从 `${` 之后走到配对的 `}`;里面可以再套字符串和模板字符串。"""
-    depth = 1
-    while i < len(src):
-        c = src[i]
-        if c == "`":
-            i = _template(src, i + 1)[1]
+def _mark(mask, start, end):
+    for k in range(start, end):
+        mask[k] = True
+
+
+def _occurrences(text, needle, fold=False):
+    """needle 在 text 里出现的区间;两头是字母数字时要落在词边界上(「form」不算「informes」里的那段)。"""
+    hay, nd = (text.lower(), needle.lower()) if fold else (text, needle)
+    i = hay.find(nd) if nd else -1
+    while i >= 0:
+        j = i + len(nd)
+        if not ((nd[0].isalnum() and i > 0 and hay[i - 1].isalnum() and not _cjk(hay[i - 1]))
+                or (nd[-1].isalnum() and j < len(hay) and hay[j].isalnum() and not _cjk(hay[j]))):
+            yield i, j
+        i = hay.find(nd, i + 1)
+
+
+def template_match(parts, text, low_words):
+    """一个模板能不能套上这段原文 → (固定部分在原文里的区间, 空位填的文字) 或 None。
+    固定部分合计 ≥ LOOSE_MIN:按顺序出现就算(模板可能只是原文的一段,外面还有一层);
+    合计 ≥3 但更短(`${platform} ${action} API`):要整句完全套上,且每个空位都含 URL 里的实体词。"""
+    sw = sum(wlen(p.strip()) for p in parts)
+    if sw < 3:
+        return None
+    if sw >= LOOSE_MIN:
+        static = [p for p in parts if p.strip()]
+        pat = "(.*?)" + "(.+?)".join("(%s)" % re.escape(p) for p in static) + "(.*)"
+        m = re.fullmatch(pat, text, re.S)
+        if not m:
+            return None
+        spans = [m.span(g) for g in range(2, m.lastindex + 1, 2)]
+        fills = [m.group(g) for g in range(1, m.lastindex + 1, 2)]
+    else:
+        pat = "(.+?)".join("(%s)" % re.escape(p) for p in parts)
+        m = re.fullmatch(pat, text, re.S)
+        if not m or not low_words:
+            return None
+        spans = [m.span(g) for g in range(1, m.lastindex + 1, 2)]
+        fills = [m.group(g) for g in range(2, m.lastindex + 1, 2)]
+        if not all(any(w in f.lower().replace("-", " ") for w in low_words) for f in fills):
+            return None
+    return spans, [f.strip(" ,.:;，。：；、") for f in fills if f.strip()]
+
+
+GENERIC_WORDS = {"api", "apis", "data", "scraper", "the", "of", "and", "for"}
+
+
+def _bare(text):
+    return re.sub(r"[\W_]+", "", text)
+
+
+def explain(repo, files, text, words):
+    """closure 里每个文件写死的字面量和模板,能解释这段原文里多少「措辞」(去掉数据值以后)。
+    数据值:URL 里的实体词、生成物里的表值(平台名、能力名)、模板空位里填的短名字。
+    → ({文件: 解释了几成措辞}, [数据值], {数据值来自的生成物})。行家找标题真源就是这样分:名字来自数据表,句子骨架来自模板;
+    要改标题的措辞去改模板,名字错了才去改数据表的真源。
+    两条边界:模板的固定部分(措辞)优先,别的模板空位把它吞进去时那段不算数据;生成物里的字面量等于整段原文时,
+    是整页内容被生成进去了(Markdown → 生成的 .ts),不是表值,留给片段反查去找上游的那份。"""
+    n = len(text)
+    if not n:
+        return {}, [], set()
+    ents = [w.lower() for w in words if w.lower() not in GENERIC_WORDS]
+    data, glue, fills, marks, src = [False] * n, [False] * n, [], {}, {}
+    for w in ents:
+        for s, e in _occurrences(text, w, fold=True):
+            _mark(data, s, e)
+    for f in files:
+        lits, tpls = repo.strings(f)
+        if repo.generated(f):                          # 生成物里的表值:是数据,不是措辞
+            for lit in {x.strip() for x in lits}:
+                if wlen(lit) >= DATA_LIT_MIN and lit in text and any(_occurrences(text, lit)) \
+                        and wlen(_bare(text.replace(lit, ""))) >= 3:
+                    fills.append(lit)
+                    src.setdefault(lit, set()).add(f)
             continue
-        if c in "\"'":
-            i = _skip_str(src, i)
-            continue
-        if c == "{":
-            depth += 1
-        elif c == "}":
-            depth -= 1
-            if not depth:
-                return i + 1
-        i += 1
-    return i
-
-
-def _template(src, i):
-    """→ (固定片段列表, 结束位置);空位处切开。"""
-    parts, buf = [], []
-    while i < len(src):
-        c = src[i]
-        if c == "\\":
-            buf.append(src[i + 1:i + 2])
-            i += 2
-        elif c == "`":
-            parts.append("".join(buf))
-            return parts, i + 1
-        elif src.startswith("${", i):
-            parts.append("".join(buf))
-            buf = []
-            i = _skip_expr(src, i + 2)
-        else:
-            buf.append(c)
-            i += 1
-    parts.append("".join(buf))
-    return parts, i
-
-
-def js_templates(src):
-    """JS/TS 源码里带空位的模板字符串 → 每个给出固定片段列表(len ≥ 2)。
-    手写扫描而不是正则:`${a ? `${b},` : ""}` 这种嵌套会让正则把反引号配错对,后面整份文件的模板全错位。"""
-    out, i, n = [], 0, len(src)
-    while i < n:
-        c = src[i]
-        if c == "`":
-            parts, i = _template(src, i + 1)
-            if len(parts) > 1:
-                out.append(parts)
-        elif c in "\"'":
-            i = _skip_str(src, i)
-        elif src.startswith("//", i):
-            j = src.find("\n", i)
-            i = n if j < 0 else j
-        elif src.startswith("/*", i):
-            j = src.find("*/", i + 2)
-            i = n if j < 0 else j + 2
-        else:
-            i += 1
-    return out
+        mask, by_tpl = None, False
+        for parts in tpls:
+            hit = template_match(parts, text, ents)
+            if not hit:
+                continue
+            mask, by_tpl = mask or [False] * n, True
+            strong = sum(wlen(p.strip()) for p in parts) >= LOOSE_MIN
+            for s, e in hit[0]:
+                _mark(mask, s, e)
+                if strong:
+                    _mark(glue, s, e)
+            fills += [fl for fl in hit[1] if 0 < wlen(fl) <= FILL_MAX]
+        for lit in {x.strip() for x in lits}:
+            # 拉丁文单个词(「Residential」)多半是键名、标签,不算措辞;要词组
+            if wlen(lit) >= LIT_MIN and lit in text and (" " in lit or any(_cjk(c) for c in lit)):
+                for s, e in _occurrences(text, lit):
+                    mask = mask or [False] * n
+                    _mark(mask, s, e)
+        if mask:
+            marks[f] = (mask, by_tpl)
+    data_vals, data_files = [], set()
+    for fl in set(fills):
+        spans = list(_occurrences(text, fl))
+        if spans and not any(glue[k] for s, e in spans for k in range(s, e)):
+            data_vals.append(fl)
+            data_files |= src.get(fl, set())
+            for s, e in spans:
+                _mark(data, s, e)
+    weight = [0 if data[k] or not text[k].strip() else (2 if _cjk(text[k]) else 1) for k in range(n)]
+    total = sum(weight)
+    cover = {}
+    if total >= 3:
+        for f, (mask, by_tpl) in marks.items():
+            got = sum(w for w, m in zip(weight, mask) if m)
+            # 没有模板套上、只靠零散字面量时,要几乎整段措辞都由它写才算(一两个词组撞上不算)
+            if got >= 3 and (by_tpl or got >= LIT_FULL * total):
+                cover[f] = got / total
+    return cover, data_vals, data_files
 
 
 AFFIX_SEP = re.compile(r"\s+[·|\-\u2014\u2013]\s+")
@@ -417,49 +563,35 @@ def strip_site_affix(text):
     return text
 
 
-def template_hits(repo, files, text, words=()):
-    """路由 import 链里的 JS/TS 模板字符串(`${name}爬虫 API:${items}数据采集`)能不能套上这段原文。
-    固定部分合计 ≥8 个加权字符:按顺序出现就算;固定部分短(≥3,如 `${platform} ${action} API`)时,
-    要整句完全套上、且每个空位填进去的文字都含 URL 里的实体词,才算——不然 `${x} API` 会套上任何标题。"""
-    hits = []
-    low_words = [w.lower() for w in words]
-    for f in files:
-        if not f.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs")):
-            continue
-        for parts in js_templates(repo.read(f)):
-            static = sum(wlen(x.strip()) for x in parts)
-            if static < 3:
-                continue
-            pat = "(.+?)".join(re.escape(x) for x in parts)
-            if static >= 8:
-                loose = "(.+?)".join(re.escape(x) for x in parts if x.strip())
-                if re.search(("^.+?" if not parts[0] else "") + loose, text):
-                    hits.append(f)
-                    break
-                continue
-            mm = re.fullmatch(pat, text)
-            if mm and low_words and all(any(w in g.lower().replace("-", " ") for w in low_words)
-                                        for g in mm.groups()):
-                hits.append(f)
-                break
-    return hits
-
-
 def anchor_candidates(repo, url, anchors, closure=(), root=""):
     """按原文片段反查:每个锚点给命中它的文件记 权重 / 命中文件数;一个锚点对一个文件只记一次最好的片段。"""
     corpus = repo.corpus(root)
     words = url_words(url)
     scores, kinds, cache, solid = {}, {}, {}, set()      # solid:有过不止实体词的证据
     titled = set()                                        # 标题类(title / H1 / og:title)有实打实的证据
+    owners, data, data_files, templated = {}, set(), set(), set()
+    if closure:                                           # 先分清原文里哪些是数据值、哪些措辞由谁写
+        for kind, text in anchors.items():
+            if kind == "p":
+                continue
+            cover, vals, dfiles = explain(repo, closure, strip_site_affix(text) if kind in TITLE_KINDS else text,
+                                          words)
+            owners[kind] = cover
+            data.update(vals)
+            data_files |= dfiles
+    data = sorted(data, key=len, reverse=True)
     for kind, text in anchors.items():
         best = {}
+        # 数据值只在它是这段原文「一部分」时才算数据;整段原文就是它(标题直接取自表里那一格),那是内容本身
+        own = strip_site_affix(text) if kind in TITLE_KINDS else text
+        kdata = [d for d in data if d in own and wlen(_bare(own.replace(d, ""))) >= 3]
         for frag in fragments(text, words):
             if frag not in cache:
                 cache[frag] = [f for f, t in corpus.items() if frag in t]
             hits = cache[frag]
             if not hits or len(hits) > FRAG_MAX_FILES:
                 continue
-            weak = entity_only(frag, words)
+            weak = entity_only(frag, words, kdata)
             w = ANCHOR_WEIGHT.get(kind, 1.0) * (ENTITY_ONLY if weak else 1.0)
             if not w:
                 continue
@@ -469,11 +601,15 @@ def anchor_candidates(repo, url, anchors, closure=(), root=""):
                     solid.add(f)
                     if kind in TITLE_KINDS:
                         titled.add(f)
-        if closure and kind in ("title", "h1", "og_title"):   # 标题常是模板拼的:拿 import 链里的模板去套
-            th = template_hits(repo, closure, strip_site_affix(text), words)
-            for f in th if len(th) <= FRAG_MAX_FILES else ():
-                best[f] = max(best.get(f, 0), ANCHOR_WEIGHT.get(kind, 1.0) / len(th))
-                solid.add(f)
+        # 措辞由谁写:import 链里字面量和模板解释得最多的文件(并列太多 = 公共套话,不算)
+        cover = owners.get(kind) or {}
+        top = max(cover.values(), default=0)
+        lead = [f for f, c in cover.items() if c >= max(OWNER_MIN, 0.9 * top)]
+        for f in lead if len(lead) <= FRAG_MAX_FILES else ():
+            best[f] = max(best.get(f, 0), OWNER_GAIN * ANCHOR_WEIGHT.get(kind, 1.0) * cover[f] / len(lead))
+            solid.add(f)
+            templated.add(f)
+            if kind in TITLE_KINDS:
                 titled.add(f)
         for f, v in best.items():
             scores[f] = scores.get(f, 0) + v
@@ -511,8 +647,20 @@ def anchor_candidates(repo, url, anchors, closure=(), root=""):
             if c["role"] == "data" and PAGE_RE.search(f):
                 c["role"] = "route"
             c.update(confidence=round(min(0.95, conf if c["role"] != "generated" else 0.3), 2),
-                     matched=sorted(kinds[f]), via="page-text")
+                     matched=sorted(kinds[f]), via="page-text+template" if f in templated else "page-text")
             out.append(c)
+    # 多源拼接:措辞在模板里,名字(平台名、能力名)来自生成的数据表。把表的真源也列出来,配成「模板 + 真源」
+    if out and out[0]["file"] in templated:
+        have = {c["file"] for c in out}
+        for f in sorted(data_files):
+            for c in classify_data(repo, f):
+                fl = file_locales(c["file"])
+                if c["file"] in have or (fl and not (loc in fl if loc else fl <= zh)):
+                    continue                                  # 别的语言那份表管不到这页
+                have.add(c["file"])
+                out.append(dict(c, confidence=0.3 if c["role"] == "generated" else 0.35, via="data-value",
+                                note="页面上的名字来自这里(数据值);改措辞去改模板,名字错了改这份的真源"
+                                if c["role"] != "generated" else c.get("note")))
     return out
 
 
@@ -583,7 +731,8 @@ def match_route(segs, path_parts):
     return score, binds
 
 
-IMPORT_RE = re.compile(r"""(?:import[^'"]*?from\s*|import\s*\(\s*|require\(\s*|import\s+)['"]([^'"]+)['"]""")
+# 也认 `export { X } from "./y"` 这种转出(桶文件):漏了它,路由的 import 链在第一层就断了
+IMPORT_RE = re.compile(r"""(?:\b(?:import|export)[^'"]*?\bfrom\s*|import\s*\(\s*|require\(\s*|import\s+)['"]([^'"]+)['"]""")
 RESOLVE_EXT = ("", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".json", "/index.ts", "/index.tsx", "/index.js")
 
 
@@ -786,9 +935,13 @@ def map_urls(repo, urls, min_conf=0.7, anchors_for=None):
                 cands = merge(text, cands)
         cands.sort(key=lambda c: -c["confidence"])
         best = cands[0]["confidence"] if cands else 0.0
-        out.append({"url": u, "framework": kind or "unsupported", "candidates": cands,
-                    "best": cands[0]["file"] if cands else None, "confidence": best,
-                    "actionable": best >= min_conf and cands[0]["role"] != "generated"})
+        row = {"url": u, "framework": kind or "unsupported", "candidates": cands,
+               "best": cands[0]["file"] if cands else None, "confidence": best,
+               "actionable": best >= min_conf and cands[0]["role"] != "generated"}
+        data_src = [c["file"] for c in cands if c.get("via") == "data-value" and c["role"] != "generated"]
+        if cands and "template" in cands[0].get("via", "") and data_src:
+            row["combo"] = {"template": cands[0]["file"], "data": data_src}
+        out.append(row)
     return out
 
 
@@ -817,6 +970,8 @@ def main(argv=None):
     else:
         for r in res:
             print("%s → %s(%.2f%s)" % (r["url"], r["best"], r["confidence"], "" if r["actionable"] else ",只列候选"))
+            if r.get("combo"):
+                print("    模板 %s + 数据真源 %s" % (r["combo"]["template"], "、".join(r["combo"]["data"])))
             for c in r["candidates"][1:5]:
                 print("    %s [%s %.2f]" % (c["file"], c["role"], c["confidence"]))
     return 0
