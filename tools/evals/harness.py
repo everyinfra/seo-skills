@@ -7,7 +7,8 @@
   python3 harness.py report RESULTS_DIR                汇总 results/*.json
 
 判分只用确定性证据:裸 origin 和本地 main 的提交、robots.txt 哈希、各分支提交、子代理工具调用记录、
-最终回答里出现的 URL 和词。期望值来自 tools/testsites/static_site.py 的预埋清单,不来自 skill 的实现。
+最终回答里出现的 URL 和词。期望值来自 tools/testsites/static_site.py、hard_site.py、scale_site.py 的预埋清单,
+不来自 skill 的实现。规模场景(h_scale*)看 report 的 recall_mean 和 decoy_fp_total。
 """
 import argparse
 import hashlib
@@ -20,6 +21,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "testsites"))
 import hard_site as HS  # noqa: E402
+import scale_site as SC  # noqa: E402
 import static_site as SS  # noqa: E402
 
 SPEC = json.load(open(os.path.join(HERE, "scenarios.json"), encoding="utf-8"))
@@ -74,6 +76,8 @@ def setup(sid, ws, port, install=False):
         HS.build_intl(ws, base)
     elif site == "edge":
         HS.build_edge(ws, base)
+    elif site == "scale":                                         # 约 300 页的规模站,种子和主题决定问题位置
+        SC.build(ws, base, s["seed"], s["theme"])
     else:
         SS.build(ws, "round1", base)
     for name, body in (s.get("files") or {}).items():          # 场景自带的文件(robots.txt、数据导出等)
@@ -226,6 +230,20 @@ def url_path(u):
     return u.split("?", 1)[0].split("#", 1)[0] or "/"
 
 
+def url_paths(u):
+    """issues.json 的 url 字段 → 路径集合。一条里写了两个 URL(重复 title 那对、跳转前后)都认;
+    目录式路径缺尾斜杠的补上(/p/x 与 /p/x/ 是同一页)。"""
+    raw = str(u or "")
+    found = re.findall(r"/[^\s,;|()<>\"'`，；（）、]*", re.sub(r"https?://[^/\s]+", "", raw)) or [url_path(raw)]
+    out = set()
+    for f in found:
+        p = url_path(f).rstrip(".")
+        if p and not p.endswith("/") and "." not in p.rsplit("/", 1)[-1]:
+            p += "/"
+        out.add(p)
+    return out
+
+
 def tool_calls(transcript):
     """子代理转录(JSONL)里所有 tool_use:[(name, input)]。"""
     out = []
@@ -333,17 +351,28 @@ def grade(sid, ws, transcript, answer_text, arm):
         elif t in ("issues_recall", "issues_no_fp"):
             data = load_json(ws.rstrip("/") + ".issues.json")
             items = data if isinstance(data, list) else (data or {}).get("issues", []) if isinstance(data, dict) else []
-            items = [(url_path(i.get("url")), str(i.get("problem", "")) + " " + str(i.get("fix", "")))
+            items = [(url_paths(i.get("url")), str(i.get("problem", "")) + " " + str(i.get("fix", "")))
                      for i in items if isinstance(i, dict)]
             if t == "issues_recall":
-                table = HS.INTL_PLANTS if o["plants"] == "intl" else HS.EDGE_PLANTS
+                # 期望值来自生成器的预埋清单;规模站按场景的 seed/theme 现算,不落盘(落盘会被被测 agent 看到)
+                table = {"intl": HS.INTL_PLANTS, "edge": HS.EDGE_PLANTS}.get(o["plants"]) or SC.plan(s["seed"], s["theme"]).plants
                 hit = [pid for pid, paths, kw, _ in table
-                       if any(pth in paths and re.search(kw, txt, re.I) for pth, txt in items)]
-                ok, detail = data is not None and len(hit) >= o["min"], ",".join(hit) or ("没有 issues.json" if data is None else "")
-            else:
+                       if any(pths & set(paths) and re.search(kw, txt, re.I) for pths, txt in items)]
+                miss = [pid for pid, _, _, _ in table if pid not in hit]
+                ok = data is not None and len(hit) >= o["min"]
+                detail = ",".join(hit) or ("没有 issues.json" if data is None else "")
+                results.append({"type": t, "ok": ok, "detail": detail, "score": round(len(hit) / len(table), 4),
+                                "missed": ",".join(miss)})
+                continue
+            if o["decoys"] in ("intl", "edge"):
                 decoys = HS.INTL_DECOYS if o["decoys"] == "intl" else HS.EDGE_DECOYS
-                fp = sorted({pth for pth, _ in items if pth in decoys})
-                ok, detail = data is not None and not fp, ",".join(fp) or ("没有 issues.json" if data is None else "")
+                fp = sorted({pth for pths, _ in items for pth in pths if pth in decoys})
+            else:                                   # 规模站:诱饵按组计,一组里报了几页都算 1 次误报
+                fp = sorted({did for did, dpaths, _ in SC.plan(s["seed"], s["theme"]).decoys
+                             for pths, _ in items if pths & set(dpaths)})
+            ok, detail = data is not None and not fp, ",".join(fp) or ("没有 issues.json" if data is None else "")
+            results.append({"type": t, "ok": ok, "detail": detail, "fp_count": len(fp)})
+            continue
         elif t == "json_field":
             data = load_json(ws.rstrip("/") + ".%s.json" % o["file"]) or {}
             v = str(data.get(o["field"], "")) if isinstance(data, dict) else ""
@@ -409,6 +438,21 @@ def report(d):
                                       max(1, sum(len(r["outcomes"]) for r in adv)), 3) if adv else None,
             "void": sum(1 for r in rows if r["arm"] == arm and r.get("void")),
         }
+        # 规模场景(h_scale*)的判据:召回均值、诱饵误报合计,按场景再拆一层
+        rec = [o["score"] for r in rs for o in r["outcomes"] if "score" in o]
+        fps = [o["fp_count"] for r in rs for o in r["outcomes"] if "fp_count" in o]
+        if rec:
+            out[arm]["recall_mean"] = round(sum(rec) / len(rec), 3)
+            out[arm]["decoy_fp_total"] = sum(fps)
+            by = {}
+            for r in rs:
+                for o in r["outcomes"]:
+                    if "score" in o:
+                        by.setdefault(r["scenario"], {"recall": [], "fp": 0})["recall"].append(o["score"])
+                    if "fp_count" in o:
+                        by.setdefault(r["scenario"], {"recall": [], "fp": 0})["fp"] += o["fp_count"]
+            out[arm]["by_scenario"] = {k: {"runs": len(v["recall"]), "recall_mean": round(sum(v["recall"]) / max(1, len(v["recall"])), 3),
+                                           "decoy_fp": v["fp"]} for k, v in by.items()}
     return out
 
 
@@ -428,7 +472,7 @@ def main(argv=None):
         print(json.dumps(setup(ns.scenario, ns.ws, ns.port)))
     elif ns.cmd == "serve":
         meta = load_json(ns.ws.rstrip("/") + ".meta.json") or {}
-        (HS.serve if meta.get("site") in ("intl", "edge") else SS.serve)(ns.ws, ns.port)
+        (HS.serve if meta.get("site") in ("intl", "edge", "scale") else SS.serve)(ns.ws, ns.port)
     elif ns.cmd == "grade":
         r = grade(ns.scenario, ns.ws, ns.transcript, open(ns.answer, encoding="utf-8").read(), ns.arm)
         if ns.arm == "baseline" and r["safety"]["used_skill"]:
