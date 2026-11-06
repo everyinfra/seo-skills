@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 import time
 import http.client
@@ -28,6 +29,29 @@ from urllib.parse import urlsplit, urljoin, parse_qsl
 UA = "Mozilla/5.0 (compatible; SEOSkill-RedirectChain/1.0)"
 REDIRECT_STATUSES = (301, 302, 303, 307, 308)
 PERMANENT = (301, 308)
+
+
+META_TAG_RE = re.compile(r"<meta\b[^>]*>", re.I)
+ATTR_RE = re.compile(r"""([a-zA-Z-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""")
+LAST_BODY = {"text": ""}   # 最后一跳(非 3xx)读到的正文前 512KB,查 meta refresh 用
+
+
+def meta_refresh_target(html, base):
+    """<meta http-equiv="refresh" content="4; URL='…'"> → 目标绝对 URL;只刷新本页/没写 url → None。
+    Ahrefs「Meta refresh redirect」(https://help.ahrefs.com/en/articles/2433739):客户端跳转,不推荐。"""
+    content = None
+    for tag in META_TAG_RE.findall(html or ""):
+        attrs = {k.lower(): (a if a else (b if b else c)) for k, a, b, c in ATTR_RE.findall(tag)}
+        if (attrs.get("http-equiv") or "").strip().lower() == "refresh":
+            content = attrs.get("content") or ""
+            break
+    if content is None:
+        return None
+    u = re.search(r"url\s*=\s*['\"]?([^'\";]+)", content, re.I)
+    if not u:
+        return None
+    tgt = urljoin(base, u.group(1).strip())
+    return tgt if tgt.split("#")[0] != base.split("#")[0] else None
 
 
 def request_once(url, timeout, ua=UA):
@@ -50,7 +74,10 @@ def request_once(url, timeout, ua=UA):
     status = resp.status
     location = resp.getheader("Location")
     try:
-        resp.read(2048)  # 少量读取以复用连接, 随即关闭
+        if 300 <= status < 400:
+            resp.read(2048)  # 少量读取以复用连接, 随即关闭
+        else:                # 终点页读前 512KB 查 meta refresh
+            LAST_BODY["text"] = resp.read(512 * 1024).decode("utf-8", "replace")
     except Exception:
         pass
     conn.close()
@@ -100,6 +127,7 @@ def main(argv=None):
     ap.add_argument("--timeout", type=float, default=12.0, help="单请求超时秒数 (默认 12)")
     args = ap.parse_args(argv)
 
+    LAST_BODY["text"] = ""   # 每次运行清空,避免上一次的终点页正文串进来
     url = args.url.strip()
     if not url.lower().startswith(("http://", "https://")):
         url = "https://" + url
@@ -159,6 +187,14 @@ def main(argv=None):
             if perm and status not in PERMANENT:
                 issues.append(("WARN", "第 {0} 跳是{1}, 但状态码 {2} 为临时重定向, 建议改 301".format(
                     len(chain), perm, status)))
+            elif status == 302:
+                # Ahrefs「302 redirect」(https://help.ahrefs.com/en/articles/2427783):「only use 302 redirects where the
+                # redirection is temporary」;Bing 要求永久搬迁用 301
+                issues.append(("INFO", "第 {0} 跳用 302(临时); 内容永久搬走就改 301 (Ahrefs 302 redirect)".format(len(chain))))
+            if urlsplit(current).scheme.lower() == "http" and urlsplit(nxt).scheme.lower() == "https":
+                # Ahrefs「HTTP to HTTPS redirect」(应用内导出项,提示级): 跳转本身对, 站内链接应直接写 HTTPS
+                issues.append(("INFO", "第 {0} 跳 HTTP→HTTPS (Ahrefs HTTP to HTTPS redirect; 站内链接直接写 HTTPS 省一跳)".format(
+                    len(chain))))
 
             current = nxt
     except KeyboardInterrupt:
@@ -186,6 +222,10 @@ def main(argv=None):
         issues.append(("CRITICAL", "重定向终点返回 HTTP {0}: {1} (跳到坏页, 改指向能打开的页或直接 404/410)".format(
             final[1], truncate(final[0], 60))))
         critical = True
+    refresh = meta_refresh_target(LAST_BODY["text"], final[0]) if final[1] is not None and 200 <= final[1] < 300 else None
+    if refresh:
+        issues.append(("WARN", "终点页用 meta refresh 再跳到 {0} (客户端跳转; 改服务器 301; Ahrefs Meta refresh redirect)".format(
+            truncate(refresh, 60))))
     if hops > 2:
         sev = "CRITICAL" if hops > 5 else "WARN"
         issues.append((sev, "链长 {0} 跳{1} (Google/用户均不友好, 应一跳到底)".format(

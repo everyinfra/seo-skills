@@ -280,6 +280,55 @@ def citation_report(doc):
             "explicit_count": sum(1 for s in states.values() if s["state"] == "allowed" and not s["via_wildcard"]),
             "bots": states}
 
+# 同一厂商的 AI bot(用于「AI bot 策略不一致」判定)。只列官方页写明归属的。
+VENDORS = {
+    "OpenAI": ("GPTBot", "OAI-SearchBot", "ChatGPT-User"),
+    "Anthropic": ("ClaudeBot", "Claude-SearchBot", "Claude-User"),
+    "Perplexity": ("PerplexityBot", "Perplexity-User"),
+    "Meta": ("meta-externalagent", "meta-webindexer", "Meta-ExternalFetcher"),
+    "Amazon": ("Amazonbot", "Amzn-SearchBot", "Amzn-User"),
+    "Mistral": ("MistralAI-Training", "MistralAI-Index", "MistralAI-User"),
+}
+AI_SEARCH_BOTS = ("OAI-SearchBot", "Claude-SearchBot", "PerplexityBot", "meta-webindexer", "MistralAI-Index",
+                  "Amzn-SearchBot", "DuckAssistBot")
+
+
+def _openness(state):
+    return {"allowed": "放行", "missing": "放行", "blocked": "封", "partial": "部分"}[state]
+
+
+def inconsistent_policies(bots):
+    """Ahrefs AI Discoverability「Inconsistent AI bot policies」(2026-09 上线,https://ahrefs.com/blog/new-features-september-2026/;
+    Ahrefs 只公布了名称,没公布判法)。本套件按 robots.txt 根路径判三种不一致:
+      ① 同一厂商「答案路径」bot(search + user 层)有的放行有的封——如 OAI-SearchBot 放行、ChatGPT-User 被封:
+         能进 ChatGPT 搜索索引,用户点名时又取不到;
+      ② 同一厂商训练 bot 放行、搜索 bot 被封——给训练不给引用,通常是写反了;
+      ③ 各家 AI 搜索 bot 之间有的放行有的封(可能是有意的,只作提示)。"""
+    st = {b["token"]: b for b in bots}
+    out = []
+    for vendor, tokens in VENDORS.items():
+        have = [st[t] for t in tokens if t in st]
+        answer = [b for b in have if b["tier"] in ("search", "user")]
+        kinds = {_openness(b["state"]) for b in answer}
+        if len(kinds) > 1:
+            out.append({"kind": "same_vendor_answer_bots", "vendor": vendor, "severity": "WARN",
+                        "detail": "、".join("%s %s" % (b["token"], _openness(b["state"])) for b in answer)})
+        train = [b for b in have if b["tier"] == "training"]
+        search = [b for b in have if b["tier"] == "search"]
+        if train and search and all(_openness(b["state"]) == "放行" for b in train) \
+                and any(_openness(b["state"]) == "封" for b in search):
+            out.append({"kind": "training_open_search_closed", "vendor": vendor, "severity": "WARN",
+                        "detail": "训练 %s 放行,搜索 %s 被封" % ("、".join(b["token"] for b in train),
+                                                          "、".join(b["token"] for b in search))})
+    ai_search = [st[t] for t in AI_SEARCH_BOTS if t in st]
+    opened = [b["token"] for b in ai_search if _openness(b["state"]) == "放行"]
+    closed = [b["token"] for b in ai_search if _openness(b["state"]) != "放行"]
+    if opened and closed:
+        out.append({"kind": "across_ai_search_bots", "vendor": None, "severity": "INFO",
+                    "detail": "放行 %s;封或部分封 %s(有意为之可忽略)" % ("、".join(opened), "、".join(closed))})
+    return out
+
+
 def analyze(txt, mode="visibility"):
     """全量分析:37 bot 四态矩阵 + 分层统计 + 两级引用评分 + 指令提取。"""
     doc = parse_robots(txt)
@@ -312,6 +361,7 @@ def analyze(txt, mode="visibility"):
         # answers vs training 分层:封 search/user 才是可见性失败;封 training 只是授权决策不扣分
         "visibility_failures": [b["token"] for b in bots
                                 if b["tier"] in ("search", "user") and b["state"] in ("blocked", "partial")],
+        "inconsistent_ai_policies": inconsistent_policies(bots),
         "content_signal": SIGNALS.get(mode, SIGNALS["visibility"]),
         # 现有的 Content-Signal 行(11-05 第三轮留出站 fly.io:已有同一行,脚本还建议加)
         "content_signal_present": [m.strip() for m in re.findall(r"(?im)^\s*content-signal\s*:\s*(.+)$", txt)],
@@ -385,6 +435,13 @@ def render(report):
                    f"封 training 只是授权决策,不扣分)")
     else:
         out.append("可见性结论: ✅ 引用(search)与按需(user)bot 无封禁;training 封禁属授权决策,不扣分")
+    inc = report.get("inconsistent_ai_policies") or []
+    if inc:
+        out.append("AI bot 策略不一致(Ahrefs Inconsistent AI bot policies;判法本套件口径):")
+        for x in inc:
+            out.append(f"  [{x['severity']}] {(x['vendor'] + ':') if x['vendor'] else '各家 AI 搜索 bot:'}{x['detail']}")
+    else:
+        out.append("AI bot 策略一致性: ✅ 同厂商的检索/按需/训练 bot 规则没有互相矛盾")
     out.append("\n过时 token 检查: " + (", ".join(report["deprecated_tokens"]) if report["deprecated_tokens"] else "无"))
     sm = report["sitemaps"]
     out.append("Sitemap 行: " + (f"有({len(sm)} 条)" if sm else "❌ 缺"))

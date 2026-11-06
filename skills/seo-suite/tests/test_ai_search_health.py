@@ -117,7 +117,10 @@ class StubbedAudit(unittest.TestCase):
         self.assertEqual(ai["bots"]["blocked"], ["Google-Extended", "Perplexity-User", "PerplexityBot"])
         self.assertEqual(ai["score"], 60)                        # bots 0.4 丢光,其余全过
         bots = [(s, m) for s, a, m in F if a == "ai-bots"]
-        self.assertEqual([s for s, _ in bots].count("CRITICAL"), 2)   # 两个爬虫型被禁
+        # PerplexityBot(搜索索引)CRITICAL;Perplexity-User 按用户请求抓取,Perplexity 原话
+        # 「generally ignores robots.txt rules」→ INFO(2026-11-06 改,修前两条都记 CRITICAL)
+        self.assertEqual([s for s, _ in bots].count("CRITICAL"), 1)
+        self.assertTrue(any(s == "INFO" and "Perplexity-User" in m for s, m in bots))
         self.assertIn("WARN", [s for s, _ in bots])              # Google-Extended 单列 WARN
         ge = [m for s, m in bots if s == "WARN"][0]
         self.assertIn("robots token", ge)
