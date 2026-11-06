@@ -168,6 +168,14 @@ class SecondCheckTests(unittest.TestCase):
                               seeds=["firecrawl.dev", "firecrawl.link"])
         self.assertEqual(rows, [])
 
+    def test_seed_country_sites_and_shared_hosts(self):
+        """11-06 链接图里 brightdata.es / .jp 和 blogspot.com、vercel.app 排进了候选前 30:前者是种子自己的分站,后者是公共托管域。"""
+        g = {"inlinks": {"brightdata.com": ["brightdata.es", "blogspot.com", "list.io"],
+                         "apify.com": ["brightdata.es", "blogspot.com", "list.io"]}, "mutual": []}
+        rows, _ = L.intersect(g, own="everyinfra.com", min_seeds=2)
+        flags = {r["domain"]: (r["is_seed"], r["platform"]) for r in rows}
+        self.assertEqual(flags, {"list.io": (0, 0), "brightdata.es": (1, 0), "blogspot.com": (0, 1)})
+
 
 class ExchangerTests(unittest.TestCase):
     def test_hosts_and_listed(self):

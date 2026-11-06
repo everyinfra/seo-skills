@@ -5,6 +5,13 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.41.2 - 2026-11-06
+
+- **Common Crawl 链接图从「卡几小时」到 13 分钟**(11-06 实跑 781 秒,149 个目标域找到 144 个、互链 393 对):`link_intel.py ccgraph` 之前用 `grep -E -f` 过滤,macOS 自带的 BSD grep 多模式过滤实测只有约 1MB/s,8GB 压缩的边文件要跑好几天,下载被堵住、连接停在 CLOSE_WAIT,看起来像被限流。改成有 rg 用 rg(约 600MB/s)、否则 awk 查表(约 37MB/s),命中行再按列精确比对一遍。下载改为 16MB 分段并发(`LINK_INTEL_PARALLEL`,默认 4),每段失败轮换主站、CloudFront 镜像和 `LINK_INTEL_PROXIES` 代理出口;每 512MB 打一次进度。种子文件里不像域名的行(比如 `'data']`)跳过。更正 0.41.0 文档里「整桶限流、换 IP 没用」:实测同一时刻不同出口结果不同,限流按出口 IP。
+  `link_intel.py ccgraph`: filter with rg (or awk) instead of BSD `grep -E -f` (about 1MB/s, which stalled the download); parallel ranged download with mirror and proxy rotation; Common Crawl throttling is per egress IP.
+- **外联候选去掉种子分站和公共托管域**:链接图并进来后,brightdata.es / .jp、octoparse.fr 这类种子站自己的各国分站,和 blogspot.com、vercel.app、gitbook.io 这类成千上万子站共用的托管域,排进了候选前 30。前者现在算种子(`is_seed=1`),后者进平台名单。实跑(everyinfra.com,118 个同行种子):5,917 个候选里剔掉 247 个。
+  `intersect`: seed country sites count as seeds; shared hosting domains (blogspot.com, vercel.app, gitbook.io…) are platforms.
+
 ## 0.41.1 - 2026-11-06
 
 - **交收录时 Google 和 Bing 一起交**:everyinfra.com 11-06 只给 Google 请求了编入索引,Bing 那边两张日语 sitemap 显示「The page is not accessible」(条数 0)没人发现。`bing_wmt.py` 加 `feeds` 子命令:列 Bing 登记的每张 sitemap 的状态、条数、最近读取日期,`--submit` 先交或重交(SubmitFeed);有读不到的退出码 3。SKILL.md 路由表加「交收录」一行,script-catalog 补 `bing_wmt.py`(原来漏了)。实跑:重交后 Bing 当天读到 53 条和 106 条。`tests/test_bing_wmt.py` 加 3 条,响应取自当天真实 GetFeeds。

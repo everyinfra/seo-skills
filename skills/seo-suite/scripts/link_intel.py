@@ -9,7 +9,7 @@
              抓榜单/对比文章,数每个外链域出现在几篇里 → 种子站(≥min 篇)。榜单文章本身也是「求收录」外联对象。
   ccgraph    --targets seeds.txt [--own example.com] [--release cc-main-2026-jul-aug-sep|latest] [--ranks] --out graph.json
              流式读 Common Crawl 域名级链接图(顶点约 1GB、边约 8GB 压缩,不落盘),取出每个目标域的入链域,
-             以及目标域之间的互链。要 gzip、grep(-E -f)、awk 在 PATH 上;下载断了按 Range 断点续传。
+             以及目标域之间的互链。要 gzip、awk 在 PATH 上(有 rg 自动用,快十几倍);分段并发下载,断了按段重试。
   crawl      --sites sites.txt [--own example.com] [--max-pages 30] --out crawl.json
              抓每个站的首页、合作/集成/友链/资源类页面和 sitemap 里同类页,记下页面上的外链(含 rel、锚文本)。
              页面级互链(A 的某页链 B、B 的某页链 A)= 疑似互换,两边页面都给出来。
@@ -77,6 +77,9 @@ PLATFORMS = {
     "nodejs.org", "playwright.dev", "pptr.dev", "selenium.dev", "developer.mozilla.org", "cal.com", "hsforms.com",
     "hsforms.net", "typeform.com", "tally.so", "figma.com", "notion.so", "notion.com", "slack.com", "linear.app",
     "claude.com", "huggingface.co", "modelcontextprotocol.io", "stripe.com", "vercel.com", "netlify.com",
+    # 公共托管域:成千上万个子站共用一个注册域,域名级链接图里它「链了几十个种子」不代表任何一个站在推荐
+    "blogspot.com", "vercel.app", "netlify.app", "pages.dev", "gitbook.io", "herokuapp.com", "wixsite.com",
+    "webflow.io", "notion.site", "framer.website", "framer.ai", "carrd.co", "readthedocs.io", "glitch.me",
 }
 
 
@@ -106,9 +109,7 @@ def registrable(host_or_url):
     return SC.registrable(h)
 
 
-def _ere(domain):
-    """域名 → grep -E 字面量(域名里只有字母数字、点、连字符)。"""
-    return domain.replace(".", "\\.")
+DOMAIN_RE = re.compile(r"[a-z0-9-]+(\.[a-z0-9-]+)+")
 
 
 def rev(domain):
@@ -306,40 +307,68 @@ def cc_url(release, kind):
     return "%s/%s/domain/%s-domain-%s.txt.gz" % (CC_BASE, release, release, kind)
 
 
-def _feed(url, sink, tries=300, chunk=16 << 20):
-    """把 url 的字节流按 16MB 一段的 Range 请求写进 sink(子进程 stdin)。
-    Common Crawl 高峰时 S3 回 503 SlowDown:整条长连接几乎拿不到数据,短的分段请求一半以上能成。
-    所以按段取,单段失败就换主站 / 镜像重试,连续失败 tries 次才放弃(单线程顺序取,不加并发)。"""
-    got, total, fails, last = 0, None, 0, None
+def _proxies():
+    """LINK_INTEL_PROXIES=http://u:p@host:port,http://... 时,各段轮流走这些出口;不设就直连。"""
+    return [p.strip() for p in os.environ.get("LINK_INTEL_PROXIES", "").split(",") if p.strip()] or [None]
+
+
+def _get_range(u, start, end, proxy):
+    handlers = [urllib.request.ProxyHandler({"http": proxy, "https": proxy})] if proxy else []
+    opener = urllib.request.build_opener(*handlers)
+    req = urllib.request.Request(u, headers={"User-Agent": UA, "Range": "bytes=%d-%d" % (start, end)})
+    with opener.open(req, timeout=60) as r:
+        if r.status != 206:
+            raise SystemExit("服务器不支持分段下载:%s" % u)
+        m = re.search(r"/(\d+)$", r.headers.get("Content-Range", ""))
+        return (int(m.group(1)) if m else None), r.read()
+
+
+def _feed(url, sink, tries=300, chunk=16 << 20, parallel=None):
+    """把 url 的字节流按 16MB 一段的 Range 请求写进 sink(子进程 stdin),按顺序写。
+    Common Crawl 高峰时回 503 SlowDown,而且按出口限流:同一时刻本机能跑 20MB/s,别的机房回 503。
+    所以按段取、并发 LINK_INTEL_PARALLEL 段(默认 4),每段失败就换主站 / 镜像 / 下一个代理出口重试;
+    同一段连续失败 tries 次才放弃。进度每 512MB 打到 stderr。"""
+    from concurrent.futures import ThreadPoolExecutor
+    parallel = parallel or int(os.environ.get("LINK_INTEL_PARALLEL", "4"))
     alts = [url] + [url.replace(CC_MIRRORS[0], m, 1) for m in CC_MIRRORS[1:] if url.startswith(CC_MIRRORS[0])]
-    while total is None or got < total:
-        u = alts[fails % len(alts)]
-        try:
-            req = urllib.request.Request(u, headers={"User-Agent": UA, "Range": "bytes=%d-%d" % (got, got + chunk - 1)})
-            with urllib.request.urlopen(req, timeout=60) as r:
-                if r.status != 206:
-                    raise SystemExit("服务器不支持分段下载:%s" % u)
-                m = re.search(r"/(\d+)$", r.headers.get("Content-Range", ""))
-                total = int(m.group(1)) if m else total
-                data = r.read()
+    exits = _proxies()
+    state = {"n": 0}
+
+    def fetch(start):
+        last = None
+        for i in range(tries):
+            state["n"] += 1
+            k = state["n"]
+            try:
+                return _get_range(alts[k % len(alts)], start, start + chunk - 1, exits[k % len(exits)])
+            except urllib.error.HTTPError as e:
+                if e.code == 416:
+                    return None, b""
+                last = e
+            except (urllib.error.URLError, OSError, TimeoutError) as e:
+                last = e
+            time.sleep(min(30, 1 + i // 5))
+        raise SystemExit("下载失败(第 %d 字节起的一段连续失败 %d 次):%s %s" % (start, tries, url, last))
+
+    total, first = fetch(0)             # 第一段顺带拿到总长度
+    sink.write(first)
+    got, mark = len(first), 0
+    if not total or got >= total:
+        sink.close()
+        return got
+    with ThreadPoolExecutor(max_workers=parallel) as ex:
+        starts = iter(range(chunk, total, chunk))
+        window = [ex.submit(fetch, st) for st in [next(starts, None) for _ in range(parallel * 2)] if st is not None]
+        while window:
+            _, data = window.pop(0).result()
             sink.write(data)
             got += len(data)
-            fails = 0
-            if total is None and len(data) < chunk:
-                break
-        except urllib.error.HTTPError as e:
-            if e.code == 416:           # 已经取完
-                break
-            last, fails = e, fails + 1
-        except (urllib.error.URLError, OSError, TimeoutError) as e:
-            if isinstance(e, BrokenPipeError):
-                raise
-            last, fails = e, fails + 1
-        if fails:
-            if fails >= tries:
-                sink.close()
-                raise SystemExit("下载失败(连续 %d 段失败,到 %d 字节):%s %s" % (tries, got, u, last))
-            time.sleep(min(30, 1 + fails // 5))
+            nxt = next(starts, None)
+            if nxt is not None:
+                window.append(ex.submit(fetch, nxt))
+            if got - mark >= 512 << 20:
+                mark = got
+                print("  下载 %s:%d / %d MB" % (url.rsplit("/", 1)[-1], got >> 20, total >> 20), file=sys.stderr, flush=True)
     sink.close()
     return got
 
@@ -376,39 +405,43 @@ def _pipeline(url, source, tail_cmd):
     return out
 
 
-def stream_grep(url, patterns, source=None):
-    """(下载 | 本地文件) | gzip -dc | grep -E -f patterns → 命中行。source 给本地文件(测试用)时不走网络。"""
-    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".pat", encoding="utf-8") as pf:
-        pf.write("\n".join(patterns) + "\n")
-        pat = pf.name
-    try:
-        return _pipeline(url, source, ["grep", "-E", "-f", pat])
-    finally:
-        os.unlink(pat)
-
-
-def stream_join(url, keys, col, source=None):
-    """(下载 | 本地文件) | gzip -dc | awk 第 col 列在 keys 里的行。键多(几十万)时比 grep 快,一遍读完。"""
+def stream_join(url, keys, cols, source=None):
+    """(下载 | 本地文件) | gzip -dc | 过滤:第 cols 列(1 起,任一列)等于 keys 之一的行。source 给本地文件(测试用)时不走网络。
+    键不多(≤5000)且有 rg 就用 rg(实测约 600MB/s);否则 awk 查表(约 37MB/s)。不用 grep -E -f:
+    macOS 自带的 BSD grep 多模式过滤实测只有约 1MB/s,8GB 压缩的边文件要跑好几天,下载也会被它堵住。"""
+    cols = (cols,) if isinstance(cols, int) else tuple(cols)
+    keys = sorted(set(keys))
+    rg = shutil.which("rg") if len(keys) <= 5000 else None    # 键太多 rg 的正则会超大小上限,改用 awk 查表
     with tempfile.NamedTemporaryFile("w", delete=False, suffix=".keys", encoding="utf-8") as kf:
-        kf.write("\n".join(keys) + "\n")
+        if rg:      # 键只有字母数字、点、连字符;第 1 列锚行首,其他列锚前一个 tab 和后一个 tab 或行尾
+            kf.write("\n".join(("^%s\t" if c == 1 else "\t%s(\t|$)") % k.replace(".", "\\.")
+                               for k in keys for c in cols) + "\n")
+        else:
+            kf.write("\n".join(keys) + "\n")
         kpath = kf.name
     try:
-        return _pipeline(url, source, ["awk", "-F", "\t", "NR==FNR{k[$1];next} ($%d in k)" % col, kpath, "-"])
+        if rg:
+            out = _pipeline(url, source, [rg, "--no-config", "--no-line-number", "-a", "-f", kpath])
+        else:
+            cond = " || ".join("($%d in k)" % c for c in cols)
+            out = _pipeline(url, source, ["awk", "-F", "\t", "NR==FNR{k[$1];next} %s" % cond, kpath, "-"])
     finally:
         os.unlink(kpath)
+    ks = set(keys)
+    return [ln for ln in out if any(len(f) >= c and f[c - 1] in ks for f in [ln.split("\t")] for c in cols)]
 
 
 def ccgraph(targets, own=None, release=None, ranks=False, local=None):
     """targets:注册域列表。local:{'vertices': path, 'edges': path, 'ranks': path}(测试用)。
     返回 {release, found, missing, inlinks{t:[src]}, outlinks{t:[dst]}, mutual[[a,b]], ranks{d:pos}}。"""
-    for tool in ("gzip", "grep", "awk"):
+    for tool in ("gzip", "awk"):
         if not shutil.which(tool):
             raise SystemExit("缺少命令 %s" % tool)
     local = local or {}
-    names = sorted({t.lower() for t in targets} | ({own.lower()} if own else set()))
+    names = sorted({t.strip().lower() for t in targets if DOMAIN_RE.fullmatch(t.strip().lower())}
+                   | ({own.lower()} if own else set()))
     # 1) 顶点:目标域 → id
-    vpat = ["\t%s\t" % _ere(rev(d)) for d in names]
-    vlines = stream_grep(cc_url(release, "vertices"), vpat, local.get("vertices"))
+    vlines = stream_join(cc_url(release, "vertices"), [rev(d) for d in names], 2, local.get("vertices"))
     id_of = {}
     for ln in vlines:
         parts = ln.split("\t")
@@ -417,9 +450,8 @@ def ccgraph(targets, own=None, release=None, ranks=False, local=None):
     name_of = {v: k for k, v in id_of.items()}
     # 2) 边:指向目标的(入链)和目标发出的(出链)
     ids = sorted(name_of)
-    epat = ["\t%s$" % i for i in ids] + ["^%s\t" % i for i in ids]
     inl, outl = defaultdict(set), defaultdict(set)
-    for ln in stream_grep(cc_url(release, "edges"), epat, local.get("edges")) if ids else []:
+    for ln in stream_join(cc_url(release, "edges"), ids, (1, 2), local.get("edges")) if ids else []:
         a, _, b = ln.partition("\t")
         if b in name_of:
             inl[b].add(a)
@@ -637,6 +669,7 @@ def intersect(graph, crawl=None, own=None, min_seeds=2, ledger=(), seeds=None):
                     if ln["domain"] == own:
                         own_linkers.add(s["site"])
     ranks = graph.get("ranks", {})
+    seed_brands = {b for b in _brands(seeds) if len(b) >= 5}
     rows = []
     for d, ts in links_to.items():
         ts = ts - {d}
@@ -648,7 +681,8 @@ def intersect(graph, crawl=None, own=None, min_seeds=2, ledger=(), seeds=None):
         rows.append({"domain": d, "seeds_linked": len(_brands(ts)), "best_page": page_best.get(d, ""),
                      "followed": len(_brands(followed[d] & ts)),
                      "seeds": ";".join(sorted(ts)),
-                     "is_seed": int(d in seeds), "platform": int(is_platform(d)),
+                     "is_seed": int(d in seeds or d.split(".")[0] in seed_brands),   # brightdata.es 也算种子
+                     "platform": int(is_platform(d)),
                      "cc_rank": ranks.get(d, ""), "contacted": int(d in ledger),
                      "evidence": ";".join(u for _, u in sorted(evidence.get(d, ()))[:6]),
                      "evidence_kind": ",".join(sorted({k for k, _ in evidence.get(d, ())})) or "commoncrawl"})

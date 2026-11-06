@@ -16,7 +16,7 @@
 | 要的东西 | 免费来源 | 局限 |
 |---|---|---|
 | 种子站 | search MCP 搜榜单文章(best X、top X providers、X alternatives、X 推荐、X 哪个好),数每个站出现在几篇里 | 榜单偏英文;中文「验证码」查询会混进接码平台,要分清 |
-| 任意域名的入链域 | Common Crawl 域名级链接图(commoncrawl.org/web-graphs,每季度一版,顶点约 1GB、边约 8GB 压缩) | 只到域名级,没有页面和锚文本;只到该季度;Common Crawl 抓得少的站入链偏少。高峰时 S3 整桶回 503 SlowDown(不是按 IP 封,换 IP 没用),脚本按 16MB 分段顺序取、失败换地址重试;整天都限流时换个时段再跑 |
+| 任意域名的入链域 | Common Crawl 域名级链接图(commoncrawl.org/web-graphs,每季度一版,顶点约 1GB、边约 8GB 压缩) | 只到域名级,没有页面和锚文本;只到该季度;Common Crawl 抓得少的站入链偏少。高峰时回 503 SlowDown,按出口 IP 限流(11-06 同一时刻本机 20MB/s、香港两台 503 或 2.5MB/s):脚本按 16MB 分段并发取(`LINK_INTEL_PARALLEL`,默认 4),每段失败轮换主站 / CloudFront 镜像 / `LINK_INTEL_PROXIES` 里的代理出口(逗号分隔的 http 代理)重试。过滤用 rg,没有就 awk 查表;不要用 macOS 自带 grep 多模式过滤(约 1MB/s,会把下载一起堵住,看起来像被限流) |
 | 域名权重的替代 | 同一版的 harmonic centrality 名次(`--ranks`,再下 2.3GB) | 名次是全网图上的中心度,不是流量 |
 | 互换的页面证据 | 自己抓合作 / 集成 / 友链 / 资源页,以及路径里带对方品牌词的页(评测、合作方介绍、客座文章) | 只看静态 HTML;要 JS 渲染的页面认不出 |
 | 竞品排名 | search MCP 的 SERP 抽样(一词一次,前 10 名) | 一天的快照,只是抽样 |
