@@ -52,8 +52,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+import zlib
 from collections import Counter, deque
 from html.parser import HTMLParser
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from hreflang_cluster import check_lang  # noqa: E402  语言码校验唯一实现(sitemap_audit 同款)
 
 UA = "Mozilla/5.0 (compatible; seo-suite-crawl/1.0)"   # 套件 UA 惯例:seo-suite-<tool>/1.0
 UA_TOKEN = "seo-suite-crawl"                            # robots.txt 自我标识 token
@@ -80,6 +84,18 @@ SUB_PROBE_BUDGET_S = 30           # 常见子域探测总预算(秒);超时剩�
 EXTERNAL_SAMPLE = 10             # --check-external 抽样域数
 EXTERNAL_TOP = 50                # external_domains 聚合表保留 Top N
 EXTERNAL_URL_SAMPLE = 50         # --check-external 外链 URL 3xx 抽检个数(按引用页数取前 N)
+# ---- Ahrefs Site Audit 补项(2026-11-06,RQ-229 例 11):阈值出处见各行 ----
+HTML_LIMIT = 2 * 1024 * 1024     # Oversized HTML (>2MB);Googlebot「crawls the first 2MB of a supported file type」
+PAGE_READ_CAP = HTML_LIMIT + 1   # 页面最多读 2MB+1 字节:读满即判超限
+SLOW_MS_DEFAULT = 3000           # Slow page:Ahrefs 未公布阈值(帮助文 2570529 只说看 Loading time);本套件口径 3 秒,--slow-ms 可改
+IMAGE_MAX_BYTES = 100 * 1024     # Image file size too large:100 KB(Ahrefs Webmaster Tools 应用内说明,二手转录;官方帮助无数字)
+HTML_LARGE_BYTES = 300 * 1024    # Ahrefs「HTML file size too large」:博客写 250-300KB 起,取上沿
+CSS_MAX_BYTES = 15 * 1024        # CSS file size too large:「CSS files that are larger than 15 kB」(help.ahrefs.com/en/articles/2760432)
+RESOURCE_CHECK_CAP = 300         # --check-resources 最多查多少个资源 URL(按引用页数取前 N)
+EXTRA_PROBE_CAP = 200            # canonical / hreflang 指向但没抓到的 URL,最多补抓多少个
+NEAR_DUP_JACCARD = 0.9           # 近似重复:5 词 shingle 估算 Jaccard ≥0.9(Ahrefs「exact or very similar」未公布阈值;
+                                 # Screaming Frog 近似重复默认 90%)
+DUP_MIN_WORDS = 50               # 正文少于 50 词的页不参与重复内容判定(空壳页互相「重复」没有意义)
 SKIP_HREF_SCHEMES = ("javascript:", "mailto:", "tel:", "data:", "ftp:")
 ANCHOR_MAX_LEN = 80               # R3-5:锚文本截断长度(去空白后)
 ANCHOR_MIN_LEN = 2                # R3-5:短于 2 字的锚不落盘(无信号;亦保持 edges 旧快照兼容,anchor 键可缺)
@@ -265,7 +281,11 @@ def _header(headers, name):
     if not headers:
         return None
     try:
-        return headers.get(name)
+        v = headers.get(name)
+        if v is None and isinstance(headers, dict):     # 普通 dict(桩、缓存)按大小写无关再找一次
+            low = name.lower()
+            v = next((val for k, val in headers.items() if str(k).lower() == low), None)
+        return v
     except Exception:
         return None
 
@@ -279,8 +299,30 @@ def check_redirect(cur, nxt):
     ssrf_guard(p.hostname)
 
 
+def _decode(blob, enc, cap):
+    """Content-Encoding gzip/deflate 解压(最多解出 cap 字节,防压缩炸弹);其余原样返回。"""
+    enc = (enc or "").strip().lower()
+    try:
+        if enc in ("gzip", "x-gzip"):
+            return zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(blob, cap)
+        if enc == "deflate":
+            try:
+                return zlib.decompressobj().decompress(blob, cap)
+            except zlib.error:
+                return zlib.decompressobj(-zlib.MAX_WBITS).decompress(blob, cap)
+    except zlib.error:
+        return blob
+    return blob
+
+
 def _single(url, method, timeout):
     """单次请求(不跟随重定向);4xx/5xx 以 (status, headers, body) 返回,不抛。"""
+    status, headers, body, _meta = _single_timed(url, method, timeout)
+    return status, headers, body
+
+
+def _single_timed(url, method, timeout):
+    """同 _single,另返回 meta{ttfb_ms, load_ms, raw_bytes, encoding}(慢页、没压缩判定用)。"""
     p = urllib.parse.urlsplit(url)
     if p.scheme.lower() not in ("http", "https"):
         raise GuardError("仅允许 http(s): %s" % _redact(url))
@@ -288,18 +330,30 @@ def _single(url, method, timeout):
     req = urllib.request.Request(url, method=method, headers={
         "User-Agent": UA,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        # 只报 gzip/deflate(stdlib 解不了 br):这样「没压缩」才是服务器没压(Ahrefs Not compressed)
+        "Accept-Encoding": "gzip, deflate",
     })
     # sitemap 可以远大于页面上限(spiegel.de 的 index 2.25MB),按 2MB 截断会让 XML 解析失败
-    cap = SITEMAP_MAX_BYTES if p.path.lower().endswith(SITEMAP_EXT) else MAX_BYTES
+    cap = SITEMAP_MAX_BYTES if p.path.lower().endswith(SITEMAP_EXT) else PAGE_READ_CAP
+    t0 = time.monotonic()
     try:
         with _OPENER.open(req, timeout=timeout) as r:
-            return int(r.status), r.headers, r.read(cap)
+            t1 = time.monotonic()
+            raw = r.read(cap)
+            t2 = time.monotonic()
+            enc = _header(r.headers, "content-encoding")
+            meta = {"ttfb_ms": round((t1 - t0) * 1000), "load_ms": round((t2 - t0) * 1000),
+                    "raw_bytes": len(raw), "encoding": (enc or "").strip().lower() or None}
+            return int(r.status), r.headers, _decode(raw, enc, cap), meta
     except urllib.error.HTTPError as e:
         try:
             body = e.read(MAX_BYTES)
         except Exception:
             body = b""
-        return int(e.code), getattr(e, "headers", None), body
+        enc = _header(getattr(e, "headers", None), "content-encoding")
+        return int(e.code), getattr(e, "headers", None), _decode(body, enc, MAX_BYTES), {
+            "ttfb_ms": round((time.monotonic() - t0) * 1000), "load_ms": round((time.monotonic() - t0) * 1000),
+            "raw_bytes": len(body), "encoding": (enc or "").strip().lower() or None}
     # URLError/OSError/Timeout 向上抛给 robust_fetch 重试
 
 
@@ -307,9 +361,9 @@ def http_fetch(url, timeout=10.0, method="GET"):
     """GET/HEAD 并手动跟随重定向(≤10 跳,逐跳 SSRF 复查)。
     返回 {status, final_url, chain:[{status,location}], headers, body, body_bytes}。"""
     chain, cur = [], url
-    status, headers, blob = 200, None, b""
+    status, headers, blob, meta = 200, None, b"", {}
     for _ in range(REDIRECT_HOPS_MAX + 1):
-        status, headers, blob = _single(cur, method, timeout)
+        status, headers, blob, meta = _single_timed(cur, method, timeout)
         if not (300 <= status < 400):
             break
         loc = _header(headers, "location")
@@ -320,7 +374,7 @@ def http_fetch(url, timeout=10.0, method="GET"):
         chain.append({"status": status, "location": nxt})
         cur = nxt
     return {"status": status, "final_url": cur, "chain": chain, "headers": headers,
-            "body": blob.decode("utf-8", "replace"), "body_bytes": blob}
+            "body": blob.decode("utf-8", "replace"), "body_bytes": blob, "meta": meta}
 
 
 def _retry_after(headers):
@@ -494,32 +548,85 @@ def parse_sitemap_bytes(blob):
 # ---------------------------------------------------------------------------
 
 class PageParser(HTMLParser):
+    """一次解析拿全站审计要的页面信号:title/canonical/<a href>(带 rel=nofollow)、robots meta、description、
+    H1、html lang、hreflang、og:url、meta refresh、图片/JS/CSS 资源、正文文本(重复内容判定用)。"""
+    TEXT_SKIP = ("script", "style", "noscript", "template", "svg")
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.canonical = None
         self.hrefs = []
         self.anchors = []             # R3-5:与 hrefs 平行——每个 <a> 的锚文本(去空白截 80 字)
+        self.rel_nofollow = []        # 与 hrefs 平行——<a rel> 里有 nofollow
         self._in_title = False
         self._title_buf = []
         self._a_buf = None            # 当前 <a> 的文本缓冲(None=不在带 href 的 <a> 内)
+        self.title_count = 0
+        self.robots_meta = []         # name=robots / googlebot 的 content
+        self.descriptions = []
+        self.h1s, self._h1_buf = [], None
+        self.lang = None
+        self.hreflangs = []           # [(code, href)]
+        self.og_url = None
+        self.refresh = None
+        self.resources = []           # [(type, url)] type ∈ image/js/css
+        self.text, self._text_len, self._skip = [], 0, 0
+        self._svg = 0
 
     def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
-        if tag == "title":
+        a = {k.lower(): (v if v is not None else "") for k, v in attrs}
+        if tag in self.TEXT_SKIP:
+            self._skip += 1
+        if tag == "svg":
+            self._svg += 1
+        if tag == "html" and self.lang is None and "lang" in a:
+            self.lang = a["lang"].strip()
+        if tag == "title" and not self._svg:
             self._in_title = True
-        elif tag == "link" and "canonical" in (a.get("rel") or "").lower().split():
-            if a.get("href") and not self.canonical:
-                self.canonical = a["href"]
+            self.title_count += 1
+        elif tag == "link":
+            rel = (a.get("rel") or "").lower().split()
+            if "canonical" in rel:
+                if a.get("href") and not self.canonical:
+                    self.canonical = a["href"]
+            if "alternate" in rel and a.get("hreflang") and a.get("href"):
+                self.hreflangs.append((a["hreflang"].strip(), a["href"].strip()))
+            if "stylesheet" in rel and a.get("href"):
+                self.resources.append(("css", a["href"].strip()))
+        elif tag == "meta":
+            nm = (a.get("name") or a.get("property") or "").strip().lower()
+            if nm in ("robots", "googlebot"):
+                self.robots_meta.append(a.get("content") or "")
+            elif nm == "description":
+                self.descriptions.append((a.get("content") or "").strip())
+            elif nm == "og:url":
+                self.og_url = (a.get("content") or "").strip()
+            if (a.get("http-equiv") or "").strip().lower() == "refresh":
+                self.refresh = a.get("content") or ""
+        elif tag == "img" and a.get("src"):
+            self.resources.append(("image", a["src"].strip()))
+        elif tag == "script" and a.get("src"):
+            self.resources.append(("js", a["src"].strip()))
+        elif tag == "h1":
+            self._h1_buf = []
         elif tag == "a":
             h = a.get("href")
             if h:
                 self.hrefs.append(h)
                 self.anchors.append("")
+                self.rel_nofollow.append("nofollow" in (a.get("rel") or "").lower().split())
                 self._a_buf = []      # R3-5:嵌套标签(<a><b>文</b></a>)的文本也计入
 
     def handle_endtag(self, tag):
+        if tag in self.TEXT_SKIP and self._skip:
+            self._skip -= 1
+        if tag == "svg" and self._svg:
+            self._svg -= 1
         if tag == "title":
             self._in_title = False
+        elif tag == "h1" and self._h1_buf is not None:
+            self.h1s.append(" ".join("".join(self._h1_buf).split()))
+            self._h1_buf = None
         elif tag == "a" and self._a_buf is not None:
             self.anchors[-1] = " ".join("".join(self._a_buf).split())[:ANCHOR_MAX_LEN]
             self._a_buf = None
@@ -527,26 +634,93 @@ class PageParser(HTMLParser):
     def handle_data(self, d):
         if self._in_title:
             self._title_buf.append(d)
-        elif self._a_buf is not None:
+            return
+        if self._a_buf is not None:
             self._a_buf.append(d)
+        if self._h1_buf is not None:
+            self._h1_buf.append(d)
+        if not self._skip and self._text_len < 300_000:
+            self.text.append(d)
+            self._text_len += len(d)
 
     @property
     def title(self):
         return " ".join("".join(self._title_buf).split()) or None
 
 
+def parse_page(body, base):
+    """完整解析(给 fetch_page 用);坏 HTML 不抛。"""
+    p = PageParser()
+    try:
+        p.feed(body[:PAGE_READ_CAP])
+    except Exception:
+        pass
+    return p
+
+
 def extract_links(body, base):
     """返回 (title, canonical_abs, [(href_abs_norm...)], [anchor...])——link 归一/过滤在调用方;
     anchors 与 hrefs 等长平行(R3-5,无文本/未闭合时为空串)。"""
-    p = PageParser()
-    try:
-        p.feed(body[:500_000])
-    except Exception:
-        pass
+    p = parse_page(body, base)
     canonical = None
     if p.canonical:
         canonical = normalize_url(p.canonical, base=base)
     return p.title, canonical, p.hrefs, p.anchors
+
+
+# ---------------------------------------------------------------------------
+# 页面信号小工具(Ahrefs 补项)
+# ---------------------------------------------------------------------------
+
+def robots_names(*values):
+    """robots 指令串 → 指令名集合(小写;逗号/空白分隔;max-snippet:20 → max-snippet)。"""
+    out = set()
+    for v in values:
+        for part in re.split(r"[,\s]+", re.sub(r"\s*:\s*", ":", v or "")):
+            if part.strip():
+                out.add(part.strip().lower().split(":")[0])
+    return out
+
+
+def header_robots(value):
+    """X-Robots-Tag → 对 Google 生效的指令名集合(「bingbot: noindex」只对 Bing 生效,不算)。"""
+    m = re.match(r"\s*([a-z][\w-]*)\s*:\s*(.+)$", value or "", re.I)
+    if m and m.group(1).lower() not in ("max-snippet", "max-image-preview", "max-video-preview",
+                                        "unavailable_after"):
+        return robots_names(m.group(2)) if m.group(1).lower() == "googlebot" else set()
+    return robots_names(value)
+
+
+def refresh_target(content, base):
+    m = re.search(r"url\s*=\s*['\"]?([^'\";]+)", content or "", re.I)
+    if not m:
+        return None
+    tgt = urllib.parse.urljoin(base, m.group(1).strip()).split("#")[0]
+    return tgt if tgt != base.split("#")[0] else None
+
+
+def lang_primary(code):
+    return (code or "").strip().replace("_", "-").split("-")[0].lower()
+
+
+_TOKEN_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|[^\W_]+", re.U)
+
+
+def text_sketch(text, k=64):
+    """正文 → (词数, 全文哈希, bottom-k 草图)。5 词 shingle,crc32 哈希,保留最小 k 个。"""
+    toks = _TOKEN_RE.findall((text or "").lower())
+    if len(toks) < DUP_MIN_WORDS:
+        return len(toks), None, None
+    full = zlib.crc32(" ".join(toks).encode("utf-8"))
+    sh = {zlib.crc32(" ".join(toks[i:i + 5]).encode("utf-8")) for i in range(max(1, len(toks) - 4))}
+    return len(toks), full, tuple(sorted(sh)[:k])
+
+
+def sketch_jaccard(a, b, k=64):
+    """bottom-k 估算 Jaccard:并集最小 k 个里,两边都有的占比。"""
+    sa, sb = set(a), set(b)
+    union = sorted(sa | sb)[:k]
+    return sum(1 for h in union if h in sa and h in sb) / len(union) if union else 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -599,6 +773,13 @@ class Crawler:
         self.rate_limited = 0            # 退避重试后仍像限流的页数(不算错误页,未判定)
         self.truncated = False
         self._robots_cache = {}
+        # Ahrefs 补项状态
+        self.edge_follow = {}           # (src, dst) -> 至少一条可跟随链接(无 rel=nofollow 且源页不是 nofollow 页)
+        self.edge_nofollow_link = set() # (src, dst) 里有 rel=nofollow 的 <a>(Page has nofollow outgoing internal links)
+        self.resources = {}             # 资源 URL -> {"type", "pages": [引用页]}
+        self.sketch = {}                # url -> (词数, 全文哈希, bottom-k 草图)
+        self.extra = {}                 # canonical/hreflang 指向但没在抓取集里的 URL -> {status, final_url, canonical, ...}
+        self.slow_ms = getattr(ns, "slow_ms", None) or SLOW_MS_DEFAULT
 
     # ---- 基础设施 ----
 
@@ -914,8 +1095,11 @@ class Crawler:
                     prev = h["location"]
                 self.redirect_hops[url] = hops
             self.served[url] = r["final_url"]
-            title, canonical, hrefs, anchors = extract_links(r["body"], r["final_url"])
+            pp = parse_page(r["body"], r["final_url"])
+            title, hrefs, anchors = pp.title, pp.hrefs, pp.anchors
+            canonical = normalize_url(pp.canonical, base=r["final_url"]) if pp.canonical else None
             rec["title"], rec["canonical"] = title, canonical
+            page_nofollow = self._page_signals(rec, r, pp)
             for i, h in enumerate(hrefs):
                 hl = h.strip()
                 if not hl or hl.startswith("#"):
@@ -930,6 +1114,13 @@ class Crawler:
                 if self.is_internal(h2):
                     self.consider_host(h2)
                     internal_targets.add(absu)
+                    rel_nf = pp.rel_nofollow[i] if i < len(pp.rel_nofollow) else False
+                    if rel_nf:
+                        self.edge_nofollow_link.add((url, absu))
+                    if not rel_nf and not page_nofollow:
+                        self.edge_follow[(url, absu)] = True
+                    else:
+                        self.edge_follow.setdefault((url, absu), False)
                     atext = anchors[i] if i < len(anchors) else ""
                     if len(atext) >= ANCHOR_MIN_LEN:   # R3-5:锚文本配对进边(首见优先)
                         self.edge_anchor.setdefault((url, absu), atext)
@@ -958,6 +1149,71 @@ class Crawler:
         self.pages[url] = rec
         self.order.append(url)
         return rec, internal_targets
+
+    def _page_signals(self, rec, r, pp):
+        """把 Ahrefs 补项要用的页面信号写进 rec(只写有值的键,旧下游不受影响);返回本页是否 nofollow。"""
+        base = r["final_url"]
+        meta = r.get("meta") or {}
+        hdr = r.get("headers")
+        html_names = robots_names(*pp.robots_meta)
+        hdr_names = header_robots(_header(hdr, "x-robots-tag") or "")
+        ni = lambda n: bool(n & {"noindex", "none"})
+        nf = lambda n: bool(n & {"nofollow", "none"})
+        if ni(html_names) or ni(hdr_names):
+            rec["noindex"] = True
+        if nf(html_names) or nf(hdr_names):
+            rec["nofollow"] = True
+        both = [d for d, f in (("noindex", ni), ("nofollow", nf)) if f(html_names) and f(hdr_names)]
+        if both:
+            rec["robots_in_html_and_header"] = both
+        if pp.title_count > 1:
+            rec["title_count"] = pp.title_count
+        if pp.descriptions:
+            rec["description"] = pp.descriptions[0][:300]
+            if len(pp.descriptions) > 1:
+                rec["description_count"] = len(pp.descriptions)
+        if pp.h1s:
+            rec["h1"] = pp.h1s[0][:200]
+        if pp.lang is not None:
+            rec["lang"] = pp.lang
+        if pp.hreflangs:
+            rec["hreflang"] = [[c, normalize_url(urllib.parse.urljoin(base, h))] for c, h in pp.hreflangs][:50]
+        if pp.og_url:
+            rec["og_url"] = pp.og_url
+        if pp.refresh is not None:
+            tgt = refresh_target(pp.refresh, base)
+            if tgt:
+                rec["meta_refresh"] = tgt
+        size = max(len(r.get("body_bytes") or b""), 0)
+        if size:
+            rec["bytes"] = size
+        if meta.get("load_ms") is not None:
+            rec["load_ms"] = meta["load_ms"]
+        if meta.get("ttfb_ms") is not None:
+            rec["ttfb_ms"] = meta["ttfb_ms"]
+        ctype = (_header(hdr, "content-type") or "").lower()
+        is_html = (not ctype and _looks_html(r.get("body") or "")) or "html" in ctype
+        if is_html:
+            rec["html"] = True
+            enc = meta.get("encoding") or (_header(hdr, "content-encoding") or "").strip().lower() or None
+            if meta and "encoding" in meta or _header(hdr, "content-encoding") is not None:
+                rec["encoding"] = enc or "identity"
+            scripts = 0
+            for typ, src in pp.resources:
+                if src.lower().startswith("data:"):
+                    continue
+                ru = urllib.parse.urljoin(base, src).split("#")[0]
+                if not ru.lower().startswith(("http://", "https://")):
+                    continue
+                scripts += typ == "js"
+                slot = self.resources.setdefault(ru, {"type": typ, "pages": []})
+                if rec["url"] not in slot["pages"]:
+                    slot["pages"].append(rec["url"])
+            if scripts:
+                rec["scripts"] = scripts
+            if 200 <= r["status"] < 300 and not r["chain"]:   # 被重定向的 URL 内容属于目标页,不重复计
+                self.sketch[rec["url"]] = text_sketch(" ".join(pp.text))
+        return bool(rec.get("nofollow"))
 
     def crawl(self, crawl_fallback):
         """统一抓取循环:初始队列(②③产物/①清单/子域根页)→ 逐页抓取 →
@@ -1082,6 +1338,381 @@ class Crawler:
                 "redirects": [x for x in rows if x.get("status") is not None and not x.get("broken")],
                 "broken": [x for x in rows if x.get("broken")],
                 "errors": [x for x in rows if x.get("status") is None]}
+
+    # ---- Ahrefs 站点审计补项(2026-11-06,RQ-229 例 11:脚本实跑覆盖 ≥90%)。判据原文见各段注释 ----
+
+    def probe_extra(self):
+        """canonical / hreflang 指向、但不在抓取集里的站内 URL:补抓一次(≤EXTRA_PROBE_CAP),拿状态码、
+        是否重定向、它自己的 canonical 与 html lang。Ahrefs 会抓 canonical 目标(Canonical points to 4XX/5XX/
+        redirect、Non-canonical page specified as canonical 都要看目标页本身)。"""
+        want = []
+        for u in self.order:
+            rec = self.pages[u]
+            if rec.get("status") is None or rec["status"] >= 400 or rec.get("final_url"):
+                continue
+            c = rec.get("canonical")
+            if c and c != u:
+                want.append(c)
+            want.extend(h for _c, h in rec.get("hreflang", []) if h)
+        todo, seen = [], set()
+        for w in want:
+            if w in self.pages or w in seen or not self.is_internal(host_of(w)):
+                continue
+            seen.add(w)
+            todo.append(w)
+        if len(todo) > EXTRA_PROBE_CAP:
+            self.warnings.append("canonical/hreflang 指向的未抓 URL 有 %d 个,只补抓前 %d 个"
+                                 % (len(todo), EXTRA_PROBE_CAP))
+            todo = todo[:EXTRA_PROBE_CAP]
+        for u in todo:
+            if not self.allowed(u):
+                self.extra[u] = {"status": None, "error": "robots Disallow,未抓"}
+                continue
+            try:
+                r = self._request(u)
+            except (FetchError, GuardError) as e:
+                self.extra[u] = {"status": None, "error": str(e)}
+                continue
+            ent = {"status": r["status"]}
+            if r["chain"]:
+                ent["final_url"] = r["final_url"]
+                ent["first_status"] = r["chain"][0]["status"]
+            if r["status"] < 400:
+                pp = parse_page(r["body"], r["final_url"])
+                if pp.canonical:
+                    ent["canonical"] = normalize_url(pp.canonical, base=r["final_url"])
+                if pp.lang is not None:
+                    ent["lang"] = pp.lang
+            self.extra[u] = ent
+
+    def check_resources(self, limit=RESOURCE_CHECK_CAP):
+        """--check-resources:页面引用的图片/JS/CSS 逐个 HEAD(405/501 或没有 Content-Length 时 GET),
+        记状态、是否重定向、大小。Ahrefs 帮助文:Image broken / JavaScript broken / CSS broken
+        「return one of the 4xx or 5xx status codes」(articles 2628254、2750495、2759921)。
+        按引用页数取前 limit 个,输出写明查了几个、共几个。"""
+        picked = sorted(self.resources.items(), key=lambda kv: (-len(kv[1]["pages"]), kv[0]))[:limit]
+        out = {}
+        for u, info in picked:
+            if self.is_internal(host_of(u)) and not self.allowed(u):
+                out[u] = {"status": None, "error": "robots Disallow,未查"}
+                continue
+            try:
+                r = self._request(u, method="HEAD")
+                clen = _header(r.get("headers"), "content-length")
+                if r["status"] in (405, 501) or (r["status"] < 300 and clen is None):
+                    r = self._request(u)
+                    clen = _header(r.get("headers"), "content-length")
+            except (FetchError, GuardError) as e:
+                out[u] = {"status": None, "error": str(e)}
+                continue
+            ent = {"status": r["status"]}
+            if r["chain"]:
+                ent["final_url"] = r["final_url"]
+                ent["first_status"] = r["chain"][0]["status"]
+            try:
+                size = int(clen) if clen is not None else None
+            except ValueError:
+                size = None
+            if size is None and r.get("body_bytes"):
+                size = (r.get("meta") or {}).get("raw_bytes") or len(r["body_bytes"])
+            if size is not None:
+                ent["bytes"] = size
+            out[u] = ent
+        return {"checked": len(picked), "total": len(self.resources), "status": out}
+
+    def site_issues(self, direct, resource_check=None):
+        """Ahrefs Site Audit 各项的站级清单(crawl.json 的 site_issues 节)。每个键对应一项 Ahrefs 问题,
+        值是受影响 URL 行(最多 100 行)+ counts 里写全量数。只读已抓数据,不再发请求。"""
+        P = self.pages
+        out, counts = {}, {}
+
+        def put(key, rows):
+            counts[key] = len(rows)
+            out[key] = rows[:100]
+
+        ok = [u for u in self.order if P[u].get("status") and 200 <= P[u]["status"] < 300 and not P[u].get("final_url")]
+        ok_set = set(ok)
+        html_ok = [u for u in ok if P[u].get("html")]
+
+        def indexable(u):
+            r = P[u]
+            c = r.get("canonical")
+            return u in ok_set and not r.get("noindex") and (not c or c == u)
+
+        def target(u):
+            return P.get(u) or self.extra.get(u)
+
+        def scheme(u):
+            return urllib.parse.urlsplit(u).scheme.lower()
+
+        # -- Internal pages --
+        # Double slash in URL:「URLs that contain a double slash (after the domain part)」(help 2596665)
+        cand = set(self.order) | {d for _s, d in self.edges}
+        put("double_slash_in_url", sorted(u for u in cand if "//" in urllib.parse.urlsplit(u).path
+                                          and self.is_internal(host_of(u))))
+        # Oversized HTML (>2MB) / HTML file size too large:Googlebot 只抓前 2MB
+        put("oversized_html", [{"url": u, "bytes": P[u]["bytes"]} for u in html_ok if P[u].get("bytes", 0) > HTML_LIMIT])
+        # HTML file size too large:Ahrefs 未公布阈值,只说「a large html size of 250-300KB or more is usually accompanied by
+        # different performance issues」(ahrefs.com/blog/site-audit-issues-update-september-2021/)→ 取 300KB(解压后)
+        put("html_file_size_too_large", [{"url": u, "bytes": P[u]["bytes"]} for u in html_ok
+                                         if HTML_LARGE_BYTES < P[u].get("bytes", 0)])
+        # -- Indexability --
+        put("noindex_page", [u for u in ok if P[u].get("noindex")])
+        put("nofollow_page", [u for u in ok if P[u].get("nofollow")])       # help 2478724
+        put("noindex_in_html_and_header", [u for u in ok if "noindex" in P[u].get("robots_in_html_and_header", ())])
+        put("nofollow_in_html_and_header", [u for u in ok if "nofollow" in P[u].get("robots_in_html_and_header", ())])
+        c4, c5, cr, ch2s, cs2h, chain = [], [], [], [], [], []
+        for u in ok:
+            c = P[u].get("canonical")
+            if not c or c == u:
+                continue
+            ps, cs = scheme(self.served.get(u, u)), scheme(c)
+            if ps == "https" and cs == "http":
+                cs2h.append({"url": u, "canonical": c})       # help 2434581
+            elif ps == "http" and cs == "https":
+                ch2s.append({"url": u, "canonical": c})       # help 2478867
+            t = target(c)
+            if not t or t.get("status") is None:
+                continue
+            st = t["status"]
+            if t.get("final_url") and t.get("final_url") != c:
+                cr.append({"url": u, "canonical": c, "redirects_to": t["final_url"]})   # help 2753767
+            elif 400 <= st < 500:
+                c4.append({"url": u, "canonical": c, "status": st})                      # help 2427853
+            elif st >= 500:
+                c5.append({"url": u, "canonical": c, "status": st})                      # help 2491113
+            elif t.get("canonical") and t["canonical"] != c:
+                # Non-canonical page specified as canonical:「pages specified as canonical on other pages ...
+                # have a rel=canonical link to a different page」(help 2526305)
+                chain.append({"url": u, "canonical": c, "canonical_of_canonical": t["canonical"]})
+        put("canonical_points_to_4xx", c4)
+        put("canonical_points_to_5xx", c5)
+        put("canonical_points_to_redirect", cr)
+        put("canonical_from_http_to_https", ch2s)
+        put("canonical_from_https_to_http", cs2h)
+        put("non_canonical_page_specified_as_canonical", chain)
+        # -- Duplicates --
+        idx = [u for u in html_ok if indexable(u)]
+
+        def dup_groups(field):
+            g = {}
+            for u in idx:
+                v = " ".join((P[u].get(field) or "").split()).lower()
+                if v:
+                    g.setdefault(v, []).append(u)
+            return [{"value": P[us[0]].get(field)[:120], "urls": us} for _v, us in sorted(g.items()) if len(us) > 1]
+        put("duplicate_title", dup_groups("title"))
+        put("duplicate_meta_description", dup_groups("description"))
+        put("duplicate_h1", dup_groups("h1"))
+        groups = self._content_groups([u for u in html_ok if u in self.sketch and self.sketch[u][2]])
+        bad, without = [], []
+        for grp in groups:
+            canon = {P[u].get("canonical") or u for u in grp}
+            alts = all(set(grp) - {u} <= {h for _c, h in P[u].get("hreflang", [])} for u in grp)
+            if len(canon) == 1 or alts:
+                continue                                  # 好的重复:canonical 指向同一页,或互为 hreflang 版本
+            bad.append({"urls": grp})
+            # Ahrefs 2021-09 修:加了「Is Noindex = false」条件,noindex 页不报缺 canonical
+            without.extend(u for u in grp if not P[u].get("canonical") and not P[u].get("noindex"))
+        # Duplicate content (bad duplicates):「Pages with duplicate content that is not properly handled with their
+        # canonical, hreflang or pagination setups」(help 2115215);Duplicate pages without canonical:「pages that have
+        # duplicate content but do not declare their canonical version」(help 2596742)
+        put("duplicate_content_bad", bad)
+        put("duplicate_pages_without_canonical", sorted(set(without)))
+        # -- Links --
+        seed_final = self.served.get(self.seed, self.seed)
+        canon_targets = {P[u]["canonical"] for u in ok if P[u].get("canonical") and P[u]["canonical"] != u}
+        canon_set = canon_targets | {u for u in ok if P[u].get("source") == "sitemap" and indexable(u)}
+        # Canonical URL has no incoming internal links:「URLs in the website's sitemap files that have no incoming
+        # internal links」(help 2595174);本脚本另把被别页声明为 canonical 的 URL 也算进来
+        # --max 截断时样本外的页可能正链着它(everyinfra.com 实跑 80/5580+ 页误报 1 条):截断就不判,写进 partial
+        put("canonical_url_no_incoming_internal_links",
+            [] if self.truncated else
+            sorted(u for u in canon_set if direct.get(u, 0) == 0 and u not in (self.seed, seed_final)
+                   and self.is_internal(host_of(u))))
+        inbound = {}
+        for (src, dst), followed in self.edge_follow.items():
+            if src != dst:
+                inbound.setdefault(dst, [0, 0])[0 if followed else 1] += 1
+        only, mixed = [], []
+        for u in idx:
+            f, n = inbound.get(u, (0, 0))
+            if n and not f:
+                only.append({"url": u, "nofollow_inlinks": n})     # help 2746992
+            elif n and f:
+                mixed.append({"url": u, "dofollow_inlinks": f, "nofollow_inlinks": n})   # help 2734983
+        put("nofollow_incoming_internal_links_only", only)
+        put("nofollow_and_dofollow_incoming_internal_links", mixed)
+        nf_out = {}
+        for src, dst in self.edge_nofollow_link:
+            nf_out.setdefault(src, []).append(dst)
+        put("nofollow_outgoing_internal_links", [{"url": k, "links": sorted(v)[:20], "count": len(v)}
+                                                 for k, v in sorted(nf_out.items())])
+        # Page has no outgoing links:「pages that have no outgoing links」(help 2734700)
+        put("no_outgoing_links", [u for u in html_ok if not P[u].get("out_internal") and not P[u].get("out_external")])
+        to_redir, to_broken = {}, {}
+        for src, dst in self.edges:
+            t = P.get(dst)
+            if not t or src == dst:
+                continue
+            if t.get("final_url") and t["final_url"] != dst:
+                to_redir.setdefault(src, []).append(dst)              # help 2724308(站内部分)
+            elif t.get("status") in (404, 410):
+                # help 2721106;Ahrefs 2021-09 更新:「We now only include 404 and 410 URLs in this issue」
+                # (ahrefs.com/blog/site-audit-issues-update-september-2021/),其他 4xx/5xx 仍在 pages[].status 里
+                to_broken.setdefault(src, []).append({"url": dst, "status": t["status"]})
+        put("links_to_redirect", [{"url": k, "links": sorted(v)[:20], "count": len(v)} for k, v in sorted(to_redir.items())])
+        put("links_to_broken_page", [{"url": k, "links": v[:20], "count": len(v)} for k, v in sorted(to_broken.items())])
+        # -- Redirects --
+        r302, broken, h2s = [], [], []
+        for u in self.order:
+            hops = self.redirect_hops.get(u, ())
+            if not hops or not self.is_internal(host_of(u)):
+                continue
+            if any(st == 302 for _f, _t, st in hops):
+                r302.append({"url": u, "to": P[u].get("final_url")})          # help 2427783
+            fst = P[u].get("status")
+            if fst is not None and fst >= 400:
+                broken.append({"url": u, "to": P[u].get("final_url"), "final_status": fst})   # help 2456799
+            if any(scheme(f) == "http" and scheme(t) == "https" for f, t, _st in hops):
+                h2s.append(u)
+        put("redirect_302", r302)
+        put("broken_redirect", broken)
+        put("http_to_https_redirect", h2s)
+        put("meta_refresh_redirect", [{"url": u, "to": P[u]["meta_refresh"]} for u in ok if P[u].get("meta_refresh")])
+        # -- Content --
+        put("multiple_title_tags", [{"url": u, "count": P[u]["title_count"]} for u in ok if P[u].get("title_count", 1) > 1])
+        put("multiple_meta_description_tags", [{"url": u, "count": P[u]["description_count"]}
+                                               for u in ok if P[u].get("description_count", 1) > 1])
+        # -- Social --
+        ogm = []
+        for u in ok:
+            og, c = P[u].get("og_url"), P[u].get("canonical")
+            if og and c and re.match(r"^https?://", og, re.I) and normalize_url(og) != c:
+                ogm.append({"url": u, "og_url": og, "canonical": c})   # ahrefs.com/blog/canonical-tags/ 第 10 条
+        put("og_url_not_matching_canonical", ogm)
+        # -- Localization --
+        bad_lang = []
+        for u in html_ok:
+            lang = P[u].get("lang")
+            if lang is None:
+                continue
+            probs = check_lang(lang) if lang.strip().lower() != "x-default" else ["x-default 不是语言码"]
+            if probs:
+                bad_lang.append({"url": u, "lang": lang, "problem": probs[0]})   # help 2601025
+        put("html_lang_invalid", bad_lang)
+        ann = {}
+        # Ahrefs 2021-09:「We now ignore hreflangs on non-canonical pages」→ 只看 canonical 自指或没写 canonical 的页
+        for u in ok:
+            if P[u].get("canonical") and P[u]["canonical"] != u:
+                continue
+            for code, h in P[u].get("hreflang", []):
+                if h and code.strip().lower() != "x-default":
+                    ann.setdefault(h, []).append((u, code))
+        multi, mismatch, to_noncanon = [], [], {}
+        for h, refs in sorted(ann.items()):
+            langs = sorted({lang_primary(c) for _u, c in refs})
+            if len(langs) > 1:
+                multi.append({"url": h, "languages": langs, "referenced_from": sorted({u for u, _c in refs})[:10]})
+            t = target(h)
+            tl = (t or {}).get("lang")
+            if tl and not check_lang(tl) and any(lang_primary(c) != lang_primary(tl) for _u, c in refs):
+                mismatch.append({"url": h, "html_lang": tl, "hreflang": sorted({c for _u, c in refs})})
+            if t and not t.get("final_url") and t.get("canonical") and t["canonical"] != h:
+                for u, _c in refs:
+                    to_noncanon.setdefault(u, []).append({"hreflang_url": h, "canonical": t["canonical"]})
+        put("page_referenced_for_more_than_one_language", multi)    # help 2747339
+        put("hreflang_and_html_lang_mismatch", mismatch)            # help 2598523
+        put("hreflang_to_non_canonical", [{"url": k, "targets": v[:10]} for k, v in sorted(to_noncanon.items())])  # help 2608450
+        # -- Usability and performance --
+        put("slow_page", [{"url": u, "load_ms": P[u]["load_ms"]} for u in html_ok if P[u].get("load_ms", 0) > self.slow_ms])
+        put("not_compressed", [u for u in html_ok if P[u].get("encoding") == "identity"])
+        # -- AI Discoverability:Too slow/heavy for AI crawlers(Ahrefs 只公布了名称,未公布判法)。AI 爬虫只取 HTML、
+        #    不跑 JS,所以按两条可量的原因判:HTML 下载慢于 --slow-ms、HTML >2MB。外部 script 个数不算
+        #    (everyinfra.com 实跑:Next.js 每页 18-19 个 script,80/80 页都被报,与 AI 爬虫取页无关)
+        heavy = []
+        for u in html_ok:
+            why = []
+            if P[u].get("load_ms", 0) > self.slow_ms:
+                why.append("加载 %dms" % P[u]["load_ms"])
+            if P[u].get("bytes", 0) > HTML_LIMIT:
+                why.append("HTML %.1fMB" % (P[u]["bytes"] / 1048576))
+            if why:
+                heavy.append({"url": u, "reasons": why})
+        put("too_slow_or_heavy_for_ai_crawlers", heavy)
+        # -- 资源:HTTPS 页引用 HTTP 的图片/JS/CSS(不用请求就能判)--
+        for typ, key in (("image", "image"), ("js", "javascript"), ("css", "css")):
+            rows = {}
+            for ru, info in self.resources.items():
+                if info["type"] != typ or scheme(ru) != "http":
+                    continue
+                for pg in info["pages"]:
+                    if scheme(self.served.get(pg, pg)) == "https":
+                        rows.setdefault(pg, []).append(ru)
+            put("https_page_links_to_http_" + key, [{"url": k, "resources": v[:10]} for k, v in sorted(rows.items())])
+        if resource_check is not None:
+            stat = resource_check["status"]
+            limits = {"image": IMAGE_MAX_BYTES, "css": CSS_MAX_BYTES}
+            for typ, key in (("image", "image"), ("js", "javascript"), ("css", "css")):
+                items = [(u, self.resources[u], stat[u]) for u in stat if self.resources.get(u, {}).get("type") == typ]
+                brk = [(u, i, e) for u, i, e in items if e.get("status") is not None and e["status"] >= 400]
+                put(key + "_broken", [{"url": u, "status": e["status"], "pages": len(i["pages"])} for u, i, e in brk])
+                pages = {}
+                for u, i, e in brk:
+                    for pg in i["pages"]:
+                        pages.setdefault(pg, []).append(u)
+                put("page_has_broken_" + key, [{"url": k, "resources": v[:10]} for k, v in sorted(pages.items())])
+                put(key + "_redirects", [{"url": u, "to": e["final_url"], "status": e.get("first_status")}
+                                         for u, i, e in items if e.get("final_url") and e["final_url"] != u])
+                if typ in limits:
+                    put(key + "_file_size_too_large", [{"url": u, "bytes": e["bytes"]} for u, i, e in items
+                                                       if e.get("bytes", 0) > limits[typ] and (e.get("status") or 0) < 400])
+        if self.truncated:
+            out["partial"] = {"skipped": ["canonical_url_no_incoming_internal_links"],
+                              "reason": "--max 截断,入链数只算样本内的页;没有站内入链这一项不判。"
+                                        "nofollow 入链两项只看样本内的链接,可能偏少"}
+        out["counts"] = counts
+        return out
+
+    def _content_groups(self, urls):
+        """完全重复(全文哈希相同)∪ 近似重复(bottom-k 估算 Jaccard ≥NEAR_DUP_JACCARD)→ 分组(并查集)。
+        候选对:最小 8 个 shingle 哈希里有共同项的页面才比,避免 n² 全比。"""
+        parent = {u: u for u in urls}
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def union(a, b):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[rb] = ra
+        by_full, buckets = {}, {}
+        for u in urls:
+            _n, full, sk = self.sketch[u]
+            by_full.setdefault(full, []).append(u)
+            for h in sk[:8]:
+                buckets.setdefault(h, []).append(u)
+        for us in by_full.values():
+            for v in us[1:]:
+                union(us[0], v)
+        seen = set()
+        for us in buckets.values():
+            if len(us) > 50:          # 模板公共段落(页脚)命中太多页,不当候选
+                continue
+            for i, a in enumerate(us):
+                for b in us[i + 1:]:
+                    if (a, b) in seen or find(a) == find(b):
+                        continue
+                    seen.add((a, b))
+                    if sketch_jaccard(self.sketch[a][2], self.sketch[b][2]) >= NEAR_DUP_JACCARD:
+                        union(a, b)
+        groups = {}
+        for u in urls:
+            groups.setdefault(find(u), []).append(u)
+        return [sorted(g) for g in groups.values() if len(g) > 1]
 
     def subdomain_robots(self):
         """各子域各自的 robots.txt(GEO 补项)。判据:BingBot「looks at the root of the host」
@@ -1209,6 +1840,10 @@ class Crawler:
             if sp.query:                          # 带跟踪参数的链接也算直接指向干净 URL(同 _targets)
                 direct[urllib.parse.urlunsplit((sp.scheme, sp.netloc, sp.path, "", ""))] += 1
         report["link_issues"] = self.link_issues(direct)
+        report["site_issues"] = self.site_issues(direct, getattr(self, "resource_check", None))
+        if getattr(self, "resource_check", None) is not None:
+            rc_ = self.resource_check
+            report["resource_check"] = {"checked": rc_["checked"], "total": rc_["total"]}
         if self.rate_limited:
             report["warnings"].append(
                 "%d 页疑似被站点限流(429,或先 200 后 403/503,退避重试后仍是),未判定,不算错误页;"
@@ -1226,10 +1861,18 @@ class Crawler:
         mode, crawl_fallback = self.discover()
         self.discover_subdomains()
         self.crawl(crawl_fallback)
+        self.probe_extra()
+        self.resource_check = self.check_resources() if getattr(self.ns, "check_resources", False) else None
         report = self.build_report(time.monotonic() - t0)
         if self.ns.check_external:
             report["external_check"] = self.check_external_domains()
             report["external_redirects"] = self.check_external_redirects()
+            # Page has links to redirect / links to broken page 的外链部分(help 2724308、2721106:internal and external)
+            si = report["site_issues"]
+            for key, rows in (("external_links_to_redirect", report["external_redirects"]["redirects"]),
+                              ("external_links_to_broken", report["external_redirects"]["broken"])):
+                si[key] = rows[:100]
+                si["counts"][key] = len(rows)
         sub = self.subdomain_robots()
         if sub is not None:
             report["subdomain_robots"] = sub
@@ -1334,12 +1977,112 @@ def render_link_issues(report):
             "%s [%s]" % (r["url"], r["status"]) for r in bad[:5])) if bad else ""))
     else:
         L.append("- 外链 3xx:未检查(加 --check-external 才抽检外链 URL)")
+    L.extend(render_site_issues(report))
     sub = report.get("subdomain_robots")
     if sub is not None and sub["hosts"]:
         main = ("主域 %s 的 %d 条 Disallow 不覆盖子域" % (sub["main_host"], sub["main_rules"])
                 if sub["main_rules"] else "主域 %s 没有 Disallow 规则,子域缺 robots.txt 也是全放行" % sub["main_host"])
         L.append("- 子域 robots.txt(每个子域各读自己的一份;%s):%s"
                  % (main, "; ".join("%s=%s" % (h["host"], h["verdict"]) for h in sub["hosts"])))
+    return L
+
+
+# site_issues 键 → (Ahrefs 问题名, 人读说明);渲染顺序即本表顺序(按 Ahrefs 报告分类)
+SITE_ISSUE_LABELS = [
+    ("double_slash_in_url", "Double slash in URL", "URL 路径有 //"),
+    ("oversized_html", "Oversized HTML (>2MB)", "HTML 超过 2MB(Googlebot 只抓前 2MB)"),
+    ("html_file_size_too_large", "HTML file size too large", "HTML 解压后 >300KB(Ahrefs 未公布阈值,博客写 250-300KB 起)"),
+    ("noindex_page", "Noindex page", "noindex 页"),
+    ("nofollow_page", "Nofollow page", "nofollow 页"),
+    ("noindex_in_html_and_header", "Noindex in HTML and HTTP header", "noindex 同时写在 meta 和 X-Robots-Tag"),
+    ("nofollow_in_html_and_header", "Nofollow in HTML and HTTP header", "nofollow 同时写在 meta 和 X-Robots-Tag"),
+    ("canonical_points_to_4xx", "Canonical points to 4XX", "canonical 指向 4xx"),
+    ("canonical_points_to_5xx", "Canonical points to 5XX", "canonical 指向 5xx"),
+    ("canonical_points_to_redirect", "Canonical points to redirect", "canonical 指向会重定向的 URL"),
+    ("canonical_from_http_to_https", "Canonical from HTTP to HTTPS", "HTTP 页 canonical 指向 HTTPS"),
+    ("canonical_from_https_to_http", "Canonical from HTTPS to HTTP", "HTTPS 页 canonical 指向 HTTP"),
+    ("non_canonical_page_specified_as_canonical", "Non-canonical page specified as canonical",
+     "canonical 指向的页自己又 canonical 到别处(canonical 链)"),
+    ("duplicate_pages_without_canonical", "Duplicate pages without canonical", "内容重复且没写 canonical 的页"),
+    ("duplicate_content_bad", "Duplicate content (bad duplicates)", "内容重复且没用 canonical/hreflang 处理的组"),
+    ("duplicate_title", "Duplicate title tag", "可索引页 title 重复的组"),
+    ("duplicate_meta_description", "Duplicate meta description", "可索引页 description 重复的组"),
+    ("duplicate_h1", "Duplicate H1", "可索引页 H1 重复的组"),
+    ("canonical_url_no_incoming_internal_links", "Canonical URL has no incoming internal links",
+     "sitemap 里或被声明为 canonical 的 URL 没有站内入链"),
+    ("nofollow_incoming_internal_links_only", "Page has nofollow incoming internal links only", "只有 nofollow 站内入链"),
+    ("nofollow_and_dofollow_incoming_internal_links", "Page has nofollow and dofollow incoming internal links",
+     "站内入链 nofollow 与 dofollow 混用"),
+    ("nofollow_outgoing_internal_links", "Page has nofollow outgoing internal links", "页内有 rel=nofollow 的站内链接"),
+    ("no_outgoing_links", "Page has no outgoing links", "没有任何出链(死胡同页)"),
+    ("links_to_redirect", "Page has links to redirect", "链到会重定向的站内 URL"),
+    ("links_to_broken_page", "Page has links to broken page", "链到 404/410 站内 URL(Ahrefs 2021-09 起只算这两种)"),
+    ("external_links_to_redirect", "Page has links to redirect(外链)", "外链 3xx(--check-external 抽检)"),
+    ("external_links_to_broken", "External 4XX / links to broken page(外链)", "外链 4xx/5xx(--check-external 抽检)"),
+    ("redirect_302", "302 redirect", "站内 URL 用 302 跳转"),
+    ("broken_redirect", "Broken redirect", "跳转终点 4xx/5xx"),
+    ("http_to_https_redirect", "HTTP to HTTPS redirect", "HTTP 跳 HTTPS(提示,内链宜直接写 HTTPS)"),
+    ("meta_refresh_redirect", "Meta refresh redirect", "meta refresh 客户端跳转"),
+    ("multiple_title_tags", "Multiple title tags", "一页多个 <title>"),
+    ("multiple_meta_description_tags", "Multiple meta description tags", "一页多个 meta description"),
+    ("og_url_not_matching_canonical", "Open Graph URL not matching canonical", "og:url 与 canonical 不一致"),
+    ("html_lang_invalid", "HTML lang attribute invalid", "html lang 不是 ISO 639-1(+ISO 3166-1)"),
+    ("hreflang_and_html_lang_mismatch", "Hreflang and HTML lang mismatch", "hreflang 写的语言与目标页 html lang 不一致"),
+    ("page_referenced_for_more_than_one_language", "Page referenced for more than one language in hreflang",
+     "同一 URL 被 hreflang 标成多种语言"),
+    ("hreflang_to_non_canonical", "Hreflang to non-canonical", "hreflang 指向非 canonical 页"),
+    ("slow_page", "Slow page", "HTML 下载慢于 --slow-ms"),
+    ("not_compressed", "Not compressed", "HTML 没压缩"),
+    ("too_slow_or_heavy_for_ai_crawlers", "Too slow/heavy for AI crawlers", "对 AI 爬虫太慢或太重"),
+    ("https_page_links_to_http_image", "HTTPS page links to HTTP image", "HTTPS 页引用 HTTP 图片"),
+    ("https_page_links_to_http_javascript", "HTTPS page links to HTTP JavaScript", "HTTPS 页引用 HTTP 脚本"),
+    ("https_page_links_to_http_css", "HTTPS page links to HTTP CSS", "HTTPS 页引用 HTTP 样式表"),
+    ("image_broken", "Image broken", "图片 4xx/5xx"),
+    ("page_has_broken_image", "Page has broken image", "页面引用坏图片"),
+    ("image_redirects", "Image redirects", "图片 URL 会重定向"),
+    ("image_file_size_too_large", "Image file size too large", "图片 >100KB"),
+    ("javascript_broken", "JavaScript broken", "JS 文件 4xx/5xx"),
+    ("page_has_broken_javascript", "Page has broken JavaScript", "页面引用坏 JS"),
+    ("javascript_redirects", "JavaScript redirects", "JS URL 会重定向"),
+    ("css_broken", "CSS broken", "CSS 文件 4xx/5xx"),
+    ("page_has_broken_css", "Page has broken CSS", "页面引用坏 CSS"),
+    ("css_redirects", "CSS redirects", "CSS URL 会重定向"),
+    ("css_file_size_too_large", "CSS file size too large", "CSS >15KB"),
+]
+
+
+def _row_text(row):
+    if isinstance(row, str):
+        return row
+    if "urls" in row:
+        return " = ".join(row["urls"][:3]) + (" …" if len(row["urls"]) > 3 else "")
+    return row.get("url") or json.dumps(row, ensure_ascii=False)[:100]
+
+
+def render_site_issues(report):
+    """site_issues 的人读行:只列命中的项(各带全量数和前 3 例);没命中的合成一行。"""
+    si = report.get("site_issues")
+    if not si:
+        return []
+    counts = si.get("counts", {})
+    L, clean = ["- Ahrefs 站点审计各项(site_issues;规则与出处见 references/technical/ahrefs-site-audit-coverage.md):"], []
+    for key, name, desc in SITE_ISSUE_LABELS:
+        if key not in counts:
+            continue
+        n = counts[key]
+        if not n:
+            clean.append(name)
+            continue
+        L.append("  - [%s] %s %d:%s" % (name, desc, n, "; ".join(_row_text(r) for r in si[key][:3])))
+    if clean:
+        L.append("  - 未命中 %d 项:%s" % (len(clean), ", ".join(clean)))
+    if si.get("partial"):
+        L.append("  - ⚠ 截断:%s" % si["partial"]["reason"])
+    rc = report.get("resource_check")
+    if rc:
+        L.append("  - 资源检查:查了 %d/%d 个图片/JS/CSS URL(按引用页数取前 %d)" % (rc["checked"], rc["total"], RESOURCE_CHECK_CAP))
+    else:
+        L.append("  - 图片/JS/CSS 坏链、重定向、体积:未检查(加 --check-resources)")
     return L
 
 
@@ -1384,6 +2127,11 @@ def build_parser():
                     help="子域补充来源:dns=常见子域探测(默认)/ct=crt.sh CT 日志(失败优雅跳过)")
     ap.add_argument("--check-external", action="store_true",
                     help="对 Top 外链域抽样 HEAD 验活(默认关;用途:验证外链指向是否腐烂,不外爬)")
+    ap.add_argument("--check-resources", action="store_true",
+                    help="页面引用的图片/JS/CSS 逐个 HEAD(按引用页数取前 %d 个):坏资源、资源重定向、"
+                         "图片 >100KB、CSS >15KB(Ahrefs Images/JavaScript/CSS 各项;默认关)" % RESOURCE_CHECK_CAP)
+    ap.add_argument("--slow-ms", type=int, default=SLOW_MS_DEFAULT, metavar="MS",
+                    help="慢页阈值:HTML 下载完用时超过它记 slow_page(默认 %(default)s;Ahrefs 未公布阈值)")
     ap.add_argument("--out", default="crawl.json", metavar="FILE", help="crawl.json 输出路径(默认 %(default)s)")
     ap.add_argument("--urls-out", metavar="FILE", help="纯 URL 清单输出(2xx/3xx 页,喂下游脚本)")
     ap.add_argument("--json", action="store_true", help="报告 JSON 打 stdout(替代 markdown 摘要)")

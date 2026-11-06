@@ -385,7 +385,7 @@
    "outputs_schema": "markdown",
    "data_source": "URL 实时抓取(提取全部 ld+json 块)",
    "fallback_mode": "③",
-   "tests_file": null,
+   "tests_file": "tests/test_ahrefs_coverage.py",
    "status": "beta"
   },
   {
