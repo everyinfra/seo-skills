@@ -5,6 +5,13 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.43.0 - 2026-11-07
+
+- **运营单的「只做这一件」按会带来注册的页排**(`ops.py`):外部数据包可以多给一份 `conversions`(站点自己的注册 × 首次落地页,按天、渠道加总,不带账户标识)。给了它,运营单开头多一节「注册从哪来」(注册数、7 天首付、按渠道、按落地页类),选题在展示和点击之外按同类页带来的注册加权;没有这份数据时和 0.42 一样。起因:everyinfra.com 11-07 的月度单把 `/es/partners/power-bi` 排第一(展示 309、点击 0),搜进来的词是「servicios power bi」,这类页 10-21～10-31 带来 0 个注册,改好了也带不来客户。回放(训练 10-21～10-31,检验 11-01～11-06 的真实注册,排法没看检验期):新排法前 10 里 8 个所在页类在检验期有注册,Power BI 页不在前 10。
+  `ops.py`: optional `conversions` in the external bundle (signups by day × first landing page × channel, no account ids) weights the weekly pick by signups from the same page class; adds a "where signups come from" section.
+- **月度退役候选不再列语言根和一级栏目页**(`/en/about`、`/en/build`、`/en/guides` 这类),有注册数据时也不列带来过注册的页类。
+  Monthly prune candidates skip locale roots and top-level section pages.
+
 ## 0.42.0 - 2026-11-07
 
 - **URL → 源码映射第一名从 73% 到 97%**(`source_map.py`):模板拼出来的标题拆成「措辞 + 数据值」,第一名给写措辞的模板文件,只撞上数据值的指南、博客不算证据;import 链认 `export { X } from` 桶文件;翻译流水线产出的 ja/ko/ru 内容文件算这一语种的真源,不再当生成物压低置信度;import 链外的大语料打五折、不标「可以直接动手」(页面运行时按 locale 和 slug 读的文件除外);短模板枚举所有切法、空位可填链里写死的名字。实测(everyinfra.com,独立标注、跑前不看标注):新抽的留出集 40 条第一名 38/39 对(1 条标题存在库里,不计分),标「可以直接动手」的 29 条 0 条指错;上一轮留出集 25/40 → 40/40,h1–h4 35/60 → 59/60。

@@ -83,10 +83,14 @@ GSC AI 报告、Bing AI Performance 目前没有 API,先读它们的导出文件
     "gsc_page_daily":{"source": "…", "rows": [{"page": "https://…", "date": "2026-10-01", "clicks": 3, "impressions": 40}]},
     "ai_crawl":      {"source": "…", "rows": [{"date": "…", "total": 5473, "by_bot": {"GPTBot": 10}, "status_by_bot": {"Googlebot": {"2xx": 161, "4xx": 1}}}]},
     "geo_citations": {"source": "…", "reports": [{"query_set": "weekly", "engine": "perplexity", "date": "…",
-                      "metrics": {"queries": 10, "hits": 3, "hit_rate": 0.3}, "previous": {"date": "…", "metrics": {}}}]}
+                      "metrics": {"queries": 10, "hits": 3, "hit_rate": 0.3}, "previous": {"date": "…", "metrics": {}}}]},
+    "gsc_page_queries": {"source": "…", "window": ["…", "…"], "rows": [{"page": "https://…", "queries": [{"query": "…", "clicks": 0, "impressions": 69}]}]},
+    "conversions":   {"source": "…", "rows": [{"date": "2026-10-21", "landing": "https://…/taobao-api", "channel": "organic_search", "signups": 1, "first_payers_7d": 0}]}
   }
 }
 ```
+
+`conversions`(可选,0.43.0 起):站点自己的注册数据,按天、首次落地页(去掉查询串)、首次来源渠道加总,**不放任何账户标识**。给了它,运营单会多一节「注册从哪来」,「只做这一件」在展示和点击之外按「同类页带来的注册」加权:页面按路径归类(同后缀的一级路径如 `taobao-api`、`douyin-api` 合成 `*-api`,有下一级的加 `/*`,语言前缀不算),类别展示少时向全站均值收缩;没带来过注册的页类自然沉底。月度退役候选同时排除带来过注册的页类。没有这份数据时,选题和 0.42 一样。
 
 每个 `source` 字段写清口径(含不含匿名查询、源站口径还是 CDN 口径),运营单原样引用。缺哪块就不写哪块。
 

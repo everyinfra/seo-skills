@@ -1,0 +1,1617 @@
+{
+ "schema": "seo-ops.external.v1",
+ "note": "everyinfra.com 11-07 外部数据包节选(GSC 28 天窗口 10-07～11-03;注册 10-21～10-31,按天/落地页/渠道加总,无账户标识)",
+ "sources": {
+  "gsc_pages": {
+   "rows": [
+    {
+     "page": "https://everyinfra.com/en",
+     "clicks": 182,
+     "impressions": 312,
+     "prev_clicks": 54,
+     "prev_impressions": 76
+    },
+    {
+     "page": "https://everyinfra.com/es/partners/power-bi",
+     "clicks": 0,
+     "impressions": 309,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/guides",
+     "clicks": 0,
+     "impressions": 159,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/build",
+     "clicks": 0,
+     "impressions": 149,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/about",
+     "clicks": 0,
+     "impressions": 117,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/docs",
+     "clicks": 0,
+     "impressions": 91,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/twitter-api/search",
+     "clicks": 0,
+     "impressions": 80,
+     "prev_clicks": 0,
+     "prev_impressions": 1
+    },
+    {
+     "page": "https://everyinfra.com/es/blog/google-maps-place-id-deduplication",
+     "clicks": 0,
+     "impressions": 74,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/yahoo-finance-api",
+     "clicks": 0,
+     "impressions": 59,
+     "prev_clicks": 0,
+     "prev_impressions": 0
+    },
+    {
+     "page": "https://everyinfra.com/en/behance-api",
+     "clicks": 0,
+     "impressions": 58,
+     "prev_clicks": 0,
+     "prev_impressions": 44
+    },
+    {
+     "page": "https://everyinfra.com/en/taobao-api",
+     "clicks": 0,
+     "impressions": 54,
+     "prev_clicks": 0,
+     "prev_impressions": 9
+    }
+   ]
+  },
+  "conversions": {
+   "rows": [
+    {
+     "date": "2026-10-21",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://cn.everyinfra.com/jd-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://cn.everyinfra.com/kuaishou-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/douyin-api/comments",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en/aliexpress-api/product_detail",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en/captcha/akamai_sec_cpt",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en/douyin-api/user_posts",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en/instagram-api/followers_list",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/en/shopee-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/mcp-server/douyin",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/taobao-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/taobao-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/taobao-api/search",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-21",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://cn.everyinfra.com/docs",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://cn.everyinfra.com/douyin-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://cn.everyinfra.com/douyin-api/product_search",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://cn.everyinfra.com/taobao-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 4,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/app",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/douyin-api/comments",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/en/captcha/perimeterx",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/en/xianyu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-22",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://cn.everyinfra.com/douyin-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://cn.everyinfra.com/taobao-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 5,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 3,
+     "first_payers_7d": 2
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/alibaba1688-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 6,
+     "first_payers_7d": 3
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 7,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/en/alibaba1688-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/en/jd-api/product_price",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/en/pricing",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/en/vk-api/user_posts",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/market",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-23",
+     "landing": "https://everyinfra.com/wechat-oa-api/article_search",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://cn.everyinfra.com/captcha/yidun",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://cn.everyinfra.com/en/captcha/temu",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/",
+     "channel": "partner",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/alibaba1688-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/app",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/dewu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 2,
+     "first_payers_7d": 2
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/en/facebook-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/guides",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-24",
+     "landing": "https://everyinfra.com/xiaohongshu-api/user_posts",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/app",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/dewu-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/docs",
+     "channel": "developer_community",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/douyin-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/iqiyi-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/market",
+     "channel": "referral",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/twitter-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://cn.everyinfra.com/xianyu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/app",
+     "channel": "internal",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/en/taobao-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/en/taobao-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/mcp-server/xiaohongshu",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/taobao-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-25",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 6,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/docs",
+     "channel": "developer_community",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/docs",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/douyin-api/search",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/en/captcha/temu",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://cn.everyinfra.com/jd-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 5,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/alibaba1688-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/docs",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 5,
+     "first_payers_7d": 3
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en/captcha/f5_shape",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en/docs",
+     "channel": "developer_community",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en/docs",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en/threads-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/en/wechat-oa-api/account_articles",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/taobao-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-26",
+     "landing": "https://everyinfra.com/xiaohongshu-api/search",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://cn.everyinfra.com/taobao-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://cn.everyinfra.com/taobao-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/captcha/slider",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/douyin-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/douyin-api/search",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/douyin-api/video",
+     "channel": "ai_assistant",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 4,
+     "first_payers_7d": 3
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/en/discord-api/search_users",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/en/mcp-server/douyin",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/en/pinterest-api/pin",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/mcp-server/xiaohongshu",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-27",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 4,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://cn.everyinfra.com/alibaba1688-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://cn.everyinfra.com/douyin-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://cn.everyinfra.com/jd-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 4,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/app",
+     "channel": "internal",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "internal",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/douyin-api/comments",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 6,
+     "first_payers_7d": 3
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/en/alibaba1688-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/en/discord-api/search_users",
+     "channel": "ai_assistant",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/etsy-api/profile",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/flickr-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/kuaishou-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/mcp-server/xiaohongshu",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-28",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 3,
+     "first_payers_7d": 2
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://cn.everyinfra.com/douyin-api/user_posts",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://cn.everyinfra.com/market",
+     "channel": "campaign",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://cn.everyinfra.com/toutiao-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 3,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/console",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/dewu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/dewu-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/docs",
+     "channel": "developer_community",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 5,
+     "first_payers_7d": 2
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/en/market",
+     "channel": "developer_community",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/en/shopee-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/instagram-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/market",
+     "channel": "campaign",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/mcp-server/douyin",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/temu-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/weibo-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-29",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 3,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/captcha/geetest",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/en/xianyu-api/item_detail",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/market",
+     "channel": "internal",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://cn.everyinfra.com/toutiao-api/user_posts",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 8,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/app",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/docs",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/docs",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/douban-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/douyin-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/en/alibaba1688-api",
+     "channel": "ai_assistant",
+     "signups": 2,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/en/register",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/en/xiaohongshu-api/note",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/pricing",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/taobao-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/taobao-api/shop",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-30",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 2
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://cn.everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://cn.everyinfra.com/dewu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://cn.everyinfra.com/pricing",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://cn.everyinfra.com/wechat-oa-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/",
+     "channel": "direct",
+     "signups": 5,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/captcha/geetest",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/docs",
+     "channel": "developer_community",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/douyin-api",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en",
+     "channel": "organic_search",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en/alibaba1688-api/product_detail",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en/aliexpress-api/product_detail",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en/captcha/f5_shape",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en/discord-api/search_users",
+     "channel": "ai_assistant",
+     "signups": 1,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/en/instagram-api/followers_list",
+     "channel": "organic_search",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/market",
+     "channel": "direct",
+     "signups": 2,
+     "first_payers_7d": 1
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/market",
+     "channel": "internal",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/xianyu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 0
+    },
+    {
+     "date": "2026-10-31",
+     "landing": "https://everyinfra.com/xiaohongshu-api",
+     "channel": "direct",
+     "signups": 1,
+     "first_payers_7d": 1
+    }
+   ]
+  }
+ }
+}

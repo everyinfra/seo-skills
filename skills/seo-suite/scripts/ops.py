@@ -698,11 +698,94 @@ def five_lists(ext, light):
     return lists
 
 
-def ctr_opportunity(ext):
+def _path_segs(url):
+    segs = [x for x in urllib.parse.urlsplit(url).path.split("/") if x]
+    if segs and len(segs[0]) == 2 and segs[0].isalpha():          # 语言前缀(en、es、ja…)不算层级
+        segs = segs[1:]
+    return segs
+
+
+def page_classer(urls):
+    """按路径归页类:第一段同后缀(xx-api、yy-api…)≥3 个时合成「*-api」;有下一级的加「/*」;根是「/」。"""
+    firsts = {sg[0] for sg in (_path_segs(u) for u in urls) if sg}
+    suffix = {}
+    for f in firsts:
+        if "-" in f:
+            k = f.rsplit("-", 1)[1]
+            suffix[k] = suffix.get(k, 0) + 1
+
+    def cls(url):
+        sg = _path_segs(url)
+        if not sg:
+            return "/"
+        head = sg[0]
+        if "-" in head and suffix.get(head.rsplit("-", 1)[1], 0) >= 3:
+            head = "*-" + head.rsplit("-", 1)[1]
+        return head + ("/*" if len(sg) > 1 else "")
+    return cls
+
+
+def conversion_model(ext):
+    """站点自己的注册数据(外部数据包 sources.conversions,可选)→ 每个页类的注册数、首付数和「每千次展示带来的注册」。
+    没有这份数据时返回 None,选题照旧按展示和点击排。"""
+    src = ((ext or {}).get("sources") or {})
+    conv = (src.get("conversions") or {}).get("rows") or []
+    if not conv:
+        return None
+    pages = (src.get("gsc_pages") or {}).get("rows") or []
+    cls = page_classer([p["page"] for p in pages] + [c.get("landing") or "" for c in conv if c.get("landing")])
+    impr, signups, payers, by_channel = {}, {}, {}, {}
+    for p in pages:
+        k = cls(p["page"])
+        impr[k] = impr.get(k, 0) + int(p.get("impressions") or 0)
+    dates = sorted(c["date"] for c in conv if c.get("date"))
+    for c in conv:
+        n = int(c.get("signups") or 0)
+        by_channel[c.get("channel") or "unknown"] = by_channel.get(c.get("channel") or "unknown", 0) + n
+        if not c.get("landing"):
+            continue
+        k = cls(c["landing"])
+        signups[k] = signups.get(k, 0) + n
+        payers[k] = payers.get(k, 0) + int(c.get("first_payers_7d") or 0)
+    total_s, total_i = sum(signups.values()), sum(impr.values())
+    prior = total_s / total_i if total_i else 0.0
+    smooth = 200                                                   # 页类展示少时向全站均值收缩(按一半先验)
+
+    def rate(k):
+        return (signups.get(k, 0) + smooth * prior * 0.5) / (impr.get(k, 0) + smooth)
+    return {"classify": cls, "rate": rate, "signups": signups, "payers": payers, "impressions": impr,
+            "by_channel": by_channel, "window": [dates[0], dates[-1]] if dates else None,
+            "total_signups": sum(by_channel.values()), "total_payers": sum(int(c.get("first_payers_7d") or 0) for c in conv)}
+
+
+def signup_summary(model):
+    if not model:
+        return None
+    top = sorted(model["signups"].items(), key=lambda kv: -kv[1])[:6]
+    return {"window": model["window"], "signups": model["total_signups"], "first_payers_7d": model["total_payers"],
+            "by_channel": sorted(model["by_channel"].items(), key=lambda kv: -kv[1])[:6],
+            "top_classes": [{"page_class": k, "signups": v, "first_payers_7d": model["payers"].get(k, 0),
+                             "impressions": model["impressions"].get(k, 0)} for k, v in top]}
+
+
+def ctr_opportunity(ext, model=None):
     pages = ((ext or {}).get("sources", {}).get("gsc_pages") or {}).get("rows") or []
-    cands = [p for p in pages if p.get("impressions", 0) >= 200 and pct(p.get("clicks", 0), p["impressions"]) < 0.01]
-    cands.sort(key=lambda p: -p["impressions"])
-    return cands[:5]
+    if model is None:
+        cands = [p for p in pages if p.get("impressions", 0) >= 200 and pct(p.get("clicks", 0), p["impressions"]) < 0.01]
+        cands.sort(key=lambda p: -p["impressions"])
+        return cands[:5]
+    # 有注册数据:按「补到 3% 点击率能多带来多少注册」排,页类没带来过注册的自然沉底(11-07 everyinfra 回放见 CHANGELOG)
+    cls, out = model["classify"], []
+    for p in pages:
+        im = int(p.get("impressions") or 0)
+        ctr = pct(p.get("clicks", 0), im)
+        if im < 50 or ctr >= 0.03 or not _path_segs(p["page"]):
+            continue
+        k = cls(p["page"])
+        out.append(dict(p, page_class=k, class_signups=model["signups"].get(k, 0),
+                        class_payers=model["payers"].get(k, 0), score=im * (0.03 - ctr) * model["rate"](k)))
+    out.sort(key=lambda p: -p["score"])
+    return out[:5]
 
 
 def source_hint(repo, url, rev=None):
@@ -742,10 +825,12 @@ def recommend(hard, states, lists, ctr, geo, clicks_by_url, repo):
                     "source": "GSC 页面 × 本周轻检"}
     if ctr:
         p = ctr[0]
-        return {"what": "改写 %s 的标题和描述(展示多、点击少)" % p["page"],
-                "why": "近 28 天展示 %d、点击 %d(CTR %.2f%%)" % (p["impressions"], p["clicks"],
-                                                                 100 * pct(p["clicks"], p["impressions"])),
-                "url": p["page"], "source": "GSC 页面窗口"}
+        why = "近 28 天展示 %d、点击 %d(CTR %.2f%%)" % (p["impressions"], p["clicks"],
+                                                     100 * pct(p["clicks"], p["impressions"]))
+        if "page_class" in p:
+            why += ";同类页(%s)带来注册 %d、7 天内首付 %d" % (p["page_class"], p["class_signups"], p["class_payers"])
+        return {"what": "改写 %s 的标题和描述(展示多、点击少)" % p["page"], "why": why,
+                "url": p["page"], "source": "GSC 页面窗口" + (" × 站点注册数据" if "page_class" in p else "")}
     for r in (geo or {}).get("reports") or []:
         if r.get("prev_hit_rate") is not None and (r.get("hit_rate") or 0) < r["prev_hit_rate"]:
             return {"what": "查 AI 引用出现率下降(%s)" % r["query_set"],
@@ -942,7 +1027,8 @@ def run_ops(args, kind):
     lists = five_lists(ext, light)
     if lists is None:
         cov["skipped"].append("流量 × 抓取交叉:缺 GSC 页面数据")
-    ctr = ctr_opportunity(ext)
+    cmodel = conversion_model(ext)
+    ctr = ctr_opportunity(ext, cmodel)
     verifs = due_verifications(ws, ext, dt.date.fromisoformat(date))
     vpath = os.path.join(ws, "ledger", "verifications.jsonl")
     for v in verifs:
@@ -984,7 +1070,7 @@ def run_ops(args, kind):
         hint = source_hint(args.repo, rec["url"], args.rev)
         if hint:
             rec["source_files"] = hint
-    monthly = monthly_extras(ext) if kind == "monthly" else None
+    monthly = monthly_extras(ext, cmodel) if kind == "monthly" else None
 
     elapsed = round(time.time() - t0, 1)
     agenda = {"kind": kind, "date": date, "site": site, "generated_at": iso_now(), "seconds": elapsed,
@@ -992,7 +1078,8 @@ def run_ops(args, kind):
               "verifications": verifs, "gsc": gsc, "gsc_crosscheck": cross, "ga4": ga4, "geo": geo,
               "five_lists": lists, "ctr_opportunity": ctr, "recommendation": rec, "coverage": cov,
               "score_gate": gate, "score": (score or {}).get("main_score") if gate_ok else None,
-              "markets": markets, "monthly": monthly, "external": ext_path, "first_run": not prev_issues}
+              "markets": markets, "monthly": monthly, "external": ext_path, "first_run": not prev_issues,
+              "signups": signup_summary(cmodel)}
     write_json(os.path.join(run_dir, "agenda.json"), agenda)
     md = render(agenda, score)
     with open(os.path.join(run_dir, "agenda.md"), "w", encoding="utf-8") as f:
@@ -1005,14 +1092,16 @@ def run_ops(args, kind):
     return 1 if hard else 0
 
 
-def monthly_extras(ext):
+def monthly_extras(ext, model=None):
     pages = ((ext or {}).get("sources", {}).get("gsc_pages") or {}).get("rows") or []
     win = ((ext or {}).get("sources", {}).get("gsc_pages") or {}).get("window") or {}
+    # 语言根、一级路径(关于、指南、构建这类栏目页)不当退役候选;有注册数据时,带来过注册的页类也不列
     zero = [p for p in pages if p.get("impressions", 0) > 0 and p.get("clicks", 0) == 0
-            and p.get("prev_clicks", 0) == 0]
+            and p.get("prev_clicks", 0) == 0 and len(_path_segs(p["page"])) >= 2
+            and not (model and model["signups"].get(model["classify"](p["page"]), 0) > 0)]
     zero.sort(key=lambda p: -p["impressions"])
     return {"prune_candidates": zero[:20], "prune_window": win,
-            "prune_note": "候选 = 两个窗口都 0 点击但有展示;动手前跑 prune_gate.py 三查(入链、外链、排名词),"
+            "prune_note": "候选 = 两个窗口都 0 点击但有展示,不含语言根和一级栏目页、不含带来过注册的页类;动手前跑 prune_gate.py 三查(入链、外链、排名词),"
                           "外链 > 0 或有排名词的不动",
             "fact_resample": "本月重抽 30 条事实断言(freshness.py --sample 30),错 ≤1 才算达标"}
 
@@ -1032,6 +1121,16 @@ def render(a, score):
     else:
         L.append("- 无")
     L.append("")
+    su = a.get("signups")
+    if su:
+        L.append("## 注册从哪来(站点自己的注册数据,%s～%s)" % tuple(su["window"] or ("?", "?")))
+        L.append("- 注册 %d、7 天内首次付费 %d(%.1f%%)" % (su["signups"], su["first_payers_7d"],
+                                                       100 * pct(su["first_payers_7d"], su["signups"])))
+        L.append("- 按首次来源:" + "、".join("%s %d" % kv for kv in su["by_channel"]))
+        L.append("- 按落地页类:" + "、".join("%s %d(首付 %d)" % (c["page_class"], c["signups"], c["first_payers_7d"])
+                                          for c in su["top_classes"]))
+        L.append("- 下面「只做这一件」在展示和点击之外,还按同类页带来的注册加权;没带来过注册的页类沉底")
+        L.append("")
     rec = a["recommendation"]
     L.append("## 2. 本周只做这一件")
     L.append("- **%s**" % rec["what"])
