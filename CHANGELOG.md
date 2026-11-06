@@ -5,6 +5,16 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.42.0 - 2026-11-07
+
+- **URL → 源码映射第一名从 73% 到 97%**(`source_map.py`):模板拼出来的标题拆成「措辞 + 数据值」,第一名给写措辞的模板文件,只撞上数据值的指南、博客不算证据;import 链认 `export { X } from` 桶文件;翻译流水线产出的 ja/ko/ru 内容文件算这一语种的真源,不再当生成物压低置信度;import 链外的大语料打五折、不标「可以直接动手」(页面运行时按 locale 和 slug 读的文件除外);短模板枚举所有切法、空位可填链里写死的名字。实测(everyinfra.com,独立标注、跑前不看标注):新抽的留出集 40 条第一名 38/39 对(1 条标题存在库里,不计分),标「可以直接动手」的 29 条 0 条指错;上一轮留出集 25/40 → 40/40,h1–h4 35/60 → 59/60。
+  `source_map.py`: split template wording from data values; translated locale files are that locale's source; out-of-chain corpora are discounted and never actionable. Fresh holdout: top-1 38/39, 0 wrong-but-actionable.
+- **Ahrefs Site Audit 问题清单按脚本实跑口径从 59.9% 补到 118/118**:`site_crawl` 新增 `site_issues`(canonical 目标坏、重复页与重复 title/描述/H1、nofollow 入链、链到重定向或 404/410、302、断掉的重定向、meta refresh、og:url 与 canonical 不一致、lang 与 hreflang、慢页、没压缩、HTML 过大等),`--check-resources` 查图片/JS/CSS;`site_audit`、`redirect_chain`、`robots_posture`、`schema_lint` 各补对应项,`schema_lint` 退出码 0/1/2/3 写明。ChatGPT-User / Perplexity-User 被封改报 INFO、Claude-User 报 WARN。逐项对照 `references/technical/ahrefs-site-audit-coverage.md`。
+  Ahrefs Site Audit issue list covered by running scripts: 118/118 (was 59.9%).
+- **检查线上站时先跑体检链,装和不装差得出来**:`ops install` 写进仓库 CLAUDE.md 的运营段开头就是体检链(site_crawl → sitemap_audit / site_audit → health_score → link_graph)和可复制命令;SKILL.md 描述和路由表写上「检查抓取、收录、跳转、死链、站内链接」。`site_crawl --allow-local` 只放行回环地址;sitemap 外的站内链接目标也抓;新增 `links_to_4xx_page`、`redirect_chain` / `redirect_chain_too_long`、`soft_404`、`canonical_points_to_noindex`;`site_audit` 加软 404;`link_graph` 会重定向的 URL 不算孤儿;`health_score` 列出撞在一起的重复 title。评测(326 页的线上测试站、拿不到源码、12 个埋点加 4 个诱饵,Sonnet 各跑 4 次):装了找到 95.8%、不装 66.7%,诱饵误报 0,4 次都真用上了 skill。
+  Site checks now start from the audit chain; new crawl issues (4xx link targets, redirect chains, soft 404, canonical to noindex). Live-site eval: 95.8% with the skill vs 66.7% without.
+- **`market_lint` 日韩误报**:日文名词化「であること」、韩文「좋아요」、重复渲染的「ではなく」不再误报;합니다体识别补上(原来写成分解字母「ㅂ니다」,从没命中);ko 描述上限 80→120。期望值来自 everyinfra.com /ja、/ko 线上页逐条人工判定。
+
 ## 0.41.2 - 2026-11-06
 
 - **Common Crawl 链接图从「卡几小时」到 13 分钟**(11-06 实跑 781 秒,149 个目标域找到 144 个、互链 393 对):`link_intel.py ccgraph` 之前用 `grep -E -f` 过滤,macOS 自带的 BSD grep 多模式过滤实测只有约 1MB/s,8GB 压缩的边文件要跑好几天,下载被堵住、连接停在 CLOSE_WAIT,看起来像被限流。改成有 rg 用 rg(约 600MB/s)、否则 awk 查表(约 37MB/s),命中行再按列精确比对一遍。下载改为 16MB 分段并发(`LINK_INTEL_PARALLEL`,默认 4),每段失败轮换主站、CloudFront 镜像和 `LINK_INTEL_PROXIES` 代理出口;每 512MB 打一次进度。种子文件里不像域名的行(比如 `'data']`)跳过。更正 0.41.0 文档里「整桶限流、换 IP 没用」:实测同一时刻不同出口结果不同,限流按出口 IP。
