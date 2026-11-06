@@ -1,6 +1,6 @@
 ---
 name: seo-suite
-description: 统一的 SEO / GEO 工作台(在网站仓库里改页面 title、meta 描述、robots.txt、canonical、重定向、sitemap 这类搜索引擎看得到的东西时也要先读它:改动要上分支、开草稿 PR):关键词研究、搜索意图与 SERP 分析、内容缺口、竞品与替代方案页规划、内容与标题描述优化、AI 搜索可见度(GEO)、技术审计、Schema、内链与架构、实体信号、Programmatic SEO、Core Web Vitals、归因埋点、排名监控、外链分析、报告。先统一 intake,再按 overview/research/content/technical/monitoring 路由;每个任务先定市场(18 个语言市场)。Use for SEO, GEO / AI search visibility, keyword research, SERP analysis, content optimization, technical SEO audits, schema markup, internal linking, site architecture, programmatic SEO, Core Web Vitals, rank tracking, backlink analysis, SEO reporting, llms.txt, AI crawler robots.txt policy, hreflang and international SEO, global market-by-market SEO (Yandex Russia, Naver Korea, Yahoo Japan, es-419 LatAm, pt-BR, Arabic RTL, Bill 96, DACH Sie/du, Indonesian baku/gaul, Hinglish), video SEO, image and visual search, Google Discover and news SEO, ecommerce GEO ladder, algorithm-update attribution, local SEO by vertical. Not for paid ads management or non-search content writing.
+description: 统一的 SEO / GEO 工作台(在网站仓库里改页面 title、meta 描述、robots.txt、canonical、重定向、sitemap 这类搜索引擎看得到的东西时也要先读它:改动要上分支、开草稿 PR):关键词研究、搜索意图与 SERP 分析、内容缺口、竞品与替代方案页规划、内容与标题描述优化、AI 搜索可见度(GEO)、技术审计(检查抓取、收录、跳转、死链、站内链接)、Schema、内链与架构、实体信号、Programmatic SEO、Core Web Vitals、归因埋点、排名监控、外链分析、报告。先统一 intake,再按 overview/research/content/technical/monitoring 路由;每个任务先定市场(18 个语言市场)。Use for SEO, GEO / AI search visibility, keyword research, SERP analysis, content optimization, technical SEO audits (crawl, indexing, redirects, broken links), schema markup, internal linking, site architecture, programmatic SEO, Core Web Vitals, rank tracking, backlink analysis, SEO reporting, llms.txt, AI crawler robots.txt, hreflang and international SEO, global market-by-market SEO (Yandex, Naver, Yahoo Japan, es-419, pt-BR, Arabic RTL, Bill 96, DACH, Indonesian, Hinglish), video SEO, image search, Google Discover and news SEO, ecommerce GEO ladder, algorithm-update attribution, local SEO by vertical. Not for paid ads management or non-search content writing.
 metadata:
   adapted-hosts: claude-code, codex, cursor, copilot, gemini-cli, windsurf, goose, amp, kiro, zcode
   install: https://github.com/everyinfra/seo-skills#安装
@@ -15,7 +15,7 @@ metadata:
 ## 使用原则
 
 0. **按任务大小决定先不先体检。**
-   - 站点级任务先体检：整站诊断、新站开局、GEO 整体优化。体检链：`site_crawl` → `site_audit` 多页 → `health_score` → `prioritize` → `envelope`。有未处置的 CRITICAL 技术问题时，先修再量产内容。
+   - 站点级任务先体检：整站诊断、检查全站抓取 / 收录 / 站内链接、新站开局、GEO 整体优化。体检链：`site_crawl` → `sitemap_audit` 与 `site_audit` 多页 → `health_score` → `link_graph` → `prioritize` → `envelope`。有未处置的 CRITICAL 技术问题时，先修再量产内容。
    - 单页或小任务直接做：改一个标题或描述、写一篇 brief、查一个 hreflang 簇。不强制跑全站体检。
 1. 先跑脚本拿事实，再读参考文件解读。
 2. 缺数据不拒跑，也不编造。按降级口径执行，报告写明数据覆盖范围。
@@ -59,7 +59,7 @@ metadata:
 | 旧文掉量、refresh | [content-refresh-playbook](references/content/content-refresh-playbook.md) | `gsc_mining.py --decay` |
 | GEO / AI 引用 | 先读 [geo-evidence](references/content/geo-evidence.md)，再读 [geo-platform-differences](references/content/geo-platform-differences.md) | `citation_panel.py`、`citation_gaps.py` |
 | llms.txt 与 AI 爬虫 | [llms-txt-guide](references/content/llms-txt-guide.md)、[ai-crawler-policy](references/technical/ai-crawler-policy.md) | `llmstxt.py`、`robots_posture.py` |
-| 技术审计 | [audit-rule-catalog](references/technical/audit-rule-catalog.md)、[validation-guide](references/technical/validation-guide.md) | `site_crawl.py`、`site_audit.py`、`health_score.py` |
+| 技术审计:检查抓取、收录、状态码、跳转、canonical、sitemap、站内链接、死链、孤儿页、软 404、重复标题描述 | [audit-rule-catalog](references/technical/audit-rule-catalog.md)、[validation-guide](references/technical/validation-guide.md) | `site_crawl.py`(本机开发站加 `--allow-local`)→ `sitemap_audit.py`、`site_audit.py` → `health_score.py` → `link_graph.py`;要修的清单取 site_crawl 的 site_issues、sitemap_audit 的坏桶和 site_audit 的 findings,health_score 只给分 |
 | 审计发现变工单 | [audit-tool-output](references/technical/audit-tool-output.md) | `envelope.py` → `remediation.py` |
 | 交收录(新页、加急页、新 sitemap):Google 和 Bing 同一批交 | [validation-guide](references/technical/validation-guide.md) | `gsc_api.py inspect`(只读,请求编入索引要在 GSC 后台点)、`bing_wmt.py submit`、`bing_wmt.py feeds --submit` |
 | Schema | [schema-templates](references/technical/schema-templates.md) | `schema_lint.py` |

@@ -408,11 +408,12 @@ TW = ('<meta name="twitter:card" content="summary"><meta name="twitter:title" co
       '<meta name="twitter:description" content="d"><meta name="twitter:image" content="https://example.com/i.png">')
 
 
-def audit_page(head="", url="https://example.com/self", headers=None, lang="en", body=None, robots=None):
-    page = ('<!doctype html><html lang="%s"><head><title>Example Article Page Title Long Enough</title>'
+def audit_page(head="", url="https://example.com/self", headers=None, lang="en", body=None, robots=None,
+               title="Example Article Page Title Long Enough", h1="Heading"):
+    page = ('<!doctype html><html lang="%s"><head><title>%s</title>'
             '<meta name="description" content="A sufficiently long description text that exceeds eighty characters easily.">'
-            '%s</head><body><main><article><h1>Heading</h1><p>%s</p></article></main></body></html>'
-            % (lang, head, body if body is not None else "In short, the answer. " + "filler word " * 150))
+            '%s</head><body><main><article><h1>%s</h1><p>%s</p></article></main></body></html>'
+            % (lang, title, head, h1, body if body is not None else "In short, the answer. " + "filler word " * 150))
     root = "%s://%s" % tuple(url.split("://", 1)[0:1] + [url.split("/")[2]])
     table = {root + p: v for p, v in ROOT.items()}
     if robots is not None:
@@ -496,6 +497,22 @@ class SiteAuditTests(unittest.TestCase):
         self.assertEqual(audit_page(TW, headers=asked).get("compression-none"), "WARN")
         self.assertNotIn("compression-none", audit_page(TW, headers=dict(asked, **{"Content-Encoding": "gzip"})))
         self.assertNotIn("compression-none", audit_page(TW))     # 没真的发过 Accept-Encoding(桩、离线)不判
+
+    def test_soft_404(self):
+        """RQ-229 例 7 规模场景复现:200 + title「Page not found | 品牌」,site_crawl 报了、site_audit 没报,
+        走 site_audit → health_score 汇总时这一类整个丢掉。判法照 Screaming Frog Soft 404 Pages
+        (找「Page Not Found」这类报错语)和 Google soft 404 定义(200 却告诉用户页面不存在)。"""
+        gone = audit_page(TW, title="Page not found | Ridgeway Outfitters", h1="Page not found",
+                          body="Sorry, we could not find that page. Browse our categories instead.")
+        self.assertEqual(gone.get("soft404-page"), "WARN")
+        self.assertEqual(audit_page(TW, title="Example Store", h1="404",
+                                    body="The page you were looking for does not exist.").get("soft404-page"), "WARN")
+        # 讲 404 的文章不算(标题整段不是报错语、正文长);故意 noindex 的报错页不重复报
+        self.assertNotIn("soft404-page", audit_page(TW, title="How to fix 404 errors on WordPress | Blog",
+                                                    h1="How to fix 404 errors"))
+        self.assertNotIn("soft404-page", audit_page(TW + '<meta name="robots" content="noindex">',
+                                                    title="Page not found | Shop", h1="Page not found", body="Gone."))
+        self.assertNotIn("soft404-page", audit_page(TW))
 
     def test_user_triggered_bots_severity(self):
         got = audit_page(TW, robots="User-agent: Claude-User\nDisallow: /\n\nUser-agent: *\nAllow: /\n")

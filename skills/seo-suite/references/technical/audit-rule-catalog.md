@@ -151,6 +151,7 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 | `url-double-slash` | WARN | url 类;Ahrefs「Double slash in URL」 | [Ahrefs 2596665](https://help.ahrefs.com/en/articles/2596665);只看路径 |
 | `size-html-too-large` | WARN | perf 类;Ahrefs「HTML file size too large」 | [Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)「first 2MB」 |
 | `compression-none` | WARN | perf 类;Ahrefs「Page not compressed」 | 只在真实请求带了 Accept-Encoding 时判;离线 HTML 与桩不判 |
+| `soft404-page` | WARN | Technical SEO soft-404;Screaming Frog「Soft 404 Pages」(Warning) | [Google soft 404](https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors#soft-404-errors);判法与 site_crawl `site_issues.soft_404` 同一个函数,只看 2xx、非 noindex 页 |
 | `ai-bots-user-fetch-blocked` | INFO(ChatGPT-User、Perplexity-User)/ WARN(Claude-User) | AI-GEO、[ai-crawler-policy.md](ai-crawler-policy.md) | OpenAI:ChatGPT-User「robots.txt rules may not apply」;Perplexity:Perplexity-User 一般不遵守 robots;Anthropic:Claude-User 遵守,封了取不到 |
 | `fetch`(无导出 slug,按 area 兜底) | CRITICAL | technical-seo 5xx/超时 | — |
 

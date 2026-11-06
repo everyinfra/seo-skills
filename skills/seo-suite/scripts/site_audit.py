@@ -30,6 +30,7 @@ import zlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from hreflang_cluster import check_lang  # noqa: E402  语言码校验唯一实现(sitemap_audit 同款)
+from site_crawl import soft404_evidence  # noqa: E402  软 404 判定唯一实现(site_crawl site_issues 同款)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.1)"
@@ -798,6 +799,7 @@ RULE_SLUGS = [
     ("url", "双斜杠", "url-double-slash"),
     ("size", ">2MB", "size-html-too-large"),
     ("compression", "没压缩", "compression-none"),
+    ("soft404", "软 404", "soft404-page"),
     ("viewport", "没有", "viewport-missing"),
     ("viewport", "没写 width", "viewport-no-width"),
     ("content", ">15000", "content-too-long"),
@@ -1045,6 +1047,15 @@ def audit(url, market="en", serp_titles=None):
     else: F.append(("WARN", "canonical", "缺失"))
     # S5 修复②:大小写无关取头;RQ-229:按爬虫名分路(bingbot 专属 noindex 不当成 Google noindex)
     F.extend(robots_directive_findings(p.meta_robots, p.meta_agents, get_header(hdrs, "x-robots-tag") or ""))
+    # 软 404:2xx、非 noindex 的页面是「找不到页面」。判法与 site_crawl 的 site_issues.soft_404 同一个函数(出处见
+    # site_crawl.soft404_evidence:Google soft 404 文档、Screaming Frog Soft 404 Pages);多页审计没有它,
+    # 走 site_audit → health_score 汇总时这一类会整个丢掉(RQ-229 例 7 规模场景)
+    if 200 <= (st or 200) < 300 and not any(a == "robots" and m == "noindex" for _, a, m in F):
+        h1s = [visible_text(h) for h in re.findall(r"<h1\b[^>]*>(.*?)</h1>", html, re.S | re.I)]
+        ev = soft404_evidence(t, h1s, visible_text(html))
+        if ev:
+            F.append(("WARN", "soft404", f"软 404:返回 HTTP {st} 但页面是「找不到页面」({ev});页面真没了就回 404/410,"
+                      "换了地址就 301 到对应新页,还在卖就补回正文(Google soft 404;Screaming Frog Soft 404 Pages)"))
     for k in ("og:title", "og:description", "og:image"):
         if k not in p.og: F.append(("WARN", "og", f"{k} 缺失"))
     if p.og.get("og:image") and not p.og["og:image"].startswith("http"): F.append(("WARN", "og", "og:image 非绝对 URL"))

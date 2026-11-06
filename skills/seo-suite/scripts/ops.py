@@ -1240,11 +1240,40 @@ def skill_version():
         return None
 
 
+def _is_local_site(site):
+    host = (re.sub(r"^[a-z][a-z0-9+.-]*://", "", site or "", flags=re.I).split("/", 1)[0].rsplit(":", 1)[0]
+            .strip("[]").lower())
+    return host in ("localhost", "::1") or host.endswith(".localhost") or host.startswith("127.")
+
+
+def audit_chain(site):
+    """检查 / 审计站点时的体检链命令(写进运营段;站点是本机开发站时自动带 --allow-local)。"""
+    local = _is_local_site(site)
+    return "\n".join([
+        "  ```sh",
+        "  S=\"$HOME/.claude/skills/seo-suite/scripts\"; C=seo-ops/cache; mkdir -p \"$C\"",
+        "  python3 \"$S/site_crawl.py\" %s%s --out \"$C/crawl.json\" --urls-out \"$C/urls.txt\"" % (
+            site, " --allow-local --delay 0" if local else ""),
+        "  python3 \"$S/sitemap_audit.py\" %s --check-limit 0%s" % (site, " --delay 0" if local else ""),
+        "  python3 \"$S/site_audit.py\" $(cat \"$C/urls.txt\") --json > \"$C/audit.json\" 2> \"$C/audit.txt\"; "
+        "sed -n '/^## findings 汇总/,$p' \"$C/audit.txt\"",
+        "  python3 \"$S/health_score.py\" --input \"$C/audit.json\"",
+        "  python3 \"$S/link_graph.py\" --crawl \"$C/crawl.json\"",
+        "  ```"])
+
+
 def snippet(site, version):
     return "\n".join([
         SNIPPET_BEGIN,
         "## SEO / GEO 长期运营(seo-suite %s)" % (version or ""),
         "",
+        "- 检查或审计站点(抓取、收录、状态码、跳转、canonical、sitemap、站内链接、死链、标题描述)时,先跑 seo-suite "
+        "的体检链拿事实(有源码时再对源码):site_crawl → sitemap_audit / site_audit → health_score → link_graph。"
+        "本机开发站(127.0.0.1、localhost)要给 site_crawl 加 `--allow-local`。",
+        audit_chain(site),
+        "  要修的清单逐条来自 site_crawl 的 site_issues 和孤儿页、sitemap_audit 的坏桶、site_audit 的 findings"
+        "(health_score 只给分数和排序,不当清单);工具报的 noindex、302、canonical 指他页先按页面用途判断,"
+        "故意这样设的(如站内搜索结果页 noindex)不报。",
         "- 每周:`python3 \"$HOME/.claude/skills/seo-suite/scripts/project.py\" ops weekly`,读 "
         "`seo-ops/runs/<日期>/agenda.md`,只做里面推荐的那一件事;做完 `ops ack`。",
         "- 运营状态只在 `seo-ops/`(台账、运营单、监控快照);每次运营先读它,结束写回它(只写文件;要提交就提交到 `seo-ops` 分支,不提交、不推主干)。缓存和原始流量行不进 git。",

@@ -95,11 +95,12 @@ MAPPING = {
     "url":             ("uniqueness", "duplicate_body", "WARN", "URL 路径双斜杠(同一页多个 URL)"),
     "size":            ("experience", "page_speed", "WARN", "HTML >2MB(Googlebot 只抓前 2MB)"),
     "compression":     ("experience", "page_speed", "WARN", "HTML 未压缩"),
+    "soft404":         ("indexability", "non_indexable", "WARN", "软 404(2xx 但页面是「找不到页面」;Screaming Frog 记 Warning)"),
     # 派生规则(非 site_audit area):批内 meta.title 相同的 URL≥2 → 各记一次命中
     "duplicate_title": ("uniqueness", "duplicate_title", "WARN", "批内 title 重复(≥2 URL 同 title)"),
 }
 
-HIT_ONLY = ("injection", "viewport", "twitter", "lang", "hreflang", "redirect", "url", "size", "compression")   # injection 0.40.0、viewport 0.40.1、其余 Ahrefs 补项 2026-11-06 新增
+HIT_ONLY = ("injection", "viewport", "twitter", "lang", "hreflang", "redirect", "url", "size", "compression", "soft404")   # injection 0.40.0、viewport 0.40.1、其余 Ahrefs 补项 2026-11-06 新增;soft404 同日(RQ-229 例 7)
 
 USAGE = """usage: health_score.py --input audit.json [--ignore r1,r2] [--severity rule=sev]
                        [--config rules.json] [--json]
