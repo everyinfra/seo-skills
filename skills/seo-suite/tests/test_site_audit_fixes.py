@@ -135,9 +135,12 @@ class RobotsEmptyGroupTests(unittest.TestCase):
             "/sitemap.xml": (200, {}, "<urlset/>"), "/llms.txt": (200, {}, "# l\n")})
         self.assertNotIn("PerplexityBot", ai["bots"]["blocked"])     # 8 bot 名单不再误禁
         self.assertFalse(any("PerplexityBot 被禁" in m for _, a, m in F if a == "ai-bots"))
-        # 无专属组的 bot 仍按 * 组被禁(真 CRITICAL 不受影响)
-        self.assertTrue(any("ChatGPT-User 被禁" in m for s, a, m in F
+        # 无专属组的 bot 仍按 * 组被禁(搜索索引 bot 是真 CRITICAL)
+        self.assertTrue(any("OAI-SearchBot 被禁" in m for s, a, m in F
                             if s == "CRITICAL" and a == "ai-bots"))
+        # 按用户请求抓取的 ChatGPT-User:OpenAI 原话「robots.txt rules may not apply」→ 只记 INFO(11-06 评分点名)
+        self.assertTrue(any("ChatGPT-User 被禁" in m and "可能不适用" in m for s, a, m in F
+                            if s == "INFO" and a == "ai-bots"))
 
 
 # ---------------------------------------------------------------- ② X-Robots-Tag

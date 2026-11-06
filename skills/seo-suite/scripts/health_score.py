@@ -87,11 +87,20 @@ MAPPING = {
     "semantic-html":   ("rankability", "page_content", "INFO", "语义标签比值<10%"),
     "bluf":            ("rankability", "page_content", "INFO", "BLUF 密度不足(答案未前置)"),
     "freshness":       ("rankability", "page_content", "INFO", "Last-Modified>183 天"),
+    # Ahrefs 站点审计补项(2026-11-06 新增 area;只在命中时计分,不改旧快照)
+    "twitter":         ("rankability", "social_tags", "INFO", "X(Twitter)卡片缺失/不完整"),
+    "lang":            ("discoverability", "internationalization", "WARN", "html lang 不是 ISO 639-1(+ISO 3166-1)"),
+    "hreflang":        ("discoverability", "internationalization", "WARN", "一页多语/hreflang 与 html lang 不一致"),
+    "redirect":        ("discoverability", "redirection", "WARN", "meta refresh 客户端跳转"),
+    "url":             ("uniqueness", "duplicate_body", "WARN", "URL 路径双斜杠(同一页多个 URL)"),
+    "size":            ("experience", "page_speed", "WARN", "HTML >2MB(Googlebot 只抓前 2MB)"),
+    "compression":     ("experience", "page_speed", "WARN", "HTML 未压缩"),
+    "soft404":         ("indexability", "non_indexable", "WARN", "软 404(2xx 但页面是「找不到页面」;Screaming Frog 记 Warning)"),
     # 派生规则(非 site_audit area):批内 meta.title 相同的 URL≥2 → 各记一次命中
     "duplicate_title": ("uniqueness", "duplicate_title", "WARN", "批内 title 重复(≥2 URL 同 title)"),
 }
 
-HIT_ONLY = ("injection", "viewport")   # injection 0.40.0、viewport 0.40.1 新增
+HIT_ONLY = ("injection", "viewport", "twitter", "lang", "hreflang", "redirect", "url", "size", "compression", "soft404")   # injection 0.40.0、viewport 0.40.1、其余 Ahrefs 补项 2026-11-06 新增;soft404 同日(RQ-229 例 7)
 
 USAGE = """usage: health_score.py --input audit.json [--ignore r1,r2] [--severity rule=sev]
                        [--config rules.json] [--json]
@@ -202,7 +211,10 @@ def compute(audit, ignored, sev_overrides):
     # 派生 duplicate_title:批内非空 title 相同的 URL≥2,各记一次命中(可被降级/忽略)
     titles = {}
     for url in scored:
-        t = (results[url].get("meta") or {}).get("title")
+        m = results[url].get("meta") or {}
+        t = m.get("title")
+        if m.get("final_url") and m["final_url"] != url:
+            continue        # 会重定向的 URL:审到的是终点页的 title,不是第二个页面(Ahrefs 重复 title 只算可索引页)
         if t:
             titles.setdefault(t, []).append(url)
     has_title_data = sum(len(us) for us in titles.values()) >= 2  # ≥2 个带 title 的 URL 才可判重
@@ -295,6 +307,10 @@ def compute(audit, ignored, sev_overrides):
         "urls_total": total,
         "urls_clean": total - len(crit_urls),
         "urls_refused": len(refused),
+        # 哪几页撞了同一个 title(只给计数时看不出该改哪页);description 原文 site_audit 不输出,
+        # 判重看 site_crawl 的 site_issues.duplicate_meta_description(也按组列 URL)
+        "duplicate_title_groups": ([{"title": t, "urls": sorted(us)} for t, us in sorted(titles.items()) if len(us) >= 2]
+                                   if has_title_data and "duplicate_title" not in ignored else []),
     }
 
 
@@ -341,6 +357,11 @@ def render(rep):
         L.append("opportunity 值得探索(impact=0):")
         L += ["- %s(%s/%s %s 0/%d)" % (d["rule"], d["category"], d["subgroup"],
                                         d["severity"], d["total_urls"]) for d in opp]
+    if rep.get("duplicate_title_groups"):
+        L.append("")
+        L.append("## 重复 title(%d 组;description 判重看 site_crawl site_issues.duplicate_meta_description)"
+                 % len(rep["duplicate_title_groups"]))
+        L += ["- 「%s」:%s" % (g["title"][:80], ", ".join(g["urls"])) for g in rep["duplicate_title_groups"]]
     if rep["unmapped"]:
         L.append("")
         L.append("## 未映射检查(计主分/子分,不计类别分——MAPPING 待跟进)")
@@ -407,7 +428,10 @@ def main():
         die("无可评分 URL(全部拒审或空 results)")
     rep = compute(audit, ignored, sev_over)
     if as_json:
-        print(json.dumps(rep, ensure_ascii=False, indent=1))
+        # --json 键集是冻结的评分契约(tests/fixtures/scoring_v1.json),重复 title 分组只进 markdown;
+        # 要结构化分组用 site_crawl 的 site_issues.duplicate_title
+        out = {k: v for k, v in rep.items() if k != "duplicate_title_groups"}
+        print(json.dumps(out, ensure_ascii=False, indent=1))
     else:
         print(render(rep))
     sys.exit(1 if rep["band"] == "Weak" else 0)

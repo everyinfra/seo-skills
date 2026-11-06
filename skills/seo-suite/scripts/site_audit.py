@@ -26,6 +26,11 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
+import zlib
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from hreflang_cluster import check_lang  # noqa: E402  语言码校验唯一实现(sitemap_audit 同款)
+from site_crawl import soft404_evidence  # noqa: E402  软 404 判定唯一实现(site_crawl site_issues 同款)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 UA = "Mozilla/5.0 (compatible; seo-suite-audit/1.1)"
@@ -192,6 +197,125 @@ def robots_directive_findings(meta_robots, meta_agents, xrobots):
             F.append(("INFO", "robots", "max-video-preview:0——搜索结果只显示视频静态图,不放预览片段"))
         break
     return F
+
+# ---- Ahrefs Site Audit 补项(2026-11-06,RQ-229 例 11 脚本实跑覆盖)。每条判据写 Ahrefs 官方原文出处。
+HTML_MAX_BYTES = 2 * 1024 * 1024   # Ahrefs「Oversized HTML (>2MB)」;Google:Googlebot「crawls the first 2MB of a
+                                   # supported file type」(developers.google.com/search/docs/crawling-indexing/googlebot)
+ASKED_ENCODING_HDR = "x-seo-suite-accept-encoding"   # fetch 写进响应头 dict 的标记:这次请求声明过 gzip/deflate
+FINAL_URL_HDR = "x-seo-suite-final-url"              # fetch 写进响应头 dict 的标记:跟完重定向后的最终 URL
+TWITTER_FULL = ("twitter:card", "twitter:title", "twitter:description", "twitter:image")
+# 按用户请求抓取的 AI bot:被 robots.txt 封的后果因厂商而异,不和搜索索引 bot 一样记 CRITICAL(2026-11-06 评分点名)。
+# OpenAI(platform.openai.com/docs/bots):ChatGPT-User 由用户触发,「robots.txt rules may not apply」,且「not used to
+# determine whether content may appear in Search」;Perplexity(docs.perplexity.ai/guides/bots):Perplexity-User 由用户触发,
+# 「generally ignores robots.txt rules」;Anthropic(support.claude.com 爬虫说明):禁 Claude-User 会让 Claude 按用户请求取不到页面,
+# 「may reduce your site's visibility for user-directed web search」。
+USER_TRIGGERED_BOTS = {
+    "ChatGPT-User": dict(severity="INFO", message="ChatGPT-User 被禁——按用户请求抓取;OpenAI 说明 robots.txt 规则可能不适用于它,"
+                             "也不用它决定能否出现在 ChatGPT 搜索里(搜索看 OAI-SearchBot)"),
+    "Perplexity-User": dict(severity="INFO", message="Perplexity-User 被禁——按用户请求抓取;Perplexity 说明它一般不遵守 robots.txt,"
+                                "能否被 Perplexity 引用看 PerplexityBot"),
+    "Claude-User": dict(severity="WARN", message="Claude-User 被禁——用户在 Claude 里点名这个页面时取不到;Anthropic 说明这会降低"
+                            "用户发起的网页搜索里的可见度(搜索索引看 Claude-SearchBot)"),
+}
+
+
+def google_directives(meta_robots, meta_agents, xrobots):
+    """robots 指令按载体拆开 → ({指令名} 来自 HTML meta, {指令名} 来自 X-Robots-Tag),只算对 Google 生效的
+    (通用 robots 与 googlebot)。"""
+    xr_generic, xr_agents = split_x_robots(xrobots)
+    html_names = {n for n, _ in robots_tokens(meta_robots) + robots_tokens(meta_agents.get("googlebot"))}
+    hdr_names = {n for n, _ in robots_tokens(xr_generic) + robots_tokens(xr_agents.get("googlebot"))}
+    return html_names, hdr_names
+
+
+def directive_findings(meta_robots, meta_agents, xrobots):
+    """Nofollow page / Noindex·Nofollow in HTML and HTTP header(Ahrefs 帮助文:
+    https://help.ahrefs.com/en/articles/2478724 「Nofollow page」;
+    https://help.ahrefs.com/en/articles/2465780「a nofollow directive implemented both in meta tag and in HTTP
+    response header (X-Robots tag)」;Noindex 同理,见 https://help.ahrefs.com/en/articles/2429909)。"""
+    F = []
+    html_n, hdr_n = google_directives(meta_robots, meta_agents, xrobots)
+    nofollow = lambda names: bool(names & {"nofollow", "none"})
+    noindex = lambda names: bool(names & {"noindex", "none"})
+    if nofollow(html_n) or nofollow(hdr_n):
+        F.append(("WARN", "robots", "nofollow 页(搜索引擎不跟这页上的链接;Ahrefs Nofollow page)"))
+    if noindex(html_n) and noindex(hdr_n):
+        F.append(("INFO", "robots", "noindex 同时写在 HTML meta 和 X-Robots-Tag 头里(写一处就够,两处易改漏;"
+                  "Ahrefs Noindex in HTML and HTTP header)"))
+    if nofollow(html_n) and nofollow(hdr_n):
+        F.append(("INFO", "robots", "nofollow 同时写在 HTML meta 和 X-Robots-Tag 头里(写一处就够;"
+                  "Ahrefs Nofollow in HTML and HTTP header)"))
+    return F
+
+
+def meta_refresh_target(content, base):
+    """<meta http-equiv="refresh" content="4; URL='https://…'"> → 目标绝对 URL;只刷新本页(没写 url)→ None。"""
+    m = re.search(r"url\s*=\s*['\"]?([^'\";]+)", content or "", re.I)
+    if not m:
+        return None
+    tgt = urljoin(base, m.group(1).strip())
+    return tgt if tgt.split("#")[0] != base.split("#")[0] else None
+
+
+def has_double_slash(url):
+    """Ahrefs「URLs that contain a double slash (after the domain part)」(https://help.ahrefs.com/en/articles/2596665)。
+    只看路径:查询串里的 //(如 ?next=https://…)不算。"""
+    return "//" in (urlparse(url).path or "")
+
+
+def twitter_findings(tw):
+    """X (Twitter) card missing / incomplete。Ahrefs 社交标签报告的两项(应用内导出项;Patrick Stox(前 Ahrefs):
+    「flags a "Twitter card incomplete" issue when a page has partial twitter:* metadata」)。
+    缺 twitter:card 记 missing;有 twitter:* 但 card/title/description/image 不齐记 incomplete。
+    X 会回落用 og:*,所以只记 INFO。"""
+    if not tw.get("twitter:card"):
+        return [("INFO", "twitter", "twitter:card 缺失(X 卡片;X 会回落用 og:*,Ahrefs X (Twitter) card missing)")]
+    miss = [k for k in TWITTER_FULL if not tw.get(k)]
+    if miss:
+        return [("INFO", "twitter", "twitter 卡片不完整,缺 %s(Ahrefs X (Twitter) card incomplete)" % ", ".join(miss))]
+    return []
+
+
+def _lang_primary(code):
+    return (code or "").strip().replace("_", "-").split("-")[0].lower()
+
+
+def lang_findings(lang, hreflangs, url, canonical_abs):
+    """HTML lang attribute invalid / Hreflang and HTML lang mismatch / Page referenced for more than one language。
+    - invalid:「Language code must adhere to ISO 639-1 format, region code (optional) must be specified in ISO 3166-1
+      Alpha 2 format」(https://help.ahrefs.com/en/articles/2601025);
+    - mismatch:「language codes declared in the HTML language attribute and in the hreflang annotation for the URL do not
+      match」(https://help.ahrefs.com/en/articles/2598523)——单页只能比本页 hreflang 里指向自己的那条(跨页看 site_crawl);
+    - 一页多语:「pages referenced for more than one language in hreflang annotations」;同语言不同地区可以
+      (https://help.ahrefs.com/en/articles/2747339)。"""
+    F = []
+    if lang:
+        probs = check_lang(lang)
+        if lang.strip().lower() == "x-default":
+            probs = ["x-default 只用于 hreflang,不是语言码"]
+        if probs:
+            F.append(("WARN", "lang", "html lang=%r 无效: %s(Ahrefs HTML lang attribute invalid)" % (lang, probs[0])))
+    selves = {url.split("#")[0]}
+    if canonical_abs:
+        selves.add(canonical_abs.split("#")[0])
+    by_href = {}
+    for code, href in hreflangs:
+        if not href or code.strip().lower() == "x-default":
+            continue
+        by_href.setdefault(urljoin(url, href).split("#")[0], set()).add(_lang_primary(code))
+    for href, langs in by_href.items():
+        if len(langs) > 1:
+            F.append(("WARN", "hreflang", "同一 URL 被标成 %d 种语言(%s): %s(Ahrefs Page referenced for more than one language)"
+                      % (len(langs), "/".join(sorted(langs)), href[:80])))
+    own = set()
+    for href, langs in by_href.items():
+        if href in selves:
+            own |= langs
+    if lang and own and _lang_primary(lang) not in own and not check_lang(lang):
+        F.append(("WARN", "hreflang", "html lang=%s 与本页 hreflang 自指的语言(%s)不一致(Ahrefs Hreflang and HTML lang mismatch)"
+                  % (lang, "/".join(sorted(own)))))
+    return F
+
 
 USAGE = """usage: site_audit.py URL [URL...] [--market XX] [--json] [--export-dir DIR] [--serp-titles FILE]
 单页全项审计:title/desc 限值(市场单位)/H1/词数/链接/alt/canonical/robots/og/JSON-LD/
@@ -422,9 +546,24 @@ class Page(HTMLParser):
         self.meta_agents = {}                          # name=googlebot/bingbot/… 的 robots 指令(按爬虫名)
         self.embeds = []                               # <embed>/<object>/<applet>(Lighthouse plugins 口径)
         self._obj = None                               # 当前 <object>,收 <param>
+        # Ahrefs 站点审计补项(2026-11-06):title/description 个数、meta refresh、twitter:*、hreflang
+        self.title_tags, self.desc_tags = 0, 0         # <head> 里的 <title> 个数(svg 里的 <title> 不算)/ meta description 个数
+        self.svg_depth = 0
+        self.meta_refresh = None                       # <meta http-equiv="refresh" content="N; url=…"> 原值
+        self.twitter = {}                              # twitter:* → 值(name 或 property 写法都认)
+        self.hreflangs = []                            # [(hreflang 值, href)](<link rel="alternate" hreflang>)
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         self.all_tags += 1
+        if tag == "svg": self.svg_depth += 1
+        if tag == "title" and self.in_head and not self.svg_depth: self.title_tags += 1
+        if tag == "meta":
+            nm = (a.get("name") or a.get("property") or "").strip().lower()
+            if nm == "description": self.desc_tags += 1
+            if nm.startswith("twitter:"): self.twitter[nm] = (a.get("content") or "").strip()
+            if (a.get("http-equiv") or "").strip().lower() == "refresh": self.meta_refresh = a.get("content") or ""
+        if tag == "link" and a.get("hreflang") and "alternate" in (a.get("rel") or "").lower().split():
+            self.hreflangs.append((a.get("hreflang").strip(), (a.get("href") or "").strip()))
         if tag in SEMANTIC_TAGS:
             self.semantic_tags += 1
             self.sem_counts[tag] = self.sem_counts.get(tag, 0) + 1
@@ -435,7 +574,7 @@ class Page(HTMLParser):
         if tag == "noscript": self.in_noscript = True
         if tag == "html": self.lang = a.get("lang")
         if tag == "head": self.in_head = True
-        if tag == "title" and self.in_head:
+        if tag == "title" and self.in_head and not self.svg_depth:
             self.title.append("")
             self.in_title = True
         if tag == "script":
@@ -471,6 +610,7 @@ class Page(HTMLParser):
             if "alt" not in a: self.img_noalt += 1
         if tag == "body": self.in_head = self.in_title = False
     def handle_endtag(self, tag):
+        if tag == "svg" and self.svg_depth: self.svg_depth -= 1
         if tag == "object": self._obj = None
         if tag == "title": self.in_title = False
         if tag == "script":
@@ -615,10 +755,12 @@ SEV_RANK = {"SKIP": 0, "INFO": 1, "WARN": 2, "CRITICAL": 3}
 # fallback(area+message 首个 ASCII 词素),同一 slug 冲突自动合并(SF bulk export 口径)。
 RULE_SLUGS = [
     ("staging", "staging 子域", "staging-subdomain"),
+    ("title", "个 <title> 标签", "title-multiple"),
     ("title", "缺失", "title-missing"),
     ("title", "超上限", "title-too-long"),
     ("title", "<20", "title-too-short"),
     ("title", "搜索结果显示的标题不一致", "title-serp-mismatch"),
+    ("description", "个 meta description", "description-multiple"),
     ("description", "缺失", "description-missing"),
     ("description", "超上限", "description-too-long"),
     ("description", "低于下限", "description-too-short"),
@@ -631,17 +773,33 @@ RULE_SLUGS = [
     ("canonical", "相对 URL", "canonical-relative"),
     ("canonical", "指向外域", "canonical-external"),
     ("canonical", "缺失", "canonical-missing"),
+    ("canonical", "Canonical from HTTPS to HTTP", "canonical-https-to-http"),
+    ("canonical", "Canonical from HTTP to HTTPS", "canonical-http-to-https"),
+    ("robots", "noindex 同时写在", "robots-noindex-html-and-header"),
+    ("robots", "nofollow 同时写在", "robots-nofollow-html-and-header"),
+    ("robots", "nofollow 页", "robots-nofollow"),
     ("robots", "bingbot noindex", "robots-bingbot-noindex"),
     ("robots", "bingbot 专属", "robots-bingbot-only"),
     ("robots", "max-video-preview", "robots-max-video-preview"),
     ("robots", "noindex", "robots-noindex"),
     ("robots", "nosnippet", "robots-nosnippet"),
+    ("og", "og:url 与 canonical 不一致", "og-url-canonical-mismatch"),
     ("og", "og:image 非绝对", "og-image-not-absolute"),
     ("og", "og:url 非绝对", "og-url-not-absolute"),
     ("og", "og:title", "og-title-missing"),
     ("og", "og:description", "og-description-missing"),
     ("og", "og:image", "og-image-missing"),
     ("a11y", "无 lang", "a11y-no-lang"),
+    ("twitter", "twitter:card 缺失", "twitter-card-missing"),
+    ("twitter", "不完整", "twitter-card-incomplete"),
+    ("lang", "无效", "lang-invalid"),
+    ("hreflang", "种语言", "hreflang-multi-language"),
+    ("hreflang", "不一致", "hreflang-lang-mismatch"),
+    ("redirect", "meta refresh", "redirect-meta-refresh"),
+    ("url", "双斜杠", "url-double-slash"),
+    ("size", ">2MB", "size-html-too-large"),
+    ("compression", "没压缩", "compression-none"),
+    ("soft404", "软 404", "soft404-page"),
     ("viewport", "没有", "viewport-missing"),
     ("viewport", "没写 width", "viewport-no-width"),
     ("content", ">15000", "content-too-long"),
@@ -659,6 +817,7 @@ RULE_SLUGS = [
     ("sitemap", "不可达", "sitemap-unreachable"),
     ("llms.txt", "不可达", "llms-txt-unreachable"),
     ("ai-bots", "训练型", "ai-bots-training-blocked"),
+    ("ai-bots", "-User 被禁", "ai-bots-user-fetch-blocked"),
     ("ai-bots", "被禁", "ai-bots-blocked"),
     ("freshness", "天前", "freshness-stale"),
     ("semantic-html", "比值", "semantic-html-low"),
@@ -848,10 +1007,15 @@ def audit(url, market="en", serp_titles=None):
     dn = unit_len(p.desc or "", dl["unit"])
     d_lo, d_hi = desc_bounds(mk)
     # S2a B15:描述可选——Google 主要从正文生成摘要(snippet 文档),缺失记 WARN 不记 CRITICAL
-    if p.desc is None: F.append(("WARN", "description", "缺失"))
+    # Ahrefs「Meta description tag missing or empty」:空 content 也算缺失(11-05 评分:空的被报成「太短」)
+    if p.desc is None or not p.desc.strip(): F.append(("WARN", "description", "缺失" if p.desc is None else "缺失(content 为空)"))
     elif dn < d_lo: F.append(("WARN", "description", f"{dn} {dl['unit']} 低于下限 {d_lo}(本套件口径)"))
     elif dn > d_hi:
         F.append(("WARN", "description", f"{dn} {dl['unit']} 超上限 {d_hi}"))
+    # Ahrefs「Multiple title tags」(https://help.ahrefs.com/en/articles/2754360)/「Multiple meta description tags」
+    # (https://help.ahrefs.com/en/articles/2652405):「indexable pages that have more than one」;svg 里的 <title> 不算
+    if p.title_tags > 1: F.append(("WARN", "title", f"{p.title_tags} 个 <title> 标签(Ahrefs Multiple title tags)"))
+    if p.desc_tags > 1: F.append(("WARN", "description", f"{p.desc_tags} 个 meta description(Ahrefs Multiple meta description tags)"))
     # S2a B38:SEO 起始指南——标题数量与顺序对 Google 搜索无影响;缺 H1 记 WARN
     if p.h1 == 0: F.append(("WARN", "h1", "无 H1"))
     elif p.h1 > 1: F.append(("WARN", "h1", f"{p.h1} 个 H1"))
@@ -883,6 +1047,15 @@ def audit(url, market="en", serp_titles=None):
     else: F.append(("WARN", "canonical", "缺失"))
     # S5 修复②:大小写无关取头;RQ-229:按爬虫名分路(bingbot 专属 noindex 不当成 Google noindex)
     F.extend(robots_directive_findings(p.meta_robots, p.meta_agents, get_header(hdrs, "x-robots-tag") or ""))
+    # 软 404:2xx、非 noindex 的页面是「找不到页面」。判法与 site_crawl 的 site_issues.soft_404 同一个函数(出处见
+    # site_crawl.soft404_evidence:Google soft 404 文档、Screaming Frog Soft 404 Pages);多页审计没有它,
+    # 走 site_audit → health_score 汇总时这一类会整个丢掉(RQ-229 例 7 规模场景)
+    if 200 <= (st or 200) < 300 and not any(a == "robots" and m == "noindex" for _, a, m in F):
+        h1s = [visible_text(h) for h in re.findall(r"<h1\b[^>]*>(.*?)</h1>", html, re.S | re.I)]
+        ev = soft404_evidence(t, h1s, visible_text(html))
+        if ev:
+            F.append(("WARN", "soft404", f"软 404:返回 HTTP {st} 但页面是「找不到页面」({ev});页面真没了就回 404/410,"
+                      "换了地址就 301 到对应新页,还在卖就补回正文(Google soft 404;Screaming Frog Soft 404 Pages)"))
     for k in ("og:title", "og:description", "og:image"):
         if k not in p.og: F.append(("WARN", "og", f"{k} 缺失"))
     if p.og.get("og:image") and not p.og["og:image"].startswith("http"): F.append(("WARN", "og", "og:image 非绝对 URL"))
@@ -890,6 +1063,47 @@ def audit(url, market="en", serp_titles=None):
     # og:url 是对象的规范 URL(永久 ID),写成 "/" 这类相对路径不合规(sspai 首页实测)
     if "og:url" in p.og and not re.match(r"^https?://", p.og["og:url"].strip(), re.I):
         F.append(("WARN", "og", f"og:url 非绝对 URL: {p.og['og:url'].strip()[:60]!r}(ogp.me:URL 类型须 http(s)://)"))
+    canon_abs = urljoin(url, p.canonical.strip()) if p.canonical else None
+    if canon_abs:
+        # Ahrefs「Canonical from HTTP to HTTPS」/「Canonical from HTTPS to HTTP」(notice;
+        # https://help.ahrefs.com/en/articles/2478867、https://help.ahrefs.com/en/articles/2434581)
+        ps, cs = urlparse(url).scheme.lower(), urlparse(canon_abs).scheme.lower()
+        if ps == "https" and cs == "http":
+            F.append(("WARN", "canonical", f"HTTPS 页的 canonical 指向 HTTP: {canon_abs[:80]}(Ahrefs Canonical from HTTPS to HTTP)"))
+        elif ps == "http" and cs == "https":
+            F.append(("INFO", "canonical", f"HTTP 页的 canonical 指向 HTTPS(该做 301;Ahrefs Canonical from HTTP to HTTPS)"))
+    # Ahrefs「Open Graph URL not matching canonical」:「The URL specified in og:url Open Graph tag and in rel=canonical tag
+    # is mismatched」(https://ahrefs.com/blog/canonical-tags/ 第 10 条)。两者都有才比;只差末尾斜杠也算不一致
+    og_url = (p.og.get("og:url") or "").strip()
+    if canon_abs and og_url and re.match(r"^https?://", og_url, re.I):
+        if norm_host(og_url) + urlparse(og_url).path + ("?" + urlparse(og_url).query if urlparse(og_url).query else "") != \
+                norm_host(canon_abs) + urlparse(canon_abs).path + ("?" + urlparse(canon_abs).query if urlparse(canon_abs).query else ""):
+            F.append(("INFO", "og", f"og:url 与 canonical 不一致: og:url={og_url[:70]} / canonical={canon_abs[:70]}"
+                      "(Ahrefs Open Graph URL not matching canonical)"))
+    F.extend(twitter_findings(p.twitter))
+    F.extend(lang_findings(p.lang, p.hreflangs, url, canon_abs))
+    F.extend(directive_findings(p.meta_robots, p.meta_agents, get_header(hdrs, "x-robots-tag") or ""))
+    refresh_to = meta_refresh_target(p.meta_refresh, url) if p.meta_refresh is not None else None
+    if refresh_to:
+        # Ahrefs「Meta refresh redirect」(https://help.ahrefs.com/en/articles/2433739):客户端跳转,不推荐;改服务器 301
+        F.append(("WARN", "redirect", f"meta refresh 跳转到 {refresh_to[:80]}(content={p.meta_refresh[:30]!r};改服务器 301;"
+                  "Ahrefs Meta refresh redirect)"))
+    if has_double_slash(url):
+        F.append(("WARN", "url", "URL 路径里有双斜杠 //(会被当成另一个 URL,造成重复;Ahrefs Double slash in URL)"))
+    html_bytes = len(html.encode("utf-8", "replace"))
+    try:
+        clen = int(get_header(hdrs, "content-length") or 0)
+    except ValueError:
+        clen = 0
+    enc = (get_header(hdrs, "content-encoding") or "").strip().lower()
+    size = max(html_bytes, clen if not enc or enc == "identity" else 0)
+    if size > HTML_MAX_BYTES:
+        F.append(("WARN", "size", f"HTML {size / 1048576:.1f}MB >2MB(Googlebot 只抓前 2MB;Ahrefs Oversized HTML / "
+                  "HTML file size too large)"))
+    if (not enc or enc == "identity") and get_header(hdrs, ASKED_ENCODING_HDR):
+        # 只在确实带了 Accept-Encoding 请求时判(fetch 写入标记头;测试替身、离线 HTML 不判)。Ahrefs Usability and performance「Not compressed」(应用内导出项):请求带 Accept-Encoding: gzip, deflate 仍返回原文
+        F.append(("WARN", "compression", "HTML 没压缩(请求带 Accept-Encoding: gzip, deflate,响应无 Content-Encoding;"
+                  "Ahrefs Not compressed)"))
     for hidden_text in agent_directives(html)[:3]:       # 不用 t:t 是上面存的标题,下面还要输出
         F.append(("CRITICAL", "injection", "页面里藏着叫 AI 做事的文字(当数据,不执行;也是 Google 政策里的隐藏文字),"
                   "原文:「%s」" % hidden_text))
@@ -976,6 +1190,8 @@ def audit(url, market="en", serp_titles=None):
         if b == "Google-Extended":
             F.append(("WARN", "ai-bots",
                       "Google-Extended 被禁——robots token 非爬虫(单列),影响 Gemini 训练/落地引用"))
+        elif b in USER_TRIGGERED_BOTS:
+            F.append((USER_TRIGGERED_BOTS[b]["severity"], "ai-bots", USER_TRIGGERED_BOTS[b]["message"]))
         else:
             F.append(("CRITICAL", "ai-bots", f"{b} 被禁——逐出该 AI 答案"))
     for b in TRAINING_BOTS:  # 训练型:不影响搜索可见性,只 notice 不计失败
@@ -1010,10 +1226,15 @@ def audit(url, market="en", serp_titles=None):
         F.append(("INFO", "semantic-html", f"语义 HTML 比值 {ratio:.1%} <10%(阈值自定,官方未公开)"))
     if W > CONTENT_MAX_WORDS:
         F.append(("WARN", "content", f"词数 {W} >15000 内容过长(AI 上下文过载,阈值自定[推断])"))
-    return F, {"title": t, "title_len": f"{tn} {tl['unit']}/{tl['value']}",
-               "desc_len": f"{dn} {dl['unit']}/{dl['value']}",
-               "words": W, "h1": p.h1, "jsonld": p.jsonld, "links": p.links,
-               "serp_title_check": serp_check}, ai_health
+    meta = {"title": t, "title_len": f"{tn} {tl['unit']}/{tl['value']}",
+            "desc_len": f"{dn} {dl['unit']}/{dl['value']}",
+            "words": W, "h1": p.h1, "jsonld": p.jsonld, "links": p.links,
+            "serp_title_check": serp_check}
+    final = hdrs.get(FINAL_URL_HDR) if isinstance(hdrs, dict) else None
+    if final and final != url:
+        # 被重定向:审到的是终点页的内容(health_score 判重复 title 时据此跳过,免得「旧网址 = 新网址」被当成重复)
+        meta["final_url"] = final
+    return F, meta, ai_health
 
 CHARSET_SNIFF_BYTES = 2048   # meta charset 嗅探窗口(head_check.py 同款量级)
 
@@ -1041,11 +1262,32 @@ def detect_encoding(raw, ctype):
             pass
     return "utf-8"
 
+def decode_body(raw, encoding, cap=HTML_MAX_BYTES + 1):
+    """gzip/deflate 解压(最多解出 cap 字节,防压缩炸弹);未知编码原样返回。"""
+    enc = (encoding or "").strip().lower()
+    try:
+        if enc in ("gzip", "x-gzip"):
+            return zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(raw, cap)
+        if enc == "deflate":
+            try:
+                return zlib.decompressobj().decompress(raw, cap)
+            except zlib.error:
+                return zlib.decompressobj(-zlib.MAX_WBITS).decompress(raw, cap)
+    except zlib.error:
+        return raw
+    return raw
+
+
 def fetch(url, timeout=15):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    # Accept-Encoding 只报 gzip/deflate(stdlib 解不了 br),这样「没压缩」才是服务器没压,不是我们没要
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Encoding": "gzip, deflate"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         hdrs = dict(r.headers)
-        raw = r.read(2_000_000)
+        hdrs[ASKED_ENCODING_HDR] = "gzip, deflate"
+        final = getattr(r, "url", None) or (r.geturl() if hasattr(r, "geturl") else None)
+        if final:
+            hdrs[FINAL_URL_HDR] = final
+        raw = decode_body(r.read(8_000_000), get_header(hdrs, "content-encoding"))
         enc = detect_encoding(raw, get_header(hdrs, "content-type"))
         try:
             return r.status, hdrs, raw.decode(enc, "replace")

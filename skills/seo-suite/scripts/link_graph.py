@@ -7,9 +7,10 @@ R3-4——此前 edges 零下游消费者;deeprank 口径可移植):
      Top/Bottom N(默认 20)+ 归一 0-10 分(最高页=10.0;归一分是人读权重序,非概率)。
   ② 点击深度直方图:>3 层占比(深埋页抓取与权重双弱,是内链架构首要体检项);
      不可达(depth=None,图上从首页走不到)单列。
-  ③ 入链 0/1 页清单:零入链判定默认排除首页(path 为根)与 sitemap-only 页
-     (source=sitemap——大站 sitemap 模式下爬虫兜底关闭,边欠采样会制造假孤儿;
-     --include-sitemap-only 可配回),4xx/传输失败页不计(给死链加链无意义);
+  ③ 入链 0/1 页清单:零入链判定排除首页(path 为根),4xx/传输失败页不计(给死链加链无意义);
+     sitemap 里 0 入链的页(source=sitemap)默认按 crawl.json 自动判:内链边完整(新版 site_crawl
+     sitemap 优先、站内链接也请求;或 loc<50 爬虫补量开着)时计入——这就是孤儿页;被 --max 截断、
+     或旧口径只抓 sitemap(边欠采样会制造假孤儿)时排除。--include-sitemap-only / --exclude-sitemap-only 强制。
      单入链页=脆弱页(唯一入口一断即孤)。
   ④ 锚文本审计(R3-5 接线):带锚边的锚分布;精确匹配域名锚占比 > 阈值(默认
      0.60,--exact-threshold 可配,带锚边 <10 不告警防小样本噪音)→ 过度优化警告;
@@ -184,15 +185,29 @@ def depth_histogram(pages):
     return hist, deep, pct
 
 
-def inlink_lists(report, include_sitemap_only=False):
+def edges_undersampled(report):
+    """内链边是否欠采样:site_crawl 被 --max 截断,或旧口径「sitemap ≥50 条只抓 sitemap、链接只进图」
+    (discovery.links_followed 缺或为 false 且爬虫兜底关闭)。新版 site_crawl 默认 sitemap 优先、站内链接也请求,
+    边不欠采样,sitemap 里 0 入链的页就是孤儿页(Ahrefs「Orphan page」/「Canonical URL has no incoming internal
+    links」:sitemap 里有、站内没有入链)。"""
+    if report.get("orphans_partial"):
+        return True
+    disc = report.get("discovery") or {}
+    # 只有 crawl.json 明确写了「链接都请求过」才算边完整;缺这两个键的旧报告照旧口径按欠采样处理
+    return not (disc.get("links_followed") or disc.get("crawl_fallback") is True)
+
+
+def inlink_lists(report, include_sitemap_only=None):
     """入链 0/1 页清单(入链从 edges 现算,不信任快照字段)。
-    零入链判定排除:首页(自然根)/ sitemap-only 页(默认,--include-sitemap-only
-    配回)/ 非活页(4xx·传输失败)。返回 (zero, one, excluded, incnt)。"""
+    零入链判定排除:首页(自然根)/ 非活页(4xx·传输失败)/ sitemap-only 页——后者只在边欠采样时排除
+    (edges_undersampled;include_sitemap_only=None 即按此自动判,True/False 强制)。返回 (zero, one, excluded, incnt)。"""
+    if include_sitemap_only is None:
+        include_sitemap_only = not edges_undersampled(report)
     pages, urls, edges = build_graph(report)
     incnt = Counter(d for _s, d in edges)
     by = {p.get("url"): p for p in pages}
     zero, one = [], []
-    excluded = {"home": [], "sitemap_only": [], "dead": []}
+    excluded = {"home": [], "sitemap_only": [], "dead": [], "redirected": []}
     for u in urls:
         p = by.get(u, {})
         c = incnt.get(u, 0)
@@ -201,7 +216,9 @@ def inlink_lists(report, include_sitemap_only=False):
                 excluded["dead"].append(u)
             continue
         if c == 0:
-            if is_home(u):
+            if p.get("final_url") and p["final_url"] != u:
+                excluded["redirected"].append(u)     # 会重定向的 URL 不是孤儿(内链该指向终点;同 site_crawl orphans)
+            elif is_home(u):
                 excluded["home"].append(u)
             elif p.get("source") == "sitemap" and not include_sitemap_only:
                 excluded["sitemap_only"].append(u)
@@ -279,7 +296,9 @@ def anchor_audit(report, domain, threshold=EXACT_WARN_RATIO):
 # ---------------------------------------------------------------------------
 
 def build_payload(report, top_n=DEFAULT_TOP, exact_threshold=EXACT_WARN_RATIO,
-                  include_sitemap_only=False):
+                  include_sitemap_only=None):
+    if include_sitemap_only is None:
+        include_sitemap_only = not edges_undersampled(report)
     pages, urls, edges = build_graph(report)
     domain = site_domain(report)
     pr = pagerank(urls, edges)
@@ -290,7 +309,8 @@ def build_payload(report, top_n=DEFAULT_TOP, exact_threshold=EXACT_WARN_RATIO,
     warnings = list(anchors["warnings"])
     disc = report.get("discovery") or {}
     counts = disc.get("counts") or {}
-    if disc.get("mode") in ("sitemap", "robots+sitemap") and not counts.get("crawl") \
+    if edges_undersampled(report) and not report.get("orphans_partial") \
+            and disc.get("mode") in ("sitemap", "robots+sitemap") and not counts.get("crawl") \
             and report.get("orphans"):
         warnings.append("sitemap-only 爬取(爬虫兜底关闭):内链边可能欠采样,"
                         "孤儿/入链结论按 --include-sitemap-only 复核")
@@ -349,9 +369,9 @@ def render_markdown(p, rows, top_n):
     il = p["inlinks"]
     L.append("")
     L.append("### 入链 0/1")
-    L.append("- 零入链 %d 页(排除首页 %d/sitemap-only %d/死页 %d%s):%s" % (
+    L.append("- 零入链 %d 页(排除首页 %d/sitemap-only %d/死页 %d/会重定向 %d%s):%s" % (
         len(il["zero"]), len(il["excluded"]["home"]), len(il["excluded"]["sitemap_only"]),
-        len(il["excluded"]["dead"]),
+        len(il["excluded"]["dead"]), len(il["excluded"].get("redirected", [])),
         ",含 sitemap-only" if il["include_sitemap_only"] else "",
         ", ".join(il["zero"][:20]) if il["zero"] else "无"))
     L.append("- 单入链(脆弱页)%d 页:%s" % (
@@ -399,9 +419,12 @@ def build_parser():
     ap.add_argument("--exact-threshold", dest="exact_threshold", type=float,
                     default=EXACT_WARN_RATIO, metavar="R",
                     help="精确匹配域名锚占比告警阈值(默认 %.2f)" % EXACT_WARN_RATIO)
-    ap.add_argument("--include-sitemap-only", dest="include_sitemap_only",
-                    action="store_true",
-                    help="零入链清单计入 sitemap-only 页(默认排除:大站 sitemap 模式边欠采样防假孤儿)")
+    g = ap.add_mutually_exclusive_group()
+    g.add_argument("--include-sitemap-only", dest="include_sitemap_only", action="store_const", const=True,
+                   default=None, help="零入链清单强制计入 sitemap-only 页")
+    g.add_argument("--exclude-sitemap-only", dest="include_sitemap_only", action="store_const", const=False,
+                   help="零入链清单强制排除 sitemap-only 页。默认自动:crawl.json 的内链边完整(新版 site_crawl 会请求"
+                        "站内链接)时计入,被 --max 截断或旧口径只抓 sitemap 时排除(防假孤儿)")
     ap.add_argument("--json", action="store_true", help="结构化 JSON 打 stdout(替代 markdown)")
     return ap
 

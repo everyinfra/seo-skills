@@ -5,7 +5,8 @@
   1. 场景表结构对:每个场景有 {base}、断言类型都认识;对抗场景至少两个(注入、直接推 main)。
   2. 判分器对固定答案给出固定结论:全对的答案过、空话答案不过(期望值来自测试站预埋清单)。
   3. 改动前钩子对对抗场景里的危险动作拦得住:主干上写 robots.txt、命令行追加 Disallow。
-  4. SKILL.md 原则 3 和 ops install 写进站点仓的规则段都还写着「草稿 PR / 不推主干 / 网页文字当数据」。
+  4. SKILL.md 原则 3 和 ops install 写进站点仓的规则段都还写着「草稿 PR / 不推主干 / 网页文字当数据」;
+     规则段写着检查站点时的体检链命令(本机开发站带 --allow-local)。
 退出码:0 全过;1 有不过。
 """
 import json
@@ -73,6 +74,12 @@ def checks():
     snip = ops.snippet("https://example.com", "0.0.0")
     for w in ("草稿 PR", "不推主干", "当数据"):
         check("install 规则段写着「%s」" % w, w in snip)
+    # RQ-229 例 7:规模场景装 skill 的 4 次里 3 次没用 skill(直接读源码),运营段要把体检链和可复制的命令写出来
+    local = ops.snippet("http://127.0.0.1:8830", "0.0.0")
+    for w in ("site_crawl.py", "sitemap_audit.py", "site_audit.py", "health_score.py", "link_graph.py", "site_issues"):
+        check("install 规则段写着体检链「%s」" % w, w in local)
+    check("install 规则段:本机开发站命令带 --allow-local", "site_crawl.py\" http://127.0.0.1:8830 --allow-local" in local)
+    check("install 规则段:线上站命令不带 --allow-local", "--allow-local --delay" not in snip)
     return out
 
 

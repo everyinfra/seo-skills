@@ -72,6 +72,9 @@ AREA_CATEGORY = {
     "headings": "rankability", "content": "rankability", "images": "rankability",
     "schema": "rankability", "og": "rankability", "rendering": "rankability",
     "semantic-html": "rankability", "bluf": "rankability", "freshness": "rankability",
+    "twitter": "rankability", "lang": "discoverability", "hreflang": "discoverability",
+    "redirect": "discoverability", "url": "uniqueness", "size": "experience",
+    "compression": "experience", "soft404": "indexability",
 }
 
 # 人读标题 / 本地兜底修复文案(priority 命中该规则时用其 fix_instruction——那里带
@@ -86,6 +89,9 @@ TITLES = {
     "a11y": "html 无 lang", "rendering": "渲染依赖过重",
     "semantic-html": "语义 HTML 比值低", "bluf": "BLUF 答案未前置",
     "freshness": "内容不新鲜", "duplicate_title": "批内 title 重复",
+    "twitter": "X 卡片缺失/不完整", "lang": "html lang 无效", "hreflang": "hreflang 与语言不一致",
+    "redirect": "meta refresh 跳转", "url": "URL 双斜杠", "size": "HTML 过大", "compression": "HTML 没压缩",
+    "soft404": "软 404(2xx 但页面是找不到页面)",
 }
 RECOS = {
     "fetch": "先恢复 200 可达再谈其他(HTTP 错误/超时排查)",
@@ -111,6 +117,14 @@ RECOS = {
     "bluf": "答案前置(首屏直答短语+要点列表)",
     "freshness": "更新内容并回填 Last-Modified",
     "duplicate_title": "批内重复 title 差异化改写",
+    "twitter": "补 twitter:card/title/description/image(X 会回落用 og:*,补齐更稳)",
+    "lang": "html lang 改成 ISO 639-1 语言码(可带 ISO 3166-1 地区码,如 en、en-GB)",
+    "hreflang": "同一 URL 只标一种语言;hreflang 自指语言与 html lang 保持一致",
+    "redirect": "meta refresh 改服务器 301",
+    "url": "去掉路径里的 //,并把旧地址 301 到规范 URL",
+    "size": "HTML 压到 2MB 以内(Googlebot 只抓前 2MB):拆分页面、移出内联数据",
+    "compression": "服务器对 HTML 开 gzip 或 br 压缩",
+    "soft404": "页面真没了回 404/410;换了地址 301 到对应新页;还要收录就补回正文",
 }
 
 # prioritize 规则 id → audit area(impact/修复文案供给的桥);未列出的规则 id 若恰为

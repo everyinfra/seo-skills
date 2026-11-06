@@ -275,9 +275,9 @@
         "note": "本套件口径(未找到 Naver 官方出处):~30 전각"
       },
       "desc_limit": {
-        "value": 80,
+        "value": 120,
         "unit": "fullwidth",
-        "note": "本套件口径(未找到 Naver 官方出处):≤80 전각"
+        "note": "本套件口径(未找到 Naver 官方出处):≤120 전각。谚文和日文假名同为全角字形,Google 按像素截断,和 ja 取同值;原 80 无出处,everyinfra.com 实测会把 722 页正常描述判超(2026-11-06)"
       },
       "desc_min": 40,
       "sentence_ideal": {

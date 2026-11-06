@@ -58,7 +58,7 @@
 | redirect_chain.py | URL | markdown | URL 实时逐跳 GET(手动跟随不自动重定向) | ③ | — | beta |
 | robots_posture.py | URL --fix-robots(可选) | json | robots.txt 实时抓取;37 bot 四层名单(search 15/training 11/user 8/other 3,带官方核实标记)+RFC 9309 解析器内置本地 | ③ | test_robots_posture.py | stable |
 | llmstxt.py | validate FILE\|check URL\|generate --sitemap | markdown | validate=本地文件;check=线上 /llms.txt 等 4 路径探测;generate=--sitemap 实时抓取 | ③ | run_tests.py(内联) | stable |
-| schema_lint.py | URL | markdown | URL 实时抓取(提取全部 ld+json 块) | ③ | — | beta |
+| schema_lint.py | URL | markdown | URL 实时抓取(提取全部 ld+json 块) | ③ | test_ahrefs_coverage.py | beta |
 | head_check.py | URL\|FILE --market(可选,zh 门控) | markdown | URL 实时抓取或本地 HTML 文件;--market zh 门控中文项 | ③+④ | run_tests.py(内联) | stable |
 
 ## 三、关键词与 SERP(8)

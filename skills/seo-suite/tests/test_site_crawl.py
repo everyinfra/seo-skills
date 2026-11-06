@@ -269,7 +269,8 @@ class DiscoveryChainTests(unittest.TestCase):
         self.assertEqual(rc, 0)
 
     def test_50_sitemap_locs_close_crawl_fallback(self):
-        """≥50 条 loc 关闭爬虫兜底:链接只进图(边保留),不进抓取队列。"""
+        """≥50 条 loc 关闭爬虫兜底(counts.crawl=0),但站内链接指向、sitemap 没列的 URL 排在 sitemap 后面
+        补抓(source=link),记状态码;--sitemap-only 恢复「链接只进图不请求」。"""
         locs = ["https://example.com/p%02d" % i for i in range(1, 51)]
         web = FakeWeb()
         web.add("https://example.com/sitemap.xml", body=urlset_xml(locs))
@@ -277,10 +278,34 @@ class DiscoveryChainTests(unittest.TestCase):
         rep, rc = crawl(make_ns(), web)
         self.assertEqual(rep["discovery"]["counts"]["sitemap"], 50)
         self.assertEqual(rep["discovery"]["counts"]["crawl"], 0)
-        self.assertNotIn("https://example.com/hidden", {pg["url"] for pg in rep["pages"]})
+        self.assertEqual(rep["discovery"]["counts"]["link"], 1)
+        self.assertFalse(rep["discovery"]["crawl_fallback"])
+        self.assertTrue(rep["discovery"]["links_followed"])
+        hidden = [pg for pg in rep["pages"] if pg["url"] == "https://example.com/hidden"]
+        self.assertEqual([(h["source"], h["status"]) for h in hidden], [("link", 404)])
+        self.assertEqual(rep["pages"][-1]["url"], "https://example.com/hidden")   # 排在 sitemap 之后
+        self.assertIn({"src": "https://example.com/p01", "dst": "https://example.com/hidden"}, rep["edges"])
+        self.assertEqual(len(rep["pages"]), 52)                          # 50 条 loc + 首页 + 链接目标
+        web2 = FakeWeb()
+        web2.add("https://example.com/sitemap.xml", body=urlset_xml(locs))
+        web2.add("https://example.com/p01", body=html_links("P1", ["/hidden"]))
+        rep2, _rc = crawl(make_ns(sitemap_only=True), web2)
+        self.assertNotIn("https://example.com/hidden", {pg["url"] for pg in rep2["pages"]})
         self.assertIn({"src": "https://example.com/p01", "dst": "https://example.com/hidden"},
-                      rep["edges"])                                        # 图仍记边
-        self.assertEqual(len(rep["pages"]), 51)                          # 50 条 loc + 首页
+                      rep2["edges"])                                       # 图仍记边
+        self.assertEqual(len(rep2["pages"]), 51)
+        self.assertFalse(rep2["discovery"]["links_followed"])
+
+    def test_link_targets_respect_max_budget(self):
+        """链接补抓同受 --max:预算用完就停,标截断并写明有多少链接目标没请求。"""
+        locs = ["https://example.com/p%02d" % i for i in range(1, 51)]
+        web = FakeWeb()
+        web.add("https://example.com/sitemap.xml", body=urlset_xml(locs))
+        web.add("https://example.com/p01", body=html_links("P1", ["/h1", "/h2", "/h3"]))
+        rep, _rc = crawl(make_ns(max_pages=52), web)
+        self.assertEqual(len(rep["pages"]), 52)
+        self.assertTrue(rep["orphans_partial"])
+        self.assertTrue(any("另外 2 个 URL 超出 --max 52" in w for w in rep["warnings"]))
 
     def test_under_50_locs_crawl_supplement(self):
         """<50 条 loc:爬虫兜底开着,sitemap 页上的新内链被补抓(source=crawl)。"""

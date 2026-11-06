@@ -222,7 +222,9 @@ class ExportDirIntegrationTests(unittest.TestCase):
         self.assertIn("| canonical-missing | WARN | 2/3 页(66.7%) |", out)
         self.assertIn("分母=本次已审计 3 页", out)
         # S2a:默认 INFO 改由 101 个链接提供,链接标签同时把语义 HTML 比值压到 <10% → 3 个规则
-        self.assertIn("bulk export: 3 个规则清单 + summary.json", out)
+        # RQ-229 例 3:夹具页没有 twitter:card → 多一条 Ahrefs「X (Twitter) card missing」(INFO)→ 4 个规则
+        self.assertIn("| twitter-card-missing | INFO | 3/3 页(100%) |", out)
+        self.assertIn("bulk export: 4 个规则清单 + summary.json", out)
 
     def test_summary_json_coverage_math_and_rule_fields(self):
         export_dir = os.path.join(self.tmp, "exp")

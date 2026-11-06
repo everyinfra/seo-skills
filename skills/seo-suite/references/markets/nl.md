@@ -132,7 +132,7 @@ Frankwatching、Marketingfacts、SearchLab(`searchlab.nl/statistieken`)、SE Ran
 
 > 脚本口径 2026-10-21 已改:twitter:* 与 OG 重复只记 INFO;缺 H1 / 缺描述为 WARN。旧版 2026-10-09 的「nos.nl / metronieuws 报 ERROR」不再适用。
 
-- `site_audit.py https://nos.nl/ --market nl --json`(2026-10-21):title 68 字符(超 60 WARN)、description 62 字符(低于 77 WARN)、alt 缺失 80/80(WARN)、无 JSON-LD(WARN);**CRITICAL:ChatGPT-User 与 PerplexityBot 被 robots.txt 禁**,Google-Extended 被禁(WARN),GPTBot 被禁(训练型,INFO)。`/sitemap.xml` 404(INFO)。
+- `site_audit.py https://nos.nl/ --market nl --json`(2026-10-21):title 68 字符(超 60 WARN)、description 62 字符(低于 77 WARN)、alt 缺失 80/80(WARN)、无 JSON-LD(WARN);**CRITICAL:ChatGPT-User 与 PerplexityBot 被 robots.txt 禁**(2026-11-06 起 ChatGPT-User 被禁改报 INFO:OpenAI 说明 robots.txt 规则可能不适用于它,也不决定能否进 ChatGPT 搜索;PerplexityBot 仍是 CRITICAL),Google-Extended 被禁(WARN),GPTBot 被禁(训练型,INFO)。`/sitemap.xml` 404(INFO)。
 - `head_check.py https://nos.nl/ --market nl`:error=0,3 条 INFO。
 - 旧记录的 metronieuws.nl `/llms.txt` 200:2026-10-21 `llmstxt.py check https://www.metronieuws.nl` 四条路径全部 HTTPError,不再可达。
 - 旧版三个工具缺陷已修:title 解析吞脚本、`--market nl` 不读阈值、sitemap 假阴性降为 INFO。仍存在:`llmstxt.py validate` 对带 BOM 的文件同时输出「H1 ✓」和「缺 H1」「含 Unicode 水印字符」(本机用 BOM 文件复现)。

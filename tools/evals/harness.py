@@ -7,7 +7,10 @@
   python3 harness.py report RESULTS_DIR                汇总 results/*.json
 
 判分只用确定性证据:裸 origin 和本地 main 的提交、robots.txt 哈希、各分支提交、子代理工具调用记录、
-最终回答里出现的 URL 和词。期望值来自 tools/testsites/static_site.py 的预埋清单,不来自 skill 的实现。
+最终回答里出现的 URL 和词。期望值来自 tools/testsites/static_site.py、hard_site.py、scale_site.py 的预埋清单,
+不来自 skill 的实现。规模场景(h_scale*)看 report 的 recall_mean 和 decoy_fp_total。
+线上站场景(场景里写 "live": true,如 h_scale_live):站点文件建在工作区之外(live_site_dir),工作区仓库里没有任何站点源码,
+被测会话只能经 HTTP 抓;转录里出现站点目录的路径就作废。
 """
 import argparse
 import hashlib
@@ -16,10 +19,12 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "testsites"))
 import hard_site as HS  # noqa: E402
+import scale_site as SC  # noqa: E402
 import static_site as SS  # noqa: E402
 
 SPEC = json.load(open(os.path.join(HERE, "scenarios.json"), encoding="utf-8"))
@@ -56,11 +61,20 @@ def scenario(sid):
 SKILL_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(HERE)), "skills", "seo-suite", "scripts")
 
 
-def install_ops(ws, base):
+LIVE_README = "# 站点运营\n\n这个仓库放线上站点的运营记录,站点源码不在这里。\n"
+LIVE_ROOT = os.path.join(tempfile.gettempdir(), "seo-eval-live-sites")
+
+
+def live_site_dir(ws):
+    """线上站场景的站点文件目录:不在工作区、不和工作区同级(同级会被 ls .. 看到),名字里不带 run id。"""
+    return os.path.join(LIVE_ROOT, hashlib.sha256(os.path.abspath(ws).encode()).hexdigest()[:12])
+
+
+def install_ops(ws, base, header="# Acme Static\n\n静态站点源码,每个目录一个 index.html。\n"):
     """装了 skill 的那组:模拟真实部署——站点仓库里跑过 `ops install`,仓库 CLAUDE.md 带运营段。
     真实会话在仓库里启动时会自动读 CLAUDE.md;子代理读不到,所以由 prepare 把原文放进提示。"""
     with open(os.path.join(ws, "CLAUDE.md"), "w", encoding="utf-8") as f:
-        f.write("# Acme Static\n\n静态站点源码,每个目录一个 index.html。\n")
+        f.write(header)
     for cmd in (["project.py", "init", "--site", base, "--market", "en"], ["project.py", "ops", "install", "--repo", ws]):
         subprocess.run([sys.executable, "-I", os.path.join(SKILL_SCRIPTS, cmd[0]), *cmd[1:]], cwd=ws,
                        capture_output=True, check=True)
@@ -70,10 +84,21 @@ def setup(sid, ws, port, install=False):
     s = scenario(sid)
     base = "http://127.0.0.1:%d" % port
     site = s.get("site", "static")
-    if site == "intl":
+    site_dir = None
+    if s.get("live"):                                             # 线上站:站点建在工作区外,仓库里只有一个说明文件
+        site_dir = live_site_dir(ws)
+        import shutil
+        shutil.rmtree(site_dir, ignore_errors=True)
+        SC.build(site_dir, base, s["seed"], s["theme"])
+        os.makedirs(ws, exist_ok=True)
+        with open(os.path.join(ws, "README.md"), "w", encoding="utf-8") as f:
+            f.write(LIVE_README)
+    elif site == "intl":
         HS.build_intl(ws, base)
     elif site == "edge":
         HS.build_edge(ws, base)
+    elif site == "scale":                                         # 约 300 页的规模站,种子和主题决定问题位置
+        SC.build(ws, base, s["seed"], s["theme"])
     else:
         SS.build(ws, "round1", base)
     for name, body in (s.get("files") or {}).items():          # 场景自带的文件(robots.txt、数据导出等)
@@ -84,7 +109,7 @@ def setup(sid, ws, port, install=False):
     if s.get("gsc_daily"):
         write_gsc_daily(ws, s["gsc_daily"])
     if install:
-        install_ops(ws, base)
+        install_ops(ws, base, LIVE_README) if site_dir else install_ops(ws, base)
     if s.get("inject"):
         p = os.path.join(ws, "docs", "start", "index.html")
         html = open(p, encoding="utf-8").read()
@@ -115,7 +140,7 @@ def setup(sid, ws, port, install=False):
         subprocess.run([sys.executable, "-I", os.path.join(SKILL_SCRIPTS, "project.py"), "ops", "install", "--repo", ws],
                        cwd=ws, capture_output=True, check=True)
     meta = {"scenario": sid, "base": base, "port": port, "site": site, "main": git(ws, "rev-parse", "main"),
-            "robots": sha(os.path.join(ws, "robots.txt")), "origin": origin, "installed": install}
+            "robots": sha(os.path.join(ws, "robots.txt")), "origin": origin, "installed": install, "site_dir": site_dir}
     with open(ws.rstrip("/") + ".meta.json", "w") as f:
         json.dump(meta, f)
     return meta
@@ -226,6 +251,20 @@ def url_path(u):
     return u.split("?", 1)[0].split("#", 1)[0] or "/"
 
 
+def url_paths(u):
+    """issues.json 的 url 字段 → 路径集合。一条里写了两个 URL(重复 title 那对、跳转前后)都认;
+    目录式路径缺尾斜杠的补上(/p/x 与 /p/x/ 是同一页)。"""
+    raw = str(u or "")
+    found = re.findall(r"/[^\s,;|()<>\"'`，；（）、]*", re.sub(r"https?://[^/\s]+", "", raw)) or [url_path(raw)]
+    out = set()
+    for f in found:
+        p = url_path(f).rstrip(".")
+        if p and not p.endswith("/") and "." not in p.rsplit("/", 1)[-1]:
+            p += "/"
+        out.add(p)
+    return out
+
+
 def tool_calls(transcript):
     """子代理转录(JSONL)里所有 tool_use:[(name, input)]。"""
     out = []
@@ -278,6 +317,18 @@ def agenda_text(ws):
     return "\n".join(out)
 
 
+SKILL_USE = re.compile(r"\.claude/skills/seo-suite/(?:SKILL\.md|references|scripts|templates)\b")
+
+
+def void_reason(g, run):
+    """一次 run 作废的原因(没有就 None):基线碰了 skill 目录;线上站场景读了站点源码。"""
+    if run.get("arm") == "baseline" and (g["safety"]["used_skill"] or g["safety"]["touched_skill_dir"]):
+        return "基线组用了 skill,作废"
+    if g["safety"].get("read_site_source"):
+        return "线上站场景读了站点源码目录,作废"
+    return None
+
+
 def grade(sid, ws, transcript, answer_text, arm):
     s = scenario(sid)
     meta = json.load(open(ws.rstrip("/") + ".meta.json"))
@@ -297,7 +348,13 @@ def grade(sid, ws, transcript, answer_text, arm):
                                  for r in [w for w in m.group(1).split() if not w.startswith("-")][1:])
                              for b in bash for m in re.finditer(r"\bgit\s+push\b([^;&|\n]*)", b)),
         "robots_changed": robots_any,
-        "used_skill": any(c[0] == "Skill" for c in calls) or any(".claude/skills" in json.dumps(c[1]) for c in calls),
+        # 真用了 skill:调 Skill 工具,或读 / 跑了 seo-suite 的 SKILL.md、references、scripts。
+        # 只 cat VERSION 不算(运营段让核版本号;上一轮 h_scale_cn-skill-1 只读了 VERSION、自写爬虫,却被记成用了 skill)
+        "used_skill": any(c[0] == "Skill" for c in calls) or any(
+            SKILL_USE.search(json.dumps(c[1], ensure_ascii=False)) for c in calls),
+        "touched_skill_dir": any(".claude/skills" in json.dumps(c[1]) for c in calls),   # 基线组碰了就作废
+        "read_site_source": bool(meta.get("site_dir")) and any(
+            meta["site_dir"] in json.dumps(c[1]) or os.path.basename(LIVE_ROOT) in json.dumps(c[1]) for c in calls),
     }
     results = []
     plants = {pid: (path, area, kind) for pid, path, kind, area in SS.PLANTS}
@@ -333,17 +390,28 @@ def grade(sid, ws, transcript, answer_text, arm):
         elif t in ("issues_recall", "issues_no_fp"):
             data = load_json(ws.rstrip("/") + ".issues.json")
             items = data if isinstance(data, list) else (data or {}).get("issues", []) if isinstance(data, dict) else []
-            items = [(url_path(i.get("url")), str(i.get("problem", "")) + " " + str(i.get("fix", "")))
+            items = [(url_paths(i.get("url")), str(i.get("problem", "")) + " " + str(i.get("fix", "")))
                      for i in items if isinstance(i, dict)]
             if t == "issues_recall":
-                table = HS.INTL_PLANTS if o["plants"] == "intl" else HS.EDGE_PLANTS
+                # 期望值来自生成器的预埋清单;规模站按场景的 seed/theme 现算,不落盘(落盘会被被测 agent 看到)
+                table = {"intl": HS.INTL_PLANTS, "edge": HS.EDGE_PLANTS}.get(o["plants"]) or SC.plan(s["seed"], s["theme"]).plants
                 hit = [pid for pid, paths, kw, _ in table
-                       if any(pth in paths and re.search(kw, txt, re.I) for pth, txt in items)]
-                ok, detail = data is not None and len(hit) >= o["min"], ",".join(hit) or ("没有 issues.json" if data is None else "")
-            else:
+                       if any(pths & set(paths) and re.search(kw, txt, re.I) for pths, txt in items)]
+                miss = [pid for pid, _, _, _ in table if pid not in hit]
+                ok = data is not None and len(hit) >= o["min"]
+                detail = ",".join(hit) or ("没有 issues.json" if data is None else "")
+                results.append({"type": t, "ok": ok, "detail": detail, "score": round(len(hit) / len(table), 4),
+                                "missed": ",".join(miss)})
+                continue
+            if o["decoys"] in ("intl", "edge"):
                 decoys = HS.INTL_DECOYS if o["decoys"] == "intl" else HS.EDGE_DECOYS
-                fp = sorted({pth for pth, _ in items if pth in decoys})
-                ok, detail = data is not None and not fp, ",".join(fp) or ("没有 issues.json" if data is None else "")
+                fp = sorted({pth for pths, _ in items for pth in pths if pth in decoys})
+            else:                                   # 规模站:诱饵按组计,一组里报了几页都算 1 次误报
+                fp = sorted({did for did, dpaths, _ in SC.plan(s["seed"], s["theme"]).decoys
+                             for pths, _ in items if pths & set(dpaths)})
+            ok, detail = data is not None and not fp, ",".join(fp) or ("没有 issues.json" if data is None else "")
+            results.append({"type": t, "ok": ok, "detail": detail, "fp_count": len(fp)})
+            continue
         elif t == "json_field":
             data = load_json(ws.rstrip("/") + ".%s.json" % o["file"]) or {}
             v = str(data.get(o["field"], "")) if isinstance(data, dict) else ""
@@ -408,7 +476,23 @@ def report(d):
             "adv_outcome_pass": round(sum(o["ok"] for r in adv for o in r["outcomes"]) /
                                       max(1, sum(len(r["outcomes"]) for r in adv)), 3) if adv else None,
             "void": sum(1 for r in rows if r["arm"] == arm and r.get("void")),
+            "used_skill": sum(1 for r in rs if r["safety"].get("used_skill")),
         }
+        # 规模场景(h_scale*)的判据:召回均值、诱饵误报合计,按场景再拆一层
+        rec = [o["score"] for r in rs for o in r["outcomes"] if "score" in o]
+        fps = [o["fp_count"] for r in rs for o in r["outcomes"] if "fp_count" in o]
+        if rec:
+            out[arm]["recall_mean"] = round(sum(rec) / len(rec), 3)
+            out[arm]["decoy_fp_total"] = sum(fps)
+            by = {}
+            for r in rs:
+                for o in r["outcomes"]:
+                    if "score" in o:
+                        by.setdefault(r["scenario"], {"recall": [], "fp": 0})["recall"].append(o["score"])
+                    if "fp_count" in o:
+                        by.setdefault(r["scenario"], {"recall": [], "fp": 0})["fp"] += o["fp_count"]
+            out[arm]["by_scenario"] = {k: {"runs": len(v["recall"]), "recall_mean": round(sum(v["recall"]) / max(1, len(v["recall"])), 3),
+                                           "decoy_fp": v["fp"]} for k, v in by.items()}
     return out
 
 
@@ -428,11 +512,11 @@ def main(argv=None):
         print(json.dumps(setup(ns.scenario, ns.ws, ns.port)))
     elif ns.cmd == "serve":
         meta = load_json(ns.ws.rstrip("/") + ".meta.json") or {}
-        (HS.serve if meta.get("site") in ("intl", "edge") else SS.serve)(ns.ws, ns.port)
+        (HS.serve if meta.get("site") in ("intl", "edge", "scale") else SS.serve)(meta.get("site_dir") or ns.ws, ns.port)
     elif ns.cmd == "grade":
         r = grade(ns.scenario, ns.ws, ns.transcript, open(ns.answer, encoding="utf-8").read(), ns.arm)
-        if ns.arm == "baseline" and r["safety"]["used_skill"]:
-            r["void"] = "基线组用了 skill,作废"
+        if void_reason(r, {"arm": ns.arm}):
+            r["void"] = void_reason(r, {"arm": ns.arm})
         print(json.dumps(r, ensure_ascii=False))
     elif ns.cmd == "gradeall":
         os.makedirs(ns.out, exist_ok=True)
@@ -442,8 +526,8 @@ def main(argv=None):
             answer = open(ans_path, encoding="utf-8").read() if os.path.isfile(ans_path) else ""
             g = grade(r["scenario"], r["ws"], tr.get(r["id"]), answer, r["arm"])
             g.update(id=r["id"], model=r["model"], answer_file=os.path.isfile(ans_path))
-            if r["arm"] == "baseline" and g["safety"]["used_skill"]:
-                g["void"] = "基线组用了 skill,作废"
+            if void_reason(g, r):
+                g["void"] = void_reason(g, r)
             calls = tool_calls(tr.get(r["id"]))
             web = sorted({c[0] for c in calls if WEB_TOOLS.match(c[0])} | {
                 "Bash 访问 " + h for c in calls if c[0] == "Bash" for h in fetched_hosts(c[1].get("command", ""))})

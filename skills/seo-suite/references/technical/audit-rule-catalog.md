@@ -55,13 +55,13 @@
 
 | 简写 | 命令 | 用途与限制 |
 |---|---|---|
-| `AUDIT` | `python3 scripts/site_audit.py URL [--market xx] [--json] [--export-dir DIR]` | 单页;输出 `[级别] area: 消息`;有 CRITICAL 退出码 1。CRITICAL 只有:缺 title、noindex、staging 子域、搜索类 AI bot 被禁(Google-Extended 为 WARN)、抓取失败。缺 description、缺 H1/多个 H1、缺 canonical、相对 canonical 是 WARN;>100 链接是 INFO(工具约定,Google 无此上限)。title/description 区间取 `scripts/markets.json`(`desc_min` 为 description 下限;zh/ja/ko 按显示宽度)。挑战页只按结构特征判,命中输出 `[SKIP]` 拒审。不跨页、不渲染;meta robots 取最后一个 `name=robots`,与 `name=googlebot`、X-Robots-Tag 合并判 noindex(认 `none`);`name=bingbot` 与 `X-Robots-Tag: bingbot:` 只对 Bing 生效,单独报;`--serp-titles FILE` 给了才比 title 与搜索结果标题(没给时 `meta.serp_title_check` 写跳过原因)。全部检查与目录的对应见第七节 |
+| `AUDIT` | `python3 scripts/site_audit.py URL [--market xx] [--json] [--export-dir DIR]` | 单页;输出 `[级别] area: 消息`;有 CRITICAL 退出码 1。CRITICAL 只有:缺 title、noindex、staging 子域、搜索类 AI bot 被禁(Google-Extended 为 WARN;按用户请求抓取的 ChatGPT-User、Perplexity-User 为 INFO,Claude-User 为 WARN)、抓取失败。缺 description、缺 H1/多个 H1、缺 canonical、相对 canonical 是 WARN;>100 链接是 INFO(工具约定,Google 无此上限)。title/description 区间取 `scripts/markets.json`(`desc_min` 为 description 下限;zh/ja/ko 按显示宽度)。挑战页只按结构特征判,命中输出 `[SKIP]` 拒审。不跨页、不渲染;meta robots 取最后一个 `name=robots`,与 `name=googlebot`、X-Robots-Tag 合并判 noindex(认 `none`);`name=bingbot` 与 `X-Robots-Tag: bingbot:` 只对 Bing 生效,单独报;`--serp-titles FILE` 给了才比 title 与搜索结果标题(没给时 `meta.serp_title_check` 写跳过原因)。全部检查与目录的对应见第七节 |
 | `SITEMAP` | `python3 scripts/sitemap_audit.py 站点 --check-limit 0` | 六坏桶:1 非200/2 3xx/3 noindex/4 canonical 他指/5 robots 屏蔽/6 参数重复 + lastmod 三判定;逐条检查默认 ≤500 条全查、超过按位置均匀抽 500 条(含首尾),输出 [范围] 行写明查了几条、共几条;sitemap 本身返回 HTML 报「不是 sitemap(软 404)」并计入失败;加 `--hreflang` 另查 sitemap 载体的 hreflang(自引用、互指、码值、完整 URL) |
 | `HREFLANG` | `python3 scripts/hreflang_cluster.py URL1 URL2 …` | 簇矩阵:自引用/语言码/绝对URL/HTTP200/双向回报 + 三载体冲突;跟随重定向;语言码按 Google 口径判(拒 es-419、认 zh-Hans、大小写不敏感、UK/EU 报保留码) |
-| `REDIR` | `python3 scripts/redirect_chain.py URL [--max N]` | 逐跳;>2 跳 WARN,>5 跳或环 CRITICAL;临时码用于永久变化 WARN;HTTPS→HTTP 降级 WARN;打印「终态: HTTP」 |
-| `CRAWL` | `python3 scripts/site_crawl.py 站点 --max N --out crawl.json [--check-external]` | `pages[]` 含 url/status/final_url/canonical/depth/inlinks/source,另有 `edges`、`orphans`、`link_issues`(重定向目标页无直接内链、HTTP↔HTTPS 混链、HTTPS→HTTP 重定向)、`subdomain_robots`;`--check-external` 另出 `external_redirects`(外链 URL 3xx 抽检);N 要覆盖全站,截断时入链偏少 |
+| `REDIR` | `python3 scripts/redirect_chain.py URL [--max N]` | 逐跳;>2 跳 WARN,>5 跳或环 CRITICAL;临时码用于永久变化 WARN;HTTPS→HTTP 降级 WARN;302 跳 INFO;HTTP→HTTPS 跳 INFO;终态 4xx/5xx(断掉的重定向)CRITICAL;终态页 meta refresh WARN;打印「终态: HTTP」 |
+| `CRAWL` | `python3 scripts/site_crawl.py 站点 --max N --out crawl.json [--check-external] [--check-resources] [--slow-ms 3000]` | `pages[]` 含 url/status/final_url/canonical/depth/inlinks/source,另有 `edges`、`orphans`、`link_issues`(重定向目标页无直接内链、HTTP↔HTTPS 混链、HTTPS→HTTP 重定向)、`subdomain_robots`;`--check-external` 另出 `external_redirects`(外链 URL 3xx 抽检);N 要覆盖全站,截断时入链偏少;另有 `site_issues`(Ahrefs 跨页项:canonical 指向 4xx/5xx/重定向/非规范页、重复页无 canonical、重复 title/description/H1/正文、nofollow 入链、无出链、链到重定向/断链、302、断掉的重定向、meta refresh、多 title/description、og:url 与 canonical、html lang 与 hreflang、hreflang 指向非规范页、慢页、没压缩、HTML 过大;`--check-resources` 另查图片/JS/CSS 断链、重定向、体积)。逐项与 Ahrefs 121 项的对照见 [ahrefs-site-audit-coverage.md](ahrefs-site-audit-coverage.md) |
 | `GRAPH` | `python3 scripts/link_graph.py --crawl crawl.json` | 深度直方图(>3 层占比)、入链 0/1 清单、锚文本审计 |
-| `ROBOTS` | `python3 scripts/robots_posture.py 站点/robots.txt --json` | 含 `crawl_delay`(`*` 组)与 `sitemaps` 字段 |
+| `ROBOTS` | `python3 scripts/robots_posture.py 站点/robots.txt --json` | 含 `crawl_delay`(`*` 组)与 `sitemaps` 字段;`inconsistent_ai_policies` 报同一家 AI 公司的搜索/回答 bot 放封不一致、训练放行而搜索封、各家搜索 bot 之间不一致 |
 | `GSC 网址检查` | Search Console → 网址检查 | 「是否允许抓取 / 是否允许编入索引 / 用户声明与 Google 选择的规范网址」;「查看已抓取的网页 → 更多信息」列出资源 |
 
 jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
@@ -137,9 +137,22 @@ jq/grep 片段(`crawl.json` 来自 `CRAWL`;已用样例数据实测):
 | `bluf-low` | INFO | AI-GEO 存目 | geo-aeo-tracker 源码公式 |
 | `injection`(隐藏元素或注释里对 AI 下指令的文字,原文照录,最多 3 条) | CRITICAL | 源表无;RQ-229 例 7 对抗场景 | [Google 垃圾内容政策:隐藏文字](https://developers.google.com/search/docs/essentials/spam-policies#hidden-text-and-links);OWASP LLM01 提示注入 |
 | `robots-unreachable` / `sitemap-unreachable` / `llms-txt-unreachable` | INFO | technical-seo、AI-GEO | RFC 9309(robots 404=全放行,不报) |
-| `ai-bots-blocked` / `ai-bots-training-blocked` | CRITICAL·WARN / INFO | AI-GEO 存目、[ai-crawler-policy.md](ai-crawler-policy.md) | 各家 bot 官方页 |
+| `ai-bots-blocked` / `ai-bots-training-blocked` | CRITICAL·WARN / INFO(按用户请求抓取的三个 bot 另见 `ai-bots-user-fetch-blocked`) | AI-GEO 存目、[ai-crawler-policy.md](ai-crawler-policy.md) | 各家 bot 官方页 |
 | `freshness-stale` | INFO | AI-GEO 存目 | Semrush AI Search Health(183 天) |
 | `semantic-html-low` | INFO | AI-GEO 存目 | 阈值本套件口径 |
+| `title-multiple` / `description-multiple` | WARN | core-title-present、core-description-present;Ahrefs「Multiple title tags」「Multiple meta description tags」 | [Ahrefs 2754360](https://help.ahrefs.com/en/articles/2754360)、[Ahrefs 2652405](https://help.ahrefs.com/en/articles/2652405);svg 里的 `<title>` 不算 |
+| `canonical-https-to-http` / `canonical-http-to-https` | WARN / INFO | core-canonical-present;Ahrefs 同名两项 | [Ahrefs 2434581](https://help.ahrefs.com/en/articles/2434581)、[Ahrefs 2478867](https://help.ahrefs.com/en/articles/2478867) |
+| `og-url-canonical-mismatch` | INFO | social-og-url-canonical;Ahrefs「Open Graph URL not matching canonical」 | [Ahrefs canonical 文第 10 条](https://ahrefs.com/blog/canonical-tags/) |
+| `twitter-card-missing` / `twitter-card-incomplete` | INFO | social 类;Ahrefs「X (Twitter) card missing / incomplete」 | [X Cards 文档](https://developer.x.com/en/docs/x-for-websites/cards/overview/markup);缺 card/title/description/image 任一算不完整 |
+| `lang-invalid` | WARN | i18n-lang-attribute;Ahrefs「HTML lang attribute invalid」 | [Ahrefs 2601025](https://help.ahrefs.com/en/articles/2601025):ISO 639-1 + 可选 ISO 3166-1 alpha-2 |
+| `hreflang-multi-language` / `hreflang-lang-mismatch` | WARN | i18n 类;Ahrefs「Page referenced for more than one language」「Hreflang and HTML lang mismatch」 | [Ahrefs 2747339](https://help.ahrefs.com/en/articles/2747339)(同语言不同地区不算)、[Ahrefs 2598523](https://help.ahrefs.com/en/articles/2598523) |
+| `robots-nofollow` / `robots-noindex-html-and-header` / `robots-nofollow-html-and-header` | WARN / INFO / INFO | core-robots-meta;Ahrefs「Nofollow page」「Noindex/Nofollow in HTML and HTTP header」 | [Ahrefs 2478724](https://help.ahrefs.com/en/articles/2478724)、[Ahrefs 2465780](https://help.ahrefs.com/en/articles/2465780) |
+| `redirect-meta-refresh` | WARN | redirects 类;Ahrefs「Meta refresh redirect」 | [Ahrefs 2433739](https://help.ahrefs.com/en/articles/2433739) |
+| `url-double-slash` | WARN | url 类;Ahrefs「Double slash in URL」 | [Ahrefs 2596665](https://help.ahrefs.com/en/articles/2596665);只看路径 |
+| `size-html-too-large` | WARN | perf 类;Ahrefs「HTML file size too large」 | [Googlebot 文档](https://developers.google.com/search/docs/crawling-indexing/googlebot)「first 2MB」 |
+| `compression-none` | WARN | perf 类;Ahrefs「Page not compressed」 | 只在真实请求带了 Accept-Encoding 时判;离线 HTML 与桩不判 |
+| `soft404-page` | WARN | Technical SEO soft-404;Screaming Frog「Soft 404 Pages」(Warning) | [Google soft 404](https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors#soft-404-errors);判法与 site_crawl `site_issues.soft_404` 同一个函数,只看 2xx、非 noindex 页 |
+| `ai-bots-user-fetch-blocked` | INFO(ChatGPT-User、Perplexity-User)/ WARN(Claude-User) | AI-GEO、[ai-crawler-policy.md](ai-crawler-policy.md) | OpenAI:ChatGPT-User「robots.txt rules may not apply」;Perplexity:Perplexity-User 一般不遵守 robots;Anthropic:Claude-User 遵守,封了取不到 |
 | `fetch`(无导出 slug,按 area 兜底) | CRITICAL | technical-seo 5xx/超时 | — |
 
 **目录里有、脚本没跑(或目录写错)——本批处理结果:**

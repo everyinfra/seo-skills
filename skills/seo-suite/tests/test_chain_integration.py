@@ -631,7 +631,8 @@ class TestStage6CiFormat(unittest.TestCase):
         run = s["runs"][0]
         self.assertTrue(run["tool"]["driver"]["rules"])        # rules 与 results 对齐登记
         # S2a B3 改:noindex 页有服务端内容,不再报「无 noscript 回退」→ 13+3
-        self.assertEqual(len(run["results"]), 16)              # 13(问题页)+3(noindex 页)条非 SKIP finding
+        # RQ-229 例 3:两页都没有 twitter:card,各多一条 Ahrefs「X (Twitter) card missing」(INFO)→ 14+4
+        self.assertEqual(len(run["results"]), 18)              # 14(问题页)+4(noindex 页)条非 SKIP finding
         self.assertEqual({r["level"] for r in run["results"]},
                          {"error", "warning", "note"})         # CRITICAL/WARN/INFO 三档映射
         for r in run["results"]:

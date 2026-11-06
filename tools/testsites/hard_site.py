@@ -173,7 +173,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except (OSError, ValueError):
             return {}
 
-    def do_GET(self):
+    def do_HEAD(self):                     # HEAD 与 GET 走同一套重定向 / 404 / 响应头(基类的 do_HEAD 会绕过它们)
+        self.do_GET(head=True)
+
+    def do_GET(self, head=False):
         path = self.path.split("?", 1)[0]
         red = self._load("_redirects").get(path)
         if red:
@@ -190,10 +193,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
-            self.wfile.write(body)
+            if not head:
+                self.wfile.write(body)
             return
         self._extra = self._load("_headers").get(path, {})
-        super().do_GET()
+        if head:
+            super().do_HEAD()
+        else:
+            super().do_GET()
 
     def end_headers(self):
         for k, v in getattr(self, "_extra", {}).items():
