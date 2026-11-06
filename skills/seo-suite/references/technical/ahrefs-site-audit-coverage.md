@@ -50,6 +50,18 @@ Ahrefs 没公布判法或数字,下面 4 项按本套件口径判,报出来的�
 
 另有 2 个数字来自二手转录:Image file size too large 的 100KB(AWT 应用内说明),X (Twitter) card incomplete 的判法。
 
+## Ahrefs 清单之外的补项(2026-11-06,RQ-229 例 7 规模站)
+
+规模站(sitemap 300 多条)上实跑发现的缺口,都在 site_crawl 的 `site_issues` 里,夹具在 `tests/test_crawl_gaps_20261106.py`。
+
+| 输出键 | 报什么 | 判法 | 出处 |
+|---|---|---|---|
+| `soft_404` | 返回 2xx、非 noindex,但页面是「找不到页面」 | title 或 H1 的某一段整段就是报错语;或正文 <300 词且有「页面找不到 / 不存在」句 | [Google soft 404](https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors#soft-404-errors);[Screaming Frog Soft 404 Pages](https://www.screamingfrog.co.uk/seo-spider/issues/content/soft-404-pages/) |
+| `canonical_points_to_noindex` | canonical 目标是 noindex(meta robots/googlebot 或 X-Robots-Tag) | 目标页已抓或补抓一次 | [Screaming Frog Non-Indexable Canonical](https://www.screamingfrog.co.uk/seo-spider/issues/canonicals/non-indexable-canonical/) |
+| `links_to_4xx_page` | 被站内链接引用的 4xx URL(除 429),按目标列,带来源页 | 经重定向落到 4xx 也算 | [Google HTTP 状态码](https://developers.google.com/search/docs/crawling-indexing/http-network-errors):「All 4xx errors, except 429, are treated the same」 |
+
+另:sitemap ≥50 条时 site_crawl 原来只抓 sitemap、站内链接只进图不请求,链到 404 的链接、被链接引用的重定向链、只从分页页链出的页都查不到。现在 sitemap 优先,站内链接指向、sitemap 没列的 URL 排在后面请求(同受 `--max`;`--sitemap-only` 恢复旧口径)。
+
 ## 用法
 
 - 单页:`python3 scripts/site_audit.py URL`。
@@ -92,7 +104,7 @@ Ahrefs 没公布判法或数字,下面 4 项按本套件口径判,报出来的�
 | Indexability | 403 page receives organic traffic | 覆盖 | 覆盖(原有) | scripts/ops.py:672 | — |
 | Indexability | 3xx page receives organic traffic | 覆盖 | 覆盖(原有) | scripts/ops.py:672 | — |
 | Indexability | Non-canonical page receives organic traffic | 覆盖 | 覆盖(原有) | scripts/ops.py:672 | — |
-| Links | Orphan page | 覆盖 | 覆盖(原有) | scripts/site_crawl.py:1100 orphans | — |
+| Links | Orphan page | 覆盖 | 覆盖(原有) | scripts/site_crawl.py orphans;`link_graph.py` 零入链清单(11-06 起内链边完整时默认计入 sitemap 里 0 入链的页) | — |
 | Links | Canonical URL has no incoming internal links | 缺 | 覆盖(本轮补) | `CRAWL` site_issues.`canonical_url_no_incoming_internal_links`(--max 截断时不判) | [help 2595174](https://help.ahrefs.com/en/articles/2595174);[Ahrefs 2021-09 更新](https://ahrefs.com/blog/site-audit-issues-update-september-2021/) |
 | Links | Redirected page has no incoming internal links | 覆盖 | 覆盖(原有) | scripts/site_crawl.py:941 link_issues | — |
 | Links | Page has nofollow incoming internal links only | 缺 | 覆盖(本轮补) | `CRAWL` site_issues.`nofollow_incoming_internal_links_only` | [help 2746992](https://help.ahrefs.com/en/articles/2746992) |
@@ -108,8 +120,8 @@ Ahrefs 没公布判法或数字,下面 4 项按本套件口径判,报出来的�
 | Redirects | 302 redirect | 半 | 覆盖(本轮补) | `CRAWL` site_issues.`redirect_302`;`REDIR` 302 跳 INFO | [help 2427783](https://help.ahrefs.com/en/articles/2427783) |
 | Redirects | Broken redirect | 半 | 覆盖(本轮补) | `CRAWL` site_issues.`broken_redirect`;`REDIR` 终点 4xx/5xx CRITICAL | [help 2456799](https://help.ahrefs.com/en/articles/2456799) |
 | Redirects | Redirect loop | 覆盖 | 覆盖(原有) | scripts/redirect_chain.py:146 | — |
-| Redirects | Redirect chain | 覆盖 | 覆盖(原有) | scripts/redirect_chain.py:11 | — |
-| Redirects | Redirect chain too long | 覆盖 | 覆盖(原有) | scripts/redirect_chain.py:128 | — |
+| Redirects | Redirect chain | 覆盖 | 覆盖(原有) | scripts/redirect_chain.py:11(单个 URL);`CRAWL` site_issues.`redirect_chain`(全站发现,带起点、逐跳和来源页,11-06 补) | [Ahrefs 2021-09 更新](https://ahrefs.com/blog/site-audit-issues-update-september-2021/) |
+| Redirects | Redirect chain too long | 覆盖 | 覆盖(原有) | scripts/redirect_chain.py:128;`CRAWL` site_issues.`redirect_chain_too_long`(链上 URL >5) | 同上 |
 | Redirects | Meta refresh redirect | 缺 | 覆盖(本轮补) | `CRAWL` site_issues.`meta_refresh_redirect`;`AUDIT` `redirect-meta-refresh`;`REDIR` 终点页 WARN | [help 2433739](https://help.ahrefs.com/en/articles/2433739) |
 | Redirects | HTTPS to HTTP redirect | 覆盖 | 覆盖(原有) | scripts/site_crawl.py:984;redirect_chain WARN | — |
 | Redirects | HTTP to HTTPS redirect | 半 | 覆盖(本轮补) | `CRAWL` site_issues.`http_to_https_redirect`;`REDIR` INFO | Ahrefs 导出项 |
@@ -125,7 +137,7 @@ Ahrefs 没公布判法或数字,下面 4 项按本套件口径判,报出来的�
 | Content | Multiple H1 tags | 覆盖 | 覆盖(原有) | site_audit h1-multiple | — |
 | Content | Low word count | 覆盖 | 覆盖(原有) | site_audit content-thin | — |
 | Content | Page and SERP titles do not match | 覆盖 | 覆盖(原有) | site_audit --serp-titles title-serp-mismatch | — |
-| Duplicates | Duplicate title tag | 覆盖 | 覆盖(原有) | health_score duplicate_title | — |
+| Duplicates | Duplicate title tag | 覆盖 | 覆盖(原有) | `CRAWL` site_issues.`duplicate_title`(按组列 URL);health_score `duplicate_title_groups`(11-06 起列出撞在一起的页) | — |
 | Duplicates | Duplicate meta description | 缺 | 覆盖(本轮补) | `CRAWL` site_issues.`duplicate_meta_description`(只算可索引页) | Ahrefs 问题清单 |
 | Duplicates | Duplicate H1 | 缺 | 覆盖(本轮补) | `CRAWL` site_issues.`duplicate_h1`(只算可索引页) | Ahrefs 问题清单 |
 | Duplicates | Duplicate content (bad duplicates) | 缺 | 覆盖(本轮补) | `CRAWL` site_issues.`duplicate_content_bad`(全文哈希 + 5 词 shingle 近似 Jaccard ≥0.9;canonical 同指一页或互为 hreflang 的算好重复) | [help 2115215](https://help.ahrefs.com/en/articles/2115215) |

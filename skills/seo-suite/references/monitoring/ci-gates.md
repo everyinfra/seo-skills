@@ -114,7 +114,7 @@ monitor.py 写法(config.json,零 headless 依赖):
 2. 按「站点 + 模板」分组;
 3. 每组随机抽 ≤8 个，再并上手工清单(钱页永远进样本);
 4. 全局上限 200 个路由，超出截断并标注 coverage;单组样本被截时警告。
-**发现链**(`site_crawl.py`):手工 `--urls` 清单 → robots.txt 的 Sitemap 行 → sitemap(递归 sitemap index;≥50 条 loc 即关闭爬虫；unlighthouse 文档措辞是 over 50，其源码 `routes.ts` 是 `>= 50`，本套件按源码) → 爬虫兜底(BFS 内链)。传输层失败重试 2 次(带退避)，4xx / 5xx 不重试;仍失败记 error，不记 0(§五同律)。
+**发现链**(`site_crawl.py`):手工 `--urls` 清单 → robots.txt 的 Sitemap 行 → sitemap(递归 sitemap index;≥50 条 loc 即关闭爬虫；unlighthouse 文档措辞是 over 50，其源码 `routes.ts` 是 `>= 50`，本套件按源码。2026-11-06 起关闭的只是「爬虫补量」排队：sitemap 先抓完，站内链接指向、sitemap 没列的 URL 仍排在后面请求，同受 `--max`，否则断链和重定向链查不到；`--sitemap-only` 恢复只抓 sitemap) → 爬虫兜底(BFS 内链)。传输层失败重试 2 次(带退避)，4xx / 5xx 不重试;仍失败记 error，不记 0(§五同律)。
 
 落地前，门禁页清单 = `config.json` 的 `key_pages` 手工维护 + `sitemap_audit.py` 抽样。**样本纪律**:门禁跑分必须输出 coverage_ratio(样本 / 全站);两次 coverage 口径不同的分数不可比(Ryte 的说法;`health_score.py` 的 `coverage_note` 同口径)。
 

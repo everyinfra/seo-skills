@@ -71,7 +71,7 @@
 | 检查什么 | 怎么查 | 通过 / 失败 |
 |---|---|---|
 | 链接可抓取 | `curl -s URL \| grep -o '<a [^>]*>' \| grep -vc 'href='` 统计无 href 的 `<a>`；网址检查工具看渲染后 HTML | 导航和正文链接都是 `<a href>` → 通过；靠 onclick 跳转 → 失败 |
-| 孤立页 | `site_crawl.py` + `link_graph.py --json` 的零入链清单，对照 sitemap 与索引报告 | 重要页面零入链 = 失败 |
+| 孤立页 | `site_crawl.py` 的 `orphans`（sitemap 里有、站内没有入链；sitemap ≥50 条时站内链接也会请求，边是完整的）+ `link_graph.py --json` 的零入链清单（crawl.json 边完整时默认计入 sitemap 里 0 入链的页；被 `--max` 截断或用了 `--sitemap-only` 时排除，防假孤儿，`--include-sitemap-only` 强制计入）。会重定向的 URL 不算孤儿 | 重要页面零入链 = 失败 |
 | 点击深度 | `link_graph.py` 深度直方图 | 重要页面深度明显高于同类 → 列入修复（阈值本套件口径） |
 | 锚文本 | `link_graph.py` 锚文本审计 | 退出码 0 → 通过；1 → 精确匹配锚过度集中 |
 | 分页 | 抽查第 2、3 页的 canonical 与链接 | 每页自指 canonical、有 `<a href>` 到下一页 → 通过 |

@@ -201,6 +201,7 @@ def robots_directive_findings(meta_robots, meta_agents, xrobots):
 HTML_MAX_BYTES = 2 * 1024 * 1024   # Ahrefs「Oversized HTML (>2MB)」;Google:Googlebot「crawls the first 2MB of a
                                    # supported file type」(developers.google.com/search/docs/crawling-indexing/googlebot)
 ASKED_ENCODING_HDR = "x-seo-suite-accept-encoding"   # fetch 写进响应头 dict 的标记:这次请求声明过 gzip/deflate
+FINAL_URL_HDR = "x-seo-suite-final-url"              # fetch 写进响应头 dict 的标记:跟完重定向后的最终 URL
 TWITTER_FULL = ("twitter:card", "twitter:title", "twitter:description", "twitter:image")
 # 按用户请求抓取的 AI bot:被 robots.txt 封的后果因厂商而异,不和搜索索引 bot 一样记 CRITICAL(2026-11-06 评分点名)。
 # OpenAI(platform.openai.com/docs/bots):ChatGPT-User 由用户触发,「robots.txt rules may not apply」,且「not used to
@@ -1214,10 +1215,15 @@ def audit(url, market="en", serp_titles=None):
         F.append(("INFO", "semantic-html", f"语义 HTML 比值 {ratio:.1%} <10%(阈值自定,官方未公开)"))
     if W > CONTENT_MAX_WORDS:
         F.append(("WARN", "content", f"词数 {W} >15000 内容过长(AI 上下文过载,阈值自定[推断])"))
-    return F, {"title": t, "title_len": f"{tn} {tl['unit']}/{tl['value']}",
-               "desc_len": f"{dn} {dl['unit']}/{dl['value']}",
-               "words": W, "h1": p.h1, "jsonld": p.jsonld, "links": p.links,
-               "serp_title_check": serp_check}, ai_health
+    meta = {"title": t, "title_len": f"{tn} {tl['unit']}/{tl['value']}",
+            "desc_len": f"{dn} {dl['unit']}/{dl['value']}",
+            "words": W, "h1": p.h1, "jsonld": p.jsonld, "links": p.links,
+            "serp_title_check": serp_check}
+    final = hdrs.get(FINAL_URL_HDR) if isinstance(hdrs, dict) else None
+    if final and final != url:
+        # 被重定向:审到的是终点页的内容(health_score 判重复 title 时据此跳过,免得「旧网址 = 新网址」被当成重复)
+        meta["final_url"] = final
+    return F, meta, ai_health
 
 CHARSET_SNIFF_BYTES = 2048   # meta charset 嗅探窗口(head_check.py 同款量级)
 
@@ -1267,6 +1273,9 @@ def fetch(url, timeout=15):
     with urllib.request.urlopen(req, timeout=timeout) as r:
         hdrs = dict(r.headers)
         hdrs[ASKED_ENCODING_HDR] = "gzip, deflate"
+        final = getattr(r, "url", None) or (r.geturl() if hasattr(r, "geturl") else None)
+        if final:
+            hdrs[FINAL_URL_HDR] = final
         raw = decode_body(r.read(8_000_000), get_header(hdrs, "content-encoding"))
         enc = detect_encoding(raw, get_header(hdrs, "content-type"))
         try:

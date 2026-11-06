@@ -219,7 +219,7 @@ class CrawlSummaryWording(unittest.TestCase):
         md = sc.render_markdown(rep)
         line = [ln for ln in md.splitlines() if ln.startswith("- 发现模式")][0]
         self.assertNotIn("兜底开着", line)                      # 修前:「爬虫补量 1(loc<50 兜底开着)」
-        self.assertIn("爬虫补量关闭", line)
+        self.assertIn("loc ≥50,先抓 sitemap", line)            # 11-06 起:兜底关闭,但站内链接目标排在后面补抓
         self.assertIn("子域根页 1", line)
         self.assertFalse(rep["discovery"]["crawl_fallback"])
 

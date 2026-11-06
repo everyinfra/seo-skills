@@ -4,7 +4,9 @@
 发现链(unlighthouse 官方优先级,references/monitoring/ci-gates.md §四,取到即止):
   ① --urls 手工清单文件(给出即关闭 ②③④)
   ② robots.txt:解析 Disallow 做排除 + Sitemap: 指令入队
-  ③ sitemap:递归解析 sitemap index 嵌套;**≥50 条 loc 则关闭爬虫兜底**(代表性够,只走 sitemap)
+  ③ sitemap:递归解析 sitemap index 嵌套;**≥50 条 loc 则关闭爬虫兜底**(代表性够,sitemap 优先);
+     但站内链接指向、sitemap 没列的 URL 仍排在 sitemap 后面请求(source=link,同受 --max),记状态码和
+     重定向跳数,断链/重定向链/分页深处的页才查得到;--sitemap-only 恢复「链接只进图不请求」
   ④ 爬虫兜底:BFS 从首页沿内链走,采集 <a href> 同域链接
 (链⑤ 前端路由定义抽取不在本脚本范围——monitor.py sample-keypages 另议。)
 
@@ -23,6 +25,8 @@ crawl-delay 取 * 组,与 --delay 取大者;--ignore-robots 显式关);每 URL �
 SSRF 防御(照 monitor.py/traffic_funnel.py 惯例):仅 http(s)+拒私网/环回/链路本地/
 保留/组播;重定向逐跳复查(站方可控的 Sitemap 指令可 302 到 169.254.169.254 穿墙);
 198.18.0.0/15(RFC2544)豁免本机 fake-IP 代理,SEO_CRAWL_STRICT_SSRF=1 恢复全拒。
+--allow-local:审本地开发版网站时只多放行本机回环(127.0.0.0/8、::1、localhost),
+私网段(10/8、172.16/12、192.168/16)、链路本地、保留段照旧拒绝。
 
 URL 归一:去 fragment/尾斜杠原样保留/参数默认保留(--strip-params 可开)/
 大小写路径不合并/scheme+host 小写/去默认端口;已见集合去重。
@@ -117,6 +121,16 @@ _sleep = time.sleep               # 模块级可打桩(测试零网络/零真实
 # ---------------------------------------------------------------------------
 
 _ssrf_cache = {}
+ALLOW_LOCAL = False               # --allow-local:只多放行本机回环(审本地开发站),私网/链路本地照旧拒
+LOCAL_HINT = "审本机开发站加 --allow-local(只放行 127.0.0.0/8、::1、localhost)"
+
+
+def _is_loopback(ip):
+    """127.0.0.0/8、::1,以及 IPv4 映射的 ::ffff:127.x。"""
+    if ip.is_loopback:
+        return True
+    mapped = getattr(ip, "ipv4_mapped", None)
+    return bool(mapped and mapped.is_loopback)
 
 
 def dns_resolve(host):
@@ -131,7 +145,8 @@ def ssrf_guard(host):
     解析到该段,实际连接经代理出网,TLS 验证仍生效;SEO_CRAWL_STRICT_SSRF=1 恢复全拒。"""
     if not host:
         raise GuardError("empty host")
-    if host in _ssrf_cache:
+    key = (host, ALLOW_LOCAL)
+    if key in _ssrf_cache:
         return
     try:
         ips = dns_resolve(host)
@@ -147,9 +162,13 @@ def ssrf_guard(host):
             if not strict:
                 continue
             raise GuardError("SSRF guard: 非公网地址 %s(strict 模式拒 fake-IP 段)" % ip)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+        if _is_loopback(ip):
+            if ALLOW_LOCAL:
+                continue
+            raise GuardError("SSRF guard: 本机回环地址 %s;%s" % (ip, LOCAL_HINT))
+        if ip.is_private or ip.is_link_local or ip.is_reserved or ip.is_multicast:
             raise GuardError("SSRF guard: 非公网地址 %s" % ip)
-    _ssrf_cache[host] = True
+    _ssrf_cache[key] = True
 
 
 def _redact(u):
@@ -174,6 +193,13 @@ def registrable(host):
     h = (host or "").lower().rstrip(".")
     if not h:
         return ""
+    try:                                   # IP 字面量(本机开发站 127.0.0.1 等)没有「末两段」可言
+        ipaddress.ip_address(h.strip("[]"))
+        return h
+    except ValueError:
+        pass
+    if h == "localhost" or h.endswith(".localhost"):
+        return h
     labels = h.split(".")
     if len(labels) <= 2:
         return h
@@ -706,6 +732,57 @@ def lang_primary(code):
 _TOKEN_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|[^\W_]+", re.U)
 
 
+# ---- 软 404(soft 404)----
+# Google Search Central「A soft 404 error is when a URL that returns a page telling the user that the page does not
+# exist and also a 200 (success) status code. In some cases, it might be a page with no main content or empty page.」
+# https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors#soft-404-errors(2026-11-06 读取)
+# 判法照 Screaming Frog「Soft 404 Pages」:「identified by looking for common error text used on pages, such as 'Page Not
+# Found', or '404 Page Can't Be Found'」https://www.screamingfrog.co.uk/seo-spider/issues/content/soft-404-pages/
+# 本脚本分两档,都只看 2xx、可索引(非 noindex)的 HTML 页:
+#   ① title 或 H1 的某一段(按 | – — · : » 、「 - 」和句末 . ! 。切开)整段就是报错语(「How to fix 404 errors」这类文章标题不算);
+#   ② 正文很短(<SOFT404_MAX_WORDS 词)且正文里有「页面找不到 / 不存在」这类专指页面的报错句。
+_S404_FULL = re.compile(r"""^(?:
+    (?:error\s*)?404(?:\s*error)?(?:\s*(?:page|-|:)?\s*(?:page\s+)?not\s+found)?
+  | (?:error\s*)?(?:404\s*[-:]?\s*)?(?:page|file|url|content|product|article)?\s*not\s+found
+  | (?:the\s+)?(?:page|url|product|article)\s+(?:you\s+requested\s+)?(?:does\s*n[o'\u2019]?t|does\s+not|no\s+longer)\s+exists?
+  | (?:404\s*[-:]?\s*)?(?:the\s+)?page\s+(?:can(?:no|'|\u2019)?t|could\s*n[o'\u2019]?t|could\s+not)\s+be\s+found
+  | (?:oops|sorry|uh[\s-]*oh)?[\s,.!]*(?:we\s+)?(?:can(?:no|'|\u2019)?t|could\s*n[o'\u2019]?t|could\s+not)\s+find\s+(?:that|this|the|your)\s+page
+  | page\s+(?:unavailable|missing|gone)
+  | 页面不存在|页面未找到|找不到(?:该|此|您要的|你要的)?页面|網頁不存在|頁面不存在|找不到(?:該|此)?網頁|404\s*(?:页面|頁面)
+  | ページが見つかりません|お探しのページは見つかりませんでした|페이지를\s*찾을\s*수\s*없습니다
+  | p[aá]gina\s+no\s+encontrada|p[aá]gina\s+n[aã]o\s+encontrada|seite\s+nicht\s+gefunden|page\s+introuvable|pagina\s+non\s+trovata
+)$""", re.I | re.X)
+_S404_BODY = re.compile(r"""(?:
+    \bpage\s+not\s+found\b
+  | \bpage\s+(?:you\s+(?:were\s+|are\s+)?(?:looking|searching)\s+for\s+|you\s+requested\s+)?(?:does\s*n[o'\u2019]?t|does\s+not|no\s+longer)\s+exists?\b
+  | \b(?:can(?:no|'|\u2019)?t|could\s*n[o'\u2019]?t|could\s+not)\s+find\s+(?:that|this|the)\s+page\b
+  | \bpage\s+(?:you\s+(?:were\s+|are\s+)?(?:looking|searching)\s+for\s+)?(?:can(?:no|'|\u2019)?t|could\s*n[o'\u2019]?t|could\s+not)\s+be\s+found\b
+  | 页面不存在|页面未找到|找不到(?:该|此|您要的|你要的)?页面|網頁不存在|頁面不存在|ページが見つかりません|페이지를\s*찾을\s*수\s*없습니다
+  | p[aá]gina\s+no\s+encontrada|p[aá]gina\s+n[aã]o\s+encontrada|seite\s+nicht\s+gefunden|page\s+introuvable|pagina\s+non\s+trovata
+)""", re.I | re.X)
+_S404_SPLIT = re.compile(r"\s*(?:[|\u2013\u2014\u00b7:\u00bb]|\s-\s|[.!。](?=\s|$))\s*")
+SOFT404_MAX_WORDS = 300          # 正文档的「很短」:带导航和页脚的典型报错页在 100-250 词;本套件口径,Google/SF 都没给数字
+
+
+def soft404_evidence(title, h1s, text):
+    """返回软 404 的证据(「title: …」「H1: …」「正文: …」)或 None。只看文字,状态码和 noindex 由调用方判。"""
+    def full(seg):
+        seg = re.sub(r"^[\W_]+|[\W_]+$", "", seg or "", flags=re.U)
+        return bool(seg) and bool(_S404_FULL.match(seg))
+    for seg in _S404_SPLIT.split(title or ""):
+        if full(seg):
+            return "title: %s" % title[:120]
+    for h in h1s or ():
+        if any(full(seg) for seg in _S404_SPLIT.split(h)):
+            return "H1: %s" % h[:120]
+    toks = _TOKEN_RE.findall((text or "").lower())
+    if len(toks) < SOFT404_MAX_WORDS:
+        m = _S404_BODY.search(" ".join((text or "").split()))
+        if m:
+            return "正文(%d 词): …%s…" % (len(toks), m.group(0)[:80])
+    return None
+
+
 def text_sketch(text, k=64):
     """正文 → (词数, 全文哈希, bottom-k 草图)。5 词 shingle,crc32 哈希,保留最小 k 个。"""
     toks = _TOKEN_RE.findall((text or "").lower())
@@ -757,6 +834,7 @@ class Crawler:
         self.accepted_subs = set()      # 已收子域(同 registrable、≠种子主机)
         self.counts = {"robots": 0, "sitemap": 0, "crawl": 0}   # 子域根页另记 "subdomain"(有才出现)
         self.crawl_fallback = False     # 链④ 是否开着(写进 discovery,摘要按它说话)
+        self.links_followed = False     # 站内链接指向的 URL 是否请求(sitemap ≥50 时也请求,--sitemap-only 关)
         self.robots_status = {}         # origin -> HTTP 状态 / "html" / "error"(子域 robots 检查用)
         self.redirect_hops = {}         # url -> [(from, to, status)](HTTPS→HTTP 重定向检查用)
         self.external_urls = Counter()  # 外链完整 URL -> 引用页数(外链 3xx 抽检用)
@@ -929,6 +1007,7 @@ class Crawler:
                     self.queue.append((u, "urls"))
             # 链①给出即关闭 ②③④:robots 仅作礼貌规则(Disallow/crawl-delay),不做发现
             self._robots(self._origin(self.seed))
+            self.links_followed = False          # 手工清单:只审给定的 URL
             return self.mode, False
 
         seed_doc = self._robots(self._origin(self.seed))
@@ -985,6 +1064,7 @@ class Crawler:
             self.mode in ("robots+sitemap", "sitemap")
             and self.counts["sitemap"] < SITEMAP_CLOSES_CRAWL)
         self.crawl_fallback = crawl_fallback
+        self.links_followed = crawl_fallback or not getattr(self.ns, "sitemap_only", False)
         return self.mode, crawl_fallback
 
     # ---- 子域发现 ----
@@ -1212,18 +1292,30 @@ class Crawler:
             if scripts:
                 rec["scripts"] = scripts
             if 200 <= r["status"] < 300 and not r["chain"]:   # 被重定向的 URL 内容属于目标页,不重复计
-                self.sketch[rec["url"]] = text_sketch(" ".join(pp.text))
+                body_text = " ".join(pp.text)
+                self.sketch[rec["url"]] = text_sketch(body_text)
+                ev = soft404_evidence(pp.title, pp.h1s, body_text)
+                if ev:
+                    rec["soft404"] = ev
         return bool(rec.get("nofollow"))
 
     def crawl(self, crawl_fallback):
         """统一抓取循环:初始队列(②③产物/①清单/子域根页)→ 逐页抓取 →
-        crawl_fallback 时沿内链续队(链④)。--max 截断记 truncated。"""
-        while self.queue and len(self.pages) < self.max_pages:
-            url, source = self.queue.popleft()
+        crawl_fallback 时沿内链续队(链④)。--max 截断记 truncated。
+        sitemap ≥50 条(爬虫兜底关闭)时,站内链接指向、sitemap 没列的 URL 仍要请求:排在 sitemap 后面
+        (source=link),同受 --max 预算,记状态码和重定向跳数,它们的出链也照样续队。没有这一步,
+        链到 404 的站内链接、被链接引用的重定向链、只从分页页链出去的页面都查不到(RQ-229 例 7)。
+        --sitemap-only 恢复旧口径(链接只进图,不请求)。"""
+        link_q = deque()
+        follow_links = self.links_followed
+        while (self.queue or link_q) and len(self.pages) < self.max_pages:
+            url, source = self.queue.popleft() if self.queue else link_q.popleft()
             if not self.allowed(url):
                 self.skipped_robots.append(url)
                 continue
             rec, internal_targets = self.fetch_page(url, source)
+            if source == "link":
+                self.counts["link"] = self.counts.get("link", 0) + 1
             if rec["status"] is None:
                 continue                          # 传输失败无链接可走
             if crawl_fallback:
@@ -1232,11 +1324,19 @@ class Crawler:
                         self.seen.add(tgt)
                         self.queue.append((tgt, "crawl"))
                         self.counts["crawl"] += 1
-        self.truncated = bool(self.queue)
-        if self.truncated:
+            elif follow_links:
+                for tgt in sorted(internal_targets):
+                    if tgt not in self.seen:
+                        self.seen.add(tgt)
+                        link_q.append((tgt, "link"))
+        self.truncated = bool(self.queue or link_q)
+        if self.queue:
             self.warnings.append("发现 %d+ URL 超过 --max %d,已截断——大站建议采样"
                                  "(ci-gates §四:路由模板归一后每组抽 ≤8 ∪ 手工钱页)"
-                                 % (len(self.pages) + len(self.queue), self.max_pages))
+                                 % (len(self.pages) + len(self.queue) + len(link_q), self.max_pages))
+        elif link_q:
+            self.warnings.append("sitemap 已抓完,站内链接指向的另外 %d 个 URL 超出 --max %d 没请求:"
+                                 "断链、重定向链、孤儿页只覆盖已抓部分,加大 --max 再抓" % (len(link_q), self.max_pages))
 
     def check_external_domains(self):
         """--check-external:对 Top 外链域抽样 HEAD 根路径(只记状态,不外爬)。"""
@@ -1383,6 +1483,9 @@ class Crawler:
                     ent["canonical"] = normalize_url(pp.canonical, base=r["final_url"])
                 if pp.lang is not None:
                     ent["lang"] = pp.lang
+                names = robots_names(*pp.robots_meta) | header_robots(_header(r.get("headers"), "x-robots-tag") or "")
+                if names & {"noindex", "none"}:
+                    ent["noindex"] = True
             self.extra[u] = ent
 
     def check_resources(self, limit=RESOURCE_CHECK_CAP):
@@ -1431,6 +1534,13 @@ class Crawler:
             out[key] = rows[:100]
 
         ok = [u for u in self.order if P[u].get("status") and 200 <= P[u]["status"] < 300 and not P[u].get("final_url")]
+        linked_from = {}                                   # 目标 URL → 链到它的站内页(报问题时带上来源页)
+        for src_, dst_ in self.edges:
+            if src_ != dst_:
+                linked_from.setdefault(dst_, []).append(src_)
+
+        def sources(u, k=5):
+            return sorted(linked_from.get(u, ()))[:k]
         ok_set = set(ok)
         html_ok = [u for u in ok if P[u].get("html")]
 
@@ -1461,7 +1571,7 @@ class Crawler:
         put("nofollow_page", [u for u in ok if P[u].get("nofollow")])       # help 2478724
         put("noindex_in_html_and_header", [u for u in ok if "noindex" in P[u].get("robots_in_html_and_header", ())])
         put("nofollow_in_html_and_header", [u for u in ok if "nofollow" in P[u].get("robots_in_html_and_header", ())])
-        c4, c5, cr, ch2s, cs2h, chain = [], [], [], [], [], []
+        c4, c5, cr, ch2s, cs2h, chain, cni = [], [], [], [], [], [], []
         for u in ok:
             c = P[u].get("canonical")
             if not c or c == u:
@@ -1481,6 +1591,13 @@ class Crawler:
                 c4.append({"url": u, "canonical": c, "status": st})                      # help 2427853
             elif st >= 500:
                 c5.append({"url": u, "canonical": c, "status": st})                      # help 2491113
+            elif t.get("noindex"):
+                # canonical 指向 noindex 页:Screaming Frog「Non-Indexable Canonical」——「Pages with a canonical URL
+                # specified that is non-indexable ... are 'noindex'」,「search engines are being instructed to consolidate
+                # indexing and link signals to a non-indexable page, which often leads to them ignoring the canonical」
+                # (https://www.screamingfrog.co.uk/seo-spider/issues/canonicals/non-indexable-canonical/)。
+                # noindex 认 meta robots/googlebot 和 X-Robots-Tag 两处
+                cni.append({"url": u, "canonical": c, "linked_from": sources(u)})
             elif t.get("canonical") and t["canonical"] != c:
                 # Non-canonical page specified as canonical:「pages specified as canonical on other pages ...
                 # have a rel=canonical link to a different page」(help 2526305)
@@ -1491,6 +1608,7 @@ class Crawler:
         put("canonical_from_http_to_https", ch2s)
         put("canonical_from_https_to_http", cs2h)
         put("non_canonical_page_specified_as_canonical", chain)
+        put("canonical_points_to_noindex", cni)
         # -- Duplicates --
         idx = [u for u in html_ok if indexable(u)]
 
@@ -1563,6 +1681,22 @@ class Crawler:
                 to_broken.setdefault(src, []).append({"url": dst, "status": t["status"]})
         put("links_to_redirect", [{"url": k, "links": sorted(v)[:20], "count": len(v)} for k, v in sorted(to_redir.items())])
         put("links_to_broken_page", [{"url": k, "links": v[:20], "count": len(v)} for k, v in sorted(to_broken.items())])
+        # 链到 4xx 的站内链接(按目标列,带来源页):Google「All 4xx errors, except 429, are treated the same: Google crawlers
+        # inform the next processing system that the content doesn't exist」
+        # (https://developers.google.com/search/docs/crawling-indexing/http-network-errors)→ 除 429 外的 4xx 都算;
+        # 经重定向落到 4xx 的链接也算(终点不存在)。Ahrefs 口径的 404/410 子集仍在 links_to_broken_page
+        to_4xx = []
+        for dst in sorted(linked_from):
+            t = P.get(dst)
+            if not t or not self.is_internal(host_of(dst)):
+                continue
+            st = t.get("status")
+            if st is not None and 400 <= st < 500 and st != 429 and not t.get("rate_limited"):
+                row = {"url": dst, "status": st, "linked_from": sources(dst, 20), "count": len(linked_from[dst])}
+                if t.get("final_url"):
+                    row["redirects_to"] = t["final_url"]
+                to_4xx.append(row)
+        put("links_to_4xx_page", to_4xx)
         # -- Redirects --
         r302, broken, h2s = [], [], []
         for u in self.order:
@@ -1578,8 +1712,28 @@ class Crawler:
                 h2s.append(u)
         put("redirect_302", r302)
         put("broken_redirect", broken)
+        # Redirect chain / Redirect chain too long:Ahrefs 2021-09 起拆成两项——「"Redirect chain" (Importance: Notice) for
+        # redirect chains URLs ≤ 5」「"Redirect chain too long" (Importance: Error) for redirect chains URLs > 5」
+        # (https://ahrefs.com/blog/site-audit-issues-update-september-2021/);链 = 起点经 ≥2 跳才到终点。
+        # Google:「keep the number of redirects in the chain low, ideally no more than 3 and fewer than 5」
+        # (https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes)。
+        # 每行带起点、逐跳 URL、终点状态和链到起点的站内来源页(要改的是来源页里的链接,直接写终点)
+        chains = []
+        for u in self.order:
+            hops = self.redirect_hops.get(u, ())
+            if len(hops) < 2 or not self.is_internal(host_of(u)):
+                continue
+            chains.append({"url": u, "hops": len(hops), "chain": [u] + [t for _f, t, _st in hops],
+                           "statuses": [st for _f, _t, st in hops], "final_status": P[u].get("status"),
+                           "linked_from": sources(u), "in_sitemap": P[u].get("source") == "sitemap"})
+        chains.sort(key=lambda r: (-r["hops"], r["url"]))
+        put("redirect_chain", [r for r in chains if r["hops"] + 1 <= 5])
+        put("redirect_chain_too_long", [r for r in chains if r["hops"] + 1 > 5])
         put("http_to_https_redirect", h2s)
         put("meta_refresh_redirect", [{"url": u, "to": P[u]["meta_refresh"]} for u in ok if P[u].get("meta_refresh")])
+        # -- 软 404:2xx、非 noindex 的 HTML 页,title/H1 就是报错语或很短的正文里有「页面找不到」(判法与出处见 soft404_evidence)
+        put("soft_404", [{"url": u, "evidence": P[u]["soft404"], "linked_from": sources(u)}
+                         for u in html_ok if P[u].get("soft404") and not P[u].get("noindex")])
         # -- Content --
         put("multiple_title_tags", [{"url": u, "count": P[u]["title_count"]} for u in ok if P[u].get("title_count", 1) > 1])
         put("multiple_meta_description_tags", [{"url": u, "count": P[u]["description_count"]}
@@ -1831,6 +1985,7 @@ class Crawler:
         report["orphans_partial"] = bool(self.truncated)
         report["rate_limited_pages"] = self.rate_limited     # 疑似限流、未判定(不算错误页)
         report["discovery"]["crawl_fallback"] = bool(self.crawl_fallback)
+        report["discovery"]["links_followed"] = bool(self.links_followed)   # link_graph 据此判断入链是否欠采样
         direct = Counter()
         for src, dst in self.edges:
             if dst == src:
@@ -1910,8 +2065,11 @@ def render_markdown(report):
         if fallback:
             src_desc += " ∪ 链④ 爬虫补量 %d(loc %d<%d,爬虫补量开着)" % (
                 c["crawl"], c["sitemap"], SITEMAP_CLOSES_CRAWL)
+        elif disc.get("links_followed"):
+            src_desc += "(loc ≥%d,先抓 sitemap;站内链接指向、sitemap 没列的 URL 排在后面补抓 %d 个)" % (
+                SITEMAP_CLOSES_CRAWL, c.get("link", 0))
         else:
-            src_desc += "(loc ≥%d,爬虫补量关闭)" % SITEMAP_CLOSES_CRAWL
+            src_desc += "(loc ≥%d,爬虫补量关闭,站内链接只进图不请求)" % SITEMAP_CLOSES_CRAWL
     elif disc["mode"] == "crawl":
         src_desc = "链④ 爬虫兜底(robots/sitemap 均无产出)发现 %d 页" % c["crawl"]
     if c.get("subdomain"):
@@ -2003,6 +2161,7 @@ SITE_ISSUE_LABELS = [
     ("canonical_from_https_to_http", "Canonical from HTTPS to HTTP", "HTTPS 页 canonical 指向 HTTP"),
     ("non_canonical_page_specified_as_canonical", "Non-canonical page specified as canonical",
      "canonical 指向的页自己又 canonical 到别处(canonical 链)"),
+    ("canonical_points_to_noindex", "Non-Indexable Canonical(noindex)", "canonical 指向 noindex 页(meta 或 X-Robots-Tag)"),
     ("duplicate_pages_without_canonical", "Duplicate pages without canonical", "内容重复且没写 canonical 的页"),
     ("duplicate_content_bad", "Duplicate content (bad duplicates)", "内容重复且没用 canonical/hreflang 处理的组"),
     ("duplicate_title", "Duplicate title tag", "可索引页 title 重复的组"),
@@ -2017,12 +2176,16 @@ SITE_ISSUE_LABELS = [
     ("no_outgoing_links", "Page has no outgoing links", "没有任何出链(死胡同页)"),
     ("links_to_redirect", "Page has links to redirect", "链到会重定向的站内 URL"),
     ("links_to_broken_page", "Page has links to broken page", "链到 404/410 站内 URL(Ahrefs 2021-09 起只算这两种)"),
+    ("links_to_4xx_page", "Internal links to 4XX", "被站内链接引用的 4xx URL(除 429;按目标列,带来源页)"),
     ("external_links_to_redirect", "Page has links to redirect(外链)", "外链 3xx(--check-external 抽检)"),
     ("external_links_to_broken", "External 4XX / links to broken page(外链)", "外链 4xx/5xx(--check-external 抽检)"),
     ("redirect_302", "302 redirect", "站内 URL 用 302 跳转"),
     ("broken_redirect", "Broken redirect", "跳转终点 4xx/5xx"),
+    ("redirect_chain", "Redirect chain", "≥2 跳才到终点的重定向链(链上 URL ≤5;带起点和来源页)"),
+    ("redirect_chain_too_long", "Redirect chain too long", "链上 URL >5 的重定向链"),
     ("http_to_https_redirect", "HTTP to HTTPS redirect", "HTTP 跳 HTTPS(提示,内链宜直接写 HTTPS)"),
     ("meta_refresh_redirect", "Meta refresh redirect", "meta refresh 客户端跳转"),
+    ("soft_404", "Soft 404", "返回 2xx 但页面是「找不到页面」(软 404)"),
     ("multiple_title_tags", "Multiple title tags", "一页多个 <title>"),
     ("multiple_meta_description_tags", "Multiple meta description tags", "一页多个 meta description"),
     ("og_url_not_matching_canonical", "Open Graph URL not matching canonical", "og:url 与 canonical 不一致"),
@@ -2054,6 +2217,16 @@ SITE_ISSUE_LABELS = [
 def _row_text(row):
     if isinstance(row, str):
         return row
+    lf = row.get("linked_from")
+    src = ("(来源 %s)" % ", ".join(lf[:2])) if isinstance(lf, list) and lf else ""
+    if "chain" in row:
+        return "%s 跳:%s [终点 %s]%s" % (row["hops"], " → ".join(row["chain"]), row.get("final_status"), src)
+    if "evidence" in row:
+        return "%s(%s)%s" % (row["url"], row["evidence"], src)
+    if "status" in row and isinstance(lf, list):
+        return "%s [%s]%s" % (row["url"], row["status"], src)
+    if "canonical" in row and isinstance(lf, list):
+        return "%s → canonical %s" % (row["url"], row["canonical"])
     if "urls" in row:
         return " = ".join(row["urls"][:3]) + (" …" if len(row["urls"]) > 3 else "")
     return row.get("url") or json.dumps(row, ensure_ascii=False)[:100]
@@ -2073,7 +2246,11 @@ def render_site_issues(report):
         if not n:
             clean.append(name)
             continue
-        L.append("  - [%s] %s %d:%s" % (name, desc, n, "; ".join(_row_text(r) for r in si[key][:3])))
+        extra = ""
+        if key == "links_to_redirect":                     # 几百页都链到同一个跳转 URL(导航里的购物车等)时一眼看出来
+            tc = Counter(t for r in si[key] for t in r.get("links", ()))
+            extra = "(按被链目标:%s)" % ", ".join("%s×%d" % kv for kv in tc.most_common(3))
+        L.append("  - [%s] %s %d%s:%s" % (name, desc, n, extra, "; ".join(_row_text(r) for r in si[key][:3])))
     if clean:
         L.append("  - 未命中 %d 项:%s" % (len(clean), ", ".join(clean)))
     if si.get("partial"):
@@ -2093,7 +2270,8 @@ Sitemap 指令 → ③ sitemap(递归 index;≥50 loc 关闭爬虫)→ ④ BFS �
 + --subs ct 走 crt.sh;--same-host 收紧到单主机。
 礼貌:robots.txt 默认遵守(Disallow 排除/crawl-delay 取 * 组与 --delay 取大);
 每 URL 传输层失败重试 2 次;--max 默认 500(上限 5000,超出警告并截断)。
-SSRF:仅 http(s),拒私网/环回/链路本地,重定向逐跳复查(同 site_audit/monitor 惯例)。
+SSRF:仅 http(s),拒私网/环回/链路本地,重定向逐跳复查(同 site_audit/monitor 惯例);
+审本机开发站加 --allow-local(只放行回环,私网照旧拒)。
 输出:crawl.json(--out)+ --urls-out 纯 URL 清单(喂 site_audit/traffic_funnel --urls)
 + markdown 摘要;--json 打 stdout。不抓外链目标;--check-external 只对外链域抽样 HEAD。
 退出码:0 正常 / 1 有错误页(4xx/5xx 或重试后仍失败) / 2 输入错 / 3 全部起点失败。\
@@ -2136,6 +2314,10 @@ def build_parser():
     ap.add_argument("--urls-out", metavar="FILE", help="纯 URL 清单输出(2xx/3xx 页,喂下游脚本)")
     ap.add_argument("--json", action="store_true", help="报告 JSON 打 stdout(替代 markdown 摘要)")
     ap.add_argument("--timeout", type=float, default=10.0, metavar="SEC", help="单请求超时(默认 10s)")
+    ap.add_argument("--sitemap-only", action="store_true",
+                    help="sitemap ≥50 条时只抓 sitemap(旧口径:站内链接只进图、不请求;断链和重定向链查不到)")
+    ap.add_argument("--allow-local", action="store_true",
+                    help="审本机开发站:只多放行回环地址(127.0.0.0/8、::1、localhost),私网段照旧拒绝")
     return ap
 
 
@@ -2151,10 +2333,17 @@ def main(argv=None):
         ap.error("--subs 仅接受 dns/ct 逗号组合,未知项: %s" % ",".join(bad_subs))
     if args.urls and not os.path.isfile(args.urls):
         ap.error("--urls 文件不存在: %s" % args.urls)
+    global ALLOW_LOCAL
+    ALLOW_LOCAL = bool(args.allow_local)
     try:
         crawler = Crawler(args)
     except ValueError as e:
         ap.error(str(e))
+    try:                                 # 起点先过一次守卫:本机/内网站点直接报用法错,不进抓取
+        ssrf_guard(urllib.parse.urlsplit(crawler.seed).hostname)
+    except GuardError as e:
+        if not str(e).startswith("DNS 解析失败"):      # 解析不了照旧走抓取,按「全部起点失败」退 3
+            ap.error(str(e))
     report, rc = crawler.run()
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=1)
