@@ -285,10 +285,14 @@ def r_ja_len(ctx):
         issues.append("正文 %d/300 全角(薄页)" % bn)
     return ("FAIL" if issues else "OK"), "title %d/%d,desc %d/%d,正文 %d/300 全角(visible_length 口径)" % (tn, tl, dn, dl, bn)
 
+# 합니다体:「니다」前一字带收音 ㅂ(합/됩/입/습…)。原写法里的「ㅂ니다」是分解字母,正文里不会出现
+KO_HAPNIDA = "[%s]니다" % "".join(chr(c) for c in range(0xAC00, 0xD7A4) if (c - 0xAC00) % 28 == 17)
+
+
 def r_ja_keigo(ctx):
     a = ctx["alltext"]
     polite = re.search(r"です|ます", a)
-    plain = re.search(r"である|[ぁ-ん]だ[。、!?!?]|[^だ]だ。", a)
+    plain = re.search(r"である[。！？!?]|[ぁ-ん]だ[。、!?!?]|[^だ]だ。", a)
     if polite and plain:
         return "FAIL", "です/ます 与 だ/である 体混用——全站统一(学术栏可用である体)"
     if plain:
@@ -297,7 +301,9 @@ def r_ja_keigo(ctx):
 
 def r_ja_ai(ctx):
     a = ctx["alltext"]
-    contrast = re.findall(r"[一-龯ぁ-んァ-ヶa-zA-Z0-9]{1,10}ではなく", a)
+    # 同一段内容常被渲染多遍(桌面/手机两份、折叠区),按去重后的句子计
+    sents = {x.strip() for x in re.split(r"[。！？!?\n]", a) if "ではなく" in x}
+    contrast = [m for x in sents for m in re.findall(r"[一-龯ぁ-んァ-ヶa-zA-Z0-9]{1,10}ではなく", x)]
     fp = [w for w in JA_FP if w in a]
     if len(contrast) > 3 or fp:
         return "FAIL", "AI 臭:对比构文「AではなくB」%d 处(≤3)%s" % (len(contrast), (";指纹词 " + "/".join(fp)) if fp else "")
@@ -1147,14 +1153,14 @@ def _lint():
             print("✓ Sie 称谓一致(%d 处)" % sie)
     if market == "ja":
         polite = re.search(r"です|ます", alltext)
-        plain = re.search(r"である|[ぁ-ん]だ[。、!?!?]|[^だ]だ。", alltext)
+        plain = re.search(r"である[。！？!?]|[ぁ-ん]だ[。、!?!?]|[^だ]だ。", alltext)
         if polite and plain:
             warn_out("です/ます 与 だ/である 体混用——全站统一(学术栏可用である体)")
         elif polite:
             print("✓ です/ます 体一致")
     if market == "ko":
-        hae = re.findall(r"[아야어여]요[\s.!?]|해요|예요|이에요", alltext)
-        ham = re.findall(r"습니다|ㅂ니다|입니다", alltext)
+        hae = re.findall(r"(?<!좋)[아야어여]요[\s.!?]|해요|예요|이에요", alltext)
+        ham = re.findall(KO_HAPNIDA, alltext)
         if hae and ham:
             warn_out("해요체(%d)与 합니다体(%d)混用——敬语体系统一" % (len(hae), len(ham)))
         elif ham:
