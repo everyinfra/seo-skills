@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-06T07:54:02.243403+00:00",
+ "checked_at": "2026-11-07T07:04:34.759942+00:00",
  "sources": {
   "google-blog": {
    "top": "Search Central Live in Zurich is back!",
@@ -15,8 +15,8 @@
    "ts": "2026-11-05T07:53:13.665673+00:00"
   },
   "google-updates": {
-   "hash": "e34c16aa7185b280d4c3f2e2eb966bf6",
-   "ts": "2026-11-06T07:53:42.432815+00:00"
+   "hash": "b6111b472051ec191c10402933eef9d1",
+   "ts": "2026-11-07T07:04:09.385394+00:00"
   },
   "gsc-announce": {
    "top": "Search Central Live in Zurich is back!",
@@ -60,8 +60,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "16a619b7b5857489fac913541062d93c",
-   "ts": "2026-11-06T07:53:45.000304+00:00"
+   "hash": "fd10f23798c2815cd752ccaa9c87903a",
+   "ts": "2026-11-07T07:04:11.475462+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -82,20 +82,20 @@
    "ts": "2026-10-26T06:07:48.821620+00:00"
   },
   "anthropic-crawl": {
-   "hash": "3bd7bc453283f63f76d9661faac4d8d0",
-   "ts": "2026-11-06T07:53:45.701176+00:00"
+   "hash": "fd4b5ddbc18bb76842ef230d295d55c0",
+   "ts": "2026-11-07T07:04:12.300163+00:00"
   },
   "schema-org": {
-   "hash": "c28ae2197ecacc4469ac00319b179a7f",
-   "ts": "2026-11-05T07:53:16.855715+00:00"
+   "hash": "77148a1e8e96b49506a4883169899e89",
+   "ts": "2026-11-07T07:04:12.862631+00:00"
   },
   "crux": {
-   "hash": "d842f6212aa2bb011604625ef58846f2",
-   "ts": "2026-11-04T07:28:31.258636+00:00"
+   "hash": "7fafd44a87d80dda0b78eb6b758250bd",
+   "ts": "2026-11-07T07:04:13.842318+00:00"
   },
   "yandex-wm": {
-   "hash": "f5fbded20c7e0a8e746afdcd5b00f3d9",
-   "ts": "2026-11-06T07:53:48.056156+00:00"
+   "hash": "75a297b629144a16ef3d77bf7edfcaa5",
+   "ts": "2026-11-07T07:04:18.515484+00:00"
   },
   "naver-wm": {
    "hash": "400dd05a1650d065f71a7b174a56c817",
@@ -106,25 +106,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "d63a05ad3e04b841b267072da92f6018",
-   "ts": "2026-11-06T07:53:58.191668+00:00"
+   "hash": "8cab98cd2fef1e89c4bb4865770f2650",
+   "ts": "2026-11-07T07:04:30.958551+00:00"
   },
   "statcounter-ai": {
-   "hash": "305076206002ea853ebae03060b99b0c",
-   "ts": "2026-11-06T07:53:58.476825+00:00"
+   "hash": "dc433a5245770fc2216b53829a958fbf",
+   "ts": "2026-11-07T07:04:31.359365+00:00"
   },
   "semrush-sensor": {
    "hash": "506d19834d3a89fe6edacf6a84974ffc",
    "ts": "2026-11-06T07:53:58.892896+00:00"
   },
   "seroundtable": {
-   "top": "OpenAI Updates ChatGPT Ads Bidding Options For Max Bid or Max CPC",
+   "top": "OpenAI Working On ChatGPT Tools For Business For Analytics & Citations",
    "seen": [
-    "Search News Buzz Video Recap: Google Search Chatter, PHP Exploit, AI SEO Worthwhile, Google Local, Google Ads, ChatGPT Ads & More",
-    "Google AI Overview Citation Cards With AI-Generated Summary Snippets",
-    "JPEG XL Image Format Not Supported By Google Images & Google Discover",
-    "Google Business Profiles Tests New Advanced Performance Reports",
-    "Google Search Ranking Volatility Gets Heated October 24th",
     "Google Warns Tools On User-Generated Spam Guidance & More",
     "Daily Search Forum Recap: October 26, 2026",
     "Over 80% Of Google Searches Have AI Overviews & Growing",
@@ -169,9 +164,14 @@
     "Daily Search Forum Recap: November 5, 2026",
     "Facebook Answers AI-Generated 6 Million Pages Is Google Scaled Content Abuse",
     "Google Ads Expands AI Content Disclosure Label To More Regions",
-    "Google Ads PMax Channel Report Definitions Coming To Search & Shopping"
+    "Google Ads PMax Channel Report Definitions Coming To Search & Shopping",
+    "OpenAI Working On ChatGPT Tools For Business For Analytics & Citations",
+    "Daily Search Forum Recap: November 6, 2026",
+    "Search News Buzz Video Recap: Google Scaled Content Abuse From Facebook, ChatGPT Search 20% Of Google & More SEO, PPC & Local",
+    "Google Business Profiles Manage Offers Help Document",
+    "Google AI Mode Asking Searchers To Continue With This Search"
    ],
-   "ts": "2026-11-06T07:53:59.692349+00:00"
+   "ts": "2026-11-07T07:04:32.824670+00:00"
   },
   "google-docs-rss": {
    "top": "Updated guidance on preventing user-generated spam",
