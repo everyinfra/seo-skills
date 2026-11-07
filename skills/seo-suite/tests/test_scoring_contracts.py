@@ -154,7 +154,10 @@ def write_inputs(tmpdir):
 def _normalize(payload, tmpdir):
     """把 payload 里的临时目录路径换成 <TMPDIR> 占位——competitor_files 等字段
     含 tmpdir 绝对路径,归一后 fixture 才可跨机器/跨次再生。"""
-    return json.loads(json.dumps(payload).replace(tmpdir, "<TMPDIR>"))
+    s = json.dumps(payload)
+    tmp_json = json.dumps(tmpdir)[1:-1]   # Windows 路径的 \ 在 JSON 里写成 \\
+    s = s.replace(tmp_json + json.dumps(os.sep)[1:-1], "<TMPDIR>/")
+    return json.loads(s.replace(tmp_json, "<TMPDIR>"))
 
 
 def health_payload(paths, tmpdir):

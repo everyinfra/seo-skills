@@ -121,7 +121,8 @@ class GlossaryAndCliTests(unittest.TestCase):
             with open(bad, "w", encoding="utf-8") as f:
                 f.write(proc(25) + "\n")
             run = lambda *a: subprocess.run([sys.executable, os.path.join(SCRIPTS, "ste_lint.py"), *a],
-                                            capture_output=True, text=True, encoding="utf-8")
+                                            capture_output=True, text=True, encoding="utf-8",
+                                            env=dict(os.environ, PYTHONIOENCODING="utf-8"))
             r_ok = run(ok, "--json")
             r_bad = run(bad)
             r_missing = run(os.path.join(tmp, "nope.txt"))

@@ -7,7 +7,7 @@ if any(a in ("-h", "--help") for a in sys.argv[1:]):
     print(__doc__.strip())
     sys.exit(0)
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-s = open(os.path.join(BASE, 'SKILL.md')).read()
+s = open(os.path.join(BASE, 'SKILL.md'), encoding='utf-8').read()
 fail = []
 m = re.match(r'^---\n(.*?)\n---\n', s, re.S)
 if not m:
@@ -24,7 +24,7 @@ else:
         fail.append(f'SKILL.md too long: {len(s.splitlines())} lines')
 templates = [os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(BASE, 'templates')) for f in fs if f.endswith('.md')]
 for t in templates:
-    body = open(t).read()
+    body = open(t, encoding='utf-8').read()
     for sec in ['The answer', 'What could change this conclusion', 'Method Notes']:
         if sec not in body:
             fail.append(f'{os.path.relpath(t, BASE)} missing section: {sec}')
