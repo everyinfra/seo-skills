@@ -1,0 +1,58 @@
+{
+ "generated": "2026-11-07T10:06:44",
+ "site": "https://github.com/everyinfra/seo-skills",
+ "market": null,
+ "curr_run": 34,
+ "prev_run": 33,
+ "baseline_run": 1,
+ "baseline_missing": false,
+ "baseline_kind_mismatch": false,
+ "alerts": [
+  {
+   "level": "info",
+   "code": "visibility_zero",
+   "key": "site",
+   "message": "site: 抽查可见页 10 → 0(端点成功返回,疑似去索引/处罚)(7 天基线亦为 0→端点口径抖动可能,降 info)",
+   "details": {
+    "prev": 10,
+    "curr": 0,
+    "sample": [],
+    "method_note": "Bing HTML 端点方向抽样,非官方索引数"
+   },
+   "action": "按 alert-threshold-guide 排查顺序 L1→L5;先查 robots/noindex/处罚",
+   "boundary": "human"
+  }
+ ],
+ "healed": [],
+ "suppressed": [],
+ "inhibited": [],
+ "accepted": 0,
+ "slo": null,
+ "counts": {
+  "critical": 0,
+  "warn": 0,
+  "info": 1,
+  "low": 0
+ },
+ "persisted": {
+  "inserted": [
+   {
+    "level": "info",
+    "code": "visibility_zero",
+    "key": "site",
+    "message": "site: 抽查可见页 10 → 0(端点成功返回,疑似去索引/处罚)(7 天基线亦为 0→端点口径抖动可能,降 info)",
+    "details_row": {
+     "details": {
+      "prev": 10,
+      "curr": 0,
+      "sample": [],
+      "method_note": "Bing HTML 端点方向抽样,非官方索引数"
+     },
+     "action": "按 alert-threshold-guide 排查顺序 L1→L5;先查 robots/noindex/处罚",
+     "boundary": "human"
+    }
+   }
+  ],
+  "resolved": []
+ }
+}
