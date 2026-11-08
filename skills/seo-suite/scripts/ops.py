@@ -1066,6 +1066,9 @@ def run_ops(args, kind):
             m["open_issues"] = m.get("open_issues", 0) + 1
 
     rec = recommend(hard, states, lists, ctr, geo, clicks_by_url, args.repo)
+    # RQ-237 第 3 批:开局档案和定稿方案接进运营单。优先级:硬告警 > 方案本周路线项 > 原来的「只做这一件」
+    loops_ev, roadmap, _ = lifecycle_loops(ws, ext, date)
+    rec, single_pick = with_plan(hard, rec, roadmap)
     if rec.get("url"):
         hint = source_hint(args.repo, rec["url"], args.rev)
         if hint:
@@ -1079,6 +1082,7 @@ def run_ops(args, kind):
               "five_lists": lists, "ctr_opportunity": ctr, "recommendation": rec, "coverage": cov,
               "score_gate": gate, "score": (score or {}).get("main_score") if gate_ok else None,
               "markets": markets, "monthly": monthly, "external": ext_path, "first_run": not prev_issues,
+              "roadmap": roadmap, "single_pick": single_pick, "loops": loops_ev,
               "signups": signup_summary(cmodel)}
     write_json(os.path.join(run_dir, "agenda.json"), agenda)
     md = render(agenda, score)
@@ -1090,6 +1094,39 @@ def run_ops(args, kind):
         print(md)
         print("\n写到 %s" % os.path.join(run_dir, "agenda.md"))
     return 1 if hard else 0
+
+
+def with_plan(hard, rec, roadmap):
+    """优先级:硬告警 > 方案本周路线项 > 原来的「只做这一件」(被让位的那件放进 single_pick 照样列出来)。"""
+    if hard or not roadmap or not roadmap.get("items"):
+        return rec, None
+    top = roadmap["items"][0]
+    new = {"what": "本周路线项 #%d:%s" % (top["rank"], top["title"]),
+           "why": "方案第 %d 周;%s;看 %s,怎么量:%s" % (roadmap["week"], top["do"], top["metric"], top["measure"]),
+           "url": None, "source": "plan/plan.json(%s 定稿)" % roadmap.get("approved_at", "")}
+    return new, rec
+
+
+def lifecycle_loops(ws, ext, date):
+    """读开局档案、定稿方案和循环(loops.py);没开局或没做完时三项都是 None,运营单照旧。"""
+    try:
+        import loops as LP
+    except ImportError:
+        return None, None, None
+    if not os.path.isfile(os.path.join(ws, "context", "profile.json")):
+        return None, None, None
+    d = dt.date.fromisoformat(date)
+    mx = LP.metrics_from_external(ext)
+    if mx:
+        LP.append_metrics(ws, mx[0], "ops.py 外部数据包 gsc_totals", mx[1])
+    try:
+        ev = LP.evaluate(ws, d)
+    except (LP.GateError, LP.UsageError) as e:
+        return {"skipped": str(e)}, None, None
+    plan = read_json(os.path.join(ws, "plan", "plan.json"))
+    wk, items = LP.roadmap_this_week(plan, d)
+    road = {"week": wk, "approved_at": (plan or {}).get("approved_at", "")[:10], "items": items} if wk else None
+    return ev, road, None
 
 
 def monthly_extras(ext, model=None):
@@ -1141,6 +1178,26 @@ def render(a, score):
         L.append("- 源码:%s" % ("; ".join("%s(置信度 %.2f)" % (c["file"], c["confidence"]) for c in cands[:3])
                                or "没找到"))
     L.append("")
+    if a.get("single_pick"):
+        sp = a["single_pick"]
+        L.append("- 数据里另一个机会(排在路线项之后):%s — %s" % (sp["what"], sp["why"]))
+        L.append("")
+    road, lp = a.get("roadmap"), a.get("loops")
+    if road or (lp and lp.get("loops")):
+        L.append("## 2.5 方案与循环")
+        if road:
+            L.append("- 方案第 %d 周(%s 定稿)。本周路线项:%s" % (road["week"], road["approved_at"], ";".join(
+                "#%d %s" % (r["rank"], r["title"]) for r in road["items"]) or "无"))
+        for r in (lp or {}).get("loops") or []:
+            if r["status"] in ("ask", "due", "waiting"):
+                L.append("- %s:%s" % (r["name"], r["why"]))
+        qs = (lp or {}).get("questions") or []
+        if qs:
+            L.append("- 要问用户的(最多 3 个,只问变了的):")
+            L += ["  %d. %s" % (i, q["text"]) for i, q in enumerate(qs, 1)]
+        if lp and not qs and not [r for r in lp.get("loops") or [] if r["status"] in ("ask", "due", "waiting")]:
+            L.append("- 循环都查了,没事")
+        L.append("")
     L.append("## 3. 问题和上期比")
     if a.get("first_run"):
         L.append("- 首轮:没有上期可比,下面的「新增」就是基线(共 %d 条),下周起才有五态" % len(a["states"]))

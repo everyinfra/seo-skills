@@ -50,7 +50,7 @@ metadata:
 
 ## 能力路由
 
-- 98 个脚本（stdlib 零依赖）的用法见 [script-catalog](references/overview/script-catalog.md)。
+- 100 个脚本（stdlib 零依赖）的用法见 [script-catalog](references/overview/script-catalog.md)。
 - 每个脚本的数据来源和降级见 [data-source-contract](references/overview/data-source-contract.md)。
 - 分诊细则、负例和全部参考文件清单见 [routing-rules](references/overview/routing-rules.md)。能力全景见 [capability-map](references/overview/capability-map.md)。
 - CWV 阈值、GSC 数据异常期、富结果退役日期、API 配额、sitemap 上限、搜索引擎份额等反复引用的外部事实只写在 [facts](references/overview/facts.md)，其他文件链接它。
@@ -65,6 +65,8 @@ metadata:
 | 出方案、90 天路线和战略书(开局第 6 环) | [lifecycle-stages](references/overview/lifecycle-stages.md)、[strategy-fit](references/overview/strategy-fit.md) | `plan.py build` |
 | 想法阶段:有没有人搜、起名和域名 | [stage-0-idea](references/lifecycle/stage-0-idea.md) | `demand_check.py` |
 | 上线前:上线清单(每项有负责人) | [stage-1-prelaunch](references/lifecycle/stage-1-prelaunch.md) | `launch_check.py` |
+| 第二次打开、定期核档案、产品变了、换阶段 | [loops-and-site-move](references/lifecycle/loops-and-site-move.md) | `loops.py status`、`loops.py run` |
+| 改版、换域名、改 URL 结构前后对比 | [loops-and-site-move](references/lifecycle/loops-and-site-move.md)、[redirects-canonical](references/technical/redirects-canonical.md) | `site_move.py baseline` → `site_move.py compare` |
 | 关键词研究 | [keyword-intent-taxonomy](references/research/keyword-intent-taxonomy.md)、[topic-cluster-templates](references/research/topic-cluster-templates.md) | `gsc_mining.py`、`serp_overlap.py` |
 | SERP 与内容缺口 | [serp-feature-taxonomy](references/research/serp-feature-taxonomy.md)、[gap-analysis-frameworks](references/research/gap-analysis-frameworks.md) | `serp_occupancy.py`、`fanout_analysis.py` |
 | 竞品 / alternative / vs 页 | [competitor-page-patterns](references/research/competitor-page-patterns.md)、[battlecard-template](references/research/battlecard-template.md) | — |

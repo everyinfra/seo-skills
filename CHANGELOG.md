@@ -5,6 +5,15 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.46.0 - 2026-11-08
+
+- **第二次打开不再从头问:一屏现状加 6 个长期循环**(RQ-237 第 3 批,`loops.py`、`data/loops.json`):`loops.py status` 一屏写清档案上次核对日、阶段、方案第几周、本周路线项和各循环状态。6 个循环用同一种格式写明什么时候查、什么情况才打扰、怎么自检、什么时候不再问、怎么去重:每周运营单;档案满 30 天核一次(最多问 3 个);方案定稿满 90 天季度复盘;重新读站发现新产品线、定价变化或新页面类型时**只问变了的部分**;最近 4 次指标(跨度 ≥ 21 天)都过了下一阶段门槛才提示换阶段,一次冲高不算;改版保护。问过的事按指纹去重,用户没回复不重复问,一轮最多 3 问;`resolve` 带原话写回档案。用户在 `seo-ops/playbook/loops.json` 可以加循环或改阈值。
+  Second-open view and six long-running loops: one-screen status, 30-day profile review, 90-day review, product-change detection that asks only about what changed, a stage-change prompt after four consecutive readings, and site-move protection; deduplicated, at most three questions per run.
+- **每周运营单接上方案**(`ops.py`):方案定稿后「只做这一件」的顺序是硬告警 > 本周路线项 > 原来按数据挑的那件(让位的那件照样列出来);新增第 2.5 节「方案与循环」;拿到 GSC 数据时把近 28 天点击、展示追加到 `context/metrics_history.jsonl`。`onboard.py metric` 加 `--at`,同样写指标历史。
+- **改版 / 迁移保护**(`site_move.py`):改动前 `baseline` 存每页状态码、title、H1、canonical、hreflang、结构化数据、noindex、站内链接(可合 GSC 点击);改动后 `compare` 按映射表(CSV 或迁移文档里的 Markdown 表)查漏 301、链式和临时跳转、跳到首页或映射表以外、旧地址没跳、canonical / hreflang / 站内链接 / sitemap 还指向旧址、新加 noindex、结构化数据丢失。测试站(30 页英德双语,预埋 10 个迁移问题)10 个全部找到、误报 0。说明 `references/lifecycle/loops-and-site-move.md`。
+  Site-move protection: baseline before, compare after against the URL map; on a 30-page bilingual test site with 10 planted migration issues it found all 10 with no false positives.
+- **修:产品线不再取首页小标题**(`product_scan.py`):没有 llms.txt 产品段时,旧版把首页 h2(比如「Why freelancers pick Quillbill」)当产品线;现在先按 `/products/<x>`、`/features/<x>`、`/solutions/<x>` 这类路由取,站点和仓库路由都认。
+
 ## 0.45.0 - 2026-11-08
 
 - **按产品阶段出方案、90 天路线和中英战略书**(RQ-237 第 2 批,`plan.py`、`data/playbooks.json`):开局第 6 环不再凭模型感觉排策略。打法库写了 53 条打法,按阶段算想法 11、上线前 13、刚上线 11、增长 11、成熟 10、改版 10(有的跨阶段),每条写明补哪一维成熟度、动哪类页面、预期动哪个数、怎么量、第几周做;`plan.py build` **只从当前阶段里选**,按成熟度最弱的一格加权,把档案里的产品事实(产品线、客户、转化、竞品、市场)填进每条建议;`only_if`(不适用)、`done_if`(已经做完,比如已有 llms.txt)、`veto`(反指标,比如页面不到 100 不做内链)和第 5 环的禁用清单逐条过滤,理由写进战略书「不做什么」;体检查到 CRITICAL 时技术修复强制排第一。产出 `seo-ops/plan/plan.json`、`roadmap.md`、`strategy-book.zh.md`、`strategy-book.en.md`;用户在第 6 环答「可以」才定稿(`status=approved`)。用户在 `seo-ops/playbook/plays.json` 可以加自己的打法、同 id 覆盖内置的。实测:上线前、想法、增长期(everyinfra.com 真 GSC)三个产品各 10 条建议都在本阶段内、10 条都引用了产品事实;想法阶段没有体检类建议。
