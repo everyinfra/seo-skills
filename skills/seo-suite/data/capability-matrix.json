@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 98,
+  "script": 100,
   "template": 25,
   "reference": 13,
   "stable": 76,
-  "beta": 59,
+  "beta": 61,
   "draft": 1
  },
  "entries": [
@@ -1876,6 +1876,34 @@
    "data_source": "公开联想接口(联想数是信号不是搜索量 [est]);可选 --volumes 关键词工具导出 [real];RDAP 域名注册记录",
    "fallback_mode": "②",
    "tests_file": null,
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "loops.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "status|run|resolve --ws seo-ops [--scan new.json|--rescan] [--today]",
+    "context/profile.json、plan/plan.json、context/metrics_history.jsonl、data/loops.json、playbook/loops.json"
+   ],
+   "outputs_schema": "json",
+   "data_source": "开局档案 + 定稿方案 + 指标历史(GSC 数字来自用户或 ops 外部数据包);不联网(--rescan 时调 product_scan)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_loops.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "site_move.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "baseline --site URL [--gsc-pages CSV]",
+    "compare --baseline B --new-site URL [--old-origin] [--map CSV|MIGRATION.md]"
+   ],
+   "outputs_schema": "json",
+   "data_source": "新旧站实时抓取(本机回环需 --allow-local);可选 GSC 网页导出算点击保留 [est]",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_site_move.py",
    "status": "beta"
   }
  ]

@@ -555,6 +555,8 @@ def cmd_metric(ns):
         prof.setdefault("metrics", {})[k] = v
     prof.setdefault("metric_sources", {}).update({k: ns.source for k in vals})
     save_profile(ws, prof, "记指标 %s(来源 %s)" % (",".join(vals), ns.source))
+    import loops as _loops
+    _loops.append_metrics(ws, {k: prof["metrics"][k] for k in vals}, ns.source, ns.at)
     diag = lifecycle.diagnose(read_json(ctx(ws, "scan.json")), ws)
     write_json(ctx(ws, "diagnosis.json"), diag)
     prof = load_profile(ws)
@@ -668,6 +670,7 @@ def build_parser():
     add_ws(p)
     p.add_argument("--set", action="append")
     p.add_argument("--source")
+    p.add_argument("--at", help="这批指标的截止日 YYYY-MM-DD(默认今天;记进指标历史,阶段门槛循环用)")
     p = sub.add_parser("status")
     add_ws(p)
     p.add_argument("--json", action="store_true")

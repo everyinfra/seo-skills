@@ -370,5 +370,20 @@ class RealRunRegressionTests(unittest.TestCase):
         self.assertIsNone(ps.cta_kind("登录", "https://everyinfra.com/auth/logto/login?first_screen=sign_in"))
         self.assertIsNone(ps.cta_kind("快速开始", "https://everyinfra.com/docs#quickstart"))
 
+    def test_product_lines_from_routes_not_home_h2(self):
+        """第 3 批:Quillbill 测试站(brief 写明三条产品线 Invoicing / Time tracking / Client portal)没有 llms 产品段,
+        旧版取首页 h2「Why freelancers pick Quillbill」当产品线;应按 /features/<x> 路由取。"""
+        o = "https://quillbill.example"
+        home = ('<!doctype html><html lang="en"><head><title>Quillbill</title></head><body><h1>Invoices for freelancers</h1>'
+                '<h2>Why freelancers pick Quillbill</h2></body></html>')
+        locs = "".join("<url><loc>%s%s</loc></url>" % (o, p) for p in
+                       ("/", "/pricing/", "/features/invoicing/", "/features/time-tracking/", "/features/client-portal/", "/blog/"))
+        routes = {o + "/": (200, {"content-type": "text/html"}, home),
+                  o + "/sitemap.xml": (200, {"content-type": "application/xml"}, "<urlset>%s</urlset>" % locs)}
+        with patched_web(routes):
+            rep = ps.build_report(o + "/", None, max_pages=5, max_urls=1000, wayback=False, cwd=tempfile.mkdtemp())
+        lines = facts_by_key(rep)["product.lines"][0]["value"]
+        self.assertEqual(lines, ["Invoicing", "Time tracking", "Client portal"])
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

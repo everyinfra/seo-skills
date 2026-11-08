@@ -28,7 +28,7 @@ python3 scripts/lifecycle.py diagnose --scan seo-ops/context/scan.json --ws seo-
 - 没有 GSC 时 2 / 3 / 4 分不清:结果标「猜测」、列候选,在开局第 1 环让用户确认。用户确认的阶段优先,和规则不一致时写进 `conflicts`。
 - 阶段 5 另报「底层阶段」(改版前在哪一档),改版做完后删掉事件,回到底层阶段。
 
-各阶段的详细打法挂在已有专题参考上:上线和收录看 [validation-guide](../technical/validation-guide.md)、[redirects-canonical](../technical/redirects-canonical.md);增长看 [site-type-playbooks](site-type-playbooks.md)、[strategy-fit](strategy-fit.md);成熟看 [content-refresh-playbook](../content/content-refresh-playbook.md);监控看 [ops-agenda](../monitoring/ops-agenda.md)。想法阶段和上线前是新写的打法卡:[stage-0-idea](../lifecycle/stage-0-idea.md)、[stage-1-prelaunch](../lifecycle/stage-1-prelaunch.md)。每个阶段能选的打法在 `data/playbooks.json`(`stages` 字段),`plan.py build` 只从本阶段里选,不跨阶段。
+各阶段的详细打法挂在已有专题参考上:上线和收录看 [validation-guide](../technical/validation-guide.md)、[redirects-canonical](../technical/redirects-canonical.md);增长看 [site-type-playbooks](site-type-playbooks.md)、[strategy-fit](strategy-fit.md);成熟看 [content-refresh-playbook](../content/content-refresh-playbook.md);监控看 [ops-agenda](../monitoring/ops-agenda.md);开局以后的长期循环(档案核对、产品变了、换阶段)和改版保护看 [loops-and-site-move](../lifecycle/loops-and-site-move.md)。想法阶段和上线前是新写的打法卡:[stage-0-idea](../lifecycle/stage-0-idea.md)、[stage-1-prelaunch](../lifecycle/stage-1-prelaunch.md)。每个阶段能选的打法在 `data/playbooks.json`(`stages` 字段),`plan.py build` 只从本阶段里选,不跨阶段。
 
 ## 二、成熟度
 

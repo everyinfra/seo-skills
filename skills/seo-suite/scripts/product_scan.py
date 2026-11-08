@@ -358,6 +358,28 @@ def split_locale(path):
     return None, segs
 
 
+LINE_ROUTE_SEGS = {"products", "product", "features", "feature", "solutions", "solution", "tools", "apps", "modules"}
+
+
+def route_lines(paths):
+    """/products/<x>、/features/<x>、/solutions/<x> 这类一层子页 → 产品线名(按路由取,语言前缀剥掉、去重)。
+    动态段([slug]、:id)和列表页不算。"""
+    out, seen = [], set()
+    for path in paths or []:
+        _, segs = split_locale(urllib.parse.urlsplit(path).path)
+        if len(segs) != 2 or segs[0].lower() not in LINE_ROUTE_SEGS:
+            continue
+        slug = segs[1]
+        if not slug or slug.startswith(("[", ":")) or "." in slug:
+            continue
+        name = re.sub(r"[-_]+", " ", slug).strip()
+        key = name.lower()
+        if key and key not in seen:
+            seen.add(key)
+            out.append(name[:1].upper() + name[1:])
+    return out
+
+
 def classify_segments(segs):
     if not segs:
         return "other"
@@ -588,6 +610,7 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
                 links.append(a)
         pool, pool_src = _dedup(links), home["final_url"] or site
     ctx["pool_src"] = pool_src
+    ctx["pool_paths"] = [urllib.parse.urlsplit(u).path for u in pool]
     types, locales = {}, {}
     for u in pool:
         loc, t = classify_url(u)
@@ -983,11 +1006,16 @@ def build_facts(site_scan, ctx, repo_scan, existing):
     elif (repo_scan or {}).get("readme_summary"):
         add("product.one_liner", repo_scan["readme_summary"], ev.get("readme"), "fact")
 
-    # product.lines:llms.txt 里「产品 / 服务 / 方案」那一节的条目 > 首页 h2(llms 的 ## 标题多半是栏目名,不是产品)
+    # product.lines:llms.txt 里「产品 / 服务 / 方案」那一节的条目 > /products/<x> 这类路由 > 首页 h2(llms 的 ## 标题多半是栏目名,不是产品)
     llms_sections = ((ss or {}).get("llms") or {}).get("sections") or {}
     prod_sec = next((v for k, v in llms_sections.items() if v and PRODUCT_SECTION_RE.search(k)), None)
+    rl_site = route_lines((ctx or {}).get("pool_paths"))
+    rl_repo = route_lines((repo_scan or {}).get("routes"))
     if prod_sec:
         add("product.lines", prod_sec[:8], ctx.get("llms_src") if ctx else None, "fact")
+    elif rl_site or rl_repo:                      # 路由比首页小标题可靠:h2 多半是「为什么选我们」这类卖点句
+        add("product.lines", (rl_site or rl_repo)[:8],
+            (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
     elif home.get("h2"):
         add("product.lines", home["h2"], home_src, "inferred")
 

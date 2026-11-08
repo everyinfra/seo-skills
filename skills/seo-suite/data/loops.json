@@ -1,0 +1,29 @@
+{
+ "about": "RQ-237 第 3 批:长期循环的统一格式(loops.py 读)。每个循环写清:trigger 什么时候查(cadence_days 按天数,或 event 按事件);act_if 查完什么情况才打扰用户;self_check 怎么自检;stop_if 什么时候不再问;dedup 同一件事问过就不重复问(按指纹,ask_again_days 天内不再问);output 结果写到哪;ring 回开局哪一环;max_questions 最多问几个。大多数轮次的结论是「查了,没事」,只记账不打扰。用户在 seo-ops/playbook/loops.json 写 {\"loops\": [...]} 可以加自己的循环或改阈值,同 id 覆盖内置的。",
+ "loops": [
+  {"id": "weekly-ops", "name": "每周运营单", "trigger": {"cadence_days": 7},
+   "act_if": "有硬告警、本周路线项或变差的问题", "self_check": "覆盖率门槛(ops.py score_gate)", "stop_if": "用户停用运营",
+   "dedup": "按问题指纹(ledger/issues.jsonl)", "output": "runs/<日期>/agenda.md", "ring": null, "max_questions": 0},
+  {"id": "profile-review", "name": "档案核对", "trigger": {"cadence_days": 30, "since": "profile.reviewed_at|profile.confirmed_at"},
+   "act_if": "重新读站点后,有事实和档案不一样;或档案超过 30 天没核", "self_check": "只列可能变了的条目(和上次读站的结果比),没变的不问",
+   "stop_if": "用户答过「都没变」", "dedup": "按变了的条目指纹", "ask_again_days": 30,
+   "output": "运营单「档案核对」一节", "ring": 1, "max_questions": 3},
+  {"id": "quarterly-review", "name": "季度复盘", "trigger": {"cadence_days": 90, "since": "plan.approved_at"},
+   "act_if": "方案定稿满 90 天", "self_check": "用这一季的真实数据(GSC 指标历史、运营单期数)重跑 plan.py,和定稿方案比",
+   "stop_if": "用户确认路线不改", "dedup": "按季度", "ask_again_days": 90,
+   "output": "运营单「季度复盘」一节", "ring": 6, "max_questions": 2},
+  {"id": "product-change", "name": "产品变了", "trigger": {"event": "rescan"},
+   "act_if": "新的产品线、定价变了、sitemap 出现新页面类型", "self_check": "和档案里已确认的值比,只列变了的",
+   "stop_if": "用户确认后写回档案", "dedup": "按变化指纹", "ask_again_days": 30,
+   "output": "运营单「产品变了」一节", "ring": 1, "max_questions": 3},
+  {"id": "stage-threshold", "name": "到了下一阶段的门槛", "trigger": {"event": "metrics"},
+   "act_if": "最近 4 次指标记录(跨度 ≥ 21 天)按规则都判成同一个阶段,且和已确认的阶段不同",
+   "self_check": "逐次用 lifecycle 阈值重判,不是只看最后一次", "stop_if": "用户确认或否认换阶段",
+   "dedup": "按目标阶段", "ask_again_days": 28, "output": "运营单「阶段」一节", "ring": 1, "max_questions": 1,
+   "params": {"points": 4, "min_span_days": 21}},
+  {"id": "site-move", "name": "改版保护", "trigger": {"event": "change_event"},
+   "act_if": "档案里记了改版类事件(migration、domain_change、replatform、url_restructure、merge_sites)",
+   "self_check": "改动前存基线、改后和基线比(site_move.py)", "stop_if": "改后 4 周点击保留率 ≥ 90% 且没有新错误,删事件",
+   "dedup": "按事件", "ask_again_days": 7, "output": "运营单「改版保护」一节", "ring": null, "max_questions": 1}
+ ]
+}
