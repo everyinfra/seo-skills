@@ -15,7 +15,7 @@
 
 阶段判定(顺序执行,先命中先用):
   1. 档案里声明了改版类事件(change_events)→ 5 改版;另报底层阶段
-  2. 站点不可访问:仓库有公开路由 → 1 上线前;否则 → 0 想法
+  2. 站点不可访问:仓库有公开路由 → 1 上线前;否则 → 0 想法(只给了仓库、没给站点时同样判,标「猜测」)
   3. 站点可访问但 robots 全封或首页 noindex → 1 上线前
   4. 有 GSC:近 28 天展示 < 阈值,或站龄 < 90 天 → 2 刚上线;点击环比 ≥ +10% → 3;≤ -10% → 4;
      其余站龄 ≥ 2 年 → 4(平台期),否则 → 3
@@ -238,6 +238,13 @@ def stage(rules, ev, prof=None):
     clicks = ev.get("metrics.gsc_clicks_28d")
     prev = ev.get("metrics.gsc_clicks_prev_28d")
     base = None
+    if "signals.site_live" not in ev and "signals.repo_public_routes" in ev:
+        # 只给了仓库、没给站点:空仓库多半是想法阶段,有公开路由多半是上线前;是猜测,第 1 环让用户确认
+        sid = 1 if routes > 0 else 0
+        return {"stage": sid, "name": names[sid], "base_stage": None, "base_name": None, "confidence": "guess",
+                "why": ["没给站点地址,只读了仓库:" + ("有 %d 条公开路由" % routes if routes else "没有公开路由")
+                        + ";站点已经上线的话补 --site 重跑"],
+                "candidates": [0, 1, 2], "missing": ["signals.site_live"], "conflicts": []}
     if "signals.site_live" not in ev:
         return {"stage": None, "name": "未知", "base_stage": None, "base_name": None, "confidence": "unknown",
                 "why": ["没有站点和仓库的证据,先跑 product_scan.py"], "candidates": [],

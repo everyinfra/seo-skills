@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.44.0-brightgreen" alt="version 0.44.0">
+  <img src="https://img.shields.io/badge/version-0.45.0-brightgreen" alt="version 0.45.0">
   <img src="https://img.shields.io/badge/license-Apache--2.0-brightgreen" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/markets-18-brightgreen" alt="18 language markets">
   <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Python standard library only">
@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 > 由 [EveryInfra（万有引擎）](https://everyinfra.com/) 维护。需要实时数据时，可以接 EveryInfra 的[全网搜索 API](https://everyinfra.com/products/search)（17 种检索工具）和 [90 个平台的数据接口](https://everyinfra.com/market)（<img src="assets/icons/xiaohongshu.svg" width="16" height="16" alt=""> 小红书、<img src="assets/icons/douyin.svg" width="16" height="16" alt=""> 抖音、<img src="assets/icons/taobao.svg" width="16" height="16" alt=""> 淘宝等）；本 Skill 不依赖它们。
 
-EveryInfra SEO Skills 的版本为 `0.44.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度来自你自己的 AI 工具。
+EveryInfra SEO Skills 的版本为 `0.45.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度来自你自己的 AI 工具。
 
 **独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十几个单市场工具——本套件把 **18 个语言市场**放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、英文、俄语区（Yandex/Alice）、韩语区（<img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver/AI Briefing）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=<img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）、印地语（Hinglish 三种书写）、意大利语（it-CH 独立 locale）、土耳其语（第二个 Yandex 市场，~26%）、越南语（有调/无调+Coc Cốc）、泰语（无空格分词）、波兰语（变音符规范化）、荷兰语（nl-NL/nl-BE 弗拉芒）。**全球能力不做成独立模块，而是融入五类能力文件的每一类**——主干是 `overview/multilingual-workflow.md`（市场总表、逐市场工具栈、语言规范、合规速查）。
 
@@ -76,7 +76,7 @@ EveryInfra SEO Skills 的版本为 `0.44.0`，采用 Apache-2.0 许可协议。�
 
 ## 它是什么
 
-`seo-suite` 是一个统一的 SEO 入口。第一次进一个产品时先开局：自己读透产品（站点、定价、文档、llms.txt、代码仓库），再分 6 环和你一环一环核对（产品、客户与搜索意图、竞品、资产与限制、市场与关键词版图、策略与路线），每环停下等你确认；同时判断产品在哪个阶段（想法、上线前、刚上线、增长、成熟、改版）、技术 / 内容 / 外链与品牌 / AI 可见度 / 团队与测量哪方面最弱。开局做完，把任务路由到 overview、research、content、technical、monitoring 五类能力，最后按固定结构给出结论、优先级和验证方法。
+`seo-suite` 是一个统一的 SEO 入口。第一次进一个产品时先开局：自己读透产品（站点、定价、文档、llms.txt、代码仓库），再分 6 环和你一环一环核对（产品、客户与搜索意图、竞品、资产与限制、市场与关键词版图、策略与路线），每环停下等你确认；同时判断产品在哪个阶段（想法、上线前、刚上线、增长、成熟、改版）、技术 / 内容 / 外链与品牌 / AI 可见度 / 团队与测量哪方面最弱。最后一环按阶段出方案：只选这个阶段该做的事，每条写清动哪类页面、看哪个数、第几周做，并生成中英两份战略书；想法阶段用真实联想词验证需求，上线前跑一份每项有负责人的上线清单。开局做完，把任务路由到 overview、research、content、technical、monitoring 五类能力，最后按固定结构给出结论、优先级和验证方法。
 
 它强调证据：不报告页面上不存在的信号，不承诺排名、流量或 AI 引用的提升。GEO（AI 搜索可见度）相关建议以 `references/content/geo-evidence.md` 的证据约束为准。
 
@@ -84,7 +84,7 @@ EveryInfra SEO Skills 的版本为 `0.44.0`，采用 Apache-2.0 许可协议。�
 
 | 能力集合 | 典型任务 |
 |---|---|
-| overview | **开局 6 环与产品档案**（`onboard.py`、`product_scan.py`）、**产品阶段 × 成熟度诊断**（`lifecycle.py`）、整站 SEO 诊断、路线图与优先级排序、不知道先做什么时的分诊、目标市场 intake 闸门 |
+| overview | **开局 6 环与产品档案**（`onboard.py`、`product_scan.py`）、**产品阶段 × 成熟度诊断**（`lifecycle.py`）、**按阶段出方案、90 天路线和中英战略书**（`plan.py`）、想法阶段的需求验证和起名核对（`demand_check.py`）、上线清单（`launch_check.py`）、整站 SEO 诊断、路线图与优先级排序、不知道先做什么时的分诊、目标市场 intake 闸门 |
 | research | 关键词研究与搜索意图（各市场工具链+persona×意图 SXO 层）、SERP 分析（含各市场 AIO 覆盖与 SERP 占位层）、内容缺口、竞品、目录提交引擎、外链画像、**竞品与外链发现**（`link_intel.py`：榜单种子站、Common Crawl 链接图、合作页互换识别、互换池、求收录候选、竞品赢词页面类型）、**经典速效清单**（33 条，逐条指到脚本） |
 | content | SEO 内容 brief 与写作、标题与 meta 描述、GEO / AI 搜索可见度优化（含区域 AI 平台）、中文 AI 搜索、**视频 SEO/GEO**（<img src="assets/icons/youtube.svg" width="16" height="16" alt=""> YouTube 被引机制/人工字幕层）、**电商 GEO 五级阶梯+七大 marketplace 站内 SEO**（ML/Trendyol/Allegro/bol/<img src="assets/icons/shopee.svg" width="16" height="16" alt=""> Shopee）、内容质量、旧内容刷新 |
 | technical | 技术 SEO 与单页审计、robots.txt 与 AI 爬虫政策（含区域爬虫/MistralAI/Bytespider）、hreflang 国际化、结构化数据（含富结果状态速查）、内链与架构、实体、Programmatic SEO、Core Web Vitals、**JS 渲染与 SPA SEO**（五引擎渲染差异）、**Agent-Readiness 协议层**（ARD/WebMCP）、**服务器日志分析**（AI 到访测量/a11y 三分法）、归因埋点 |

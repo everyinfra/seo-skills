@@ -1,0 +1,1866 @@
+{
+ "about": "RQ-237 第 2 批:按产品阶段的打法库(plan.py 读)。每条打法只属于列出的阶段,plan.py 只从当前阶段里选,不跨阶段。字段:stages 适用阶段;theme 归哪条策略;dims 补哪一维成熟度(按 lifecycle 的最弱一格加权);base 本阶段内的基础优先级 1-5(base_by_stage 按阶段改写,比如需求验证在想法阶段 5、上线前 2);do / do_en 动作模板,{product} {main_line} {lines} {customers} {conversion} {competitor} {market} 从开局档案取,取不到用括号里的通用说法并标出缺哪条;page_types 动哪类页面;metric 预期动哪个数;measure 怎么量;week 最早第几周开始、weeks 持续几周、after 依赖哪几条;veto 任一条件成立就本轮出局(理由写进战略书);done_if 条件全部成立就当已做完、不再建议;tags 给禁用清单匹配用;ref 详细做法;cmd 首条命令。条件写法和 data/lifecycle.json 相同(key 来自 lifecycle 的证据表)。用户在 seo-ops/playbook/plays.json 里写 {\"plays\": [...]} 可以加自己的打法,同 id 覆盖内置的。",
+ "themes": {
+  "validate": {
+   "name": "需求验证与定位",
+   "name_en": "Demand validation and positioning"
+  },
+  "architecture": {
+   "name": "信息架构与技术基座",
+   "name_en": "Information architecture and technical base"
+  },
+  "launch": {
+   "name": "上线就绪",
+   "name_en": "Launch readiness"
+  },
+  "indexing": {
+   "name": "收录与冷启动",
+   "name_en": "Indexing and cold start"
+  },
+  "entity": {
+   "name": "品牌实体与 AI 可见度",
+   "name_en": "Brand entity and AI visibility"
+  },
+  "content": {
+   "name": "内容版图与生产线",
+   "name_en": "Content map and production line"
+  },
+  "links": {
+   "name": "外链与合作",
+   "name_en": "Links and partnerships"
+  },
+  "measure": {
+   "name": "测量与归因",
+   "name_en": "Measurement and attribution"
+  },
+  "tech": {
+   "name": "技术修复",
+   "name_en": "Technical fixes"
+  },
+  "refresh": {
+   "name": "刷新与退役",
+   "name_en": "Refresh and prune"
+  },
+  "expand": {
+   "name": "多市场扩张",
+   "name_en": "Market expansion"
+  },
+  "protect": {
+   "name": "改版保护",
+   "name_en": "Change protection"
+  }
+ },
+ "metrics_by_stage": {
+  "0": [
+   [
+    "有人在搜吗",
+    "核心词的联想词数量和问题词数量(demand_check.py),有关键词工具时看月搜索量"
+   ],
+   [
+    "搜索结果里已经是谁",
+    "每个核心词前 10 名的站型分布"
+   ],
+   [
+    "名字能不能用",
+    "域名可注册、品牌名搜索时不被别的东西占满"
+   ]
+  ],
+  "1": [
+   [
+    "上线清单通过率",
+    "launch 清单自动项通过数 / 总数,手动项有负责人"
+   ],
+   [
+    "本地预览体检",
+    "site_crawl --allow-local + health_score 主分,CRITICAL 为 0"
+   ],
+   [
+    "测量就绪",
+    "GSC、Bing 已验证,统计埋点能记到转化"
+   ]
+  ],
+  "2": [
+   [
+    "收录",
+    "GSC 已收录页数 / sitemap 页数"
+   ],
+   [
+    "展示",
+    "近 28 天展示和查询词数"
+   ],
+   [
+    "品牌搜索",
+    "品牌词展示和点击"
+   ],
+   [
+    "引用域",
+    "引用域数量"
+   ]
+  ],
+  "3": [
+   [
+    "非品牌点击",
+    "GSC 非品牌点击,按产品线分"
+   ],
+   [
+    "自然转化",
+    "GA4 organic 的转化(开局第 1 环定的那个)"
+   ],
+   [
+    "AI 引用",
+    "AI 引荐流量和引用面板命中率"
+   ]
+  ],
+  "4": [
+   [
+    "衰退页",
+    "点击比去年同期跌 20% 以上的页数"
+   ],
+   [
+    "刷新回升",
+    "刷新页 8 周后点击变化"
+   ],
+   [
+    "新市场",
+    "新市场非品牌点击"
+   ]
+  ],
+  "5": [
+   [
+    "迁移保留率",
+    "改动后 4 周点击 / 基线点击"
+   ],
+   [
+    "301 覆盖",
+    "旧 URL 有 301 的比例"
+   ],
+   [
+    "新错误",
+    "改动后新出现的 404、链式跳转、canonical 错误数"
+   ]
+  ]
+ },
+ "plays": [
+  {
+   "id": "demand-validate",
+   "stages": [
+    0,
+    1
+   ],
+   "theme": "validate",
+   "dims": [
+    "content",
+    "measurement"
+   ],
+   "base": 5,
+   "title": "用真实搜索数据验证需求",
+   "title_en": "Validate demand with real search data",
+   "do": "把 {main_line} 的叫法和 {customers} 会搜的问题列成 10–30 个种子词,跑联想词和问题词,看有没有人搜、搜什么、结果里已经是谁;结论写成一页需求验证报告",
+   "do_en": "List 10-30 seed terms for {main_line} as {customers} would search them, expand autocomplete and question terms, check who already ranks; write a one-page demand report",
+   "page_types": [
+    "(还没有页面)需求验证报告"
+   ],
+   "metric": "核心词的联想词和问题词数量;结果前 10 的站型分布",
+   "measure": "demand_check.py 的报告;有关键词工具时补月搜索量",
+   "week": 1,
+   "weeks": 2,
+   "tags": [
+    "关键词",
+    "需求验证"
+   ],
+   "ref": "references/lifecycle/stage-0-idea.md#一需求验证",
+   "cmd": "python3 scripts/demand_check.py --seeds seeds.txt --market {market_code} --md",
+   "base_by_stage": {
+    "1": 2
+   }
+  },
+  {
+   "id": "name-domain",
+   "stages": [
+    0
+   ],
+   "theme": "validate",
+   "dims": [
+    "authority"
+   ],
+   "base": 4,
+   "title": "起名和域名过一遍搜索可见度",
+   "title_en": "Check the name and domain for search visibility",
+   "do": "给 {product} 的候选名字查:域名能不能注册、搜这个名字时联想和结果是不是已经被别的东西占满、和 {competitor} 会不会混淆",
+   "do_en": "For each candidate name for {product}: check the domain, whether autocomplete and results are already taken by something else, and whether it is confused with {competitor}",
+   "page_types": [
+    "(还没有页面)命名对照表"
+   ],
+   "metric": "可注册域名数;品牌名联想里被别的东西占的比例",
+   "measure": "demand_check.py --names",
+   "week": 1,
+   "weeks": 1,
+   "tags": [
+    "起名",
+    "域名",
+    "品牌"
+   ],
+   "ref": "references/lifecycle/stage-0-idea.md#二起名和域名",
+   "cmd": "python3 scripts/demand_check.py --names name-a,name-b --tlds com,io,ai,dev --md"
+  },
+  {
+   "id": "keyword-ia",
+   "stages": [
+    0,
+    1
+   ],
+   "theme": "architecture",
+   "dims": [
+    "content",
+    "technical"
+   ],
+   "base": 5,
+   "after": [
+    "demand-validate"
+   ],
+   "title": "按关键词版图定信息架构和 URL",
+   "title_en": "Set information architecture and URLs from the keyword map",
+   "do": "把需求验证出来的词按意图归成主题簇,一簇对应一类页面;给 {lines} 定 URL 规则(层级、语言前缀、对比页 / 集成页 / 文档放哪),写成一张页面类型表",
+   "do_en": "Group validated terms into topic clusters, one cluster per page type; set URL rules for {lines} (depth, locale prefix, where compare / integration / docs pages live) as one page-type table",
+   "page_types": [
+    "页面类型表",
+    "URL 规则"
+   ],
+   "metric": "每个主题簇都有对应的页面类型;URL 规则覆盖全部页面类型",
+   "measure": "页面类型表逐簇核对",
+   "week": 2,
+   "weeks": 2,
+   "tags": [
+    "信息架构",
+    "URL"
+   ],
+   "ref": "references/lifecycle/stage-0-idea.md#三信息架构和-url",
+   "cmd": "python3 scripts/keyword_variants.py --json < terms.txt",
+   "base_by_stage": {
+    "1": 3
+   }
+  },
+  {
+   "id": "stack-constraints",
+   "stages": [
+    0
+   ],
+   "theme": "architecture",
+   "dims": [
+    "technical"
+   ],
+   "base": 4,
+   "title": "技术选型先过 SEO 约束",
+   "title_en": "Check the tech stack against SEO constraints",
+   "do": "选框架和托管前确认:关键页面能服务端渲染或静态生成、能按页设 title / meta / canonical、能出 sitemap 和 hreflang、{market} 之外的语言怎么放、改 URL 能做 301",
+   "do_en": "Before picking a framework and host, confirm: key pages render on the server or statically, per-page title / meta / canonical, sitemap and hreflang output, how languages beyond {market} are placed, 301 support",
+   "page_types": [
+    "技术选型表"
+   ],
+   "metric": "约束清单 8 项全部有答案",
+   "measure": "stage-0 打法卡第四节的 8 项逐条打勾",
+   "week": 2,
+   "weeks": 1,
+   "tags": [
+    "技术选型",
+    "渲染"
+   ],
+   "ref": "references/lifecycle/stage-0-idea.md#四技术选型的-seo-约束",
+   "cmd": ""
+  },
+  {
+   "id": "entity-day-one",
+   "stages": [
+    0,
+    1
+   ],
+   "theme": "entity",
+   "dims": [
+    "authority",
+    "geo"
+   ],
+   "base": 3,
+   "title": "品牌实体从第一天起统一",
+   "title_en": "Keep the brand entity consistent from day one",
+   "do": "定一份品牌事实卡:{product} 的正式名、一句话简介、产品线 {lines}、目标客户 {customers};之后官网、社媒主页、目录站都照这一份写,先占好同名账号",
+   "do_en": "Write one brand fact card: official name of {product}, one-line description, product lines {lines}, target customers {customers}; use it for the site, social profiles and directories; reserve the same handle",
+   "page_types": [
+    "品牌事实卡",
+    "社媒主页"
+   ],
+   "metric": "各处名称和简介一致",
+   "measure": "grounding_page.py 生成事实页;各平台逐个核对",
+   "week": 3,
+   "weeks": 1,
+   "tags": [
+    "品牌",
+    "实体",
+    "社媒"
+   ],
+   "ref": "references/technical/entity-signal-checklist.md",
+   "cmd": "python3 scripts/grounding_page.py --help"
+  },
+  {
+   "id": "measure-plan",
+   "stages": [
+    0
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement"
+   ],
+   "base": 3,
+   "title": "先定转化怎么记",
+   "title_en": "Decide how conversions are recorded",
+   "do": "把「{conversion}」定成唯一的主转化,写清事件名、触发点、自然流量口径;上线前就埋好,不要上线后补",
+   "do_en": "Make '{conversion}' the single primary conversion; write the event name, trigger and organic definition; instrument it before launch",
+   "page_types": [
+    "埋点方案"
+   ],
+   "metric": "主转化有事件名和口径",
+   "measure": "ga4-implementation 的检查表",
+   "week": 3,
+   "weeks": 1,
+   "tags": [
+    "埋点",
+    "测量"
+   ],
+   "ref": "references/technical/ga4-implementation.md",
+   "cmd": ""
+  },
+  {
+   "id": "launch-checklist",
+   "stages": [
+    1
+   ],
+   "theme": "launch",
+   "dims": [
+    "technical"
+   ],
+   "base": 5,
+   "title": "跑上线清单,每项写负责人",
+   "title_en": "Run the launch checklist with an owner per item",
+   "do": "在 {product} 的本地预览或预发环境跑上线清单:robots、sitemap、canonical、hreflang、结构化数据、分享卡片、速度、404 和跳转,按 {lines} 的模板各抽一页;自动项脚本查,手动项写负责人和截止日",
+   "do_en": "Run the launch checklist on the {product} preview or staging: robots, sitemap, canonical, hreflang, structured data, share cards, speed, 404 and redirects, sampling one page per template of {lines}; scripts check automatic items, manual items get an owner and a due date",
+   "page_types": [
+    "全站模板",
+    "robots.txt",
+    "sitemap.xml"
+   ],
+   "metric": "清单自动项通过率 100%;手动项都有负责人",
+   "measure": "launch_check.py 的清单",
+   "week": 1,
+   "weeks": 2,
+   "tags": [
+    "上线",
+    "清单"
+   ],
+   "ref": "references/lifecycle/stage-1-prelaunch.md#一上线清单",
+   "cmd": "python3 scripts/launch_check.py --url http://localhost:3000 --allow-local --md"
+  },
+  {
+   "id": "preview-audit",
+   "stages": [
+    1
+   ],
+   "theme": "launch",
+   "dims": [
+    "technical"
+   ],
+   "base": 4,
+   "after": [
+    "launch-checklist"
+   ],
+   "title": "在本地预览上跑体检",
+   "title_en": "Audit the local preview",
+   "do": "用 site_crawl --allow-local 爬本地预览,按 {lines} 的页面类型分组看问题;CRITICAL 清零才上线",
+   "do_en": "Crawl the local preview with site_crawl --allow-local and group issues by the page types of {lines}; launch only with zero CRITICAL",
+   "page_types": [
+    "全部页面类型"
+   ],
+   "metric": "体检 CRITICAL 数为 0",
+   "measure": "health_score.py 主分和 CRITICAL 数",
+   "week": 2,
+   "weeks": 1,
+   "tags": [
+    "体检",
+    "技术"
+   ],
+   "ref": "references/technical/validation-guide.md",
+   "cmd": "python3 scripts/site_crawl.py http://localhost:3000 --allow-local"
+  },
+  {
+   "id": "measure-ready",
+   "stages": [
+    1
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement"
+   ],
+   "base": 4,
+   "title": "GSC、Bing 验证和转化埋点上线前就绪",
+   "title_en": "Have GSC, Bing and conversion tracking ready before launch",
+   "do": "准备 GSC 和 Bing Webmaster 的域名验证(DNS 记录),埋好「{conversion}」事件并在预览上触发一次确认能记到",
+   "do_en": "Prepare GSC and Bing Webmaster domain verification (DNS), instrument the '{conversion}' event and fire it once on the preview",
+   "page_types": [
+    "统计埋点",
+    "DNS"
+   ],
+   "metric": "转化事件在预览上能记到",
+   "measure": "统计后台实时视图;ga4_api.py",
+   "week": 2,
+   "weeks": 1,
+   "done_if": [
+    {
+     "key": "signals.analytics",
+     "op": "true"
+    },
+    {
+     "key": "metrics.gsc_connected",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "埋点",
+    "GSC",
+    "Bing"
+   ],
+   "ref": "references/technical/ga4-implementation.md",
+   "cmd": "python3 scripts/doctor.py --wizard --want gsc"
+  },
+  {
+   "id": "ai-crawler-llms",
+   "stages": [
+    1
+   ],
+   "theme": "entity",
+   "dims": [
+    "geo"
+   ],
+   "base": 3,
+   "title": "定 AI 爬虫策略,准备 llms.txt",
+   "title_en": "Set the AI crawler policy and prepare llms.txt",
+   "do": "按 {product} 想不想被 AI 引用定 robots 里各 AI 爬虫放不放;准备 llms.txt,按 {lines} 列核心页",
+   "do_en": "Decide per AI crawler in robots based on whether {product} wants AI citations; prepare llms.txt listing core pages for {lines}",
+   "page_types": [
+    "robots.txt",
+    "llms.txt"
+   ],
+   "metric": "AI 爬虫策略写明;llms.txt 覆盖每条产品线",
+   "measure": "robots_posture.py;llmstxt.py",
+   "week": 2,
+   "weeks": 1,
+   "done_if": [
+    {
+     "key": "signals.has_llms_txt",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "AI 爬虫",
+    "llms.txt",
+    "GEO"
+   ],
+   "ref": "references/technical/ai-crawler-policy.md",
+   "cmd": "python3 scripts/robots_posture.py --help"
+  },
+  {
+   "id": "core-pages-ready",
+   "stages": [
+    1
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 4,
+   "title": "上线时每条产品线至少一张能排名的核心页",
+   "title_en": "Launch with at least one rankable core page per product line",
+   "do": "{lines} 每条产品线一张核心页(产品页或落地页),标题对准需求验证出来的主词,写清给 {customers} 解决什么、怎么「{conversion}」",
+   "do_en": "One core page per product line in {lines}, title aimed at the validated head term, saying what it solves for {customers} and how to '{conversion}'",
+   "page_types": [
+    "产品页",
+    "落地页"
+   ],
+   "metric": "每条产品线有核心页;content_score 过线",
+   "measure": "content_score.py",
+   "week": 1,
+   "weeks": 3,
+   "tags": [
+    "核心页",
+    "内容"
+   ],
+   "ref": "references/content/content-structure-templates.md",
+   "cmd": "python3 scripts/content_score.py --help"
+  },
+  {
+   "id": "redirect-map-prelaunch",
+   "stages": [
+    1
+   ],
+   "theme": "protect",
+   "dims": [
+    "technical"
+   ],
+   "base": 4,
+   "title": "替换旧站时先做 301 映射表",
+   "title_en": "Map 301s first when replacing an old site",
+   "do": "新站要替换已有的站时,上线前把旧站全部 URL 和 GSC 有点击的页导出来,逐条映射到新 URL,存一份基线",
+   "do_en": "If the new site replaces an existing one, export all old URLs and pages with GSC clicks before launch, map each to a new URL and save a baseline",
+   "page_types": [
+    "301 映射表"
+   ],
+   "metric": "有点击的旧 URL 100% 有映射",
+   "measure": "redirect_chain.py 复测",
+   "week": 1,
+   "weeks": 1,
+   "only_if": [
+    {
+     "key": "profile.replaces_old_site",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "迁移",
+    "301"
+   ],
+   "ref": "references/technical/redirects-canonical.md",
+   "cmd": "python3 scripts/redirect_chain.py --help"
+  },
+  {
+   "id": "indexing-submit",
+   "stages": [
+    2
+   ],
+   "theme": "indexing",
+   "dims": [
+    "technical",
+    "measurement"
+   ],
+   "base": 5,
+   "title": "起草收录提交:GSC、Bing、IndexNow",
+   "title_en": "Draft index submissions: GSC, Bing, IndexNow",
+   "do": "起草 sitemap 提交和 IndexNow 推送(用户自己点提交),先推 {lines} 的核心页;两周后看收录率",
+   "do_en": "Draft the sitemap submission and IndexNow push (the user clicks submit), core pages for {lines} first; check the index rate after two weeks",
+   "page_types": [
+    "sitemap.xml",
+    "核心页"
+   ],
+   "metric": "已收录页 / sitemap 页",
+   "measure": "GSC 页面报告;sitemap_audit.py",
+   "week": 1,
+   "weeks": 2,
+   "tags": [
+    "收录",
+    "IndexNow",
+    "GSC"
+   ],
+   "ref": "references/technical/validation-guide.md",
+   "cmd": "python3 scripts/indexnow.py --help"
+  },
+  {
+   "id": "cold-start-links",
+   "stages": [
+    2
+   ],
+   "theme": "links",
+   "dims": [
+    "authority"
+   ],
+   "base": 4,
+   "title": "冷启动外链:目录、上架平台、社区、合作页",
+   "title_en": "Cold-start links: directories, launch platforms, communities, partner pages",
+   "do": "列 {customers} 常去的目录、产品上架平台和社区,以及和 {product} 有集成或合作的公司页面,逐个起草提交或外联稿(用户自己发)",
+   "do_en": "List directories, launch platforms and communities {customers} use, plus partner and integration pages, and draft each submission or outreach note (the user sends)",
+   "page_types": [
+    "站外:目录、上架平台、合作页"
+   ],
+   "metric": "引用域数量",
+   "measure": "directory_tracker.py;backlink_import.py",
+   "week": 2,
+   "weeks": 6,
+   "tags": [
+    "外链",
+    "目录",
+    "社区",
+    "外联"
+   ],
+   "ref": "references/research/link-intelligence.md",
+   "cmd": "python3 scripts/directory_tracker.py --help"
+  },
+  {
+   "id": "entity-profiles",
+   "stages": [
+    2
+   ],
+   "theme": "entity",
+   "dims": [
+    "authority",
+    "geo"
+   ],
+   "base": 4,
+   "title": "建品牌实体档案:sameAs、各平台主页",
+   "title_en": "Build the brand entity: sameAs and platform profiles",
+   "do": "在首页 Organization 结构化数据里写全 sameAs,把 {product} 的各平台主页名称和简介统一成品牌事实卡;符合收录条件再考虑 Wikidata",
+   "do_en": "Complete sameAs in the homepage Organization markup and align every profile of {product} to the brand fact card; consider Wikidata only if it qualifies",
+   "page_types": [
+    "首页结构化数据",
+    "社媒主页"
+   ],
+   "metric": "sameAs 数量;品牌词搜索结果第一页是自己的页数",
+   "measure": "schema_lint.py;oracle_check.py",
+   "week": 1,
+   "weeks": 2,
+   "done_if": [
+    {
+     "key": "signals.same_as_count",
+     "op": ">=",
+     "value": 4
+    }
+   ],
+   "tags": [
+    "实体",
+    "品牌",
+    "Wikidata"
+   ],
+   "ref": "references/technical/entity-signal-checklist.md",
+   "cmd": "python3 scripts/schema_lint.py --help"
+  },
+  {
+   "id": "first-core-content",
+   "stages": [
+    2
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 4,
+   "title": "第一批核心内容:每条产品线 3–5 篇",
+   "title_en": "First core content: 3-5 pieces per product line",
+   "do": "按需求验证的问题词,给 {main_line} 先写 3–5 篇回答 {customers} 买之前常问的问题的内容,每篇链回产品页、导向「{conversion}」",
+   "do_en": "From validated question terms, write 3-5 pieces for {main_line} answering what {customers} ask before buying, each linking to the product page and leading to '{conversion}'",
+   "page_types": [
+    "博客 / 指南"
+   ],
+   "metric": "这批页的展示和点击",
+   "measure": "GSC 按页过滤,8 周",
+   "week": 2,
+   "weeks": 6,
+   "tags": [
+    "内容",
+    "博客"
+   ],
+   "ref": "references/content/content-structure-templates.md",
+   "cmd": "python3 scripts/content_score.py --help"
+  },
+  {
+   "id": "llms-entity-consistent",
+   "stages": [
+    2
+   ],
+   "theme": "entity",
+   "dims": [
+    "geo"
+   ],
+   "base": 3,
+   "title": "让 AI 读得到:llms.txt 和事实一致",
+   "title_en": "Be readable by AI: llms.txt and consistent facts",
+   "do": "上线 llms.txt,按 {lines} 列核心页;核对官网、文档、社媒上 {product} 的名称和简介一致",
+   "do_en": "Publish llms.txt listing core pages for {lines}; check that the name and description of {product} match across site, docs and social",
+   "page_types": [
+    "llms.txt",
+    "品牌事实页"
+   ],
+   "metric": "AI 引荐流量开始出现",
+   "measure": "ai_referral_log.py",
+   "week": 3,
+   "weeks": 1,
+   "done_if": [
+    {
+     "key": "signals.has_llms_txt",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "llms.txt",
+    "GEO",
+    "AI"
+   ],
+   "ref": "references/content/llms-txt-guide.md",
+   "cmd": "python3 scripts/llmstxt.py --help"
+  },
+  {
+   "id": "brand-query-baseline",
+   "stages": [
+    2
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement"
+   ],
+   "base": 3,
+   "title": "接 GSC,存第一份基线",
+   "title_en": "Connect GSC and save the first baseline",
+   "do": "接上 GSC(服务账号或导出),存第一份 28 天基线:展示、点击、查询词数、品牌词和非品牌词分开;之后每周运营单和它比",
+   "do_en": "Connect GSC (service account or export) and save a first 28-day baseline: impressions, clicks, query count, brand vs non-brand; weekly ops compares to it",
+   "page_types": [
+    "测量"
+   ],
+   "metric": "有 28 天基线",
+   "measure": "gsc_api.py;monitor.py",
+   "week": 1,
+   "weeks": 1,
+   "done_if": [
+    {
+     "key": "metrics.gsc_connected",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "GSC",
+    "测量"
+   ],
+   "ref": "references/monitoring/continuous-operations.md",
+   "cmd": "python3 scripts/gsc_api.py --help"
+  },
+  {
+   "id": "tech-fix-critical",
+   "stages": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "theme": "tech",
+   "dims": [
+    "technical"
+   ],
+   "base": 2,
+   "force_first_if": [
+    {
+     "key": "health.critical",
+     "op": ">",
+     "value": 0
+    }
+   ],
+   "title": "先修 {product} 的体检 CRITICAL",
+   "title_en": "Fix audit CRITICALs on {product} first",
+   "do": "先跑体检(没跑过的话);把 CRITICAL(不可达、误封 noindex、robots 误拒、canonical 断链)按 {lines} 的页面类型分组修,修完复测。体检查到 CRITICAL 时这条自动排第一",
+   "do_en": "Run the audit if it has not run; fix CRITICALs (unreachable, wrong noindex, robots blocks, broken canonical) grouped by the page types of {lines}, then re-test. Ranks first automatically when the audit finds CRITICALs",
+   "page_types": [
+    "受影响的页面类型"
+   ],
+   "metric": "CRITICAL 数为 0;收录回升",
+   "measure": "audit_compare.py 修前修后",
+   "week": 1,
+   "weeks": 2,
+   "done_if": [
+    {
+     "key": "health.critical",
+     "op": "<=",
+     "value": 0
+    }
+   ],
+   "tags": [
+    "技术",
+    "体检"
+   ],
+   "ref": "references/technical/audit-rule-catalog.md",
+   "cmd": "python3 scripts/project.py run triage"
+  },
+  {
+   "id": "cluster-expand",
+   "stages": [
+    3
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 5,
+   "title": "按产品线扩关键词版图和主题簇",
+   "title_en": "Expand the keyword map and topic clusters per product line",
+   "do": "从 GSC 拉 {main_line} 有展示没点击、排名 8–20 的词,按意图归成主题簇,每簇定一张支柱页和 3–6 张支撑页",
+   "do_en": "Pull GSC terms for {main_line} with impressions but few clicks at positions 8-20, group by intent into clusters, one pillar plus 3-6 supporting pages each",
+   "page_types": [
+    "支柱页",
+    "支撑页"
+   ],
+   "metric": "{main_line} 的非品牌点击",
+   "measure": "GSC 按页面组过滤,8 周",
+   "week": 1,
+   "weeks": 3,
+   "tags": [
+    "关键词",
+    "主题簇",
+    "内容"
+   ],
+   "ref": "references/research/topic-cluster-templates.md",
+   "cmd": "python3 scripts/gsc_mining.py --help"
+  },
+  {
+   "id": "compare-pages",
+   "stages": [
+    2,
+    3
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 4,
+   "title": "对比页和替代页",
+   "title_en": "Comparison and alternative pages",
+   "do": "给 {main_line} 做「{product} vs {competitor}」和「{competitor} 替代」页,事实只写能核对的,写清适合 {customers} 的哪种情况",
+   "do_en": "Build '{product} vs {competitor}' and '{competitor} alternative' pages for {main_line}; only verifiable facts; say which {customers} situation each fits",
+   "page_types": [
+    "对比页",
+    "替代页"
+   ],
+   "metric": "对比页的非品牌点击和「{conversion}」",
+   "measure": "GSC + GA4 按页,8 周",
+   "week": 3,
+   "weeks": 4,
+   "veto": [
+    {
+     "key": "profile.compliance_no_naming",
+     "op": "true",
+     "why": "第 3 环说过对外不能点名别的公司"
+    }
+   ],
+   "tags": [
+    "对比页",
+    "竞品",
+    "内容"
+   ],
+   "ref": "references/research/competitor-page-patterns.md",
+   "cmd": "",
+   "base_by_stage": {
+    "2": 2
+   }
+  },
+  {
+   "id": "content-line",
+   "stages": [
+    3
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 4,
+   "title": "内容生产线:brief → 写 → 评分 → 发",
+   "title_en": "Content line: brief, write, score, publish",
+   "do": "按主题簇排 {main_line} 的内容队列,每篇先出 brief(意图、要回答 {customers} 的哪些问题、链到哪张产品页),过 content_score 再发",
+   "do_en": "Queue {main_line} content by cluster; each piece starts with a brief (intent, which {customers} questions it answers, which product page it links to) and passes content_score before publishing",
+   "page_types": [
+    "博客 / 指南"
+   ],
+   "metric": "每月发布篇数;新文 8 周点击",
+   "measure": "content_queue.py;GSC",
+   "week": 2,
+   "weeks": 11,
+   "after": [
+    "cluster-expand"
+   ],
+   "tags": [
+    "内容",
+    "博客"
+   ],
+   "ref": "references/content/content-structure-templates.md",
+   "cmd": "python3 scripts/content_queue.py --help"
+  },
+  {
+   "id": "pseo-gated",
+   "stages": [
+    3
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 3,
+   "title": "程序化页面试点(过闸门)",
+   "title_en": "Programmatic pages pilot (gated)",
+   "do": "{lines} 里有「X 对 Y」「X 用在 Z」这类模式词的,用真实数据做 50–100 页试点,过质量闸门再放量",
+   "do_en": "Where {lines} have pattern terms ('X for Y', 'X with Z'), pilot 50-100 pages from real data, scale only after the quality gate passes",
+   "page_types": [
+    "程序化页面"
+   ],
+   "metric": "试点页收录率和点击",
+   "measure": "pseo_batch_gate.py;pseo_cohort.py",
+   "week": 5,
+   "weeks": 6,
+   "veto": [
+    {
+     "key": "signals.url_count",
+     "op": "<",
+     "value": 30,
+     "why": "站太小,先把核心页和内容做起来"
+    }
+   ],
+   "tags": [
+    "程序化",
+    "pSEO"
+   ],
+   "ref": "references/technical/programmatic-seo-gates.md",
+   "cmd": "python3 scripts/pseo_batch_gate.py --help"
+  },
+  {
+   "id": "internal-links",
+   "stages": [
+    3,
+    4
+   ],
+   "theme": "content",
+   "dims": [
+    "technical",
+    "content"
+   ],
+   "base": 3,
+   "title": "内链:孤儿页和支柱页",
+   "title_en": "Internal links: orphans and pillars",
+   "do": "跑链接图,把 {main_line} 的孤儿页接进支柱页,把权重高的页链到「{conversion}」相关的产品页",
+   "do_en": "Run the link graph, connect {main_line} orphans to pillars, link high-weight pages to the product pages that lead to '{conversion}'",
+   "page_types": [
+    "支柱页",
+    "孤儿页"
+   ],
+   "metric": "孤儿页数;产品页入链数",
+   "measure": "link_graph.py 两次对比",
+   "week": 4,
+   "weeks": 2,
+   "veto": [
+    {
+     "key": "signals.url_count",
+     "op": "<",
+     "value": 100,
+     "why": "页面不到 100,内链收益有限"
+    }
+   ],
+   "tags": [
+    "内链"
+   ],
+   "ref": "references/technical/link-architecture-patterns.md",
+   "cmd": "python3 scripts/link_graph.py --help",
+   "base_by_stage": {
+    "4": 2
+   }
+  },
+  {
+   "id": "partner-links",
+   "stages": [
+    3
+   ],
+   "theme": "links",
+   "dims": [
+    "authority"
+   ],
+   "base": 3,
+   "title": "外链与合作:谁链了 {competitor} 没链我们",
+   "title_en": "Links and partnerships: who links to {competitor} but not us",
+   "do": "用 link_intel 找链了 {competitor} 却没链 {product} 的站和合作页,按 {customers} 的相关度排,起草外联(用户自己发)",
+   "do_en": "Use link_intel to find sites and partner pages linking to {competitor} but not {product}, rank by relevance to {customers}, draft outreach (the user sends)",
+   "page_types": [
+    "站外:合作页、资源页"
+   ],
+   "metric": "引用域数量",
+   "measure": "backlink_import.py 月度对比",
+   "week": 3,
+   "weeks": 8,
+   "tags": [
+    "外链",
+    "外联",
+    "合作"
+   ],
+   "ref": "references/research/link-intelligence.md",
+   "cmd": "python3 scripts/link_intel.py --help"
+  },
+  {
+   "id": "ai-citation-monitor",
+   "stages": [
+    3,
+    4
+   ],
+   "theme": "entity",
+   "dims": [
+    "geo"
+   ],
+   "base": 3,
+   "title": "AI 引用监控:{customers} 会问的问题",
+   "title_en": "AI citation monitoring for questions {customers} ask",
+   "do": "把 {customers} 买 {main_line} 之前会问 AI 的 10–30 个问题做成引用面板,每周看 {product} 和 {competitor} 谁被引用",
+   "do_en": "Turn 10-30 questions {customers} ask AI before buying {main_line} into a citation panel; weekly, see whether {product} or {competitor} is cited",
+   "page_types": [
+    "被引用的页"
+   ],
+   "metric": "引用面板命中率;AI 引荐流量",
+   "measure": "citation_panel.py;ai_referral_log.py",
+   "week": 2,
+   "weeks": 2,
+   "done_if": [
+    {
+     "key": "metrics.ai_citation_weeks",
+     "op": ">=",
+     "value": 4
+    }
+   ],
+   "tags": [
+    "GEO",
+    "AI 引用"
+   ],
+   "ref": "references/content/geo-evidence.md",
+   "cmd": "python3 scripts/citation_panel.py --help",
+   "base_by_stage": {
+    "4": 2
+   }
+  },
+  {
+   "id": "attribution",
+   "stages": [
+    3
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement"
+   ],
+   "base": 3,
+   "title": "自然流量到「{conversion}」的归因",
+   "title_en": "Attribute organic traffic to '{conversion}'",
+   "do": "把「{conversion}」按首次落地页和渠道归到页面类,每周运营单按带来转化的页类排优先级",
+   "do_en": "Attribute '{conversion}' by first landing page and channel to page classes; weekly ops ranks by the classes that bring conversions",
+   "page_types": [
+    "测量"
+   ],
+   "metric": "每个页面类的自然转化",
+   "measure": "ga4_api.py;ops.py 的 conversions 数据包",
+   "week": 1,
+   "weeks": 2,
+   "done_if": [
+    {
+     "key": "profile.kpi_defined",
+     "op": "true"
+    },
+    {
+     "key": "metrics.conversions_by_page",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "归因",
+    "测量"
+   ],
+   "ref": "references/technical/ga4-implementation.md",
+   "cmd": "python3 scripts/ga4_api.py --help"
+  },
+  {
+   "id": "weekly-ops",
+   "stages": [
+    2,
+    3,
+    4
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement",
+    "technical"
+   ],
+   "base": 2,
+   "title": "开每周运营单",
+   "title_en": "Start the weekly ops sheet",
+   "do": "每周跑一次 {product} 的运营单:硬告警、本周路线项、只做这一件;连续 4 期,每期看 {main_line} 的数",
+   "do_en": "Run the weekly ops sheet for {product}: hard alerts, this week's roadmap item, the single pick; four weeks in a row, watching {main_line}",
+   "page_types": [
+    "测量"
+   ],
+   "metric": "运营单期数和已读",
+   "measure": "project.py ops weekly",
+   "week": 1,
+   "weeks": 13,
+   "done_if": [
+    {
+     "key": "ops.weekly_runs",
+     "op": ">=",
+     "value": 4
+    }
+   ],
+   "tags": [
+    "运营单"
+   ],
+   "ref": "references/monitoring/ops-agenda.md",
+   "cmd": "python3 scripts/project.py ops weekly"
+  },
+  {
+   "id": "multi-market",
+   "stages": [
+    3,
+    4
+   ],
+   "theme": "expand",
+   "dims": [
+    "content"
+   ],
+   "base": 2,
+   "title": "下一个市场:{main_line} 先做",
+   "title_en": "Next market, starting with {main_line}",
+   "do": "{market} 之外有量的市场里,先把 {main_line} 的核心页做本地化(不是机翻),hreflang 成簇再扩",
+   "do_en": "In markets beyond {market} that show demand, localize the {main_line} core pages first (not machine translation); expand once hreflang clusters are clean",
+   "page_types": [
+    "多语言核心页"
+   ],
+   "metric": "新市场非品牌点击",
+   "measure": "GSC 按国家;hreflang_cluster.py",
+   "week": 6,
+   "weeks": 6,
+   "tags": [
+    "多语言",
+    "多市场",
+    "hreflang"
+   ],
+   "ref": "references/overview/multilingual-workflow.md",
+   "cmd": "python3 scripts/hreflang_cluster.py --help",
+   "base_by_stage": {
+    "4": 3
+   }
+  },
+  {
+   "id": "refresh-decay",
+   "stages": [
+    4
+   ],
+   "theme": "refresh",
+   "dims": [
+    "content"
+   ],
+   "base": 5,
+   "title": "刷新衰退页",
+   "title_en": "Refresh decaying pages",
+   "do": "用 GSC 双期找 {main_line} 点击比去年跌 20% 以上的页,先刷新带来过「{conversion}」的那些",
+   "do_en": "Use two GSC periods to find {main_line} pages down 20%+ year over year; refresh the ones that brought '{conversion}' first",
+   "page_types": [
+    "衰退页"
+   ],
+   "metric": "刷新页 8 周后点击",
+   "measure": "gsc_mining.py --decay;audit_compare.py",
+   "week": 1,
+   "weeks": 6,
+   "tags": [
+    "刷新",
+    "内容"
+   ],
+   "ref": "references/content/content-refresh-playbook.md",
+   "cmd": "python3 scripts/gsc_mining.py --decay --help"
+  },
+  {
+   "id": "prune",
+   "stages": [
+    4
+   ],
+   "theme": "refresh",
+   "dims": [
+    "content"
+   ],
+   "base": 3,
+   "title": "退役:零点击、零入链、零外链的页",
+   "title_en": "Prune pages with zero clicks, internal links and backlinks",
+   "do": "三查都为零的页合并、301 或 noindex;{lines} 的核心页和带来过「{conversion}」的页类不动",
+   "do_en": "Merge, 301 or noindex pages that are zero on all three checks; never touch core pages of {lines} or page classes that brought '{conversion}'",
+   "page_types": [
+    "零价值页"
+   ],
+   "metric": "退役页数;站点平均点击 / 页",
+   "measure": "prune_gate.py",
+   "week": 4,
+   "weeks": 3,
+   "veto": [
+    {
+     "key": "signals.url_count",
+     "op": "<",
+     "value": 200,
+     "why": "页面不到 200,先别退役"
+    }
+   ],
+   "tags": [
+    "退役",
+    "prune"
+   ],
+   "ref": "references/content/content-refresh-playbook.md",
+   "cmd": "python3 scripts/prune_gate.py --help"
+  },
+  {
+   "id": "decline-diagnose",
+   "stages": [
+    4
+   ],
+   "theme": "refresh",
+   "dims": [
+    "measurement"
+   ],
+   "base": 4,
+   "title": "掉量查根因:算法、技术、竞品",
+   "title_en": "Find the cause of the decline: algorithm, technical, competitor",
+   "do": "对 {main_line} 的掉量跑 monitor diff → 波动传感器 → 改动日志,分清是算法更新、自己改坏了,还是 {competitor} 抢了位置",
+   "do_en": "For the {main_line} decline run monitor diff, the volatility sensor and the change log to separate algorithm updates, self-inflicted changes, and {competitor} taking positions",
+   "page_types": [
+    "掉量页"
+   ],
+   "metric": "能解释的掉量占比",
+   "measure": "monitor.py diff;sensor_volatility.py --context;changelog.py",
+   "week": 1,
+   "weeks": 2,
+   "tags": [
+    "掉量",
+    "算法更新"
+   ],
+   "ref": "references/overview/capability-map.md",
+   "cmd": "python3 scripts/monitor.py --help"
+  },
+  {
+   "id": "seo-experiments",
+   "stages": [
+    4
+   ],
+   "theme": "refresh",
+   "dims": [
+    "measurement",
+    "content"
+   ],
+   "base": 3,
+   "title": "SEO 实验:标题和模板分组测",
+   "title_en": "SEO experiments: test titles and templates in groups",
+   "do": "{main_line} 同类页够多时,按组改标题或模板做分组实验,用对照组判效果,不凭感觉全站改",
+   "do_en": "When {main_line} has enough similar pages, test titles or templates by group against a control instead of changing everything",
+   "page_types": [
+    "同类页组"
+   ],
+   "metric": "实验组对照组点击差",
+   "measure": "split_test.py;did_attribution.py",
+   "week": 4,
+   "weeks": 6,
+   "veto": [
+    {
+     "key": "signals.url_count",
+     "op": "<",
+     "value": 200,
+     "why": "同类页不够多,实验分不出组"
+    }
+   ],
+   "tags": [
+    "实验"
+   ],
+   "ref": "references/technical/ga4-implementation.md",
+   "cmd": "python3 scripts/split_test.py --help"
+  },
+  {
+   "id": "link-reclaim",
+   "stages": [
+    4
+   ],
+   "theme": "links",
+   "dims": [
+    "authority"
+   ],
+   "base": 2,
+   "title": "找回丢掉的外链和未链提及",
+   "title_en": "Reclaim lost links and unlinked mentions",
+   "do": "导出近半年丢掉的引用域和提到 {product} 却没链的页,起草找回邮件(用户自己发)",
+   "do_en": "Export referring domains lost in six months and pages mentioning {product} without a link; draft reclaim notes (the user sends)",
+   "page_types": [
+    "站外"
+   ],
+   "metric": "找回的引用域数",
+   "measure": "backlink_import.py 对比",
+   "week": 3,
+   "weeks": 4,
+   "tags": [
+    "外链",
+    "外联"
+   ],
+   "ref": "references/research/backlink-profile-analysis.md",
+   "cmd": "python3 scripts/backlink_import.py --help"
+  },
+  {
+   "id": "change-baseline",
+   "stages": [
+    5
+   ],
+   "theme": "protect",
+   "dims": [
+    "technical",
+    "measurement"
+   ],
+   "base": 5,
+   "title": "改动前存基线",
+   "title_en": "Save a baseline before the change",
+   "do": "改动前存一份基线:全部 URL、状态码、canonical、hreflang、title,GSC 近 28 天按页点击;{lines} 的核心页单独列",
+   "do_en": "Before the change, save a baseline: all URLs, status, canonical, hreflang, titles and 28-day GSC clicks by page; list core pages of {lines} separately",
+   "page_types": [
+    "全站"
+   ],
+   "metric": "基线完整",
+   "measure": "site_crawl.py + gsc_api.py 导出",
+   "week": 1,
+   "weeks": 1,
+   "tags": [
+    "迁移",
+    "基线"
+   ],
+   "ref": "references/technical/redirects-canonical.md",
+   "cmd": "python3 scripts/site_crawl.py https://example.com"
+  },
+  {
+   "id": "redirect-map",
+   "stages": [
+    5
+   ],
+   "theme": "protect",
+   "dims": [
+    "technical"
+   ],
+   "base": 5,
+   "after": [
+    "change-baseline"
+   ],
+   "title": "301 映射表:有点击的旧 URL 全覆盖",
+   "title_en": "301 map covering every old URL with clicks",
+   "do": "旧 URL 逐条映射到新 URL,一跳到位;有点击的页 100% 覆盖,canonical 和 hreflang 指向新址",
+   "do_en": "Map each old URL to a new one in a single hop; cover 100% of pages with clicks; canonical and hreflang point to the new URLs",
+   "page_types": [
+    "301 映射表"
+   ],
+   "metric": "301 覆盖率;链式跳转数",
+   "measure": "redirect_chain.py",
+   "week": 1,
+   "weeks": 2,
+   "tags": [
+    "迁移",
+    "301"
+   ],
+   "ref": "references/technical/redirects-canonical.md",
+   "cmd": "python3 scripts/redirect_chain.py --help"
+  },
+  {
+   "id": "change-compare",
+   "stages": [
+    5
+   ],
+   "theme": "protect",
+   "dims": [
+    "technical",
+    "measurement"
+   ],
+   "base": 4,
+   "after": [
+    "redirect-map"
+   ],
+   "title": "改动后和基线对比",
+   "title_en": "Compare against the baseline after the change",
+   "do": "上线当天和之后 4 周和基线比:新出现的 404、链式跳转、canonical 指向旧址、hreflang 断簇;{lines} 的核心页点击保留率",
+   "do_en": "On launch day and for four weeks, compare to the baseline: new 404s, redirect chains, canonicals to old URLs, broken hreflang clusters; click retention of core pages for {lines}",
+   "page_types": [
+    "全站"
+   ],
+   "metric": "4 周点击保留率;新错误数",
+   "measure": "audit_compare.py;monitor.py diff",
+   "week": 3,
+   "weeks": 4,
+   "tags": [
+    "迁移",
+    "对比"
+   ],
+   "ref": "references/technical/redirects-canonical.md",
+   "cmd": "python3 scripts/audit_compare.py --help"
+  },
+  {
+   "id": "new-line-onboard",
+   "stages": [
+    5
+   ],
+   "theme": "validate",
+   "dims": [
+    "content"
+   ],
+   "base": 4,
+   "title": "新产品线回开局第 1 环",
+   "title_en": "Take the new product line back to onboarding ring 1",
+   "do": "新加的产品线(不是 {main_line})回到开局第 1 环,只问新的那部分:卖给谁、转化算什么、和谁抢",
+   "do_en": "Take the new product line (not {main_line}) back to onboarding ring 1 and ask only about it: who buys, what counts as conversion, who competes",
+   "page_types": [
+    "新产品线核心页"
+   ],
+   "metric": "新产品线的档案确认",
+   "measure": "onboard.py show --ring 1",
+   "week": 1,
+   "weeks": 1,
+   "only_if": [
+    {
+     "key": "profile.event_new_product_line",
+     "op": "true"
+    }
+   ],
+   "tags": [
+    "新产品线"
+   ],
+   "ref": "references/overview/onboarding.md",
+   "cmd": "python3 scripts/onboard.py show --ring 1"
+  },
+  {
+   "id": "serp-landscape",
+   "stages": [
+    0
+   ],
+   "theme": "validate",
+   "dims": [
+    "content"
+   ],
+   "base": 4,
+   "after": [
+    "demand-validate"
+   ],
+   "title": "看清搜索结果里赢的是哪类页",
+   "title_en": "See which page types win the results",
+   "do": "对需求验证里信号强的 5–10 个词,看前 10 名是产品页、榜单、论坛还是视频,以及 {competitor} 在不在;赢的页型决定 {main_line} 先做哪类页",
+   "do_en": "For the 5-10 strongest terms, check whether the top 10 are product pages, listicles, forums or videos and whether {competitor} is there; the winning page type decides what {main_line} builds first",
+   "page_types": [
+    "(还没有页面)SERP 页型表"
+   ],
+   "metric": "每个核心词的赢家页型",
+   "measure": "serp_occupancy.py(有 SERP 导出时)或人工看前 10",
+   "week": 2,
+   "weeks": 1,
+   "tags": [
+    "SERP",
+    "竞品"
+   ],
+   "ref": "references/research/serp-feature-taxonomy.md",
+   "cmd": "python3 scripts/serp_occupancy.py --help"
+  },
+  {
+   "id": "first-ten-pages",
+   "stages": [
+    0
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 3,
+   "after": [
+    "keyword-ia"
+   ],
+   "title": "定上线时的前 10 张页",
+   "title_en": "Choose the first 10 pages for launch",
+   "do": "从主题簇里挑 10 张上线就要有的页:{main_line} 的产品页、定价、1–2 张对比 {competitor} 的页、回答 {customers} 最常问问题的几篇,写好每张的目标词",
+   "do_en": "Pick 10 pages needed at launch: the {main_line} product page, pricing, 1-2 pages comparing with {competitor}, and pieces answering what {customers} ask most, each with a target term",
+   "page_types": [
+    "产品页",
+    "定价页",
+    "对比页",
+    "指南"
+   ],
+   "metric": "10 张页都有目标词和意图",
+   "measure": "页面类型表逐张核对",
+   "week": 4,
+   "weeks": 1,
+   "tags": [
+    "内容",
+    "规划"
+   ],
+   "ref": "references/research/topic-cluster-templates.md",
+   "cmd": ""
+  },
+  {
+   "id": "ai-answer-check",
+   "stages": [
+    0,
+    1
+   ],
+   "theme": "entity",
+   "dims": [
+    "geo"
+   ],
+   "base": 3,
+   "title": "问一遍 AI:{customers} 的问题现在谁被引用",
+   "title_en": "Ask AI assistants what {customers} ask, and who gets cited",
+   "do": "把 {customers} 选 {main_line} 时会问的 10 个问题拿去问主流 AI 助手,记下被引用的站和 {competitor} 的出现次数,作为 GEO 的起点",
+   "do_en": "Ask mainstream AI assistants 10 questions {customers} ask when choosing {main_line}; record cited sites and how often {competitor} appears as the GEO starting point",
+   "page_types": [
+    "(还没有页面)AI 引用基线"
+   ],
+   "metric": "10 个问题里被引用的站和次数",
+   "measure": "citation_panel.py 手动模式",
+   "week": 3,
+   "weeks": 1,
+   "tags": [
+    "GEO",
+    "AI 引用"
+   ],
+   "ref": "references/content/geo-evidence.md",
+   "cmd": "python3 scripts/citation_panel.py --help",
+   "base_by_stage": {
+    "1": 2
+   }
+  },
+  {
+   "id": "competitor-gap",
+   "stages": [
+    0
+   ],
+   "theme": "validate",
+   "dims": [
+    "authority",
+    "content"
+   ],
+   "base": 2,
+   "title": "看 {competitor} 靠哪类页拿流量和外链",
+   "title_en": "See which pages bring {competitor} traffic and links",
+   "do": "用 link_intel 看 {competitor} 被谁链、哪类页拿到外链和排名,找 {main_line} 能补的空档",
+   "do_en": "Use link_intel to see who links to {competitor} and which page types earn links and rankings; find gaps {main_line} can fill",
+   "page_types": [
+    "(还没有页面)竞品空档表"
+   ],
+   "metric": "空档主题数",
+   "measure": "link_intel.py",
+   "week": 3,
+   "weeks": 1,
+   "tags": [
+    "竞品",
+    "外链"
+   ],
+   "ref": "references/research/link-intelligence.md",
+   "cmd": "python3 scripts/link_intel.py --help"
+  },
+  {
+   "id": "waitlist-page",
+   "stages": [
+    0
+   ],
+   "theme": "indexing",
+   "dims": [
+    "technical",
+    "authority"
+   ],
+   "base": 2,
+   "title": "先放一张可收录的落地页",
+   "title_en": "Publish one indexable landing page early",
+   "do": "产品还没做完时先在正式域名放一张 {product} 落地页(说清给 {customers} 解决什么,收「{conversion}」意向),让域名和品牌名先被收录",
+   "do_en": "Before the product is done, publish one {product} landing page on the real domain (what it solves for {customers}, collecting '{conversion}' interest) so the domain and brand get indexed early",
+   "page_types": [
+    "落地页"
+   ],
+   "metric": "品牌词能搜到这张页",
+   "measure": "GSC 网址检查",
+   "week": 4,
+   "weeks": 1,
+   "tags": [
+    "落地页",
+    "收录"
+   ],
+   "ref": "references/lifecycle/stage-0-idea.md",
+   "cmd": ""
+  },
+  {
+   "id": "product-schema",
+   "stages": [
+    1
+   ],
+   "theme": "launch",
+   "dims": [
+    "geo",
+    "technical"
+   ],
+   "base": 3,
+   "title": "产品和组织的结构化数据",
+   "title_en": "Product and organization structured data",
+   "do": "首页放 Organization(含 sameAs),{main_line} 的产品页放 SoftwareApplication 或 Product,价格和名称与定价页一致",
+   "do_en": "Add Organization (with sameAs) on the homepage and SoftwareApplication or Product on the {main_line} page, with name and price matching the pricing page",
+   "page_types": [
+    "首页",
+    "产品页"
+   ],
+   "metric": "schema_lint 无错误",
+   "measure": "schema_lint.py",
+   "week": 2,
+   "weeks": 1,
+   "tags": [
+    "结构化数据",
+    "schema"
+   ],
+   "ref": "references/technical/schema-templates.md",
+   "cmd": "python3 scripts/schema_lint.py --help"
+  },
+  {
+   "id": "launch-day-pack",
+   "stages": [
+    1
+   ],
+   "theme": "indexing",
+   "dims": [
+    "authority",
+    "technical"
+   ],
+   "base": 3,
+   "title": "备好上线当天的收录和冷启动包",
+   "title_en": "Prepare the launch-day indexing and cold-start pack",
+   "do": "上线前起草好:sitemap 提交、IndexNow 推送清单、{customers} 常去的目录和产品上架平台的提交稿(用户自己点提交)",
+   "do_en": "Before launch, draft the sitemap submission, the IndexNow list and listings for directories and launch platforms {customers} use (the user submits)",
+   "page_types": [
+    "sitemap.xml",
+    "站外:目录、上架平台"
+   ],
+   "metric": "上线当天提交完",
+   "measure": "directory_tracker.py",
+   "week": 3,
+   "weeks": 1,
+   "tags": [
+    "收录",
+    "目录",
+    "上架"
+   ],
+   "ref": "references/technical/validation-guide.md",
+   "cmd": "python3 scripts/directory_tracker.py --help"
+  },
+  {
+   "id": "launch-baseline",
+   "stages": [
+    1
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement"
+   ],
+   "base": 2,
+   "title": "存一份上线当天的基线",
+   "title_en": "Save a launch-day baseline",
+   "do": "上线当天存 {product} 的全部 URL、状态码、canonical、title,之后每周运营单和它比,出问题能查到是哪天改的",
+   "do_en": "On launch day save all {product} URLs, status, canonical and titles; weekly ops compares to it so regressions can be dated",
+   "page_types": [
+    "全站"
+   ],
+   "metric": "有基线",
+   "measure": "site_crawl.py 存档",
+   "week": 3,
+   "weeks": 1,
+   "tags": [
+    "基线"
+   ],
+   "ref": "references/monitoring/continuous-operations.md",
+   "cmd": "python3 scripts/site_crawl.py --help"
+  },
+  {
+   "id": "index-coverage",
+   "stages": [
+    2
+   ],
+   "theme": "indexing",
+   "dims": [
+    "technical"
+   ],
+   "base": 3,
+   "after": [
+    "indexing-submit"
+   ],
+   "title": "查没收录的原因",
+   "title_en": "Find why pages are not indexed",
+   "do": "两周后看 GSC 页面报告里没收录的 {main_line} 页,按原因(已发现未编入、已抓取未编入、重复)分组处理",
+   "do_en": "After two weeks, group unindexed {main_line} pages in the GSC page report by reason (discovered, crawled not indexed, duplicate) and fix each group",
+   "page_types": [
+    "没收录的页"
+   ],
+   "metric": "已收录页 / sitemap 页",
+   "measure": "GSC 页面报告;sitemap_audit.py",
+   "week": 3,
+   "weeks": 2,
+   "tags": [
+    "收录"
+   ],
+   "ref": "references/technical/validation-guide.md",
+   "cmd": "python3 scripts/sitemap_audit.py --help"
+  },
+  {
+   "id": "brand-serp",
+   "stages": [
+    2
+   ],
+   "theme": "entity",
+   "dims": [
+    "authority"
+   ],
+   "base": 2,
+   "title": "搜 {product} 时第一页都是自己的",
+   "title_en": "Own page one for the {product} name",
+   "do": "搜品牌名时第一页应是官网、文档、各平台主页;被别的同名东西占了就补主页和事实页",
+   "do_en": "Searching the brand should show the site, docs and official profiles on page one; if a namesake takes it, add profiles and a fact page",
+   "page_types": [
+    "首页",
+    "社媒主页"
+   ],
+   "metric": "品牌词第一页自己的结果数",
+   "measure": "oracle_check.py;人工搜一次",
+   "week": 4,
+   "weeks": 2,
+   "tags": [
+    "品牌",
+    "实体"
+   ],
+   "ref": "references/content/brand-records.md",
+   "cmd": "python3 scripts/oracle_check.py --help"
+  },
+  {
+   "id": "new-version-audit",
+   "stages": [
+    5
+   ],
+   "theme": "protect",
+   "dims": [
+    "technical"
+   ],
+   "base": 4,
+   "after": [
+    "change-baseline"
+   ],
+   "title": "新版本上线前在预发上跑上线清单",
+   "title_en": "Run the launch checklist on the new version's staging",
+   "do": "新版本在预发上跑 launch_check 和体检:canonical 指向新正式域名、robots 没封、{lines} 每个模板抽一页",
+   "do_en": "Run launch_check and an audit on the new version's staging: canonical to the new production domain, robots open, one page per {lines} template",
+   "page_types": [
+    "新版本全部模板"
+   ],
+   "metric": "block 项 0 个不通过",
+   "measure": "launch_check.py --strict",
+   "week": 1,
+   "weeks": 2,
+   "tags": [
+    "迁移",
+    "上线"
+   ],
+   "ref": "references/lifecycle/stage-1-prelaunch.md",
+   "cmd": "python3 scripts/launch_check.py --url https://staging.example.com --strict --md"
+  },
+  {
+   "id": "change-signals",
+   "stages": [
+    5
+   ],
+   "theme": "protect",
+   "dims": [
+    "technical"
+   ],
+   "base": 3,
+   "after": [
+    "redirect-map"
+   ],
+   "title": "站内信号跟着换:内链、sitemap、hreflang",
+   "title_en": "Move on-site signals: internal links, sitemap, hreflang",
+   "do": "内链直接指新 URL(不靠 301)、sitemap 只列新 URL、hreflang 成簇;换域名时在 GSC 提交地址变更",
+   "do_en": "Point internal links straight at new URLs (not via 301), list only new URLs in the sitemap, keep hreflang clusters; file a GSC change of address for a domain move",
+   "page_types": [
+    "全站模板",
+    "sitemap.xml"
+   ],
+   "metric": "内链指向 301 的数量为 0",
+   "measure": "link_graph.py;hreflang_cluster.py",
+   "week": 2,
+   "weeks": 2,
+   "tags": [
+    "迁移",
+    "内链",
+    "hreflang"
+   ],
+   "ref": "references/technical/redirects-canonical.md",
+   "cmd": "python3 scripts/link_graph.py --help"
+  },
+  {
+   "id": "top-links-update",
+   "stages": [
+    5
+   ],
+   "theme": "links",
+   "dims": [
+    "authority"
+   ],
+   "base": 2,
+   "after": [
+    "redirect-map"
+   ],
+   "title": "请最重要的外链改指新地址",
+   "title_en": "Ask the most valuable linking sites to update URLs",
+   "do": "导出指向 {product} 旧 URL 的前 20 个引用域,起草改链请求(用户自己发)",
+   "do_en": "Export the top 20 referring domains linking to old {product} URLs and draft link update requests (the user sends)",
+   "page_types": [
+    "站外"
+   ],
+   "metric": "改指新地址的引用域数",
+   "measure": "backlink_import.py",
+   "week": 4,
+   "weeks": 4,
+   "tags": [
+    "外链",
+    "迁移"
+   ],
+   "ref": "references/research/backlink-profile-analysis.md",
+   "cmd": "python3 scripts/backlink_import.py --help"
+  },
+  {
+   "id": "change-alerts",
+   "stages": [
+    5
+   ],
+   "theme": "measure",
+   "dims": [
+    "measurement"
+   ],
+   "base": 3,
+   "after": [
+    "change-baseline"
+   ],
+   "title": "改动后 4 周每天看告警",
+   "title_en": "Daily alerts for four weeks after the change",
+   "do": "改动后 4 周每天跑 monitor:{main_line} 核心页点击掉 30% 以上、新 404、收录骤降就告警",
+   "do_en": "For four weeks after the change, run monitor daily: alert on 30%+ click drops on {main_line} core pages, new 404s or index drops",
+   "page_types": [
+    "核心页"
+   ],
+   "metric": "告警数和处理时间",
+   "measure": "monitor.py;notify.py",
+   "week": 3,
+   "weeks": 4,
+   "tags": [
+    "监控",
+    "迁移"
+   ],
+   "ref": "references/monitoring/continuous-operations.md",
+   "cmd": "python3 scripts/monitor.py --help"
+  },
+  {
+   "id": "change-content-keep",
+   "stages": [
+    5
+   ],
+   "theme": "content",
+   "dims": [
+    "content"
+   ],
+   "base": 2,
+   "title": "改版不丢有点击的内容",
+   "title_en": "Keep content that earns clicks through the redesign",
+   "do": "基线里有点击的 {main_line} 页,新版本的标题、正文要点、结构化数据不删;要删的先列出来给用户确认",
+   "do_en": "For {main_line} pages with clicks in the baseline, keep titles, key content and structured data in the new version; list anything to remove for the user to confirm",
+   "page_types": [
+    "有点击的页"
+   ],
+   "metric": "有点击页的内容保留率",
+   "measure": "audit_compare.py 标题和正文对比",
+   "week": 2,
+   "weeks": 2,
+   "tags": [
+    "迁移",
+    "内容"
+   ],
+   "ref": "references/content/content-refresh-playbook.md",
+   "cmd": "python3 scripts/audit_compare.py --help"
+  }
+ ]
+}
