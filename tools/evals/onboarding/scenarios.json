@@ -1,0 +1,450 @@
+{
+ "about": "RQ-237 开局多轮评测场景(第 0 批,独立出题人写,开跑前定、记 hash)。期望值来自产品说明(tools/testsites/lifecycle_sites.py 的 *_BRIEF)、测试站的造法和 everyinfra 的线上原始材料,不来自任何 skill 的输出。答案表在 answers/<product>.json。",
+ "driver": "多轮驱动:被测会话是子代理;每次它停下,驱动按当前环号从 simulated_user[环号] 里按顺序取下一条回话续跑,取完了用 fallback。环号判法:先看 agent 最后一条文本里的「第 N 环 / Ring N」;没有就读 seo-ops/context/profile.json 的 ring / current_ring;都没有用 fallback_unknown_ring。模拟用户的数字只用于评测,不代表任何真实业务目标。",
+ "grading": "outcome 类断言进「装 vs 不装」差距;process 类单独判,不进差距(需求卡第 7 节红队致命 2)。所有断言只读转录 JSON、seo-ops/ 下文件和工具调用记录,不让模型判。",
+ "criteria_defs": {
+  "facts_error_max": {
+   "kind": "outcome",
+   "how": "第 1 环确认后(以及场景结束时)读 seo-ops/context/profile.json,拍平成点号路径。每个事实键 K 取 facts.K(没有就取顶层 K);值是对象时取 .value。用 answers/<product>.json 的 facts_match[K] 判:每个别名组至少命中一个词(不分大小写、子串)算这一项对;product.one_liner 只要命中组数 ≥ one_liner_min_hits;product.lines、customers 按「答案表每一项都在档案里有一项命中对应别名组」判,多出来的条目不算错。缺键、空值、命中不够都算 1 条错。错的条数 ≤ max 通过。另:product.lines 漏一条就判本断言失败(lines_missing_max=0)。实现方键名不同时,profile.json 顶层须有 _schema: {答案表键: 档案路径},否则按缺键算。"
+  },
+  "stage_correct": {
+   "kind": "outcome",
+   "how": "profile.json 的 stage.id(或 stage)等于答案表 stage;并且第一屏(第一次停下前最后一条 assistant 文本)里出现该阶段名(lifecycle.json stages[].name 或 key)。两处都对才通过。"
+  },
+  "must_do_hits_min": {
+   "kind": "outcome",
+   "how": "取 seo-ops/plan/ 下方案的前 5 条建议(plan.json 的 items[0:5];只有 Markdown 时取第一个编号列表的前 5 项),每条和答案表 stage_must_do_match 逐项比:某一项的每个别名组都至少命中一个词即该项被覆盖。被覆盖的不同项数 ≥ min 通过。"
+  },
+  "must_not_hits_max": {
+   "kind": "outcome",
+   "how": "取方案前 10 条建议,任一条命中 stage_must_not_match 的某一项(该项所有别名组都命中)记 1 次;次数 ≤ max 通过。写在「不做 / 暂缓 / 以后」小节里、明确否定的不算。"
+  },
+  "stops_per_ring": {
+   "kind": "process",
+   "how": "解析被测会话的逐轮转录。一次「停下」= 一个回合以 AskUserQuestion 工具调用结束,或回合结束时最后一条 assistant 文本含编号问题(行首 1. / 1、/ A. 且该行含 ? 或 ?)并由驱动回了模拟用户的话。按驱动给出的环号记账。每个 rings 里列的环至少 min 次。"
+  },
+  "questions_per_ring_max": {
+   "kind": "process",
+   "how": "每次停下时数问题数(AskUserQuestion 的 questions 数组长度,或编号问题行数),每次 ≤ max;每个问题带选项或 agent 的猜测(AskUserQuestion 有 options;文本问题同一行或下一行有 A/B/C 选项或「我猜 / 推测 / 猜测」)。"
+  },
+  "ring1_not_skipped": {
+   "kind": "process",
+   "how": "在第 1 环得到用户回话、且出现第 1 环的确认调用(onboard answer --ring 1 ... --confirm)之前:没有任何写 seo-ops/plan/ 的工具调用;没有 --ring 2..6 的 onboard 调用;第一次停下之前的 assistant 文本里没有以「建议 / 优先级 / 方案 / recommend / priority / roadmap」开头的小标题或列表。站点类产品另要求:第一次停下之前,工具调用里抓过 ≥ min_page_types 种不同页面类型(首页、定价、文档、llms.txt、sitemap、博客 / 文章、产品页、robots.txt 各算一种;按请求 URL 的路径判)。"
+  },
+  "quote_before_confirm": {
+   "kind": "process",
+   "how": "每个带 --confirm 的 onboard 调用都必须带 --quote;引号内文本去空白后是在这次调用之前驱动发出的某条模拟用户回话的子串(≥ 6 个字符)。转录顺序必须是「agent 提问 → 模拟用户回话 → 确认调用」。状态文件不算证据。"
+  },
+  "correction_applied": {
+   "kind": "outcome",
+   "how": "纠正那一环之后:profile.json customers 的第一项(或标了 primary 的那项)含 term_new;第 3–6 环的停下文本和最终方案里出现 term_new;之后没有任何一处把 term_old 写成「主要客户 / main customer / primary」。"
+  },
+  "unknown_marked": {
+   "kind": "outcome",
+   "how": "用户说「不知道」的那一项在 profile.json 里 status 是「未确认 / unconfirmed / unknown」,value 为空或明确标「猜测」;驱动随后仍发出了下一环的回话(会话没卡住);最终方案里把这一项列为未确认。"
+  },
+  "skip_handled": {
+   "kind": "outcome+process",
+   "how": "用户在第 1 环说「别问了」后,agent 的下一条文本含「第 1 环 / 第一环 / 必须 / 先确认」之一,随后这次停下的问题数 ≤ 3;第 1 环确认后不再为第 2–6 环停下(全场停下总数 ≤ max_stops);方案开头 30 行内有「未确认 / 猜测 / 假设」并列出至少 3 条猜测。"
+  }
+ },
+ "scenarios": [
+  {
+   "id": "onboard-idea",
+   "product": "idea",
+   "setup": {
+    "build": "lifecycle_sites.py build --product idea --out DIR",
+    "workspace": "DIR/repo,另把 DIR/brief.md 复制进工作区根目录",
+    "site": null,
+    "gsc": null
+   },
+   "prompt": "我想做一个宠物健康记账的 App,产品说明在 brief.md 里,仓库就是当前目录。用 seo-suite 帮我把 SEO 从头规划一下。",
+   "simulated_user": {
+    "1": [
+     "对,就是这个产品。最想要的是上线前攒候补名单,先攒 2000 个;主要客户是一二线城市养猫狗的上班族;最重要的是健康提醒这条线。你说现在是想法阶段,对。"
+    ],
+    "2": [
+     "用户一般在小红书搜「猫咪疫苗时间表」「狗狗驱虫多久一次」,还有搜附近宠物医院多少钱。大家说「毛孩子」「铲屎官」「猫三联」「狂犬疫苗」。"
+    ],
+    "3": [
+     "业务上的对手是宠物医院自己的小程序,还有那种宠物服务平台;搜索结果里是谁我不太清楚,你查到谁就是谁。"
+    ],
+    "4": [
+     "就我一个人加一个兼职设计,每周能写 1 篇;以前没做过 SEO,没处罚、没买过链接;每月预算 2000 块以内;网站、域名、统计都还没有。"
+    ],
+    "5": [
+     "只做中国大陆、简体中文。先做疫苗驱虫这类主题,看病诊断那种不做,怕担责任。"
+    ],
+    "6": [
+     "路线可以。目标:上线前 3 个月候补名单 2000 人。"
+    ]
+   },
+   "fallback": "按你的猜测来,继续下一环。",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0
+    },
+    {
+     "id": "stage_correct"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4
+    },
+    {
+     "id": "ring1_not_skipped"
+    },
+    {
+     "id": "quote_before_confirm"
+    },
+    {
+     "id": "no_site_audit",
+     "kind": "process",
+     "how": "全程没有调用 site_crawl / 体检链(没有站点),工具调用里没有对 http(s) 站点的抓取请求;方案前 5 条里有需求验证和信息架构两项(用 must_do_hits_min 的第 1、3 项判)。"
+    }
+   ]
+  },
+  {
+   "id": "onboard-prelaunch",
+   "product": "prelaunch",
+   "setup": {
+    "build": "lifecycle_sites.py build --product prelaunch --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/site --port PORT",
+    "workspace": "DIR/repo",
+    "gsc": null
+   },
+   "prompt": "This is our Next.js repo for Quillbill, and a local preview is running at {base}. Can you use seo-suite to help us get SEO right before launch?",
+   "simulated_user": {
+    "1": [
+     "Yes, that's right. The goal is trial sign-ups. Main customers are freelance designers and illustrators, studios come second. Invoicing is the most important part. And yes, we're pre-launch, going live December 1."
+    ],
+    "2": [
+     "People search things like 'invoice template for designers', 'how to charge clients as a freelancer', 'freelance time tracker'. They say 'getting paid' and 'chasing invoices' a lot."
+    ],
+    "3": [
+     "Business competitors are FreshBooks, Bonsai and HoneyBook. Whoever ranks in search, you tell me, I don't really know."
+    ],
+    "4": [
+     "It's two of us, maybe 2 posts a month. No penalties, never bought links, nothing migrated. We can change code ourselves any time. No analytics yet, no Search Console yet. Launch is Dec 1 and the budget is basically zero."
+    ],
+    "5": [
+     "US first, then UK and Canada, English only. Don't plan any tax or legal advice content."
+    ],
+    "6": [
+     "Approved. Target: 300 trial sign-ups from organic search in the first 90 days after launch."
+    ]
+   },
+   "fallback": "Go with your best guess and move on to the next part.",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0
+    },
+    {
+     "id": "stage_correct"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4
+    },
+    {
+     "id": "ring1_not_skipped",
+     "min_page_types": 3
+    },
+    {
+     "id": "quote_before_confirm"
+    },
+    {
+     "id": "local_only",
+     "kind": "process",
+     "how": "全程抓取请求的主机只有 127.0.0.1 / localhost(复用 harness.fetched_hosts 的判法),没有请求 quillbill.com;方案或停下文本里出现上线检查清单,且至少列出 robots、sitemap、canonical 三项。"
+    }
+   ]
+  },
+  {
+   "id": "onboard-launched",
+   "product": "launched",
+   "setup": {
+    "build": "lifecycle_sites.py build --product launched --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/site --port PORT",
+    "workspace": "新目录:README.md 写「Northfold Coffee 官网,站点在 {base}」,把 DIR/gsc/ 复制成 data/"
+   },
+   "prompt": "We launched our coffee shop site three weeks ago. It's running at {base} and the Search Console exports are in data/ — can you use seo-suite to work out what we should do for SEO?",
+   "simulated_user": {
+    "1": [
+     "Yes. What matters most is subscription starts, one-off bags come second. Customers are US home brewers. The subscription is the most important line. We launched October 18."
+    ],
+    "2": [
+     "People look up brew recipes like 'v60 ratio' or 'french press ratio', and 'best coffee subscription'. Our customers say 'pour-over', 'light roast', 'single origin'."
+    ],
+    "3": [
+     "Competitors are Trade Coffee, Onyx, Counter Culture and Blue Bottle. We don't care about Amazon listings."
+    ],
+    "4": [
+     "Two of us, we can write one brew guide a week. No penalties, no bought links. We built the site ourselves and can edit any page. GA4 and Search Console have been set up since launch day. No budget for paid tools."
+    ],
+    "5": [
+     "US only, English. We won't make caffeine health claims."
+    ],
+    "6": [
+     "Looks good. Target: 30 new subscriptions a month from organic search by the end of Q1 2027."
+    ]
+   },
+   "fallback": "Go with your best guess and move on to the next part.",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0
+    },
+    {
+     "id": "stage_correct"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4
+    },
+    {
+     "id": "ring1_not_skipped",
+     "min_page_types": 5
+    },
+    {
+     "id": "quote_before_confirm"
+    }
+   ]
+  },
+  {
+   "id": "onboard-mature",
+   "product": "mature",
+   "setup": {
+    "build": "lifecycle_sites.py build --product mature --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/site --port PORT",
+    "workspace": "新目录:README.md 写「Trailmark Guides,站点在 {base}」,把 DIR/gsc/ 复制成 data/"
+   },
+   "prompt": "Our hiking blog at {base} has been losing search clicks this month, and the Search Console exports are in data/. Can you use seo-suite to help us get back on track?",
+   "simulated_user": {
+    "1": [
+     "Yes. Affiliate click-outs pay the bills, Trailmark Pro is secondary. Readers are US backpackers and day hikers. Gear reviews are the most important part. We've been around since 2022, and yes, traffic is dropping."
+    ],
+    "2": [
+     "Readers search 'best ultralight tent', 'osprey exos vs gregory focal', or a trail name plus 'permit'. They say 'base weight', 'thru-hike', 'ultralight'."
+    ],
+    "3": [
+     "Competitors are OutdoorGearLab, CleverHiker, Switchback Travel and REI Expert Advice. Reddit threads show up a lot too."
+    ],
+    "4": [
+     "Me and one freelancer, about 4 updates a month. No manual penalties, we never bought links. The last big change was a theme switch in 2024. GA4 and Search Console are both connected. Honestly we haven't updated anything since July."
+    ],
+    "5": [
+     "US first; UK and Canada English readers would be nice later. No sponsored posts dressed up as reviews."
+    ],
+    "6": [
+     "Approved. Target: back to 1,800 clicks per 28 days within 90 days."
+    ]
+   },
+   "fallback": "Go with your best guess and move on to the next part.",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0
+    },
+    {
+     "id": "stage_correct"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4
+    },
+    {
+     "id": "ring1_not_skipped",
+     "min_page_types": 4
+    },
+    {
+     "id": "quote_before_confirm"
+    },
+    {
+     "id": "drop_located",
+     "kind": "outcome",
+     "how": "方案或第 4 环文本里点名掉量集中在评测 / 对比 / best-of 页(出现 review 或 评测 或 best-),并给出两期点击 1,850 和 1,450(或 -21.6% / -22%)。"
+    }
+   ]
+  },
+  {
+   "id": "onboard-change",
+   "product": "change",
+   "setup": {
+    "build": "lifecycle_sites.py build --product change --state before --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/repo --port PORT",
+    "workspace": "DIR/repo",
+    "note": "开局只用 before;例 10 的 site-move 另跑:存基线后用 --state after 重建同一目录再对比"
+   },
+   "prompt": "We're about to change our URL structure. The plan is in MIGRATION.md and the site runs at {base} — can you use seo-suite to help with the SEO side of this?",
+   "simulated_user": {
+    "1": [
+     "Yes. The goal is store sales. Customers are home gardeners and houseplant owners in the US and Germany. Sensor Pro is the most important product. And yes, we're in the middle of a URL change, launching November 24."
+    ],
+    "2": [
+     "People search 'when to water houseplants', 'soil moisture sensor', and in German 'Bodenfeuchtesensor'. They say 'overwatering' and 'Gießen'."
+    ],
+    "3": [
+     "Competitors are Xiaomi Mi Flora, Ecowitt, and Parrot from back in the day. Garden blogs rank for the articles."
+    ],
+    "4": [
+     "Three people on the site, about 2 articles a month. No penalties, no bought links, no migration in the last three years. GA4 is on. Search Console exists but I can't give you access for this project. We've never measured AI referrals or citations. Code changes go through me and take a day or two."
+    ],
+    "5": [
+     "US and Germany, English and German. Don't touch the pricing page copy."
+    ],
+    "6": [
+     "Approved. Target: no more than a 5% drop in organic clicks in the first 4 weeks after the move, back to baseline within 8 weeks."
+    ]
+   },
+   "fallback": "Go with your best guess and move on to the next part.",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0
+    },
+    {
+     "id": "stage_correct"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4
+    },
+    {
+     "id": "ring1_not_skipped",
+     "min_page_types": 4
+    },
+    {
+     "id": "quote_before_confirm"
+    },
+    {
+     "id": "baseline_first",
+     "kind": "process",
+     "how": "方案前 3 条里有「存基线 / baseline」;工具调用里在任何 301 映射文件写出之前,先对 before 站抓过全部 30 个 URL 中的 ≥ 28 个。"
+    }
+   ]
+  }
+ ]
+}

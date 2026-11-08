@@ -1,0 +1,508 @@
+{
+ "about": "RQ-237 两条轴诊断的规则表(lifecycle.py 读;用户可在 seo-ops/playbook/lifecycle.json 覆盖同名条目)。阶段按产品生命周期分 6 档,成熟度按 5 个方面各 5 级(级别名借 Moz SEO client maturity 与 Conductor AEO maturity 的 5 级划分)。所有判定都是可检查的条件,不靠模型感觉;证据缺失时判为「未知」并列出要补什么,不猜。 级别 = 从 1 级往上、条件全部满足的最高一级;1 级都不满足记 0;某一级的条件缺证据就停在下面一级并列出缺什么,一级都没证实且缺证据记「未知」。",
+ "stage_thresholds": {
+  "new_site_age_days": 90,
+  "low_impressions_28d": 1000,
+  "growth_clicks_delta": 0.1,
+  "decline_clicks_delta": -0.1,
+  "mature_age_days": 730,
+  "guess_small_site_urls": 50
+ },
+ "stages": [
+  {
+   "id": 0,
+   "key": "idea",
+   "name": "想法 / 原型",
+   "test": "没有可访问的站点,仓库里也没有公开页面路由",
+   "focus": [
+    "用搜索数据验证需求:有没有人搜、搜什么词、结果里已经是谁",
+    "起名和域名的搜索可见度",
+    "按关键词版图定信息架构和 URL 结构",
+    "技术选型里的 SEO 约束(服务端渲染、多语言方案)",
+    "品牌实体从第一天起统一(名称、简介、各平台账号)"
+   ]
+  },
+  {
+   "id": 1,
+   "key": "prelaunch",
+   "name": "上线前",
+   "test": "仓库里有公开页面但站点还不可访问,或站点可访问但 robots 全封 / 首页 noindex",
+   "focus": [
+    "上线检查清单(robots、sitemap、canonical、hreflang、结构化数据、分享卡片、速度),每项写负责人",
+    "在本地预览上跑体检(site_crawl --allow-local)",
+    "准备 GSC / Bing 验证和统计埋点",
+    "AI 爬虫放行策略和 llms.txt"
+   ]
+  },
+  {
+   "id": 2,
+   "key": "launched",
+   "name": "刚上线",
+   "test": "站点可访问,首次出现不足 90 天,或近 28 天展示 < 1000",
+   "focus": [
+    "收录:GSC 和 Bing 提交 sitemap、IndexNow",
+    "冷启动外链:目录、产品上架平台、社区、合作页",
+    "品牌实体档案(各平台主页、Organization sameAs)",
+    "第一批核心页:产品、定价、文档、对比",
+    "被 AI 读到:llms.txt、实体信息一致"
+   ]
+  },
+  {
+   "id": 3,
+   "key": "growth",
+   "name": "增长期",
+   "test": "已过 90 天、展示 ≥ 1000,近 28 天点击环比涨 ≥ 10%,或站龄不足 2 年且没在掉",
+   "focus": [
+    "关键词版图扩张和主题簇",
+    "内容生产线和 brief",
+    "对比 / 替代页",
+    "程序化页面(带质量闸门)",
+    "内链、外链与合作",
+    "AI 引用监控",
+    "转化归因",
+    "每周运营单"
+   ]
+  },
+  {
+   "id": 4,
+   "key": "mature",
+   "name": "成熟期",
+   "test": "近 28 天点击环比跌 ≥ 10%,或站龄 ≥ 2 年且点击在 ±10% 内(平台期)",
+   "focus": [
+    "旧内容刷新和退役",
+    "掉量排查和算法更新归因",
+    "多市场扩张",
+    "SEO 实验"
+   ]
+  },
+  {
+   "id": 5,
+   "key": "change",
+   "name": "改版 / 迁移 / 转型",
+   "test": "用户声明要换域名、换框架、改 URL 结构、合并站点,或要加一条新产品线",
+   "focus": [
+    "改动前存基线(全部 URL、状态码、title、canonical、hreflang、结构化数据、内链)",
+    "301 映射表,标出没映射的 URL",
+    "上线后对比、修差异",
+    "新产品线回到开局第 1 环,只做新的那部分"
+   ]
+  }
+ ],
+ "change_events": [
+  "migration",
+  "domain_change",
+  "replatform",
+  "url_restructure",
+  "merge_sites",
+  "new_product_line",
+  "rebrand"
+ ],
+ "maturity_levels": {
+  "0": "还没开始(1 级的条件都不满足)",
+  "1": "零散(想到才做)",
+  "2": "能重复(有基本做法)",
+  "3": "有体系(做法写清楚了)",
+  "4": "可度量(有数、有目标)",
+  "5": "持续优化(有循环、能自己发现问题)"
+ },
+ "maturity": [
+  {
+   "dim": "technical",
+   "name": "技术",
+   "levels": [
+    {
+     "level": 1,
+     "all": [
+      {
+       "key": "signals.site_live",
+       "op": "true"
+      }
+     ],
+     "next": "让站点可访问(先做上线检查清单)",
+     "cmd": "site_crawl.py --allow-local"
+    },
+    {
+     "level": 2,
+     "all": [
+      {
+       "key": "signals.robots_block_all",
+       "op": "false"
+      },
+      {
+       "key": "signals.homepage_noindex",
+       "op": "false"
+      },
+      {
+       "key": "signals.url_count",
+       "op": ">=",
+       "value": 1
+      }
+     ],
+     "next": "放开 robots / noindex,补 sitemap",
+     "cmd": "sitemap_audit.py"
+    },
+    {
+     "level": 3,
+     "all": [
+      {
+       "key": "health.critical",
+       "op": "==",
+       "value": 0
+      }
+     ],
+     "next": "清零体检的 CRITICAL 问题",
+     "cmd": "project.py run triage"
+    },
+    {
+     "level": 4,
+     "all": [
+      {
+       "key": "health.score",
+       "op": ">=",
+       "value": 80
+      },
+      {
+       "key": "metrics.cwv_pass",
+       "op": "true"
+      }
+     ],
+     "next": "主分到 80、Core Web Vitals 达标",
+     "cmd": "field_data.py"
+    },
+    {
+     "level": 5,
+     "all": [
+      {
+       "key": "ops.weekly_runs",
+       "op": ">=",
+       "value": 4
+      }
+     ],
+     "next": "开每周运营单,让回退能被自动发现",
+     "cmd": "project.py ops weekly"
+    }
+   ]
+  },
+  {
+   "dim": "content",
+   "name": "内容",
+   "levels": [
+    {
+     "level": 1,
+     "all": [
+      {
+       "key": "signals.url_count",
+       "op": ">=",
+       "value": 5
+      }
+     ],
+     "next": "先有能被搜到的页面(产品、定价、文档)",
+     "cmd": ""
+    },
+    {
+     "level": 2,
+     "all": [
+      {
+       "key": "page_types.core",
+       "op": ">=",
+       "value": 1
+      }
+     ],
+     "next": "补产品 / 定价 / 文档这类核心页",
+     "cmd": ""
+    },
+    {
+     "level": 3,
+     "all": [
+      {
+       "key": "page_types.editorial",
+       "op": ">=",
+       "value": 10
+      }
+     ],
+     "next": "建内容生产线:按主题簇写 10 篇以上",
+     "cmd": "content_score.py"
+    },
+    {
+     "level": 4,
+     "all": [
+      {
+       "key": "page_types.intent",
+       "op": ">=",
+       "value": 3
+      },
+      {
+       "key": "metrics.pages_with_clicks",
+       "op": ">=",
+       "value": 10
+      }
+     ],
+     "next": "补对比 / 集成 / 场景页,让 10 个以上非首页拿到点击",
+     "cmd": "gsc_mining.py"
+    },
+    {
+     "level": 5,
+     "all": [
+      {
+       "key": "ops.content_changes_90d",
+       "op": ">=",
+       "value": 3
+      }
+     ],
+     "next": "按掉量信号定期刷新和退役旧内容",
+     "cmd": "gsc_mining.py --decay"
+    }
+   ]
+  },
+  {
+   "dim": "authority",
+   "name": "外链与品牌",
+   "levels": [
+    {
+     "level": 1,
+     "all": [
+      {
+       "key": "signals.brand_name",
+       "op": "nonempty"
+      }
+     ],
+     "next": "统一品牌名(og:site_name、Organization name)",
+     "cmd": ""
+    },
+    {
+     "level": 2,
+     "all": [
+      {
+       "key": "signals.same_as_count",
+       "op": ">=",
+       "value": 2
+      }
+     ],
+     "next": "Organization 结构化数据加 sameAs(各平台主页)",
+     "cmd": "schema_lint.py"
+    },
+    {
+     "level": 3,
+     "all": [
+      {
+       "key": "metrics.referring_domains",
+       "op": ">=",
+       "value": 20
+      }
+     ],
+     "next": "冷启动外链:目录、上架平台、合作页(20 个引用域)",
+     "cmd": "link_intel.py"
+    },
+    {
+     "level": 4,
+     "all": [
+      {
+       "key": "metrics.referring_domains",
+       "op": ">=",
+       "value": 100
+      }
+     ],
+     "next": "持续外链:合作、数据研究、被引用(100 个引用域)",
+     "cmd": "link_intel.py"
+    },
+    {
+     "level": 5,
+     "all": [
+      {
+       "key": "metrics.referring_domains",
+       "op": ">=",
+       "value": 500
+      },
+      {
+       "key": "metrics.unlinked_mentions_tracked",
+       "op": "true"
+      }
+     ],
+     "next": "跟踪未链提及并转化成外链",
+     "cmd": "link_intel.py"
+    }
+   ]
+  },
+  {
+   "dim": "geo",
+   "name": "AI 可见度",
+   "levels": [
+    {
+     "level": 1,
+     "all": [
+      {
+       "key": "signals.robots_block_all",
+       "op": "false"
+      }
+     ],
+     "next": "不要全封爬虫;按需放行 AI 爬虫",
+     "cmd": "robots_posture.py"
+    },
+    {
+     "level": 2,
+     "all": [
+      {
+       "key": "signals.has_llms_txt",
+       "op": "true"
+      }
+     ],
+     "next": "发 llms.txt",
+     "cmd": "llmstxt.py"
+    },
+    {
+     "level": 3,
+     "all": [
+      {
+       "key": "signals.has_jsonld",
+       "op": "true"
+      },
+      {
+       "key": "signals.brand_name",
+       "op": "nonempty"
+      }
+     ],
+     "next": "结构化数据和实体信息一致",
+     "cmd": "grounding_page.py"
+    },
+    {
+     "level": 4,
+     "all": [
+      {
+       "key": "metrics.ai_visibility_measured",
+       "op": "true"
+      }
+     ],
+     "next": "开始量 AI 引荐和引用(GA4 AI Assistant 渠道、引用面板)",
+     "cmd": "citation_panel.py"
+    },
+    {
+     "level": 5,
+     "all": [
+      {
+       "key": "metrics.ai_citation_weeks",
+       "op": ">=",
+       "value": 4
+      }
+     ],
+     "next": "AI 引用率连续 4 周以上有记录、按趋势改内容",
+     "cmd": "citation_panel.py"
+    }
+   ]
+  },
+  {
+   "dim": "measurement",
+   "name": "团队与测量",
+   "levels": [
+    {
+     "level": 1,
+     "all": [
+      {
+       "key": "profile.ring1_confirmed",
+       "op": "true"
+      }
+     ],
+     "next": "先答完开局第 1 环(产品、客户、转化)",
+     "cmd": "onboard.py show"
+    },
+    {
+     "level": 2,
+     "all": [
+      {
+       "key": "signals.analytics",
+       "op": "true"
+      }
+     ],
+     "next": "装统计埋点",
+     "cmd": "ga4_api.py"
+    },
+    {
+     "level": 3,
+     "all": [
+      {
+       "key": "metrics.gsc_connected",
+       "op": "true"
+      },
+      {
+       "key": "profile.conversion_defined",
+       "op": "true"
+      }
+     ],
+     "next": "接 GSC,写清转化算什么",
+     "cmd": "gsc_api.py"
+    },
+    {
+     "level": 4,
+     "all": [
+      {
+       "key": "profile.kpi_defined",
+       "op": "true"
+      }
+     ],
+     "next": "定业务目标数字和口径(开局第 6 环)",
+     "cmd": "onboard.py show --ring 6"
+    },
+    {
+     "level": 5,
+     "all": [
+      {
+       "key": "ops.weekly_runs",
+       "op": ">=",
+       "value": 4
+      },
+      {
+       "key": "ops.agenda_read_rate",
+       "op": ">=",
+       "value": 0.75
+      }
+     ],
+     "next": "每周运营单有人看(4 周里看过 3 周以上)",
+     "cmd": "project.py ops weekly"
+    }
+   ]
+  }
+ ],
+ "dim_priority_by_stage": {
+  "0": [
+   "measurement",
+   "content",
+   "technical",
+   "authority",
+   "geo"
+  ],
+  "1": [
+   "technical",
+   "measurement",
+   "geo",
+   "content",
+   "authority"
+  ],
+  "2": [
+   "technical",
+   "authority",
+   "measurement",
+   "content",
+   "geo"
+  ],
+  "3": [
+   "content",
+   "authority",
+   "geo",
+   "measurement",
+   "technical"
+  ],
+  "4": [
+   "content",
+   "measurement",
+   "geo",
+   "authority",
+   "technical"
+  ],
+  "5": [
+   "technical",
+   "measurement",
+   "content",
+   "authority",
+   "geo"
+  ]
+ }
+}

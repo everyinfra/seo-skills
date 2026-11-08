@@ -1,6 +1,6 @@
 # Capability Matrix(能力矩阵)
 
-机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**130 条 = 92 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-11-05 补 ga4_api.py、guard_hook.py、ops.py、source_map.py,2026-11-06 补 link_intel.py,2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
+机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**133 条 = 95 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-11-05 补 ga4_api.py、guard_hook.py、ops.py、source_map.py,2026-11-06 补 link_intel.py,2026-11-08 补 product_scan.py、lifecycle.py、onboard.py(RQ-237 开局),2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
 
 治理出处:[references/research/niubigeo-deep-read.md](references/research/niubigeo-deep-read.md) N10(CAPABILITY_MATRIX 治理格式)。借用其核心思想「**能力=完成**三条件」并按本套件改写:
 
@@ -124,6 +124,9 @@
 | trend_watch.py | Google News/Reddit rising/HN/微博/百度热搜(实时拉取) --topics 站点主题词表 gate: --angle 观点清单 --exclusive data\|quote\|access(403 源整源跳过;全源失败退出 2) | json | 六信号源实时拉取(Google News/Reddit rising/HN/微博/百度热搜;403 源整源跳过告警;--state 可指工作区) | ②+③ | test_trend_watch.py | beta |
 | remediation.py | envelope 的 audit-data.json(init) 两份 site_audit --json(verify) | json | 前置脚本产出(工单不自带数据) | ③ | test_remediation.py | beta |
 | project.py | --site URL(init) 子进程调既有脚本(run triage/next/status;编排不重实现) | json | 编排器只编排不重实现;任何步失败续跑其余 | ② | test_project.py | beta |
+| product_scan.py | --site URL 和/或 --repo DIR;首页、定价、文档、llms.txt、sitemap、robots(实时);仓库路由、README、package.json | json | 目标站实时抓取 + 本地仓库只读;Wayback 首次出现日期(可关) | ② | test_product_scan.py | beta |
+| lifecycle.py | --scan product_scan.json;--ws seo-ops;--metrics 指标 JSON | json | data/lifecycle.json 规则表;证据缺失判未知 | ② | test_onboard.py | beta |
+| onboard.py | start --site/--repo;answer --ring N --quote 用户原话 | json | product_scan + lifecycle;用户回答 | ② | test_onboard.py | beta |
 | ops.py | seo-ops/ 工作区; 外部数据包 seo-ops/raw/external-*.json(可缺); GSC / GA4 服务账号(可缺) | json | 站点 sitemap 与页面(轻检/深审)+ 外部数据包 + GSC/GA4 API + monitor.db | ② | test_ops_agenda.py | beta |
 | source_map.py | 站点仓库路径(可指定 --rev); URL 列表; 线上页面(默认抓 title/描述/H1/首段;--no-fetch 关) | json | 线上页面原文 + 站点仓库文件树与 import 关系(只读) | ② | test_source_map.py | stable |
 | guard_hook.py | Claude Code PreToolUse 事件(stdin JSON) | json | 当前 git 分支名 + 待改文件路径与内容(只读) | ④ | test_guard_hook.py | stable |

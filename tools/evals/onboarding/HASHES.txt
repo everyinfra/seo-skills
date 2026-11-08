@@ -1,0 +1,8 @@
+7d157e55c3cf850456984a167988c4870245152358e679274912886c93609e74  testsites/lifecycle_sites.py
+50dfc18cd5bef0cc15348deb303197e50bf0a85bf33d4efa68e6d4d613f03c9c  evals/onboarding/answers/change.json
+0250ad344bcba30e43e4a2308ff80c07daf68b084a4c852991b2aae144da1ef2  evals/onboarding/answers/idea.json
+df59cd18f926f10f98fe04e2f448b4fcdf46ca21a11bc1921256a25030896da8  evals/onboarding/answers/launched.json
+2d4864cf5e212c873cdca8e4be976ee2e4bb4a477d2d892d8d81fc5ed9a7e242  evals/onboarding/answers/mature.json
+d1839a91bbf1de4ba5bb4a60194cc4eba2d57b7ed6478417c036b13a655f1473  evals/onboarding/answers/prelaunch.json
+97cc788f5a62e702fcd28691108b6be9546f82f418e623e353aa86f91b6fd76b  evals/onboarding/scenarios.json
+# 11-08 公开前:everyinfra.com 的 4 个场景和答案表挪到私有仓(含竞品名和内部路径),这里只剩 5 个合成产品;出题时 9 个场景的原 hash 在私有仓。

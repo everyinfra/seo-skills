@@ -176,8 +176,13 @@ def parse_project_yaml(path):
     return data
 
 
-def write_project_yaml(path, site, market, site_type, created):
-    """写 project.yaml(受限子集,人可读注释带状态收敛说明)。"""
+MANAGED_KEYS = ("site", "market", "type", "created", "schema_version", "history_dir", "references")
+
+
+def write_project_yaml(path, site, market, site_type, created, extra=None):
+    """写 project.yaml(受限子集,人可读注释带状态收敛说明)。
+    extra:别的脚本追加的顶层标量(ops.py 的 skill_version、ga4_property 等),刷新时原样保留
+    (RQ-237 红队:init 整份重写会把它们冲掉)。"""
     L = ["# seo-suite 项目工作区(project.py;受限 YAML 子集:顶层标量 + references 列表)",
          "site: %s" % site,
          "market: %s" % market,
@@ -190,6 +195,9 @@ def write_project_yaml(path, site, market, site_type, created):
          "references:"]
     for name, _desc in SCATTERED_STATE:
         L.append("  - %s" % name)
+    for k, v in (extra or {}).items():
+        if k not in MANAGED_KEYS and isinstance(v, str) and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", k):
+            L.append("%s: %s" % (k, v))
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(L) + "\n")
 
@@ -346,6 +354,7 @@ def cmd_init(ns):
     ws = os.path.abspath(ns.dir or OPS_DIR)
     ypath = os.path.join(ws, "project.yaml")
     created = now_utc_iso()
+    old = {}
     if os.path.isfile(ypath):                   # 幂等刷新:同 site 保留 created/history
         old = parse_project_yaml(ypath)
         if old.get("site") != site:
@@ -361,7 +370,8 @@ def cmd_init(ns):
                                                    os.path.dirname(ws) or "."))
     os.makedirs(os.path.join(ws, "history"), exist_ok=True)
     ensure_ops_layout(ws)
-    write_project_yaml(ypath, site, ns.market, ns.type, created)
+    write_project_yaml(ypath, site, ns.market, ns.type, created,
+                       extra={k: v for k, v in old.items() if k not in MANAGED_KEYS})
     summary = {"workspace": ws, "project_yaml": ypath, "site": site, "market": ns.market,
                "type": ns.type or "", "created": created, "history_dir": os.path.join(ws, "history"),
                "migrated": False,
@@ -831,6 +841,27 @@ def implemented_time(items, rem):
     return max(ts) if ts else os.path.getmtime(rem)
 
 
+def onboarding_state(ws):
+    """RQ-237 开局:context/profile.json 不在,或 6 环还有没确认 / 没跳过的 → (当前环, 原因);开局完成 → None。"""
+    prof = load_json_tolerant_quiet(os.path.join(ws, "context", "profile.json"))
+    if prof is None:
+        return 1, "还没开局(seo-ops/context/profile.json 不在):先读透产品、一环一环问用户"
+    rings = prof.get("rings") or {}
+    for r in range(1, 7):
+        st = (rings.get(str(r)) or {}).get("status")
+        if st not in ("confirmed", "skipped"):
+            return r, "开局第 %d 环还没确认(%s)" % (r, st or "pending")
+    return None
+
+
+def load_json_tolerant_quiet(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
 def stage_state(ws, proj):
     """五阶段判定(只读 history/ 与工单,不重实现任何链路):
     体检(无 envelope)→ 优先级(有 envelope 无工单)→ 修复(工单有未完成项)→
@@ -907,6 +938,27 @@ def next_command(stage, info):
 def cmd_next(ns):
     ws = find_workspace(ns.dir)
     proj = load_project(ws)
+    ob = onboarding_state(ws)
+    if ob is not None:
+        ring, why = ob
+        onboard = os.path.join(HERE, "onboard.py")
+        if os.path.isfile(os.path.join(ws, "context", "profile.json")):
+            cmd = [PY, onboard, "show", "--ws", ws]
+        else:
+            cmd = [PY, onboard, "start", "--site", proj["site"], "--ws", ws]
+            if proj.get("market"):
+                cmd += ["--market", proj["market"]]
+        if ns.json:
+            print(json.dumps({"stage": "开局", "stage_index": "0/5", "ring": ring, "why": why,
+                              "command": cmd, "hint": "开局 6 环做完(确认或用户要求跳过)才进五阶段"},
+                             ensure_ascii=False, indent=1))
+        else:
+            print("## 当前阶段: 0/5 开局(第 %d 环)" % ring)
+            print("依据: %s" % why)
+            print("下一条命令:")
+            print("  " + " ".join(cmd))
+            print("随后: 按屏幕上的问题停下问用户;开局做完才进五阶段(体检→优先级→修复→验证→监控)")
+        return 0
     stage, info = stage_state(ws, proj)
     cmd, hint = next_command(stage, info)
     idx = STAGES.index(stage) + 1

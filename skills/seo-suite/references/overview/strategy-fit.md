@@ -6,7 +6,8 @@
 
 | 输入 | 来源 | 关键字段 | 缺失时 |
 |---|---|---|---|
-| 审计封套 | `envelope.py` → audit-data.json | `summary{band,top_findings,quick_wins}`、`categories[]`(availability/indexability/uniqueness/discoverability/rankability/experience)、`action_plan.phases`(立即/短期/持续) | 未跑体检→先跑(SKILL.md 原则 0,先体检后内容);只有单页审计→信号标 `[est]` |
+| 审计封套 | `envelope.py` → audit-data.json | `summary{band,top_findings,quick_wins}`、`categories[]`(availability/indexability/uniqueness/discoverability/rankability/experience)、`action_plan.phases`(立即/短期/持续) | 站点已上线:在开局第 4 环跑体检([onboarding](onboarding.md));想法阶段 / 上线前没有线上站,用技术选型和上线清单代替,不硬跑;只有单页审计→信号标 `[est]` |
+| 产品阶段 | `lifecycle.py diagnose`([lifecycle-stages](lifecycle-stages.md)) | 阶段 0–5、成熟度最弱的一格 | 只从本阶段的打法里选候选策略;阶段是猜测时先在开局第 1 环确认 |
 | 站型 | 八卡"识别信号"(site_crawl URL 型谱+schema 分布+页面构成) | 主卡+副卡(混合站) | 模糊→**列前二站型让用户确认**,不静默选一 |
 | 资源字段 | intake 通用节"资源与约束四问" | 内容产能/开发资源/工具层级/外包预算;风险容忍三类;时间窗;量化目标 | 未答→资源可行性按 0.5 下限计,报告注明"资源未知按保守计" |
 

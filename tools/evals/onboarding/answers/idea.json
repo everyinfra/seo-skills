@@ -1,0 +1,267 @@
+{
+ "product": "idea",
+ "facts": {
+  "product.name": "宠账本 PetLedger",
+  "product.one_liner": [
+   "宠物",
+   "健康",
+   "提醒",
+   "病历",
+   "比价"
+  ],
+  "product.lines": [
+   "健康提醒(疫苗、驱虫、体检)",
+   "病历档案(拍照存档、OCR 提取指标)",
+   "宠物医院比价"
+  ],
+  "pricing.model": "基础版免费;会员 ¥18/月 或 ¥168/年(多宠物、云端病历、比价、家人共享)",
+  "conversion.primary": "上线前:加入候补名单(留手机号 / 关注公众号);用户第 1 环确认目标是候补名单 2000 人",
+  "customers": [
+   "中国一二线城市 22–35 岁养猫或狗的上班族",
+   "多宠家庭、刚领养的新手主人"
+  ],
+  "market.languages": [
+   "zh-CN"
+  ]
+ },
+ "facts_match": {
+  "product.name": [
+   [
+    "宠账本",
+    "PetLedger"
+   ]
+  ],
+  "product.one_liner": [
+   [
+    "宠物",
+    "猫",
+    "狗"
+   ],
+   [
+    "健康"
+   ],
+   [
+    "提醒",
+    "疫苗",
+    "驱虫"
+   ],
+   [
+    "病历",
+    "档案"
+   ],
+   [
+    "比价",
+    "价格",
+    "医院"
+   ]
+  ],
+  "product.one_liner_min_hits": 3,
+  "product.lines": [
+   [
+    "提醒",
+    "疫苗",
+    "驱虫"
+   ],
+   [
+    "病历",
+    "档案",
+    "化验"
+   ],
+   [
+    "比价",
+    "价格",
+    "医院"
+   ]
+  ],
+  "pricing.model": [
+   [
+    "免费"
+   ],
+   [
+    "18",
+    "168",
+    "会员"
+   ]
+  ],
+  "conversion.primary": [
+   [
+    "候补",
+    "waitlist",
+    "名单",
+    "预约"
+   ]
+  ],
+  "customers": [
+   [
+    "一二线",
+    "上班族",
+    "年轻",
+    "22"
+   ],
+   [
+    "多宠",
+    "新手",
+    "领养"
+   ]
+  ],
+  "market.languages": [
+   [
+    "zh",
+    "中文",
+    "简体"
+   ]
+  ]
+ },
+ "stage": 0,
+ "stage_why": "没有可访问的站点、域名未买,仓库只有 README.md,没有任何公开页面路由(lifecycle.json 阶段 0 判据)。",
+ "maturity": {
+  "technical": 0,
+  "content": 0,
+  "authority": 0,
+  "geo": 0,
+  "measurement": 1
+ },
+ "maturity_proven": {
+  "technical": 0,
+  "content": 0,
+  "authority": 0,
+  "geo": 0,
+  "measurement": 1
+ },
+ "maturity_why": {
+  "technical": "L1 signals.site_live 不成立:没有站点。",
+  "content": "L1 signals.url_count ≥5 不成立:0 个 URL。",
+  "authority": "L1 signals.brand_name 来自站点(og:site_name / Organization),没有站点 → 不成立;名字也还没定死。",
+  "geo": "L1 signals.robots_block_all=false 不成立:没有站点和 robots,没有任何可被 AI 抓的页面。",
+  "measurement": "L1 profile.ring1_confirmed 成立(第 1 环脚本确认);L2 signals.analytics 不成立(没有站点、没装统计)→ 1。"
+ },
+ "maturity_rule": "成熟度判法(出题人写定):每维从第 1 级往上逐级查 lifecycle.json 的 all 条件;第一个不成立的级别之前的最高级就是答案。第一个不成立的级别若是「确定不成立」(证据在,值不满足)→ 写数字;若是「证据缺失、判不了」→ 写 null(规格:证据缺失判未知,不猜),这时 maturity_proven 给出已证明的级别。第 1 级都不成立写 0(lifecycle.json 没有 0 级,0 表示「第 1 级未达到」)。没有站点时,signals.* 一律按「未达到」处理(没有站点本身就是确定证据,不算未知)。判的时点:按 scenarios.json 本产品开局场景的模拟用户脚本走完 6 环之后(profile.ring1_confirmed、conversion_defined、kpi_defined 由脚本回答决定;ops.weekly_runs 一律 0)。metrics.gsc_connected:有 GSC API 或用户给的 GSC 导出文件任一即算。health.* 按测试站的造法判:lifecycle_sites.py 的页面按 static_site clean 状态的写法造,预期 0 个 CRITICAL。metrics.cwv_pass 要现场数据(CrUX / 实测),测试站和新站都没有 → 未知。metrics.referring_domains 没有外链数据 → 未知。",
+ "stage_must_do": [
+  "用真实搜索数据验证需求:「猫咪疫苗时间表」「狗狗驱虫多久一次」「宠物医院价格」这类词在百度 / 小红书 / 微信搜一搜的量,和现在排在前面的是谁",
+  "起名和域名的搜索可见度:「宠账本」「毛孩子病历本」撞名和可抢占情况,在 petledger.cn / chongzhangben.com 里定一个",
+  "按关键词版图定信息架构和 URL 结构(疫苗驱虫指南、按城市的医院比价页、病历功能页)",
+  "技术选型里的 SEO 约束:小程序页面的可收录性、官网要服务端渲染或静态生成;只做简中,不需要 hreflang",
+  "品牌实体从第一天统一:名称、一句话简介、公众号 / 小红书 / 微博账号同名",
+  "候补名单落地页当转化,落地页一上线就装统计、定好「留资算转化」的口径",
+  "按中国大陆的搜索渠道做(百度、小红书、微信搜一搜),不是以 Google 为主"
+ ],
+ "stage_must_do_match": [
+  [
+   [
+    "需求",
+    "搜索量",
+    "指数",
+    "有没有人搜",
+    "验证"
+   ]
+  ],
+  [
+   [
+    "起名",
+    "名字",
+    "域名",
+    "撞名",
+    "品牌名"
+   ]
+  ],
+  [
+   [
+    "信息架构",
+    "URL 结构",
+    "网站结构",
+    "栏目",
+    "关键词版图"
+   ]
+  ],
+  [
+   [
+    "技术选型",
+    "服务端渲染",
+    "SSR",
+    "静态生成",
+    "SSG",
+    "小程序"
+   ]
+  ],
+  [
+   [
+    "实体",
+    "公众号",
+    "账号",
+    "统一",
+    "简介"
+   ]
+  ],
+  [
+   [
+    "候补",
+    "落地页",
+    "waitlist",
+    "统计",
+    "埋点",
+    "转化"
+   ]
+  ],
+  [
+   [
+    "百度",
+    "小红书",
+    "微信搜一搜",
+    "搜一搜"
+   ]
+  ]
+ ],
+ "stage_must_not": [
+  "跑站点技术体检 / 爬站(没有站点可体检)",
+  "去 GSC / Bing 提交 sitemap、IndexNow",
+  "刷新旧内容、掉量排查、算法更新归因",
+  "外链建设、目录提交、买外链",
+  "做多语言 hreflang 或以 Google 英文关键词为主的研究"
+ ],
+ "stage_must_not_match": [
+  [
+   [
+    "体检",
+    "site_crawl",
+    "爬站",
+    "抓取全站",
+    "技术审计"
+   ]
+  ],
+  [
+   [
+    "提交 sitemap",
+    "IndexNow",
+    "Search Console 提交",
+    "GSC 提交"
+   ]
+  ],
+  [
+   [
+    "刷新旧",
+    "掉量",
+    "算法更新",
+    "旧内容"
+   ]
+  ],
+  [
+   [
+    "外链建设",
+    "目录提交",
+    "买外链",
+    "backlink"
+   ]
+  ],
+  [
+   [
+    "hreflang",
+    "多语言",
+    "英文关键词"
+   ]
+  ]
+ ],
+ "sources": [
+  "tools/testsites/lifecycle_sites.py IDEA_BRIEF",
+  "仓库 repo/README.md"
+ ]
+}

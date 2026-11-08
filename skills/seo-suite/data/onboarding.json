@@ -1,0 +1,279 @@
+{
+ "about": "RQ-237 开局 6 环的问题库(onboard.py 读)。每环先由 agent 自己做 agent_steps 里的事,再把 questions 带着猜测发给用户,用户回了话才能确认这一环。每环最多 4 个问题;required=true 的问题不答不能确认;sensitive=true 的答案存进 seo-ops/context/private/(不进 git);when 写了条件的只在条件成立时问。",
+ "rings": [
+  {
+   "ring": 1,
+   "key": "product",
+   "title": "产品是什么",
+   "must_confirm": true,
+   "goal": "确认产品档案草稿、产品阶段、SEO 要带来的转化、主要客户、最重要的产品线",
+   "fact_prefixes": [
+    "product.",
+    "pricing.",
+    "conversion.",
+    "context."
+   ],
+   "agent_steps": [
+    "读 product_scan 的草稿(首页、定价、文档、llms.txt、sitemap 页面类型;有仓库就读路由和 README)",
+    "有 .agents/product-marketing.md 之类的已有上下文就先读,和站点对不上的地方标出来",
+    "有 GSC(服务账号或导出文件)就先拉近两个 28 天的点击和展示:gsc_api.py 或导出 CSV,用 onboard.py metric --set gsc_clicks_28d=… --set gsc_clicks_prev_28d=… --set gsc_impressions_28d=… --source … 记下,阶段会按真实数据重判;没有就让用户在第 1 个问题里确认阶段",
+    "看 lifecycle 诊断给的阶段;是猜测就在问题里让用户确认"
+   ],
+   "questions": [
+    {
+     "id": "profile_ok",
+     "text": "上面这份产品理解(含产品阶段)对吗?哪里不对直接改。",
+     "options": [
+      "都对",
+      "有几处要改(请写出来)"
+     ],
+     "required": true
+    },
+    {
+     "id": "conversion",
+     "text": "最想让 SEO 带来什么结果?",
+     "options_from": "conversion.ctas",
+     "options": [
+      "注册",
+      "付费 / 下单",
+      "留资 / 预约演示",
+      "品牌曝光",
+      "被 AI 引用"
+     ],
+     "required": true
+    },
+    {
+     "id": "customers",
+     "text": "主要客户是谁?(越具体越好:行业、角色、规模)",
+     "options": [],
+     "required": true
+    },
+    {
+     "id": "main_line",
+     "text": "哪条产品线最重要、最想先做?",
+     "options_from": "product.lines",
+     "options": [],
+     "required": true
+    }
+   ]
+  },
+  {
+   "ring": 2,
+   "key": "audience",
+   "title": "客户与搜索意图",
+   "must_confirm": false,
+   "goal": "客户搜之前在想什么、用什么词、买之前会问什么",
+   "fact_prefixes": [
+    "audience."
+   ],
+   "agent_steps": [
+    "按产品线和客户推搜索意图类型(了解 / 比较 / 购买 / 找工具 / 排错)",
+    "有 GSC 就拉真实查询词:gsc_mining.py 或 gsc_api.py,按意图分组",
+    "把推出来的意图和样例词写成 note(kind=inferred)"
+   ],
+   "questions": [
+    {
+     "id": "jargon",
+     "text": "客户怎么称呼你们解决的问题?有没有行业黑话或常用叫法?(用他们的原话)",
+     "options": [],
+     "required": false
+    },
+    {
+     "id": "pre_purchase_questions",
+     "text": "客户买之前最常问的 3 个问题是什么?",
+     "options": [],
+     "required": false
+    },
+    {
+     "id": "seasonality",
+     "text": "有没有旺季或固定的时间点(节日、财年、发布会)?",
+     "options": [
+      "没有",
+      "有(请写时间)"
+     ],
+     "required": false,
+     "when": "site_type in ecommerce,local,media"
+    }
+   ]
+  },
+  {
+   "ring": 3,
+   "key": "competitors",
+   "title": "竞品",
+   "must_confirm": false,
+   "goal": "分开两份名单:业务上的竞品,和搜索结果里真正抢位置的站",
+   "fact_prefixes": [
+    "competitors."
+   ],
+   "agent_steps": [
+    "用主产品线的 3–5 个核心词查 SERP(serp_occupancy.py / serp_overlap.py),列出反复出现的域名",
+    "link_intel.py 找同类站、互换外链和合作页",
+    "两份名单写成 note:competitors.business、competitors.serp"
+   ],
+   "questions": [
+    {
+     "id": "real_competitors",
+     "text": "这两份名单里,哪些是真对手?漏了谁?",
+     "options": [],
+     "required": false
+    },
+    {
+     "id": "ignore",
+     "text": "哪些站不用管(比如只是信息站、不卖同类东西)?",
+     "options": [],
+     "required": false
+    },
+    {
+     "id": "compliance",
+     "text": "对外内容有没有不能说的话、不能点名的公司、受监管的措辞?",
+     "options": [
+      "没有",
+      "有(请写)"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "ring": 4,
+   "key": "assets",
+   "title": "现有资产与限制",
+   "must_confirm": false,
+   "goal": "现在有什么、能投入多少、有什么历史包袱、权限和埋点在谁手里",
+   "fact_prefixes": [
+    "site.",
+    "tech.",
+    "measurement.",
+    "entity.",
+    "history."
+   ],
+   "agent_steps": [
+    "站点已上线:跑技术体检链 project.py run triage,按页面类型分组看问题;想法阶段改成看技术选型(框架能不能服务端渲染、URL 和多语言方案)",
+    "lifecycle.py diagnose 算 5 维成熟度(脚本算,不问用户)",
+    "把体检结论写成 note(kind=inferred)"
+   ],
+   "questions": [
+    {
+     "id": "capacity",
+     "text": "每月能产出多少篇内容?开发每周能投多少小时改站?",
+     "options": [],
+     "required": false
+    },
+    {
+     "id": "history",
+     "text": "以前做过 SEO 吗?有没有被处罚、买过链接、近三年换过域名或改过 URL?",
+     "options": [
+      "没有",
+      "有(请写)"
+     ],
+     "required": false,
+     "sensitive": true
+    },
+    {
+     "id": "team_budget",
+     "text": "谁拍板、谁写内容、改一个标题要多久?内容、外链、工具每月各有多少预算?",
+     "options": [],
+     "required": false,
+     "sensitive": true
+    },
+    {
+     "id": "access",
+     "text": "GSC、GA4、CMS、DNS 的权限在谁手里?转化(注册、下单)现在有埋点吗?",
+     "options": [
+      "都有",
+      "部分有(请写)",
+      "都没有"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "ring": 5,
+   "key": "markets",
+   "title": "市场与关键词版图",
+   "must_confirm": false,
+   "goal": "先做哪个市场、哪些主题簇、哪些不做",
+   "fact_prefixes": [
+    "market.",
+    "keywords."
+   ],
+   "agent_steps": [
+    "每个目标市场跑关键词研究和主题簇(gsc_mining.py、keyword_variants.py、fanout_analysis.py)",
+    "和第 3 环的搜索竞品比内容缺口",
+    "主题簇和优先级写成 note"
+   ],
+   "questions": [
+    {
+     "id": "market_first",
+     "text": "先做哪个市场 / 语言?",
+     "options_from": "market.languages",
+     "options": [],
+     "required": false
+    },
+    {
+     "id": "deny_topics",
+     "text": "哪些主题、渠道或做法明确不做?(会写进禁用清单,之后不再建议)",
+     "options": [
+      "没有"
+     ],
+     "required": false,
+     "deny": true
+    },
+    {
+     "id": "formats",
+     "text": "能接受哪些内容形式?",
+     "options": [
+      "文章",
+      "对比页",
+      "工具 / 计算器",
+      "程序化页面",
+      "视频"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "ring": 6,
+   "key": "strategy",
+   "title": "策略与路线",
+   "must_confirm": false,
+   "goal": "按阶段选 3 条策略、排 90 天、写清怎么量",
+   "fact_prefixes": [
+    "strategy."
+   ],
+   "agent_steps": [
+    "strategy-fit 打分,只从本阶段的打法里选,按成熟度最弱的一格加权",
+    "排 90 天路线:每条写动哪类页面、预期动哪个数、怎么量、第几周做",
+    "路线写进 seo-ops/plan/"
+   ],
+   "questions": [
+    {
+     "id": "approve_plan",
+     "text": "这 3 条策略和 90 天路线可以吗?要改哪条?",
+     "options": [
+      "可以",
+      "要改(请写)"
+     ],
+     "required": false
+    },
+    {
+     "id": "deadline",
+     "text": "有没有硬截止时间(融资、发布会、旺季)?",
+     "options": [
+      "没有",
+      "有(请写)"
+     ],
+     "required": false
+    },
+    {
+     "id": "kpi_target",
+     "text": "业务目标数字和口径是什么?(例:「非品牌自然注册每月 +50%,口径 GA4 organic 注册」)",
+     "options": [],
+     "required": false
+    }
+   ]
+  }
+ ]
+}

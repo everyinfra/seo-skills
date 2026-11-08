@@ -60,10 +60,16 @@ def run_project(args, cwd, extra_env=None):
                           cwd=cwd, capture_output=True, text=True, encoding="utf-8", env=env)
 
 
-def mk_ws(cwd, site=SITE, market="en", type_=""):
+def mk_ws(cwd, site=SITE, market="en", type_="", onboarded=True):
     r = run_project(["init", "--site", site, "--market", market] + (["--type", type_] if type_ else []), cwd)
     assert r.returncode == 0, r.stderr
-    return os.path.join(cwd, "seo-ops")
+    ws = os.path.join(cwd, "seo-ops")
+    if onboarded:                     # RQ-237:开局 6 环做完才进五阶段;五阶段用例默认开局已完成
+        os.makedirs(os.path.join(ws, "context"), exist_ok=True)
+        with open(os.path.join(ws, "context", "profile.json"), "w", encoding="utf-8") as f:
+            json.dump({"schema": 1, "rings": {str(i): {"status": "confirmed" if i == 1 else "skipped"}
+                                              for i in range(1, 7)}}, f)
+    return ws
 
 
 def fabricate_run(ws, name, audit=True, envelope=True, health=None):
@@ -225,6 +231,21 @@ class ProjectInitTests(ProjectTestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         data = P.parse_project_yaml(os.path.join(ws, "project.yaml"))
         self.assertEqual(data["created"], created1)       # 幂等刷新不重置 created
+        self.assertEqual(data["market"], "ja")
+
+    def test_init_refresh_keeps_keys_other_scripts_appended(self):
+        """RQ-237 红队:ops.py install 往 project.yaml 追加 skill_version,ops weekly 读 ga4_property;
+        再跑一次 init 不能把这两个键冲掉(修前 init 整份重写,两键丢失)。"""
+        ws = mk_ws(self.tmp, market="en")
+        ypath = os.path.join(ws, "project.yaml")
+        with open(ypath, "a", encoding="utf-8") as f:
+            f.write("skill_version: 0.43.0\nga4_property: 552286376\n")
+        r = run_project(["init", "--site", SITE, "--market", "ja"], self.tmp)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        import project as P
+        data = P.parse_project_yaml(ypath)
+        self.assertEqual(data.get("skill_version"), "0.43.0")
+        self.assertEqual(data.get("ga4_property"), "552286376")
         self.assertEqual(data["market"], "ja")
 
     def test_init_rejects_unparseable_site(self):
@@ -501,6 +522,28 @@ class HelpSmokeTests(ProjectTestCase):
             self.assertEqual(r.returncode, 0, args)
             self.assertIn("usage: project.py", r.stdout)
 
+
+
+class ProjectOnboardingGateTests(ProjectTestCase):
+    """RQ-237:没开局 / 开局没做完时,next 指向 onboard.py,不直接进体检(卡例 1:先不给建议)。"""
+
+    def test_next_without_profile_points_to_onboard_start(self):
+        mk_ws(self.tmp, onboarded=False)
+        r = run_project(["next"], self.tmp)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("0/5 开局(第 1 环)", r.stdout)
+        self.assertIn("onboard.py start --site %s" % SITE, r.stdout)
+        self.assertNotIn("run triage", r.stdout)
+
+    def test_next_mid_onboarding_points_to_show(self):
+        ws = mk_ws(self.tmp, onboarded=False)
+        os.makedirs(os.path.join(ws, "context"), exist_ok=True)
+        with open(os.path.join(ws, "context", "profile.json"), "w", encoding="utf-8") as f:
+            json.dump({"schema": 1, "rings": {"1": {"status": "confirmed"}, "2": {"status": "asking"}}}, f)
+        r = run_project(["next", "--json"], self.tmp)
+        d = json.loads(r.stdout)
+        self.assertEqual((d["stage"], d["ring"]), ("开局", 2))
+        self.assertIn("show", d["command"])
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)
