@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-07T07:04:34.759942+00:00",
+ "checked_at": "2026-11-08T07:16:13.863750+00:00",
  "sources": {
   "google-blog": {
    "top": "Search Central Live in Zurich is back!",
@@ -60,8 +60,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "fd10f23798c2815cd752ccaa9c87903a",
-   "ts": "2026-11-07T07:04:11.475462+00:00"
+   "hash": "8003d31875a073e4fa742620d19bfa4f",
+   "ts": "2026-11-08T07:15:57.027790+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -106,12 +106,12 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "8cab98cd2fef1e89c4bb4865770f2650",
-   "ts": "2026-11-07T07:04:30.958551+00:00"
+   "hash": "d2795516482e4d66e509e7b74bc7f506",
+   "ts": "2026-11-08T07:16:09.559803+00:00"
   },
   "statcounter-ai": {
-   "hash": "dc433a5245770fc2216b53829a958fbf",
-   "ts": "2026-11-07T07:04:31.359365+00:00"
+   "hash": "5dfe81201f21eb1fa576cbd7188ab0fe",
+   "ts": "2026-11-08T07:16:10.413361+00:00"
   },
   "semrush-sensor": {
    "hash": "506d19834d3a89fe6edacf6a84974ffc",
