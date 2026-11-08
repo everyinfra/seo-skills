@@ -244,9 +244,9 @@
     "strategy."
    ],
    "agent_steps": [
-    "strategy-fit 打分,只从本阶段的打法里选,按成熟度最弱的一格加权",
-    "排 90 天路线:每条写动哪类页面、预期动哪个数、怎么量、第几周做",
-    "路线写进 seo-ops/plan/"
+    "跑 plan.py build --ws seo-ops:只从本阶段的打法里选(data/playbooks.json + 用户的 playbook/plays.json),按成熟度最弱的一格加权,禁用清单直接过滤",
+    "每条建议已写好动哪类页面、预期动哪个数、怎么量、第几周做;把三条策略、前 10 条路线和「不做什么」发给用户",
+    "产出在 seo-ops/plan/:plan.json、roadmap.md、strategy-book.zh.md / .en.md;用户说可以就用 answer --ring 6 --set approve_plan=可以 定稿"
    ],
    "questions": [
     {

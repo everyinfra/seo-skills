@@ -1,6 +1,6 @@
 # Capability Matrix(能力矩阵)
 
-机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**133 条 = 95 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-11-05 补 ga4_api.py、guard_hook.py、ops.py、source_map.py,2026-11-06 补 link_intel.py,2026-11-08 补 product_scan.py、lifecycle.py、onboard.py(RQ-237 开局),2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
+机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**136 条 = 98 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-11-05 补 ga4_api.py、guard_hook.py、ops.py、source_map.py,2026-11-06 补 link_intel.py,2026-11-08 补 product_scan.py、lifecycle.py、onboard.py(RQ-237 开局)和 plan.py、launch_check.py、demand_check.py(RQ-237 第 2 批),2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
 
 治理出处:[references/research/niubigeo-deep-read.md](references/research/niubigeo-deep-read.md) N10(CAPABILITY_MATRIX 治理格式)。借用其核心思想「**能力=完成**三条件」并按本套件改写:
 
@@ -127,6 +127,9 @@
 | product_scan.py | --site URL 和/或 --repo DIR;首页、定价、文档、llms.txt、sitemap、robots(实时);仓库路由、README、package.json | json | 目标站实时抓取 + 本地仓库只读;Wayback 首次出现日期(可关) | ② | test_product_scan.py | beta |
 | lifecycle.py | --scan product_scan.json;--ws seo-ops;--metrics 指标 JSON | json | data/lifecycle.json 规则表;证据缺失判未知 | ② | test_onboard.py | beta |
 | onboard.py | start --site/--repo;answer --ring N --quote 用户原话 | json | product_scan + lifecycle;用户回答 | ② | test_onboard.py | beta |
+| plan.py | build --ws seo-ops(开局第 1 环已确认);context/profile.json、diagnosis、data/playbooks.json、playbook/plays.json | json | 开局档案 + 两条轴诊断 + 打法库;不联网 | ② | test_plan.py | beta |
+| launch_check.py | --url 预览/预发/正式站 [--allow-local] [--prod-host];robots.txt、sitemap、抽样页面(实时) | json | 目标站实时抓取(本机回环需 --allow-local);data/launch-checklist.json | ② | test_plan.py | beta |
+| demand_check.py | --seeds 种子词 / --names 候选名;Google、Bing、DuckDuckGo 公开联想接口;rdap.org | json | 公开联想接口(联想数是信号不是搜索量 [est]);可选 --volumes 关键词工具导出 [real];RDAP 域名注册记录 | ② | — | beta |
 | ops.py | seo-ops/ 工作区; 外部数据包 seo-ops/raw/external-*.json(可缺); GSC / GA4 服务账号(可缺) | json | 站点 sitemap 与页面(轻检/深审)+ 外部数据包 + GSC/GA4 API + monitor.db | ② | test_ops_agenda.py | beta |
 | source_map.py | 站点仓库路径(可指定 --rev); URL 列表; 线上页面(默认抓 title/描述/H1/首段;--no-fetch 关) | json | 线上页面原文 + 站点仓库文件树与 import 关系(只读) | ② | test_source_map.py | stable |
 | guard_hook.py | Claude Code PreToolUse 事件(stdin JSON) | json | 当前 git 分支名 + 待改文件路径与内容(只读) | ④ | test_guard_hook.py | stable |

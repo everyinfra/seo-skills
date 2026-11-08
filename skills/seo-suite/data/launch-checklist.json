@@ -1,0 +1,30 @@
+{
+ "about": "RQ-237 第 2 批:上线清单(launch_check.py 读)。auto 项由脚本在预览或正式站上查;manual 项脚本查不了,列出来写负责人和截止日。owner 是默认负责角色,用户在 seo-ops/plan/launch-owners.json 里写 {\"<id>\": \"张三\"} 覆盖;due 同理写 {\"<id>@due\": \"2026-12-01\"}。severity:block 不过不能上线,warn 上线后两周内补,info 可选。出处:Google 搜索中心的 SEO 入门指南、robots / sitemap / canonical / hreflang / 结构化数据文档,以及公开的网站上线 SEO 清单(v9digital,核对 2026-11-08);具体判据写在 references/lifecycle/stage-1-prelaunch.md。",
+ "items": [
+  {"id": "reachable", "area": "可访问", "kind": "auto", "severity": "block", "owner": "开发", "title": "首页返回 200", "title_en": "Homepage returns 200"},
+  {"id": "https", "area": "可访问", "kind": "auto", "severity": "block", "owner": "开发", "title": "正式站走 HTTPS,HTTP 跳到 HTTPS", "title_en": "Production uses HTTPS; HTTP redirects to HTTPS"},
+  {"id": "robots", "area": "抓取", "kind": "auto", "severity": "block", "owner": "开发", "title": "robots.txt 存在且没有全站 Disallow", "title_en": "robots.txt exists and does not disallow the whole site"},
+  {"id": "noindex", "area": "收录", "kind": "auto", "severity": "block", "owner": "开发", "title": "抽查页没有 noindex(预发环境的封锁上线时要撤)", "title_en": "Sampled pages have no noindex (remove staging blocks at launch)"},
+  {"id": "sitemap", "area": "抓取", "kind": "auto", "severity": "block", "owner": "开发", "title": "sitemap 能读到、至少 1 条 URL、在 robots.txt 里声明", "title_en": "Sitemap is readable, has at least one URL and is declared in robots.txt"},
+  {"id": "canonical", "area": "收录", "kind": "auto", "severity": "block", "owner": "开发", "title": "抽查页有 canonical,是绝对地址,指向正式域名", "title_en": "Sampled pages have an absolute canonical pointing to the production domain"},
+  {"id": "titles", "area": "页面", "kind": "auto", "severity": "warn", "owner": "内容", "title": "抽查页 title 和 meta description 都有、互不重复", "title_en": "Sampled pages have unique titles and meta descriptions"},
+  {"id": "h1", "area": "页面", "kind": "auto", "severity": "warn", "owner": "内容", "title": "抽查页各有 1 个 H1", "title_en": "Each sampled page has one H1"},
+  {"id": "lang", "area": "页面", "kind": "auto", "severity": "warn", "owner": "开发", "title": "html 标签写了 lang", "title_en": "The html element declares lang"},
+  {"id": "hreflang", "area": "多语言", "kind": "auto", "severity": "block", "owner": "开发", "title": "多语言站:hreflang 列出自身、用完整地址(x-default 建议加)", "title_en": "Multilingual sites: hreflang lists itself with full URLs (x-default recommended)"},
+  {"id": "jsonld", "area": "结构化数据", "kind": "auto", "severity": "warn", "owner": "开发", "title": "首页有 Organization 或 WebSite 结构化数据", "title_en": "Homepage has Organization or WebSite structured data"},
+  {"id": "og", "area": "分享卡片", "kind": "auto", "severity": "warn", "owner": "设计", "title": "首页有 og:title 和绝对地址的 og:image", "title_en": "Homepage has og:title and an absolute og:image"},
+  {"id": "viewport", "area": "移动", "kind": "auto", "severity": "block", "owner": "开发", "title": "有 viewport meta", "title_en": "Viewport meta is present"},
+  {"id": "not_found", "area": "可访问", "kind": "auto", "severity": "warn", "owner": "开发", "title": "不存在的地址返回 404,不是 200(软 404)", "title_en": "Unknown URLs return 404, not 200 (soft 404)"},
+  {"id": "speed", "area": "速度", "kind": "auto", "severity": "warn", "owner": "开发", "title": "首页响应 < 800 ms(本地预览只作参考,上线后看 CWV 实测)", "title_en": "Homepage responds in under 800 ms (local preview is indicative only)"},
+  {"id": "llms_txt", "area": "AI 可见度", "kind": "auto", "severity": "info", "owner": "内容", "title": "有 llms.txt(可选,Google 搜索不需要)", "title_en": "llms.txt exists (optional; not needed for Google Search)"},
+  {"id": "ai_crawlers", "area": "AI 可见度", "kind": "auto", "severity": "info", "owner": "产品负责人", "title": "robots.txt 对 AI 爬虫的放行是有意定的", "title_en": "robots.txt AI crawler rules are a deliberate decision"},
+  {"id": "favicon", "area": "页面", "kind": "auto", "severity": "info", "owner": "设计", "title": "有 favicon(搜索结果里显示)", "title_en": "Favicon exists (shown in search results)"},
+  {"id": "gsc_verify", "area": "测量", "kind": "manual", "severity": "block", "owner": "站长", "title": "GSC 域名资源验证(DNS TXT),上线当天提交 sitemap", "title_en": "GSC domain property verified (DNS TXT); submit the sitemap on launch day"},
+  {"id": "bing_verify", "area": "测量", "kind": "manual", "severity": "warn", "owner": "站长", "title": "Bing Webmaster 验证(可从 GSC 导入),开 IndexNow", "title_en": "Bing Webmaster verified (can import from GSC); enable IndexNow"},
+  {"id": "conversion_tracking", "area": "测量", "kind": "manual", "severity": "block", "owner": "开发", "title": "主转化事件埋好,在预览上触发一次能记到", "title_en": "Primary conversion event fires once on the preview and is recorded"},
+  {"id": "redirect_map", "area": "迁移", "kind": "manual", "severity": "block", "owner": "开发", "title": "替换旧站时:有点击的旧 URL 全部有 301 映射", "title_en": "When replacing an old site: every old URL with clicks has a 301"},
+  {"id": "brand_profiles", "area": "实体", "kind": "manual", "severity": "info", "owner": "市场", "title": "社媒主页和目录站的名称、简介和官网一致", "title_en": "Social and directory profiles match the site name and description"},
+  {"id": "legal_pages", "area": "信任", "kind": "manual", "severity": "warn", "owner": "产品负责人", "title": "关于、联系、隐私、条款页都在,能从页脚到达", "title_en": "About, contact, privacy and terms pages exist and are linked from the footer"},
+  {"id": "cwv_field", "area": "速度", "kind": "manual", "severity": "warn", "owner": "开发", "title": "上线 28 天后看 CWV 实测(LCP、INP、CLS)", "title_en": "Check field CWV (LCP, INP, CLS) 28 days after launch"}
+ ]
+}

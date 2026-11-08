@@ -5,6 +5,18 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.45.0 - 2026-11-08
+
+- **按产品阶段出方案、90 天路线和中英战略书**(RQ-237 第 2 批,`plan.py`、`data/playbooks.json`):开局第 6 环不再凭模型感觉排策略。打法库写了 53 条打法,按阶段算想法 11、上线前 13、刚上线 11、增长 11、成熟 10、改版 10(有的跨阶段),每条写明补哪一维成熟度、动哪类页面、预期动哪个数、怎么量、第几周做;`plan.py build` **只从当前阶段里选**,按成熟度最弱的一格加权,把档案里的产品事实(产品线、客户、转化、竞品、市场)填进每条建议;`only_if`(不适用)、`done_if`(已经做完,比如已有 llms.txt)、`veto`(反指标,比如页面不到 100 不做内链)和第 5 环的禁用清单逐条过滤,理由写进战略书「不做什么」;体检查到 CRITICAL 时技术修复强制排第一。产出 `seo-ops/plan/plan.json`、`roadmap.md`、`strategy-book.zh.md`、`strategy-book.en.md`;用户在第 6 环答「可以」才定稿(`status=approved`)。用户在 `seo-ops/playbook/plays.json` 可以加自己的打法、同 id 覆盖内置的。实测:上线前、想法、增长期(everyinfra.com 真 GSC)三个产品各 10 条建议都在本阶段内、10 条都引用了产品事实;想法阶段没有体检类建议。
+  Stage-specific plans: `plan.py` picks only plays for the current lifecycle stage, weights the weakest maturity area, fills in product facts, filters by veto rules and the user's deny list, and writes a 90-day roadmap plus Chinese and English strategy books.
+- **想法阶段:用真实搜索数据验证需求、核对起名**(`demand_check.py`,不要 key):三家公开联想接口取联想词和问题 / 比较 / 价格词,报信号强弱、意图分布、跑题率(联想偏到别的东西时提示换叫法)和反复出现的词;联想数是信号不是搜索量(`[est]`),`--volumes` 可补关键词工具导出(`[real]`);`--names` 用 RDAP 查域名注册记录、看名字的联想是否已被占。打法卡 `references/lifecycle/stage-0-idea.md`。
+  Idea stage: `demand_check.py` validates demand from public autocomplete (signal, intent mix, drift) and checks names and domains via RDAP.
+- **上线前:上线清单,每项有负责人**(`launch_check.py`、`data/launch-checklist.json`):25 项(18 项自动、7 项手动),分 block / warn / info;在本地预览(`--allow-local`)、预发或正式站上都能跑;`--prod-host` 查 canonical 和 og:image 是不是指向正式域名;负责人和截止日写进 `seo-ops/plan/launch-owners.json`。hreflang 按 Google 原文判:缺自身或不是完整地址挡上线,缺 x-default 只警告。实测 everyinfra.com 自动项 17/18 通过、没有误报。打法卡 `references/lifecycle/stage-1-prelaunch.md`。
+  Pre-launch: `launch_check.py` runs a 25-item launch checklist (18 automatic) with an owner per item, on local previews, staging or production.
+- **修:只给仓库、没给站点时阶段判「未知」,第 1 环照样能确认,之后方案出不来**:现在空仓库判想法、有公开路由判上线前(都标「猜测」,让用户确认);第 1 环在阶段未知时不能确认(退出码 3,用 `--correct stage=N` 记下)。回归测试修前红、修后绿。
+  Fix: repo-only scans now guess stage 0 or 1, and ring 1 cannot be confirmed while the stage is unknown.
+- `strategy-fit.md` 加「按产品阶段过滤」一节;`lifecycle-stages.md`、`onboarding.md` 第 6 环改指向 `plan.py`。
+
 ## 0.44.0 - 2026-11-08
 
 - **开局:先读透产品,再一环一环问**(RQ-237 第 1 批,`onboard.py`、`product_scan.py`、`lifecycle.py`):站点级任务第一次进一个产品时不再直接体检、给建议。`product_scan.py` 先读首页、定价、文档、llms.txt、sitemap 页面类型和语言前缀、robots、Wayback 首次出现日期,给仓库时读框架、路由、内容文件、埋点和 README,产出带出处的事实草稿;`onboard.py` 按 6 环(产品、客户与搜索意图、竞品、资产与限制、市场与关键词版图、策略与路线)和用户核对,每环最多 4 个带猜测的问题,**每环都停下等回复**;第 1 环必须由用户确认,确认要带用户原话(`--quote`),没问过的环不能确认,第 1 环没确认不能跳过(退出码 3)。档案存 `seo-ops/context/`(`profile.json` + 人读版 `product.md`,带版本和变更记录);网页上读来的条目在用户确认前一律「未确认」;处罚史、预算、审批人存 `context/private/`(进 .gitignore);第 5 环「明确不做」写成结构化禁用清单。`project.py next` 在开局没做完时指向 `onboard.py`(0/5 开局)。流程见 `references/overview/onboarding.md`。

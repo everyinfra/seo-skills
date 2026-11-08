@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 95,
+  "script": 98,
   "template": 25,
   "reference": 13,
   "stable": 76,
-  "beta": 56,
+  "beta": 59,
   "draft": 1
  },
  "entries": [
@@ -1835,6 +1835,48 @@
    "fallback_mode": "④",
    "tests_file": "tests/test_guard_hook.py",
    "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "plan.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "build --ws seo-ops(开局第 1 环已确认)",
+    "context/profile.json、diagnosis、data/playbooks.json、playbook/plays.json"
+   ],
+   "outputs_schema": "json",
+   "data_source": "开局档案 + 两条轴诊断 + 打法库;不联网",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_plan.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "launch_check.py",
+   "group": "技术 SEO",
+   "inputs": [
+    "--url 预览/预发/正式站 [--allow-local] [--prod-host]",
+    "robots.txt、sitemap、抽样页面(实时)"
+   ],
+   "outputs_schema": "json",
+   "data_source": "目标站实时抓取(本机回环需 --allow-local);data/launch-checklist.json",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_plan.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "demand_check.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "--seeds 种子词 / --names 候选名",
+    "Google、Bing、DuckDuckGo 公开联想接口;rdap.org"
+   ],
+   "outputs_schema": "json",
+   "data_source": "公开联想接口(联想数是信号不是搜索量 [est]);可选 --volumes 关键词工具导出 [real];RDAP 域名注册记录",
+   "fallback_mode": "②",
+   "tests_file": null,
+   "status": "beta"
   }
  ]
 }

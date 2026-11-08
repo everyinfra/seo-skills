@@ -472,6 +472,9 @@ def cmd_answer(ns):
             if f.get("status") == "unconfirmed":
                 f["status"] = "confirmed"
                 f["confirmed_at"] = now()
+        if r == 1 and prof["stage"].get("value") is None:
+            save_profile(ws, prof, msg)
+            raise GateError("产品阶段还是未知:先问用户在哪个阶段(0 想法 … 5 改版),用 --correct stage=N 记下再确认")
         if r == 1 and not prof["stage"].get("confirmed"):
             prof["stage"]["confirmed"] = True
         msg += ",确认"
@@ -479,6 +482,16 @@ def cmd_answer(ns):
     if ns.confirm:
         diag = lifecycle.diagnose(read_json(ctx(ws, "scan.json")), ws)
         write_json(ctx(ws, "diagnosis.json"), diag)
+    if ns.confirm and r == 6:
+        plan_path = os.path.join(ws, "plan", "plan.json")
+        plan = read_json(plan_path)
+        ok = str(ring["answers"].get("approve_plan", "")).strip()
+        if plan and ok.startswith("可以"):
+            plan.update({"status": "approved", "approved_at": now(), "approved_quote": ns.quote})
+            write_json(plan_path, plan)
+            print("方案已定稿(plan/plan.json status=approved)。")
+        elif plan:
+            print("用户要改方案:按原话改 seo-ops/playbook/plays.json 或档案后重跑 plan.py build,再发给用户确认。")
     nxt = current_ring(prof)
     print("%s。%s" % (msg, ("下一环:onboard.py show --ring %d" % nxt) if nxt else "6 环都完成了。"))
     return 0
