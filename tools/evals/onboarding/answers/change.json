@@ -1,0 +1,250 @@
+{
+ "product": "change",
+ "facts": {
+  "product.name": "Soilsense",
+  "product.one_liner": [
+   "smart soil sensors",
+   "when to water",
+   "home gardeners",
+   "houseplant owners"
+  ],
+  "product.lines": [
+   "Soilsense Sensor Mini(土壤湿度,$29)",
+   "Soilsense Sensor Pro(湿度 + 光照 + 温度,$59)",
+   "Soilsense Hub(Wi-Fi 网关,最多 16 个传感器,$79)+ App Premium $3/月"
+  ],
+  "pricing.model": "硬件一次性购买 $29 / $59 / $79;App 免费,Premium $3/月",
+  "conversion.primary": "在线商店下单(checkout 完成)",
+  "customers": [
+   "美国和德国(DACH)的家庭园艺和室内植物爱好者",
+   "植物店经销商(次要)"
+  ],
+  "market.languages": [
+   "en",
+   "de"
+  ]
+ },
+ "facts_match": {
+  "product.name": [
+   [
+    "Soilsense"
+   ]
+  ],
+  "product.one_liner": [
+   [
+    "soil",
+    "土壤"
+   ],
+   [
+    "sensor",
+    "传感器"
+   ],
+   [
+    "water",
+    "浇水"
+   ],
+   [
+    "garden",
+    "园艺",
+    "houseplant",
+    "plant",
+    "植物"
+   ]
+  ],
+  "product.one_liner_min_hits": 3,
+  "product.lines": [
+   [
+    "Mini"
+   ],
+   [
+    "Pro"
+   ],
+   [
+    "Hub"
+   ]
+  ],
+  "pricing.model": [
+   [
+    "29"
+   ],
+   [
+    "59"
+   ],
+   [
+    "79"
+   ]
+  ],
+  "conversion.primary": [
+   [
+    "store",
+    "商店",
+    "purchase",
+    "购买",
+    "下单",
+    "checkout"
+   ]
+  ],
+  "customers": [
+   [
+    "garden",
+    "园艺",
+    "houseplant",
+    "植物"
+   ],
+   [
+    "reseller",
+    "经销",
+    "plant shop",
+    "植物店"
+   ]
+  ],
+  "market.languages": [
+   [
+    "en",
+    "英"
+   ],
+   [
+    "de",
+    "德"
+   ]
+  ]
+ },
+ "stage": 5,
+ "stage_why": "用户声明要改 URL 结构(MIGRATION.md:/blog/→/articles/、/product/*→/products/*),属 change_events 的 url_restructure;阶段 5 由用户声明触发,不看流量。",
+ "maturity": {
+  "technical": null,
+  "content": 3,
+  "authority": null,
+  "geo": 3,
+  "measurement": 2
+ },
+ "maturity_proven": {
+  "technical": 3,
+  "content": 3,
+  "authority": 2,
+  "geo": 3,
+  "measurement": 2
+ },
+ "maturity_why": {
+  "technical": "按改版前(--state before)判:L1–L2 成立(30 个 URL、robots 放行);L3 预期 0 个 CRITICAL;L4 CWV 无现场数据 → null(已证明 3)。",
+  "content": "L1 30 个 URL;L2 产品页、定价页;L3 15 篇文章(英 10、德 5)≥10;L4 page_types.intent 确定为 0(没有对比 / 集成 / 场景页)→ 3。",
+  "authority": "L1 品牌名;L2 sameAs 2 个(Instagram、YouTube);L3 引用域没有数据 → null(已证明 2)。",
+  "geo": "L1 robots 放行;L2 有 llms.txt;L3 有 JSON-LD 且品牌名一致;L4 ai_visibility_measured 确定不成立(brief 和第 4 环用户原话:从没量过 AI 引荐和引用)→ 3。",
+  "measurement": "L1 ring1;L2 GA4;L3 gsc_connected 不成立(用户第 4 环说 GSC 不给本项目权限,也没有导出)→ 2。"
+ },
+ "maturity_rule": "成熟度判法(出题人写定):每维从第 1 级往上逐级查 lifecycle.json 的 all 条件;第一个不成立的级别之前的最高级就是答案。第一个不成立的级别若是「确定不成立」(证据在,值不满足)→ 写数字;若是「证据缺失、判不了」→ 写 null(规格:证据缺失判未知,不猜),这时 maturity_proven 给出已证明的级别。第 1 级都不成立写 0(lifecycle.json 没有 0 级,0 表示「第 1 级未达到」)。没有站点时,signals.* 一律按「未达到」处理(没有站点本身就是确定证据,不算未知)。判的时点:按 scenarios.json 本产品开局场景的模拟用户脚本走完 6 环之后(profile.ring1_confirmed、conversion_defined、kpi_defined 由脚本回答决定;ops.weekly_runs 一律 0)。metrics.gsc_connected:有 GSC API 或用户给的 GSC 导出文件任一即算。health.* 按测试站的造法判:lifecycle_sites.py 的页面按 static_site clean 状态的写法造,预期 0 个 CRITICAL。metrics.cwv_pass 要现场数据(CrUX / 实测),测试站和新站都没有 → 未知。metrics.referring_domains 没有外链数据 → 未知。",
+ "stage_must_do": [
+  "改动前存基线:30 个旧 URL 的状态码、title、canonical、hreflang、结构化数据、内链",
+  "按 MIGRATION.md 规则出 301 映射表(23 条旧 → 新),标出没映射的 URL",
+  "上线后(--state after)在本地预览重抓、和基线对比,列差异清单并修(一跳 301、canonical / hreflang / sitemap / 内链换新址、新页不带 noindex)",
+  "英德 hreflang 簇在新 URL 上保持互指",
+  "接 GSC(现在没接):迁移前后看收录、404 和点击",
+  "上线后提交新 sitemap,盯 404 和旧 URL 的抓取"
+ ],
+ "stage_must_do_match": [
+  [
+   [
+    "基线",
+    "baseline",
+    "快照",
+    "snapshot"
+   ]
+  ],
+  [
+   [
+    "301",
+    "映射",
+    "redirect map",
+    "mapping"
+   ]
+  ],
+  [
+   [
+    "对比",
+    "diff",
+    "差异",
+    "compare",
+    "重抓",
+    "recrawl"
+   ]
+  ],
+  [
+   [
+    "hreflang",
+    "英德",
+    "de",
+    "German"
+   ]
+  ],
+  [
+   [
+    "Search Console",
+    "GSC"
+   ]
+  ],
+  [
+   [
+    "sitemap",
+    "404",
+    "抓取",
+    "crawl"
+   ]
+  ]
+ ],
+ "stage_must_not": [
+  "建内容生产线、主题簇扩张(增长期)",
+  "冷启动外链:目录、产品上架平台",
+  "需求验证、起名和域名",
+  "按掉量信号刷新 / 退役旧内容",
+  "程序化页面"
+ ],
+ "stage_must_not_match": [
+  [
+   [
+    "内容生产线",
+    "主题簇",
+    "topic cluster",
+    "content pipeline"
+   ]
+  ],
+  [
+   [
+    "冷启动",
+    "目录提交",
+    "directory",
+    "Product Hunt"
+   ]
+  ],
+  [
+   [
+    "需求验证",
+    "起名",
+    "域名"
+   ]
+  ],
+  [
+   [
+    "退役",
+    "刷新旧",
+    "decay",
+    "prune"
+   ]
+  ],
+  [
+   [
+    "程序化",
+    "programmatic"
+   ]
+  ]
+ ],
+ "sources": [
+  "lifecycle_sites.py SS_BRIEF / PLANTS / migration_md",
+  "repo/MIGRATION.md"
+ ],
+ "site_move": {
+  "plants": "lifecycle_sites.PLANTS(M1–M10)",
+  "recall_min": 9,
+  "false_positive_max": 0,
+  "false_positive_rule": "--state after 里,不在 PLANT_URLS 的 URL 上报出的迁移问题算误报;MIGRATION.md 里其余 18 条映射是一跳 301,正确"
+ }
+}

@@ -5,6 +5,16 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.44.0 - 2026-11-08
+
+- **开局:先读透产品,再一环一环问**(RQ-237 第 1 批,`onboard.py`、`product_scan.py`、`lifecycle.py`):站点级任务第一次进一个产品时不再直接体检、给建议。`product_scan.py` 先读首页、定价、文档、llms.txt、sitemap 页面类型和语言前缀、robots、Wayback 首次出现日期,给仓库时读框架、路由、内容文件、埋点和 README,产出带出处的事实草稿;`onboard.py` 按 6 环(产品、客户与搜索意图、竞品、资产与限制、市场与关键词版图、策略与路线)和用户核对,每环最多 4 个带猜测的问题,**每环都停下等回复**;第 1 环必须由用户确认,确认要带用户原话(`--quote`),没问过的环不能确认,第 1 环没确认不能跳过(退出码 3)。档案存 `seo-ops/context/`(`profile.json` + 人读版 `product.md`,带版本和变更记录);网页上读来的条目在用户确认前一律「未确认」;处罚史、预算、审批人存 `context/private/`(进 .gitignore);第 5 环「明确不做」写成结构化禁用清单。`project.py next` 在开局没做完时指向 `onboard.py`(0/5 开局)。流程见 `references/overview/onboarding.md`。
+  Onboarding first: `product_scan.py` reads the product, `onboard.py` confirms it with the user in six rings (stops after each, ring 1 must be confirmed with the user's own words), and the profile lives in `seo-ops/context/`.
+- **两条轴诊断:产品阶段 × 成熟度**(`lifecycle.py`、`data/lifecycle.json`):阶段 6 档(想法、上线前、刚上线、增长、成熟、改版 / 迁移 / 转型),按可检查的条件判(站点可不可访问、robots / noindex、近 28 天展示、点击环比、站龄、改版事件);没有 GSC 时标「猜测」、列候选,在第 1 环让用户确认。成熟度 5 维(技术、内容、外链与品牌、AI 可见度、团队与测量)× 5 级,缺证据的判「未知」并列出要补什么,不猜;按阶段给出最该补的一格和下一件事。`onboard.py metric` 记 GSC 等指标后按真实数据重判。实测 everyinfra.com:近 28 天点击 475、上一期 155,判增长期。说明见 `references/overview/lifecycle-stages.md`。
+  Two-axis diagnosis: six lifecycle stages × five maturity areas, rule-based with unknowns reported instead of guessed.
+- **修 `project.py init` 冲掉别的脚本写进 project.yaml 的键**:`ops.py install` 追加的 `skill_version`、`ops weekly` 读的 `ga4_property`,再跑一次 init 就丢了;现在原样保留(回归测试修前红、修后绿)。
+  `project.py init` no longer drops keys other scripts appended to project.yaml.
+- SKILL.md 加「启动协议」;原则 2 从「缺数据不拒跑」改成「缺数据先问用户,问不到或用户说直接做(第 1 环除外)再按降级口径执行」;`strategy-fit.md`、`intake-checklists.md` 里「先体检」的说法改成「体检在开局第 4 环跑,想法阶段和上线前不硬跑」。
+
 ## 0.43.0 - 2026-11-07
 
 - **运营单的「只做这一件」按会带来注册的页排**(`ops.py`):外部数据包可以多给一份 `conversions`(站点自己的注册 × 首次落地页,按天、渠道加总,不带账户标识)。给了它,运营单开头多一节「注册从哪来」(注册数、7 天首付、按渠道、按落地页类),选题在展示和点击之外按同类页带来的注册加权;没有这份数据时和 0.42 一样。起因:everyinfra.com 11-07 的月度单把 `/es/partners/power-bi` 排第一(展示 309、点击 0),搜进来的词是「servicios power bi」,这类页 10-21～10-31 带来 0 个注册,改好了也带不来客户。回放(训练 10-21～10-31,检验 11-01～11-06 的真实注册,排法没看检验期):新排法前 10 里 8 个所在页类在检验期有注册,Power BI 页不在前 10。

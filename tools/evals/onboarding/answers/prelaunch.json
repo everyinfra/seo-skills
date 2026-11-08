@@ -1,0 +1,260 @@
+{
+ "product": "prelaunch",
+ "facts": {
+  "product.name": "Quillbill",
+  "product.one_liner": [
+   "invoicing",
+   "time tracking",
+   "client portal",
+   "freelance designers",
+   "studios"
+  ],
+  "product.lines": [
+   "Invoicing(品牌发票、Stripe / PayPal 付款链接、自动催款)",
+   "Time tracking(按项目计时,工时转发票行)",
+   "Client portal(打样确认、发票、付款一个链接)"
+  ],
+  "pricing.model": "Free(最多 3 个客户)/ Pro $12/月或 $120/年 / Studio $29 每席位每月(2–10 席);Pro 14 天免费试用,不要信用卡",
+  "conversion.primary": "开始 14 天免费试用(/signup/ 注册)",
+  "customers": [
+   "自由职业设计师和插画师",
+   "2–10 人的小型创意工作室"
+  ],
+  "market.languages": [
+   "en"
+  ]
+ },
+ "facts_match": {
+  "product.name": [
+   [
+    "Quillbill"
+   ]
+  ],
+  "product.one_liner": [
+   [
+    "invoic",
+    "发票"
+   ],
+   [
+    "time track",
+    "计时",
+    "工时"
+   ],
+   [
+    "portal",
+    "门户"
+   ],
+   [
+    "freelanc",
+    "自由职业"
+   ],
+   [
+    "designer",
+    "设计师",
+    "studio",
+    "工作室",
+    "creative",
+    "创意"
+   ]
+  ],
+  "product.one_liner_min_hits": 3,
+  "product.lines": [
+   [
+    "invoic",
+    "发票"
+   ],
+   [
+    "time",
+    "计时",
+    "工时"
+   ],
+   [
+    "portal",
+    "门户"
+   ]
+  ],
+  "pricing.model": [
+   [
+    "12"
+   ],
+   [
+    "29"
+   ],
+   [
+    "trial",
+    "试用",
+    "14"
+   ]
+  ],
+  "conversion.primary": [
+   [
+    "trial",
+    "试用",
+    "sign",
+    "注册"
+   ]
+  ],
+  "customers": [
+   [
+    "freelanc",
+    "自由职业",
+    "designer",
+    "设计师",
+    "illustrator",
+    "插画"
+   ],
+   [
+    "studio",
+    "工作室"
+   ]
+  ],
+  "market.languages": [
+   [
+    "en",
+    "英"
+   ]
+  ]
+ },
+ "stage": 1,
+ "stage_why": "仓库有 8 个公开路由(app/**/page.tsx)和 app/sitemap.ts;站点只在本地预览,robots.txt 是 Disallow: /,正式域名未指向,计划 2026-12-01 上线(阶段 1 判据:有公开页面但站点不可访问,或可访问但 robots 全封)。",
+ "maturity": {
+  "technical": 1,
+  "content": 2,
+  "authority": 1,
+  "geo": 0,
+  "measurement": 1
+ },
+ "maturity_proven": {
+  "technical": 1,
+  "content": 2,
+  "authority": 1,
+  "geo": 0,
+  "measurement": 1
+ },
+ "maturity_why": {
+  "technical": "L1 site_live:本地预览可访问,按成立判(若实现把「只有本地预览」判成不成立则为 0,两种都确定、都不是 null);L2 robots_block_all=false 不成立(Disallow: /)→ 1。",
+  "content": "L1 url_count=8 ≥5(路由和预览 sitemap 都是 8);L2 core ≥1(/pricing/、3 个功能页);L3 editorial ≥10 不成立(博客 0 篇)→ 2。",
+  "authority": "L1 brand_name=Quillbill(og:site_name、Organization name);L2 same_as_count ≥2 不成立(Organization 没有 sameAs)→ 1。",
+  "geo": "L1 robots_block_all=false 不成立 → 0。",
+  "measurement": "L1 ring1 确认;L2 analytics 不成立(仓库和预览都没有统计代码,brief 写未装)→ 1。"
+ },
+ "maturity_rule": "成熟度判法(出题人写定):每维从第 1 级往上逐级查 lifecycle.json 的 all 条件;第一个不成立的级别之前的最高级就是答案。第一个不成立的级别若是「确定不成立」(证据在,值不满足)→ 写数字;若是「证据缺失、判不了」→ 写 null(规格:证据缺失判未知,不猜),这时 maturity_proven 给出已证明的级别。第 1 级都不成立写 0(lifecycle.json 没有 0 级,0 表示「第 1 级未达到」)。没有站点时,signals.* 一律按「未达到」处理(没有站点本身就是确定证据,不算未知)。判的时点:按 scenarios.json 本产品开局场景的模拟用户脚本走完 6 环之后(profile.ring1_confirmed、conversion_defined、kpi_defined 由脚本回答决定;ops.weekly_runs 一律 0)。metrics.gsc_connected:有 GSC API 或用户给的 GSC 导出文件任一即算。health.* 按测试站的造法判:lifecycle_sites.py 的页面按 static_site clean 状态的写法造,预期 0 个 CRITICAL。metrics.cwv_pass 要现场数据(CrUX / 实测),测试站和新站都没有 → 未知。metrics.referring_domains 没有外链数据 → 未知。",
+ "stage_must_do": [
+  "上线检查清单,每项写负责人:robots 从 Disallow: / 改放行(app/robots.ts)、sitemap 用正式域名、canonical、结构化数据、分享卡片、速度",
+  "在本地预览上跑体检(site_crawl --allow-local),不连公网 quillbill.com",
+  "准备 GSC / Bing 的 quillbill.com 验证和统计埋点(现在都没有)",
+  "AI 爬虫放行策略和 llms.txt",
+  "定价页和 3 个功能页的 title / description、SoftwareApplication + Offer 结构化数据($12 / $29、14 天试用)",
+  "试用开始(/signup/)的转化事件埋点"
+ ],
+ "stage_must_do_match": [
+  [
+   [
+    "上线检查",
+    "launch checklist",
+    "清单",
+    "checklist"
+   ]
+  ],
+  [
+   [
+    "本地预览",
+    "--allow-local",
+    "localhost",
+    "127.0.0.1",
+    "preview"
+   ]
+  ],
+  [
+   [
+    "Search Console",
+    "GSC",
+    "Bing",
+    "验证",
+    "verification"
+   ],
+   [
+    "统计",
+    "埋点",
+    "analytics",
+    "GA4"
+   ]
+  ],
+  [
+   [
+    "llms.txt",
+    "AI 爬虫",
+    "GPTBot",
+    "AI crawler"
+   ]
+  ],
+  [
+   [
+    "SoftwareApplication",
+    "Offer",
+    "结构化数据",
+    "schema",
+    "pricing"
+   ]
+  ],
+  [
+   [
+    "signup",
+    "试用",
+    "trial",
+    "转化事件",
+    "conversion"
+   ]
+  ]
+ ],
+ "stage_must_not": [
+  "现在就做外链建设、目录 / 产品上架平台提交(上线后的事)",
+  "刷新旧内容、掉量排查",
+  "程序化页面批量生成",
+  "改版 301 映射",
+  "直接去公网抓 quillbill.com 做体检"
+ ],
+ "stage_must_not_match": [
+  [
+   [
+    "外链建设",
+    "目录提交",
+    "Product Hunt",
+    "backlink"
+   ]
+  ],
+  [
+   [
+    "刷新旧",
+    "掉量",
+    "decay"
+   ]
+  ],
+  [
+   [
+    "程序化",
+    "programmatic"
+   ]
+  ],
+  [
+   [
+    "301 映射",
+    "迁移",
+    "migration"
+   ]
+  ],
+  [
+   [
+    "https://quillbill.com 体检",
+    "抓 quillbill.com",
+    "crawl quillbill.com"
+   ]
+  ]
+ ],
+ "sources": [
+  "lifecycle_sites.py QB_BRIEF / QB_ROUTES",
+  "repo/app/robots.ts、repo/package.json",
+  "site/robots.txt"
+ ],
+ "note": "一般外链规划可以写进上线后的路线,但不能排在方案前 5 条当本周动作。"
+}

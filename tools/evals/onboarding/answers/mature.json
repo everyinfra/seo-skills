@@ -1,0 +1,261 @@
+{
+ "product": "mature",
+ "facts": {
+  "product.name": "Trailmark Guides",
+  "product.one_liner": [
+   "independent",
+   "trail guides",
+   "gear reviews",
+   "US backpackers",
+   "day hikers"
+  ],
+  "product.lines": [
+   "徒步路线指南(12 篇,免费)",
+   "装备评测与选购(16 篇评测、4 篇对比、4 篇 best-of,REI / Backcountry 联盟链接)",
+   "Trailmark Pro 会员(离线 GPX 地图、许可证清单,$5/月或 $48/年)"
+  ],
+  "pricing.model": "内容免费;约 70% 收入是联盟佣金(REI、Backcountry);Trailmark Pro $5/月或 $48/年",
+  "conversion.primary": "点联盟链接去零售商购买(affiliate click-out)",
+  "customers": [
+   "规划具体行程的美国背包客和一日徒步者(入门到中级)",
+   "比较型号的装备买家"
+  ],
+  "market.languages": [
+   "en"
+  ]
+ },
+ "facts_match": {
+  "product.name": [
+   [
+    "Trailmark"
+   ]
+  ],
+  "product.one_liner": [
+   [
+    "independent",
+    "独立"
+   ],
+   [
+    "trail",
+    "路线",
+    "徒步"
+   ],
+   [
+    "gear",
+    "装备"
+   ],
+   [
+    "review",
+    "评测"
+   ],
+   [
+    "backpack",
+    "hiker",
+    "背包",
+    "徒步者"
+   ]
+  ],
+  "product.one_liner_min_hits": 3,
+  "product.lines": [
+   [
+    "trail",
+    "路线"
+   ],
+   [
+    "review",
+    "评测",
+    "gear",
+    "装备"
+   ],
+   [
+    "Pro",
+    "会员",
+    "GPX"
+   ]
+  ],
+  "pricing.model": [
+   [
+    "affiliate",
+    "联盟",
+    "佣金"
+   ],
+   [
+    "5",
+    "48",
+    "Pro"
+   ]
+  ],
+  "conversion.primary": [
+   [
+    "affiliate",
+    "联盟",
+    "click-out",
+    "click out",
+    "零售商"
+   ]
+  ],
+  "customers": [
+   [
+    "backpack",
+    "hiker",
+    "背包",
+    "徒步"
+   ],
+   [
+    "gear buyer",
+    "装备买家",
+    "compar",
+    "比较"
+   ]
+  ],
+  "market.languages": [
+   [
+    "en",
+    "英"
+   ]
+  ]
+ },
+ "stage": 4,
+ "stage_why": "站龄 4 年 8 个月(2022-03 起,≥2 年);近 28 天点击 1,450,上一期 1,850,环比 -21.6%(≤ -10%,阶段 4 判据)。",
+ "maturity": {
+  "technical": null,
+  "content": 4,
+  "authority": null,
+  "geo": 1,
+  "measurement": 4
+ },
+ "maturity_proven": {
+  "technical": 3,
+  "content": 4,
+  "authority": 2,
+  "geo": 1,
+  "measurement": 4
+ },
+ "maturity_why": {
+  "technical": "L1–L2 成立(可访问、robots 放行、41 个 URL);L3 预期 0 个 CRITICAL;L4 CWV 没有现场数据 → null(已证明 3)。",
+  "content": "L1 41 个 URL;L2 /pro/ 定价核心页;L3 36 篇文章;L4 4 篇 vs 对比页 ≥3,GSC 两期都有 ≥10 个非首页拿到点击;L5 近 90 天内容改动 0(sitemap lastmod 和 dateModified 最晚 2026-07-02,90 天线是 2026-08-10)→ 4。",
+  "authority": "L1 品牌名;L2 sameAs 3 个(Instagram、YouTube、Pinterest);L3 引用域没有数据 → null(已证明 2)。",
+  "geo": "L1 robots 放行;L2 没有 llms.txt → 1。",
+  "measurement": "L1 ring1;L2 GA4;L3 GSC 导出 + 转化=联盟点击;L4 第 6 环脚本目标(90 天内回到每 28 天 1,800 点击);L5 weekly_runs=0 → 4。"
+ },
+ "maturity_rule": "成熟度判法(出题人写定):每维从第 1 级往上逐级查 lifecycle.json 的 all 条件;第一个不成立的级别之前的最高级就是答案。第一个不成立的级别若是「确定不成立」(证据在,值不满足)→ 写数字;若是「证据缺失、判不了」→ 写 null(规格:证据缺失判未知,不猜),这时 maturity_proven 给出已证明的级别。第 1 级都不成立写 0(lifecycle.json 没有 0 级,0 表示「第 1 级未达到」)。没有站点时,signals.* 一律按「未达到」处理(没有站点本身就是确定证据,不算未知)。判的时点:按 scenarios.json 本产品开局场景的模拟用户脚本走完 6 环之后(profile.ring1_confirmed、conversion_defined、kpi_defined 由脚本回答决定;ops.weekly_runs 一律 0)。metrics.gsc_connected:有 GSC API 或用户给的 GSC 导出文件任一即算。health.* 按测试站的造法判:lifecycle_sites.py 的页面按 static_site clean 状态的写法造,预期 0 个 CRITICAL。metrics.cwv_pass 要现场数据(CrUX / 实测),测试站和新站都没有 → 未知。metrics.referring_domains 没有外链数据 → 未知。",
+ "stage_must_do": [
+  "掉量排查:按页面类型拆,跌幅集中在评测、对比和 best-of 页(平均位置从约 6.5 退到约 10),路线指南基本没掉",
+  "算法更新归因:对照 10 月前后的 Google 更新(评测 / 核心更新)和站内改动时间",
+  "旧内容刷新:best-of 2025 更新到 2026、评测补新实测,dateModified 从 7 月停住后没动过",
+  "退役或合并过时、薄的评测页",
+  "SEO 实验:评测页结构或标题改写,一半页面改、一半不改对比",
+  "把联盟点击当转化量起来(GA4 出站点击事件),用它判断刷新效果",
+  "多市场扩张(英国、加拿大英语读者)排在后面"
+ ],
+ "stage_must_do_match": [
+  [
+   [
+    "掉量",
+    "drop",
+    "decline",
+    "页面类型",
+    "评测页",
+    "review"
+   ]
+  ],
+  [
+   [
+    "算法",
+    "update",
+    "更新归因",
+    "core update",
+    "reviews update"
+   ]
+  ],
+  [
+   [
+    "刷新",
+    "refresh",
+    "更新到 2026",
+    "2026",
+    "update content"
+   ]
+  ],
+  [
+   [
+    "退役",
+    "合并",
+    "prune",
+    "retire",
+    "consolidat"
+   ]
+  ],
+  [
+   [
+    "实验",
+    "test",
+    "A/B",
+    "experiment"
+   ]
+  ],
+  [
+   [
+    "联盟点击",
+    "affiliate",
+    "click-out",
+    "出站",
+    "outbound",
+    "归因"
+   ]
+  ],
+  [
+   [
+    "多市场",
+    "UK",
+    "Canada",
+    "英国",
+    "加拿大",
+    "international"
+   ]
+  ]
+ ],
+ "stage_must_not": [
+  "把「提交 GSC 验证 / 首次提交 sitemap」当要做的事(已接 4 年)",
+  "上线检查清单",
+  "需求验证、起名和域名",
+  "冷启动外链:目录、产品上架平台"
+ ],
+ "stage_must_not_match": [
+  [
+   [
+    "验证 GSC",
+    "GSC 验证",
+    "verify Search Console",
+    "提交 sitemap",
+    "submit sitemap"
+   ]
+  ],
+  [
+   [
+    "上线检查",
+    "launch checklist"
+   ]
+  ],
+  [
+   [
+    "需求验证",
+    "起名",
+    "域名"
+   ]
+  ],
+  [
+   [
+    "冷启动",
+    "目录提交",
+    "directory submission",
+    "Product Hunt"
+   ]
+  ]
+ ],
+ "sources": [
+  "lifecycle_sites.py TM_BRIEF / TM_POSTS",
+  "gsc/Pages_*.csv(合计 1,850 → 1,450)",
+  "site/sitemap.xml lastmod"
+ ]
+}

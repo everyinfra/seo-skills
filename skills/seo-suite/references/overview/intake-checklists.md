@@ -187,4 +187,6 @@
 详细清单(含逐市场闸门与资源四问)见 [references/overview/intake-checklists.md](intake-checklists.md);数据源矩阵与 T0-T4 阶梯见 [数据接入指南](data-onboarding.md)。
 
 **新站开局协议(用户给出新域名的默认动作序列)**:
+> 2026-11-08 起由[开局 6 环](onboarding.md)取代(RQ-237):`onboard.py start` 先读透产品、一环一环问,体检放在第 4 环;想法阶段和上线前不跑线上体检。下面是旧版序列,只作题库参考。
+
 intake(市场+站型+目标+三问+资源四问)→ `doctor.py --wizard --want seo-audit,rank,backlinks,cwv`(探测已配源)→ `project.py init <域名>` + `project.py run triage`(全站发现→体检→优先级→封套→"站型+该做三件事")→ 按 [strategy-fit](strategy-fit.md) 与对应站型卡的开局命令链推进 → CRITICAL 未清零前不做内容量产(原则 0)。

@@ -1,6 +1,6 @@
 {
  "schema_version": "1.0",
- "updated": "2026-11-05",
+ "updated": "2026-11-08",
  "governance": {
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 92,
+  "script": 95,
   "template": 25,
   "reference": 13,
   "stable": 76,
-  "beta": 53,
+  "beta": 56,
   "draft": 1
  },
  "entries": [
@@ -1349,6 +1349,49 @@
    "data_source": "编排器只编排不重实现;任何步失败续跑其余",
    "fallback_mode": "②",
    "tests_file": "tests/test_project.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "product_scan.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "--site URL 和/或 --repo DIR",
+    "首页、定价、文档、llms.txt、sitemap、robots(实时);仓库路由、README、package.json"
+   ],
+   "outputs_schema": "json",
+   "data_source": "目标站实时抓取 + 本地仓库只读;Wayback 首次出现日期(可关)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_product_scan.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "lifecycle.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "--scan product_scan.json",
+    "--ws seo-ops(档案、体检、运营单)",
+    "--metrics 指标 JSON"
+   ],
+   "outputs_schema": "json",
+   "data_source": "data/lifecycle.json 规则表;证据缺失判未知",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_onboard.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "onboard.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "start --site/--repo",
+    "answer --ring N --quote 用户原话"
+   ],
+   "outputs_schema": "json",
+   "data_source": "product_scan + lifecycle;用户回答",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_onboard.py",
    "status": "beta"
   },
   {

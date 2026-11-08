@@ -1,0 +1,267 @@
+{
+ "product": "launched",
+ "facts": {
+  "product.name": "Northfold Coffee",
+  "product.one_liner": [
+   "single-origin",
+   "coffee",
+   "small-batch / roasted to order",
+   "Portland, Maine",
+   "US"
+  ],
+  "product.lines": [
+   "单品咖啡豆(Ethiopia Guji $22、Colombia Huila $18、Kenya Nyeri AA $26,12 oz)",
+   "月度订阅(一袋 $22/月、两袋 $40/月,随时跳过或取消)",
+   "冲煮器具(V60 入门套装 $45)"
+  ],
+  "pricing.model": "按件零售,12 oz 一袋 $18–$26;订阅 $22/月起;满 $40 美国包邮",
+  "conversion.primary": "下单购买;最看重开始订阅(用户第 1 环确认)",
+  "customers": [
+   "在家手冲的美国咖啡爱好者",
+   "Q4 送礼买家"
+  ],
+  "market.languages": [
+   "en-US"
+  ]
+ },
+ "facts_match": {
+  "product.name": [
+   [
+    "Northfold"
+   ]
+  ],
+  "product.one_liner": [
+   [
+    "single-origin",
+    "single origin",
+    "单品"
+   ],
+   [
+    "coffee",
+    "咖啡"
+   ],
+   [
+    "small-batch",
+    "small batch",
+    "roasted to order",
+    "现烘",
+    "小批量"
+   ],
+   [
+    "Portland",
+    "Maine",
+    "缅因"
+   ],
+   [
+    "US",
+    "美国",
+    "United States"
+   ]
+  ],
+  "product.one_liner_min_hits": 3,
+  "product.lines": [
+   [
+    "bean",
+    "豆",
+    "single"
+   ],
+   [
+    "subscription",
+    "订阅"
+   ],
+   [
+    "gear",
+    "器具",
+    "V60",
+    "kit"
+   ]
+  ],
+  "pricing.model": [
+   [
+    "18",
+    "22",
+    "26"
+   ],
+   [
+    "subscription",
+    "订阅"
+   ]
+  ],
+  "conversion.primary": [
+   [
+    "subscri",
+    "订阅",
+    "purchase",
+    "购买",
+    "下单",
+    "checkout"
+   ]
+  ],
+  "customers": [
+   [
+    "home brew",
+    "在家",
+    "pour-over",
+    "手冲",
+    "home"
+   ],
+   [
+    "gift",
+    "送礼"
+   ]
+  ],
+  "market.languages": [
+   [
+    "en",
+    "英"
+   ]
+  ]
+ },
+ "stage": 2,
+ "stage_why": "站点 2026-10-18 上线(到 11-08 共 21 天,< 90 天);近 28 天(10-11~11-07)展示 640 < 1000,上一期 0(阶段 2 判据)。",
+ "maturity": {
+  "technical": null,
+  "content": 2,
+  "authority": 1,
+  "geo": 1,
+  "measurement": 4
+ },
+ "maturity_proven": {
+  "technical": 3,
+  "content": 2,
+  "authority": 1,
+  "geo": 1,
+  "measurement": 4
+ },
+ "maturity_why": {
+  "technical": "L1 站点可访问;L2 robots 放行、首页无 noindex、14 个 URL;L3 体检预期 0 个 CRITICAL(按干净页面造);L4 要 Core Web Vitals 现场数据,新站没有 → 未知,null(已证明 3)。",
+  "content": "L1 14 个 URL;L2 核心页(3 个产品页、订阅页);L3 编辑类只有 3 篇冲煮指南 <10 → 2。",
+  "authority": "L1 品牌名 Northfold Coffee;L2 sameAs 只有 Instagram 1 个 <2 → 1。",
+  "geo": "L1 robots 放行;L2 没有 llms.txt(/llms.txt 404)→ 1。",
+  "measurement": "L1 ring1;L2 每页有 GA4;L3 GSC 导出在 + 转化=下单/订阅;L4 第 6 环脚本给了目标(每月 30 个自然搜索新订阅);L5 weekly_runs=0 → 4。"
+ },
+ "maturity_rule": "成熟度判法(出题人写定):每维从第 1 级往上逐级查 lifecycle.json 的 all 条件;第一个不成立的级别之前的最高级就是答案。第一个不成立的级别若是「确定不成立」(证据在,值不满足)→ 写数字;若是「证据缺失、判不了」→ 写 null(规格:证据缺失判未知,不猜),这时 maturity_proven 给出已证明的级别。第 1 级都不成立写 0(lifecycle.json 没有 0 级,0 表示「第 1 级未达到」)。没有站点时,signals.* 一律按「未达到」处理(没有站点本身就是确定证据,不算未知)。判的时点:按 scenarios.json 本产品开局场景的模拟用户脚本走完 6 环之后(profile.ring1_confirmed、conversion_defined、kpi_defined 由脚本回答决定;ops.weekly_runs 一律 0)。metrics.gsc_connected:有 GSC API 或用户给的 GSC 导出文件任一即算。health.* 按测试站的造法判:lifecycle_sites.py 的页面按 static_site clean 状态的写法造,预期 0 个 CRITICAL。metrics.cwv_pass 要现场数据(CrUX / 实测),测试站和新站都没有 → 未知。metrics.referring_domains 没有外链数据 → 未知。",
+ "stage_must_do": [
+  "收录:GSC 和 Bing 提交 sitemap、开 IndexNow,核对 14 个页面都被收录",
+  "冷启动外链:精品咖啡烘焙商目录、咖啡社区(r/pourover、r/Coffee 等)、合作页(咖啡馆、器具品牌)",
+  "品牌实体档案:Organization sameAs 补齐(现在只有 Instagram)、Google 商家资料等各平台主页",
+  "第一批核心页:3 支豆子和订阅页加 Product / Offer 结构化数据与评价,补订阅对比页(如 vs Trade Coffee)",
+  "被 AI 读到:发 llms.txt、各处品牌和产品信息一致",
+  "冲煮指南继续出(V60 已有展示),接住「v60 ratio」这类入门词并链到订阅"
+ ],
+ "stage_must_do_match": [
+  [
+   [
+    "收录",
+    "index",
+    "提交 sitemap",
+    "submit",
+    "IndexNow",
+    "Search Console",
+    "Bing"
+   ]
+  ],
+  [
+   [
+    "外链",
+    "目录",
+    "directory",
+    "社区",
+    "community",
+    "Reddit",
+    "合作",
+    "backlink"
+   ]
+  ],
+  [
+   [
+    "sameAs",
+    "实体",
+    "entity",
+    "Business Profile",
+    "商家资料",
+    "主页"
+   ]
+  ],
+  [
+   [
+    "Product",
+    "Offer",
+    "结构化",
+    "schema",
+    "核心页",
+    "对比",
+    "vs"
+   ]
+  ],
+  [
+   [
+    "llms.txt",
+    "AI"
+   ]
+  ],
+  [
+   [
+    "brew guide",
+    "冲煮",
+    "指南",
+    "V60",
+    "ratio",
+    "recipe"
+   ]
+  ]
+ ],
+ "stage_must_not": [
+  "刷新 / 退役旧内容",
+  "掉量排查、算法更新归因",
+  "程序化页面大批量生成",
+  "多市场 / 多语言扩张(只发美国)",
+  "SEO A/B 实验(流量太小)"
+ ],
+ "stage_must_not_match": [
+  [
+   [
+    "刷新旧",
+    "退役",
+    "refresh old",
+    "content decay"
+   ]
+  ],
+  [
+   [
+    "掉量",
+    "算法更新",
+    "traffic drop",
+    "core update"
+   ]
+  ],
+  [
+   [
+    "程序化",
+    "programmatic"
+   ]
+  ],
+  [
+   [
+    "多市场",
+    "多语言",
+    "hreflang",
+    "international",
+    "UK",
+    "Canada"
+   ]
+  ],
+  [
+   [
+    "A/B",
+    "实验",
+    "split test",
+    "SEO test"
+   ]
+  ]
+ ],
+ "sources": [
+  "lifecycle_sites.py NF_BRIEF / NF_PAGES",
+  "gsc/Pages_*.csv(合计见 product.json gsc_totals)"
+ ]
+}
