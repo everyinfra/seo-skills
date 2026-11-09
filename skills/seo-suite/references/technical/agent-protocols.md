@@ -1,6 +1,6 @@
 # Agent 协议速查卡(15 协议一页对照)
 
-> 核对 2026-10-18;复核于 2026-11-05(第 1 卡补 OpenAI,新增第 15 卡内容授权)。事实以各卡「规范」链接的原文为准;[specification.website](https://github.com/jdevalk/specification.website) 只作二手索引(它的 ARD 路径与字段、NLWeb 响应、DNS-AID 标签、Web Bot Auth 签名厂商、RFC 8288 章节号与原文不符,已按原文改)。部署取舍见 [agent-readiness.md](agent-readiness.md);robots.txt UA 表见 [ai-crawler-policy.md](ai-crawler-policy.md)。
+> 核对 2026-10-18;复核于 2026-11-09(第 1 卡补 OpenAI,新增第 15 卡内容授权)。事实以各卡「规范」链接的原文为准;[specification.website](https://github.com/jdevalk/specification.website) 只作二手索引(它的 ARD 路径与字段、NLWeb 响应、DNS-AID 标签、Web Bot Auth 签名厂商、RFC 8288 章节号与原文不符,已按原文改)。部署取舍见 [agent-readiness.md](agent-readiness.md);robots.txt UA 表见 [ai-crawler-policy.md](ai-crawler-policy.md)。
 > 状态标签:**stable**=冻结的正式版(RFC、W3C CG 定稿报告、开放治理项目的 1.x);**draft**=还在改的草案(IETF WG/个人草案、W3C CG 草案、多方 0.x 提案、社区约定);**vendor**=一家公司或一个项目自定版本的规范;**none**=单站约定,未成标准。
 
 ## 1. Content Signals(robots.txt 使用偏好声明)— vendor(IETF 对应物为 WG 草案)
@@ -86,6 +86,8 @@
 - **规则**:禁止共享 HMAC。`Signature-Agent` 用字典形 `sig1="https://bot.example"`;默认 `type=directory`,值必须是 origin,目录在 `/.well-known/http-message-signatures-directory`(`application/http-message-signatures-directory+json`);另有 `type=jwks_uri`、`type=cimd`。签名覆盖 `@authority` 或 `@target-uri`,外加 `"signature-agent";key="sig1"`;必带 `created`、`expires`、`keyid`(JWK thumbprint)、`tag="web-bot-auth"`。未解析的 Signature-Agent 不能用来定策略。
 - **兼容性坑**:Cloudflare 现行验证只认旧的字符串形,收到字典形会验证失败([文档](https://developers.cloudflare.com/bots/reference/bot-verification/web-bot-auth/))。
 - **谁签名**:OpenAI 的 ChatGPT Cloud browser(`"https://chatgpt.com"`,旧形,[帮助中心](https://help.openai.com/en/articles/11845367-chatgpt-works-cloud-browser-allowlisting));Google-Agent 的部分请求(`g="https://agent.bot.goog"`,实验阶段,[文档](https://developers.google.com/crawling/docs/crawlers-fetchers/web-bot-auth))。旧版写的 Anthropic、Perplexity 无文档,主域名下也无目录(实测 404),已删。不要拦未签名流量:Google 说明并非所有请求都签名。
+
+- **生态动向(2026-11-05,核对 2026-11-09)**:Cloudflare 发起 Trusted Agent Delegation(TAD)联盟,想把「站点怎么识别、信任并追责 agent 背后的真人」交给 IETF 做;文章自己的点名是 Web Bot Auth(agent 身份)、MOLE(不带用户标识的限速)、OAuth(账户身份)、AIPREF(用途偏好),并指出 robots.txt 说不清 agent 可以做什么,目前没有专门工作组([Cloudflare 博客](https://blog.cloudflare.com/trusted-agent-delegation/))。这是倡议和讨论,不是已发布的协议,不进下面的「状态一览」。落地的只有 Cloudflare 自家功能:Security Analytics 把 Personal Assistants 单列;Account Abuse Protection(早期访问)对登录和注册标出是不是个人 agent 发起,可按 Hashed User ID 只处置一个账户。
 
 ## 15. RSL(Really Simple Licensing,机读授权条款)— stable(行业规范,非标准组织)
 

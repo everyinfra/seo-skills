@@ -20,7 +20,8 @@ import unittest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
-TODAY = dt.date.today()
+# onboard.py 用 UTC 日期盖「上次核对」戳;测试用同一个日期,否则 UTC 与本地跨日(如新加坡 00:00–08:00)会误红
+TODAY = dt.datetime.now(dt.timezone.utc).date()
 
 
 def run(script, args, cwd):
