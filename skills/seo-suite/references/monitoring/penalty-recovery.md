@@ -1,6 +1,6 @@
 # 人工操作与排名下滑：识别、恢复与负面 SEO 防御(类型学·鉴别诊断·恢复流程·防御)
 
-> 建立于 2026-10-09，2026-10-21 逐条对 Google 官方文档重核，复核于 2026-11-05（补垃圾举报可触发人工操作、生成式 AI 回答适用垃圾政策、第三方 SEO 服务评估）。定位:**人工操作(manual action)与排名下滑的全生命周期处置**——识别(哪类人工操作)→鉴别(人工操作还是算法变化)→恢复(reconsideration / 内容工程)→防御(负面 SEO)。用词按 Google 原话：人工评审给出的叫「人工操作」(manual action)；核心更新、垃圾内容更新和自动系统造成的排名变化叫「算法变化」或「自动降级」，**不叫惩罚，也没有申诉通道**。
+> 建立于 2026-10-09，2026-10-21 逐条对 Google 官方文档重核，复核于 2026-11-09（补垃圾举报可触发人工操作、生成式 AI 回答适用垃圾政策、第三方 SEO 服务评估）。定位:**人工操作(manual action)与排名下滑的全生命周期处置**——识别(哪类人工操作)→鉴别(人工操作还是算法变化)→恢复(reconsideration / 内容工程)→防御(负面 SEO)。用词按 Google 原话：人工评审给出的叫「人工操作」(manual action)；核心更新、垃圾内容更新和自动系统造成的排名变化叫「算法变化」或「自动降级」，**不叫惩罚，也没有申诉通道**。
 > 分工(引用不重复):**时间线对齐与算法归因方法论**见 [seo-drift-monitoring](seo-drift-monitoring.md) 第五节(归因流程)与五层协议 L5;**站群/PBN 案例模式、传染性与 SRA 时间线**见 [site-networks](../research/site-networks.md) 第四节;**disavow 判定门槛**见 [外链画像分析](../research/backlink-profile-analysis.md) 第四节;**规模化内容政策闸门**见 [agent-readiness](../technical/agent-readiness.md) 第 8 节。本文件只写上述文件未覆盖的:手动动作类型全清单、reconsideration 全流程、负面 SEO 防御、恢复期策略与时长汇总。
 
 ## 一、人工操作类型学:官方清单
@@ -35,6 +35,7 @@
 
 - **口径纪律**:这张表是识别用速查，不是判定器。判定只认 Search Console 报告原文;「识别信号」列里标「本套件经验信号」的内容用于报告之外的预诊。
 - **政策里有、人工操作报告里没有单独条目的**:规模化内容滥用(scaled content abuse)、过期域名滥用(expired domain abuse)。两者 2024-03-05 随 3 月核心更新一起宣布([公告](https://developers.google.com/search/blog/2024/03/core-update-spam-policies))，这两条的说明是:规模化内容滥用「无论内容怎么产生」(自动化、人工或混合)，只要主要目的是操纵排名；过期域名滥用指买下过期域名、主要为操纵排名而改作低价值内容(旧域名做新的、为用户设计的原创站点没问题)。它们可能通过 Major spam problems 或 Thin content 等条目体现。
+- **公开案例线索(第三方观察,2026-11-05,核对 2026-11-09)**:行业媒体和 SEO 从业者记录到 Facebook 的 `/fb-answers/` 目录——由 AI 汇总 Facebook 公开帖子生成的页面——在 Google 索引里约 600 万页并有排名,被点名为规模化内容滥用的例子([Search Engine Roundtable](https://www.seroundtable.com/facebook-answers-google-42467.html),引用 Saul Westbrook 与 Glenn Gabe 的观察)。该文没有引用 Google 的回应,也没有处置记录;这是从业者的判断,不是官方认定。本套件口径:不把「大站也在做」当成自己可以批量做 AI 汇总页的理由;大站的未处置不代表政策不适用于你,小站被处置时没有同样的缓冲。
 
 ### 1.3 影响范围:受影响页面模式与 EEA 例外
 

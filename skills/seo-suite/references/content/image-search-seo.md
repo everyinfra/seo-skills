@@ -1,6 +1,6 @@
 # 图片 SEO 与视觉搜索(被 AI 看见的图片层)
 
-> 建立于 2026-10-09;2026-10-21 逐条重新核对:官方事实附一手链接;没有出处的行业数字已删除;第三方研究标「第三方」并写年份。与 [视频 GEO 指南](video-geo-guide.md) 互补。「本套件口径」是做法约定,不是 Google 规则。
+> 建立于 2026-10-09;2026-10-21 逐条重新核对(2026-11-09 补 JPEG XL):官方事实附一手链接;没有出处的行业数字已删除;第三方研究标「第三方」并写年份。与 [视频 GEO 指南](video-geo-guide.md) 互补。「本套件口径」是做法约定,不是 Google 规则。
 
 ## 一、视觉搜索的量级与测量(官方)
 
@@ -44,6 +44,7 @@ Backlinko 分析了 65,388 次 Google Lens 搜索结果(2020 年发布;第三方
 3. **页面上下文**:Google 从页面内容、图注和图片标题理解图片;图放在相关文字附近。
 4. **结构化数据**:`image` 是图片结果徽章(badge)和富结果的必填字段。要在图片结果里显示创作者、版权、授权信息,用[图片元数据](https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata)(IPTC 或结构化数据)。
 5. **格式**:Google 图片搜索收录 BMP、GIF、JPEG、PNG、WebP、SVG、AVIF;文件扩展名与类型一致。`srcset` 或 `<picture>` 要配 `src` 回退。同一张图在站内始终用同一个 URL,方便缓存。
+   - **JPEG XL(2026-11-09 补)**:Chrome 从 155 版起支持解码 `.jxl`;官方称压缩比 JPEG 好 30–50%,支持无损、HDR,并建议 AVIF 和 JPEG XL 都试([Chrome 博客 2026-10-06](https://developer.chrome.com/blog/jpeg-xl-in-chrome),核对 2026-11-09)。上面 Google 图片搜索的收录格式清单里没有 JPEG XL。本套件口径:`.jxl` 只能当 `<picture>` 里的可选源,必须带 JPEG、WebP 或 AVIF 回退,不当唯一图片 URL;CWV 和 LCP 的图片基线不因此重算。
 6. **体积**:WebP 有损图比同等质量(SSIM)的 JPEG 小 25–34%([WebP 官方页](https://developers.google.com/speed/webp));首屏大图(LCP 图)不要 `loading="lazy"`([web.dev](https://web.dev/articles/lcp-lazy-loading))。
 7. **退出内联展示**:图片请求的 referrer 来自 Google 域名时,返回 200 或 204 且无内容,Google 会用抓取时生成的缩略图,官方说这不算 cloaking、不会触发人工处置。
 8. **EXIF/GPS**:本组没有找到 Google 官方文档说明如何使用它们,旧版「官方明确不用」已删除;不要为 SEO 给图片加地理标签,也不要靠它做本地排名(未核)。

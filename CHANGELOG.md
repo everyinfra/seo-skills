@@ -5,6 +5,13 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.46.1 - 2026-11-09
+
+- **信源工单 #11(2026-11-06 至 11-08 三轮,18 个源)**:补 6 处一手内容。`image-search-seo.md` 加 Chrome 155 起支持 JPEG XL(Google 图片搜索收录清单没有它,只当可选源并带回退);`agent-growth-loop.md` 加第八之二节 Clarity Agent Activity 与模拟评估(2026-11-04);`agent-protocols.md` 记 Cloudflare 发起 Trusted Agent Delegation 联盟(倡议,不进状态一览);`geo-platform-differences.md` 补 Bing AI Performance 的 Intents、Topics、Citation Share、Compare(2026-06-16);`geo-evidence-bank.md` 入库 3 篇 arXiv(IntentGEO、LIVE-GEO、Implicit Brand Injection,后者只作风险警示);`penalty-recovery.md` 记 Facebook `/fb-answers/` 约 600 万页被从业者点名为规模化内容滥用(第三方观察,Google 无回应记录)。其余源核对后判为已在 11-05 收录或噪声,理由写在工单评论里。
+  Intel issue #11: six first-source additions (JPEG XL in Chrome 155, Clarity Agent Activity, Trusted Agent Delegation, Bing AI Performance Intents/Topics/Citation Share/Compare, three GEO papers, Facebook Answers as a scaled-content-abuse case); the rest were already covered or noise.
+- **修:`test_loops.py` 在新加坡 00:00–08:00 误红**:`onboard.py` 用 UTC 日期盖「上次核对」,测试用本地日期,两者跨日时 `test_status_one_screen` 失败;测试改用 UTC 日期。
+  Fix: `test_loops.py` compared a local-date expectation with a UTC-stamped profile date, failing between 00:00 and 08:00 in UTC+8; the test now uses the UTC date.
+
 ## 0.46.0 - 2026-11-08
 
 - **第二次打开不再从头问:一屏现状加 6 个长期循环**(RQ-237 第 3 批,`loops.py`、`data/loops.json`):`loops.py status` 一屏写清档案上次核对日、阶段、方案第几周、本周路线项和各循环状态。6 个循环用同一种格式写明什么时候查、什么情况才打扰、怎么自检、什么时候不再问、怎么去重:每周运营单;档案满 30 天核一次(最多问 3 个);方案定稿满 90 天季度复盘;重新读站发现新产品线、定价变化或新页面类型时**只问变了的部分**;最近 4 次指标(跨度 ≥ 21 天)都过了下一阶段门槛才提示换阶段,一次冲高不算;改版保护。问过的事按指纹去重,用户没回复不重复问,一轮最多 3 问;`resolve` 带原话写回档案。用户在 `seo-ops/playbook/loops.json` 可以加循环或改阈值。

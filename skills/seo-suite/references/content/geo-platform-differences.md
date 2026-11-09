@@ -129,6 +129,7 @@ Google 系之外的 AI 搜索入口行为不同，不套用同一套 GEO 假设�
 
 - **GSC 生成式 AI 效果报告**（先对部分站点开放，后对全球开放，[日期](../overview/facts.md#gsc-genai)）只有展示，没有点击、CTR、查询维度；维度只有页面、国家、日期、设备。这些数据同时计入总体效果报告，所以 AI 功能带来的点击仍然拆不出来。
 - **Bing AI Performance**：Total Citations、Average Cited Pages、Grounding queries（抽样）、页面级引用数；2026-02 公测（[Bing 博客](https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/)）。
+- **Bing AI Performance 的四项新增（2026-06-16 预览，全球）**：Intents 把 grounding queries 归到信息型、商业型、导航型、本地型等类别；Topics 把相关 grounding queries 聚成主题（2026-10 的 Topics Portfolio Beta 在此基础上，见上）；Citation Share 是你的站在同一 grounding query 下占全部被引次数的百分比；Compare 把上一个时间段叠在当前报表上。官方强调 Citation Share 只是观察指标，不暴露竞争对手域名，也不代表流量份额，分类标签在预览期可能偏宽（[Bing 博客](https://blogs.bing.com/search/2026/6/New-AI-Visibility-Insights-in-Bing-Webmaster-Tools-Intents-Topics-Citation-Share-Compare/)，核对 2026-11-09）。
 - **引荐流量是下界**：Ahrefs 测试发现 Copilot、Mistral、Jasper 的访问在分析工具里显示为「Direct」（[Ahrefs](https://ahrefs.com/blog/ai-traffic-study/)）。用 referrer 清单 + 服务器日志 + 分析工具三源对账，按平台分列。
 - **抽样面板的五状态**（本套件口径，实现见 `scripts/citation_panel.py`）：no_answer / failed / brand_absent / name_only_mention / cited_brand。采集失败不等于内容缺口；提及不等于引用。
 - **query fan-out 三桶**：`python3 scripts/fanout_analysis.py fanout.csv`（列：prompt,web_query）把子查询分成 added / dropped / preserved，用来看引擎改写了哪些词。

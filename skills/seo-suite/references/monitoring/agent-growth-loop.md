@@ -1,6 +1,6 @@
 # 增长周循环:让 AI agent 每周只推一个「赚钱页」
 
-> 建立于 2026-10-17，2026-10-21 重核，复核于 2026-11-05（加第八节 Chrome 给 agent 的工具）。来源:X @EXM7777 长文《How to automate SEO with Opus 5.5 (Full Course)》(2026-09-23，正文经 fxtwitter 全文读取)。原文由一款 Slack 内 AI 员工产品赞助,文中「托管自动驾驶」那条路线是广告位,本文件不收。**这是一位从业者的工作方式，没有对照数据，本文件全部按「本套件口径的实践方法」使用，不当作 Google 或行业规定。**
+> 建立于 2026-10-17，2026-10-21 重核，复核于 2026-11-09（加第八节 Chrome 给 agent 的工具）。来源:X @EXM7777 长文《How to automate SEO with Opus 5.5 (Full Course)》(2026-09-23，正文经 fxtwitter 全文读取)。原文由一款 Slack 内 AI 员工产品赞助,文中「托管自动驾驶」那条路线是广告位,本文件不收。**这是一位从业者的工作方式，没有对照数据，本文件全部按「本套件口径的实践方法」使用，不当作 Google 或行业规定。**
 > 以下是与本套件已有内容查重后**只留新增、可操作的部分**,用本套件口径改写。
 >
 > 分工:[continuous-operations](continuous-operations.md) 管「站点今天有没有出事」(监控、告警、自动安全项);
@@ -111,6 +111,16 @@
 | Gemini in Chrome 的 auto browse | 用户让 Chrome 里的 Gemini 替自己在网页上办事(预约、找有货的商品等);桌面已有,2026-06 起到 Android;桌面端计划和 Gemini Spark 整合 | 这是你网站的**访客**,不是你的工具。赚钱页的表单、结账、预约要能被它走通:按钮是真按钮、表单有 label、关键步骤不靠悬停;WebMCP 在 Chrome 149 起做 origin trial,Gemini in Chrome 将支持(见 [agent-protocols.md](../technical/agent-protocols.md) 第 5 卡) |
 
 本套件口径:这些工具帮 agent「看见」页面,不替代第六节的判定纪律;agent 跑出的 Lighthouse 分数是实验室数据,不是现场数据(见 [cwv-playbook.md](../technical/cwv-playbook.md) 第一节)。
+
+### 八之二、看 agent 在你站上做什么:Clarity Agent Activity(2026-11-04,核对 2026-11-09)
+
+微软 Clarity 向全球所有用户开放两项新功能([Clarity 博客](https://clarity.microsoft.com/blog/clarity-connects-agents-llms-people/),[Microsoft Advertising 摘要](https://about.ads.microsoft.com/en/blog/post/november-2026/whats-new-in-microsoft-clarity-agent-insights-faster-answers-and-ai-discovery)):
+
+- **Agent Activity 看板**:按时间看 agent 流量的变化、哪些 agent 来过、到站后做了什么(搜索、提交表单、登录、下载、预约、结账)。官方只说「支持的 agent」,没有公开支持名单。
+- **模拟评估**:在真实客户碰壁之前,让 agent 试跑关键任务,报告是否完成、用时、交互次数和卡点。目前先做电商和旅行两类场景。
+- 同一天发布但范围小:Brand Agents 扩到本地服务商(合作预订工具有 Square、Jobber、HubSpot、Calendly、Housecall Pro、Salesforce,符合条件的 WordPress 站可用);「Ask Clarity」对话式分析目前只对零售商封闭测试,要排队。Clarity 本身免费。
+
+本套件口径:Agent Activity 只覆盖它认得的 agent,不等于全部 agent 流量,要和服务器日志、Cloudflare 的 Personal Assistants 分类([ai-crawler-policy.md](../technical/ai-crawler-policy.md))三方对账再下结论;模拟评估是微软的合成任务,通过不代表真实 agent 在你的结账流里一定走得通,仍要按第六节的判定纪律抽样复核。
 
 ## 检查清单
 
