@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-09T07:54:58.788274+00:00",
+ "checked_at": "2026-11-10T08:23:24.391280+00:00",
  "sources": {
   "google-blog": {
    "top": "Search Central Live in Zurich is back!",
@@ -15,8 +15,8 @@
    "ts": "2026-11-05T07:53:13.665673+00:00"
   },
   "google-updates": {
-   "hash": "b6111b472051ec191c10402933eef9d1",
-   "ts": "2026-11-07T07:04:09.385394+00:00"
+   "hash": "aee8d2e3fd99f3db753433b418de4ce7",
+   "ts": "2026-11-10T08:23:03.813989+00:00"
   },
   "gsc-announce": {
    "top": "Search Central Live in Zurich is back!",
@@ -60,8 +60,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "7937ada638886788bb6ce6c05364a195",
-   "ts": "2026-11-09T07:54:29.937152+00:00"
+   "hash": "1141296d06d02e322d81eed26e99e94b",
+   "ts": "2026-11-10T08:23:06.093122+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -106,26 +106,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "7d1761b7fff2dc16e6063f56ba39ca86",
-   "ts": "2026-11-09T07:54:54.859555+00:00"
+   "hash": "f5555bfe7a51c1a7606cce6e19d534c5",
+   "ts": "2026-11-10T08:23:19.057167+00:00"
   },
   "statcounter-ai": {
-   "hash": "5dfe81201f21eb1fa576cbd7188ab0fe",
-   "ts": "2026-11-09T07:54:55.104792+00:00",
-   "unstable_streak": 1
+   "hash": "633bff425dbda445756648ba1931fa50",
+   "ts": "2026-11-10T08:23:19.718078+00:00"
   },
   "semrush-sensor": {
-   "hash": "506d19834d3a89fe6edacf6a84974ffc",
-   "ts": "2026-11-06T07:53:58.892896+00:00"
+   "hash": "9f93acc341136effa0727c10afc98b4a",
+   "ts": "2026-11-10T08:23:20.375453+00:00"
   },
   "seroundtable": {
-   "top": "OpenAI Working On ChatGPT Tools For Business For Analytics & Citations",
+   "top": "Daily Search Forum Recap: November 9, 2026",
    "seen": [
-    "Google Warns Tools On User-Generated Spam Guidance & More",
-    "Daily Search Forum Recap: October 26, 2026",
-    "Over 80% Of Google Searches Have AI Overviews & Growing",
-    "Google Ads AI-Generated Review Summaries Help Doc",
-    "ChatGPT Ads With Learn More Arrow Link; Some Served Through Amazon DSP",
     "Googlebot Must Follow Redirects From Homepage To Favicon, Updated Doc Say",
     "Daily Search Forum Recap: October 27, 2026",
     "Unconfirmed Google Search Ranking Update: Volatility & Chatter Spike",
@@ -170,12 +164,17 @@
     "Daily Search Forum Recap: November 6, 2026",
     "Search News Buzz Video Recap: Google Scaled Content Abuse From Facebook, ChatGPT Search 20% Of Google & More SEO, PPC & Local",
     "Google Business Profiles Manage Offers Help Document",
-    "Google AI Mode Asking Searchers To Continue With This Search"
+    "Google AI Mode Asking Searchers To Continue With This Search",
+    "Daily Search Forum Recap: November 9, 2026",
+    "Google Search Ranking Volatility Status: Update November 8th/9th?",
+    "Google AI Mode Multiturn Ads Are Live - Follow-Up Query Ads",
+    "Google Adding Booking Links To Business Profiles Automatically?",
+    "Bing Ads At Top Of AI Mode Results"
    ],
-   "ts": "2026-11-07T07:04:32.824670+00:00"
+   "ts": "2026-11-10T08:23:21.568503+00:00"
   },
   "google-docs-rss": {
-   "top": "Updated guidance on preventing user-generated spam",
+   "top": "Added \"things to do\" query support to the aggregator and supplier units",
    "seen": [
     "Updating the Indexing API quota page",
     "Added documentation on the UGC Fresh Data Program",
@@ -184,9 +183,10 @@
     "Added local business query support to the aggregator and supplier units",
     "Updated the control what you share with Google Search documentation",
     "Updated guidance on crawlable URL structures",
-    "Updated guidance on preventing user-generated spam"
+    "Updated guidance on preventing user-generated spam",
+    "Added \"things to do\" query support to the aggregator and supplier units"
    ],
-   "ts": "2026-10-28T06:50:34.902893+00:00"
+   "ts": "2026-11-10T08:23:20.980349+00:00"
   },
   "openai-bots-rss": {
    "hash": "f237661cad613ae8cbd3da9f508b2565",
@@ -253,15 +253,16 @@
    "ts": "2026-11-06T07:54:01.270719+00:00"
   },
   "google-maps-blog": {
-   "top": "Celebrate 110 years of national parks with Maps, Search, and Gemini",
+   "top": "Developers can now build with Google Maps Platform in AI Studio.",
    "seen": [
     "Celebrate 110 years of national parks with Maps, Search, and Gemini",
     "Ask Maps gets more helpful with food ordering and more",
     "Simulate real-world places with Project Genie and Street View",
     "7 ways to travel smarter this summer, with help from Google",
-    "New ways we\u2019re protecting businesses on Maps"
+    "New ways we\u2019re protecting businesses on Maps",
+    "Developers can now build with Google Maps Platform in AI Studio."
    ],
-   "ts": "2026-11-06T07:54:01.518031+00:00"
+   "ts": "2026-11-10T08:23:23.651527+00:00"
   },
   "google-shopping-blog": {
    "top": "An intelligent new shopping cart",
