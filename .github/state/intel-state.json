@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-10T08:23:24.391280+00:00",
+ "checked_at": "2026-11-11T07:43:33.405373+00:00",
  "sources": {
   "google-blog": {
    "top": "Search Central Live in Zurich is back!",
@@ -32,8 +32,8 @@
    "ts": "2026-11-05T07:53:14.293905+00:00"
   },
   "status-dashboard": {
-   "hash": "dbf54cafc22db00d7f075d1f10101f38",
-   "ts": "2026-11-02T07:38:25.734853+00:00"
+   "hash": "ac743cbc33e4e71b92a051a8b5fe4d88",
+   "ts": "2026-11-11T07:43:11.342540+00:00"
   },
   "lighthouse": {
    "top": "v13.6.0",
@@ -60,8 +60,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "1141296d06d02e322d81eed26e99e94b",
-   "ts": "2026-11-10T08:23:06.093122+00:00"
+   "hash": "3a5a4a0240b89ff3f98617c075cae4f5",
+   "ts": "2026-11-11T07:43:12.957467+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -94,8 +94,8 @@
    "ts": "2026-11-07T07:04:13.842318+00:00"
   },
   "yandex-wm": {
-   "hash": "75a297b629144a16ef3d77bf7edfcaa5",
-   "ts": "2026-11-07T07:04:18.515484+00:00"
+   "hash": "adcac02d7d720d5e1b0da45cd5ed7919",
+   "ts": "2026-11-11T07:43:16.967278+00:00"
   },
   "naver-wm": {
    "hash": "400dd05a1650d065f71a7b174a56c817",
@@ -106,25 +106,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "f5555bfe7a51c1a7606cce6e19d534c5",
-   "ts": "2026-11-10T08:23:19.057167+00:00"
+   "hash": "c849df4cf796d6cd83659585f760938d",
+   "ts": "2026-11-11T07:43:28.178336+00:00"
   },
   "statcounter-ai": {
-   "hash": "633bff425dbda445756648ba1931fa50",
-   "ts": "2026-11-10T08:23:19.718078+00:00"
+   "hash": "367d6964cff200af70169a43ec254704",
+   "ts": "2026-11-11T07:43:28.801648+00:00"
   },
   "semrush-sensor": {
-   "hash": "9f93acc341136effa0727c10afc98b4a",
-   "ts": "2026-11-10T08:23:20.375453+00:00"
+   "hash": "cc608413de0e6fe4b37c8e3f452db90e",
+   "ts": "2026-11-11T07:43:29.427911+00:00"
   },
   "seroundtable": {
-   "top": "Daily Search Forum Recap: November 9, 2026",
+   "top": "Google Loses Another Round in Legal Battle Against SerpApi Over Scraping",
    "seen": [
-    "Googlebot Must Follow Redirects From Homepage To Favicon, Updated Doc Say",
-    "Daily Search Forum Recap: October 27, 2026",
-    "Unconfirmed Google Search Ranking Update: Volatility & Chatter Spike",
-    "Google Downplays The Importance Of Fresh Index Reporting",
-    "Advertisers Can't Figure Out If An Ad Is A Google Local Service Ad Or Not",
     "Google Business Profiles Finally Adds Third-Party Ordering Controls",
     "Google Expands Ads In AI Mode To More Countries & Multiturn Ads In U.S.",
     "Bing Ads Revenue Up 12% With Overall Revenue Up 19%",
@@ -169,9 +164,14 @@
     "Google Search Ranking Volatility Status: Update November 8th/9th?",
     "Google AI Mode Multiturn Ads Are Live - Follow-Up Query Ads",
     "Google Adding Booking Links To Business Profiles Automatically?",
-    "Bing Ads At Top Of AI Mode Results"
+    "Bing Ads At Top Of AI Mode Results",
+    "Google Loses Another Round in Legal Battle Against SerpApi Over Scraping",
+    "Businesses in ChatGPT Business Hub Live With Click Data",
+    "Google November 2026 Core Update Is Rolling Out",
+    "Gemini 4 Carbon Available In Google Search AI Mode",
+    "Yahoo Search Launches Pivot Search, Yahoo Scout App & More"
    ],
-   "ts": "2026-11-10T08:23:21.568503+00:00"
+   "ts": "2026-11-11T07:43:30.730869+00:00"
   },
   "google-docs-rss": {
    "top": "Added \"things to do\" query support to the aggregator and supplier units",
