@@ -1,8 +1,8 @@
 {
- "checked_at": "2026-11-11T07:43:33.405373+00:00",
+ "checked_at": "2026-11-12T08:16:57.635555+00:00",
  "sources": {
   "google-blog": {
-   "top": "Search Central Live in Zurich is back!",
+   "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
    "seen": [
     "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
     "Announcing web multimodal Search performance reporting in Search Console",
@@ -10,16 +10,17 @@
     "Search Central Live India 2026: Bengaluru, We're Coming (For Real This Time)",
     "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico",
     "Supporting a shared AI training control for websites",
-    "Search Central Live in Zurich is back!"
+    "Search Central Live in Zurich is back!",
+    "Moving to a CDN without overwhelming your origin (or blocking Googlebot)"
    ],
-   "ts": "2026-11-05T07:53:13.665673+00:00"
+   "ts": "2026-11-12T08:16:39.468606+00:00"
   },
   "google-updates": {
-   "hash": "aee8d2e3fd99f3db753433b418de4ce7",
-   "ts": "2026-11-10T08:23:03.813989+00:00"
+   "hash": "f508290e04cd92e4e08f564654f64c69",
+   "ts": "2026-11-12T08:16:39.926742+00:00"
   },
   "gsc-announce": {
-   "top": "Search Central Live in Zurich is back!",
+   "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
    "seen": [
     "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
     "Announcing web multimodal Search performance reporting in Search Console",
@@ -27,9 +28,10 @@
     "Search Central Live India 2026: Bengaluru, We're Coming (For Real This Time)",
     "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico",
     "Supporting a shared AI training control for websites",
-    "Search Central Live in Zurich is back!"
+    "Search Central Live in Zurich is back!",
+    "Moving to a CDN without overwhelming your origin (or blocking Googlebot)"
    ],
-   "ts": "2026-11-05T07:53:14.293905+00:00"
+   "ts": "2026-11-12T08:16:40.469387+00:00"
   },
   "status-dashboard": {
    "hash": "ac743cbc33e4e71b92a051a8b5fe4d88",
@@ -60,8 +62,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "3a5a4a0240b89ff3f98617c075cae4f5",
-   "ts": "2026-11-11T07:43:12.957467+00:00"
+   "hash": "59b75652574fbf639185dc42fb02172f",
+   "ts": "2026-11-12T08:16:42.371154+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -82,16 +84,16 @@
    "ts": "2026-10-26T06:07:48.821620+00:00"
   },
   "anthropic-crawl": {
-   "hash": "fd4b5ddbc18bb76842ef230d295d55c0",
-   "ts": "2026-11-07T07:04:12.300163+00:00"
+   "hash": "96b82b4673f9d5db5a46d20b7dd0991e",
+   "ts": "2026-11-12T08:16:42.983163+00:00"
   },
   "schema-org": {
-   "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-11-07T07:04:12.862631+00:00"
+   "hash": "c28ae2197ecacc4469ac00319b179a7f",
+   "ts": "2026-11-12T08:16:43.279710+00:00"
   },
   "crux": {
-   "hash": "7fafd44a87d80dda0b78eb6b758250bd",
-   "ts": "2026-11-07T07:04:13.842318+00:00"
+   "hash": "56158ee637663120b42a4024715945cf",
+   "ts": "2026-11-12T08:16:43.637442+00:00"
   },
   "yandex-wm": {
    "hash": "adcac02d7d720d5e1b0da45cd5ed7919",
@@ -106,25 +108,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "c849df4cf796d6cd83659585f760938d",
-   "ts": "2026-11-11T07:43:28.178336+00:00"
+   "hash": "368c4980e9c1eb7d5ddfaa44c729aaaf",
+   "ts": "2026-11-12T08:16:54.159090+00:00"
   },
   "statcounter-ai": {
-   "hash": "367d6964cff200af70169a43ec254704",
-   "ts": "2026-11-11T07:43:28.801648+00:00"
+   "hash": "421f8d10eb53ff2f28d52c72bc8b7391",
+   "ts": "2026-11-12T08:16:54.530637+00:00"
   },
   "semrush-sensor": {
    "hash": "cc608413de0e6fe4b37c8e3f452db90e",
    "ts": "2026-11-11T07:43:29.427911+00:00"
   },
   "seroundtable": {
-   "top": "Google Loses Another Round in Legal Battle Against SerpApi Over Scraping",
+   "top": "Google Placing Source Icons At Bottom Of AI Overviews",
    "seen": [
-    "Google Business Profiles Finally Adds Third-Party Ordering Controls",
-    "Google Expands Ads In AI Mode To More Countries & Multiturn Ads In U.S.",
-    "Bing Ads Revenue Up 12% With Overall Revenue Up 19%",
-    "Google Ad Revenue Up 10.5% With Overall Revenue Up 25%",
-    "Google Ads API Version 26.1 Now Out Available",
     "Google's John Mueller: Eventually Systems Will Catch The AI Spam & Tricks",
     "Google Business Profiles AI-Powered Messaging Expands",
     "Google: Ads In AI Mode Earning Less Than Traditional Search Ads",
@@ -169,9 +166,14 @@
     "Businesses in ChatGPT Business Hub Live With Click Data",
     "Google November 2026 Core Update Is Rolling Out",
     "Gemini 4 Carbon Available In Google Search AI Mode",
-    "Yahoo Search Launches Pivot Search, Yahoo Scout App & More"
+    "Yahoo Search Launches Pivot Search, Yahoo Scout App & More",
+    "Google Placing Source Icons At Bottom Of AI Overviews",
+    "Google Ads API Version 26.2 Now Out Available",
+    "Google Search AI Overview Definitions Expanded By  Default",
+    "Google: How Moving to a CDN Can Accidentally Overwhelm Your Website",
+    "Daily Search Forum Recap: November 11, 2026"
    ],
-   "ts": "2026-11-11T07:43:30.730869+00:00"
+   "ts": "2026-11-12T08:16:55.405139+00:00"
   },
   "google-docs-rss": {
    "top": "Added \"things to do\" query support to the aggregator and supplier units",
@@ -234,15 +236,16 @@
    "ts": "2026-11-06T07:54:00.315401+00:00"
   },
   "bing-search-blog": {
-   "top": "Your content, your choice: clearer preferences for training and grounding",
+   "top": "Your choice: Turn AI answers on or off in Bing",
    "seen": [
     "Your content, your choice: clearer preferences for training and grounding",
     "New AI Visibility Insights in Bing Webmaster Tools: Intents, Topics, Citation Share, Compare",
     "Announcing Microsoft Web IQ",
     "A Smarter Way to Explore Images Has Come to Bing",
-    "Keeping Trusted Content Visible in an AI-Powered Search World"
+    "Keeping Trusted Content Visible in an AI-Powered Search World",
+    "Your choice: Turn AI answers on or off in Bing"
    ],
-   "ts": "2026-11-06T07:54:01.233797+00:00"
+   "ts": "2026-11-12T08:16:56.885244+00:00"
   },
   "msads-blog": {
    "top": "What's new in Microsoft Clarity: Agent insights, faster answers, and AI discovery",
