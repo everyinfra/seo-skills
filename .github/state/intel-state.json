@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-12T08:16:57.635555+00:00",
+ "checked_at": "2026-11-13T07:53:55.487612+00:00",
  "sources": {
   "google-blog": {
    "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
@@ -16,8 +16,8 @@
    "ts": "2026-11-12T08:16:39.468606+00:00"
   },
   "google-updates": {
-   "hash": "f508290e04cd92e4e08f564654f64c69",
-   "ts": "2026-11-12T08:16:39.926742+00:00"
+   "hash": "82093e2e19f8f6cbb4df913bf4811570",
+   "ts": "2026-11-13T07:53:34.349757+00:00"
   },
   "gsc-announce": {
    "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
@@ -62,8 +62,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "59b75652574fbf639185dc42fb02172f",
-   "ts": "2026-11-12T08:16:42.371154+00:00"
+   "hash": "79cff871da6db0e63145b03deae25b06",
+   "ts": "2026-11-13T07:53:36.701939+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -88,45 +88,40 @@
    "ts": "2026-11-12T08:16:42.983163+00:00"
   },
   "schema-org": {
-   "hash": "c28ae2197ecacc4469ac00319b179a7f",
-   "ts": "2026-11-12T08:16:43.279710+00:00"
+   "hash": "77148a1e8e96b49506a4883169899e89",
+   "ts": "2026-11-13T07:53:37.647830+00:00"
   },
   "crux": {
-   "hash": "56158ee637663120b42a4024715945cf",
-   "ts": "2026-11-12T08:16:43.637442+00:00"
+   "hash": "3db35934ccecc6475c50d7555ea730c1",
+   "ts": "2026-11-13T07:53:38.113543+00:00"
   },
   "yandex-wm": {
-   "hash": "adcac02d7d720d5e1b0da45cd5ed7919",
-   "ts": "2026-11-11T07:43:16.967278+00:00"
+   "hash": "4eb8a5dd47b0b7fe8962e5b56a80a44f",
+   "ts": "2026-11-13T07:53:40.285505+00:00"
   },
   "naver-wm": {
-   "hash": "400dd05a1650d065f71a7b174a56c817",
-   "ts": "2026-11-06T07:53:51.587275+00:00"
+   "hash": "971dcd07731ae04993b1f0455f2426b2",
+   "ts": "2026-11-13T07:53:43.387116+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "368c4980e9c1eb7d5ddfaa44c729aaaf",
-   "ts": "2026-11-12T08:16:54.159090+00:00"
+   "hash": "eb77eeff2321eaaa66bf9efc9a319f5b",
+   "ts": "2026-11-13T07:53:51.398061+00:00"
   },
   "statcounter-ai": {
-   "hash": "421f8d10eb53ff2f28d52c72bc8b7391",
-   "ts": "2026-11-12T08:16:54.530637+00:00"
+   "hash": "17557047edb4436ee5039e6faf6b3455",
+   "ts": "2026-11-13T07:53:51.878415+00:00"
   },
   "semrush-sensor": {
-   "hash": "cc608413de0e6fe4b37c8e3f452db90e",
-   "ts": "2026-11-11T07:43:29.427911+00:00"
+   "hash": "1fbf96b5ffce4eb5edfae3f33c0f06d0",
+   "ts": "2026-11-13T07:53:52.418974+00:00"
   },
   "seroundtable": {
-   "top": "Google Placing Source Icons At Bottom Of AI Overviews",
+   "top": "Google Search Console Generative AI Performance Report Data Bug Nov 9 - 11",
    "seen": [
-    "Google's John Mueller: Eventually Systems Will Catch The AI Spam & Tricks",
-    "Google Business Profiles AI-Powered Messaging Expands",
-    "Google: Ads In AI Mode Earning Less Than Traditional Search Ads",
-    "Daily Search Forum Recap: October 29, 2026",
-    "Google Does Not Show All Spammy Links In Search Console",
     "Google Adopts New AI Training Control",
     "Microsoft Bing New AI New Controls With AI Training From AI Search Grounding",
     "ChatGPT Gets Wider Ads, Multi-Image Ads Expands, Expansion & More",
@@ -171,9 +166,14 @@
     "Google Ads API Version 26.2 Now Out Available",
     "Google Search AI Overview Definitions Expanded By  Default",
     "Google: How Moving to a CDN Can Accidentally Overwhelm Your Website",
-    "Daily Search Forum Recap: November 11, 2026"
+    "Daily Search Forum Recap: November 11, 2026",
+    "Google Search Console Generative AI Performance Report Data Bug Nov 9 - 11",
+    "Google Search Gets Massive Upgrade With Gemini 4 Hydrogen",
+    "New Google Help Doc Explains How To Identifying Traffic From Google Search",
+    "OpenAI ChatGPT Ads Updates: Intelligent Bidding, New Cost Targets, Geo-Flexibility & Product Set Filters",
+    "Daily Search Forum Recap: November 12, 2026"
    ],
-   "ts": "2026-11-12T08:16:55.405139+00:00"
+   "ts": "2026-11-13T07:53:53.387419+00:00"
   },
   "google-docs-rss": {
    "top": "Added \"things to do\" query support to the aggregator and supplier units",
