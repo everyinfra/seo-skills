@@ -1,0 +1,26 @@
+{
+ "generated": "2026-11-13T10:57:33",
+ "site": "https://github.com/everyinfra/seo-skills",
+ "market": null,
+ "curr_run": 39,
+ "prev_run": 38,
+ "baseline_run": 33,
+ "baseline_missing": false,
+ "baseline_kind_mismatch": false,
+ "alerts": [],
+ "healed": [],
+ "suppressed": [],
+ "inhibited": [],
+ "accepted": 0,
+ "slo": null,
+ "counts": {
+  "critical": 0,
+  "warn": 0,
+  "info": 0,
+  "low": 0
+ },
+ "persisted": {
+  "inserted": [],
+  "resolved": []
+ }
+}
