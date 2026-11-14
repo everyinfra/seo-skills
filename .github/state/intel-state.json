@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-13T07:53:55.487612+00:00",
+ "checked_at": "2026-11-14T07:35:20.455044+00:00",
  "sources": {
   "google-blog": {
    "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
@@ -62,8 +62,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "79cff871da6db0e63145b03deae25b06",
-   "ts": "2026-11-13T07:53:36.701939+00:00"
+   "hash": "fce1f974ab3758e80efeae6f064b3be3",
+   "ts": "2026-11-14T07:35:03.245106+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -88,16 +88,16 @@
    "ts": "2026-11-12T08:16:42.983163+00:00"
   },
   "schema-org": {
-   "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-11-13T07:53:37.647830+00:00"
+   "hash": "c28ae2197ecacc4469ac00319b179a7f",
+   "ts": "2026-11-14T07:35:04.341177+00:00"
   },
   "crux": {
    "hash": "3db35934ccecc6475c50d7555ea730c1",
    "ts": "2026-11-13T07:53:38.113543+00:00"
   },
   "yandex-wm": {
-   "hash": "4eb8a5dd47b0b7fe8962e5b56a80a44f",
-   "ts": "2026-11-13T07:53:40.285505+00:00"
+   "hash": "3c1aeb3f504c374c0f6ba8b5c76fb51e",
+   "ts": "2026-11-14T07:35:06.915400+00:00"
   },
   "naver-wm": {
    "hash": "971dcd07731ae04993b1f0455f2426b2",
@@ -108,25 +108,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "eb77eeff2321eaaa66bf9efc9a319f5b",
-   "ts": "2026-11-13T07:53:51.398061+00:00"
+   "hash": "cb5470241bcec61221c1c765d82ba5a5",
+   "ts": "2026-11-14T07:35:15.486145+00:00"
   },
   "statcounter-ai": {
-   "hash": "17557047edb4436ee5039e6faf6b3455",
-   "ts": "2026-11-13T07:53:51.878415+00:00"
+   "hash": "bceda5ca40ddb3df8e8a03a5aa5d76f7",
+   "ts": "2026-11-14T07:35:15.885316+00:00"
   },
   "semrush-sensor": {
    "hash": "1fbf96b5ffce4eb5edfae3f33c0f06d0",
    "ts": "2026-11-13T07:53:52.418974+00:00"
   },
   "seroundtable": {
-   "top": "Google Search Console Generative AI Performance Report Data Bug Nov 9 - 11",
+   "top": "Google Tests Dropping AI Mode From Search Bar & Ask Anything",
    "seen": [
-    "Google Adopts New AI Training Control",
-    "Microsoft Bing New AI New Controls With AI Training From AI Search Grounding",
-    "ChatGPT Gets Wider Ads, Multi-Image Ads Expands, Expansion & More",
-    "Daily Search Forum Recap: October 30, 2026",
-    "Search News Buzz Video Recap: Google Volatility X2, Spam Updates, AI Overviews Everywhere, Blending Ads & Organic, Google & Microsoft Earnings",
     "Google AI Overviews For Brands Moved To Right Column",
     "Daily Search Forum Recap: November 2, 2026",
     "November 2026 Google Webmaster Report",
@@ -171,12 +166,17 @@
     "Google Search Gets Massive Upgrade With Gemini 4 Hydrogen",
     "New Google Help Doc Explains How To Identifying Traffic From Google Search",
     "OpenAI ChatGPT Ads Updates: Intelligent Bidding, New Cost Targets, Geo-Flexibility & Product Set Filters",
-    "Daily Search Forum Recap: November 12, 2026"
+    "Daily Search Forum Recap: November 12, 2026",
+    "Google Tests Dropping AI Mode From Search Bar & Ask Anything",
+    "Microsoft 365 Outage Impact On Microsoft Advertising",
+    "Daily Search Forum Recap: November 13, 2026",
+    "Search News Buzz Video Recap: Google November Core Update Is Here, ChatGPT Business Hub Gives Us Clicks, Yahoo Pivot Search & Google Ads Invalid Traffic",
+    "Yahoo Scout To Pay Publishers Through The ILC For Using Content In AI Answers"
    ],
-   "ts": "2026-11-13T07:53:53.387419+00:00"
+   "ts": "2026-11-14T07:35:17.106612+00:00"
   },
   "google-docs-rss": {
-   "top": "Added \"things to do\" query support to the aggregator and supplier units",
+   "top": "Added documentation on identifying traffic from Google Search",
    "seen": [
     "Updating the Indexing API quota page",
     "Added documentation on the UGC Fresh Data Program",
@@ -186,9 +186,10 @@
     "Updated the control what you share with Google Search documentation",
     "Updated guidance on crawlable URL structures",
     "Updated guidance on preventing user-generated spam",
-    "Added \"things to do\" query support to the aggregator and supplier units"
+    "Added \"things to do\" query support to the aggregator and supplier units",
+    "Added documentation on identifying traffic from Google Search"
    ],
-   "ts": "2026-11-10T08:23:20.980349+00:00"
+   "ts": "2026-11-14T07:35:16.482882+00:00"
   },
   "openai-bots-rss": {
    "hash": "f237661cad613ae8cbd3da9f508b2565",
@@ -217,14 +218,16 @@
    "ts": "2026-11-06T07:54:00.066950+00:00"
   },
   "cloudflare-blog": {
-   "top": "Agents aren\u2019t humans (but they kinda are)",
+   "top": "Adapting to AI penetration testing orchestrators: The Modern Security Model",
    "seen": [
     "Agents aren\u2019t humans (but they kinda are)",
     "See the agents, set the terms: new visibility and control for personal agents",
     "Cross-request KV cache exposure in the GLM-5.3 Workers AI model, and our remediation with SGLang",
-    "How Commerce.com and Cloudflare are getting storefronts ready for AI agents"
+    "How Commerce.com and Cloudflare are getting storefronts ready for AI agents",
+    "Adapting to AI penetration testing orchestrators: The Modern Security Model",
+    "See the agents, set the terms: New visibility and control for personal agents"
    ],
-   "ts": "2026-11-06T07:54:00.165816+00:00"
+   "ts": "2026-11-14T07:35:17.651996+00:00"
   },
   "openai-news": {
    "top": "Flipsnack grows product signups with conversion optimization",
