@@ -52,12 +52,13 @@
 | `schema_lint.py` | URL 实时抓取(提取全部 ld+json 块) | ③ 抓取失败→exit 非 0 | 只对静态 HTML 内的 JSON-LD 断言(@id/悬空引用/占位符);静态未检出≠页面无 schema——渲染后可能注入,需渲染证据复核(SKILL.md 特别约束) |
 | `head_check.py` | URL 实时抓取或本地 HTML 文件;`--market zh` 门控中文项 | ③ 抓取失败→exit 2;④ 非 zh 市场且页面无汉字→微信/QQ itemprop 检查跳过(消跨市场噪音) | charset>1024B([WHATWG HTML 标准](https://html.spec.whatwg.org/multipage/semantics.html):字符编码声明元素必须完整出现在文档前 1024 字节内)/弃用 meta 命中只按文档口径断言;微信/QQ 读 itemprop 是平台文档行为,不虚构浏览器实测 |
 
-## 三、关键词与 SERP(8)
+## 三、关键词与 SERP(9)
 
 | 脚本 | 数据 | 降级 | 反编造 |
 |---|---|---|---|
 | `gsc_mining.py` | GSC 导出 CSV(Query,Clicks,Impressions,CTR,Position;matrix 模式加 Page;`--decay` 需当前+前一期两文件) | ③ 脚本侧:无导出文件不可跑;**agent 层等价替代①**:无 GSC 时改用 `serp_overlap.py` 对 SERP 抓取样(逐词 top10 URL)做蚕食/同源判断,结论标 `[est]` | **Never invent search volumes**——clicks/impressions/position 全部来自 CSV,脚本不代查 GSC;期望 CTR 曲线是行业锚点(与 forecast DEFAULT_CTR 同源),低 CTR 判定基于该模型 `[est]`;列名宽容匹配、缺值按 0,调用前自查列齐全(见文末差异) |
 | `serp_overlap.py` | 输入 CSV(keyword,top10 URL 分号分隔)——SERP 数据须用户提供(自抓取样或 rank tracker 导出) | ③ 无 CSV→exit 2 | Jaccard 只对给定 URL 集合计算,不虚构 SERP 结果;四档判据(7-10/4-6/2-3/0-1)是解读层,数据必须真实 |
+| `serp_pull.py` | 关键词文件(一行一词)+ 用户自备的 GoAnyAPI Key(env `GOANYAPI_API_KEY` 或 `~/.config/seo-suite/goanyapi.key`);实时调 `serp-stable`(1 credit/次,响应 `data.result.results[]` 的 url/rank/type) | ③ 无 Key/无词表→exit 2;预算用尽或单词抓取失败→exit 3 且该词不写行 | 只写真实抓到的有机 URL;empty 是有效响应但不等于有数据,不拿竞品页或历史样本补位;401/402/403 立即中止(先修 Key/余额);不在 stable/standard/multi 之间自动换版(单价 1/2/3 credit 不同,换版须显式 `--edition`) |
 | `keyword_variants.py` | stdin 每行一词(无输入纯本地归一) | ④ 无输入→空输出 | 归组=Unicode 归一链结果;越南有调/无调归组时显式提示"意图不同,排名当独立词跟踪",不合并了事 |
 | `payment_intent.py` | stdin 关键词 + markets.json payment_words 词表(本地) | ④ 词未命中→无标签(不是"零商业意图") | 只标词表显式命中(OXXO/cuotas/Pix/COD…);不臆测未命中词的支付意图 |
 | `geo_difficulty.py` | `--kd`/`--ur-median`/`--targeting` 手工输入——KD 来自第三方 SEO 工具导出,UR 来自竞品页审计 | ③ 缺必填参数→exit 2;② 无 `--position`/`--client-ur`→只出绝对难度分,不出客户三档 | KD/UR 必须来自真实工具导出,脚本不代查;分数公式透明,输入值须标注来源工具 |
