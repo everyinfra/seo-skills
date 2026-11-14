@@ -325,7 +325,8 @@ class CliAuditModeTests(unittest.TestCase):
         self.assertIn("nope", bad.stderr)
         self.assertIn(", ".join(fp.CATEGORIES), bad.stderr)           # 报错并列出合法值
         noargs = subprocess.run([sys.executable, os.path.join(SCRIPTS, "fix_plan.py")],
-                                capture_output=True, text=True, encoding="utf-8", timeout=60)
+                                capture_output=True, text=True, encoding="utf-8", timeout=60,
+                                env=dict(os.environ, PYTHONIOENCODING="utf-8"))
         self.assertEqual(noargs.returncode, 2)                        # 缺输入
 
     def test_dry_run_preview_truncation_and_estimate(self):

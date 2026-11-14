@@ -12,7 +12,7 @@ if any(a in ("-h", "--help") for a in sys.argv[1:]):
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 broken = []
 for f in glob.glob(os.path.join(BASE, '**', '*.md'), recursive=True):
-    t = open(f).read()
+    t = open(f, encoding='utf-8').read()
     rel = os.path.relpath(f, BASE)
     for m in re.finditer(r'\]\(([^)http][^)]*?\.md)(#[^)]*)?\)', t):
         target = os.path.normpath(os.path.join(os.path.dirname(f), m.group(1)))
