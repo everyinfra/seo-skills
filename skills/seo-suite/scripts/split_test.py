@@ -453,7 +453,8 @@ def print_plan(rep):
               + (f"   ← {r['page_weeks_total']} 页·周" if r["power"] == 0.8 else ""))
     print("页数×周数组合表(格=所需最少总页数;行=功效,列=周数):")
     head = "".join(f"{w:>7}" for w in rep["grid"]["weeks"])
-    print(f"  {'功效\\周数':<10}{head}")
+    corner = "功效\\周数"   # 反斜杠不能写进 f-string 表达式(3.12 前 SyntaxError)
+    print(f"  {corner:<10}{head}")
     for row in rep["grid"]["rows"]:
         cells = "".join(f"{p:>7}" for p in row["pages"])
         print(f"  {row['power']:<10}{cells}")
