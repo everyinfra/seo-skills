@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-15T07:49:02.603121+00:00",
+ "checked_at": "2026-11-16T07:57:00.726422+00:00",
  "sources": {
   "google-blog": {
    "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
@@ -62,8 +62,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "fce1f974ab3758e80efeae6f064b3be3",
-   "ts": "2026-11-14T07:35:03.245106+00:00"
+   "hash": "53da1af6fb4506eaa1b344e47937463e",
+   "ts": "2026-11-16T07:56:43.140269+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -88,9 +88,8 @@
    "ts": "2026-11-12T08:16:42.983163+00:00"
   },
   "schema-org": {
-   "hash": "c28ae2197ecacc4469ac00319b179a7f",
-   "ts": "2026-11-15T07:48:48.720206+00:00",
-   "unstable_streak": 1
+   "hash": "77148a1e8e96b49506a4883169899e89",
+   "ts": "2026-11-16T07:56:44.337864+00:00"
   },
   "crux": {
    "hash": "3db35934ccecc6475c50d7555ea730c1",
@@ -101,20 +100,20 @@
    "ts": "2026-11-14T07:35:06.915400+00:00"
   },
   "naver-wm": {
-   "hash": "971dcd07731ae04993b1f0455f2426b2",
-   "ts": "2026-11-13T07:53:43.387116+00:00"
+   "hash": "3b9110364c5de19b0d68bb20649d2f19",
+   "ts": "2026-11-16T07:56:48.279749+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "8018f529fb84f3a74b5caa4fc6192fcc",
-   "ts": "2026-11-15T07:48:58.735433+00:00"
+   "hash": "376e2037c800fd00955613d162ce4b0a",
+   "ts": "2026-11-16T07:56:55.999323+00:00"
   },
   "statcounter-ai": {
-   "hash": "6b628ee0f89e619d8d0ef99c0f465fdf",
-   "ts": "2026-11-15T07:48:59.158652+00:00"
+   "hash": "52fe414a6afd56159262660208270a9a",
+   "ts": "2026-11-16T07:56:56.445841+00:00"
   },
   "semrush-sensor": {
    "hash": "1fbf96b5ffce4eb5edfae3f33c0f06d0",
