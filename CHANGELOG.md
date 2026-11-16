@@ -5,6 +5,11 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.46.2 - 2026-11-16
+
+- **信源工单 #19(2026-11-10 至 11-16 六轮)**:补 1 处一手内容。`validation-guide.md` 加「用 Referer 识别 Google 搜索流量」(Google 11-12 新增页面):`origin` 策略只带协议和主机、各端的 `Referer` 取值、空白和被改写的原因、为什么和 GSC 点击对不上。其余源核对后判为已收录或噪声:OpenAI bots 页正文与 `ai-crawler-policy.md` 一致;aggregator / supplier unit 新增「things to do」只涉及 EEA 的聚合器,本套件不覆盖;StatCounter、schema.org、Naver、Yandex、CrUX 的 hash 源按动态页翻动处理。
+  Intel issue #19: one first-source addition (identifying Google Search traffic by Referer, new Google page of 2026-11-12); the rest were already covered or noise.
+
 ## 0.46.1 - 2026-11-09
 
 - **信源工单 #11(2026-11-06 至 11-08 三轮,18 个源)**:补 6 处一手内容。`image-search-seo.md` 加 Chrome 155 起支持 JPEG XL(Google 图片搜索收录清单没有它,只当可选源并带回退);`agent-growth-loop.md` 加第八之二节 Clarity Agent Activity 与模拟评估(2026-11-04);`agent-protocols.md` 记 Cloudflare 发起 Trusted Agent Delegation 联盟(倡议,不进状态一览);`geo-platform-differences.md` 补 Bing AI Performance 的 Intents、Topics、Citation Share、Compare(2026-06-16);`geo-evidence-bank.md` 入库 3 篇 arXiv(IntentGEO、LIVE-GEO、Implicit Brand Injection,后者只作风险警示);`penalty-recovery.md` 记 Facebook `/fb-answers/` 约 600 万页被从业者点名为规模化内容滥用(第三方观察,Google 无回应记录)。其余源核对后判为已在 11-05 收录或噪声,理由写在工单评论里。
