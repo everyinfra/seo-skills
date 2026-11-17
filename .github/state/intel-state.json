@@ -1,8 +1,8 @@
 {
- "checked_at": "2026-11-16T07:57:00.726422+00:00",
+ "checked_at": "2026-11-17T09:10:45.505634+00:00",
  "sources": {
   "google-blog": {
-   "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
+   "top": "New filtering and reporting capabilities in the Search Analytics API",
    "seen": [
     "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
     "Announcing web multimodal Search performance reporting in Search Console",
@@ -11,16 +11,17 @@
     "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico",
     "Supporting a shared AI training control for websites",
     "Search Central Live in Zurich is back!",
-    "Moving to a CDN without overwhelming your origin (or blocking Googlebot)"
+    "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
+    "New filtering and reporting capabilities in the Search Analytics API"
    ],
-   "ts": "2026-11-12T08:16:39.468606+00:00"
+   "ts": "2026-11-17T09:10:25.483795+00:00"
   },
   "google-updates": {
-   "hash": "82093e2e19f8f6cbb4df913bf4811570",
-   "ts": "2026-11-13T07:53:34.349757+00:00"
+   "hash": "ea8c68a8db33bd28bcedfe9d2d296954",
+   "ts": "2026-11-17T09:10:26.133515+00:00"
   },
   "gsc-announce": {
-   "top": "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
+   "top": "New filtering and reporting capabilities in the Search Analytics API",
    "seen": [
     "New learning paths: curated YouTube playlists for Search fundamentals and Technical SEO",
     "Announcing web multimodal Search performance reporting in Search Console",
@@ -29,13 +30,14 @@
     "Search Central Live is coming to Bogota and Ciudad de M\u00e9xico",
     "Supporting a shared AI training control for websites",
     "Search Central Live in Zurich is back!",
-    "Moving to a CDN without overwhelming your origin (or blocking Googlebot)"
+    "Moving to a CDN without overwhelming your origin (or blocking Googlebot)",
+    "New filtering and reporting capabilities in the Search Analytics API"
    ],
-   "ts": "2026-11-12T08:16:40.469387+00:00"
+   "ts": "2026-11-17T09:10:26.700669+00:00"
   },
   "status-dashboard": {
-   "hash": "ac743cbc33e4e71b92a051a8b5fe4d88",
-   "ts": "2026-11-11T07:43:11.342540+00:00"
+   "hash": "4591d311d804228b6d47223db5708758",
+   "ts": "2026-11-17T09:10:27.262495+00:00"
   },
   "lighthouse": {
    "top": "v13.6.0",
@@ -62,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "53da1af6fb4506eaa1b344e47937463e",
-   "ts": "2026-11-16T07:56:43.140269+00:00"
+   "hash": "04a8d04269488a42ef6821d982363065",
+   "ts": "2026-11-17T09:10:28.427306+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -88,16 +90,16 @@
    "ts": "2026-11-12T08:16:42.983163+00:00"
   },
   "schema-org": {
-   "hash": "77148a1e8e96b49506a4883169899e89",
-   "ts": "2026-11-16T07:56:44.337864+00:00"
+   "hash": "c28ae2197ecacc4469ac00319b179a7f",
+   "ts": "2026-11-17T09:10:29.681746+00:00"
   },
   "crux": {
-   "hash": "3db35934ccecc6475c50d7555ea730c1",
-   "ts": "2026-11-13T07:53:38.113543+00:00"
+   "hash": "837a78edf4e6a064f862d87c37f69c5d",
+   "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "3c1aeb3f504c374c0f6ba8b5c76fb51e",
-   "ts": "2026-11-14T07:35:06.915400+00:00"
+   "hash": "b93e6388b3db65cca5436d200ee14112",
+   "ts": "2026-11-17T09:10:33.008824+00:00"
   },
   "naver-wm": {
    "hash": "3b9110364c5de19b0d68bb20649d2f19",
@@ -108,25 +110,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "376e2037c800fd00955613d162ce4b0a",
-   "ts": "2026-11-16T07:56:55.999323+00:00"
+   "hash": "c066f8752b31e6627fd6cf019c9af3b5",
+   "ts": "2026-11-17T09:10:40.836076+00:00"
   },
   "statcounter-ai": {
-   "hash": "52fe414a6afd56159262660208270a9a",
-   "ts": "2026-11-16T07:56:56.445841+00:00"
+   "hash": "1d6b2563e4c4d4a889b0e4c62aacaf14",
+   "ts": "2026-11-17T09:10:41.378059+00:00"
   },
   "semrush-sensor": {
-   "hash": "1fbf96b5ffce4eb5edfae3f33c0f06d0",
-   "ts": "2026-11-13T07:53:52.418974+00:00"
+   "hash": "6f45bfa3f18299699047ed2bfc63579e",
+   "ts": "2026-11-17T09:10:42.022146+00:00"
   },
   "seroundtable": {
-   "top": "Google Tests Dropping AI Mode From Search Bar & Ask Anything",
+   "top": "Google Business Profiles Now Lets You Add Facebook Messenger Number",
    "seen": [
-    "Google AI Overviews For Brands Moved To Right Column",
-    "Daily Search Forum Recap: November 2, 2026",
-    "November 2026 Google Webmaster Report",
-    "Gary Illyes Implies Click Data Not Coming To Google Search Console AI Reporting",
-    "Google Ads Strategists Using AI-Generated Fake Names & Profile Photos",
     "Google Updates Crawled - Currently Not Indexed Details",
     "Google Performance Reports Showing Weird Spike In Clicks For Some Sites",
     "Daily Search Forum Recap: November 3, 2026",
@@ -171,9 +168,14 @@
     "Microsoft 365 Outage Impact On Microsoft Advertising",
     "Daily Search Forum Recap: November 13, 2026",
     "Search News Buzz Video Recap: Google November Core Update Is Here, ChatGPT Business Hub Gives Us Clicks, Yahoo Pivot Search & Google Ads Invalid Traffic",
-    "Yahoo Scout To Pay Publishers Through The ILC For Using Content In AI Answers"
+    "Yahoo Scout To Pay Publishers Through The ILC For Using Content In AI Answers",
+    "Google Business Profiles Now Lets You Add Facebook Messenger Number",
+    "Daily Search Forum Recap: November 16, 2026",
+    "Google Search Analytics API Adds Branded Queries, Multimodal & Country/Devices Filters",
+    "Google November 2026 Core Update Ranking Flux - What We're Seeing",
+    "Google AI Mode Drops Gemini Label & Rolls Out Gemini 4 Carbon To Pro Subs"
    ],
-   "ts": "2026-11-14T07:35:17.106612+00:00"
+   "ts": "2026-11-17T09:10:43.540103+00:00"
   },
   "google-docs-rss": {
    "top": "Added documentation on identifying traffic from Google Search",
@@ -259,16 +261,18 @@
    "ts": "2026-11-06T07:54:01.270719+00:00"
   },
   "google-maps-blog": {
-   "top": "Developers can now build with Google Maps Platform in AI Studio.",
+   "top": "New Ask Maps features to help with holiday travel and prep",
    "seen": [
     "Celebrate 110 years of national parks with Maps, Search, and Gemini",
     "Ask Maps gets more helpful with food ordering and more",
     "Simulate real-world places with Project Genie and Street View",
     "7 ways to travel smarter this summer, with help from Google",
     "New ways we\u2019re protecting businesses on Maps",
-    "Developers can now build with Google Maps Platform in AI Studio."
+    "Developers can now build with Google Maps Platform in AI Studio.",
+    "New Ask Maps features to help with holiday travel and prep",
+    "Ask Maps is coming to Europe."
    ],
-   "ts": "2026-11-10T08:23:23.651527+00:00"
+   "ts": "2026-11-17T09:10:44.804980+00:00"
   },
   "google-shopping-blog": {
    "top": "An intelligent new shopping cart",
@@ -282,15 +286,16 @@
    "ts": "2026-11-06T07:54:01.662474+00:00"
   },
   "arxiv-geo": {
-   "top": "IntentGEO: Intent-aware Generative Engine Optimization for Recommendation",
+   "top": "Security of Deep Research Agents: Attack Surface, Defenses, Benchmarks, and Agenda Seeding against Research Planning",
    "seen": [
     "IntentGEO: Intent-aware Generative Engine Optimization for Recommendation",
     "Characterizing Adversarial GEO via Implicit Brand Injection",
     "Do GEO Gains Survive the Live Web? Evaluating In-the-Wild Visibility Gains of Generative Engine Optimization via LIVE-GEO",
     "Predicting What Answer Engines Cite: Open Decision Models, Rerankers and a Distilled 4B Student on Ten Engines under Controlled Retrieval",
-    "Toolflation: Seller Agents Distort Tool Markets Through Spontaneous Generative Engine Optimization"
+    "Toolflation: Seller Agents Distort Tool Markets Through Spontaneous Generative Engine Optimization",
+    "Security of Deep Research Agents: Attack Surface, Defenses, Benchmarks, and Agenda Seeding against Research Planning"
    ],
-   "ts": "2026-11-06T07:54:02.242718+00:00"
+   "ts": "2026-11-17T09:10:45.504972+00:00"
   }
  }
 }
