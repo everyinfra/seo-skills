@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-17T09:10:45.505634+00:00",
+ "checked_at": "2026-11-18T08:30:38.555744+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "04a8d04269488a42ef6821d982363065",
-   "ts": "2026-11-17T09:10:28.427306+00:00"
+   "hash": "51718bca917db82401b7b1ef801edb06",
+   "ts": "2026-11-18T08:30:21.567332+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -86,8 +86,8 @@
    "ts": "2026-10-26T06:07:48.821620+00:00"
   },
   "anthropic-crawl": {
-   "hash": "96b82b4673f9d5db5a46d20b7dd0991e",
-   "ts": "2026-11-12T08:16:42.983163+00:00"
+   "hash": "9c164cc8b37515c1239d33d5fae549d5",
+   "ts": "2026-11-18T08:30:22.514284+00:00"
   },
   "schema-org": {
    "hash": "c28ae2197ecacc4469ac00319b179a7f",
@@ -118,17 +118,12 @@
    "ts": "2026-11-17T09:10:41.378059+00:00"
   },
   "semrush-sensor": {
-   "hash": "6f45bfa3f18299699047ed2bfc63579e",
-   "ts": "2026-11-17T09:10:42.022146+00:00"
+   "hash": "88213f8203d1fb3cd4b11bd87c2bf30c",
+   "ts": "2026-11-18T08:30:34.293298+00:00"
   },
   "seroundtable": {
-   "top": "Google Business Profiles Now Lets You Add Facebook Messenger Number",
+   "top": "Google AI Overviews With Unfaded Citation Block",
    "seen": [
-    "Google Updates Crawled - Currently Not Indexed Details",
-    "Google Performance Reports Showing Weird Spike In Clicks For Some Sites",
-    "Daily Search Forum Recap: November 3, 2026",
-    "Google Will Turn Off Google Search For K-12 Schools & Testing Learning Beta",
-    "Google AI Mode Biased: It Only Shows Links To Google Flights",
     "Google Ads Explains Difference With Search Terms Match Type (Keywords)",
     "Google Emails: Site Reputation Policy Manual Actions No Longer Impact EEA",
     "Google Search Console Performance Report Multi-Select Device Filters",
@@ -173,9 +168,14 @@
     "Daily Search Forum Recap: November 16, 2026",
     "Google Search Analytics API Adds Branded Queries, Multimodal & Country/Devices Filters",
     "Google November 2026 Core Update Ranking Flux - What We're Seeing",
-    "Google AI Mode Drops Gemini Label & Rolls Out Gemini 4 Carbon To Pro Subs"
+    "Google AI Mode Drops Gemini Label & Rolls Out Gemini 4 Carbon To Pro Subs",
+    "Google AI Overviews With Unfaded Citation Block",
+    "Google Tag & Google Tag Manager Unification",
+    "Daily Search Forum Recap: November 17, 2026",
+    "FBI: SEO Poisoning Led To $28 Million In Ransomware Payments",
+    "Google: A Site Move Doesn't Improve A Site's Overall Quality"
    ],
-   "ts": "2026-11-17T09:10:43.540103+00:00"
+   "ts": "2026-11-18T08:30:35.539458+00:00"
   },
   "google-docs-rss": {
    "top": "Added documentation on identifying traffic from Google Search",
@@ -232,13 +232,15 @@
    "ts": "2026-11-14T07:35:17.651996+00:00"
   },
   "openai-news": {
-   "top": "Flipsnack grows product signups with conversion optimization",
+   "top": "ChatGPT Ads increases its market presence in 44 countries",
    "seen": [
     "Flipsnack grows product signups with conversion optimization",
     "Making it easier for websites to express AI training preferences",
-    "Evernote turns AI-driven discovery into paid subscriptions"
+    "Evernote turns AI-driven discovery into paid subscriptions",
+    "ChatGPT Ads increases its market presence in 44 countries",
+    "How VistaPrint helps small businesses get the word out"
    ],
-   "ts": "2026-11-06T07:54:00.315401+00:00"
+   "ts": "2026-11-18T08:30:36.262696+00:00"
   },
   "bing-search-blog": {
    "top": "Your choice: Turn AI answers on or off in Bing",
