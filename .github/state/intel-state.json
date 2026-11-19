@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-18T08:30:38.555744+00:00",
+ "checked_at": "2026-11-19T08:44:34.564668+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -17,8 +17,8 @@
    "ts": "2026-11-17T09:10:25.483795+00:00"
   },
   "google-updates": {
-   "hash": "ea8c68a8db33bd28bcedfe9d2d296954",
-   "ts": "2026-11-17T09:10:26.133515+00:00"
+   "hash": "24fc20465b47a619fe7d2167a70960e8",
+   "ts": "2026-11-19T08:44:15.523555+00:00"
   },
   "gsc-announce": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "51718bca917db82401b7b1ef801edb06",
-   "ts": "2026-11-18T08:30:21.567332+00:00"
+   "hash": "e607d1b0286198a1e901feba74aaca04",
+   "ts": "2026-11-19T08:44:17.585959+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -91,19 +91,20 @@
   },
   "schema-org": {
    "hash": "c28ae2197ecacc4469ac00319b179a7f",
-   "ts": "2026-11-17T09:10:29.681746+00:00"
+   "ts": "2026-11-19T08:44:18.260230+00:00",
+   "unstable_streak": 1
   },
   "crux": {
    "hash": "837a78edf4e6a064f862d87c37f69c5d",
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "b93e6388b3db65cca5436d200ee14112",
-   "ts": "2026-11-17T09:10:33.008824+00:00"
+   "hash": "cfd9b1ac6e79af30c06f90d364806f64",
+   "ts": "2026-11-19T08:44:20.653931+00:00"
   },
   "naver-wm": {
-   "hash": "3b9110364c5de19b0d68bb20649d2f19",
-   "ts": "2026-11-16T07:56:48.279749+00:00"
+   "hash": "ad2962e7521a6622f26fbf62a8d752e5",
+   "ts": "2026-11-19T08:44:23.717894+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
@@ -111,24 +112,21 @@
   },
   "statcounter-search": {
    "hash": "c066f8752b31e6627fd6cf019c9af3b5",
-   "ts": "2026-11-17T09:10:40.836076+00:00"
+   "ts": "2026-11-19T08:44:31.525918+00:00",
+   "unstable_streak": 1
   },
   "statcounter-ai": {
    "hash": "1d6b2563e4c4d4a889b0e4c62aacaf14",
-   "ts": "2026-11-17T09:10:41.378059+00:00"
+   "ts": "2026-11-19T08:44:31.935703+00:00",
+   "unstable_streak": 1
   },
   "semrush-sensor": {
    "hash": "88213f8203d1fb3cd4b11bd87c2bf30c",
    "ts": "2026-11-18T08:30:34.293298+00:00"
   },
   "seroundtable": {
-   "top": "Google AI Overviews With Unfaded Citation Block",
+   "top": "Daily Search Forum Recap: November 18, 2026",
    "seen": [
-    "Google Ads Explains Difference With Search Terms Match Type (Keywords)",
-    "Google Emails: Site Reputation Policy Manual Actions No Longer Impact EEA",
-    "Google Search Console Performance Report Multi-Select Device Filters",
-    "Daily Search Forum Recap: November 4, 2026",
-    "Microsoft Clarity With New Agentic Analytics & Ask Clarity",
     "OpenAI Updates ChatGPT Ads Bidding Options For Max Bid or Max CPC",
     "Daily Search Forum Recap: November 5, 2026",
     "Facebook Answers AI-Generated 6 Million Pages Is Google Scaled Content Abuse",
@@ -173,9 +171,14 @@
     "Google Tag & Google Tag Manager Unification",
     "Daily Search Forum Recap: November 17, 2026",
     "FBI: SEO Poisoning Led To $28 Million In Ransomware Payments",
-    "Google: A Site Move Doesn't Improve A Site's Overall Quality"
+    "Google: A Site Move Doesn't Improve A Site's Overall Quality",
+    "Daily Search Forum Recap: November 18, 2026",
+    "Google Ads Releases Several AI Max For Search For Travel Campaigns Help Docs",
+    "Google Ads New Commercial Exemptions To US Election Advertising Policy",
+    "Microsoft Advertising Announces Biggest Upgrade To Bidding Models",
+    "Google Ads PMax Setup Now With Channel Prioritization & Promo Mode"
    ],
-   "ts": "2026-11-18T08:30:35.539458+00:00"
+   "ts": "2026-11-19T08:44:32.831484+00:00"
   },
   "google-docs-rss": {
    "top": "Added documentation on identifying traffic from Google Search",
@@ -220,16 +223,17 @@
    "ts": "2026-11-06T07:54:00.066950+00:00"
   },
   "cloudflare-blog": {
-   "top": "Adapting to AI penetration testing orchestrators: The Modern Security Model",
+   "top": "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team",
    "seen": [
     "Agents aren\u2019t humans (but they kinda are)",
     "See the agents, set the terms: new visibility and control for personal agents",
     "Cross-request KV cache exposure in the GLM-5.3 Workers AI model, and our remediation with SGLang",
     "How Commerce.com and Cloudflare are getting storefronts ready for AI agents",
     "Adapting to AI penetration testing orchestrators: The Modern Security Model",
-    "See the agents, set the terms: New visibility and control for personal agents"
+    "See the agents, set the terms: New visibility and control for personal agents",
+    "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team"
    ],
-   "ts": "2026-11-14T07:35:17.651996+00:00"
+   "ts": "2026-11-19T08:44:33.433568+00:00"
   },
   "openai-news": {
    "top": "ChatGPT Ads increases its market presence in 44 countries",
