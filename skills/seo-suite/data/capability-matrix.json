@@ -1,6 +1,6 @@
 {
  "schema_version": "1.0",
- "updated": "2026-11-08",
+ "updated": "2026-11-14",
  "governance": {
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
@@ -23,10 +23,10 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 100,
+  "script": 101,
   "template": 25,
   "reference": 13,
-  "stable": 76,
+  "stable": 77,
   "beta": 61,
   "draft": 1
  },
@@ -428,6 +428,22 @@
    "data_source": "输入 CSV(keyword,top10 URL 分号分隔)——SERP 数据须用户提供",
    "fallback_mode": "③",
    "tests_file": "tests/run_tests.py",
+   "status": "stable"
+  },
+  {
+   "type": "script",
+   "script": "serp_pull.py",
+   "group": "关键词与 SERP",
+   "inputs": [
+    "--keywords 关键词文件(一行一词,# 注释)",
+    "--out CSV",
+    "--gl/--hl/--device/--top(可选)",
+    "--max-credits/--cache/--rps/--edition(可选)"
+   ],
+   "outputs_schema": "csv",
+   "data_source": "GoAnyAPI serp-stable 真实 SERP(用户自备 API Key,1 credit/次;--json 附报告)",
+   "fallback_mode": "③",
+   "tests_file": "tests/test_serp_pull.py",
    "status": "stable"
   },
   {

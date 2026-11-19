@@ -1,6 +1,6 @@
 # Capability Matrix(能力矩阵)
 
-机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**138 条 = 100 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-11-05 补 ga4_api.py、guard_hook.py、ops.py、source_map.py,2026-11-06 补 link_intel.py,2026-11-08 补 product_scan.py、lifecycle.py、onboard.py(RQ-237 开局)和 plan.py、launch_check.py、demand_check.py(RQ-237 第 2 批)、loops.py、site_move.py(RQ-237 第 3 批),2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
+机器可读版:[data/capability-matrix.json](data/capability-matrix.json)(**139 条 = 101 脚本 + 25 模板 + 13 references 主干**;schema_version 1.0)。本文件是人读版,2026-10-12 从 JSON 全量重刷,2026-11-05 补 ga4_api.py、guard_hook.py、ops.py、source_map.py,2026-11-06 补 link_intel.py,2026-11-08 补 product_scan.py、lifecycle.py、onboard.py(RQ-237 开局)和 plan.py、launch_check.py、demand_check.py(RQ-237 第 2 批)、loops.py、site_move.py(RQ-237 第 3 批),2026-11-14 补 serp_pull.py(SerpAPI 兼容的 SERP 取证客户端),2026-10-18 增补 question_align.py、ste_lint.py,两者由 [tests/test_capability_matrix.py](tests/test_capability_matrix.py) 守护一致性(改条目先改 JSON,再同步本文件)。
 
 治理出处:[references/research/niubigeo-deep-read.md](references/research/niubigeo-deep-read.md) N10(CAPABILITY_MATRIX 治理格式)。借用其核心思想「**能力=完成**三条件」并按本套件改写:
 
@@ -61,13 +61,14 @@
 | schema_lint.py | URL | markdown | URL 实时抓取(提取全部 ld+json 块) | ③ | test_ahrefs_coverage.py | beta |
 | head_check.py | URL\|FILE --market(可选,zh 门控) | markdown | URL 实时抓取或本地 HTML 文件;--market zh 门控中文项 | ③+④ | run_tests.py(内联) | stable |
 
-## 三、关键词与 SERP(8)
+## 三、关键词与 SERP(9)
 
 | 脚本 | 输入 | 输出 | 数据源 | 降级 | 测试 | status |
 |---|---|---|---|---|---|---|
 | gsc_mining.py | 导出.csv --mode matrix(可选) --decay cur prev(可选) --brand RE(可选) | markdown | GSC 导出 CSV(Query 或 Top queries,Clicks,Impressions,CTR,Position;matrix 模式加 Page) | ③+① | run_tests.py(内联)+test_gsc_mining_fixes.py | stable |
 | question_align.py | --gsc 查询×页面 CSV --pages 页面级 CSV(建议) --fetch 或 --html-dir(可选) --page URL(单页导出) | json | GSC 导出 CSV(gsc_api 规范化输出或网页导出);--fetch 实时抓取 title/H1/首段 | ② | test_question_align.py | stable |
 | serp_overlap.py | 输入.csv(keyword,top10 URL 分号分隔) | markdown | 输入 CSV(keyword,top10 URL 分号分隔)——SERP 数据须用户提供 | ③ | run_tests.py(内联) | stable |
+| serp_pull.py | --keywords 词表 --out serp.csv [--gl/--hl/--device/--top] [--max-credits/--cache/--edition] | csv | GoAnyAPI serp-stable 真实 SERP(用户自备 Key,1 credit/次;缓存避免重复计费) | ③ | test_serp_pull.py | stable |
 | keyword_variants.py | stdin 每行一词 | markdown | stdin 每行一词(无输入纯本地归一) | ④ | run_tests.py(内联) | stable |
 | payment_intent.py | stdin 每行一个关键词 | markdown | stdin 关键词 + markets.json payment_words 词表(本地) | ④ | run_tests.py(内联) | stable |
 | geo_difficulty.py | --kd --ur-median --targeting --position/--client-ur(可选) | markdown | --kd/--ur-median/--targeting 手工输入——KD 来自第三方 SEO 工具导出,UR 来自竞品页审计 | ③+② | — | beta |

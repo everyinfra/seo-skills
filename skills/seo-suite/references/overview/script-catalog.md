@@ -45,6 +45,7 @@
 - `gsc_mining.py 导出.csv [--mode matrix] [--decay cur prev] [--brand RE]`:striking distance/低 CTR(排名 1–10,期望曲线是本套件口径)/蚕食/衰退(本期消失的查询按 0 计);接受网页导出的 `Top queries` 列
 - `question_align.py --gsc qp.csv --pages pages.csv [--brand RE] [--fetch|--html-dir D] [--page URL]`:提问对齐候选页(展示多、点击 0)——title/H1/首段对查询词的覆盖与缺词、匿名查询占比、按本站分段 CTR 算的期望点击;方法见 [question-alignment.md](../content/question-alignment.md)
 - `serp_overlap.py 输入.csv`:四档聚类判据(7-10/4-6/2-3/0-1)
+- `serp_pull.py --keywords k.txt --out serp.csv [--gl/--hl/--device] [--top 10]`:SERP 取证客户端(用户自备 GoAnyAPI Key,`serp-stable` 1 credit/词)——抓真实 Google 有机 top-N 落成 `keyword,url1;url2` CSV 直喂 serp_overlap/content_queue;缓存不重复计费、`--max-credits` 预算上限、`--dry-run` 先算价;empty/failed 词不写行(绝不补位),401/402/403 立即中止
 - `keyword_variants.py`:跨语言变体归组(阿正书/越声调/全半角/土 İ/俄 ё)
 - `payment_intent.py`:支付即意图标注(OXXO/cuotas/Pix/COD…)
 - `geo_difficulty.py`:GEO 难度公式+客户三档
