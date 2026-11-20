@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-19T08:44:34.564668+00:00",
+ "checked_at": "2026-11-20T08:30:27.057415+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "e607d1b0286198a1e901feba74aaca04",
-   "ts": "2026-11-19T08:44:17.585959+00:00"
+   "hash": "30c12250c7ed55b4ddf4bb51d9c8b47e",
+   "ts": "2026-11-20T08:30:04.332586+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -86,21 +86,21 @@
    "ts": "2026-10-26T06:07:48.821620+00:00"
   },
   "anthropic-crawl": {
-   "hash": "9c164cc8b37515c1239d33d5fae549d5",
-   "ts": "2026-11-18T08:30:22.514284+00:00"
+   "hash": "38f048619ad149829e43609026e91512",
+   "ts": "2026-11-20T08:30:04.929830+00:00"
   },
   "schema-org": {
    "hash": "c28ae2197ecacc4469ac00319b179a7f",
-   "ts": "2026-11-19T08:44:18.260230+00:00",
-   "unstable_streak": 1
+   "ts": "2026-11-20T08:30:05.264715+00:00",
+   "unstable_streak": 0
   },
   "crux": {
    "hash": "837a78edf4e6a064f862d87c37f69c5d",
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "cfd9b1ac6e79af30c06f90d364806f64",
-   "ts": "2026-11-19T08:44:20.653931+00:00"
+   "hash": "2f828eb1a17438b49343ba680a3b4ac5",
+   "ts": "2026-11-20T08:30:07.359335+00:00"
   },
   "naver-wm": {
    "hash": "ad2962e7521a6622f26fbf62a8d752e5",
@@ -111,27 +111,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "c066f8752b31e6627fd6cf019c9af3b5",
-   "ts": "2026-11-19T08:44:31.525918+00:00",
-   "unstable_streak": 1
+   "hash": "35c9da20b9d179bdd5f61e2784e74d2c",
+   "ts": "2026-11-20T08:30:23.088951+00:00"
   },
   "statcounter-ai": {
-   "hash": "1d6b2563e4c4d4a889b0e4c62aacaf14",
-   "ts": "2026-11-19T08:44:31.935703+00:00",
-   "unstable_streak": 1
+   "hash": "ac2db9503b09b29731b5ae22190cf297",
+   "ts": "2026-11-20T08:30:23.546307+00:00"
   },
   "semrush-sensor": {
-   "hash": "88213f8203d1fb3cd4b11bd87c2bf30c",
-   "ts": "2026-11-18T08:30:34.293298+00:00"
+   "hash": "031f563a5e4f4408383903ac8e8cae54",
+   "ts": "2026-11-20T08:30:23.936348+00:00"
   },
   "seroundtable": {
-   "top": "Daily Search Forum Recap: November 18, 2026",
+   "top": "Google Search Officially Rolls Out Collapsible Sidebar",
    "seen": [
-    "OpenAI Updates ChatGPT Ads Bidding Options For Max Bid or Max CPC",
-    "Daily Search Forum Recap: November 5, 2026",
-    "Facebook Answers AI-Generated 6 Million Pages Is Google Scaled Content Abuse",
-    "Google Ads Expands AI Content Disclosure Label To More Regions",
-    "Google Ads PMax Channel Report Definitions Coming To Search & Shopping",
     "OpenAI Working On ChatGPT Tools For Business For Analytics & Citations",
     "Daily Search Forum Recap: November 6, 2026",
     "Search News Buzz Video Recap: Google Scaled Content Abuse From Facebook, ChatGPT Search 20% Of Google & More SEO, PPC & Local",
@@ -176,12 +169,17 @@
     "Google Ads Releases Several AI Max For Search For Travel Campaigns Help Docs",
     "Google Ads New Commercial Exemptions To US Election Advertising Policy",
     "Microsoft Advertising Announces Biggest Upgrade To Bidding Models",
-    "Google Ads PMax Setup Now With Channel Prioritization & Promo Mode"
+    "Google Ads PMax Setup Now With Channel Prioritization & Promo Mode",
+    "Google Search Officially Rolls Out Collapsible Sidebar",
+    "Microsoft Confirms Ads Are In AI Overviews On Bing Search",
+    "Daily Search Forum Recap: November 19, 2026",
+    "Google Search What People Are Saying AI-Generated Emojis",
+    "Google Hotel Search Listings With Continue On Google To Book"
    ],
-   "ts": "2026-11-19T08:44:32.831484+00:00"
+   "ts": "2026-11-20T08:30:24.697973+00:00"
   },
   "google-docs-rss": {
-   "top": "Added documentation on identifying traffic from Google Search",
+   "top": "Removed the Data Feed validation tool from the book actions documentation",
    "seen": [
     "Updating the Indexing API quota page",
     "Added documentation on the UGC Fresh Data Program",
@@ -192,9 +190,10 @@
     "Updated guidance on crawlable URL structures",
     "Updated guidance on preventing user-generated spam",
     "Added \"things to do\" query support to the aggregator and supplier units",
-    "Added documentation on identifying traffic from Google Search"
+    "Added documentation on identifying traffic from Google Search",
+    "Removed the Data Feed validation tool from the book actions documentation"
    ],
-   "ts": "2026-11-14T07:35:16.482882+00:00"
+   "ts": "2026-11-20T08:30:24.391721+00:00"
   },
   "openai-bots-rss": {
    "hash": "f237661cad613ae8cbd3da9f508b2565",
@@ -259,12 +258,13 @@
    "ts": "2026-11-12T08:16:56.885244+00:00"
   },
   "msads-blog": {
-   "top": "What's new in Microsoft Clarity: Agent insights, faster answers, and AI discovery",
+   "top": "Put AI to work engaging customers in more places: What's new in Microsoft Advertising this November",
    "seen": [
     "What's new in Microsoft Clarity: Agent insights, faster answers, and AI discovery",
-    "Build, steer, and measure your campaigns with AI: What's new in Microsoft Advertising this October"
+    "Build, steer, and measure your campaigns with AI: What's new in Microsoft Advertising this October",
+    "Put AI to work engaging customers in more places: What's new in Microsoft Advertising this November"
    ],
-   "ts": "2026-11-06T07:54:01.270719+00:00"
+   "ts": "2026-11-20T08:30:26.352559+00:00"
   },
   "google-maps-blog": {
    "top": "New Ask Maps features to help with holiday travel and prep",
@@ -292,16 +292,17 @@
    "ts": "2026-11-06T07:54:01.662474+00:00"
   },
   "arxiv-geo": {
-   "top": "Security of Deep Research Agents: Attack Surface, Defenses, Benchmarks, and Agenda Seeding against Research Planning",
+   "top": "GEOHunter: Mapping a Generative Engine Optimization Network in the Wild",
    "seen": [
     "IntentGEO: Intent-aware Generative Engine Optimization for Recommendation",
     "Characterizing Adversarial GEO via Implicit Brand Injection",
     "Do GEO Gains Survive the Live Web? Evaluating In-the-Wild Visibility Gains of Generative Engine Optimization via LIVE-GEO",
     "Predicting What Answer Engines Cite: Open Decision Models, Rerankers and a Distilled 4B Student on Ten Engines under Controlled Retrieval",
     "Toolflation: Seller Agents Distort Tool Markets Through Spontaneous Generative Engine Optimization",
-    "Security of Deep Research Agents: Attack Surface, Defenses, Benchmarks, and Agenda Seeding against Research Planning"
+    "Security of Deep Research Agents: Attack Surface, Defenses, Benchmarks, and Agenda Seeding against Research Planning",
+    "GEOHunter: Mapping a Generative Engine Optimization Network in the Wild"
    ],
-   "ts": "2026-11-17T09:10:45.504972+00:00"
+   "ts": "2026-11-20T08:30:27.056812+00:00"
   }
  }
 }
