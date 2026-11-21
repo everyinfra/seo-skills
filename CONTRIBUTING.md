@@ -2,7 +2,7 @@
 
 [中文](CONTRIBUTING.zh-CN.md)
 
-Search changes every month, and no single team knows all 18 markets from the inside. The people doing SEO in Seoul, São Paulo or Istanbul know things that never reach English blogs. If you know how search really works somewhere, put it here so others can use it. Your name stays on it.
+Search changes every month, and no single team knows all 19 markets from the inside. The people doing SEO in Seoul, São Paulo or Istanbul know things that never reach English blogs. If you know how search really works somewhere, put it here so others can use it. Your name stays on it.
 
 You do not need to write code for most contributions.
 
@@ -21,7 +21,7 @@ Not sure where to start? Look at issues labelled [`help wanted`](https://github.
 
 ```text
 skills/seo-suite/SKILL.md                     # the entry point: intake, then routing
-skills/seo-suite/references/markets/<lang>.md # one portal per language market (18 today)
+skills/seo-suite/references/markets/<lang>.md # one portal per language market (19 today)
 skills/seo-suite/references/<area>/*.md       # overview / research / content / technical / monitoring
 skills/seo-suite/scripts/*.py                 # standard-library-only Python tools
 skills/seo-suite/tests/test_*.py              # tests; run_tests.py finds them automatically

@@ -10,7 +10,7 @@ detect_tier 只做本地文件/环境变量存在性判断——零网络请求,
   T3 gsc.json 另含 ga4_property_id 键 → +GA4
   输出 {tier, capabilities[](逐层累加), missing:"配置 X 可解锁 Y"} 升级指引
 
-自检项:Python ≥3.9 / markets.json 可解析且市场数=18 / 模板类目录齐全 /
+自检项:Python ≥3.9 / markets.json 可解析且市场数=19 / 模板类目录齐全 /
 scripts/*.py 全部可编译(py_compile 静默批量) / tests 可发现 /
 通知渠道配置存在性(只报渠道名与已配/未配,绝不打印值) /
 --net 可选网络可达性(HEAD https://developers.google.com,5s 超时;
@@ -60,7 +60,7 @@ import urllib.request
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GSC_REL = os.path.join(".config", "seo-suite", "gsc.json")
-EXPECTED_MARKETS = 18
+EXPECTED_MARKETS = 19
 TEMPLATE_DIRS = ("audit", "content", "monitor", "research")
 NET_URL = "https://developers.google.com"
 NET_TIMEOUT = 5
@@ -448,7 +448,7 @@ LABELS = {"python": "Python", "markets": "markets", "templates": "templates",
 
 FIX_TIPS = {
     "python": "升级到 Python ≥3.9(如 pyenv install 3.9+ 后 pyenv local 3.9.x)",
-    "markets": "修复 scripts/markets.json——校验 JSON 语法,市场数须为 18(与 _meta 口径对齐)",
+    "markets": "修复 scripts/markets.json——校验 JSON 语法,市场数须为 19(与 _meta 口径对齐)",
     "templates": "恢复 templates/ 四类子目录(audit/content/monitor/research 各 ≥1 个 .md;git checkout)",
     "scripts": "对报告点名的文件跑 python3 -m py_compile 定位语法错误并修复",
     "tests": "恢复 tests/run_tests.py 与 test_*.py 用例(self_check.py 依赖 golden 层)",

@@ -10,7 +10,7 @@
       "desc_min": "desc_min:description 长度下限,与 desc_limit 同单位;默认取 desc_limit 的一半(向下取整),必须小于上限。本套件口径——Google 对描述无长度要求(snippet 文档「There's no limit on how long a meta description can be」)"
     },
     "sections": {
-      "markets": "18 个语言市场规则(market_lint.py / local_format.py);special_checks=逐语区独有检查项标记(2026-10-09 R5 深度吸收轮,源自 multilingual-workflow.md 十一B)",
+      "markets": "19 个语言市场规则(market_lint.py / local_format.py);special_checks=逐语区独有检查项标记(2026-10-09 R5 深度吸收轮,源自 multilingual-workflow.md 十一B)",
       "payment_words": "支付即意图词表(payment_intent.py);区域键非语言市场键(BR=pt 市场语言但支付区域 BR)",
       "serp_occupancy": "SERP 占位平台表(serp_occupancy.py);键为区域码(in=印度)",
       "complaint_lookalikes": "品牌词审计必查的本国投诉/UGC 同构平台"
@@ -1313,6 +1313,82 @@
           "over.bol.com / Partnerplatform 公告 + Yoast 版本日志(llms.txt 行为)"
         ],
         "next": "2027-01-09"
+      }
+    },
+    "el": {
+      "title_limit": {
+        "value": 60,
+        "unit": "chars",
+        "note": "本套件口径:希腊字母按码点计,与 en 同值;希腊语词较长,关键词前置"
+      },
+      "desc_limit": {
+        "value": 155,
+        "unit": "chars"
+      },
+      "desc_min": 77,
+      "sentence_ideal": {
+        "min": 15,
+        "max": 20,
+        "unit": "words"
+      },
+      "sentence_split": "latin",
+      "pillar_min": 2000,
+      "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
+      "marketing_words": [
+        "καλύτερος",
+        "κορυφαίος",
+        "επαναστατικός"
+      ],
+      "formats": {
+        "number": "1.234,56(点千分位+逗号小数)",
+        "date": "21 Νοεμβρίου 2026 / 21/11/2026",
+        "phone_prefix": "+30"
+      },
+      "formality": "εσείς 正式/商务通用;εσύ 仅熟人/年轻受众,正文不用(本套件口径)",
+      "engines": [
+        "google",
+        "bing",
+        "chatgpt",
+        "perplexity",
+        "gemini",
+        "copilot"
+      ],
+      "entity_sources": [
+        "wikipedia.org",
+        "wikidata.org",
+        "skroutz.gr",
+        "bestprice.gr",
+        "vrisko.gr",
+        "xo.gr",
+        "in.gr"
+      ],
+      "hreflang_codes": [
+        "el",
+        "el-GR"
+      ],
+      "notes": "Google 95.59% + Bing 3.03%(StatCounter GR 2026-10,全设备引荐流量);AI 工具使用率 90%,ChatGPT 79%(Focus Bari 2026-09-29–10-05);Eurostat 生成式 AI 44%(16–74 岁过去 3 个月),企业仅 9%",
+      "special_checks": [
+        "希腊字母原形,不剥离成拉丁字母;词尾 sigma(ς/σ)正确",
+        "带重音/不带重音双形查;Greeklish 只作用户原话引用",
+        "εσείς 全站统一,εσύ 不用",
+        "διαφήμιση/#advertisement 开头标注(消费者保护法 Law 2251/1994;欧盟网红检查 20 名希腊网红仅 25% 披露清晰)",
+        "货到付款仍常见,结账页须明示支付与退货方式",
+        "AI 生成写实图片/视频须可见 AI 标注(EU AI Act,2026-08-02 起)"
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-02-19",
+        "last": "2026-11-21",
+        "signals": [
+          "StatCounter 希腊月度份额(Google 95% 上下波动时重读)",
+          "Focus Bari AI 调查(每年)",
+          "Eurostat 生成式 AI 数据",
+          "AI Mode 希腊语覆盖变化",
+          "Skroutz 平台变化",
+          "发展部网红执法动态"
+        ],
+        "note": "2026-11-21 首版建立(StatCounter 2026-10 + Focus Bari 2026 + Eurostat 2025);本地实测轮(真实站审计)尚未做,列入下次复审"
       }
     }
   },
