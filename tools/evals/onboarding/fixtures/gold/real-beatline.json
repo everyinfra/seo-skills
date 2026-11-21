@@ -1,0 +1,54 @@
+{
+ "scenario": "real-calib-beatline",
+ "scenarios_file": "scenarios_real_calib.json",
+ "site": "https://beatline.example/",
+ "profile": {
+  "stage": {
+   "id": 2
+  },
+  "facts": {
+   "product.name": {
+    "value": "beatline"
+   }
+  }
+ },
+ "plan_json": {
+  "items": [
+   {
+    "title": "补 sitemap 并提交",
+    "week": 1
+   },
+   {
+    "title": "给 /tools 下的工具页加 hreflang",
+    "week": 2
+   }
+  ]
+ },
+ "first_events": [
+  {
+   "bash": "curl -s https://beatline.example/",
+   "out": "<title>beatline</title><footer>beatline since 2025</footer>"
+  },
+  {
+   "bash": "curl -s https://beatline.example/pricing",
+   "out": "Free / Pro $9"
+  },
+  {
+   "bash": "curl -s https://beatline.example/sitemap.xml",
+   "out": "<urlset>640 tool pages</urlset>"
+  },
+  {
+   "bash": "curl -s https://statsdemo.example/api/stats/beatline.example/",
+   "out": "{\"peak\": \"2025-03\", \"visitors\": 12480}"
+  }
+ ],
+ "first_screen": "【第 1 环 · 产品是什么】\n我读了首页、定价页、sitemap 和公开统计面板,每条都标了出处:\n- 产品:beatline,给播客做自动剪辑 ← https://beatline.example/\n- 价格:免费版和 Pro $9/月 ← /pricing\n- 站上有 /tools 下 640 个免费工具页,覆盖 pt、es、de 等语言 ← /sitemap.xml\n- 阶段:刚上线(推测,公开统计面板显示访问量从 2025-03 起持平)← https://statsdemo.example/beatline.example\n- 目标客户:独立播客主(推测)\n\n1. 上面这份理解对吗? A 对 B 有要改的",
+ "ring_texts": {
+  "2": "【第 2 环 · 客户怎么搜】\n1. 播客主最常搜什么? A 自动剪辑 B 去口癖",
+  "3": "【第 3 环 · 对手】\n1. 业务上的对手是谁? A 我去查 B 你告诉我",
+  "4": "【第 4 环 · 资源】\n1. 每周能写几篇? A 1 篇 B 2 篇",
+  "5": "【第 5 环 · 市场】\n1. 先做哪些语言? A 中文 B 中英",
+  "6": "【第 6 环 · 路线】\n1. 这份 90 天路线可以吗? A 可以 B 要改"
+ },
+ "final_text": "方案写好了,在 seo-ops/plan/。现在没有 GSC 数据,先用公开统计面板看趋势。"
+}

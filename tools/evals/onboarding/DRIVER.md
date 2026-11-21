@@ -86,3 +86,87 @@ python3 $G report RESULTS
 - 每个 run 的子代理只在这个 run 里续跑;跑完不再叫醒。
 - 场景多时分批起(同时 3–4 个 run),每个 run 自己的端口和目录;测试站和长命令放后台。
 - 先每个场景每组各跑 1 次看判分器证据是否合理,再补到每组 ≥2 次(规则评测要求每条例子跑两次以上)。
+
+## 6. 第 5 批:真实站、扩展场景、盲比、宿主检查
+
+第 5 批的题是另一位出题人写的,**一个字不改**,开跑前核 hash:公开的 `scenarios_ext.json`、`rubric_example3.json`、`hosts_static.json` 对本目录 `HASHES-第5批出题.txt`(`cd tools/evals/onboarding && grep -v '^#' HASHES-第5批出题.txt | awk '{print $1"  "$2}' | shasum -a 256 -c`);私有的 `<PRIVATE>/scenarios-real.json` 和它的答案表对私有目录里的 `HASHES-第5批出题.txt`。真实站的场景 id、产品名和结果文件都只放私有目录,不进本仓。
+
+第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R62。
+
+### 6.1 真实站 3 个(场景 id 见 `<PRIVATE>/scenarios-real.json`,下面写成 `REAL_ID`)
+
+```bash
+P=<PRIVATE>; G=tools/evals/onboarding/grade.py
+python3 $G setup REAL_ID --arm skill --run RUN --scenarios $P/scenarios-real.json --skill-dir <本仓>/skills/seo-suite
+python3 $G mutate RUN main                     # 打印首条消息(= grade.py prompt 的同一份提示词),工作区做初始提交
+# 起子代理 → 每回合结束:
+python3 $G next REAL_ID --run RUN --session main --transcript <转录>
+# 结束后:
+python3 $G REAL_ID --run RUN --answers-dir $P/answers --out <PRIVATE>/results/REAL_ID-skill-1.json
+```
+
+- 真实站没有测试站、不起 serve;站点就是线上地址,主机名严格按 setup 原文(带不带 www 算两个主机,页面类型只数那一个)。
+- 真实站不给 GSC:判分器把任何 GSC 数字都当编造(no_fabricated_metrics)。
+
+### 6.2 扩展场景(例 5 / 6 / 7 / 11)
+
+**先跑 base,打 W0**(有 `base` 的变体:ex5-*、ex7-title-warm)。同一轮评测里每个 base 每个 arm 只跑一次:
+
+```bash
+python3 $G setup onboard-launched --arm skill --run BASE_RUN --port 8810 --skill-dir <本仓>/skills/seo-suite
+python3 $G mutate BASE_RUN main   # → 按第 3 节完整跑到第 6 环结束
+python3 $G w0 BASE_RUN --out W0-launched-skill.tgz
+```
+
+**每个变体**:
+
+```bash
+python3 $G setup ex5-new-line --arm skill --run RUN --w0 W0-launched-skill.tgz [--port 8811 --rebase-port] --skill-dir …
+# 有 serve 的后台起站(setup 输出的 serve 命令),记 PID
+# 对 run.json 的 session_order 里每一段,按顺序:
+python3 $G mutate RUN <段>        # 必调,mutate 为空也调:执行段间动作、git 提交、拍开始快照、打印这一段的首条消息
+#   → 用打印的首条消息起一个新的被测子代理(每段一个新子代理,不续上一段的)
+#   → 每回合结束:python3 $G next <场景> --run RUN --session <段> --transcript <这一段的转录>
+#      reply → SendMessage 原文;end → 这一段结束(next 自己拍结束快照),进下一段的 mutate
+python3 $G <场景> --run RUN --out RESULTS/<场景>-skill-1.json
+```
+
+- 同一个 W0 的变体默认沿用 W0 的端口,只能串行;要并行就各给 `--port` 并带 `--rebase-port`。
+- `next` 的回话顺序:停下时先按 `simulated_user_by_topic` 回,没命中再发下一条 `user_turns`,再按环号取 `simulated_user`,最后 `fallback`;没停下时发下一条 `user_turns`,发完就结束这一段。
+- **例 6**:setup 加 `--skill-src <旧版 skill 目录>`(装进 `RUN/skill/seo-suite`,被测会话用这份);第 4 段 `t1_compare_brief` 的 mutate 带 `--install-from <被测版本 skill 目录>`(reinstall_skill 只删 run 本地那份再装)。baseline 组没有 skill,reinstall 跳过;它拿不到 playbook 的路径提示,这部分差距里有一部分量的是「知不知道文件放哪」。
+- **例 11**:判分要带 `--ref`,指向同 arm、同一轮 `onboard-launched` 的判分结果(第 1 环问题数的基线);不给判不过。
+- **例 7 的 title 场景**:判分按 `git diff`,基准是 mutate 那次提交;被测会话自己 commit 不影响(比的是开始快照和结束快照)。
+- 段跑砸了要重来:换一个新的 RUN 从 setup 重跑整个场景,不在旧 run 上补段。
+
+### 6.3 例 3 盲比
+
+同一产品、同一轮:新版(skill 组)和 0.43.0(v043 组)各跑一次开局到第 6 环结束(用 6.1 / 第 3 节的 run)。
+
+```bash
+python3 $G blind prepare --product launched --round R5-1 --new-run RUN_NEW --old-run RUN_OLD --out BLIND/launched \
+        --new-skill-dir <本仓>/skills/seo-suite --old-skill-dir $V043/skills/seo-suite
+```
+
+1. 另起一个**独立**评判子代理(没看过任何被测转录),只给它 `BLIND/launched/judge_prompt.md` 和 `evidence_A.txt`、`evidence_B.txt`,不给 `record.json`;它输出 JSON 存成 `BLIND/launched/judge.json`。
+2. 反事实:`BLIND/launched/cf/prompts.json` 里有两段首条消息。新版在 `cf/new_ws` 里新开会话跑一次,旧版在 `cf/old_ws` 里新开会话跑一次(停下来问时按 `if_it_asks` 回)。
+3. 汇总:
+   ```bash
+   python3 $G blind tally --out BLIND/launched --judge BLIND/launched/judge.json \
+           --cf-new-ws BLIND/launched/cf/new_ws --cf-old-ws BLIND/launched/cf/old_ws --cf-old-transcript <旧版反事实转录> \
+           --result RESULTS/blind-launched.json
+   ```
+   归一化后肉眼仍能看出哪份是新版时加 `--blind-broken`(只作参考,不计入通过)。证据包是工具结果和文件原文去版本痕迹,结构上仍可能露出版本(新版有 seo-ops/ 文件、旧版没有),评判结论要连这一点一起看。
+
+### 6.4 宿主静态检查(Codex、Cursor、Gemini CLI、VS Code Copilot)
+
+```bash
+python3 $G hosts --skill-dir <被测 skill 目录> --plugin-root <插件或仓库根> --label <版本> --out RESULTS/hosts-<版本>.json
+```
+
+不调模型、不联网;must 不过该宿主 fail,should 不过记 warn,可选项没有对应文件记 n/a。
+
+### 6.5 汇总
+
+`python3 $G report RESULTS`(递归读子目录):`products` 是第 0 批开局,`real` 是真实站,`ext` 按场景列;`outcome` 和 `outcome+process` 进差距,process 单列;`blind_example3` 是盲比(通过数 / 产品数,blind_broken 的单列),`hosts_static` 是宿主检查。
+
+判分器改了先过校准:`python3 -m unittest tools/evals/onboarding/test_grade.py`(第 5 批的 31 条新断言各有标准答案、裸跑、反例三种 fixture,见 `fixtures/build_ext.py`、`fixtures/scenarios_real_calib.json`)。

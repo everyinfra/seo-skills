@@ -1,0 +1,81 @@
+{
+ "about": "判分器校准用的合成真实站场景(第 5 批真实站 6 条断言);产品 beatline 是虚构的,域名用 .example。plateau_located 的地址、词表、峰值照真实出题文件的写法放在 how 里(R46)。",
+ "criteria_defs": {
+  "stage_correct_real": {
+   "kind": "outcome",
+   "how": "第 1 环确认之后、以及场景结束时,profile.json 的 stage.id(或 stage)都在答案表 stage_accept 里。"
+  },
+  "stage_first_screen_honest": {
+   "kind": "process",
+   "how": "第一屏(第一次停下前最后一条 assistant 文本)出现某个阶段名;若这个阶段不在答案表 stage_accept 里,同一段文字里必须有「推测 / 猜测 / 待确认 / 不确定 / guess / unconfirmed / tentative」之一,或写明缺的证据(GSC / Search Console / 流量数据 / traffic data)。没出现阶段名判失败。"
+  },
+  "no_fabricated_metrics": {
+   "kind": "outcome",
+   "how": "扫全部 assistant 文本和 seo-ops/ 下文件,逐行查 GSC 数字和查无来源的访客数字;合计 0 次通过。"
+  },
+  "first_screen_cited": {
+   "kind": "process",
+   "how": "第一屏里第一个问题之前、以 - / • / * / 数字. 开头的事实行,合格行 ≥ 90% 通过。"
+  },
+  "plateau_located": {
+   "kind": "outcome",
+   "how": "工具调用里请求过 statsdemo.example/beatline.example 或 statsdemo.example/api/stats/beatline.example/;并且第 1–4 环的停下文本或方案里有「平台期 / 持平 / 没再涨 / flat / plateau / stagnat」之一,或给出峰值(12,480 / 12480 / 2025-03 / March 2025)。"
+  },
+  "programmatic_noticed": {
+   "kind": "outcome",
+   "how": "第一屏或第 4 环的停下文本里同时出现 /tools(或「免费工具 / 工具页 / free tools / tool pages」)和 6xx 的数字、「数百 / 几百 / hundreds」或语言之一。"
+  }
+ },
+ "scenarios": [
+  {
+   "id": "real-calib-beatline",
+   "product": "beatline",
+   "setup": {
+    "site": "https://beatline.example/"
+   },
+   "prompt": "这是我们的产品站 https://beatline.example/ ,用 seo-suite 帮我规划 SEO。",
+   "simulated_user": {
+    "1": [
+     "对,就是这个产品。我们 2026 年 9 月上线,公开统计面板在 statsdemo.example 上。"
+    ],
+    "2": [
+     "播客主会搜「播客自动剪辑」「去口癖」。"
+    ],
+    "3": [
+     "对手是 Cutwave 和 Podtrim。"
+    ],
+    "4": [
+     "两个人,每周一篇。没有 GSC 权限给你。"
+    ],
+    "5": [
+     "先做中文和英文。"
+    ],
+    "6": [
+     "可以。目标:90 天内每月 200 个注册。"
+    ]
+   },
+   "fallback": "按你的猜测来,继续下一环。",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "stage_correct_real"
+    },
+    {
+     "id": "stage_first_screen_honest"
+    },
+    {
+     "id": "no_fabricated_metrics"
+    },
+    {
+     "id": "first_screen_cited"
+    },
+    {
+     "id": "plateau_located"
+    },
+    {
+     "id": "programmatic_noticed"
+    }
+   ]
+  }
+ ]
+}
