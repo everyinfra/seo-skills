@@ -812,6 +812,74 @@ def file_routes(pages_dir, exts, skip_api=True):
     return routes
 
 
+PAGE_FILES = {"home": ("app/page", "src/app/page", "pages/index", "src/pages/index"),
+              "pricing": ("app/pricing/page", "src/app/pricing/page", "pages/pricing", "pages/pricing/index",
+                          "src/pages/pricing", "src/pages/pricing/index"),
+              "layout": ("app/layout", "src/app/layout", "pages/_document", "src/pages/_document", "pages/_app")}
+PAGE_EXTS = (".tsx", ".jsx", ".ts", ".js", ".mdx", ".md", ".astro", ".vue", ".svelte")
+MIGRATION_FILE_RE = re.compile(r"^(?:migration|site[-_]?migration|url[-_]?migration|redirect[-_]?(?:map|plan)|"
+                               r"replatform(?:ing)?|relaunch)[\w.-]*\.(?:md|markdown|txt|csv)$", re.I)
+
+
+def _find_page(app_root, kind):
+    for stem in PAGE_FILES[kind]:
+        for ext in PAGE_EXTS:
+            p = os.path.join(app_root, stem + ext)
+            if os.path.isfile(p):
+                return p
+    return None
+
+
+def _js_string(raw):
+    try:
+        return json.loads('"%s"' % raw.replace('"', '\\"')) if "\\u" in raw else raw
+    except ValueError:
+        return raw
+
+
+def page_source_facts(text):
+    """页面源码(Next / Astro / 一般 JSX)里读得出的:metadata 的 title / description、siteName、<html lang>、可见文字块。"""
+    out = {}
+    for key in ("title", "description", "siteName"):
+        m = re.search(r"\b%s\s*:\s*([\"'`])((?:\\.|(?!\1).){2,400})\1" % key, text)
+        if m:
+            out[key] = _js_string(m.group(2)).strip()
+    m = re.search(r"<html\b[^>]*\blang=[\"']([A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?)[\"']", text)
+    if m:
+        out["lang"] = m.group(1)
+    chunks = []
+    for m in re.finditer(r">([^<>{}]{3,600})<", text):
+        t = re.sub(r"\s+", " ", m.group(1)).strip()
+        if len(t) >= 3 and re.search(r"[A-Za-z一-鿿]", t) and t not in chunks:
+            chunks.append(t)
+    out["chunks"] = chunks
+    return out
+
+
+def repo_pages(repo, app_root):
+    """仓库里首页、定价页、根布局的源码事实(没有站点或站点读不到时当草稿);→ {kind: {"src", ...}}。"""
+    out = {}
+    for kind in PAGE_FILES:
+        p = _find_page(app_root, kind)
+        if p:
+            out[kind] = dict(page_source_facts(_read(p, 256 * 1024)), src=_rel(repo, p))
+    return out
+
+
+def migration_plans(repo):
+    """仓库根和 docs/ 下的改版 / 迁移计划文件(MIGRATION.md、redirect-map.csv 这类)→ 相对路径列表。"""
+    found = []
+    for d in (repo, os.path.join(repo, "docs")):
+        try:
+            names = sorted(os.listdir(d))
+        except OSError:
+            continue
+        for n in names:
+            if MIGRATION_FILE_RE.match(n) and os.path.isfile(os.path.join(d, n)):
+                found.append(_rel(repo, os.path.join(d, n)))
+    return found
+
+
 SEO_FILE_RES = {
     "robots": re.compile(r"^robots(?:\.txt)?(?:\.(?:ts|tsx|js|jsx|mjs|cjs|txt|astro|xml))?$", re.I),
     "sitemap": re.compile(r"^(?:sitemap[\w.-]*\.(?:ts|tsx|js|jsx|mjs|cjs|xml|astro)|sitemap\.xml|"
@@ -947,8 +1015,13 @@ def scan_repo(repo):
     out["seo_files"] = {k: (sorted(v) if v else None) for k, v in seo.items()}
 
     if readme:
-        out["readme_summary"] = readme_summary(_read(readme, 64 * 1024))
+        rtext = _read(readme, 64 * 1024)
+        out["readme_summary"] = readme_summary(rtext)
+        m = re.search(r"^#\s+(.+?)\s*#*\s*$", rtext, re.M)
+        out["readme_title"] = m.group(1).strip() if m else None
         ev["readme"] = _rel(repo, readme)
+    out["pages"] = repo_pages(repo, app_root)
+    out["migration_plans"] = migration_plans(repo)
     out["_ev"] = ev
     return out
 
@@ -1055,7 +1128,21 @@ def build_facts(site_scan, ctx, repo_scan, existing):
     ev = (repo_scan or {}).get("_ev") or {}
     pkg = (repo_scan or {}).get("package") or {}
 
-    # product.name
+    rp = (repo_scan or {}).get("pages") or {}
+    rhome, rlayout, rprice = rp.get("home") or {}, rp.get("layout") or {}, rp.get("pricing") or {}
+
+    def has(key):
+        return any(f["key"] == key for f in facts)
+
+    def unknown(key, note, *looked):
+        # 读不到也留下这个键(值为空、标 unknown、写明查过哪里),开局第 1 环拿它问用户;不让键整个缺掉
+        if has(key) or not (ss or repo_scan):
+            return
+        src = _dedup([x for x in looked if x])
+        facts.append({"key": key, "value": None, "kind": "unknown", "note": note,
+                      "source": ("查过:" + "、".join(src)) if src else "没读到可靠出处"})
+
+    # product.name:站点 og:site_name / Organization / title > 仓库根布局的 siteName > package.json name > README 标题
     if ss and home.get("status") and home["status"] < 400:
         if home.get("og_site_name"):
             add("product.name", home["og_site_name"], home_src, "fact")
@@ -1063,8 +1150,14 @@ def build_facts(site_scan, ctx, repo_scan, existing):
             add("product.name", hx["org_name"], home_src, "fact")
         else:
             add("product.name", brand_from_title(home.get("title"), ctx.get("host")), home_src, "inferred")
-    if not any(f["key"] == "product.name" for f in facts) and pkg.get("name"):
+    if not has("product.name") and (rlayout.get("siteName") or rhome.get("siteName")):
+        src = rlayout if rlayout.get("siteName") else rhome
+        add("product.name", src["siteName"], src["src"], "fact")
+    if not has("product.name") and pkg.get("name"):
         add("product.name", pkg["name"], ev.get("package"), "inferred")
+    if not has("product.name") and (repo_scan or {}).get("readme_title"):
+        add("product.name", repo_scan["readme_title"], ev.get("readme"), "inferred")
+    unknown("product.name", "首页、package.json、README 都没读到产品名", home_src, ev.get("package"), ev.get("readme"))
 
     # product.one_liner
     llms = (ss or {}).get("llms") or {}
@@ -1074,10 +1167,13 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         add("product.one_liner", home["description"], home_src, "fact")
     elif home.get("h1"):
         add("product.one_liner", home["h1"][0], home_src, "fact")
+    elif rhome.get("description"):                 # 站点读不到时:仓库首页源码的 metadata description
+        add("product.one_liner", rhome["description"], rhome["src"], "fact")
     elif pkg.get("description"):
         add("product.one_liner", pkg["description"], ev.get("package"), "fact")
     elif (repo_scan or {}).get("readme_summary"):
         add("product.one_liner", repo_scan["readme_summary"], ev.get("readme"), "fact")
+    unknown("product.one_liner", "首页、llms.txt、仓库都没读到一句话介绍", home_src, rhome.get("src"), ev.get("readme"))
 
     # product.lines:llms.txt 里「产品 / 服务 / 方案」那一节的条目 > /products/<x> 这类路由 > 首页 h2(llms 的 ## 标题多半是栏目名,不是产品)
     llms_sections = ((ss or {}).get("llms") or {}).get("sections") or {}
@@ -1138,6 +1234,18 @@ def build_facts(site_scan, ctx, repo_scan, existing):
             add("pricing.model", " / ".join(snips), snip_src, "fact", enum=model, billing=modes)
         elif home.get("status") or pp:
             add("pricing.model", model, ref_src, "inferred", enum=model, billing=modes)
+    if not has("pricing.model") and rprice.get("chunks"):   # 站点读不到时:仓库定价页源码里的原文
+        snips = pricing_snippets(rprice["chunks"])
+        if snips:
+            rtxt = " ".join(rprice["chunks"])
+            prices = _dedup([p for c in rprice["chunks"] for p in extract_prices(c)])[:PRICES_MAX]
+            if prices and not has("pricing.prices"):
+                add("pricing.prices", prices, rprice["src"], "fact")
+            model = ("freemium" if FREE_RE.search(rtxt) else "paid") if prices else ("free" if FREE_RE.search(rtxt) else "unknown")
+            add("pricing.model", " / ".join(snips), rprice["src"], "fact", enum=model,
+                billing=billing_modes(" ".join(snips) + " " + rtxt))
+    unknown("pricing.model", "定价页、首页、仓库里都没读到价格或收费方式的原文",
+            (pp or {}).get("final_url") or (pp or {}).get("url"), home_src, rprice.get("src"), rhome.get("src"))
 
     # conversion.ctas:按钮归成转化类型(注册 / 付费 / 试用 / 联系销售 / 演示);登录、文档入口不算转化
     ctas = home.get("ctas") or []
@@ -1161,6 +1269,9 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         add("market.languages", [home["lang"]], home_src, "fact")
     if repo_scan and repo_scan.get("locales"):
         add("market.languages", repo_scan["locales"], ev.get("locales"), "inferred")
+    if not has("market.languages") and rlayout.get("lang"):
+        add("market.languages", [rlayout["lang"]], rlayout["src"], "fact")
+    unknown("market.languages", "页面没写 lang / hreflang,仓库里也没有语言目录", home_src, rlayout.get("src"))
 
     # site.page_types / site.url_count
     if ss and ss.get("page_types"):

@@ -185,10 +185,15 @@ def _ring_parts(prof, prefixes):
     return parts
 
 
+# 不进校验值的键:校验值本身;_schema 是脚本按固定规则生成的映射(每次写入都重写),读档案的人照它取值,
+# 有人照着评测说明在顶层补一份 _schema 不算改了档案内容
+UNSEALED = ("_integrity", "_schema")
+
+
 def seal_profile(prof):
     """写 profile.json 前最后一步:记整份和每一环的内容校验值(档案只能经脚本写)。原地改,返回同一个对象。"""
     prefixes = ring_prefixes()
-    body = {k: v for k, v in prof.items() if k != "_integrity"}
+    body = {k: v for k, v in prof.items() if k not in UNSEALED}
     prof["_integrity"] = {"by": "seo-suite", "sha256": _digest(body),
                           "rings": {r: _digest(p) for r, p in _ring_parts(prof, prefixes).items()}}
     return prof
@@ -199,7 +204,7 @@ def check_seal(prof):
     seal = prof.get("_integrity")
     if not isinstance(seal, dict) or not seal.get("sha256"):
         return {"legacy": True, "rings": [], "other": False}
-    body = {k: v for k, v in prof.items() if k != "_integrity"}
+    body = {k: v for k, v in prof.items() if k not in UNSEALED}
     if _digest(body) == seal["sha256"]:
         return None
     old = seal.get("rings") or {}
@@ -441,6 +446,10 @@ def collect_evidence(scan=None, ws=None, metrics=None, today=None):
         ev["signals.brand_name"] = name if isinstance(name, str) else ""
         same = sig.get("same_as") or []
         ev["signals.same_as_count"] = len(same) if isinstance(same, list) else 0
+        repo_scan = scan.get("repo_scan") or {}
+        plans = repo_scan.get("migration_plans") if isinstance(repo_scan, dict) else None
+        if plans:
+            ev["signals.migration_plans"] = list(plans)
         site_scan = scan.get("site_scan") or {}
         pt = site_scan.get("page_types") if isinstance(site_scan, dict) else None
         if isinstance(pt, dict):
@@ -585,11 +594,17 @@ def stage(rules, ev, prof=None):
     if "signals.site_live" not in ev and "signals.repo_public_routes" in ev:
         # 只给了仓库、没给站点:空仓库多半是想法阶段,有公开路由多半是上线前;是猜测,第 1 环让用户确认
         sid = 1 if routes > 0 else 0
-        return {"stage": sid, "name": names[sid], "base_stage": None, "base_name": None, "confidence": "guess",
-                "why": ["没给站点地址,只读了仓库:" + ("有 %d 条公开路由" % routes if routes else "没有公开路由")
-                        + ";站点已经上线的话补 --site 重跑"],
-                "candidates": [{"id": c, "name": names[c]} for c in (0, 1, 2)], "missing": ["signals.site_live"],
-                "conflicts": []}
+        why = ["没给站点地址,只读了仓库:" + ("有 %d 条公开路由" % routes if routes else "没有公开路由")
+               + ";站点已经上线的话补 --site 重跑"]
+        cands = [0, 1, 2]
+        plans = ev.get("signals.migration_plans") or []
+        if plans and not events:
+            why.insert(0, "仓库里有改版 / 迁移计划:%s" % "、".join(plans[:3]))
+            sid, cands = 5, [5, 1, 2, 3, 4]
+        res = {"stage": sid, "name": names[sid], "base_stage": None, "base_name": None, "confidence": "guess",
+               "why": why, "candidates": [{"id": c, "name": names[c]} for c in cands], "missing": ["signals.site_live"],
+               "conflicts": []}
+        return _confirmed_override(res, prof, names)
     if "signals.site_live" not in ev:
         return {"stage": None, "name": "未知", "base_stage": None, "base_name": None, "confidence": "unknown",
                 "why": ["没有站点和仓库的证据,先跑 product_scan.py"], "candidates": [],
@@ -631,20 +646,39 @@ def stage(rules, ev, prof=None):
             why.append("没有 GSC 数据,按 URL 数 %s%s猜;请用户确认" % (n, (",站龄 %d 天" % age) if age is not None else ",站龄未知"))
             cands = [2, 3, 4]
     sid = base
+    plans = ev.get("signals.migration_plans") or []
     if events:
         sid = 5
         why.insert(0, "档案声明了改版类事件:%s" % ",".join(events))
+    elif plans:
+        # 仓库里摆着改版 / 迁移计划(MIGRATION.md 这类):按「改版 / 迁移」猜,底层阶段照常报;第 1 环让用户确认
+        sid, conf = 5, "guess"
+        why.insert(0, "仓库里有改版 / 迁移计划:%s" % "、".join(plans[:3]))
+        cands = _dedup_ids([5, base] + list(cands))
     res = {"stage": sid, "name": names.get(sid), "base_stage": base, "base_name": names.get(base),
            "confidence": conf, "why": why, "candidates": [{"id": c, "name": names[c]} for c in cands],
            "missing": [] if (impr is not None or clicks is not None or not live) else ["metrics.gsc_impressions_28d", "metrics.gsc_clicks_28d", "metrics.gsc_clicks_prev_28d"],
            "conflicts": []}
+    return _confirmed_override(res, prof, names)
+
+
+def _confirmed_override(res, prof, names):
+    """用户在第 1 环确认(或纠正)过的阶段压过规则;规则结果写进 conflicts,不覆盖用户的。"""
     confirmed = ((prof or {}).get("stage") or {})
     if confirmed.get("confirmed") and confirmed.get("value") is not None:
         cv = int(confirmed["value"])
-        if cv != sid:
-            res["conflicts"].append("用户确认的阶段是 %s,规则判的是 %s" % (names.get(cv), names.get(sid)))
+        if cv != res["stage"]:
+            res["conflicts"].append("用户确认的阶段是 %s,规则判的是 %s" % (names.get(cv), names.get(res["stage"])))
         res.update({"stage": cv, "name": names.get(cv), "confidence": "confirmed"})
     return res
+
+
+def _dedup_ids(ids):
+    out = []
+    for i in ids:
+        if i is not None and i not in out:
+            out.append(i)
+    return out
 
 
 def diagnose(scan=None, ws=None, metrics=None, today=None):

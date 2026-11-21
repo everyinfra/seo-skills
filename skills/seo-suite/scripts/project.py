@@ -684,6 +684,40 @@ def top_actions(envelope_path, audit_path, n=3):
     return [], "无(审计链未产出结果)"
 
 
+def local_preview_robots(site):
+    """本机预览站(127.0.0.0/8、::1、localhost)的 robots.txt 是不是对所有爬虫全封 → 发现(dict)或 None。
+    上线前的预览站封着 robots 是常态:体检照爬(--ignore-robots),全封本身记成一条发现,上线前必须翻过来。"""
+    import ipaddress
+    import urllib.request
+    pu = urllib.parse.urlsplit(site)
+    host = (pu.hostname or "").lower()
+    try:
+        loop = host == "localhost" or host.endswith(".localhost") or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        loop = False
+    if not loop:
+        return None
+    url = "%s://%s/robots.txt" % (pu.scheme, pu.netloc)
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "seo-suite-triage"}),
+                                    timeout=10) as r:
+            body = r.read(512 * 1024).decode("utf-8", "replace")
+    except Exception:  # noqa: BLE001 — 读不到 robots 就照常爬,不加发现
+        return None
+    sys.path.insert(0, HERE)
+    import site_crawl
+    doc = site_crawl.parse_robots(body)
+    if not doc or site_crawl.robots_allows(doc, "%s://%s/" % (pu.scheme, pu.netloc)):
+        return None
+    g = (doc.get("groups") or {}).get("*") or {}
+    if "/" not in g.get("disallow", []):
+        return None
+    return {"id": "robots_block_all", "severity": "CRITICAL", "url": url,
+            "title": "robots.txt 对所有爬虫 Disallow: /(整站不让抓)",
+            "detail": "本机预览站封着 robots 是上线前的常态,这次体检照爬了(--ignore-robots);"
+                      "上线前必须改成放行,否则上线后整站不会被收录。改 robots 的源头(如 app/robots.ts)后重跑体检确认。"}
+
+
 def cmd_run_triage(ns):
     if ns.max <= 0:
         die("--max 必须为正整数")
@@ -716,9 +750,14 @@ def cmd_run_triage(ns):
         ok_so_far[name] = rec["ok"]
         return rec
 
+    findings = []
+    preview_block = local_preview_robots(site) if ns.allow_local else None
+    if preview_block:
+        findings.append(preview_block)
     step("crawl", [PY, script_path("site_crawl.py"), site,
                    "--max", str(ns.max), "--delay", TRIAGE_DELAY_S,
-                   "--out", crawl_json, "--urls-out", urls_txt] + (["--allow-local"] if ns.allow_local else []))
+                   "--out", crawl_json, "--urls-out", urls_txt] + (["--allow-local"] if ns.allow_local else [])
+         + (["--ignore-robots"] if preview_block else []))
     audit_urls = pick_audit_urls(crawl_json if ok_so_far.get("crawl") else None, site)
     step("audit", [PY, script_path("site_audit.py"), *audit_urls,
                    "--market", market, "--json"], stdout_to=audit_json, after=("crawl",))
@@ -748,12 +787,16 @@ def cmd_run_triage(ns):
                     if ok_so_far.get("envelope") else None)
     audit_artifact = audit_json if ok_so_far.get("audit") else None
     actions, basis = top_actions(env_artifact, audit_artifact)
+    if findings:                                   # 体检自己发现的(robots 全封)排在审计结论前面
+        actions = [{"rule_id": f["id"], "severity": f["severity"], "title": f["title"], "category": "crawl",
+                    "affected": 0, "reason": f["detail"]} for f in findings] + actions
 
     summary = {
         "schema_version": TRIAGE_SCHEMA_VERSION,
         "generated_at": now_utc_iso(),
         "site": site, "market": market, "run_dir": hist,
         "steps": steps,
+        "findings": findings,
         "verdict": {"site_type": site_type, "top_actions": actions, "basis": basis,
                     "recheck": "python3 %s run triage --dir %s" % (me_path(), ws)},
     }
@@ -774,6 +817,8 @@ def cmd_run_triage(ns):
             if s["error"]:
                 info += " — %s" % s["error"]
             print("  %-10s %s %s" % (s["name"], mark, info))
+        for f in findings:
+            print("发现: [%s] %s —— %s" % (f["severity"], f["title"], f["detail"]))
         st = site_type
         if st["suggested"]:
             print("站型建议: %s —— %s" % (st["suggested"], st["note"]))
