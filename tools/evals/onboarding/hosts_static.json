@@ -1,0 +1,316 @@
+{
+ "about": "RQ-237 第 5 批:Claude Code 以外 4 个宿主的静态检查清单(需求卡第 7 节红队致命 4:「5 个宿主」降为 Claude Code 实测,其余宿主只做静态检查——安装、触发描述、命令文件格式)。每条写判据和官方出处;出处都在 2026-11-21 读过原文。检查对象是被测版本的 skill 目录、README 的安装段和随包的命令 / 插件文件。不调模型。",
+ "how_to_run": "每个宿主先跑 common 的 8 条,再跑该宿主自己的条目。level=must 不过判该宿主不通过;level=should 只记 warn。结果写成 {宿主: {条目 id: pass / fail / warn / n/a, 证据: 文件路径和行号}}。",
+ "common": [
+  {
+   "id": "S1_frontmatter_name",
+   "level": "must",
+   "what": "SKILL.md 的 name",
+   "how": "解析 SKILL.md 开头的 YAML frontmatter,取 name。",
+   "pass": "name 存在;1–64 个字符;只含小写字母、数字、连字符,不以连字符开头或结尾,没有连续两个连字符(正则 ^[a-z0-9]+(-[a-z0-9]+)*$);和 SKILL.md 所在目录名完全相同。",
+   "source": [
+    "https://agentskills.io/specification(源文件 github.com/agentskills/agentskills docs/specification.mdx,commit 83021e2,2026-11-21 读)",
+    "https://code.visualstudio.com/docs/copilot/customization/agent-skills(「Maximum 64 characters. Names with invalid characters cause the skill to silently fail to load.」,2026-11-21 读)"
+   ]
+  },
+  {
+   "id": "S2_description_length",
+   "level": "must",
+   "what": "SKILL.md 的 description 长度",
+   "how": "取 frontmatter 的 description,按 Unicode 字符数(Python len)算。",
+   "pass": "1–1024 个字符。超过 1024 判失败(四家都按 Agent Skills 规格;VS Code 文档直接写 Maximum 1024 characters)。",
+   "source": [
+    "https://agentskills.io/specification(源文件 github.com/agentskills/agentskills docs/specification.mdx,commit 83021e2,2026-11-21 读)",
+    "https://code.visualstudio.com/docs/copilot/customization/agent-skills"
+   ]
+  },
+  {
+   "id": "S3_description_front_loaded",
+   "level": "must",
+   "what": "触发描述的关键词和位置",
+   "how": "description 前 100 个字符里找 SEO(不分大小写);整段里逐个查关键词表 keywords(每项是正则,不分大小写)。",
+   "pass": "前 100 个字符含 SEO;keywords 10 项里命中 ≥6 项。理由:Codex 在技能多时先截短描述,官方要求把关键用途和触发词放在前面;Gemini CLI、Cursor、VS Code 都只凭 name + description 决定是否加载。",
+   "keywords": [
+    "SEO",
+    "GEO",
+    "title",
+    "meta",
+    "robots",
+    "sitemap",
+    "canonical",
+    "hreflang",
+    "keyword|关键词",
+    "收录|index"
+   ],
+   "source": [
+    "https://developers.openai.com/codex/skills(「If many skills are installed, Codex shortens skill descriptions first」「Front-load the key use case and trigger words」,2026-11-21 读)",
+    "https://geminicli.com/docs/cli/creating-skills/(「description: CRITICAL. This is how Gemini decides when to use the skill」,2026-11-21 读)"
+   ]
+  },
+  {
+   "id": "S4_skill_body_size",
+   "level": "should",
+   "what": "SKILL.md 正文长度和引用深度",
+   "how": "数 SKILL.md 行数;列出正文里引用的相对路径。",
+   "pass": "≤500 行;引用都是相对 skill 根目录的路径,而且只往下一层(references/x.md 可以,references/a/b/c.md 再引用别的文件不行)。超了只记 warn,不判失败。",
+   "source": [
+    "https://agentskills.io/specification(源文件 github.com/agentskills/agentskills docs/specification.mdx,commit 83021e2,2026-11-21 读)(「Keep your main SKILL.md under 500 lines」「Keep file references one level deep」)"
+   ]
+  },
+  {
+   "id": "S5_no_hardcoded_home",
+   "level": "must",
+   "what": "脚本不写死 Claude Code 的安装路径",
+   "how": "在 skill 目录的全部脚本里搜 ~/.claude、$HOME/.claude、os.path.expanduser(\"~/.claude、Path.home() / \".claude。",
+   "pass": "0 处命中;脚本按自身文件位置(__file__ / import.meta.url / $0)找 skill 根目录。其余四家的安装位置都不在 ~/.claude 下(见各家 install_locations),写死就会失效(需求卡第 7 节红队 13 已点名 ops.py:1352)。",
+   "source": [
+    "需求卡 RQ-237 第 7 节红队 13",
+    "各家 install_locations 的出处"
+   ]
+  },
+  {
+   "id": "S6_state_outside_skill_dir",
+   "level": "must",
+   "what": "状态写在 skill 目录外",
+   "how": "在 skill 目录的全部脚本里找写文件的路径参数(open(..., 'w'/'a')、write_text、mkdir、>、>>、tee)。",
+   "pass": "写入目标都在工作区 seo-ops/ 或用户给的目录下,没有任何一处写进 skill 自己的目录。Gemini CLI 只把 skill 目录加进「允许读」,升级重装会覆盖 skill 目录(需求卡第 1.5 节第 9 层:状态放插件目录外)。",
+   "source": [
+    "https://geminicli.com/docs/cli/skills/(「The skill's directory is added to the agent's allowed file paths, granting it permission to read any bundled assets」)",
+    "需求卡 RQ-237 第 1.5 节第 9 层"
+   ]
+  },
+  {
+   "id": "S7_stop_without_question_tool",
+   "level": "must",
+   "what": "没有提问工具时怎么停",
+   "how": "在 SKILL.md 和开局说明里找写给「没有提问工具的宿主」的停法。",
+   "pass": "有明确一段:列编号问题(每个带选项或猜测)后结束回合、等用户回话;并写明 Claude Code 才用提问工具。Codex、Cursor、Gemini CLI、VS Code 都没有 AskUserQuestion,缺这段就走不了「每环都停」。",
+   "source": [
+    "需求卡 RQ-237 第 3 节「宿主适配」"
+   ]
+  },
+  {
+   "id": "S8_command_entries_reachable",
+   "level": "must",
+   "what": "7 个命令入口在本宿主怎么进",
+   "how": "对 start、lifecycle、weekly、launch、site-move、teach、report 七个入口,逐个找本宿主的进法:单独的 skill、命令文件,或 SKILL.md 里写明的「说 X 就进 Y」。",
+   "pass": "7 个都有进法,写在 README 的本宿主安装段或 SKILL.md 里;进法符合本宿主 commands 一节的格式要求。",
+   "source": [
+    "需求卡 RQ-237 第 1.5 节第 10 层"
+   ]
+  }
+ ],
+ "hosts": {
+  "codex": {
+   "name": "OpenAI Codex(CLI、IDE 扩展、ChatGPT 桌面版)",
+   "install_locations": [
+    "$CWD/.agents/skills/<name>/",
+    "$CWD/../.agents/skills/<name>/(在 git 仓库里往上到根目录的每一层)",
+    "$REPO_ROOT/.agents/skills/<name>/",
+    "$HOME/.agents/skills/<name>/",
+    "/etc/codex/skills/<name>/",
+    "插件:根目录 plugin.json(Agent Plugins 规格)或兼容的 .codex-plugin/plugin.json,skills 放 skills/"
+   ],
+   "checks": [
+    {
+     "id": "CX1_install_path",
+     "level": "must",
+     "what": "README 的 Codex 安装段",
+     "pass": "安装目标是 install_locations 之一(复制或软链接都行,Codex 跟随软链接);不写 ~/.codex/skills(官方表里没有这个位置)。",
+     "source": [
+      "https://developers.openai.com/codex/skills(Skill Scope 表,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "CX2_openai_yaml",
+     "level": "should",
+     "what": "agents/openai.yaml(可选)",
+     "pass": "没有这个文件算过;有的话能被 YAML 解析,policy.allow_implicit_invocation 不是 false(是 false 的话 Codex 不会按描述自动触发,开局只能靠 $seo-suite 手动点名)。",
+     "source": [
+      "https://developers.openai.com/codex/skills(「allow_implicit_invocation (default: true)」)"
+     ]
+    },
+    {
+     "id": "CX3_commands",
+     "level": "must",
+     "what": "命令入口格式",
+     "pass": "入口用 skill 本身($seo-suite 或 /skills 里选)加 SKILL.md 里的「说 X 就进 Y」;如果另外带了自定义提示文件,它们在 ~/.codex/prompts/<名>.md 顶层(不放子目录)、有 description 的 YAML frontmatter,并且 README 写明这是已弃用的方式、不是唯一入口。",
+     "source": [
+      "https://developers.openai.com/codex/custom-prompts(「Custom prompts are deprecated. Use skills」「Codex scans only the top-level Markdown files」,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "CX4_plugin_manifest",
+     "level": "should",
+     "what": "如果以插件分发",
+     "pass": "不分发插件判 n/a;分发的话根目录有 plugin.json(或兼容的 .codex-plugin/plugin.json),声明 skills 为 ./skills/,skills/seo-suite/SKILL.md 存在。",
+     "source": [
+      "https://developers.openai.com/plugins/build/plugins(「add plugin.json at the plugin root」「Existing .codex-plugin/plugin.json files remain supported as a compatibility fallback」,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "CX5_agents_md_budget",
+     "level": "should",
+     "what": "如果靠 AGENTS.md 放启动协议",
+     "pass": "不靠 AGENTS.md 判 n/a;靠的话,随包要求用户加进 AGENTS.md 的内容 ≤ 8 KiB,给仓库已有内容留出 project_doc_max_bytes 默认 32 KiB 的余量。",
+     "source": [
+      "https://developers.openai.com/codex/guides/agents-md(「project_doc_max_bytes (32 KiB by default)」,2026-11-21 读)"
+     ]
+    }
+   ]
+  },
+  "cursor": {
+   "name": "Cursor(Agent、CLI、Cloud Agents)",
+   "install_locations": [
+    ".agents/skills/<name>/",
+    ".cursor/skills/<name>/",
+    "~/.agents/skills/<name>/",
+    "~/.cursor/skills/<name>/",
+    "兼容位置:.claude/skills/、.codex/skills/、~/.claude/skills/、~/.codex/skills/"
+   ],
+   "checks": [
+    {
+     "id": "CU1_install_path",
+     "level": "must",
+     "what": "README 的 Cursor 安装段",
+     "pass": "安装目标是 install_locations 之一;README 提醒:Cursor 也会读 ~/.claude/skills,已经给 Claude Code 装过的用户不要在 ~/.cursor/skills 再装一份同名 skill。",
+     "source": [
+      "https://cursor.com/docs/context/skills(Skill directories 表,「For compatibility, Cursor also loads skills from Claude and Codex directories」,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "CU2_frontmatter_flags",
+     "level": "must",
+     "what": "Cursor 专有 frontmatter",
+     "pass": "disable-model-invocation 不存在或不是 true(是 true 就只能手动 /seo-suite,不会按描述自动触发);paths 不设(开局要在任何文件下都可用)。",
+     "source": [
+      "https://cursor.com/docs/context/skills(Frontmatter fields 表)"
+     ]
+    },
+    {
+     "id": "CU3_commands",
+     "level": "must",
+     "what": "命令入口格式",
+     "pass": "入口用 skill(聊天里 /seo-suite,或拆成 seo-suite-start 这类独立 skill,名字守 S1);不再新做 .cursor/commands/*.md(Cursor 2.4 起命令迁到 skills,/migrate-to-skills 会把它们转掉);如果还带着旧命令文件,README 写明只为老版本保留。",
+     "source": [
+      "https://cursor.com/docs/context/commands(「How do I migrate commands to skills? … available in Cursor 2.4+」,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "CU4_cloud_agents",
+     "level": "should",
+     "what": "Cloud Agents 能不能用",
+     "pass": "README 写明:个人 skill 要放 ~/.cursor/skills 并打开 Sync Skills for Cloud Agents,或者放进仓库 .cursor/skills / .agents/skills;~/.agents/skills 不会同步到 Cloud Agents。",
+     "source": [
+      "https://cursor.com/docs/context/commands(「Only ~/.cursor/skills/ syncs」「~/.agents/skills/ and unsynced local skills stay on your machine」)"
+     ]
+    }
+   ]
+  },
+  "gemini_cli": {
+   "name": "Gemini CLI",
+   "install_locations": [
+    "~/.gemini/skills/<name>/ 或别名 ~/.agents/skills/<name>/(用户级)",
+    ".gemini/skills/<name>/ 或别名 .agents/skills/<name>/(工作区级,同级里 .agents 优先)",
+    "扩展:<扩展根>/skills/<name>/SKILL.md",
+    "gemini skills install <git 地址> --path <子目录> [--scope user|workspace]"
+   ],
+   "checks": [
+    {
+     "id": "GM1_install_path",
+     "level": "must",
+     "what": "README 的 Gemini CLI 安装段",
+     "pass": "安装目标是 install_locations 之一;用 gemini skills install 时 --path 指向含 SKILL.md 的子目录(仓库根不是 skill 目录时必须给)。",
+     "source": [
+      "https://geminicli.com/docs/cli/skills/(Discovery tiers、`gemini skills install … --path`,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "GM2_command_toml",
+     "level": "must",
+     "what": "自定义命令文件",
+     "pass": "命令是 .toml 文件,放在 .gemini/commands/、~/.gemini/commands/ 或扩展的 commands/ 下;能被 tomllib 解析;有字符串字段 prompt(必填);description 是一行(可选);要传参数的用 {{args}};不在 prompt 里用 !{...} 跑 shell(每次都要用户确认)。",
+     "source": [
+      "https://geminicli.com/docs/cli/custom-commands/(TOML file format (v1)、`{{args}}`、`!{...}` 需确认,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "GM3_command_namespace",
+     "level": "must",
+     "what": "命令名和 Claude Code 一致",
+     "pass": "要得到 /seo-suite:start 这种名字,文件必须是 commands/seo-suite/start.toml(子目录变成冒号前缀);放在扩展里也一样——扩展名不会自动加到命令名前面,commands/start.toml 只会变成 /start,会和别的扩展撞名。",
+     "source": [
+      "https://geminicli.com/docs/cli/custom-commands/(Naming and namespacing)",
+      "https://geminicli.com/docs/extensions/reference/(「For an extension named gcp: commands/deploy.toml becomes /deploy」,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "GM4_extension_manifest",
+     "level": "should",
+     "what": "如果以扩展分发",
+     "pass": "不分发扩展判 n/a;分发的话根目录有 gemini-extension.json,能被 JSON 解析,有 name(小写字母、数字、连字符,和扩展目录名一致)、version、description;skill 在 skills/seo-suite/SKILL.md。",
+     "source": [
+      "https://geminicli.com/docs/extensions/reference/(gemini-extension.json 字段、Agent skills 一节)"
+     ]
+    },
+    {
+     "id": "GM5_consent_scope",
+     "level": "should",
+     "what": "激活时的授权范围",
+     "pass": "skill 运行时只需要读自己的目录、写工作区 seo-ops/(见 S6);README 提醒第一次激活会弹授权确认。",
+     "source": [
+      "https://geminicli.com/docs/cli/skills/(Activation → Consent → Injection)"
+     ]
+    }
+   ]
+  },
+  "vscode_copilot": {
+   "name": "VS Code + GitHub Copilot",
+   "install_locations": [
+    "Copilot 执行器:项目 .github/skills/<name>/,个人 ~/.copilot/skills/<name>/",
+    "Claude 执行器:.claude/skills/、~/.claude/skills/",
+    "Codex 执行器:.agents/skills/、~/.agents/skills/",
+    "Local 执行器(已弃用,2027 年 2 月移除):.github/skills/、~/.copilot/skills/,另读 .claude/skills/、.agents/skills/"
+   ],
+   "checks": [
+    {
+     "id": "VS1_install_path",
+     "level": "must",
+     "what": "README 的 VS Code / Copilot 安装段",
+     "pass": "默认装到 .github/skills/seo-suite/ 或 ~/.copilot/skills/seo-suite/(Copilot 执行器的位置);只写 .claude/skills 不算,那只对 Claude 执行器和已弃用的 Local 生效。",
+     "source": [
+      "https://code.visualstudio.com/docs/copilot/customization/agent-skills(Skill locations 表,2026-11-21 读)"
+     ]
+    },
+    {
+     "id": "VS2_name_no_colon",
+     "level": "must",
+     "what": "命令入口不能靠带冒号的 skill 名",
+     "pass": "所有随包 skill 的 name 都守 S1;没有 seo-suite:start 这种带冒号、斜杠、点的名字(VS Code 写明这类名字静默加载失败);拆入口时用 seo-suite-start 之类。",
+     "source": [
+      "https://code.visualstudio.com/docs/copilot/customization/agent-skills(「Do not use slashes, colons, dots, or namespace prefixes … silently fail to load」)"
+     ]
+    },
+    {
+     "id": "VS3_invocation_flags",
+     "level": "must",
+     "what": "能自动触发也能手动点",
+     "pass": "user-invocable 不存在或不是 false;disable-model-invocation 不存在或不是 true。",
+     "source": [
+      "https://code.visualstudio.com/docs/copilot/customization/agent-skills(user-invocable、disable-model-invocation 两个字段)"
+     ]
+    },
+    {
+     "id": "VS4_prompt_files",
+     "level": "should",
+     "what": "提示文件(.prompt.md)",
+     "pass": "不带提示文件算过;带的话放在 .github/prompts/、后缀 .prompt.md、frontmatter 能解析,且 README 写明它只在已弃用的 Local 执行器里能跑,主入口仍是 skill。",
+     "source": [
+      "https://code.visualstudio.com/docs/copilot/customization/prompt-files(「Prompt files run only in Local harness sessions … removed by February 2027」,2026-11-21 读)"
+     ]
+    }
+   ]
+  }
+ },
+ "not_covered": "Claude Code 不在本清单:它走实测(scenarios.json / scenarios_ext.json 的多轮驱动)。本清单不验证模型在这些宿主里是否真的按描述触发——那要实测,红队致命 4 已定只做静态检查。"
+}
