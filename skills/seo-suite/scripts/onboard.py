@@ -348,7 +348,7 @@ def merge_pm_facts(facts, repo):
 
 def sync_pm_context(ws, prof, ring):
     """某一环确认后,把改过的条目写回 .agents/product-marketing.md(没有这份文件就什么都不做)。"""
-    repo = prof.get("repo") or os.path.dirname(ws)
+    repo = lifecycle.profile_repo(ws, prof) or os.path.dirname(ws)
     ups = pm_context.updates_from_profile(prof, ring)
     if not ups:
         return None
@@ -426,7 +426,7 @@ def cmd_start(ns):
             raise UsageError("product_scan.py 没产出结果(退出码 %s):%s" % (rc, err))
     errors += scan.get("errors") or []
     prof = {"schema": SCHEMA, "version": 0, "created": now(), "updated": None,
-            "site": ns.site, "repo": os.path.abspath(ns.repo) if ns.repo else None, "market": ns.market,
+            "site": ns.site, "repo": lifecycle.repo_for_profile(ws, ns.repo), "market": ns.market,
             "rings": {str(r): {"status": "pending", "answers": {}, "quotes": [], "asked_at": None,
                                "confirmed_at": None} for r in range(1, 7)},
             "facts": merge_pm_facts(facts_from_scan(scan), ns.repo or os.path.dirname(ws)),
@@ -1413,12 +1413,19 @@ def cmd_diagnose(ns):
     return 0
 
 
+def repo_label(repo):
+    """产品档案里仓库那一栏:相对路径(工作区就在仓库里)写成人话,不把 .. 打给用户。"""
+    if not repo:
+        return "—"
+    return repo if os.path.isabs(repo) else "工作区所在的仓库(%s)" % repo
+
+
 def render_product_md(prof):
     b = bank()
     L = ["# 产品档案(seo-suite 开局)", "",
          "> 由 onboard.py 生成,别手改;改内容用 onboard.py answer --correct。版本 v%s,更新 %s。"
          % (prof.get("version"), prof.get("updated")), "",
-         "站点:%s;仓库:%s;阶段:%s%s" % (prof.get("site") or "—", prof.get("repo") or "—",
+         "站点:%s;仓库:%s;阶段:%s%s" % (prof.get("site") or "—", repo_label(prof.get("repo")),
                                     (prof.get("stage") or {}).get("value", "—"),
                                     "(已确认)" if (prof.get("stage") or {}).get("confirmed") else "(未确认)"), ""]
     for r in range(1, 7):

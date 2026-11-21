@@ -135,7 +135,8 @@ def resolve_ws(explicit, script, argv, flag="--ws", must_exist=True, repo=None):
     ws = os.path.abspath(explicit or OPS_DIR)
     if inside_skill(ws):
         stray = read_json(os.path.join(ws, "context", "profile.json"), {}) or {}
-        known = repo or (stray.get("repo") if not inside_skill(stray.get("repo") or SKILL_ROOT) else None)
+        stray_repo = profile_repo(ws, stray)
+        known = repo or (stray_repo if not inside_skill(stray_repo or SKILL_ROOT) else None)
         extra = ""
         if stray and known and not os.path.exists(os.path.join(known, OPS_DIR)):
             extra = "\nskill 目录里已经有一份建错地方的工作区,先挪回站点仓库:mv %s %s" % (
@@ -351,10 +352,35 @@ def norm_weeks(w):
 # GSC 逐页导出(gsc-pages.csv 逐日、或两期「网页」界面导出 Pages_起_止.csv)
 # ---------------------------------------------------------------------------
 
+def repo_for_profile(ws, repo):
+    """档案里记仓库路径:工作区在仓库里面时记相对工作区的路径(一般是 ..),仓库换目录、换机器后还找得到,
+    本机绝对路径也不进 git;仓库在别处才记绝对路径。"""
+    if not repo:
+        return None
+    ws, repo = os.path.abspath(ws), os.path.abspath(repo)
+    rel = os.path.relpath(repo, ws)
+    if rel.replace(os.sep, "/").strip("./") == "" and rel != ".":
+        return rel.replace(os.sep, "/")
+    return repo
+
+
+def profile_repo(ws, prof):
+    """档案里的仓库路径 → 绝对路径。相对路径按工作区解析;旧档案里的绝对路径已经不在了(仓库挪过)就退回工作区的上一级。"""
+    repo = (prof or {}).get("repo")
+    if not repo:
+        return None
+    ws = os.path.abspath(ws)
+    if not os.path.isabs(repo):
+        return os.path.normpath(os.path.join(ws, repo))
+    if not os.path.isdir(repo) and os.path.isdir(os.path.dirname(ws)):
+        return os.path.dirname(ws)
+    return repo
+
+
 def gsc_dirs(ws, prof=None):
     """工作区附近放 GSC 导出的目录:<ws>/data、<ws 所在目录>/data、档案里 repo 的 data/。"""
     cands = [os.path.join(ws, "data"), os.path.join(os.path.dirname(os.path.abspath(ws)), "data")]
-    repo = (prof or {}).get("repo")
+    repo = profile_repo(ws, prof)
     if repo:
         cands.append(os.path.join(repo, "data"))
     out = []

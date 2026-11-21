@@ -470,5 +470,53 @@ class Ring1WordingTests(unittest.TestCase):
         self.assertNotIn("免费档", line)
 
 
+
+class ProfileRepoPortableTests(unittest.TestCase):
+    """第 1 轮评测里的真实情况:开局做完的工作区被整个搬到另一个目录(另一台机器、另一份 clone)接着用,
+    档案里记的仓库绝对路径还指着原来的目录,之后的每周循环去旧目录找 GSC 导出和产品上下文。"""
+
+    def _start(self):
+        site = make_site(self)
+        root = os.path.realpath(tempfile.mkdtemp(prefix="b5b_move_"))
+        self.addCleanup(shutil.rmtree, root, True)
+        repo = os.path.join(root, "first")
+        os.makedirs(repo)
+        r = run("onboard.py", ["start", "--site", site, "--repo", repo, "--allow-local", "--no-wayback",
+                               "--max-pages", "5"], repo)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        return root, repo
+
+    def test_profile_does_not_store_the_absolute_repo_path(self):
+        root, repo = self._start()
+        with open(os.path.join(repo, "seo-ops", "context", "profile.json"), encoding="utf-8") as f:
+            raw = f.read()
+        self.assertEqual(json.loads(raw)["repo"], "..")
+        self.assertNotIn(root, json.dumps(json.loads(raw)["repo"]))
+
+    def test_moved_repo_is_found_at_its_new_place(self):
+        import lifecycle
+        root, repo = self._start()
+        moved = os.path.join(root, "second")
+        shutil.move(repo, moved)
+        ws = os.path.join(moved, "seo-ops")
+        with open(os.path.join(ws, "context", "profile.json"), encoding="utf-8") as f:
+            prof = json.load(f)
+        self.assertEqual(lifecycle.profile_repo(ws, prof), moved)
+        os.makedirs(os.path.join(moved, "data"))
+        self.assertIn(os.path.join(moved, "data"), lifecycle.gsc_dirs(ws, prof))
+        self.assertEqual(run("onboard.py", ["status", "--ws", ws], moved).returncode, 0)
+
+    def test_old_profile_with_a_stale_absolute_path_falls_back_to_the_ws_parent(self):
+        import lifecycle
+        root, repo = self._start()
+        ws = os.path.join(repo, "seo-ops")
+        gone = os.path.join(root, "no-longer-here")
+        self.assertEqual(lifecycle.profile_repo(ws, {"repo": gone}), repo)
+        # 仓库确实在别处、目录也还在:照用记下的绝对路径
+        other = os.path.join(root, "elsewhere")
+        os.makedirs(other)
+        self.assertEqual(lifecycle.profile_repo(ws, {"repo": other}), other)
+        self.assertEqual(lifecycle.repo_for_profile(ws, other), other)
+
 if __name__ == "__main__":
     unittest.main()
