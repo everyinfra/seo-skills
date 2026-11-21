@@ -81,7 +81,7 @@ python3 $G report RESULTS
 ```
 
 - 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63–R65。
-- R65:认 onboard.py / plan.py 等脚本调用前,把同一条 Bash 命令里前面赋过值的 `$NAME` / `${NAME}`(整词或路径前缀)展开,跨调用不展开,展开后其余判定规则不变。
+- R65:认 onboard.py / plan.py 等脚本调用前,把同一条 Bash 命令里前面赋过值的 `$NAME` / `${NAME}`(整词或路径前缀)展开,跨调用不展开,展开后其余判定规则不变。R26 审计脚本、R42 执行、ops weekly 同一口径;纯赋值段和命令前缀赋值(`O=… python3 $O …`)里写的脚本不算调用。
 - `report` 按产品 × arm 汇总:`outcome_pass_pct`、`outcome_gap_pp`(skill − baseline、v043 − baseline、skill − v043,单位百分点)只算 outcome 类;process 类在 `process` 下单列,不进差距(红队致命 2)。`maturity_exact` 是例 9 的 5 维完全一致数(null 只和「未知」对得上)。
 - void 的 run 列在 `void`,不进任何汇总。
 - 判分器改了要先过校准:`python3 -m unittest tools/evals/onboarding/test_grade.py`(发版门 `tools/evals/fast_checks.py` 也跑它)。

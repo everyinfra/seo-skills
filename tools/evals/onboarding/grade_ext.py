@@ -767,7 +767,10 @@ HEADING_LINE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*|【)")
 
 
 def weekly_calls(s):
-    return [c for c in s.tr.calls() if c["name"] == "Bash" and WEEKLY_CALL.search(G.bash_cmd(c))]
+    """原文整条匹配照旧;另按 R65 展开后的段再认一遍(O=…/ops.py; python3 $O weekly)。"""
+    return [c for c in s.tr.calls() if c["name"] == "Bash" and (
+        WEEKLY_CALL.search(G.bash_cmd(c))
+        or any(WEEKLY_CALL.search(" ".join(seg)) for seg, _ in G.command_segments(G.bash_cmd(c))))]
 
 
 def c_resume_first_screen(ec, cr):
@@ -1087,18 +1090,14 @@ def check_scripts(ws):
     return sorted(out)
 
 
-def _segments_with_heredoc(cmd):
-    return G.split_simple(cmd)
-
-
 def exec_calls(tr, script_name):
-    """R42:执行了这个脚本的 Bash 调用(cat / shasum 等读文件不算)。"""
+    """R42:执行了这个脚本的 Bash 调用(cat / shasum 等读文件不算)。按 R65 展开后的段认,纯赋值段不算。"""
     out = []
     base = os.path.basename(script_name)
     for c in tr.calls():
         if c["name"] != "Bash":
             continue
-        for seg in G.split_simple(G.bash_cmd(c)):
+        for seg, _ in G.command_segments(G.bash_cmd(c)):
             toks = [t for t in seg if not re.match(r"^\w+=", t)]
             while toks and toks[0] in ("env", "sudo", "nohup", "time"):
                 toks = toks[1:]

@@ -262,6 +262,9 @@ skip_handled(定义里 kind 是 outcome+process)
       可和别的命令用 && / ; / 换行连着)赋过的 $NAME / ${NAME} 展开:整词或作路径前缀($S/onboard.py、${S}/scripts/onboard.py)。
       没在同一条命令里赋值的变量不展开(shell 状态不跨调用),不认命令替换和别的 shell 写法;展开后其余规则一条不变(结果不是报错、
       --quote 是此前回话的子串等)。第 5 批发现「O=…/onboard.py 换行 python3 $O answer --ring 1 --confirm」漏判第 1 环确认,出题人 11-22 补。
+      同一口径用到 R26 的审计脚本、R42 的执行和 ops weekly:纯赋值段(只赋值、没跑)不是调用;命令前缀赋值
+      (O=…/onboard.py python3 $O …,shell 里 $O 此时还没赋值)写在前缀里的脚本不算调用,前缀之后的词照常认。
+      R18 的「调了 plan.py(除 show)」照原文:status 等其他子命令照旧算写方案。出题人 11-22 补。
   R62 report 递归读目录下全部 JSON:按 family 分 products(第 0 批)/ real / ext(按场景);void 不进汇总;盲比按产品列,
       blind_broken 的只作参考、不计入通过数;宿主检查按 label 列各宿主 verdict。第 5 批开跑前定。
 """
@@ -605,12 +608,24 @@ def expanded_segments(cmd):
     return out
 
 
+def command_segments(cmd):
+    """R65:认调用用的段 = expanded_segments 里不是纯赋值的段,去掉开头的 NAME=值 前缀(命令前缀环境变量,
+    它的值不进 env,同一段后面的 $NAME 也不展开)→ [(词, 到这一段为止的赋值)]。"""
+    out = []
+    for seg, assign, env in expanded_segments(cmd):
+        if assign:
+            continue
+        i = 0
+        while i < len(seg) and ASSIGN_WORD.match(seg[i]):
+            i += 1
+        out.append((seg[i:], env))
+    return out
+
+
 def onboard_calls(call):
     """一个 Bash 调用里的 onboard.py 调用:[{"sub","ring","confirm","quote"}]。"""
     out = []
-    for seg, assign, env in expanded_segments(bash_cmd(call)):
-        if assign:
-            continue
+    for seg, env in command_segments(bash_cmd(call)):
         idx = next((i for i, t in enumerate(seg) if t.endswith("onboard.py")), None)
         if idx is None:
             continue
@@ -690,7 +705,7 @@ def writes_plan(call):
         p = str(call["input"].get("file_path") or call["input"].get("notebook_path") or "")
         return "seo-ops/plan/" in p.replace("\\", "/")
     cmd = HEREDOC.sub("", bash_cmd(call))
-    for seg, _, _ in expanded_segments(cmd):
+    for seg, _ in command_segments(cmd):
         i = next((k for k, t in enumerate(seg) if t.endswith("plan.py")), None)
         if i is not None and (i + 1 >= len(seg) or seg[i + 1] != "show"):
             return True
@@ -1291,8 +1306,13 @@ def c_skip_outcome(cx, cr):
                                                 "guesses_listed": items[:6]}
 
 
+def runs_audit(call):
+    """R26:按段认审计脚本调用(R65 展开后);纯赋值段和命令前缀赋值里写的脚本路径不算跑了。"""
+    return any(AUDIT_SCRIPTS.search(" ".join(seg)) for seg, _ in command_segments(bash_cmd(call)))
+
+
 def c_no_site_audit(cx, cr):
-    audits = [c["line"] for c in cx.tr.calls() if AUDIT_SCRIPTS.search(HEREDOC.sub("", bash_cmd(c)))]
+    audits = [c["line"] for c in cx.tr.calls() if runs_audit(c)]
     fetches = [{"line": c["line"], "url": u} for c in cx.tr.calls() for u in request_urls(c, None)
                if re.match(r"https?://", u)]
     cov = must_do_cover(cx, 5)

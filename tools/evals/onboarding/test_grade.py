@@ -14,6 +14,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -341,6 +342,74 @@ class Driver(unittest.TestCase):
         self.assertFalse(G.writes_plan({"name": "Bash", "input": {"command": "python3 $P add x"}}))
         c = {"name": "Bash", "input": {"command": "cd /w && T=/k/scripts/site_crawl.py && $T --out a.txt"}}
         self.assertEqual(G.script_output_files(c, "/w"), ["/w/a.txt"])
+
+    # R65 补漏 2:R18 写方案 = 调了 plan.py(除 show);赋值段、命令前缀赋值不是调用
+    def test_writes_plan_assign_is_not_call(self):
+        bash = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        not_writes = ["P=/k/scripts/plan.py",
+                      "cd /r && P=/k/scripts/plan.py && ls seo-ops",
+                      "P=/k/scripts/plan.py; python3 $P show",
+                      "export P=/k/scripts/plan.py\npython3 ${P} show --json",
+                      "P=/k/scripts/plan.py python3 $P add x",
+                      "python3 /k/scripts/plan.py show"]
+        writes = ["P=/k/scripts/plan.py; python3 $P add x",
+                  "S=/k/scripts && python3 $S/plan.py set --id 1",
+                  "P=/k/scripts/plan.py; python3 $P status",          # 原文只除 show,status 照旧算
+                  "FOO=1 python3 /k/scripts/plan.py add x",
+                  "python3 /k/scripts/plan.py"]
+        for c in not_writes:
+            self.assertFalse(G.writes_plan(bash(c)), c)
+        for c in writes:
+            self.assertTrue(G.writes_plan(bash(c)), c)
+
+    # R65 补漏 3:R26 要「跑了」审计脚本,按段认调用
+    def test_audit_runs_by_segment(self):
+        bash = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        runs = ["python3 /k/scripts/site_audit.py --site http://h",
+                "S=/k/scripts; python3 $S/site_audit.py --site http://h",
+                "python3 $S/site_audit.py --site http://h",             # 没赋值的 $S/ 前缀:原来就认,词里有脚本名
+                "T=/k/scripts/site_audit.py && python3 $T --site http://h",
+                "export T=/k/scripts/sitemap_audit.py\n$T http://h",
+                "cd scripts && python3 site_audit.py --site http://h",
+                "cd /k && python3 -m py_compile scripts/health_score.py",
+                "FOO=1 python3 site_crawl.py http://h 2>&1 | tail",
+                "bash -c 'python3 link_graph.py x'",
+                "python3 /k/project.py run --site x",
+                "P=/k/scripts/project.py; python3 $P run --site x"]
+        not_runs = ["T=/k/scripts/site_audit.py",
+                    "T=/k/scripts/site_audit.py; ls /k/scripts",
+                    "T=/k/scripts/site_audit.py python3 $T --site http://h",
+                    "python3 $T --site http://h",
+                    "python3 /k/project.py show",
+                    "P=/k/scripts/project.py; python3 $P show",
+                    "python3 - <<'EOF'\nprint('site_audit.py')\nEOF"]
+        for c in runs:
+            self.assertTrue(G.runs_audit(bash(c)), c)
+        for c in not_runs:
+            self.assertFalse(G.runs_audit(bash(c)), c)
+        # 不用赋值变量的写法,和改前整条原文正则的结果一致
+        for c in [c for c in runs + not_runs if not re.search(r"\b[A-Z]=", c)]:
+            self.assertEqual(G.runs_audit(bash(c)), bool(G.AUDIT_SCRIPTS.search(G.HEREDOC.sub("", c))), c)
+
+    def test_no_site_audit_assign_only_passes(self):
+        for cmd, want in (("T=/k/scripts/site_audit.py; ls /k/scripts", True),
+                          ("T=/k/scripts/site_audit.py; python3 $T --site http://h", False)):
+            with self.subTest(cmd=cmd):
+                ex = B.expand(B.load("idea"))
+                ex["turns"][3]["events"].insert(0, {"bash": cmd, "out": "ok"})
+                r = run(ex, os.path.join(self.tmp, "audit%d" % want))
+                got = next(a for a in r["assertions"] if a["id"] == "no_site_audit")
+                self.assertEqual(got["pass"], want, got)
+
+    # R65 补漏 4:命令前缀赋值 O=… python3 $O answer:shell 里 $O 还没赋值,不产生调用记录
+    def test_onboard_prefix_assign_no_record(self):
+        call = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        self.assertEqual(G.onboard_calls(call("O=/x/onboard.py python3 $O answer --ring 1 --confirm")), [])
+        self.assertEqual(G.onboard_calls(call("O=/x/onboard.py")), [])
+        got = G.onboard_calls(call("FOO=1 python3 /x/onboard.py answer --ring 1 --confirm"))
+        self.assertEqual([(o["sub"], o["ring"], o["confirm"]) for o in got], [("answer", 1, True)])
+        got = G.onboard_calls(call("O=/x/onboard.py; python3 $O answer --ring 1 --confirm"))
+        self.assertEqual([(o["sub"], o["ring"], o["confirm"]) for o in got], [("answer", 1, True)])
 
     def test_ring_of(self):
         self.assertEqual(G.ring_of("第 1 环确认了。\n\n【第 2 环 · 客户】\n1. 谁在搜?", self.tmp)[0], 2)
@@ -780,6 +849,34 @@ class ExtDriver(unittest.TestCase):
                    X.BS("cd ws && python3 seo-ops/playbook/checks/x.py http://h"), X.BS("./seo-ops/playbook/checks/x.py")])
         ex = E.exec_calls(G.Transcript(tr_path), "x.py")
         self.assertEqual(len(ex), 2)
+
+    # R65 补漏 1:grade_ext 认脚本调用(R42 执行、ops weekly)也按同一条命令里的赋值展开
+    def test_ext_calls_var_expanded(self):
+        tr_path = os.path.join(self.tmp, "tv.jsonl")
+        tx = X.Tx(tr_path)
+        tx.first("go")
+        runs = ["L=/w/seo-ops/playbook/checks/x.py; python3 $L http://h",
+                "S=/w/seo-ops/playbook/checks; python3 $S/x.py http://h",
+                "export L=/w/seo-ops/playbook/checks/x.py\n$L http://h",
+                "FOO=1 python3 seo-ops/playbook/checks/x.py"]
+        not_runs = ["L=/w/seo-ops/playbook/checks/x.py",
+                    "L=/w/seo-ops/playbook/checks/x.py; cat $L",
+                    "L=/w/seo-ops/playbook/checks/x.py python3 $L",
+                    "python3 $L http://h"]
+        tx.events([X.BS(c) for c in runs + not_runs])
+        tr = G.Transcript(tr_path)
+        cmds = [G.bash_cmd(c) for c in E.exec_calls(tr, "x.py")]
+        self.assertEqual(cmds, runs)
+
+        tw = os.path.join(self.tmp, "tw.jsonl")
+        tx = X.Tx(tw)
+        tx.first("go")
+        weekly = ["python3 seo-ops/ops.py weekly", "O=/k/scripts/ops.py; python3 $O weekly",
+                  "S=/k/scripts && python3 $S/ops.py weekly --site x"]
+        not_weekly = ["O=/k/scripts/ops.py", "O=/k/scripts/ops.py; python3 $O status", "python3 $O weekly"]
+        tx.events([X.BS(c) for c in weekly + not_weekly])
+        s = type("S", (), {"tr": G.Transcript(tw)})()
+        self.assertEqual([G.bash_cmd(c) for c in E.weekly_calls(s)], weekly)
 
 
 # ---------------------------------------------------------------------------
