@@ -1,0 +1,145 @@
+{
+ "about": "标准答案:改版(onboard-change)。方案前 3 条有存基线;写 301 映射表之前基线脚本列出了 30 个旧 URL。",
+ "scenario": "onboard-change",
+ "site": "http://127.0.0.1:8899",
+ "profile": {
+  "schema": 1,
+  "facts": {
+   "product.name": {
+    "value": "Soilsense",
+    "status": "confirmed"
+   },
+   "product.one_liner": {
+    "value": "Smart soil sensors that tell home gardeners and houseplant owners when to water",
+    "status": "confirmed"
+   },
+   "product.lines": {
+    "value": [
+     "Sensor Mini ($29)",
+     "Sensor Pro ($59)",
+     "Hub ($79)"
+    ],
+    "status": "confirmed"
+   },
+   "pricing.model": {
+    "value": "One-off hardware $29 / $59 / $79; App Premium $3/month",
+    "status": "confirmed"
+   },
+   "conversion.primary": {
+    "value": "Online store checkout",
+    "status": "confirmed"
+   },
+   "customers": {
+    "value": [
+     "Home gardeners and houseplant owners in the US and Germany",
+     "Plant shop resellers"
+    ],
+    "status": "confirmed"
+   },
+   "market.languages": {
+    "value": [
+     "en",
+     "de"
+    ],
+    "status": "confirmed"
+   }
+  },
+  "stage": {
+   "id": 5,
+   "confirmed": true
+  }
+ },
+ "diagnosis": {
+  "maturity": {
+   "technical": {
+    "level": 3,
+    "status": "unknown"
+   },
+   "content": {
+    "level": 3,
+    "status": "ok"
+   },
+   "authority": {
+    "level": 2,
+    "status": "unknown"
+   },
+   "geo": {
+    "level": 3,
+    "status": "ok"
+   },
+   "measurement": {
+    "level": 2,
+    "status": "ok"
+   }
+  }
+ },
+ "plan_json": {
+  "items": [
+   {
+    "title": "Save a baseline before the change",
+    "do": "status, title, canonical, hreflang, schema and internal links for all 30 old URLs",
+    "week": 1
+   },
+   {
+    "title": "301 redirect map from MIGRATION.md",
+    "do": "23 old to new, flag unmapped URLs",
+    "week": 1
+   },
+   {
+    "title": "Recrawl the preview after the move and compare",
+    "do": "diff list against the baseline",
+    "week": 2
+   },
+   {
+    "title": "Keep the English–German hreflang cluster pointing both ways",
+    "do": "on the new URLs",
+    "week": 2
+   },
+   {
+    "title": "Connect Search Console",
+    "do": "watch indexing and clicks around the move",
+    "week": 2
+   },
+   {
+    "title": "Submit the new sitemap and watch 404s",
+    "do": "after launch",
+    "week": 3
+   }
+  ]
+ },
+ "first_events": [
+  {
+   "bash": "python3 /skill/seo-suite/scripts/onboard.py start --site http://127.0.0.1:8899 --repo . --allow-local",
+   "out": "| product.name | Soilsense | http://127.0.0.1:8899/ |\n| pricing | $29 | http://127.0.0.1:8899/pricing/ |\n| lines | Mini、Pro、Hub | http://127.0.0.1:8899/products/ |\n| blog | 15 posts | http://127.0.0.1:8899/blog/ |"
+  },
+  {
+   "bash": "python3 /skill/seo-suite/scripts/site_move.py baseline --site http://127.0.0.1:8899 --allow-local --out seo-ops/baselines/before.json",
+   "out": "基线:30 个 URL(30 个 200),写到 seo-ops/baselines/before.json\n200 http://127.0.0.1:8899/\n200 http://127.0.0.1:8899/about/\n200 http://127.0.0.1:8899/pricing/\n200 http://127.0.0.1:8899/contact/\n200 http://127.0.0.1:8899/products/\n200 http://127.0.0.1:8899/blog/\n200 http://127.0.0.1:8899/blog/soil-moisture-basics/\n200 http://127.0.0.1:8899/blog/watering-schedule/\n200 http://127.0.0.1:8899/blog/indoor-plants-light/\n200 http://127.0.0.1:8899/blog/fertilizer-guide/\n200 http://127.0.0.1:8899/blog/compost-at-home/\n200 http://127.0.0.1:8899/blog/pest-control/\n200 http://127.0.0.1:8899/blog/repotting-guide/\n200 http://127.0.0.1:8899/blog/overwatering-signs/\n200 http://127.0.0.1:8899/blog/seed-starting/\n200 http://127.0.0.1:8899/blog/winter-care/\n200 http://127.0.0.1:8899/product/sensor-mini/\n200 http://127.0.0.1:8899/product/sensor-pro/\n200 http://127.0.0.1:8899/product/hub/\n200 http://127.0.0.1:8899/de/\n200 http://127.0.0.1:8899/de/pricing/\n200 http://127.0.0.1:8899/de/blog/\n200 http://127.0.0.1:8899/de/blog/zimmerpflanzen-licht/\n200 http://127.0.0.1:8899/de/blog/duenger-ratgeber/\n200 http://127.0.0.1:8899/de/blog/winterpflege/\n200 http://127.0.0.1:8899/de/blog/giessplan/\n200 http://127.0.0.1:8899/de/blog/kompost-zuhause/\n200 http://127.0.0.1:8899/de/product/sensor-mini/\n200 http://127.0.0.1:8899/de/product/sensor-pro/\n200 http://127.0.0.1:8899/de/product/hub/"
+  }
+ ],
+ "first_screen": "I read the site, MIGRATION.md and saved a baseline of every URL first.\n\nStage: 改版 / 迁移 / 转型 (change) — a URL restructure is planned for November 24.\n\nRing 1 · What the product is\n- Soil sensors for gardeners ← http://127.0.0.1:8899/\n\n1. What is the goal? A. store sales B. app sign-ups\n2. Main customers? 我猜: home gardeners in the US and Germany\n3. Most important product? A. Sensor Pro B. Sensor Mini C. Hub",
+ "ring_texts": {
+  "2": "Ring 2 · Customers and search intent\n\n1. What do people search? 我猜: when to water houseplants\n2. German terms? A. Bodenfeuchtesensor B. Gießen",
+  "3": "Ring 3 · Competitors\n\n1. Competitors? 我猜: Xiaomi Mi Flora and Ecowitt\n2. Do garden blogs matter? A. yes B. no",
+  "4": "Ring 4 · Assets and limits\n\n1. Articles per month? 我猜: 2\n2. Search Console access? A. yes B. no",
+  "5": "Ring 5 · Markets\n\n1. Markets? A. US and Germany B. US only\n2. Pages not to touch? 我猜: pricing copy",
+  "6": "Ring 6 · Strategy\n\n1. Approve? A. approve B. change it\n2. Target? 我猜: no more than a 5% drop"
+ },
+ "ring_events": {
+  "6": [
+   {
+    "bash": "python3 /skill/seo-suite/scripts/plan.py build --ws seo-ops",
+    "out": "plan written"
+   },
+   {
+    "tool": "Write",
+    "input": {
+     "file_path": "/ws/seo-ops/redirects-301.csv",
+     "content": "old,new\n/blog/a/,/articles/a/\n"
+    },
+    "out": "File created"
+   }
+  ]
+ },
+ "final_text": "Done. Baseline saved, redirect map written, plan in seo-ops/plan/plan.json."
+}

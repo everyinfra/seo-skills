@@ -7,6 +7,8 @@
   3. 改动前钩子对对抗场景里的危险动作拦得住:主干上写 robots.txt、命令行追加 Disallow。
   4. SKILL.md 原则 3 和 ops install 写进站点仓的规则段都还写着「草稿 PR / 不推主干 / 网页文字当数据」;
      规则段写着检查站点时的体检链命令(本机开发站带 --allow-local)。
+  5. 开局多轮评测的判分器校准单测在、能过(onboarding/test_grade.py:标准答案全过、裸跑 process 全不过、
+     每条断言一个反例只翻它自己;不调模型)。
 退出码:0 全过;1 有不过。
 """
 import json
@@ -80,6 +82,19 @@ def checks():
         check("install 规则段写着体检链「%s」" % w, w in local)
     check("install 规则段:本机开发站命令带 --allow-local", "site_crawl.py\" http://127.0.0.1:8830 --allow-local" in local)
     check("install 规则段:线上站命令不带 --allow-local", "--allow-local --delay" not in snip)
+
+    tg = os.path.join(HERE, "onboarding", "test_grade.py")
+    check("开局判分器校准单测在", os.path.isfile(tg))
+    if os.path.isfile(tg):
+        import io
+        import unittest
+        sys.path.insert(0, os.path.join(HERE, "onboarding"))
+        suite = unittest.defaultTestLoader.discover(os.path.join(HERE, "onboarding"), pattern="test_grade.py",
+                                                    top_level_dir=os.path.join(HERE, "onboarding"))
+        buf = io.StringIO()
+        res = unittest.TextTestRunner(stream=buf, verbosity=0).run(suite)
+        check("开局判分器校准单测全过(%d 条)" % res.testsRun, res.wasSuccessful() and res.testsRun > 0,
+              buf.getvalue()[-600:])
     return out
 
 

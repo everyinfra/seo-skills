@@ -1,0 +1,40 @@
+{
+ "about": "标准答案:成熟期(onboard-mature,带假 GSC 导出)。第 4 环点名掉量在评测 / best- 页、两期点击 1,850 → 1,450。",
+ "scenario": "onboard-mature",
+ "site": "http://127.0.0.1:8899",
+ "profile": {
+  "schema": 1,
+  "facts": {
+   "product.name": {"value": "Trailmark Guides", "status": "confirmed"},
+   "product.one_liner": {"value": "Independent trail guides and gear reviews for US backpackers and day hikers", "status": "confirmed"},
+   "product.lines": {"value": ["Trail guides", "Gear reviews and buying guides", "Trailmark Pro (offline GPX maps)"], "status": "confirmed"},
+   "pricing.model": {"value": "Free content, affiliate commissions; Trailmark Pro $5/month or $48/year", "status": "confirmed"},
+   "conversion.primary": {"value": "Affiliate click-outs to retailers", "status": "confirmed"},
+   "customers": {"value": ["US backpackers and day hikers planning a trip", "Gear buyers comparing models"], "status": "confirmed"},
+   "market.languages": {"value": ["en"], "status": "confirmed"}
+  },
+  "stage": {"id": 4, "confirmed": true}
+ },
+ "diagnosis": {"maturity": {"technical": {"level": 3, "status": "unknown"}, "content": {"level": 4, "status": "ok"},
+   "authority": {"level": 2, "status": "unknown"}, "geo": {"level": 1, "status": "ok"}, "measurement": {"level": 4, "status": "partial"}}},
+ "plan_json": {"items": [
+  {"title": "Diagnose the drop by page type", "do": "the decline sits on review, comparison and best-of pages", "week": 1},
+  {"title": "Match against the core update and reviews update", "do": "compare dates with site changes", "week": 1},
+  {"title": "Refresh best-of pages to 2026", "do": "new hands-on tests, update dateModified", "week": 2},
+  {"title": "Prune or consolidate thin reviews", "do": "retire outdated pages", "week": 3},
+  {"title": "Measure affiliate click-outs as conversions", "do": "GA4 outbound click event", "week": 2}
+ ]},
+ "first_events": [
+  {"bash": "python3 /skill/seo-suite/scripts/onboard.py start --site http://127.0.0.1:8899 --allow-local", "out": "| product.name | Trailmark Guides | http://127.0.0.1:8899/ |\n| product.lines | guides、reviews | http://127.0.0.1:8899/blog/ |\n| x | y | http://127.0.0.1:8899/blog/best-ultralight-tents/ |\n| sitemap | 40 URLs | http://127.0.0.1:8899/sitemap.xml |\n| robots | allow | http://127.0.0.1:8899/robots.txt |"}
+ ],
+ "first_screen": "I read the home page, the blog, a review, robots.txt and the sitemap. Draft below.\n\nStage: 成熟期 (mature) — running since 2022, clicks falling this month.\n\nRing 1 · What the product is\n- Trail guides and gear reviews ← http://127.0.0.1:8899/\n\n1. What pays the bills? A. affiliate click-outs B. Trailmark Pro\n2. Who reads it? 我猜: US backpackers and day hikers\n3. Most important part? A. gear reviews B. trail guides",
+ "ring_texts": {
+  "2": "Ring 2 · Readers and search intent\n\n1. What do readers search for? 我猜: best ultralight tent\n2. Common words? A. base weight B. thru-hike",
+  "3": "Ring 3 · Competitors\n\n1. Business competitors? 我猜: OutdoorGearLab and CleverHiker\n2. Do Reddit threads matter? A. yes B. no",
+  "4": "Ring 4 · Assets and limits\nFrom data/: clicks went from 1,850 to 1,450 over the two 28-day periods (-21.6%), concentrated on review and best- pages; trail guides held.\n\n1. How many updates a month? 我猜: 4\n2. Any penalties? A. no B. yes",
+  "5": "Ring 5 · Markets\n\n1. Which markets? A. US first B. US, UK and Canada\n2. Content to avoid? 我猜: sponsored posts dressed as reviews",
+  "6": "Ring 6 · Strategy and roadmap\n\n1. Approve the roadmap? A. approve B. change it\n2. Target? 我猜: back to 1,800 clicks per 28 days"
+ },
+ "ring_events": {"6": [{"bash": "python3 /skill/seo-suite/scripts/plan.py build --ws seo-ops", "out": "plan written"}]},
+ "final_text": "Done. The plan is in seo-ops/plan/plan.json."
+}

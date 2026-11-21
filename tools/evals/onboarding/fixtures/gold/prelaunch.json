@@ -1,0 +1,42 @@
+{
+ "about": "标准答案:上线前(onboard-prelaunch,本地预览 http://127.0.0.1:8899)。事实取自 answers/prelaunch.json;方案前 5 条对上 stage_must_do。",
+ "scenario": "onboard-prelaunch",
+ "site": "http://127.0.0.1:8899",
+ "profile": {
+  "schema": 1,
+  "facts": {
+   "product.name": {"value": "Quillbill", "status": "confirmed"},
+   "product.one_liner": {"value": "Invoicing, time tracking and a client portal for freelance designers and small studios", "status": "confirmed"},
+   "product.lines": {"value": ["Invoicing", "Time tracking", "Client portal"], "status": "confirmed"},
+   "pricing.model": {"value": "Free up to 3 clients; Pro $12/month; Studio $29 per seat; 14-day trial", "status": "confirmed"},
+   "conversion.primary": {"value": "Start a 14-day free trial (/signup/)", "status": "confirmed"},
+   "customers": {"value": ["Freelance designers and illustrators", "Small creative studios (2-10 people)"], "status": "confirmed"},
+   "market.languages": {"value": ["en"], "status": "confirmed"}
+  },
+  "stage": {"id": 1, "confirmed": true}
+ },
+ "diagnosis": {"maturity": {"technical": {"level": 1, "status": "ok"}, "content": {"level": 2, "status": "ok"},
+   "authority": {"level": 1, "status": "ok"}, "geo": {"level": 0, "status": "ok"}, "measurement": {"level": 1, "status": "ok"}}},
+ "plan_json": {"items": [
+  {"title": "Launch checklist with an owner per item", "do": "robots (app/robots.ts stops Disallow: /), sitemap on the real domain, canonical, structured data, share cards, speed", "week": 1},
+  {"title": "Run the site audit on the local preview", "do": "site_crawl --allow-local against 127.0.0.1, nothing on the live domain yet", "week": 1},
+  {"title": "Search Console and Bing verification plus GA4 analytics", "do": "ready before Dec 1", "week": 2},
+  {"title": "AI crawler policy and llms.txt", "do": "allow GPTBot in robots, publish llms.txt", "week": 2},
+  {"title": "SoftwareApplication + Offer schema on /pricing/", "do": "$12 / $29, 14-day trial", "week": 3},
+  {"title": "Track trial signup as the conversion event", "do": "/signup/ completion", "week": 3}
+ ]},
+ "first_events": [
+  {"bash": "python3 /skill/seo-suite/scripts/onboard.py start --site http://127.0.0.1:8899 --repo . --allow-local", "out": "| product.name | Quillbill | http://127.0.0.1:8899/ |\n| pricing.model | freemium | http://127.0.0.1:8899/pricing/ |\n| product.lines | Invoicing、Time tracking、Client portal | http://127.0.0.1:8899/features/invoicing/ |"},
+  {"bash": "curl -s http://127.0.0.1:8899/robots.txt", "out": "User-agent: *\nDisallow: /"}
+ ],
+ "first_screen": "I read the home page, pricing, the feature pages and robots.txt on the local preview. Here is my draft; please check it before we go on.\n\nStage: 上线前 (prelaunch) — the preview runs locally and robots blocks everything.\n\nRing 1 · What the product is\n- Invoicing, time tracking and a client portal for freelance designers ← http://127.0.0.1:8899/\n\nQuestions:\n1. What should SEO bring you? A. trial sign-ups B. paid plans C. brand reach\n2. Who are the main customers? My guess (猜测): freelance designers and illustrators\n3. Which line matters most? A. Invoicing B. Time tracking C. Client portal\n4. Is the stage right? A. yes B. no",
+ "ring_texts": {
+  "2": "Ring 2 · Customers and search intent\n\n1. What do people search for? 我猜: invoice template for designers\n2. Any words customers use? A. getting paid B. chasing invoices C. both",
+  "3": "Ring 3 · Competitors\n\n1. Who are the business competitors? 我猜: FreshBooks and Bonsai\n2. Should I check who ranks? A. yes B. no",
+  "4": "Ring 4 · Assets and limits\n\n1. How many posts a month? 我猜: 2\n2. Any penalties or bought links? A. no B. yes",
+  "5": "Ring 5 · Markets and keyword map\n\n1. Which markets? A. US first B. US and UK\n2. Topics to avoid? 我猜: tax and legal advice",
+  "6": "Ring 6 · Strategy and roadmap\nThe plan is in seo-ops/plan/: launch checklist (robots, sitemap, canonical), local audit, GSC and analytics, AI crawlers, pricing schema.\n\n1. Approve the roadmap? A. approve B. change it\n2. Target? 我猜: 300 trial sign-ups in 90 days"
+ },
+ "ring_events": {"6": [{"bash": "python3 /skill/seo-suite/scripts/plan.py build --ws seo-ops", "out": "plan written"}]},
+ "final_text": "All six rings are confirmed. The plan is in seo-ops/plan/plan.json; week 1 is the launch checklist."
+}

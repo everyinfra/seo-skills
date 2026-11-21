@@ -1,0 +1,273 @@
+{
+ "about": "判分器校准用的合成场景(不是第 0 批出题,不参与真实评测);product=idea,答案表用 answers/idea.json。",
+ "driver": "多轮驱动:被测会话是子代理;每次它停下,驱动按当前环号从 simulated_user[环号] 里按顺序取下一条回话续跑,取完了用 fallback。环号判法:先看 agent 最后一条文本里的「第 N 环 / Ring N」;没有就读 seo-ops/context/profile.json 的 ring / current_ring;都没有用 fallback_unknown_ring。模拟用户的数字只用于评测,不代表任何真实业务目标。",
+ "scenarios": [
+  {
+   "id": "calib-correct",
+   "product": "idea",
+   "setup": {
+    "build": "lifecycle_sites.py build --product idea --out DIR",
+    "workspace": "DIR/repo,另把 DIR/brief.md 复制进工作区根目录",
+    "site": null,
+    "gsc": null
+   },
+   "prompt": "我想做一个宠物健康记账的 App,产品说明在 brief.md 里,仓库就是当前目录。用 seo-suite 帮我把 SEO 从头规划一下。",
+   "simulated_user": {
+    "1": [
+     "目标是候补名单 2000 人;客户先按你写的;最重要的是健康提醒这条线。阶段对。"
+    ],
+    "2": [
+     "你理解错了,主要客户是多宠家庭和刚领养的新手主人,不是学生。他们搜「猫咪疫苗时间表」「狗狗驱虫多久一次」。"
+    ],
+    "3": [
+     "业务上的对手是宠物医院自己的小程序,还有那种宠物服务平台;搜索结果里是谁我不太清楚,你查到谁就是谁。"
+    ],
+    "4": [
+     "就我一个人加一个兼职设计,每周能写 1 篇;以前没做过 SEO,没处罚、没买过链接;每月预算 2000 块以内;网站、域名、统计都还没有。"
+    ],
+    "5": [
+     "只做中国大陆、简体中文。先做疫苗驱虫这类主题,看病诊断那种不做,怕担责任。"
+    ],
+    "6": [
+     "路线可以。目标:上线前 3 个月候补名单 2000 人。"
+    ]
+   },
+   "fallback": "按你的猜测来,继续下一环。",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0,
+     "kind": "outcome"
+    },
+    {
+     "id": "stage_correct",
+     "kind": "outcome"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5,
+     "kind": "outcome"
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10,
+     "kind": "outcome"
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1,
+     "kind": "process"
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4,
+     "kind": "process"
+    },
+    {
+     "id": "ring1_not_skipped",
+     "kind": "process"
+    },
+    {
+     "id": "quote_before_confirm",
+     "kind": "process"
+    },
+    {
+     "id": "correction_applied",
+     "ring": 2,
+     "term_new": [
+      "多宠"
+     ],
+     "term_old": [
+      "学生",
+      "student"
+     ],
+     "kind": "outcome"
+    }
+   ],
+   "about": "校准用合成场景:产品沿用 idea 的答案表,只改模拟用户脚本,用来锁住 correction_applied 这条断言(everyinfra 原场景在私有仓)。"
+  },
+  {
+   "id": "calib-unknown",
+   "product": "idea",
+   "setup": {
+    "build": "lifecycle_sites.py build --product idea --out DIR",
+    "workspace": "DIR/repo,另把 DIR/brief.md 复制进工作区根目录",
+    "site": null,
+    "gsc": null
+   },
+   "prompt": "我想做一个宠物健康记账的 App,产品说明在 brief.md 里,仓库就是当前目录。用 seo-suite 帮我把 SEO 从头规划一下。",
+   "simulated_user": {
+    "1": [
+     "对,就是这个产品。最想要的是上线前攒候补名单,先攒 2000 个;主要客户是一二线城市养猫狗的上班族;最重要的是健康提醒这条线。你说现在是想法阶段,对。"
+    ],
+    "2": [
+     "用户一般在小红书搜「猫咪疫苗时间表」「狗狗驱虫多久一次」,还有搜附近宠物医院多少钱。大家说「毛孩子」「铲屎官」「猫三联」「狂犬疫苗」。"
+    ],
+    "3": [
+     "业务上的对手是宠物医院自己的小程序,还有那种宠物服务平台;搜索结果里是谁我不太清楚,你查到谁就是谁。"
+    ],
+    "4": [
+     "内容产能这个不知道,得问运营。其他的:没处罚、没买过链接,每月预算 2000 块以内。"
+    ],
+    "5": [
+     "只做中国大陆、简体中文。先做疫苗驱虫这类主题,看病诊断那种不做,怕担责任。"
+    ],
+    "6": [
+     "路线可以。目标:上线前 3 个月候补名单 2000 人。"
+    ]
+   },
+   "fallback": "按你的猜测来,继续下一环。",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0,
+     "kind": "outcome"
+    },
+    {
+     "id": "stage_correct",
+     "kind": "outcome"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5,
+     "kind": "outcome"
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10,
+     "kind": "outcome"
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1,
+     "kind": "process"
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4,
+     "kind": "process"
+    },
+    {
+     "id": "ring1_not_skipped",
+     "kind": "process"
+    },
+    {
+     "id": "quote_before_confirm",
+     "kind": "process"
+    },
+    {
+     "id": "unknown_marked",
+     "ring": 4,
+     "item_terms": [
+      "产能",
+      "capacity",
+      "content_capacity",
+      "每周",
+      "篇"
+     ],
+     "kind": "outcome"
+    }
+   ],
+   "about": "校准用合成场景:产品沿用 idea 的答案表,只改模拟用户脚本,用来锁住 unknown_marked 这条断言(everyinfra 原场景在私有仓)。"
+  },
+  {
+   "id": "calib-skip",
+   "product": "idea",
+   "setup": {
+    "build": "lifecycle_sites.py build --product idea --out DIR",
+    "workspace": "DIR/repo,另把 DIR/brief.md 复制进工作区根目录",
+    "site": null,
+    "gsc": null
+   },
+   "prompt": "我想做一个宠物健康记账的 App,产品说明在 brief.md 里,仓库就是当前目录。用 seo-suite 帮我把 SEO 从头规划一下。",
+   "simulated_user": {
+    "1": [
+     "别问了,直接给方案。",
+     "最想要候补名单 2000 人;客户是一二线养猫狗的上班族;最重要的是健康提醒。后面的你按猜测补,别再问了。"
+    ],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": [],
+    "6": []
+   },
+   "fallback": "按你的猜测来,继续下一环。",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "criteria": [
+    {
+     "id": "facts_error_max",
+     "max": 1,
+     "lines_missing_max": 0,
+     "kind": "outcome"
+    },
+    {
+     "id": "stage_correct",
+     "kind": "outcome"
+    },
+    {
+     "id": "must_do_hits_min",
+     "min": 4,
+     "top": 5,
+     "kind": "outcome"
+    },
+    {
+     "id": "must_not_hits_max",
+     "max": 0,
+     "top": 10,
+     "kind": "outcome"
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1
+     ],
+     "min": 1,
+     "kind": "process"
+    },
+    {
+     "id": "questions_per_ring_max",
+     "max": 4,
+     "kind": "process"
+    },
+    {
+     "id": "ring1_not_skipped",
+     "kind": "process"
+    },
+    {
+     "id": "quote_before_confirm",
+     "kind": "process"
+    },
+    {
+     "id": "skip_handled",
+     "max_stops": 3,
+     "kind": "outcome+process"
+    }
+   ],
+   "about": "校准用合成场景:产品沿用 idea 的答案表,只改模拟用户脚本,用来锁住 skip_handled 这条断言(everyinfra 原场景在私有仓)。"
+  }
+ ]
+}
