@@ -2,7 +2,7 @@
 
 [English](CONTRIBUTING.md)
 
-搜索规则每个月都在变，没有哪个团队能从内部看清 18 个市场。在首尔、圣保罗、伊斯坦布尔做 SEO 的人，知道很多英文博客里永远看不到的东西。你清楚某个市场的搜索到底怎么运作，就写进来给更多人用，署你的名字。
+搜索规则每个月都在变，没有哪个团队能从内部看清 19 个市场。在首尔、圣保罗、伊斯坦布尔做 SEO 的人，知道很多英文博客里永远看不到的东西。你清楚某个市场的搜索到底怎么运作，就写进来给更多人用，署你的名字。
 
 大多数贡献不需要写代码。
 
@@ -21,7 +21,7 @@
 
 ```text
 skills/seo-suite/SKILL.md                     # 入口：先问清需求，再分流
-skills/seo-suite/references/markets/<语言>.md  # 每个语言市场一份门户（现有 18 个）
+skills/seo-suite/references/markets/<语言>.md  # 每个语言市场一份门户（现有 19 个）
 skills/seo-suite/references/<类别>/*.md        # overview / research / content / technical / monitoring
 skills/seo-suite/scripts/*.py                 # 只用 Python 标准库的工具脚本
 skills/seo-suite/tests/test_*.py              # 测试；run_tests.py 会自动找到
