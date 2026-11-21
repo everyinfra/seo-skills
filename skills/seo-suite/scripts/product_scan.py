@@ -20,6 +20,7 @@ facts 的 kind:"fact" = 页面/文件上原文就有;"inferred" = 推出来的(�
 """
 import argparse
 import gzip
+import ipaddress
 import json
 import os
 import re
@@ -39,6 +40,8 @@ FETCH_TIMEOUT = 15.0
 POLITE_DELAY = 0.3               # 两次请求之间的礼貌间隔(秒);走 sc._sleep,测试打桩为零延时
 H2_MAX = 12
 PRICES_MAX = 10
+PRICE_SNIPPETS_MAX = 8          # 定价原文最多留几句
+LINES_MAX = 8                   # 路由推出的「产品线」超过这个数,多半是条目清单(工具、商品),不当产品线
 CTAS_MAX = 10
 ROUTES_MAX = 200
 README_MAX = 300
@@ -130,6 +133,22 @@ ANALYTICS_PATTERNS = (
     ("vercel-analytics", re.compile(r"@vercel/analytics|/_vercel/insights")),
 )
 FREE_RE = re.compile(r"\bfree\b|免费|gratis|\$0(?![\d.,])", re.I)
+# 计费方式:页面原文里出现这些说法就记下(档案里和原文价格一起给用户确认)
+BILLING_RES = (
+    ("预充值", re.compile(r"top[- ]?ups?\b|prepaid|pre-paid|充值|预付|预存|recarga", re.I)),
+    ("按次 / 按量", re.compile(r"pay[- ]as[- ]you[- ]go|usage[- ]based|metered|按次|按量|每次|每千次|每 ?1,?000 ?次|"
+                           r"per (request|call|query|search|use|unit|1k|1,000|thousand|million|token|image|page|minute|gb)\b|"
+                           r"(?<=\d)\s?/\s?(request|call|1k|k)\b|por (solicitud|uso|consulta)", re.I)),
+    ("额度包", re.compile(r"credit packs?|credits? bundles?|\bpacks? of\b|额度包|点数包|积分包|流量包|"
+                       r"\d[\d,]* credits\b|paquetes? de cr[eé]ditos", re.I)),
+    ("订阅", re.compile(r"(?<=\d)\s?/\s?(mo|month|yr|year)\b|per (month|year|seat|user)\b|monthly|annual(ly)?|yearly|"
+                      r"subscription|subscribe|包月|包年|/月|/年|每月|每年|月付|年付|suscripci|mensual|anual", re.I)),
+    ("免费档 / 免费额度", re.compile(r"free (tier|plan|quota|credits?|requests?|calls?|searches?)|\d[\d,]* free\b|"
+                               r"\bfree\b(?!\s*trial)|免费额度|免费次数|免费版|免费套餐|gratis|plan gratuito", re.I)),
+    ("试用", re.compile(r"free trial|\btrial\b|试用|prueba (gratis|gratuita)", re.I)),
+    ("一次性购买", re.compile(r"one[- ]time|lifetime|一次性|买断|pago [uú]nico", re.I)),
+)
+SENT_SPLIT = re.compile(r"(?<=[.!?。!?])\s+")
 BRAND_SPLIT = re.compile(r"\s+[|\u2013\u2014\u00b7\-:»]\s+|\s*[|｜:：]\s*")
 
 
@@ -343,8 +362,9 @@ def page_features(resp, url):
         names |= sc.header_robots(xrt)
     feat["noindex"] = "noindex" in names or "none" in names
     feat["word_count"] = len(sc._TOKEN_RE.findall(text))
+    chunks = [" ".join(t.split()) for t in p.text if t and t.strip()]
     extra = {"org_name": org_name, "hreflangs": [c for c, _ in p.hreflangs], "hrefs": p.hrefs, "text": text,
-             "html": body}
+             "chunks": chunks, "html": body}
     return feat, extra
 
 
@@ -501,6 +521,20 @@ def scan_llms(fetcher, origin):
     return out, lines_h2, src
 
 
+def is_local_host(host):
+    """本机或私网主机(localhost、*.localhost、回环、私网、链路本地):这类站不拿去问外部历史服务。"""
+    h = (host or "").strip().strip("[]").lower().rstrip(".")
+    if not h:
+        return False
+    if h == "localhost" or h.endswith(".localhost"):
+        return True
+    try:
+        ip = ipaddress.ip_address(h.split("%", 1)[0])
+    except ValueError:
+        return False
+    return ip.is_loopback or ip.is_private or ip.is_link_local
+
+
 def wayback_first_seen(fetcher, host):
     api = "https://archive.org/wayback/available?url=%s&timestamp=19960101" % urllib.parse.quote(host)
     r = fetcher.get(api)
@@ -638,7 +672,9 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
         res["samples"].append(dict({"type": t}, **f))
         ctx["sample_extra"][u] = fx
 
-    if wayback:
+    if wayback and is_local_host(host):
+        errors.append("本机 / 私网站点(%s)不查 Wayback 最早快照" % host)
+    elif wayback:
         res["first_seen"], ctx["wayback_src"] = wayback_first_seen(fetcher, host)
     return res, ctx
 
@@ -970,13 +1006,46 @@ def brand_from_title(title, host):
     return parts[-1] if len(parts) > 1 and len(parts[-1]) <= len(parts[0]) else parts[0]
 
 
+def _has_price(s):
+    return any(rx.search(s) for rx in PRICE_RES)
+
+
+def pricing_snippets(chunks):
+    """定价页的文字块 → 写到价格或计费方式的原句(保留档位名;短标题接到下一句前面),最多 PRICE_SNIPPETS_MAX 句。"""
+    out, label = [], None
+    for ch in chunks or []:
+        if len(ch) <= 40 and not _has_price(ch) and not re.search(r"[.!?。!?]$", ch):
+            label = ch
+            continue
+        used = False
+        for sent in SENT_SPLIT.split(ch):
+            sent = sent.strip()
+            if not sent or len(sent) > 240:
+                continue
+            if _has_price(sent) or any(rx.search(sent) for _, rx in BILLING_RES):
+                if label and not used and ":" not in sent[:40] and ":" not in sent[:40]:
+                    sent = "%s: %s" % (label, sent)
+                used = True
+                if sent not in out:
+                    out.append(sent)
+        if used or not _has_price(ch):
+            label = None
+        if len(out) >= PRICE_SNIPPETS_MAX:
+            break
+    return out[:PRICE_SNIPPETS_MAX]
+
+
+def billing_modes(text):
+    return [name for name, rx in BILLING_RES if rx.search(text or "")]
+
+
 def build_facts(site_scan, ctx, repo_scan, existing):
     facts = []
 
-    def add(key, value, source, kind):
+    def add(key, value, source, kind, **extra):
         if value in (None, "", [], {}):
             return
-        facts.append({"key": key, "value": value, "source": source, "kind": kind})
+        facts.append(dict({"key": key, "value": value, "source": source, "kind": kind}, **extra))
 
     ss, hx = site_scan, (ctx or {}).get("home_extra") or {}
     home = (ss or {}).get("homepage") or {}
@@ -1015,13 +1084,23 @@ def build_facts(site_scan, ctx, repo_scan, existing):
     prod_sec = next((v for k, v in llms_sections.items() if v and PRODUCT_SECTION_RE.search(k)), None)
     rl_site = route_lines((ctx or {}).get("pool_paths"))
     rl_repo = route_lines((repo_scan or {}).get("routes"))
+    # 首页 h2 多半是「为什么选我们」这类卖点句,不拿来兜底;路由推的只算推测,条目太多(工具、商品清单)不算产品线。
+    # 拿不准就留一条「未知」,开局第 1 环问用户。
+    rl = rl_site or rl_repo
     if prod_sec:
-        add("product.lines", prod_sec[:8], ctx.get("llms_src") if ctx else None, "fact")
-    elif rl_site or rl_repo:                      # 路由比首页小标题可靠:h2 多半是「为什么选我们」这类卖点句
-        add("product.lines", (rl_site or rl_repo)[:8],
-            (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
-    elif home.get("h2"):
-        add("product.lines", home["h2"], home_src, "inferred")
+        add("product.lines", prod_sec[:LINES_MAX], ctx.get("llms_src") if ctx else None, "fact")
+    elif rl and len(rl) <= LINES_MAX:
+        add("product.lines", rl, (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
+    elif ss or repo_scan:
+        if rl:
+            note = "网址里有 %d 个同一层的子页(例:%s),像是条目清单,不当产品线" % (len(rl), "、".join(rl[:3]))
+        elif home.get("h2"):
+            note = "llms.txt 没有产品段,网址里没有 /products/<x> 这类子页;首页的 %d 个小标题多半是卖点句,不当产品线" % len(home["h2"])
+        else:
+            note = "llms.txt 没有产品段,网址里也没有 /products/<x> 这类子页"
+        looked = [x for x in ((ctx or {}).get("llms_src"), (ctx or {}).get("pool_src"), home_src, ev.get("routes")) if x]
+        facts.append({"key": "product.lines", "value": None, "kind": "unknown", "note": note,
+                      "source": "查过:" + "、".join(_dedup(looked)) if looked else "没读到可靠出处"})
 
     # pricing.prices / pricing.model
     pp = by_type.get("pricing")
@@ -1048,8 +1127,17 @@ def build_facts(site_scan, ctx, repo_scan, existing):
             model = "free"
         else:
             model = "unknown"
-        if home.get("status") or pp:
-            add("pricing.model", model, ref_src, "inferred")
+        page_chunks = ((ctx.get("sample_extra") or {}).get(pp["url"]) or {}).get("chunks") if pp else None
+        snips = pricing_snippets(page_chunks) if page_chunks else []
+        snip_src = ref_src
+        if not snips:
+            snips = [x for x in pricing_snippets(hx.get("chunks")) if _has_price(x)]
+            snip_src = home_src
+        modes = billing_modes(" ".join(snips) + " " + txt)
+        if snips:                                  # 原文价格、档位、计费方式;枚举只作附加字段
+            add("pricing.model", " / ".join(snips), snip_src, "fact", enum=model, billing=modes)
+        elif home.get("status") or pp:
+            add("pricing.model", model, ref_src, "inferred", enum=model, billing=modes)
 
     # conversion.ctas:按钮归成转化类型(注册 / 付费 / 试用 / 联系销售 / 演示);登录、文档入口不算转化
     ctas = home.get("ctas") or []

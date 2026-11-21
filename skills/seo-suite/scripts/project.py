@@ -38,7 +38,7 @@
 退出码: 0 正常 / 1 triage 有步骤失败或被跳过 / 2 输入或用法错。
 
 用法: python3 project.py init --site https://example.com [--market en] [--type 站型]
-       python3 project.py run triage [--dir <slug>.seo] [--max 50]
+       python3 project.py run triage [--dir <slug>.seo] [--max 50] [--allow-local]
        python3 project.py next|status [--dir <slug>.seo]
 """
 from __future__ import annotations
@@ -718,7 +718,7 @@ def cmd_run_triage(ns):
 
     step("crawl", [PY, script_path("site_crawl.py"), site,
                    "--max", str(ns.max), "--delay", TRIAGE_DELAY_S,
-                   "--out", crawl_json, "--urls-out", urls_txt])
+                   "--out", crawl_json, "--urls-out", urls_txt] + (["--allow-local"] if ns.allow_local else []))
     audit_urls = pick_audit_urls(crawl_json if ok_so_far.get("crawl") else None, site)
     step("audit", [PY, script_path("site_audit.py"), *audit_urls,
                    "--market", market, "--json"], stdout_to=audit_json, after=("crawl",))
@@ -1109,6 +1109,8 @@ def build_parser():
                    help="爬取页数预算(默认 %d;site_audit 取前 %d 个 2xx/3xx URL)"
                         % (TRIAGE_MAX_PAGES, TRIAGE_AUDIT_URLS))
     p.add_argument("--json", action="store_true", help="triage.json 内容打 stdout")
+    p.add_argument("--allow-local", action="store_true",
+                   help="审本机开发站(127.0.0.1 / localhost):爬取一步放行本机回环,私网照旧拒")
     p.set_defaults(func=cmd_run_triage)
 
     p = sub.add_parser("next", help="五阶段状态机 → 输出下一条精确命令行")
