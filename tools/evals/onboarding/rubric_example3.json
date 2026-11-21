@@ -1,0 +1,312 @@
+{
+ "about": "RQ-237 例 3「方案建立在产品和阶段上」的盲比打分表(第 5 批出题,开跑前定稿、记 hash)。也用于例 8:例 3 的标准在留出产品上同样要过。期望值来自各产品答案表(answers/<product>.json 的 facts_match、stage_must_do_match、stage_must_not_match)和本文件写定的规则,不来自任何 skill 的输出。",
+ "card_text": "需求卡第 2 节例 3:前 10 条建议里 ≥8 条明确引用档案里的产品事实,10 条都属于本阶段的打法;每条写动哪类页面、预期动哪个数、怎么量、第几周做;和 0.43.0 同一输入的输出放在一起,由不知道哪份是新版的独立子代理按事先写好的 5 条打分表判,每个产品新版至少赢 4 条。第 7 节红队 11:判分前统一成纯文本清单;加反事实检验——换一份档案,建议不跟着变就算没用上产品事实。",
+ "inputs": {
+  "per_product": "同一产品、同一 prompt、同一份模拟用户脚本(scenarios.json / scenarios-everyinfra.json / scenarios-real.json 里该产品的开局场景),分别用被测新版和 0.43.0 各跑一次到第 6 环结束。",
+  "plan_source": "新版:seo-ops/plan/ 下的方案(plan.json 的 items;只有 Markdown 时取第一个编号列表)。0.43.0:会话最后一条 assistant 文本里第一个编号列表或「建议 / 推荐 / priorit / recommend」小节下的列表;两处都没有时取会话写出的任何 .md 文件里第一个编号列表。",
+  "top_n": 10,
+  "short_list": "某一份不足 10 条时按实有条数比,缺的位置在 C1、C3 里按 0 分计。"
+ },
+ "normalize": {
+  "why": "评审不能知道哪份是新版:先把两份方案变成同一种纯文本编号清单,去掉一切能看出版本的痕迹。归一化由脚本做,评审只看归一化后的文本。",
+  "steps": [
+   "1. 取前 10 条。每条拍平成一行:去掉 Markdown(标题、加粗、斜体、代码标记、链接只留文字)、去掉 emoji 和行首符号;表格里属于这一条的单元格按「列名: 值;」接成一行。",
+   "2. 删掉下面 strip_patterns 命中的片段(不分大小写):版本号、skill 和脚本名、seo-ops/ 等文件路径、内部字段名、「档案 / 第 N 环 / 阶段 N / 成熟度 L1–L5」这类只有新版才有的框架词、出处箭头和「来源:」尾注。删完把连续空白压成一个空格。",
+   "3. 每条截到 400 个字符(按字符算),末尾不加省略号;两份都截,不只截长的那份。",
+   "4. 统一编号成 1. 到 10.,两份用同一种句末标点规则(去掉末尾句号)。",
+   "5. 随机决定哪份叫 A、哪份叫 B:seed = sha256(产品 id + 评测轮次 id) 的前 8 位十六进制转整数,奇数则新版为 A;seed 和映射写进评测记录,评审看不到。",
+   "6. 归一化后若仍能用肉眼看出版本(例如一份全是中文、一份全是英文),在评测记录里标 blind_broken=true,该产品的结论只作参考,不计入通过。"
+  ],
+  "strip_patterns": [
+   "seo-suite",
+   "seo[-_ ]?skills?",
+   "\\bv?0\\.\\d+(\\.\\d+)?\\b",
+   "\\b\\d+\\.\\d+\\.\\d+\\b",
+   "seo-ops/\\S*",
+   "\\.agents/\\S*",
+   "\\b[a-z_]+\\.py\\b",
+   "\\b[a-z_-]+\\.json\\b",
+   "\\b[a-z_-]+\\.md\\b",
+   "/seo-suite:\\w+",
+   "\\bonboard(ing)?\\b",
+   "\\bstrategy-fit\\b",
+   "\\bplaybooks?\\b",
+   "\\bprofile\\b",
+   "档案",
+   "第\\s*[1-6一二三四五六]\\s*环",
+   "\\bring\\s*[1-6]\\b",
+   "\\bstage[_ ]?[0-5]\\b",
+   "阶段\\s*[0-5]",
+   "\\bL[1-5]\\b",
+   "成熟度",
+   "maturity",
+   "(?:←|<-)\\s*\\S+",
+   "(出处|来源|source)[::]\\s*\\S+"
+  ]
+ },
+ "judge": {
+  "who": "一个独立子代理:不参与实现、没看过任何被测会话转录,只拿到:A、B 两份归一化清单;该产品答案表的 facts、facts_match、stage_must_do / must_not 及其 match;证据包(见 C5);本打分表。",
+  "prompt_rules": [
+   "不告诉评审哪份是新版、也不告诉有「新版 / 旧版」之分,只说「比较两份方案」。",
+   "C1、C2、C3 先由脚本按 how_mechanical 算出分数,评审只复核脚本标了 unclear 的条目(每条给出 是 / 否 和一句理由),不改其他条目的分。",
+   "C4、C5 由评审按 judge_rule 逐条判,输出 JSON:{条目号: {判定, 理由}};理由必须引用条目原文里的词。",
+   "每条打分表输出 A 分、B 分、胜者(A / B / tie)。"
+  ]
+ },
+ "criteria": [
+  {
+   "id": "C1_product_grounding",
+   "name": "产品事实落地",
+   "what": "前 10 条里明确用上这个产品具体事实的条数(卡:≥8 条引用产品事实)。",
+   "how_mechanical": "一条算「用上」要同时满足:(a) 条目文本命中答案表 facts_match 里 product.lines、customers、conversion.primary 任一别名组,或命中该产品模拟用户第 3 环点名的竞品名、或答案表 facts.product.name 以外的专有名词(产品线名、功能名);只命中产品名本身不算;(b) 没有被反事实检验判成「没跟着变」(见 counterfactual)。分数 = 满足 (a)(b) 的条数。命中词只出现在被删掉的片段里不算。",
+   "unclear": "命中的词同时是通用 SEO 词(例如产品线叫「Invoicing」而条目写的是「invoice template 关键词」)时标 unclear,交评审判是否在指这个产品的这条线。",
+   "win": "分高者胜。",
+   "tie": "分数相等为平局。"
+  },
+  {
+   "id": "C2_stage_fit",
+   "name": "阶段对口",
+   "what": "前 10 条落在本阶段该做的事上,且没有跨阶段的建议(卡:10 条都属于本阶段,跨阶段 0 条)。",
+   "how_mechanical": "覆盖数 = 前 10 条一共覆盖了答案表 stage_must_do_match 的几项(某项的每个别名组都至少命中一个词即覆盖,同一项被多条覆盖只算 1);违例数 = 前 10 条里命中 stage_must_not_match 任一项(该项所有别名组都命中)的条数,写在「不做 / 暂缓 / 以后」小节或句子里明确否定(含「不 / 别 / 暂缓 / 先不 / don't / avoid / later」且否定词在命中词前 20 个字符内)的不算。分数 = 覆盖数 − 2 × 违例数。",
+   "unclear": "命中 must_not 但否定判不准的条目标 unclear,评审判是否真的在建议做。",
+   "win": "分高者胜。",
+   "tie": "分数相等为平局。"
+  },
+  {
+   "id": "C3_actionability",
+   "name": "可执行",
+   "what": "每条写明:动哪类页面、预期动哪个数、怎么量、第几周做(卡原文四项)。",
+   "how_mechanical": "四个字段逐条查,都在才算这一条合格:页面:出现路径(以 / 开头的 URL 片段)或页面类别词(首页、定价页、产品页、功能页、对比页、替代页、博客、文章、文档、落地页、分类页、工具页、home、pricing、product page、landing、blog、docs、category、template);指标:出现指标词(展示、点击、CTR、排名、收录、注册、试用、订阅、首充、下单、转化、流量、引用、引荐、impressions、clicks、rank、indexed、sign-up、trial、conversion、traffic、citation、referral);怎么量:出现测量来源或方法(GSC、Search Console、GA4、Bing Webmaster、日志、log、rank tracker、排名跟踪、对比 / 基线、baseline、前后对比、A/B、抽查、手工检查、site:);第几周:正则 第\\s*\\d+\\s*[-~–到至]?\\s*\\d*\\s*周|week\\s*\\d+|W\\d+|\\d+\\s*-\\s*\\d+\\s*weeks?|第\\s*\\d+\\s*个?月|month\\s*\\d+。分数 = 合格条数。",
+   "unclear": "四项里恰好缺一项、且缺的是「怎么量」或「指标」时标 unclear,评审判条目里是否有等价写法。",
+   "win": "分高者胜。",
+   "tie": "分数相等为平局。"
+  },
+  {
+   "id": "C4_sequencing",
+   "name": "先后顺序和依赖",
+   "what": "排序是否违反做 SEO 的硬依赖(先有追踪和收录再扩内容,先存基线再改 URL,先验证需求再定信息架构)。",
+   "judge_rule": "评审先把每条归到 prerequisites 里的类别(一条可归多个类别,归不进的写 other),再按条目在清单里的位置和写明的周次检查每对「A 必须在 B 之前」:B 类条目的周次早于(或没写周次时,位置排在)所有 A 类条目之前,且清单里有 A 类条目,记 1 次违例;清单里根本没有 A 类条目、却有 B 类条目时也记 1 次违例(漏了前置)。分数 = 违例数(越少越好)。",
+   "prerequisites": {
+    "0": [
+     [
+      "需求验证 / 关键词版图",
+      "信息架构 / URL 结构"
+     ],
+     [
+      "需求验证 / 关键词版图",
+      "内容生产"
+     ]
+    ],
+    "1": [
+     [
+      "robots / noindex 放行",
+      "提交 sitemap / 收录"
+     ],
+     [
+      "统计与 GSC / Bing 验证",
+      "上线后观察指标"
+     ]
+    ],
+    "2": [
+     [
+      "收录(提交 sitemap、IndexNow、GSC / Bing)",
+      "内容扩张 / 程序化页"
+     ],
+     [
+      "统计与转化追踪",
+      "按转化排优先级的内容"
+     ]
+    ],
+    "3": [
+     [
+      "转化归因 / 追踪",
+      "按转化优化的内容生产线"
+     ],
+     [
+      "关键词版图 / 主题簇",
+      "程序化页面"
+     ]
+    ],
+    "4": [
+     [
+      "掉量定位(哪些页、什么时候)",
+      "内容刷新 / 退役"
+     ],
+     [
+      "基线(刷新前的点击 / 排名)",
+      "SEO 实验 / 刷新效果评估"
+     ]
+    ],
+    "5": [
+     [
+      "存基线(全部 URL、状态码、title、canonical、hreflang)",
+      "301 映射与上线"
+     ],
+     [
+      "301 映射",
+      "上线后对比"
+     ]
+    ]
+   },
+   "win": "违例少者胜。",
+   "tie": "违例数相等为平局(两份都是 0 也是平局)。"
+  },
+  {
+   "id": "C5_no_fabrication",
+   "name": "不编造、标明假设",
+   "what": "条目里的数字和事实有来源;没确认的写成假设。",
+   "judge_rule": "证据包 = 该次会话的全部工具调用结果原文 + seo-ops/ 下文件 + 工作区 data/ 下文件 + 模拟用户脚本原文(两份方案各用自己那次会话的证据包)。评审逐条找出条目里的「具体断言」:数字(搜索量、展示、点击、排名、百分比、金额、天数、页数)和关于产品或对手的具体事实。每个断言在自己的证据包里找得到原值(数字差 ≤5% 或同一取整)算有据;条目把它标成「预计 / 估计 / 假设 / 目标 / 猜测 / estimate / assume / target」也算合规;两者都不是记 1 次编造。分数 = 编造次数(越少越好)。",
+   "evidence_note": "评审拿到的证据包也要过一遍 strip_patterns,防止从证据包里认出版本;证据包只给评审用来核断言,不进 C1–C4。",
+   "win": "编造少者胜。",
+   "tie": "编造次数相等为平局。"
+  }
+ ],
+ "counterfactual": {
+  "why": "红队 11:建议不跟着产品事实变,说明没用上产品事实。只在 C1 里用:被判「没跟着变」的条目不计入 C1 分数。",
+  "method": [
+   "1. 每个版本跑完第 6 环后复制一份工作区。新版:把 seo-ops/context/ 里的产品事实(product.name、product.one_liner、product.lines、pricing.model、conversion.primary、customers、竞品两份名单)按下面 profiles 换成反事实产品的值,阶段、成熟度、站点和 data/ 不动;改完删掉 seo-ops/plan/。0.43.0 没有档案:新开会话,把反事实产品的同一组事实作为用户的一段话发给它(文本见 profiles[*].as_user_message),要求「按这些信息重新给 SEO 建议」。",
+   "2. 新版新开会话,只说「产品信息更新了,按现在的产品信息重新出方案」;两版都取前 10 条,按 normalize 归一化。",
+   "3. 两份清单里所有出现的原产品和反事实产品专有词(两份 profiles 里的 name、lines、customers、competitors 的每个词)替换成同一个占位符 <P>。",
+   "4. 分词:拉丁字母按单词小写,中日韩文字按相邻两字一组;每条原方案条目找反事实清单里 Jaccard 最高的一条(一对一,贪心从最高分配起)。Jaccard ≥ 0.6 判「没跟着变」。",
+   "5. 结果写进评测记录:每个版本「没跟着变」的条数;新版的这个数字也单独报(目标:前 10 条里 ≤2 条)。"
+  ],
+  "similarity_threshold": 0.6,
+  "profiles": {
+   "idea": {
+    "stage": 0,
+    "product.name": "药盒提醒",
+    "product.one_liner": "帮子女远程管父母吃药的提醒 App",
+    "product.lines": [
+     "用药提醒",
+     "复诊日历",
+     "家人共享药单"
+    ],
+    "customers": [
+     "给父母管药的 30–45 岁子女"
+    ],
+    "conversion.primary": "上线前候补名单",
+    "pricing.model": "免费 + 家庭版每月 15 元(计划)",
+    "competitors": [
+     "医院自己的小程序",
+     "通用备忘录 App"
+    ],
+    "as_user_message": "我们的产品其实是「药盒提醒」:帮子女远程管父母吃药的 App,功能有用药提醒、复诊日历、家人共享药单;用户是给父母管药的 30–45 岁子女;现在只攒候补名单;对手是医院小程序和通用备忘录 App。"
+   },
+   "prelaunch": {
+    "stage": 1,
+    "product.name": "Tidyshift",
+    "product.one_liner": "shift scheduling for independent restaurants",
+    "product.lines": [
+     "Scheduling",
+     "Shift swaps",
+     "Payroll export"
+    ],
+    "customers": [
+     "independent restaurant managers"
+    ],
+    "conversion.primary": "14-day trial sign-up",
+    "pricing.model": "$29/month per location",
+    "competitors": [
+     "paper rotas",
+     "spreadsheet templates"
+    ],
+    "as_user_message": "Our product is actually Tidyshift: shift scheduling for independent restaurants, with Scheduling, Shift swaps and Payroll export. Customers are independent restaurant managers. Goal is 14-day trial sign-ups at $29/month per location. Alternatives people use are paper rotas and spreadsheet templates."
+   },
+   "launched": {
+    "stage": 2,
+    "product.name": "Ferncraft Piano",
+    "product.one_liner": "online piano lessons for adult beginners",
+    "product.lines": [
+     "Video lesson library",
+     "Monthly live group class",
+     "Sheet music packs"
+    ],
+    "customers": [
+     "adult beginners in the US who learn at home"
+    ],
+    "conversion.primary": "monthly membership start",
+    "pricing.model": "$19/month membership, sheet music packs $9",
+    "competitors": [
+     "YouTube tutorials",
+     "local piano teachers"
+    ],
+    "as_user_message": "Our product is actually Ferncraft Piano: online piano lessons for adult beginners, with a video lesson library, a monthly live group class and sheet music packs. Customers are US adult beginners learning at home. What matters most is membership starts ($19/month). Alternatives are YouTube tutorials and local teachers."
+   },
+   "mature": {
+    "stage": 4,
+    "product.name": "Gridwise Garage",
+    "product.one_liner": "car maintenance how-to guides",
+    "product.lines": [
+     "DIY repair guides",
+     "Tool reviews",
+     "Gridwise Plus video membership"
+    ],
+    "customers": [
+     "US DIY car owners"
+    ],
+    "conversion.primary": "ad revenue and affiliate tool clicks",
+    "pricing.model": "free articles, Plus $5/month",
+    "competitors": [
+     "repair forums",
+     "YouTube mechanics"
+    ],
+    "as_user_message": "Our site is actually Gridwise Garage: car maintenance how-to guides, tool reviews and a $5/month video membership. Readers are US DIY car owners; we earn from ads and affiliate tool clicks. Competitors are repair forums and YouTube mechanics. Search clicks have been dropping."
+   },
+   "change": {
+    "stage": 5,
+    "product.name": "Velotrail",
+    "product.one_liner": "bike lights and safety gear",
+    "product.lines": [
+     "Front lights",
+     "Rear radar lights",
+     "Helmet mounts"
+    ],
+    "customers": [
+     "commuter cyclists in the US and Germany"
+    ],
+    "conversion.primary": "online store purchase",
+    "pricing.model": "$39–$149 per item",
+    "competitors": [
+     "bike shop chains",
+     "marketplace sellers"
+    ],
+    "as_user_message": "Our store is actually Velotrail: bike lights and safety gear (front lights, rear radar lights, helmet mounts) for commuter cyclists in the US and Germany, $39–$149 per item. Competitors are bike shop chains and marketplace sellers. We're still doing the URL change in MIGRATION.md."
+   },
+   "everyinfra": {
+    "stage": 3,
+    "product.name": "Shiplane",
+    "product.one_liner": "跨境电商物流面单 API",
+    "product.lines": [
+     "面单打印 API",
+     "运费比价",
+     "包裹追踪 Webhook"
+    ],
+    "customers": [
+     "做独立站的跨境卖家",
+     "ERP 开发商"
+    ],
+    "conversion.primary": "首单付费",
+    "pricing.model": "按单计费,每单 $0.05 起",
+    "competitors": [
+     "物流商自己的接口",
+     "ERP 自带的面单模块"
+    ],
+    "as_user_message": "其实我们的产品是 Shiplane:跨境电商物流面单 API,有面单打印、运费比价、包裹追踪 Webhook;客户是做独立站的跨境卖家和 ERP 开发商;按单计费每单 $0.05 起,最看重首单付费;对手是物流商自己的接口和 ERP 自带的面单模块。"
+   }
+  },
+  "real_products_note": "3 个真实产品(例 8)的反事实档案在私有仓 scenarios-real.json 的 example3_counterfactuals,格式同上。"
+ },
+ "verdict": {
+  "per_product": "5 条里新版胜 ≥4 条为通过;平局不算胜。例:3 胜 2 平 → 不通过。",
+  "report": "每个产品报:A/B 映射、5 条各自 A 分 / B 分 / 胜者、反事实「没跟着变」条数(两版各一个)、blind_broken 标记。全部产品汇总:通过数 / 产品数。",
+  "products": [
+   "idea",
+   "prelaunch",
+   "launched",
+   "mature",
+   "change",
+   "everyinfra",
+   "3 个真实产品(scenarios-real.json)"
+  ]
+ }
+}

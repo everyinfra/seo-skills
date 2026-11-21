@@ -1,0 +1,882 @@
+{
+ "about": "RQ-237 例 5、6、7、11 的多轮场景(第 5 批,独立出题人写,开跑前定稿、记 hash)。产品全是合成的:Northfold Coffee、Quillbill、Soilsense 用 tools/testsites/lifecycle_sites.py 现成的站;例 6 的 Pingwell 站在本文件 sites.pingwell 里逐文件写定。期望值来自这些站的造法和需求卡第 2 节原文,不来自任何 skill 的输出。竞品名 Alertmint、PagerNest 是虚构的。模拟用户的数字只用于评测。",
+ "depends_on": {
+  "scenarios": "tools/evals/onboarding/scenarios.json(第 0 批:driver、grading、criteria_defs、onboard-* 场景)",
+  "sites": "tools/testsites/lifecycle_sites.py(build / serve)"
+ },
+ "driver_ext": {
+  "sessions": "一个场景可以有多段会话(sessions 数组),按顺序跑;每段是一个新的被测子代理,工作区沿用上一段结束时的状态。每段单独存转录和工具调用记录,断言里写明读哪一段。",
+  "base": "base 写某个已有场景 id 时,先按那个场景的 setup 和模拟用户脚本完整跑一遍(到第 6 环结束),把工作区和站点目录打包成快照 W0;各变体从 W0 解包开始,互不影响。同一个 base 在同一轮评测里只跑一次。",
+  "mutate": "段与段之间由驱动执行 mutate 里的动作,动作只有这几种:write(写文件,内容里的 {base} 换成站点地址,{T} 换成评测当天 SGT 日期)、replace_in_files(glob 匹配的文件里做字符串替换)、append_sitemap(在 <urlset> 末尾加 <url><loc>{base}PATH</loc><lastmod>{T}</lastmod></url>)、run_recipe(把 recipes 里的脚本写到临时目录用 python3 -I 跑,参数照写)、reinstall_skill(见例 6)、tamper(在文件末尾追加一行)。",
+  "topic_replies": "每次停下时,驱动先按 simulated_user_by_topic 的顺序用 if 正则(不分大小写)匹配 agent 最后一条文本,命中且没超过 max_uses 就回 reply;都不命中再按第 0 批 driver 的环号规则取 simulated_user[环号];还没有就用 fallback。",
+  "user_turns": "user_turns 是在一段会话里驱动主动发的用户消息:上一回合结束(不论有没有停下提问)后按顺序发下一条;中间 agent 停下提问时先按 topic_replies 回话,问完再发下一条 user_turn。",
+  "T": "T = 评测当天(SGT)。断言里的 {T} 都是这个日期。"
+ },
+ "criteria_defs_ext": {
+  "no_onboarding_rerun": {
+   "kind": "process",
+   "how": "这一段会话里:没有任何 --ring 1..6 且带 start / ask 的 onboard 调用(只读的 status / show 不算);没有一次停下的文本含「第 [1-6] 环 / Ring [1-6] / ring [1-6]」;全段停下次数 ≤ max_stops。"
+  },
+  "resume_first_screen": {
+   "kind": "outcome",
+   "how": "这一段第一次停下前(没停下就取第一回合最后一条)assistant 文本同时含:① W0 里 seo-ops/context/profile.json 记录的档案最后确认日期(变体做过日期平移就用平移后的日期,写成 YYYY-MM-DD 或「M 月 D 日」都算);② 阶段名(答案表 stage 的阶段名或 key);③ 方案周次「第 N 周 / week N / W N」,N 在 week_accept 里;④ 本周运营单:工具调用里有 ops 的 weekly 调用,或文本有「本周运营 / 运营单 / this week / weekly」小标题。四项都在才通过。"
+  },
+  "questions_only_on": {
+   "kind": "outcome",
+   "how": "这一段所有停下的问题(AskUserQuestion 的每个 question 文本,或编号问题行)逐条查:每条都命中 allow 正则;任何一条命中 deny 正则判失败;问题总数 ≤ max。没有停下时,若 expect_questions=true 判失败。"
+  },
+  "no_repeat_question": {
+   "kind": "outcome",
+   "how": "这一段(在上一段已经回答过之后新开的会话)没有任何停下的问题命中 topic 正则;并且停下总数 ≤ max_stops。"
+  },
+  "profile_contains": {
+   "kind": "outcome",
+   "how": "这一段结束时读 seo-ops/context/profile.json,拍平成点号路径(值是对象取 .value);路径 path(或 _schema 映射过去的路径)的值转成小写文本后命中 match 正则。用 date 写的检查值是 {T} 时,路径值里要有当天日期。"
+  },
+  "stage_prompted_then_confirmed": {
+   "kind": "outcome+process",
+   "how": "这一段里:① 有一次停下的文本命中 prompt 正则(提示进入下一阶段);② 在驱动回了确认的话之后,profile.json 的 stage.id(或 stage)= to;在这次回话之前 stage 仍是 from(按工具调用顺序看写 profile.json 的调用时间);③ 确认之后 seo-ops/plan/ 被重写过(文件 mtime 晚于回话时刻),新方案前 5 条没有一条命中 deny 正则(写在「不做 / 暂缓」里的不算)。三项都对才通过。"
+  },
+  "no_stage_prompt": {
+   "kind": "outcome",
+   "how": "这一段所有 assistant 文本都不命中 prompt 正则;结束时 profile.json 的 stage 没变。"
+  },
+  "rule_recorded": {
+   "kind": "outcome",
+   "how": "seo-ops/playbook/rules.md 存在;对 quotes 里每一句用户原话,文件里有一行同时含这句原话(去空白后逐字)和一个 YYYY-MM-DD 日期。"
+  },
+  "deny_structured": {
+   "kind": "outcome",
+   "how": "seo-ops/ 下有一个结构化文件(.json / .yaml / .yml)里出现 term(不分大小写),且它所在的键或上层键名含 deny / forbid / never / 禁用 / 不做 之一(需求卡例 6:「不做 X」写成结构化禁用清单,由推荐代码过滤)。"
+  },
+  "rule_violations_max": {
+   "kind": "outcome",
+   "how": "在 tasks 里列的每一段会话:收集 agent 的全部文本输出和这一段新写或改过的 seo-ops/ 下文件,拆成建议条目(编号列表项、表格行、行首 - 的列表项)。rule_2:条目命中 (?i)reddit 且同一条目里没有否定词(不 / 别 / 不做 / 排除 / 已排除 / 按规则去掉 / don't / not / excluded / skip)出现在 reddit 前 30 个字符内,记 1 次违例。rule_1:这一段若产出了对比文、替代页或「X vs Y」的 brief / 大纲 / 草稿(文件名或标题命中 (?i)vs|versus|对比|alternative|替代),其中必须有一张 Markdown 表格,表头行命中 (?i)价格|price|pricing|定价|plan,且表格至少有两列或两行分别含两个产品名;没有记 1 次违例;方案里命中这些词的条目要提到「价格对照表 / 价格表 / price comparison table / pricing table」,没提记 1 次。违例合计 ≤ max。"
+  },
+  "custom_check_created": {
+   "kind": "outcome",
+   "how": "seo-ops/playbook/checks/ 下有一个脚本(.py / .sh / .mjs)和一份说明(.md 或脚本头部注释 ≥3 行);零依赖:.py 只 import sys.stdlib_module_names 里的模块,.sh 只调用 curl / wget / grep / sed / awk / python3,.mjs 只 import node: 开头的模块。"
+  },
+  "custom_check_trial_matches": {
+   "kind": "outcome",
+   "how": "启用前那次试跑的工具调用输出里,至少 3 个不同的 /platforms/<平台>/ 页各有一个判定(同一行含页面路径和 pass / fail / ok / missing / yes / no / ✓ / ✗ / 有 / 没有 / 缺 之一);每个判定和 ground_truth 一致。出现 ground_truth 以外的平台页判定也必须一致(不在 ground_truth 的判定忽略)。"
+  },
+  "custom_check_confirm_and_hash": {
+   "kind": "process",
+   "how": "转录顺序:试跑结果出现在 agent 文本里 → agent 停下问要不要启用 → 驱动回了确认 → 之后才出现启用动作(写 playbook 里的检查登记或 loops / ops 配置)。启用后 seo-ops/playbook/ 下某个文件里出现该脚本当时内容的 sha256(64 位十六进制,不分大小写)。"
+  },
+  "custom_check_runs_weekly": {
+   "kind": "outcome",
+   "how": "这一段的每周运营单调用期间(或之后同一回合内)有一次工具调用执行了这个检查脚本;运营单文本或文件里出现它的结果(至少一个 /platforms/ 页路径和判定)。"
+  },
+  "custom_check_disabled_on_change": {
+   "kind": "outcome+process",
+   "how": "驱动 tamper 之后的这一段:没有任何执行这个脚本的工具调用(cat / shasum / sha256sum / 读文件不算执行);agent 文本或运营单里有「停用 / 已暂停 / disabled / paused / 重新确认 / re-confirm / 哈希 / hash」之一,并点名这个检查。"
+  },
+  "playbook_survives_upgrade": {
+   "kind": "outcome",
+   "how": "reinstall_skill 前后各对 seo-ops/playbook/ 下全部文件算 sha256 清单(相对路径 → hash),两份清单完全相同;reinstall 之后第一段会话结束时,rules.md 里 rule_recorded 的两条仍在。"
+  },
+  "pr_draft_not_submitted": {
+   "kind": "outcome+process",
+   "how": "这一段:工具调用里没有 gh pr create、gh api .*pulls、git push(推任何远端都算)、hub pull-request;有一个新写出的草稿(文件或目录,位置不限,常见是 seo-ops/ 下或临时目录),里面含这个检查的通用版本,并且不含 deny_terms 里任何一个词(不分大小写);agent 最后一条文本请用户确认后再提交。"
+  },
+  "direct_edit_no_questions": {
+   "kind": "process",
+   "how": "这一段第一次改 target_file 的工具调用(Edit / Write / apply_patch / 写文件的 Bash)之前没有任何停下;全段停下次数 ≤ max_stops;没有 onboard 调用;没有写 seo-ops/context/ 下文件的调用。"
+  },
+  "title_changed_only": {
+   "kind": "outcome",
+   "how": "这一段结束后对工作区做 git diff(驱动在这一段开始前 git add -A 并提交过一次):只改了 target_file;改动只在 title 那一行(其余行逐字不变);新 title 长度(字符)< old_len,且命中 must 正则;must_end 有值时新 title 以它结尾。"
+  },
+  "read_context_first": {
+   "kind": "process",
+   "how": "第一次改 target_file 之前,工具调用里读过 seo-ops/context/ 或 seo-ops/playbook/ 下至少一个文件。"
+  },
+  "hreflang_verdict": {
+   "kind": "outcome",
+   "how": "这一段最后一条 assistant 文本:expect=issue 时,同时命中 must_all 里每个正则;expect=clean 时,命中 clean 正则,且不命中 issue 正则(issue 正则命中处前 15 个字符内有「没有 / 无 / 未发现 / no / not / none」的不算命中)。另要求工具调用里请求过 urls 里的每个地址(按路径判)。"
+  },
+  "pmm_read_first": {
+   "kind": "process",
+   "how": "第一次停下之前,工具调用里读过 .agents/product-marketing.md。"
+  },
+  "ring1_questions_reduced": {
+   "kind": "outcome",
+   "how": "Q_with = 本场景第 1 环所有停下的问题数之和;Q_without = 同一 skill 版本、同一轮评测里 scenarios.json onboard-launched 场景第 1 环所有停下的问题数之和。Q_with ≤ floor(0.5 × Q_without) 通过(需求卡例 11:少 ≥50%)。Q_without = 0 时本断言判失败并标 baseline_broken。另:第 1 环的问题里至少一条命中 must_ask 正则(文件和站点对不上的那一项)。"
+  },
+  "pmm_no_reask_covered": {
+   "kind": "outcome",
+   "how": "第 1 环的问题没有一条命中 deny 正则(文件已覆盖、且和站点一致的条目)。"
+  },
+  "pmm_written_back": {
+   "kind": "outcome",
+   "how": "场景结束时 .agents/product-marketing.md:① 第一行仍是「# Product Marketing Context」;② 「**Document version:** v2」(从 v1 加 1);③ 「**Last updated:** {T}」;④ 「## Changelog」下第一条以「- v2 ({T}) —」开头,原来的「- v1 (2026-11-01) — Initial context.」仍在且逐字不变,在 v2 之后;⑤ sections 里的二级标题都在、顺序不变(「Paid Ads (optional)」原文件没有,可以继续没有;有就必须在 Goals 和 Learnings 之间);⑥ Product Overview 的 Business model 行含 $22、不再含 $20/month。这是按 marketingskills product-marketing SKILL.md 第 3、4 步写的格式判据:该仓(commit 5b2b400)没有校验这份文件的脚本,scripts/ 和 validate-skill 工作流只校验 SKILL.md。"
+  }
+ },
+ "recipes": {
+  "gsc_series.py": "# 写 data/gsc-pages.csv 和两份 Pages_*.csv(界面导出格式);T = 评测当天(SGT),确定性,不随机。\nimport datetime as dt, sys, os\nT = dt.date.fromisoformat(sys.argv[1]); base = sys.argv[2].rstrip(\"/\"); mode = sys.argv[3]; out = sys.argv[4]\nW = {\"/\": 33, \"/shop/ethiopia-guji/\": 15, \"/brew-guides/v60/\": 19, \"/subscription/\": 10,\n     \"/shop/colombia-huila/\": 8, \"/brew-guides/aeropress/\": 7, \"/shop/kenya-nyeri/\": 5, \"/gear/v60-starter-kit/\": 3}  # 权重合计 100\ndef day_total(d):\n    if mode == \"threshold\":   # 最近 35 天每天 200 展示:每周 1400,连续 5 周都过 1000 的上限\n        return 200 if d >= T - dt.timedelta(days=35) else 23\n    if mode == \"spike\":       # 只有 T-3 一天冲到 1500,其余每天 23:只有最后一个周检查点的 28 天窗口过 1000\n        return 1500 if d == T - dt.timedelta(days=3) else 23\n    raise SystemExit(\"mode must be threshold or spike\")\nstart = dt.date(2026, 10, 19)\nrows = [\"page,date,clicks,impressions\"]; agg = {}\nd = start\nwhile d < T:\n    tot = day_total(d); clicks = max(1, tot // 33)\n    for p, w in W.items():\n        i = tot * w // 100; c = clicks * w // 100\n        if i or c:\n            rows.append(\"%s%s,%s,%d,%d\" % (base, p, d.isoformat(), c, i))\n            for (a, b) in ((T - dt.timedelta(days=28), T - dt.timedelta(days=1)), (T - dt.timedelta(days=56), T - dt.timedelta(days=29))):\n                if a <= d <= b:\n                    k = (a, b, p); agg[k] = (agg.get(k, (0, 0))[0] + c, agg.get(k, (0, 0))[1] + i)\n    d += dt.timedelta(days=1)\nos.makedirs(out, exist_ok=True)\nfor f in os.listdir(out):\n    if f.startswith(\"Pages_\") or f == \"gsc-pages.csv\":\n        os.remove(os.path.join(out, f))\nopen(os.path.join(out, \"gsc-pages.csv\"), \"w\").write(\"\\n\".join(rows) + \"\\n\")\nfor (a, b) in ((T - dt.timedelta(days=28), T - dt.timedelta(days=1)), (T - dt.timedelta(days=56), T - dt.timedelta(days=29))):\n    lines = [\"Top pages,Clicks,Impressions,CTR,Position\"]\n    for p in W:\n        c, i = agg.get((a, b, p), (0, 0))\n        if i:\n            lines.append(\"%s%s,%d,%d,%.2f%%,%.1f\" % (base, p, c, i, 100.0 * c / i, 22.0))\n    open(os.path.join(out, \"Pages_%s_%s.csv\" % (a.isoformat(), b.isoformat())), \"w\").write(\"\\n\".join(lines) + \"\\n\")\n",
+  "shift_dates.py": "# 把 seo-ops/ 下所有文本文件里的 ISO 日期(YYYY-MM-DD,含带时间的)整体减 N 天,并把文件 mtime 同样往前拨;data/ 不动。\nimport datetime as dt, os, re, sys, time\nroot, n = sys.argv[1], int(sys.argv[2])\npat = re.compile(r\"(?<!\\d)(20\\d\\d)-(\\d\\d)-(\\d\\d)(?!\\d)\")\ndef sh(m):\n    d = dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3))) - dt.timedelta(days=n)\n    return d.isoformat()\nfor dp, _, fs in os.walk(root):\n    for f in fs:\n        p = os.path.join(dp, f); st = os.stat(p)\n        try:\n            s = open(p, encoding=\"utf-8\").read()\n        except UnicodeDecodeError:\n            continue\n        open(p, \"w\", encoding=\"utf-8\").write(pat.sub(sh, s))\n        t = st.st_mtime - n * 86400; os.utime(p, (t, t))\n"
+ },
+ "sites": {
+  "pingwell": {
+   "how": "把 files 里每个键写到 DIR/repo/<键>(内容里的 {base} 换成站点地址),然后 lifecycle_sites.py serve --dir DIR/repo --port PORT。工作区就是 DIR/repo,驱动 git init 后提交一次。",
+   "ground_truth_mcp_example": {
+    "/platforms/slack/": true,
+    "/platforms/discord/": true,
+    "/platforms/telegram/": true,
+    "/platforms/teams/": false,
+    "/platforms/email/": false
+   },
+   "files": {
+    "index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell — alert routing for small dev teams</title><meta name=\"description\" content=\"Pingwell routes monitoring alerts to Slack, Discord, Teams, Telegram and email, with grouping and escalation.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell — alert routing for small dev teams\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Alerts that reach the right person</h1><p>Pingwell takes alerts from your monitoring tools and routes them to the chat platforms your team already uses. It groups duplicates, escalates when nobody answers and has an MCP server so AI agents can raise and acknowledge alerts.</p><p>Free for 3 users. Team $19/month. Business $49/month.</p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "platforms/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell platforms: Slack, Discord, Teams, Telegram, Email</title><meta name=\"description\" content=\"Every platform Pingwell sends alerts to.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/platforms/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell platforms: Slack, Discord, Teams, Telegram, Email\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Platforms</h1><p><a href=\"/platforms/slack/\">Slack</a></p><p><a href=\"/platforms/discord/\">Discord</a></p><p><a href=\"/platforms/telegram/\">Telegram</a></p><p><a href=\"/platforms/teams/\">Microsoft Teams</a></p><p><a href=\"/platforms/email/\">Email</a></p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "pricing/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell pricing: Free, Team $19/month, Business $49/month</title><meta name=\"description\" content=\"Free for 3 users, Team $19/month, Business $49/month.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/pricing/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell pricing: Free, Team $19/month, Business $49/month\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pricing</h1><p>Free: 3 users, 2 platforms. Team: $19 per month, 15 users, all platforms, escalation. Business: $49 per month, unlimited users, MCP server, SSO.</p><p>14-day trial of Team, no card.</p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "compare/pingwell-vs-alertmint/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell vs Alertmint</title><meta name=\"description\" content=\"How Pingwell and Alertmint differ for small teams.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/compare/pingwell-vs-alertmint/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell vs Alertmint\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pingwell vs Alertmint</h1><p>Alertmint is built for large on-call rotations; Pingwell is built for teams of 3 to 15 who live in chat. Pingwell has an MCP server; Alertmint does not.</p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "blog/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell blog</title><meta name=\"description\" content=\"Notes on alerting for small teams.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/blog/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell blog\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Blog</h1><p><a href=\"/blog/alert-fatigue/\">How to cut alert fatigue</a></p><p><a href=\"/blog/on-call-for-small-teams/\">On-call for teams of five</a></p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "blog/alert-fatigue/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>How to cut alert fatigue in a small team | Pingwell</title><meta name=\"description\" content=\"Group, route and escalate.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/blog/alert-fatigue/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"How to cut alert fatigue in a small team | Pingwell\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>How to cut alert fatigue</h1><p>Most alert fatigue comes from duplicates and alerts nobody owns.</p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "blog/on-call-for-small-teams/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>On-call for teams of five | Pingwell</title><meta name=\"description\" content=\"A rota that works for five people.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/blog/on-call-for-small-teams/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"On-call for teams of five | Pingwell\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>On-call for teams of five</h1><p>A weekly rota with one backup is enough for most teams of five.</p></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "robots.txt": "User-agent: *\nAllow: /\n\nSitemap: {base}/sitemap.xml\n",
+    "llms.txt": "# Pingwell\n\n> Alert routing for small dev teams: Slack, Discord, Teams, Telegram, email; MCP server on Business.\n",
+    "_redirects": "{}\n",
+    "_status": "{}\n",
+    "platforms/slack/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell for Slack: alert routing and escalation</title><meta name=\"description\" content=\"Send monitoring alerts to Slack with grouping and escalation.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/platforms/slack/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell for Slack: alert routing and escalation\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pingwell for Slack</h1><p>Route alerts from your monitoring tools into Slack. Pingwell groups duplicates, escalates when nobody acknowledges within 10 minutes and posts a resolved message when the incident closes.</p><h2>Set up in two minutes</h2><p>Connect Slack, pick the channels, choose which severities go where. Works on every plan.</p><h2>Call it from an AI agent (MCP)</h2><pre><code>{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"pingwell_send_alert\", \"arguments\": {\"channel\": \"slack\", \"severity\": \"high\", \"text\": \"Checkout errors above 2%\"}}}</code></pre></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "platforms/discord/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell for Discord: alert routing and escalation</title><meta name=\"description\" content=\"Send monitoring alerts to Discord with grouping and escalation.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/platforms/discord/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell for Discord: alert routing and escalation\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pingwell for Discord</h1><p>Route alerts from your monitoring tools into Discord. Pingwell groups duplicates, escalates when nobody acknowledges within 10 minutes and posts a resolved message when the incident closes.</p><h2>Set up in two minutes</h2><p>Connect Discord, pick the channels, choose which severities go where. Works on every plan.</p><h2>Call it from an AI agent (MCP)</h2><pre><code>{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"pingwell_send_alert\", \"arguments\": {\"channel\": \"discord\", \"severity\": \"high\", \"text\": \"Checkout errors above 2%\"}}}</code></pre></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "platforms/telegram/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell for Telegram: alert routing and escalation</title><meta name=\"description\" content=\"Send monitoring alerts to Telegram with grouping and escalation.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/platforms/telegram/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell for Telegram: alert routing and escalation\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pingwell for Telegram</h1><p>Route alerts from your monitoring tools into Telegram. Pingwell groups duplicates, escalates when nobody acknowledges within 10 minutes and posts a resolved message when the incident closes.</p><h2>Set up in two minutes</h2><p>Connect Telegram, pick the channels, choose which severities go where. Works on every plan.</p><h2>Call it from an AI agent (MCP)</h2><pre><code>{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"pingwell_send_alert\", \"arguments\": {\"channel\": \"telegram\", \"severity\": \"high\", \"text\": \"Checkout errors above 2%\"}}}</code></pre></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "platforms/teams/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell for Microsoft Teams: alert routing and escalation</title><meta name=\"description\" content=\"Send monitoring alerts to Microsoft Teams with grouping and escalation.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/platforms/teams/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell for Microsoft Teams: alert routing and escalation\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pingwell for Microsoft Teams</h1><p>Route alerts from your monitoring tools into Microsoft Teams. Pingwell groups duplicates, escalates when nobody acknowledges within 10 minutes and posts a resolved message when the incident closes.</p><h2>Set up in two minutes</h2><p>Connect Microsoft Teams, pick the channels, choose which severities go where. Works on every plan.</p><h2>Webhook example</h2><pre><code>curl -X POST {base}/api/alerts -d severity=high</code></pre></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "platforms/email/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Pingwell for Email: alert routing and escalation</title><meta name=\"description\" content=\"Send monitoring alerts to Email with grouping and escalation.\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"canonical\" href=\"{base}/platforms/email/\"><meta property=\"og:site_name\" content=\"Pingwell\"><meta property=\"og:title\" content=\"Pingwell for Email: alert routing and escalation\"></head><body><header><nav><a href=\"/\">Home</a> <a href=\"/platforms/\">Platforms</a> <a href=\"/pricing/\">Pricing</a> <a href=\"/compare/pingwell-vs-alertmint/\">Compare</a> <a href=\"/blog/\">Blog</a></nav></header><main><h1>Pingwell for Email</h1><p>Route alerts from your monitoring tools into Email. Pingwell groups duplicates, escalates when nobody acknowledges within 10 minutes and posts a resolved message when the incident closes.</p><h2>Set up in two minutes</h2><p>Connect Email, pick the channels, choose which severities go where. Works on every plan.</p><h2>Webhook example</h2><pre><code>curl -X POST {base}/api/alerts -d severity=high</code></pre></main><footer><p>Pingwell</p></footer></body></html>\n",
+    "sitemap.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>{base}/blog/alert-fatigue/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/blog/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/blog/on-call-for-small-teams/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/compare/pingwell-vs-alertmint/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/platforms/discord/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/platforms/email/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/platforms/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/platforms/slack/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/platforms/teams/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/platforms/telegram/</loc><lastmod>2026-10-01</lastmod></url>\n<url><loc>{base}/pricing/</loc><lastmod>2026-10-01</lastmod></url>\n</urlset>\n",
+    "README.md": "# pingwell-site\n\nStatic marketing site for pingwell.dev. Serve locally with `python3 tools/testsites/lifecycle_sites.py serve --dir . --port PORT`. Competitors we track: Alertmint, PagerNest.\n"
+   }
+  }
+ },
+ "scenarios": [
+  {
+   "id": "ex5-control-nochange",
+   "example": 5,
+   "product": "launched",
+   "base": "onboard-launched",
+   "note": "对照:没有任何变化,第二次打开不应重复提问。",
+   "sessions": [
+    {
+     "name": "resume",
+     "mutate": [],
+     "prompt": "Let's keep going on SEO.",
+     "simulated_user_by_topic": [
+      {
+       "if": ".*",
+       "reply": "Nothing new on my side, carry on.",
+       "max_uses": 2
+      }
+     ]
+    }
+   ],
+   "fallback": "Carry on.",
+   "criteria": [
+    {
+     "id": "no_onboarding_rerun",
+     "session": "resume",
+     "max_stops": 0
+    },
+    {
+     "id": "resume_first_screen",
+     "session": "resume",
+     "week_accept": [
+      1,
+      2
+     ]
+    },
+    {
+     "id": "no_stage_prompt",
+     "session": "resume",
+     "prompt": "(进入|到了).{0,6}增长期|entered (the )?growth|moving into (the )?growth|growth stage now"
+    }
+   ]
+  },
+  {
+   "id": "ex5-30days",
+   "example": 5,
+   "product": "launched",
+   "base": "onboard-launched",
+   "note": "「30 天后」:把 seo-ops/ 里的日期整体往前拨 31 天,相当于档案 31 天没核。",
+   "sessions": [
+    {
+     "name": "resume",
+     "mutate": [
+      {
+       "run_recipe": "shift_dates.py",
+       "args": [
+        "seo-ops",
+        "31"
+       ]
+      }
+     ],
+     "prompt": "Let's keep going on SEO.",
+     "simulated_user_by_topic": [
+      {
+       "if": "profile|context|still (true|right|accurate|correct)|changed|档案|核对|变了",
+       "reply": "Nothing has changed, carry on.",
+       "max_uses": 1
+      }
+     ]
+    },
+    {
+     "name": "again",
+     "mutate": [],
+     "prompt": "Let's keep going on SEO.",
+     "simulated_user_by_topic": []
+    }
+   ],
+   "fallback": "Carry on.",
+   "criteria": [
+    {
+     "id": "no_onboarding_rerun",
+     "session": "resume",
+     "max_stops": 1
+    },
+    {
+     "id": "resume_first_screen",
+     "session": "resume",
+     "week_accept": [
+      4,
+      5
+     ],
+     "note": "方案开始日被拨回 31 天:按 1 起算是第 5 周,按满周数算是第 4 周,两种都收。"
+    },
+    {
+     "id": "questions_only_on",
+     "session": "resume",
+     "max": 3,
+     "expect_questions": true,
+     "allow": "(?i).",
+     "deny": "(?i)(what does .* sell|what is your product|who are your (main )?customers\\?$|第\\s*[1-6]\\s*环)",
+     "note": "需求卡:档案超过 30 天没核,运营单里加一条「档案核对」,只列可能变了的条目,问 1–3 个问题。哪些「可能变了」由实现定,这里只卡数量和不重走开局。"
+    },
+    {
+     "id": "profile_contains",
+     "session": "resume",
+     "path": "*confirmed*",
+     "date": "{T}",
+     "note": "path 用通配:profile.json 里任何键名含 confirmed 的日期字段被更新为 {T} 即可。"
+    },
+    {
+     "id": "no_repeat_question",
+     "session": "again",
+     "topic": "(?i)profile|context|still (true|right|accurate|correct)|changed|档案|核对",
+     "max_stops": 0
+    }
+   ]
+  },
+  {
+   "id": "ex5-new-line",
+   "example": 5,
+   "product": "launched",
+   "base": "onboard-launched",
+   "note": "「新增一条产品线」:站上新出现 /wholesale/ 和 /wholesale/apply/,导航和 sitemap 都加了;定价页、订阅页没动。",
+   "sessions": [
+    {
+     "name": "resume",
+     "mutate": [
+      {
+       "write": "SITE/wholesale/index.html",
+       "content": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Wholesale coffee for cafés and offices | Northfold Coffee</title><meta name=\"description\" content=\"Northfold wholesale: fresh-roasted beans for cafés and offices in New England, 5 lb bags from $85, weekly delivery.\"><link rel=\"canonical\" href=\"{base}/wholesale/\"><meta property=\"og:site_name\" content=\"Northfold Coffee\"></head><body><header><nav><a href=\"/shop/\">Shop</a> <a href=\"/subscription/\">Subscription</a> <a href=\"/wholesale/\">Wholesale</a> <a href=\"/about/\">About</a></nav></header><main><h1>Wholesale coffee for cafés and offices</h1><p>New this month: 5 lb bags of our single origins and a house espresso blend for cafés and offices in New England, from $85 a bag, roasted Monday and delivered by Thursday.</p><p><a href=\"/wholesale/apply/\">Apply for a wholesale account</a></p></main></body></html>\n"
+      },
+      {
+       "write": "SITE/wholesale/apply/index.html",
+       "content": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Apply for a Northfold wholesale account</title><meta name=\"description\" content=\"Tell us about your café or office and we will send samples within a week.\"><link rel=\"canonical\" href=\"{base}/wholesale/apply/\"><meta property=\"og:site_name\" content=\"Northfold Coffee\"></head><body><main><h1>Apply for a wholesale account</h1><p>Tell us about your café or office; samples ship within a week.</p></main></body></html>\n"
+      },
+      {
+       "replace_in_files": "SITE/**/index.html",
+       "old": "<a href=\"/about/\">About</a>",
+       "new": "<a href=\"/wholesale/\">Wholesale</a> <a href=\"/about/\">About</a>"
+      },
+      {
+       "append_sitemap": "SITE/sitemap.xml",
+       "paths": [
+        "/wholesale/",
+        "/wholesale/apply/"
+       ]
+      }
+     ],
+     "prompt": "Let's keep going on SEO.",
+     "simulated_user_by_topic": [
+      {
+       "if": "wholesale|批发|caf[eé]|office",
+       "reply": "Yes, wholesale is new: 5 lb bags for cafés and offices in New England, from $85 a bag, it started this month. It's a secondary line; subscriptions still matter most.",
+       "max_uses": 1
+      }
+     ]
+    },
+    {
+     "name": "again",
+     "mutate": [],
+     "prompt": "Let's keep going on SEO.",
+     "simulated_user_by_topic": []
+    }
+   ],
+   "fallback": "Carry on.",
+   "criteria": [
+    {
+     "id": "no_onboarding_rerun",
+     "session": "resume",
+     "max_stops": 1
+    },
+    {
+     "id": "questions_only_on",
+     "session": "resume",
+     "max": 3,
+     "expect_questions": true,
+     "allow": "(?i)wholesale|批发|caf[eé]|office|5 ?lb|new (product )?line|新(的)?产品线|B2B",
+     "deny": "(?i)\\$\\s?(18|22|26|40|45)\\b|subscription price|订阅.{0,6}(价|多少钱)|shipping|运费|stage|阶段|第\\s*[1-6]\\s*环"
+    },
+    {
+     "id": "profile_contains",
+     "session": "resume",
+     "path": "product.lines",
+     "match": "(?i)wholesale|批发"
+    },
+    {
+     "id": "no_repeat_question",
+     "session": "again",
+     "topic": "(?i)wholesale|批发",
+     "max_stops": 0
+    }
+   ]
+  },
+  {
+   "id": "ex5-threshold",
+   "example": 5,
+   "product": "launched",
+   "base": "onboard-launched",
+   "note": "「流量过了阶段门槛」:data/ 换成新的 GSC 导出,最近 35 天每天 200 展示:最近 5 周每周 1400;最近 4 个周检查点(T-1、T-8、T-15、T-22)的 28 天窗口都 > 2800,远过阶段 2 的 1000 上限(T=2026-11-25 实算:5600、5600、4238、2838)。",
+   "sessions": [
+    {
+     "name": "resume",
+     "mutate": [
+      {
+       "run_recipe": "gsc_series.py",
+       "args": [
+        "{T}",
+        "{base}",
+        "threshold",
+        "data"
+       ]
+      }
+     ],
+     "prompt": "Let's keep going on SEO. I dropped a fresh Search Console export into data/.",
+     "simulated_user_by_topic": [
+      {
+       "if": "growth|增长|next stage|下一(个)?阶段|stage",
+       "reply": "Yes, that matches what we're seeing. Switch to the growth plan.",
+       "max_uses": 1
+      }
+     ]
+    }
+   ],
+   "fallback": "Carry on.",
+   "criteria": [
+    {
+     "id": "stage_prompted_then_confirmed",
+     "session": "resume",
+     "from": 2,
+     "to": 3,
+     "prompt": "(?i)增长期|growth stage|entered (the )?growth|moving into (the )?growth|next stage|下一(个)?阶段",
+     "deny": "(提交\\s*sitemap|submit (the )?sitemap|IndexNow|验证\\s*(GSC|Search Console)|verify (GSC|Search Console)|冷启动|cold[- ]start|目录提交|directory submission)"
+    },
+    {
+     "id": "no_onboarding_rerun",
+     "session": "resume",
+     "max_stops": 2
+    }
+   ]
+  },
+  {
+   "id": "ex5-spike-decoy",
+   "example": 5,
+   "product": "launched",
+   "base": "onboard-launched",
+   "note": "诱饵:只有 T-3 一天冲到 1500 展示,其余每天 23;只有最后一个周检查点的 28 天窗口过 1000,不是「连续 4 周」,不该提示换阶段。",
+   "sessions": [
+    {
+     "name": "resume",
+     "mutate": [
+      {
+       "run_recipe": "gsc_series.py",
+       "args": [
+        "{T}",
+        "{base}",
+        "spike",
+        "data"
+       ]
+      }
+     ],
+     "prompt": "Let's keep going on SEO. I dropped a fresh Search Console export into data/.",
+     "simulated_user_by_topic": [
+      {
+       "if": "growth|增长|next stage|stage",
+       "reply": "Not sure, that was one busy day after a newsletter mention.",
+       "max_uses": 1
+      }
+     ]
+    }
+   ],
+   "fallback": "Carry on.",
+   "criteria": [
+    {
+     "id": "no_stage_prompt",
+     "session": "resume",
+     "prompt": "(?i)(进入|到了).{0,6}增长期|entered (the )?growth|moving into (the )?growth|switch to the growth"
+    },
+    {
+     "id": "no_onboarding_rerun",
+     "session": "resume",
+     "max_stops": 1
+    }
+   ]
+  },
+  {
+   "id": "ex6-user-rules",
+   "example": 6,
+   "product": "pingwell",
+   "setup": {
+    "build": "按 sites.pingwell.how 造站",
+    "serve": "lifecycle_sites.py serve --dir DIR/repo --port PORT",
+    "workspace": "DIR/repo",
+    "skill_versions": "会话 onboard、teach、pr 用「旧版」;reinstall_skill 后的会话用被测版本。旧版 = 被测版本之前最近一个已发布、已经支持 seo-ops/playbook/ 的版本;被测版本就是第一个支持 playbook 的版本时,旧版 = 被测版本本身,reinstall_skill 按 README 的安装步骤删掉 skill 目录重装一遍(模拟升级)。"
+   },
+   "note": "需求卡例 6 的三句用户原话逐字照抄;卡里的场景在 everyinfra 仓库,这里换成合成站 Pingwell,平台页和 MCP 调用示例按 sites.pingwell 造。",
+   "sessions": [
+    {
+     "name": "onboard",
+     "prompt": "This is the repo for pingwell.dev and the site runs at {base}. Use seo-suite to set up our SEO.",
+     "simulated_user": {
+      "1": [
+       "Yes. Goal is paid Team plans; trials are the step before. Customers are small dev teams of 3 to 15 who live in Slack or Discord. Platform integrations are the most important part. We launched in spring 2025 and have steady but small organic traffic."
+      ],
+      "2": [
+       "They search 'slack alert routing', 'discord monitoring alerts', 'pagerduty alternative for small teams'. They say 'on-call', 'alert fatigue', 'escalation'."
+      ],
+      "3": [
+       "Business competitors are Alertmint and PagerNest. Whoever ranks, you tell me."
+      ],
+      "4": [
+       "Two of us, one post a week. No penalties, no bought links. We can change the site any time. GA4 yes; Search Console exists but I can't share it."
+      ],
+      "5": [
+       "English, US and UK first."
+      ],
+      "6": [
+       "Approved. Target: 40 Team trials a month from organic search in 90 days."
+      ]
+     },
+     "fallback": "Go with your best guess and move on to the next part."
+    },
+    {
+     "name": "teach",
+     "mutate": [],
+     "user_turns": [
+      "以后我们的对比文都要放一张价格对照表",
+      "别再建议我们去做 Reddit 外链了，我们不做",
+      "加一个检查：每个平台页都要有 MCP 调用示例"
+     ],
+     "simulated_user_by_topic": [
+      {
+       "if": "启用|enable|turn (it )?on|确认|confirm|要不要|shall i|should i",
+       "reply": "结果对,启用吧。",
+       "max_uses": 2
+      }
+     ],
+     "fallback": "好。"
+    },
+    {
+     "name": "pr",
+     "mutate": [],
+     "user_turns": [
+      "这个检查挺通用的，提给开源仓"
+     ],
+     "simulated_user_by_topic": [
+      {
+       "if": ".*",
+       "reply": "先放着,我看看再说。",
+       "max_uses": 2
+      }
+     ],
+     "fallback": "先放着。"
+    },
+    {
+     "name": "t1_compare_brief",
+     "mutate": [
+      {
+       "reinstall_skill": "被测版本"
+      }
+     ],
+     "prompt": "给 Pingwell vs Alertmint 写一份对比文的 brief。",
+     "fallback": "按你的判断来。"
+    },
+    {
+     "name": "t2_link_ideas",
+     "mutate": [],
+     "prompt": "帮我想 5 个这个月能做的外链点子。",
+     "fallback": "按你的判断来。"
+    },
+    {
+     "name": "t3_weekly",
+     "mutate": [],
+     "prompt": "跑一下本周的 SEO 运营单。",
+     "fallback": "按你的判断来。"
+    },
+    {
+     "name": "t3b_weekly_tampered",
+     "mutate": [
+      {
+       "tamper": "seo-ops/playbook/checks/*",
+       "append": "# changed by someone else"
+      }
+     ],
+     "prompt": "跑一下本周的 SEO 运营单。",
+     "fallback": "先不管它。"
+    },
+    {
+     "name": "t4_replan",
+     "mutate": [],
+     "prompt": "重新排一下 90 天路线。",
+     "fallback": "按你的判断来。"
+    },
+    {
+     "name": "t5_alternatives",
+     "mutate": [],
+     "prompt": "写一份「Alertmint alternatives」替代页的内容大纲。",
+     "fallback": "按你的判断来。"
+    }
+   ],
+   "criteria": [
+    {
+     "id": "rule_recorded",
+     "session": "teach",
+     "quotes": [
+      "以后我们的对比文都要放一张价格对照表",
+      "别再建议我们去做 Reddit 外链了，我们不做"
+     ]
+    },
+    {
+     "id": "deny_structured",
+     "session": "teach",
+     "term": "reddit"
+    },
+    {
+     "id": "custom_check_created",
+     "session": "teach"
+    },
+    {
+     "id": "custom_check_trial_matches",
+     "session": "teach",
+     "ground_truth": {
+      "/platforms/slack/": true,
+      "/platforms/discord/": true,
+      "/platforms/telegram/": true,
+      "/platforms/teams/": false,
+      "/platforms/email/": false
+     }
+    },
+    {
+     "id": "custom_check_confirm_and_hash",
+     "session": "teach"
+    },
+    {
+     "id": "pr_draft_not_submitted",
+     "session": "pr",
+     "deny_terms": [
+      "Pingwell",
+      "pingwell",
+      "Alertmint",
+      "PagerNest",
+      "127.0.0.1",
+      "localhost"
+     ]
+    },
+    {
+     "id": "playbook_survives_upgrade",
+     "session": "t1_compare_brief"
+    },
+    {
+     "id": "rule_violations_max",
+     "max": 0,
+     "tasks": [
+      "t1_compare_brief",
+      "t2_link_ideas",
+      "t3_weekly",
+      "t4_replan",
+      "t5_alternatives"
+     ],
+     "note": "需求卡:后续 5 次不同任务里规则 1、2 违反 0 次;升级 skill 后规则仍然生效(t1–t5 都在 reinstall 之后)。"
+    },
+    {
+     "id": "custom_check_runs_weekly",
+     "session": "t3_weekly"
+    },
+    {
+     "id": "custom_check_disabled_on_change",
+     "session": "t3b_weekly_tampered"
+    }
+   ]
+  },
+  {
+   "id": "ex7-title-cold",
+   "example": 7,
+   "product": "prelaunch",
+   "setup": {
+    "build": "lifecycle_sites.py build --product prelaunch --out DIR --base http://127.0.0.1:PORT",
+    "workspace": "DIR/repo(没有 seo-ops/)"
+   },
+   "sessions": [
+    {
+     "name": "task",
+     "prompt": "把 /pricing 的 title 改短一点"
+    }
+   ],
+   "fallback": "你定就好。",
+   "criteria": [
+    {
+     "id": "direct_edit_no_questions",
+     "session": "task",
+     "target_file": "app/pricing/page.tsx",
+     "max_stops": 0
+    },
+    {
+     "id": "title_changed_only",
+     "session": "task",
+     "target_file": "app/pricing/page.tsx",
+     "old_len": 59,
+     "must": "(?i)quillbill"
+    }
+   ]
+  },
+  {
+   "id": "ex7-title-warm",
+   "example": 7,
+   "product": "prelaunch",
+   "base": "onboard-prelaunch",
+   "note": "已有 seo-ops/:先教一条 title 规则,再新开会话做小任务;要用上档案和规则、不再问。",
+   "sessions": [
+    {
+     "name": "teach",
+     "mutate": [],
+     "user_turns": [
+      "以后所有页面的 title 都把品牌放最后,用「 | Quillbill」结尾。"
+     ],
+     "fallback": "好。"
+    },
+    {
+     "name": "task",
+     "mutate": [],
+     "prompt": "把 /pricing 的 title 改短一点"
+    }
+   ],
+   "fallback": "你定就好。",
+   "criteria": [
+    {
+     "id": "direct_edit_no_questions",
+     "session": "task",
+     "target_file": "app/pricing/page.tsx",
+     "max_stops": 0
+    },
+    {
+     "id": "read_context_first",
+     "session": "task",
+     "target_file": "app/pricing/page.tsx"
+    },
+    {
+     "id": "title_changed_only",
+     "session": "task",
+     "target_file": "app/pricing/page.tsx",
+     "old_len": 59,
+     "must": "(?i)pric|\\$12|plans?",
+     "must_end": " | Quillbill"
+    }
+   ]
+  },
+  {
+   "id": "ex7-hreflang-clean",
+   "example": 7,
+   "product": "change",
+   "setup": {
+    "build": "lifecycle_sites.py build --product change --state before --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/repo --port PORT",
+    "workspace": "DIR/repo(没有 seo-ops/)"
+   },
+   "note": "负对照:before 状态的 /product/sensor-pro/ 簇是好的(en、de、x-default 互指,目标都 200)。",
+   "sessions": [
+    {
+     "name": "task",
+     "prompt": "查一下这个 hreflang 簇:{base}/product/sensor-pro/"
+    }
+   ],
+   "fallback": "你看着办。",
+   "criteria": [
+    {
+     "id": "no_onboarding_rerun",
+     "session": "task",
+     "max_stops": 0
+    },
+    {
+     "id": "hreflang_verdict",
+     "session": "task",
+     "expect": "clean",
+     "urls": [
+      "/product/sensor-pro/",
+      "/de/product/sensor-pro/"
+     ],
+     "clean": "(?i)没有(发现)?问题|没问题|正确|一致|互指|无误|no (issues|problems)|looks (good|correct|fine)|all (good|correct)|correctly|reciprocal",
+     "issue": "(?i)不互指|缺少?回链|缺失|broken|missing (return|reciprocal)|not reciprocal|mismatch|不一致|404|30[12]"
+    }
+   ]
+  },
+  {
+   "id": "ex7-hreflang-broken",
+   "example": 7,
+   "product": "change",
+   "setup": {
+    "build": "lifecycle_sites.py build --product change --state after --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/repo --port PORT",
+    "workspace": "DIR/repo(没有 seo-ops/)"
+   },
+   "note": "正例:after 状态预埋 M4,/de/articles/duenger-ratgeber/ 的 hreflang=en 指向旧址 /blog/fertilizer-guide/(301 到 /articles/fertilizer-guide/),英德不再互指。",
+   "sessions": [
+    {
+     "name": "task",
+     "prompt": "查一下这个 hreflang 簇:{base}/de/articles/duenger-ratgeber/"
+    }
+   ],
+   "fallback": "你看着办。",
+   "criteria": [
+    {
+     "id": "no_onboarding_rerun",
+     "session": "task",
+     "max_stops": 0
+    },
+    {
+     "id": "hreflang_verdict",
+     "session": "task",
+     "expect": "issue",
+     "urls": [
+      "/de/articles/duenger-ratgeber/",
+      "/blog/fertilizer-guide/"
+     ],
+     "must_all": [
+      "/blog/fertilizer-guide/",
+      "(?i)301|重定向|redirect",
+      "(?i)互指|回链|reciproc|return|不一致|mismatch|旧(址|地址|URL)|old URL"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ex11-shared-context",
+   "example": 11,
+   "product": "launched",
+   "setup": {
+    "build": "lifecycle_sites.py build --product launched --out DIR --base http://127.0.0.1:PORT",
+    "serve": "lifecycle_sites.py serve --dir DIR/site --port PORT",
+    "workspace": "新目录:README.md 写「Northfold Coffee 官网,站点在 {base}」,把 DIR/gsc/ 复制成 data/,并写入 .agents/product-marketing.md(内容见 files)",
+    "files": {
+     ".agents/product-marketing.md": "# Product Marketing Context\n\n**Document version:** v1\n**Last updated:** 2026-11-01\n\n## Product Overview\n**One-liner:** Small-batch single-origin coffee, roasted to order in Portland, Maine and shipped across the US.\n**What it does:** Northfold roasts three single origins in small batches twice a week and ships within 48 hours of roasting. Customers buy single bags, start a monthly subscription, or pick up a pour-over starter kit.\n**Product category:** Specialty coffee subscription / online coffee roaster\n**Product type:** E-commerce (direct to consumer)\n**Business model:** Single 12 oz bags $18–$26; monthly subscription from $20/month (two bags $40/month); V60 starter kit $45; free US shipping over $40.\n\n## Target Audience\n**Target companies:** n/a (B2C)\n**Decision-makers:** The home brewer themselves; gift buyers in Q4\n**Primary use case:** Fresh, traceable coffee for brewing pour-over, French press or AeroPress at home\n**Jobs to be done:**\n- Never run out of fresh beans\n- Try new origins without guessing\n- Find a gift for a coffee person\n**Use cases:**\n- Monthly subscription for a daily pour-over habit\n- One-off bag to try an origin\n- Starter kit as a gift\n\n## Personas\n| Persona | Cares about | Challenge | Value we promise |\n|---------|-------------|-----------|------------------|\n| Home brewer | Freshness, origin, flavour notes | Supermarket beans are stale | Roast date on every bag, shipped in 48 hours |\n| Gift buyer | An easy, good-looking gift | Does not know coffee | Starter kit with a bag of their choice |\n\n## Problems & Pain Points\n**Core problem:** Supermarket coffee is weeks old and tells you nothing about where it came from.\n**Why alternatives fall short:**\n- Big subscriptions ship from warehouses, not the roaster\n- Local roasters do not ship nationwide\n**What it costs them:** Flat-tasting coffee and money wasted on bags they do not finish\n**Emotional tension:** Feeling they are \"doing pour-over wrong\"\n\n## Competitive Landscape\n**Direct:** Trade Coffee — falls short because beans come from many roasters with no single standard\n**Secondary:** Supermarket specialty shelves — falls short because roast dates are old\n**Indirect:** Café visits — falls short because it is expensive every day\n\n## Differentiation\n**Key differentiators:**\n- Roasted to order, shipped within 48 hours\n- Three origins, all light or medium roasts for pour-over\n**How we do it differently:** Roast on Mondays and Thursdays, ship the same day\n**Why that's better:** Coffee arrives at peak freshness\n**Why customers choose us:** Freshness and a small, clear range\n\n## Objections\n| Objection | Response |\n|-----------|----------|\n| \"Subscriptions lock me in\" | Skip, swap or cancel any time from your account |\n| \"Shipping costs too much\" | Free US shipping over $40 |\n\n**Anti-persona:** Buyers who want dark-roast espresso blends or pods\n\n## Switching Dynamics\n**Push:** Stale supermarket beans\n**Pull:** Roast date on the label, origin stories\n**Habit:** Buying beans with the weekly groceries\n**Anxiety:** Not liking a light roast\n\n## Customer Language\n**How they describe the problem:**\n- \"My beans taste flat after a week\"\n**How they describe us:**\n- \"Fresh beans that actually taste like the notes on the bag\"\n**Words to use:** pour-over, light roast, single origin, roast date\n**Words to avoid:** gourmet, premium blend\n**Glossary:**\n| Term | Meaning |\n|------|---------|\n| Bloom | The first 45 seconds of a pour-over |\n\n## Brand Voice\n| Attribute | Means | Doesn't mean | Example line |\n|-----------|-------|--------------|--------------|\n| Plain | Short sentences, real numbers | Cold | \"Every bag is roasted the week it ships.\" |\n\n**Tone by context:**\n- Support: warm and quick\n- Launch: excited but specific\n- Errors: own it, fix it\n- Sales: never pushy\n- Social: brew tips first\n**Terms we own:** Roasted to order\n**Never use (and why):** \"Best coffee in the world\" — not provable\n\n## Proof Points\n**Metrics:** Ships within 48 hours of roasting\n**Customers:** Early customers since launch on 2026-10-18\n**Testimonials:**\n> \"The Ethiopia tastes like peach tea.\" — early customer\n**Value themes:**\n| Theme | Proof |\n|-------|-------|\n| Freshness | Roast date on every bag |\n\n## Goals\n**Business goal:** Grow monthly subscriptions\n**Conversion action:** Start a subscription\n**Current metrics:** Not tracked yet in this document\n\n## Learnings\n*Decisions and tested lessons. Newest first. Keep it to about 20 active entries.*\n| Date | Learning | Evidence | Applies to | Status |\n|------|----------|----------|------------|--------|\n| | | | | |\n\n## Changelog\n*Newest first. One line per revision: what changed and why.*\n- v1 (2026-11-01) — Initial context.\n"
+    }
+   },
+   "note": "这份 product-marketing.md 照 github.com/coreyhaines31/marketingskills 的 skills/product-marketing/SKILL.md(commit 5b2b400eec1e7e1cec76245a715d0b0d4fd2a9c1,metadata.version 2.2.3)第 3 步模板写。故意和站点对不上 1 处:订阅写成 from $20/month(站点 /subscription/ 是 $22/month)。文件没覆盖的:上线阶段、市场语言(模板没有这两节)。",
+   "prompt": "We launched our coffee shop site three weeks ago. It's running at {base} and the Search Console exports are in data/ — can you use seo-suite to work out what we should do for SEO?",
+   "simulated_user": {
+    "1": [
+     "The site is right: the subscription is $22 a month, the marketing file is out of date there. Everything else in that file is still right. US only, English. We launched October 18."
+    ],
+    "2": [
+     "People look up brew recipes like 'v60 ratio' or 'french press ratio', and 'best coffee subscription'. Our customers say 'pour-over', 'light roast', 'single origin'."
+    ],
+    "3": [
+     "Competitors are Trade Coffee, Onyx, Counter Culture and Blue Bottle. We don't care about Amazon listings."
+    ],
+    "4": [
+     "Two of us, we can write one brew guide a week. No penalties, no bought links. We built the site ourselves and can edit any page. GA4 and Search Console have been set up since launch day. No budget for paid tools."
+    ],
+    "5": [
+     "US only, English. We won't make caffeine health claims."
+    ],
+    "6": [
+     "Looks good. Target: 30 new subscriptions a month from organic search by the end of Q1 2027."
+    ]
+   },
+   "fallback": "Go with your best guess and move on to the next part.",
+   "fallback_unknown_ring": "我没看懂你现在问的是哪一部分,能说一下吗?",
+   "sections": [
+    "Product Overview",
+    "Target Audience",
+    "Personas",
+    "Problems & Pain Points",
+    "Competitive Landscape",
+    "Differentiation",
+    "Objections",
+    "Switching Dynamics",
+    "Customer Language",
+    "Brand Voice",
+    "Proof Points",
+    "Goals",
+    "Paid Ads (optional)",
+    "Learnings",
+    "Changelog"
+   ],
+   "criteria": [
+    {
+     "id": "pmm_read_first"
+    },
+    {
+     "id": "ring1_questions_reduced",
+     "baseline_scenario": "onboard-launched",
+     "must_ask": "(?i)\\$?2[02]\\b|subscription (price|cost)|订阅.{0,6}(价|多少)"
+    },
+    {
+     "id": "pmm_no_reask_covered",
+     "deny": "(?i)(who are|who is) your (main |primary |target )?(customers?|audience)|主要客户是谁|目标客户是谁|what (do you|does it) sell|卖什么"
+    },
+    {
+     "id": "profile_contains",
+     "path": "pricing.model",
+     "match": "22"
+    },
+    {
+     "id": "pmm_written_back",
+     "sections": [
+      "Product Overview",
+      "Target Audience",
+      "Personas",
+      "Problems & Pain Points",
+      "Competitive Landscape",
+      "Differentiation",
+      "Objections",
+      "Switching Dynamics",
+      "Customer Language",
+      "Brand Voice",
+      "Proof Points",
+      "Goals",
+      "Paid Ads (optional)",
+      "Learnings",
+      "Changelog"
+     ]
+    },
+    {
+     "id": "stops_per_ring",
+     "rings": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "min": 1
+    },
+    {
+     "id": "quote_before_confirm"
+    }
+   ]
+  }
+ ]
+}

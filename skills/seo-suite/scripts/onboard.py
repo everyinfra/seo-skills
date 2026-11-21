@@ -109,9 +109,12 @@ def load_profile(ws):
 
 
 def save_profile(ws, prof, change):
+    lifecycle.profile_format(prof)
     prof["version"] = int(prof.get("version") or 0) + 1
     prof["updated"] = now()
     prof.setdefault("changelog", []).append({"version": prof["version"], "at": prof["updated"], "change": change})
+    if isinstance(prof.get("rings"), dict):
+        prof["current_ring"] = current_ring(prof)
     write_json(ctx(ws, "profile.json"), prof)
     with open(ctx(ws, "product.md"), "w", encoding="utf-8") as f:
         f.write(render_product_md(prof))
@@ -149,6 +152,49 @@ def fact_value(prof, key):
         if f.get("key") == key:
             return f.get("value")
     return None
+
+
+# 第 1 环这两问的回答同时记成事实(档案 _schema 按事实键找它们);列表类事实拆成列表存
+ANSWER_FACTS = {"customers": "customers", "conversion": "conversion.primary"}
+LIST_SEPS = "\u3001,\uff0c;\uff1b\n"
+
+
+def split_list(v):
+    """「A、B(x, y);C」→ [A, B(x, y), C]:按顿号、逗号、分号、换行拆,括号里的不拆。已是列表原样返回。"""
+    if isinstance(v, list):
+        return v
+    out, buf, depth = [], "", 0
+    for ch in str(v):
+        if ch in "(\uff08[":
+            depth += 1
+        elif ch in ")\uff09]" and depth:
+            depth -= 1
+        if ch in LIST_SEPS and not depth:
+            if buf.strip():
+                out.append(buf.strip())
+            buf = ""
+            continue
+        buf += ch
+    if buf.strip():
+        out.append(buf.strip())
+    return out
+
+
+def fact_shape(key, v):
+    return split_list(v) if key in lifecycle.PROFILE_LIST_KEYS and v not in (None, "") else v
+
+
+def upsert_fact(prof, key, value, status, ring, quote, source):
+    """同 key 的第一条事实改成新值(没有就加一条);别的同 key 条目不动。"""
+    rec = {"value": fact_shape(key, value), "status": status, "quote": quote, "at": now(), "source": source}
+    f = next((x for x in prof["facts"] if x.get("key") == key), None)
+    if f is None:
+        f = {"key": key, "kind": "fact", "ring": ring}
+        prof["facts"].append(f)
+    if f.get("value") not in (None, "", []) and status == "unknown":
+        f["guess"] = f.get("value")
+    f.update(rec)
+    return f
 
 
 def fmt_val(v):
@@ -267,9 +313,21 @@ def cmd_start(ns):
     prof["stage"] = {"value": diag["stage"]["stage"], "rule_value": diag["stage"]["stage"],
                      "confidence": diag["stage"]["confidence"], "confirmed": False}
     save_profile(ws, prof, "阶段初判:%s(%s)" % (diag["stage"]["name"], diag["stage"]["confidence"]))
+    if not ns.json:
+        print_fetched(scan)
     if errors:
         print("读取时有 %d 个错误(已记进 scan.json):%s" % (len(errors), ";".join(map(str, errors[:3]))))
     return cmd_show(argparse.Namespace(ws=ns.ws, ring=1, json=ns.json))
+
+
+def print_fetched(scan):
+    """把 product_scan 实际请求过的 URL 一行一个列出来(robots.txt、sitemap、llms.txt、抽样页都在里面)。"""
+    log = ((scan or {}).get("site_scan") or {}).get("fetched") or []
+    if log:
+        print("读站点时请求过的 URL(%d 个):" % len(log))
+        for x in log:
+            print("- %s %s" % (x.get("status") or "失败", x["url"]))
+        print("")
 
 
 # ---------------------------------------------------------------------------
@@ -343,7 +401,8 @@ def render_ring(prof, view, ws):
         diag = read_json(ctx(ws, "diagnosis.json"), {}) or {}
         st = diag.get("stage") or {}
         if st:
-            tag = {"guess": "猜测", "unknown": "证据不够", "rule": "按规则", "confirmed": "已确认"}.get(st.get("confidence"), "")
+            tag = {"guess": "猜测,待确认", "unknown": "证据不够,待确认", "rule": "按规则推测,待确认",
+                   "confirmed": "已确认"}.get(st.get("confidence"), "待确认")
             L.append("【产品阶段】%s(%s):%s" % (st.get("name"), tag, ";".join(st.get("why") or [])))
             if st.get("candidates"):
                 L.append("  候选:" + "、".join(c["name"] for c in st["candidates"]) + "——在第 1 个问题里请用户确认")
@@ -354,21 +413,22 @@ def render_ring(prof, view, ws):
     L += ["- " + s for s in view["agent_steps"]]
     L.append("")
     if view["facts"]:
-        L += ["## 草稿(每条带出处;未确认的不当事实用)", "", "| 项 | 内容 | 出处 | 状态 |", "|---|---|---|---|"]
+        L += ["## 草稿(每条带出处;未确认的不当事实用;给用户看时保留「← 出处」和状态)", ""]
         for f in view["facts"]:
-            L.append("| %s | %s | %s | %s |" % (f["key"], fmt_val(f.get("value"))[:160].replace("|", "/"),
-                                              f.get("source") or "—",
-                                              {"unconfirmed": "未确认" + ("(推测)" if f.get("kind") == "inferred" else ""),
-                                               "confirmed": "已确认", "corrected": "用户改过",
-                                               "unknown": "用户不知道"}.get(f.get("status"), f.get("status"))))
+            L.append("- %s:%s ← %s(%s)" % (
+                f["key"], fmt_val(f.get("value"))[:160], f.get("source") or "没有出处,推测",
+                {"unconfirmed": "未确认" + (",推测" if f.get("kind") == "inferred" else ""),
+                 "confirmed": "已确认", "corrected": "用户改过",
+                 "unknown": "用户不知道,未确认"}.get(f.get("status"), f.get("status"))))
         L.append("")
-    L.append("## 问用户(最多 %d 个;每个带你的猜测)" % len(view["questions"]))
+    L.append("## 问用户(最多 %d 个;每个带你的猜测或 A/B 选项)" % len(view["questions"]))
     for i, q in enumerate(view["questions"], 1):
         line = "%d. %s%s" % (i, q["text"], "(必答)" if q["required"] else "")
-        if q["options"]:
-            line += "\n   选项:" + " | ".join(q["options"])
+        opts = q["options"] or ([] if q["guess"] else ["我直接写", "不知道(先记未确认)"])
+        if opts:
+            line += "\u3000" + "\u3000".join("%s. %s" % (chr(65 + j), o) for j, o in enumerate(opts[:26]))
         if q["guess"]:
-            line += "\n   我的猜测:%s(%s)" % (q["guess"], q["guess_from"])
+            line += "\n   我猜:%s(%s)" % (q["guess"], q["guess_from"])
         if q["sensitive"]:
             line += "\n   (答案只存本地 context/private/,不进 git)"
         line += "\n   [id=%s]" % q["id"]
@@ -376,7 +436,8 @@ def render_ring(prof, view, ws):
     L += ["", "## 停",
           "现在停下来等用户回答,不要先给建议、不要替用户答。",
           "- Claude Code:用提问工具(AskUserQuestion)把上面的问题发出去,你的猜测放第一个选项。",
-          "- 没有提问工具的宿主:把问题按编号列出来,然后结束这一回合。",
+          "- 没有提问工具的宿主:照上面的格式列问题——每问一行「数字. 问题?」,选项写在同一行「A. …\u3000B. …」,"
+          "猜测写在下一行「我猜:…」——然后结束这一回合。",
           "用户回了以后:python3 %s answer --ring %d --set <id>=<答案> ... --quote \"<用户原话>\" --confirm"
           % (os.path.join(HERE, "onboard.py"), r),
           "用户纠正草稿:加 --correct <项>=<改后的值>;用户说不知道:加 --unknown <id>。"]
@@ -466,6 +527,8 @@ def cmd_answer(ns):
             ring["answers"][k] = "(已答,存在 context/private/)"
         else:
             ring["answers"][k] = v
+            if k in ANSWER_FACTS:
+                upsert_fact(prof, ANSWER_FACTS[k], v, "confirmed", r, ns.quote, "用户回答(第 %d 环 %s)" % (r, k))
         if q.get("deny") and v and v not in ("没有", "无", "none"):
             for item in [x.strip() for x in v.replace(";", ",").replace(",", ",").replace("、", ",").split(",") if x.strip()]:
                 if item not in [x["item"] for x in prof["deny"]]:
@@ -474,6 +537,8 @@ def cmd_answer(ns):
         if k not in qmap:
             raise UsageError("第 %d 环没有问题 %s" % (r, k))
         ring["answers"][k] = "(用户不知道)"
+        f = upsert_fact(prof, ANSWER_FACTS.get(k, "answer." + k), None, "unknown", r, ns.quote, "用户不知道")
+        f["id"] = k
     if private:
         write_json(ctx(ws, "private", "answers.json"), private)
         ensure_private_ignored(ws)
@@ -481,11 +546,11 @@ def cmd_answer(ns):
         hit = False
         for f in prof["facts"]:
             if f["key"] == k:
-                f.update({"value": v, "status": "corrected", "quote": ns.quote, "at": now(),
+                f.update({"value": fact_shape(k, v), "status": "corrected", "quote": ns.quote, "at": now(),
                           "source": "用户纠正"})
                 hit = True
         if not hit:
-            prof["facts"].append({"key": k, "value": v, "source": "用户纠正", "kind": "fact",
+            prof["facts"].append({"key": k, "value": fact_shape(k, v), "source": "用户纠正", "kind": "fact",
                                   "status": "corrected", "ring": r, "quote": ns.quote, "at": now()})
         if k == "stage":
             prof["stage"].update({"value": int(v), "confirmed": True})

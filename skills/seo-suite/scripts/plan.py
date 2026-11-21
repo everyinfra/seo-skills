@@ -325,6 +325,7 @@ def build(ws, metrics=None, top=10, today=None):
     top_themes = sorted(themes, key=lambda t: (-sum(themes[t]), -max(themes[t])))[:3]
     stage_info = next((s for s in LC.load_rules(ws)["stages"] if s["id"] == stage), {})
     unconfirmed = [f["key"] for f in prof.get("facts") or [] if f.get("status") == "unconfirmed"]
+    unknown = [f.get("id") or f["key"] for f in prof.get("facts") or [] if f.get("status") == "unknown"]
     skipped_rings = [r for r, v in (prof.get("rings") or {}).items() if v.get("status") == "skipped"]
     plan = {"schema": 1, "generated_at": (today or dt.date.today()).isoformat(),
             "profile_version": prof.get("version"), "playbooks_sha": pb_hash,
@@ -334,10 +335,10 @@ def build(ws, metrics=None, top=10, today=None):
             "weakest": weak[:2], "facts": facts,
             "strategies": [{"theme": t, "name": pb["themes"][t]["name"], "name_en": pb["themes"][t]["name_en"],
                             "plays": [r["id"] for r in recs[:top] if r["theme"] == t]} for t in top_themes],
-            "recommendations": recs[:top], "more": recs[top:],
+            "items": recs[:top], "more": recs[top:],
             "backlog": [{"id": p["id"], "title": p["title"]} for p in backlog], "skipped": skipped,
             "deny": [d["item"] for d in deny],
-            "assumptions": {"unconfirmed_facts": unconfirmed, "skipped_rings": skipped_rings,
+            "assumptions": {"unconfirmed_facts": unconfirmed, "unknown_facts": unknown, "skipped_rings": skipped_rings,
                             "missing_slots": sorted({m for r in recs[:top] for m in r["facts_missing"]})},
             "metrics_by_stage": pb["metrics_by_stage"].get(str(stage), []),
             "status": "draft"}
@@ -358,6 +359,12 @@ def _wk(r, lang="zh"):
     return "Week %d" % a if a == b else "Weeks %d-%d" % (a, b)
 
 
+def plan_items(plan):
+    """按优先级排好的建议;旧版 plan.json 叫 recommendations,照样读。"""
+    v = plan.get("items")
+    return v if isinstance(v, list) else (plan.get("recommendations") or [])
+
+
 def by_week(recs):
     return sorted(recs, key=lambda r: ((r["weeks"] or [99])[0], r["rank"]))
 
@@ -365,7 +372,7 @@ def by_week(recs):
 def render_roadmap(plan):
     L = ["# 90 天路线(%s,%s)" % (plan.get("site") or "", plan["stage"]["name"]), "",
          "按开始周排;# 是优先级(1 最先)。", "", "| # | 周 | 做什么 | 动哪类页面 | 预期动哪个数 | 怎么量 | 用到的产品事实 |", "|---|---|---|---|---|---|---|"]
-    for r in by_week(plan["recommendations"]):
+    for r in by_week(plan_items(plan)):
         L.append("| %d | %s | **%s**:%s | %s | %s | %s | %s |" % (
             r["rank"], _wk(r), r["title"], r["do"] + ("(不含:%s)" % "、".join(r["deny_notes"]) if r["deny_notes"] else ""),
             "、".join(r["page_types"]), r["metric"], r["measure"],
@@ -407,14 +414,14 @@ def render_book(plan, lang="zh"):
                                          for d, v in plan["maturity"].items()),
               "- Weakest area: " + ", ".join(DIM_NAMES[d][1] for d in plan["weakest"]), "",
               "## 3. Three strategies", ""]
-    recs = {r["id"]: r for r in plan["recommendations"]}
+    recs = {r["id"]: r for r in plan_items(plan)}
     for i, s in enumerate(plan["strategies"], 1):
         L.append("%d. **%s**:%s" % (i, s["name"] if zh else s["name_en"],
                                      ("、" if zh else ", ").join((recs[p]["title"] if zh else recs[p]["title_en"]) for p in s["plays"])))
     L += ["", "## 4. 90 天路线" if zh else "## 4. 90-day roadmap", ""]
     L += (["| # | 周 | 做什么 | 页面 | 看哪个数 | 怎么量 |"] if zh else ["| # | When | Action | Pages | Metric | How to measure |"])
     L.append("|---|---|---|---|---|---|")
-    for r in by_week(plan["recommendations"]):
+    for r in by_week(plan_items(plan)):
         note = ""
         if r["deny_notes"]:
             note = ("(不含:%s)" if zh else " (excluding: %s)") % ("、".join(r["deny_notes"]))
@@ -431,7 +438,7 @@ def render_book(plan, lang="zh"):
         for x in sk[k]:
             L.append("- %s:%s(%s)" % (label, x["title"], x["why"]))
     if plan["more"]:
-        L.append(("- 排在前 %d 条之后:" if zh else "- Ranked after the top %d: ") % len(plan["recommendations"]) +
+        L.append(("- 排在前 %d 条之后:" if zh else "- Ranked after the top %d: ") % len(plan_items(plan)) +
                  "、".join(r["title"] for r in plan["more"]))
     a = plan["assumptions"]
     L += ["", "## 7. 还没确认的假设" if zh else "## 7. Unconfirmed assumptions", ""]
@@ -439,6 +446,8 @@ def render_book(plan, lang="zh"):
         L.append(("- 跳过的开局环:第 %s 环,用的是猜测" if zh else "- Skipped onboarding rings: %s (guesses used)") % "、".join(a["skipped_rings"]))
     if a["unconfirmed_facts"]:
         L.append(("- 没确认的事实:" if zh else "- Unconfirmed facts: ") + "、".join(a["unconfirmed_facts"][:12]))
+    if a.get("unknown_facts"):
+        L.append(("- 用户不知道(未确认):" if zh else "- Unknown to the user (unconfirmed): ") + "、".join(a["unknown_facts"][:12]))
     if a["missing_slots"]:
         L.append(("- 档案里缺、方案里用了通用说法的:" if zh else "- Missing in the profile (generic wording used): ") + "、".join(a["missing_slots"]))
     if not any(a.values()):
@@ -451,6 +460,32 @@ def render_book(plan, lang="zh"):
     return "\n".join(L) + "\n"
 
 
+def render_plan_md(plan):
+    """plan.md:开头是没确认的假设(有就列,一条一行),然后是按优先级的编号建议,最后是不做的。"""
+    st, a = plan["stage"], plan["assumptions"]
+    L = ["# SEO / GEO 方案(%s,%s%s)" % (plan.get("site") or "", st["name"], "" if st["confirmed"] else ",阶段待确认"), "",
+         "> 生成于 %s,档案第 %s 版;状态 %s。plan.json 的 items 和下面的编号列表是同一份。" % (
+             plan["generated_at"], plan["profile_version"], plan.get("status")), ""]
+    guesses = (["第 %s 环跳过了,用的是猜测(未确认)" % r for r in a["skipped_rings"]]
+               + ["%s:未确认(猜测)" % k for k in dict.fromkeys(a["unconfirmed_facts"])]
+               + ["%s:用户不知道(未确认)" % k for k in a.get("unknown_facts") or []]
+               + ["%s:档案里缺,用了通用说法(假设)" % k for k in a["missing_slots"]])
+    if guesses:
+        L += ["## 还没确认的假设(猜测)", ""] + ["- " + g for g in guesses] + [""]
+    L += ["## 按优先级的建议", ""]
+    for r in plan_items(plan):
+        note = "(不含:%s)" % "、".join(r["deny_notes"]) if r["deny_notes"] else ""
+        L.append("%d. **%s**:%s%s" % (r["rank"], r["title"], r["do"], note))
+        L.append("   %s;看 %s,怎么量:%s。%s" % (_wk(r), r["metric"] or "—", r["measure"] or "—", r["title_en"]))
+    sk = plan["skipped"]
+    nots = (["你说过不做:%s" % x for x in plan["deny"]]
+            + ["%s:%s(%s)" % (label, x["title"], x["why"]) for k, label in
+               (("denied", "禁用清单去掉"), ("vetoed", "本轮出局")) for x in sk[k]])
+    if nots:
+        L += ["", "## 不做 / 暂缓", ""] + ["- " + x for x in nots]
+    return "\n".join(L) + "\n"
+
+
 def cmd_build(ns):
     ws = ns.ws
     metrics = read_json(ns.metrics) if ns.metrics else None
@@ -460,6 +495,7 @@ def cmd_build(ns):
     if old and old.get("status") == "approved":
         plan["previous_approved"] = {"generated_at": old.get("generated_at"), "approved_quote": old.get("approved_quote")}
     write_text(os.path.join(d, "plan.json"), json.dumps(plan, ensure_ascii=False, indent=1))
+    write_text(os.path.join(d, "plan.md"), render_plan_md(plan))
     write_text(os.path.join(d, "roadmap.md"), render_roadmap(plan))
     write_text(os.path.join(d, "strategy-book.zh.md"), render_book(plan, "zh"))
     write_text(os.path.join(d, "strategy-book.en.md"), render_book(plan, "en"))
@@ -467,7 +503,7 @@ def cmd_build(ns):
         print(json.dumps(plan, ensure_ascii=False, indent=1))
     else:
         print(render_roadmap(plan))
-        print("写了:%s/{plan.json,roadmap.md,strategy-book.zh.md,strategy-book.en.md}" % d)
+        print("写了:%s/{plan.json,plan.md,roadmap.md,strategy-book.zh.md,strategy-book.en.md}" % d)
         print("下一步:把三条策略和路线发给用户(开局第 6 环),停下等确认。")
     return 0
 

@@ -1,0 +1,4 @@
+# RQ-237 第 5 批出题(独立出题人,开跑前定稿)。每行:sha256  相对本文件所在目录的路径  出题日期(SGT)
+bcbff97105691850edd02d4dff1d00975b83231d4d14f7fc9db1fcbf0262c5ac  rubric_example3.json  2026-11-21
+592124d9b4bd8faafe55d72eb0a3bb95084a6092b7765f14ddf5a53159ca38b3  scenarios_ext.json  2026-11-21
+ba4f8a755c87db32f4f7321cda979059f94fd7e408eec5250f482b239976927f  hosts_static.json  2026-11-21

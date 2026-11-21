@@ -4,7 +4,7 @@
   {"id": "weekly-ops", "name": "每周运营单", "trigger": {"cadence_days": 7},
    "act_if": "有硬告警、本周路线项或变差的问题", "self_check": "覆盖率门槛(ops.py score_gate)", "stop_if": "用户停用运营",
    "dedup": "按问题指纹(ledger/issues.jsonl)", "output": "runs/<日期>/agenda.md", "ring": null, "max_questions": 0},
-  {"id": "profile-review", "name": "档案核对", "trigger": {"cadence_days": 30, "since": "profile.reviewed_at|profile.confirmed_at"},
+  {"id": "profile-review", "name": "档案核对", "trigger": {"cadence_days": 30, "since": "profile.profile_confirmed_at|profile.reviewed_at|profile.confirmed_at"},
    "act_if": "重新读站点后,有事实和档案不一样;或档案超过 30 天没核", "self_check": "只列可能变了的条目(和上次读站的结果比),没变的不问",
    "stop_if": "用户答过「都没变」", "dedup": "按变了的条目指纹", "ask_again_days": 30,
    "output": "运营单「档案核对」一节", "ring": 1, "max_questions": 3},

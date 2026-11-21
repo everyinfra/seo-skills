@@ -142,6 +142,9 @@ def cmd_rule(ns):
 # check
 # ---------------------------------------------------------------------------
 
+VERDICT = {"pass": "✓ pass 过", "fail": "✗ fail 没过", "error": "error 出错"}
+
+
 def _summary(rows):
     return {k: sum(r["result"] == k for r in rows) for k in ("pass", "fail", "error")}
 
@@ -150,7 +153,7 @@ def print_rows(name, rows):
     print("检查 %s 在 %d 个页面上的结果:" % (name, len(rows)))
     for r in rows:
         extra = r.get("error") or ";".join(r["findings"][:3]) or "—"
-        print("  [%s] %s  %s" % ({"pass": "过", "fail": "没过", "error": "出错"}[r["result"]], r["url"], extra))
+        print("  [%s] %s  %s" % (VERDICT[r["result"]], r["url"], extra))
 
 
 def cmd_check(ns):

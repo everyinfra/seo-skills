@@ -105,7 +105,7 @@ class PlanExample3Tests(unittest.TestCase):
         _, p = self.full("growth", metrics={"gsc_clicks_28d": 1200, "gsc_clicks_prev_28d": 1000,
                                             "gsc_impressions_28d": 50000})
         self.assertEqual(p["stage"]["id"], 3)
-        recs = p["recommendations"]
+        recs = p["items"]
         self.assertEqual(len(recs), 10)
         st = stages_of()
         self.assertTrue(all(3 in st[r["id"]] for r in recs), [r["id"] for r in recs])
@@ -120,7 +120,7 @@ class PlanExample3Tests(unittest.TestCase):
         w.rest()
         p = w.plan()
         self.assertEqual(p["stage"]["id"], 0)
-        recs = p["recommendations"]
+        recs = p["items"]
         self.assertFalse([r["id"] for r in recs if any(c in r["cmd"] for c in AUDIT_CMDS)])
         self.assertFalse([r for r in recs if "刷新" in r["title"] or "旧文" in r["title"]])
         themes = {r["theme"] for r in recs}
@@ -134,7 +134,7 @@ class PlanExample3Tests(unittest.TestCase):
         w.rest()
         p = w.plan()
         self.assertEqual(p["stage"]["id"], 1)
-        launch = [r for r in p["recommendations"] if "launch_check" in r["cmd"]]
+        launch = [r for r in p["items"] if "launch_check" in r["cmd"]]
         self.assertTrue(launch)
         self.assertIn("--allow-local", launch[0]["cmd"])
 
@@ -163,7 +163,7 @@ class PlanGateTests(unittest.TestCase):
         w.ring1()
         w.rest(deny="对比页、程序化")
         p = w.plan()
-        ids = [r["id"] for r in p["recommendations"] + p["more"]]
+        ids = [r["id"] for r in p["items"] + p["more"]]
         self.assertNotIn("compare-pages", ids)
         self.assertNotIn("pseo-gated", ids)
         denied = {x["id"] for x in p["skipped"]["denied"]}

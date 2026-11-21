@@ -1,0 +1,43 @@
+{
+ "about": "标准答案:想法阶段(onboard-idea)。档案和方案的内容取自 answers/idea.json 的 facts 与 stage_must_do;对话按 6 环各停一次。",
+ "scenario": "onboard-idea",
+ "site": null,
+ "profile": {
+  "schema": 1,
+  "facts": {
+   "product.name": {"value": "宠账本 PetLedger", "status": "confirmed", "source": "brief.md"},
+   "product.one_liner": {"value": "宠物健康记账 App:疫苗驱虫提醒、病历档案、宠物医院比价", "status": "confirmed", "source": "brief.md"},
+   "product.lines": {"value": ["健康提醒(疫苗、驱虫、体检)", "病历档案(拍照存档、OCR 提取指标)", "宠物医院比价"], "status": "confirmed", "source": "brief.md"},
+   "pricing.model": {"value": "基础版免费;会员 ¥18/月 或 ¥168/年", "status": "confirmed", "source": "brief.md"},
+   "conversion.primary": {"value": "上线前加入候补名单,目标 2000 人", "status": "confirmed", "source": "第 1 环用户原话"},
+   "customers": {"value": ["一二线城市 22–35 岁养猫狗的上班族", "多宠家庭、刚领养的新手主人"], "status": "confirmed", "source": "第 1 环用户原话"},
+   "market.languages": {"value": ["zh-CN"], "status": "confirmed", "source": "第 5 环"}
+  },
+  "stage": {"id": 0, "name": "想法 / 原型", "confirmed": true}
+ },
+ "diagnosis": {"maturity": {"technical": {"level": 0, "status": "ok"}, "content": {"level": 0, "status": "ok"},
+   "authority": {"level": 0, "status": "ok"}, "geo": {"level": 0, "status": "ok"}, "measurement": {"level": 1, "status": "ok"}}},
+ "plan_json": {"items": [
+  {"title": "用真实搜索数据验证需求", "do": "查「猫咪疫苗时间表」「狗狗驱虫多久一次」在百度、小红书的搜索量和排在前面的是谁", "week": 1},
+  {"title": "起名和域名", "do": "核「宠账本」撞名情况,在 petledger.cn 和 chongzhangben.com 里定一个", "week": 1},
+  {"title": "按关键词版图定信息架构和 URL 结构", "do": "疫苗驱虫指南、按城市的医院比价页、病历功能页", "week": 2},
+  {"title": "技术选型的 SEO 约束", "do": "官网用静态生成(SSG),小程序页面要能被收录", "week": 3},
+  {"title": "候补名单落地页当转化", "do": "落地页一上线就装统计,留资算转化", "week": 4},
+  {"title": "品牌实体统一", "do": "公众号、小红书账号同名,一句话简介一致", "week": 4},
+  {"title": "不跑站点体检", "do": "现在没有站点,等落地页上线再说", "week": 6}
+ ]},
+ "first_events": [
+  {"bash": "cat brief.md && ls -la", "out": "# 宠账本 PetLedger — 产品说明\n..."},
+  {"bash": "python3 /skill/seo-suite/scripts/onboard.py start --repo .", "out": "# 开局第 1 环 · 产品是什么\n【产品阶段】想法 / 原型(猜测)"}
+ ],
+ "first_screen": "我先读了 brief.md 和仓库(只有 README.md,没有站点),下面是我对产品的理解,每条后面是出处。请先核对这一环,对了我再往下。\n\n【阶段】想法 / 原型:没有站点、域名没买、仓库没有公开页面。不对请告诉我。\n\n【第 1 环 · 产品是什么】\n- 一句话:宠物健康记账 App,疫苗驱虫提醒、病历档案、医院比价 ← brief.md\n- 收费:基础版免费,会员 ¥18/月 ← brief.md\n\n问题:\n1. 最想要的 SEO 结果是哪个? A 候补名单 B 下载 C 品牌曝光\n2. 主要客户是谁?我猜:一二线城市养猫狗的上班族\n3. 哪条产品线最重要? A 健康提醒 B 病历档案 C 医院比价\n4. 阶段是想法阶段,对吗? A 对 B 不对",
+ "ring_texts": {
+  "2": "第 1 环记下了。\n\n【第 2 环 · 客户与搜索意图】\n我从产品线推了三类意图:疫苗驱虫时间、症状自查、医院价格。\n\n1. 用户一般在哪里搜、搜什么词?我猜:小红书和百度,搜「猫咪疫苗时间表」\n2. 有哪些行话? A 毛孩子 B 铲屎官 C 都有",
+  "3": "【第 3 环 · 竞品】\n业务竞品和搜索结果上抢位置的站分两份列。\n\n1. 业务上的对手是谁?我猜:宠物医院小程序\n2. 搜索结果里的你要我去查吗? A 要 B 不要",
+  "4": "【第 4 环 · 现有资产与限制】\n想法阶段没有站点可看,这一环看技术选型。\n\n1. 团队几个人、每周能写几篇?我猜:1 人,每周 1 篇\n2. 有没有处罚或买过链接? A 没有 B 有\n3. 每月预算多少? A 2000 以内 B 更多",
+  "5": "【第 5 环 · 市场与关键词版图】\n\n1. 只做中国大陆、简体中文吗? A 是 B 还有别的\n2. 哪些主题不做?我猜:看病诊断类不做",
+  "6": "【第 6 环 · 策略与路线】\n方案已写进 seo-ops/plan/,前 5 条:验证需求、起名和域名、信息架构、技术选型、候补名单落地页。\n\n1. 这条路线可以吗? A 可以 B 要改\n2. 目标定多少?我猜:上线前 3 个月候补名单 2000 人"
+ },
+ "ring_events": {"6": [{"bash": "python3 /skill/seo-suite/scripts/plan.py build --ws seo-ops", "out": "方案写到 seo-ops/plan/plan.json"}]},
+ "final_text": "6 环都确认了。方案在 seo-ops/plan/plan.json,第 1 周先做需求验证和起名。"
+}
