@@ -83,6 +83,8 @@ ring1_not_skipped
 quote_before_confirm
   R22 「去空白」= 去掉首尾空白(不删中间空白);引文 ≥ 6 个字符;必须是这次调用之前、驱动已发出且转录里
       已出现的某条回话的子串,且那条回话前面是一次停下。转录里一次 --confirm 调用都没有 → 判不过(R6)。
+      --quote 的值是 $NAME / ${NAME} 时,按同一条 Bash 命令里它前面的 NAME=… 或 export NAME=… 赋值展开再判;
+      展开不了按字面判。(第 5 批试跑发现「Q=原话 && onboard.py … --quote "$Q"」被读成 $Q,正式开跑前定。)
 correction_applied
   R23 「纠正那一环之后」= 驱动发出该环回话之后。档案 customers 第一项(或带 primary: true 的项)含任一 term_new;
       第 3–6 环的每一次停下文本都要含 term_new;方案全文含 term_new;之后任何 assistant 文本、Write/Edit 内容、
@@ -415,7 +417,14 @@ def split_simple(cmd):
 def onboard_calls(call):
     """一个 Bash 调用里的 onboard.py 调用:[{"sub","ring","confirm","quote"}]。"""
     out = []
+    env = {}
     for seg in split_simple(bash_cmd(call)):
+        words = seg[1:] if seg and seg[0] == "export" else seg
+        if words and all(re.match(r"[A-Za-z_][A-Za-z0-9_]*=", w) for w in words):
+            for w in words:
+                k, v = w.split("=", 1)
+                env[k] = v
+            continue
         idx = next((i for i, t in enumerate(seg) if t.endswith("onboard.py")), None)
         if idx is None:
             continue
@@ -433,6 +442,9 @@ def onboard_calls(call):
                 o["quote"] = args[j + 1]
             elif a.startswith("--quote="):
                 o["quote"] = a.split("=", 1)[1]
+        m = re.fullmatch(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?", o["quote"] or "")
+        if m and m.group(1) in env:
+            o["quote"] = env[m.group(1)]
         out.append(o)
     return out
 

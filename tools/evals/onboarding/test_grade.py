@@ -291,6 +291,14 @@ class Driver(unittest.TestCase):
         p = B.materialize(ex, self.tmp)
         self.assertEqual(G.drive_next("onboard-idea", p["ws"], p["transcript"], p["driver_log"])["action"], "end")
 
+    def test_quote_var_expanded(self):
+        call = {"name": "Bash", "input": {"command": 'cd /x && Q="Yes, that is right." && python3 s/onboard.py answer --ring 1 --confirm --quote "$Q"'}}
+        self.assertEqual(G.onboard_calls(call)[0]["quote"], "Yes, that is right.")
+        call = {"name": "Bash", "input": {"command": "export Q='Go with it' ; python3 onboard.py answer --ring 2 --confirm --quote=${Q}"}}
+        self.assertEqual(G.onboard_calls(call)[0]["quote"], "Go with it")
+        call = {"name": "Bash", "input": {"command": 'python3 onboard.py answer --ring 2 --confirm --quote "$Q"'}}
+        self.assertEqual(G.onboard_calls(call)[0]["quote"], "$Q")
+
     def test_ring_of(self):
         self.assertEqual(G.ring_of("第 1 环确认了。\n\n【第 2 环 · 客户】\n1. 谁在搜?", self.tmp)[0], 2)
         self.assertEqual(G.ring_of("Ring 4 · Assets\n1. How many posts?", self.tmp)[0], 4)
