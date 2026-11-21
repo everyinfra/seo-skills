@@ -19,6 +19,32 @@ Future content or structure changes must bump the version and add a dated entry.
   On a second open, `loops.py` backfills weekly checkpoints from a daily `gsc-pages.csv` so the stage trend has data right away.
 - **本地站点**:主机是 localhost、内网或回环地址时不查 Wayback;`project.py run triage --allow-local` 可以体检本地站点。
   Local hosts skip the Wayback lookup, and `project.py run triage --allow-local` can triage a local site.
+- **第 5 批第 2 轮试跑后的修复**:
+  Fixes after the second batch-5 pilot run:
+  - 本机站点没加 `--allow-local` 时 `onboard.py start` 直接报错、什么都不写。
+    `onboard.py start` on a loopback site without `--allow-local` now fails fast and writes nothing.
+  - 第 1 环还没动过时,重跑 `start` 会重新读站点和仓库,不再停在「已经开过局」。
+    Rerunning `start` before ring 1 is touched rescans the site and repo instead of stopping at "already started".
+  - 只给仓库时,`product_scan.py` 从 layout、首页和定价页源码读名字、一句话介绍、价格和 `lang`。名字依次取站点、layout 的 siteName、package 名、README 标题。读不到的核心键记成 `kind: unknown` 的占位,并写明查过哪里。
+    In repo-only scans, `product_scan.py` reads the name, one-liner, prices and `lang` from the layout, home page and pricing page source. The name falls back from the site, to the layout siteName, the package name and the README title. Core keys it cannot read become `kind: unknown` placeholders that list where it looked.
+  - 第 1 环在给 agent 看的那段里列出「档案还缺」的核心键,并给出 `note` 命令。
+    Ring 1 lists the core keys still missing from the profile in the agent section, with the `note` command to fill them.
+  - 屏幕教列表分隔符「;」。列表按 `; ； | ｜ 、` 和换行拆,括号里的内容不拆。只有英文逗号时,拆出 3 项以上、每项不超过 60 字才按逗号拆。`note` 也照这个规则存成列表。
+    The screen teaches `;` as the list separator. Lists split on `; ； | ｜ 、` and newlines, but not inside parentheses. English commas split a list only when that gives at least 3 items of at most 60 characters each. `note` stores lists by the same rule.
+  - 禁用项是一句话,不按逗号拆。
+    A deny item is one sentence and is not split on commas.
+  - 问题的猜测和 A、B 选项写在问题同一行。停下那一节写明不要把选项挪到下一行。禁用项问题加了选项「B. 有(请写)」。
+    The guess and the A/B options now sit on the question's own line, and the stop section says not to move them to the next line. The deny question gains the option "B. 有(请写)".
+  - 仓库里有 `MIGRATION.md` 这类改版或迁移计划时,阶段按「改版 / 迁移」猜,第 1 环仍要用户确认。
+    A migration or redesign plan in the repo (such as `MIGRATION.md`) makes the stage guess "redesign / migration". Ring 1 still asks the user to confirm it.
+  - 用户确认或用 `--correct stage=N` 改过的阶段,`answer` 当场重算,`status` 也先重算。之后重算不会改回去,只给仓库的路径也一样。
+    A stage the user confirmed or set with `--correct stage=N` is re-diagnosed at once by `answer`, and `status` re-diagnoses first. Later recomputation never reverts it, including on the repo-only path.
+  - 档案顶层 `_schema` 不进校验值。agent 改了它,脚本写回自己的映射并提示,不当成手改,也不退回已确认的环。
+    The top-level `_schema` is left out of the profile checksum. If the agent edits it, the script restores its own mapping with a note; it does not count as a hand edit or reopen confirmed rings.
+  - 「中国大陆、简体中文」这类回答按一个市场算,方案不再提 hreflang。
+    An answer such as "中国大陆、简体中文" counts as one market, so the plan no longer mentions hreflang.
+  - 本机预览站的 robots.txt 对所有爬虫 `Disallow: /` 时,`project.py run triage` 照爬(`--ignore-robots`),并把「robots 全封」记成第一条 CRITICAL 发现。
+    When a local preview site's robots.txt disallows `/` for all crawlers, `project.py run triage` still crawls it (`--ignore-robots`) and reports "robots fully blocked" as the first CRITICAL finding.
 
 ## 0.47.1 - 2026-11-21
 
