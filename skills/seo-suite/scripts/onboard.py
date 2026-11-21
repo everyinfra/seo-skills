@@ -6,14 +6,18 @@
            → 起草产品档案 seo-ops/context/profile.json + product.md → 打印第 1 环
   show     打印某一环(默认当前环):agent 先做什么、草稿事实(带出处)、问题(带猜测和选项)、停下的指令
   note     agent 把自己查到的东西记进档案(一律「未确认」,用户确认前不当事实用)
-  answer   记用户的回答:--quote 必须是用户原话;--confirm 确认这一环(必答题答齐、这一环问过才行)
-  skip     用户说「别问了」:第 1 环没确认就拒绝(退出码 3),确认过就把剩下的环标「跳过」、用猜测补齐
+  answer   记用户的回答:--quote 必须是用户这次回话的原文(太短的只收「对 / Yes」这类确认词,且不能带 --correct);
+           --confirm 确认这一环(必答题答齐、这一环问过才行);列表字段的 --correct 只写一项时只换那一项
+  skip     用户明确说要跳过(「跳过」「skip」「不用问了」):第 1 环没确认就拒绝(退出码 3),确认过就把剩下的环标
+           「跳过」、用猜测补齐;「按你的判断来 / best guess / carry on」不是跳过,也拒绝(退出码 3)
   event    记改版类事件(migration / new_product_line …),阶段会切到「改版 / 迁移 / 转型」
   status   一屏:每环状态、档案版本、阶段
   diagnose 重跑阶段 × 成熟度诊断
 
 规矩(红队 11-08):
   - 第 1 环必须由用户确认:没有 --quote 不能确认;这一环没 show 过不能确认。
+  - show 打印一整块「原样发给用户」的停下文本(编号问题、选项、事实出处),agent 原样贴出,不改写。
+  - 档案只经脚本写:每次写入记内容校验值,读到手改过的档案就报警,受影响的环退回待确认。
   - 网页上抓来的东西只当草稿(status=unconfirmed),用户确认这一环后才变 confirmed。
   - 敏感答案(处罚史、预算、审批人)存 context/private/,该目录写进 seo-ops/.gitignore。
   - 第 5 环「明确不做」的答案进 profile.deny(结构化禁用清单),下游推荐按它过滤(playbook.load_deny 和
@@ -41,6 +45,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -53,6 +58,8 @@ PY = sys.executable or "python3"
 BANK_PATH = os.path.join(os.path.dirname(HERE), "data", "onboarding.json")
 SCHEMA = 1
 PRIVATE_IGNORE = "context/private/"
+BLOCK_START = "===== 下面这块原样发给用户"
+BLOCK_END = "===== 原样发给用户到这里为止"
 
 
 class UsageError(Exception):
@@ -99,13 +106,67 @@ def ctx(ws, *parts):
     return os.path.join(ws, "context", *parts)
 
 
+def warn(msg):
+    print("注意: %s" % msg, file=sys.stderr)
+
+
 def load_profile(ws):
-    p = read_json(ctx(ws, "profile.json"))
-    if p is None:
+    path = ctx(ws, "profile.json")
+    if not os.path.isfile(path):
         raise UsageError("还没开局:先跑 onboard.py start --site <URL>(工作区 %s)" % ws)
-    if int(p.get("schema") or 0) > SCHEMA:
-        raise UsageError("档案是更新版本的 seo-suite 写的(schema %s),先升级 skill" % p.get("schema"))
+    try:
+        with open(path, encoding="utf-8") as f:
+            p = json.load(f)
+    except ValueError as e:
+        raise UsageError("profile.json 不是合法的 JSON(%s)。档案只能经 onboard.py 写;"
+                         "从 git 恢复上一版,或 start --force 重新开局" % e)
+    except OSError as e:
+        raise UsageError("读不了 %s:%s" % (path, e))
+    try:
+        if int(p.get("schema") or 0) > SCHEMA:
+            raise UsageError("档案是更新版本的 seo-suite 写的(schema %s),先升级 skill" % p.get("schema"))
+    except (TypeError, ValueError, AttributeError):
+        raise UsageError("profile.json 的 schema 不是数字")
+    tamper = lifecycle.check_seal(p)
+    problems = lifecycle.normalize_profile(p)
+    for msg in problems:
+        warn("档案不合格:" + msg)
+    changes = []
+    if problems:
+        changes.append("补默认值:" + ";".join(problems))
+    if tamper and tamper.get("legacy"):
+        warn("档案没有校验值(旧版 seo-suite 写的或手写的);从这次起由脚本记校验值,以后手改会被发现")
+        changes.append("补校验值")
+    elif tamper:
+        warn(lifecycle.tamper_message(tamper))
+        reopened = reopen_rings(p, tamper["rings"])
+        if reopened:
+            warn("要重新确认:第 %s 环(onboard.py show --ring %d,把改后的内容给用户看,用户确认后再 answer --confirm)"
+                 % ("、".join(map(str, reopened)), reopened[0]))
+        changes.append("发现手改(第 %s 环),%s" % ("、".join(map(str, tamper["rings"])) or "环以外",
+                                                ("退回待确认:第 %s 环" % "、".join(map(str, reopened))) if reopened else "没有要退回的环"))
+    if changes:
+        save_profile(ws, p, ";".join(changes))
     return p
+
+
+def reopen_rings(prof, rings):
+    """手改过、原来已确认或跳过的环退回「问了在等回答」,这一环的已确认事实退回未确认;→ 退回的环号。"""
+    out = []
+    pre = lifecycle.ring_prefixes()
+    for r in rings:
+        ring = prof["rings"].get(str(r))
+        if not ring or ring.get("status") not in ("confirmed", "skipped"):
+            continue
+        ring.update({"status": "asking", "asked_at": None, "confirmed_at": None,
+                     "reopened": {"at": now(), "why": "档案被手改"}})
+        for f in prof.get("facts") or []:
+            if lifecycle.fact_ring(f, pre) == r and f.get("status") == "confirmed":
+                f["status"] = "unconfirmed"
+        if r == 1 and isinstance(prof.get("stage"), dict):
+            prof["stage"]["confirmed"] = False
+        out.append(r)
+    return out
 
 
 def save_profile(ws, prof, change):
@@ -115,6 +176,7 @@ def save_profile(ws, prof, change):
     prof.setdefault("changelog", []).append({"version": prof["version"], "at": prof["updated"], "change": change})
     if isinstance(prof.get("rings"), dict):
         prof["current_ring"] = current_ring(prof)
+    lifecycle.seal_profile(prof)
     write_json(ctx(ws, "profile.json"), prof)
     with open(ctx(ws, "product.md"), "w", encoding="utf-8") as f:
         f.write(render_product_md(prof))
@@ -340,13 +402,56 @@ def site_type_of(prof):
 
 def question_applies(q, prof):
     cond = q.get("when")
-    if not cond:
-        return True
-    if cond.startswith("site_type in "):
+    if cond and cond.startswith("site_type in "):
         allowed = cond[len("site_type in "):].split(",")
         st = site_type_of(prof).lower()
-        return not st or any(a.strip() in st for a in allowed)
-    return True
+        if st and not any(a.strip() in st for a in allowed):
+            return False
+    return not covered_fact(q, prof)
+
+
+def covered_fact(q, prof):
+    """这一问已经由已有上下文文件(.agents/product-marketing.md)给出 → 那条事实;否则 None。"""
+    for key in q.get("covered_by") or []:
+        f = next((x for x in prof.get("facts") or [] if x.get("key") == key and has_value(x.get("value"))), None)
+        if f:
+            return f
+    return None
+
+
+def has_value(v):
+    if v is None:
+        return False
+    if isinstance(v, (list, tuple, dict)):
+        return bool(v)
+    return bool(str(v).strip())
+
+
+def lines_state(prof):
+    """产品线草稿:"missing"(没有或未知)/ "inferred"(按网址推的)/ "known"。"""
+    f = next((x for x in prof.get("facts") or [] if x.get("key") == "product.lines"), None)
+    if not f or not has_value(f.get("value")) or f.get("status") == "unknown" or f.get("kind") == "unknown":
+        return "missing"
+    if f.get("kind") == "inferred" and f.get("status") == "unconfirmed":
+        return "inferred"
+    return "known"
+
+
+def question_required(q, prof):
+    if q.get("required"):
+        return True
+    key = q.get("required_if_missing")
+    return bool(key == "product.lines" and lines_state(prof) == "missing")
+
+
+def question_text(q, prof):
+    if q.get("id") == "main_line":
+        st = lines_state(prof)
+        if st == "missing" and q.get("text_missing"):
+            return q["text_missing"]
+        if st == "inferred" and q.get("text_inferred"):
+            return q["text_inferred"]
+    return q["text"]
 
 
 def guess_for(q, prof):
@@ -360,15 +465,15 @@ def guess_for(q, prof):
     if src:
         v = fact_value(prof, src)
         if isinstance(v, list) and v:
-            return fmt_val(v[:1]), "来自草稿 %s 第一项" % src
+            return fmt_val(v[:1]), "草稿里 %s 的第一项" % FACT_LABELS.get(src, src)
         if v:
-            return fmt_val(v), "来自草稿 %s" % src
+            return fmt_val(v), "来自草稿 %s" % FACT_LABELS.get(src, src)
     return None, None
 
 
 def ring_view(prof, r):
     d = bank()[r]
-    qs = []
+    qs, merged = [], []
     for q in d["questions"]:
         if not question_applies(q, prof):
             continue
@@ -379,73 +484,180 @@ def ring_view(prof, r):
             v = fact_value(prof, src)
             if isinstance(v, list):
                 opts = [fmt_val([x]) for x in v[:4]] + [o for o in opts if o not in v][:2]
-        qs.append({"id": q["id"], "text": q["text"], "options": opts[:5], "guess": g, "guess_from": gsrc,
-                   "required": bool(q.get("required")), "sensitive": bool(q.get("sensitive")),
-                   "deny": bool(q.get("deny"))})
+        item = {"id": q["id"], "text": question_text(q, prof), "options": opts[:5], "guess": g, "guess_from": gsrc,
+                "required": question_required(q, prof), "sensitive": bool(q.get("sensitive")),
+                "deny": bool(q.get("deny")), "ids": [q["id"]]}
+        (merged if q.get("merge_into") else qs).append((q.get("merge_into"), item))
+    qs = [x for _, x in qs]
+    for host_id, m in merged:                      # 并进同一行问(第 1 环最多 3 问)
+        host = next((x for x in qs if x["id"] == host_id), None)
+        if host is None:
+            qs.append(m)
+            continue
+        host["text"] = "%s %s" % (host["text"], m["text"])
+        host["ids"].append(m["id"])
+        host["required"] = host["required"] or m["required"]
+        host.setdefault("merged", []).append(m)
+    covered = [{"id": q["id"], "fact": covered_fact(q, prof)} for q in d["questions"] if covered_fact(q, prof)]
     facts = ring_facts(prof, d)
-    view = {"ring": r, "title": d["title"], "goal": d["goal"], "must_confirm": d.get("must_confirm"),
+    return {"ring": r, "title": d["title"], "goal": d["goal"], "must_confirm": d.get("must_confirm"),
             "status": prof["rings"][str(r)]["status"], "agent_steps": d["agent_steps"],
-            "facts": facts, "questions": qs}
-    return view
+            "facts": facts, "questions": qs, "covered": covered}
+
+
+FACT_LABELS = {"product.name": "产品名", "product.one_liner": "一句话介绍", "product.lines": "产品线",
+               "pricing.model": "收费方式(页面原文)", "pricing.prices": "页面上的价格", "conversion.ctas": "页面上的转化入口",
+               "conversion.buttons": "按钮原文", "conversion.primary": "主转化", "conversion.pm_action": "转化动作",
+               "context.pm_customers": "主要客户", "context.existing": "已有产品上下文文件", "customers": "主要客户",
+               "market.languages": "语言", "site.page_types": "页面类型", "site.url_count": "网址数",
+               "tech.framework": "框架", "tech.rendering": "渲染方式", "measurement.analytics": "统计工具",
+               "entity.same_as": "官方账号", "history.first_seen": "最早出现"}
+STATUS_ZH = {"unconfirmed": "未确认", "confirmed": "已确认", "corrected": "你改过", "unknown": "未知,待你说"}
+
+
+def fact_line(f):
+    label = FACT_LABELS.get(f["key"], f["key"])
+    st = STATUS_ZH.get(f.get("status"), f.get("status") or "未确认")
+    if f.get("status") == "unconfirmed" and f.get("kind") == "inferred":
+        st += ",推测"
+    if not has_value(f.get("value")):
+        return "- %s:未知%s ← %s(%s)" % (label, ("(%s)" % f["note"]) if f.get("note") else "",
+                                        f.get("source") or "没读到可靠出处", "第 1 环请你说" if f["key"] == "product.lines" else st)
+    extra = ""
+    if f.get("billing"):
+        extra = ";页面写到的计费方式:%s" % "、".join(f["billing"])
+    return "- %s:%s ← %s(%s%s)" % (label, fmt_val(f.get("value"))[:320], f.get("source") or "没有出处,推测", st, extra)
+
+
+def recap_lines(prof, r):
+    """前面已确认的内容(第 1 环的产品事实 + 各环答案);纠正过的显示新值。"""
+    b = bank()
+    L = []
+    r1 = prof["rings"]["1"]
+    if r1["status"] in ("confirmed", "asking") and r1.get("confirmed_at"):
+        names = {s["id"]: s["name"] for s in lifecycle.load_rules()["stages"]}
+        stv = (prof.get("stage") or {}).get("value")
+        if stv is not None:
+            L.append("- 产品阶段:%s ← 第 1 环你确认的" % names.get(stv, stv))
+        for key in ("product.name", "product.one_liner", "product.lines", "pricing.model"):
+            f = best_fact(prof, key)
+            if f and has_value(f.get("value")):
+                L.append("- %s:%s ← %s" % (FACT_LABELS[key], fmt_val(f["value"])[:240], recap_src(f, 1)))
+    for i in range(1, r):
+        ring = prof["rings"][str(i)]
+        if ring["status"] == "skipped":
+            L.append("- 第 %d 环 %s:跳过了,用的是猜测(未确认) ← 第 %d 环你说的" % (i, b[i]["title"], i))
+            continue
+        if ring["status"] != "confirmed" and not ring.get("answers"):
+            continue
+        qtext = {q["id"]: q["text"] for q in b[i]["questions"]}
+        for k, v in (ring.get("answers") or {}).items():
+            if k == "profile_ok":
+                continue
+            label = ANSWER_LABELS.get(k) or qtext.get(k, k).split("?")[0][:24]
+            corrected = any(f.get("key") == ANSWER_FACTS.get(k) and f.get("status") == "corrected" for f in prof["facts"])
+            L.append("- %s:%s ← 第 %d 环你%s" % (label, fmt_val(v)[:200], i, "纠正过" if corrected else "答的"))
+    return L
+
+
+ANSWER_LABELS = {"conversion": "SEO 要带来的结果", "customers": "主要客户", "main_line": "最先做的产品线",
+                 "market_first": "先做的市场", "deny_topics": "明确不做", "kpi_target": "业务目标"}
+
+
+def best_fact(prof, key):
+    best = None
+    for f in prof.get("facts") or []:
+        if f.get("key") == key and (best is None or f.get("status") in ("confirmed", "corrected")):
+            best = f
+    return best
+
+
+def recap_src(f, ring):
+    if f.get("status") == "corrected":
+        return "你纠正过(原话:「%s」)" % str(f.get("quote") or "")[:60]
+    if f.get("status") == "confirmed":
+        return "第 %d 环你确认的(出处 %s)" % (ring, f.get("source") or "—")
+    return "%s(还没确认)" % (f.get("source") or "推测")
+
+
+def stage_line(ws):
+    diag = read_json(ctx(ws, "diagnosis.json"), {}) or {}
+    st = diag.get("stage") or {}
+    if not st:
+        return None
+    tag = {"guess": "猜测,待确认", "unknown": "证据不够,待确认", "rule": "按规则推测,待确认",
+           "confirmed": "已确认"}.get(st.get("confidence"), "待确认")
+    line = "- 产品阶段:%s(%s)← 依据:%s" % (st.get("name") or "未知", tag, ";".join(st.get("why") or []) or "—")
+    if st.get("candidates"):
+        line += ";候选:" + "、".join(lifecycle.candidate_names(st["candidates"])) + "(在第 1 个问题里一起确认)"
+    return line
+
+
+def render_question(i, q):
+    line = "%d. %s%s" % (i, q["text"], "(必答)" if q["required"] else "")
+    opts = q["options"] or ([] if (q["guess"] or q.get("merged")) else ["我直接写", "不知道(先记未确认)"])
+    if opts:
+        line += "　" + "　".join("%s. %s" % (chr(65 + j), o) for j, o in enumerate(opts[:26]))
+    guesses = []
+    if q["guess"]:
+        guesses.append("%s(%s)" % (q["guess"], q["guess_from"]))
+    for m in q.get("merged") or []:
+        if m["guess"]:
+            guesses.append("最想先做 %s(%s)" % (m["guess"], m["guess_from"]))
+    if guesses:
+        line += "\n   我猜:" + ";".join(guesses)
+    if q["sensitive"]:
+        line += "\n   (答案只存本地 context/private/,不进 git)"
+    return line
 
 
 def render_ring(prof, view, ws):
     r = view["ring"]
+    ob = os.path.join(HERE, "onboard.py")
     L = ["# 开局第 %d 环 · %s%s" % (r, view["title"], "(这一环必须确认完才往下)" if view["must_confirm"] else ""), "",
-         "目标:" + view["goal"], ""]
-    prev = [str(i) for i in range(1, r) if prof["rings"][str(i)]["status"] == "confirmed"]
-    if prev:
-        L.append("前面已确认:第 %s 环(档案 v%s)。" % ("、".join(prev), prof.get("version")))
-        L.append("")
-    if r == 1:
-        diag = read_json(ctx(ws, "diagnosis.json"), {}) or {}
-        st = diag.get("stage") or {}
-        if st:
-            tag = {"guess": "猜测,待确认", "unknown": "证据不够,待确认", "rule": "按规则推测,待确认",
-                   "confirmed": "已确认"}.get(st.get("confidence"), "待确认")
-            L.append("【产品阶段】%s(%s):%s" % (st.get("name"), tag, ";".join(st.get("why") or [])))
-            if st.get("candidates"):
-                L.append("  候选:" + "、".join(c["name"] for c in st["candidates"]) + "——在第 1 个问题里请用户确认")
-            L.append("")
-        if prof.get("existing_context"):
-            L += ["已有产品上下文文件(先读它当草稿):" + "、".join(c.get("path", "") for c in prof["existing_context"]), ""]
-    L.append("## agent 先做(做完再问)")
+         "目标:" + view["goal"], "", "## agent 先做(做完再问)"]
     L += ["- " + s for s in view["agent_steps"]]
-    L.append("")
-    if view["facts"]:
-        L += ["## 草稿(每条带出处;未确认的不当事实用;给用户看时保留「← 出处」和状态)", ""]
-        for f in view["facts"]:
-            L.append("- %s:%s ← %s(%s)" % (
-                f["key"], fmt_val(f.get("value"))[:160], f.get("source") or "没有出处,推测",
-                {"unconfirmed": "未确认" + (",推测" if f.get("kind") == "inferred" else ""),
-                 "confirmed": "已确认", "corrected": "用户改过",
-                 "unknown": "用户不知道,未确认"}.get(f.get("status"), f.get("status"))))
+    if r == 1 and prof.get("existing_context"):
+        L.append("- 已有产品上下文文件(先读它当草稿):" + "、".join(c.get("path", "") for c in prof["existing_context"]))
+    L += ["", BLOCK_START + "(到下面那行等号为止;不改写、不删「← 出处」和选项、不合并问题)=====",
+          "**开局第 %d 环 · %s**%s" % (r, view["title"], "(这一环要你确认完才往下)" if view["must_confirm"] else ""), ""]
+    rec = recap_lines(prof, r) if r > 1 else []
+    if rec:
+        L += ["前面已确认的(档案第 %s 版;不对直接说):" % prof.get("version")] + rec + [""]
+    facts = list(view["facts"])
+    sl = stage_line(ws) if r == 1 else None
+    if sl or facts:
+        L.append("我读到的草稿(每条带出处,都还没确认):")
+        if sl:
+            L.append(sl)
+        L += [fact_line(f) for f in facts]
         L.append("")
-    L.append("## 问用户(最多 %d 个;每个带你的猜测或 A/B 选项)" % len(view["questions"]))
+    for c in view.get("covered") or []:
+        L.append("(「%s」已经写在 %s 里:%s;没问题就在第 1 问一起确认,不再单独问)"
+                 % (ANSWER_LABELS.get(c["id"], c["id"]), c["fact"].get("source"), fmt_val(c["fact"]["value"])[:160]))
+    if view.get("covered"):
+        L.append("")
+    L.append("## 问用户(这一环 %d 个问题;每个带我的猜测或 A/B 选项)" % len(view["questions"]))
     for i, q in enumerate(view["questions"], 1):
-        line = "%d. %s%s" % (i, q["text"], "(必答)" if q["required"] else "")
-        opts = q["options"] or ([] if q["guess"] else ["我直接写", "不知道(先记未确认)"])
-        if opts:
-            line += "\u3000" + "\u3000".join("%s. %s" % (chr(65 + j), o) for j, o in enumerate(opts[:26]))
-        if q["guess"]:
-            line += "\n   我猜:%s(%s)" % (q["guess"], q["guess_from"])
-        if q["sensitive"]:
-            line += "\n   (答案只存本地 context/private/,不进 git)"
-        line += "\n   [id=%s]" % q["id"]
-        L.append(line)
-    L += ["", "## 停",
-          "现在停下来等用户回答,不要先给建议、不要替用户答。",
-          "- Claude Code:用提问工具(AskUserQuestion)把上面的问题发出去,你的猜测放第一个选项。",
-          "- 没有提问工具的宿主:照上面的格式列问题——每问一行「数字. 问题?」,选项写在同一行「A. …\u3000B. …」,"
-          "猜测写在下一行「我猜:…」——然后结束这一回合。",
-          "用户回了以后:python3 %s answer --ring %d --set <id>=<答案> ... --quote \"<用户原话>\" --confirm"
-          % (os.path.join(HERE, "onboard.py"), r),
-          "用户纠正草稿:加 --correct <项>=<改后的值>;用户说不知道:加 --unknown <id>。"]
+        L.append(render_question(i, q))
+    L += [BLOCK_END + " =====", "", "## 停",
+          "把上面那一块原样发给用户(连同编号、选项、「← 出处」),现在停下等用户回答;不要先给建议、不要替用户答、"
+          "不要改写成自己的话。只剩 1 个问题也照样编号。",
+          "- Claude Code:可以改用提问工具(AskUserQuestion),但每问的选项和你的猜测都要带上,猜测放第一个选项。",
+          "- 没有提问工具的宿主:贴完那一块就结束这一回合。",
+          "问题编号对应的 id(记答案用):" + ";".join("%d → %s" % (i, "+".join("[id=%s]" % x for x in q["ids"]))
+                                             for i, q in enumerate(view["questions"], 1)),
+          "纠正草稿时用的键:" + "、".join("%s=%s" % (FACT_LABELS.get(f["key"], f["key"]), f["key"]) for f in facts[:12]),
+          "用户回了以后:python3 %s answer --ring %d --set <id>=<答案> ... --quote \"<用户这次回话的原文>\" --confirm" % (ob, r),
+          "用户纠正草稿:加 --correct <键>=<改后的值>(列表只改其中一项:写那一项的新值,或 <键>[N]=<新值>;整份换就写全部项);"
+          "用户只是说哪条产品线最重要:用 --set main_line=<那条>,不要改 product.lines;用户说不知道:加 --unknown <id>。",
+          "用户说「按你的判断来 / 按你的猜测来 / best guess / carry on / 好」:意思是按草稿确认这一环——"
+          "answer --ring %d --set <id>=<上面我猜的值> --quote \"<原话>\" --confirm,再 show 下一环;这不是跳过。" % r]
     if r > 1:
-        L.append("用户说「别问了」:python3 %s skip --quote \"<用户原话>\"(剩下的环用猜测补齐、写明未确认)"
-                 % os.path.join(HERE, "onboard.py"))
+        L.append("用户明确说要跳过(「跳过」「skip」「不用问了」「直接出方案」):python3 %s skip --quote \"<用户原话>\""
+                 "(剩下的环用猜测补齐、写明未确认)" % ob)
     else:
-        L.append("用户说「别问了」也要先把这一环答完:把问题压到最少(上面的必答题),说明原因再问一次。")
+        L.append("用户说「别问了」也要先把这一环答完:第 1 环最多这 %d 问,说明原因再问一次。" % len(view["questions"]))
     return "\n".join(L)
 
 
@@ -500,14 +712,150 @@ def cmd_note(ns):
     return 0
 
 
+# --quote 的长度:中文一个字按 1.5 算,合计不到 6 就太短(中文少于 4 个字、英文少于 6 个字符)。
+# 太短的只收确认词(对 / 是的 / 好 / 可以 / yes / ok …),而且这次调用不能带 --correct / --unknown:
+# 用户只回了一个「对」,纠正的内容就不可能是他的原话。
+CONFIRM_WORDS = {"对", "对的", "是", "是的", "好", "好的", "行", "可以", "嗯", "没问题", "都对", "确认", "同意", "没错",
+                 "yes", "y", "yep", "yeah", "ok", "okay", "sure", "correct", "right", "approved", "confirmed",
+                 "agreed", "lgtm", "si", "sí", "vale", "claro", "correcto"}
+
+
+def quote_weight(q):
+    s = re.sub(r"\s+", "", q)
+    cjk = len(re.findall(r"[㐀-鿿豈-﫿]", s))
+    return cjk * 1.5 + (len(s) - cjk)
+
+
+def check_quote(q, corrections):
+    s = (q or "").strip()
+    if not s:
+        raise GateError("必须用 --quote 带上用户原话(用户没回话就不能记答案)")
+    if quote_weight(s) >= 6:
+        return
+    core = re.sub(r"[\W_]+", "", s.lower())
+    if core in CONFIRM_WORDS and not s.endswith(("?", "？")):
+        if corrections:
+            raise GateError("--quote %r 只是一句确认,不能拿来记纠正(--correct / --unknown);带上用户说出纠正内容的那句原话" % s)
+        return
+    raise GateError("--quote %r 太短(中文至少 4 个字、英文至少 6 个字符;只回「对 / Yes」这类确认词的,"
+                    "只能用来确认草稿,不能带 --correct)。传用户这次回话的原文,不要缩写" % s)
+
+
+# skip 只认明确要跳过的话;「按你的判断来 / best guess / carry on / 好」是按草稿继续,不是跳过
+SKIP_RE = re.compile(r"跳过|略过|不用问了|别问了|不要再问|别再问|不用再问|不想回答|直接(出|给)(方案|计划|路线)|直接出|"
+                     r"\bskip\b|\bskip(ping)? the rest\b|stop asking|no more questions|don'?t ask (me )?(any )?more|"
+                     r"just give me the plan|straight to the plan|saltar|omitir|no (me )?preguntes m[aá]s", re.I)
+NOT_SKIP_RE = re.compile(r"不要跳过|别跳过|不跳过|don'?t skip|do not skip|no skip|no saltes", re.I)
+SKIP_HINT = ("这句话的意思是按草稿继续下一环:用 answer 确认当前环(--set <id>=<你猜的值> --quote \"<原话>\" --confirm),"
+             "再 show 下一环。只有用户明确说要跳过(「跳过」「skip」「不用问了」「直接出方案」)才用 skip")
+
+
+def is_skip_request(q):
+    return bool(SKIP_RE.search(q or "")) and not NOT_SKIP_RE.search(q or "")
+
+
+IMPORTANT_RE = re.compile(r"最重要|最想先做|最主要|主推|重点是|先做|most important|main (one|line|focus|product)|"
+                          r"\bprimary\b|focus on|priority|the key part|más importante|principal", re.I)
+
+
+def _tokens(s):
+    s = str(s).lower()
+    words = set(re.findall(r"[a-z0-9]+", s))
+    cjk = re.findall(r"[㐀-鿿]", s)
+    return words | {a + b for a, b in zip(cjk, cjk[1:])}
+
+
+def corrected_list(key, cur, raw, quote, replace_all=False):
+    """列表字段的纠正:写全部项 → 整份换;只写一项 → 只换最像的那一项(或 key[N] 指定第几项)。"""
+    m = re.match(r"^(.*)\[(\d+)\]$", key)
+    idx = int(m.group(2)) if m else None
+    new = split_list(raw)
+    cur = [x for x in (cur if isinstance(cur, list) else split_list(cur) if has_value(cur) else [])]
+    if idx is not None:
+        if not 1 <= idx <= max(len(cur), 1) + 1:
+            raise UsageError("%s 只有 %d 项" % (m.group(1), len(cur)))
+        out = list(cur)
+        if idx > len(out):
+            out.append(raw.strip())
+        else:
+            out[idx - 1] = raw.strip()
+        return out
+    if replace_all or len(new) > 1 or len(cur) <= 1:
+        return new
+    if key == "product.lines" and IMPORTANT_RE.search(quote or ""):
+        raise GateError("用户说的是哪条产品线最重要:用 --set main_line=%s 记,product.lines 不动(%s);"
+                        "真要改其中一项写 product.lines[N]=<新值>" % (raw.strip(), "、".join(map(str, cur))))
+    if key == "customers" and re.search(r"主要|最重要|main|primary|most important", quote or "", re.I):
+        return [raw.strip()] + [x for x in cur if str(x).strip().lower() != raw.strip().lower()]
+    nt = _tokens(raw)
+    scored = sorted(((len(nt & _tokens(x)) / float(len(nt | _tokens(x)) or 1), i) for i, x in enumerate(cur)), reverse=True)
+    if not scored or scored[0][0] == 0 or (len(scored) > 1 and scored[0][0] == scored[1][0]):
+        raise UsageError("%s 现在有 %d 项(%s),看不出「%s」要换掉哪一项:写 %s[N]=<新值> 指定第几项,"
+                         "或者把全部项写出来整份换" % (key, len(cur), ";".join("%d. %s" % (i + 1, x) for i, x in enumerate(cur)),
+                                              raw.strip(), key))
+    out = list(cur)
+    out[scored[0][1]] = raw.strip()
+    return out
+
+
+def apply_correction(prof, r, key, v, quote):
+    base = re.sub(r"\[\d+\]$", "", key)
+    if base == "stage":
+        try:
+            sid = int(str(v).strip())
+        except ValueError:
+            raise UsageError("stage 要写成阶段编号 0–5(0 想法 … 5 改版),收到 %r" % v)
+        prof["stage"].update({"value": sid, "confirmed": True})
+    if base in lifecycle.PROFILE_LIST_KEYS:
+        cur = fact_value(prof, base)
+        value = corrected_list(key, cur, v, quote)
+    else:
+        value = fact_shape(base, v)
+    hit = False
+    for f in prof["facts"]:
+        if f["key"] == base:
+            f.update({"value": value, "status": "corrected", "quote": quote, "at": now(), "source": "用户纠正"})
+            f.pop("note", None)
+            hit = True
+    if not hit:
+        prof["facts"].append({"key": base, "value": value, "source": "用户纠正", "kind": "fact",
+                              "status": "corrected", "ring": r, "quote": quote, "at": now()})
+    for qid, fkey in ANSWER_FACTS.items():          # 第 1 环答案和事实是同一件事:改一处,两处一起变
+        if fkey == base:
+            prof["rings"]["1"]["answers"][qid] = fmt_val(value) if isinstance(value, list) else value
+    return base
+
+
+def fill_from_draft(prof, r, d, ring):
+    """确认时:已有上下文文件覆盖的问题取那份文件的值;并进第 1 问、没单独答的取猜测。→ 补了哪些 id。"""
+    filled = []
+    for q in d["questions"]:
+        if q["id"] in ring["answers"]:
+            continue
+        f = covered_fact(q, prof)
+        if f:
+            ring["answers"][q["id"]] = fmt_val(f["value"])
+            ring.setdefault("from_context", []).append(q["id"])
+            filled.append(q["id"])
+        elif q.get("merge_into") and not question_required(q, prof):
+            g, _ = guess_for(q, prof)
+            if g:
+                ring["answers"][q["id"]] = g
+                ring.setdefault("defaults", []).append(q["id"])
+                filled.append(q["id"])
+    for k in filled:
+        if k in ANSWER_FACTS:
+            upsert_fact(prof, ANSWER_FACTS[k], ring["answers"][k], "confirmed", r, None, "用户确认第 %d 环(取草稿)" % r)
+    return filled
+
+
 def cmd_answer(ns):
     ws = ws_dir(ns)
     prof = load_profile(ws)
     r = ns.ring
     if not 1 <= r <= 6:
         raise UsageError("--ring 只能是 1–6")
-    if not (ns.quote or "").strip():
-        raise GateError("必须用 --quote 带上用户原话(用户没回话就不能记答案)")
+    check_quote(ns.quote, bool(ns.correct or ns.unknown))
     if r > 1 and prof["rings"]["1"]["status"] != "confirmed":
         raise GateError("第 1 环还没确认,不能记第 %d 环" % r)
     ring = prof["rings"][str(r)]
@@ -519,6 +867,13 @@ def cmd_answer(ns):
     for k in sets:
         if k not in qmap:
             raise UsageError("第 %d 环没有问题 %s;有:%s" % (r, k, ", ".join(qmap)))
+    corrections = parse_kv(ns.correct, "--correct")
+    staged = json.loads(json.dumps(prof))         # 纠正先在副本上做:被挡住时档案不动
+    for k, v in corrections.items():
+        apply_correction(staged, r, k, v, ns.quote)
+    prof.clear()
+    prof.update(staged)
+    ring = prof["rings"][str(r)]
     private = read_json(ctx(ws, "private", "answers.json"), {}) or {}
     for k, v in sets.items():
         q = qmap[k]
@@ -542,18 +897,6 @@ def cmd_answer(ns):
     if private:
         write_json(ctx(ws, "private", "answers.json"), private)
         ensure_private_ignored(ws)
-    for k, v in parse_kv(ns.correct, "--correct").items():
-        hit = False
-        for f in prof["facts"]:
-            if f["key"] == k:
-                f.update({"value": fact_shape(k, v), "status": "corrected", "quote": ns.quote, "at": now(),
-                          "source": "用户纠正"})
-                hit = True
-        if not hit:
-            prof["facts"].append({"key": k, "value": fact_shape(k, v), "source": "用户纠正", "kind": "fact",
-                                  "status": "corrected", "ring": r, "quote": ns.quote, "at": now()})
-        if k == "stage":
-            prof["stage"].update({"value": int(v), "confirmed": True})
     if any(qmap[k].get("sensitive") for k in sets):
         import hashlib
         h = hashlib.sha256(ns.quote.encode("utf-8")).hexdigest()[:12]
@@ -563,13 +906,23 @@ def cmd_answer(ns):
     else:
         ring["quotes"].append({"at": now(), "text": ns.quote})
     msg = "第 %d 环记答案 %d 条" % (r, len(sets) + len(ns.unknown or []))
+    if corrections:
+        msg += ",纠正 %s" % "、".join(corrections)
     if ns.confirm:
-        missing = [q["id"] for q in d["questions"] if q.get("required") and q["id"] not in ring["answers"]]
+        missing = [q["id"] for q in d["questions"]
+                   if question_required(q, prof) and q["id"] not in ring["answers"] and not covered_fact(q, prof)]
         if missing:
             save_profile(ws, prof, msg)
-            raise GateError("第 %d 环还有必答题没答:%s" % (r, ", ".join(missing)))
+            hint = ""
+            if "main_line" in missing and lines_state(prof) == "missing":
+                hint = "(产品线草稿是未知:用户说的产品线用 --correct product.lines=<A、B、C> 记,最重要的那条用 --set main_line=<那条>)"
+            raise GateError("第 %d 环还有必答题没答:%s%s" % (r, ", ".join(missing), hint))
+        filled = fill_from_draft(prof, r, d, ring)
+        if filled:
+            msg += ",按草稿补 %s" % "、".join(filled)
         ring["status"] = "confirmed"
         ring["confirmed_at"] = now()
+        ring.pop("reopened", None)
         for f in ring_facts(prof, d):
             if f.get("status") == "unconfirmed":
                 f["status"] = "confirmed"
@@ -608,6 +961,8 @@ def cmd_skip(ns):
     prof = load_profile(ws)
     if not (ns.quote or "").strip():
         raise GateError("必须用 --quote 带上用户原话")
+    if not is_skip_request(ns.quote):
+        raise GateError("「%s」不是要跳过。%s" % (ns.quote.strip()[:80], SKIP_HINT))
     if prof["rings"]["1"]["status"] != "confirmed":
         raise GateError("第 1 环(产品是什么、客户是谁、转化算什么)必须先确认;"
                         "把第 1 环压到必答题再问一次:onboard.py show --ring 1")

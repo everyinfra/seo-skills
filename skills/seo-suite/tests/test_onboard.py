@@ -81,7 +81,7 @@ class OnboardGateTests(unittest.TestCase):
 
     # 例 2:必答题没答齐不能确认
     def test_confirm_requires_all_required(self):
-        r = run(["answer", "--ring", "1", "--set", "conversion=注册", "--quote", "要注册", "--confirm"], self.tmp)
+        r = run(["answer", "--ring", "1", "--set", "conversion=注册", "--quote", "要注册,别的还没想好", "--confirm"], self.tmp)
         self.assertEqual(r.returncode, 3)
         self.assertNotEqual(self.prof()["rings"]["1"]["status"], "confirmed")
 
