@@ -255,8 +255,8 @@
     "strategy."
    ],
    "agent_steps": [
-    "跑 plan.py build --ws seo-ops:只从本阶段的打法里选(data/playbooks.json + 用户的 playbook/plays.json),按成熟度最弱的一格加权,禁用清单直接过滤",
-    "每条建议已写好动哪类页面、预期动哪个数、怎么量、第几周做;把三条策略、前 10 条路线和「不做什么」发给用户",
+    "方案由 show --ring 6 生成(没有就当场跑 plan.py build):只从本阶段的打法里选(data/playbooks.json + 用户的 playbook/plays.json),按成熟度最弱的一格加权,禁用清单直接过滤;先读 seo-ops/plan/plan.md",
+    "每条建议已写好动哪类页面、预期动哪个数、怎么量、第几周做;策略、路线前 10 条和「不做什么」已经在发给用户的那一块里,原样发;要补的说明写在那块前面,不另加问题",
     "产出在 seo-ops/plan/:plan.json、roadmap.md、strategy-book.zh.md / .en.md;用户说可以就用 answer --ring 6 --set approve_plan=可以 定稿"
    ],
    "questions": [

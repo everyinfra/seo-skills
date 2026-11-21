@@ -46,6 +46,7 @@ CTAS_MAX = 10
 ROUTES_MAX = 200
 README_MAX = 300
 SAMPLE_TYPES = ("pricing", "about", "docs", "blog", "product", "compare", "integrations")
+SECTION_SAMPLES_MAX = 4          # 没归进上面几类的一级目录,最多再各抽 1 页
 SKIP_DIRS = {"node_modules", ".git", ".next", "dist", "build", ".nuxt", ".output", ".svelte-kit",
              ".astro", ".turbo", ".vercel", ".cache", "coverage", "__pycache__", ".venv", "venv", "out"}
 SOURCE_EXT = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".html", ".htm", ".vue", ".svelte", ".astro",
@@ -555,7 +556,7 @@ def wayback_first_seen(fetcher, host):
 
 
 def pick_samples(urls, host, max_pages):
-    """每个关键类型取 1 个:同主机、优先无语言前缀、再按路径最短。"""
+    """每个关键类型取 1 个:同主机、优先无语言前缀、再按路径最短;没归类的一级目录再各抽 1 页(type=section)。"""
     best = {}
     for u in urls:
         pu = urllib.parse.urlsplit(u)
@@ -571,6 +572,22 @@ def pick_samples(urls, host, max_pages):
     for t in SAMPLE_TYPES:
         if t in best and len(out) < max_pages:
             out.append((t, best[t][1]))
+    # 目录名不在上面几类里的站(/shop/、/brew-guides/、/subscription/ 这类):按一级目录各抽 1 页,
+    # 页数多的目录先抽;目录下有子页就抽子页(看得到卖的、写的是什么),只有一页就抽那一页
+    sections = {}
+    for u in urls:
+        pu = urllib.parse.urlsplit(u)
+        if (pu.hostname or "").lower() != host:
+            continue
+        loc, segs = split_locale(pu.path)
+        if not segs or classify_segments(segs) not in ("other", "category"):
+            continue
+        sections.setdefault(segs[0].lower(), []).append((loc is not None, len(segs) < 2, len(pu.path), u))
+    ranked = sorted(sections.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    for name, items in ranked[:SECTION_SAMPLES_MAX]:
+        if len(out) >= max_pages:
+            break
+        out.append(("section", min(items)[3]))
     return out
 
 

@@ -819,6 +819,54 @@ def audit_steps(prof, ws):
     return L
 
 
+PLAN_ITEMS_SHOWN = 10
+
+
+def plan_file(ws):
+    return os.path.join(ws, "plan", "plan.json")
+
+
+def plan_cmd(ws):
+    return "python3 %s build --ws %s" % (os.path.join(HERE, "plan.py"), shlex.quote(ws))
+
+
+def ensure_plan(ws):
+    """第 6 环发给用户之前方案必须已经生成:没有就在这里跑 plan.py build(不交给 agent 记着跑)。
+    已有的方案不重出(用户可能改过、定过稿)。返回 (方案, 这次是不是新出的, 出错信息)。"""
+    plan = read_json(plan_file(ws))
+    if plan:
+        return plan, False, None
+    r = subprocess.run([sys.executable, os.path.join(HERE, "plan.py"), "build", "--ws", ws],
+                       capture_output=True, text=True)
+    plan = read_json(plan_file(ws)) if r.returncode == 0 else None
+    if not plan:
+        return None, False, (r.stderr or r.stdout or "").strip()[-600:]
+    return plan, True, None
+
+
+def plan_lines(ws):
+    """第 6 环那一块里的方案摘要:策略、路线前几条、不做什么。用户确认的是这几行,不是一个文件路径。"""
+    plan = read_json(plan_file(ws))
+    if not plan:
+        return []
+    L = ["方案草稿(全文在 seo-ops/plan/;每行后面是出处):"]
+    names = [x.get("name") for x in plan.get("strategies") or [] if x.get("name")]
+    if names:
+        L.append("- 策略:%s ← plan/plan.md" % "、".join(names))
+    items = plan.get("items") or []
+    for it in items[:PLAN_ITEMS_SHOWN]:
+        w = it.get("weeks") or []
+        wk = ("第 %s 周" % w[0] if w[0] == w[-1] else "第 %s–%s 周" % (w[0], w[-1])) if w else "周数未排"
+        L.append("- 路线 %s:%s(%s;看 %s) ← plan/roadmap.md" % (it.get("rank"), it.get("title"), wk,
+                                                           it.get("metric") or "未定"))
+    if len(items) > PLAN_ITEMS_SHOWN:
+        L.append("- 另有 %d 条 ← plan/roadmap.md" % (len(items) - PLAN_ITEMS_SHOWN))
+    deny = [d if isinstance(d, str) else d.get("item") for d in plan.get("deny") or []]
+    if deny:
+        L.append("- 不做:%s ← 你说过不做的" % ";".join(str(d) for d in deny if d))
+    return L + [""]
+
+
 def render_block(prof, view, ws):
     """「原样发给用户」那一整块(含首尾两行等号);show、note、metric 打印的是同一块。"""
     r = view["ring"]
@@ -827,6 +875,8 @@ def render_block(prof, view, ws):
     rec = recap_lines(prof, r) if r > 1 else []
     if rec:
         L += ["前面已确认的(档案第 %s 版;不对直接说):" % prof.get("version")] + rec + [""]
+    if r == 6:
+        L += plan_lines(ws)
     facts = list(view["facts"])
     sl = stage_line(ws) if r == 1 else None
     if sl or facts:
@@ -906,6 +956,14 @@ def cmd_show(ns):
         raise GateError("第 1 环还没确认,不能先问第 %d 环" % r)
     view = ring_view(prof, r)
     ring = prof["rings"][str(r)]
+    if r == 6 and not ns.json and current_ring(prof) == 6:      # 前 5 环都完了才出方案;提前看第 6 环不出
+        plan, built, err = ensure_plan(ws)
+        if not plan:
+            raise UsageError("第 6 环要先有方案,方案没生成出来,这一环还没发给用户,不要先问。先把下面的错处理掉,跑:\n  %s\n"
+                             "再重跑:\n  %s\n%s" % (plan_cmd(ws), ob_cmd(ws, "show --ring 6"), err or ""))
+        print("%s:%s(plan.json、plan.md、roadmap.md、中英战略书)。摘要已经在下面那块里;档案改了要重出,跑:%s"
+              % ("方案刚生成" if built else "方案已有(%s 生成,状态 %s)" % (plan.get("generated_at"), plan.get("status")),
+                 os.path.join(ws, "plan"), plan_cmd(ws)))
     if ring["status"] == "pending" or (ring["status"] == "asking" and not ring.get("asked_at")):
         # 退回待确认的环(档案被手改)asked_at 是空的:重新发给用户时同样记一次,否则这一环永远确认不了
         ring["status"] = "asking"
@@ -1187,6 +1245,12 @@ def cmd_answer(ns):
             raise GateError("第 %d 环还有必答题没答:%s%s" % (r, ", ".join(missing), hint))
         if r == 4:
             audit_gate(ws, prof, ns, msg)
+        if r == 6 and not read_json(plan_file(ws)):
+            ring["asked_at"] = None                 # 用户回话时还没有方案:出了方案重新发一次再确认
+            save_profile(ws, prof, msg)
+            raise UsageError("第 6 环确认的是方案,工作区里还没有 plan/plan.json;这次答案已存下,这一环没确认。照抄跑:\n  %s\n"
+                             "它会生成方案并打印带方案摘要的那一块:原样发给用户,等他看过回话再确认"
+                             % ob_cmd(ws, "show --ring 6"))
         filled = fill_from_draft(prof, r, d, ring)
         if filled:
             msg += ",按草稿补 %s" % "、".join(filled)

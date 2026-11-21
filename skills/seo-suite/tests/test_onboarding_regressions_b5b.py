@@ -518,5 +518,105 @@ class ProfileRepoPortableTests(unittest.TestCase):
         self.assertEqual(lifecycle.profile_repo(ws, {"repo": other}), other)
         self.assertEqual(lifecycle.repo_for_profile(ws, other), other)
 
+
+class PlanBeforeRing6Tests(unittest.TestCase):
+    """试跑 3 的上线前场景:第 6 环没出方案就把「这 3 条策略和路线可以吗」发了出去,用户回 Approved,
+    answer --ring 6 --confirm 成功,这时 seo-ops/plan/ 还不存在;之后才出方案,又追问了两个不带选项的问题。"""
+
+    def _to_ring6(self):
+        w = Ws(self)
+        w.to_ring4()
+        w.ok(w.ob("answer", "--ring", "4", "--set", "capacity=每月 4 篇", "--quote", "每月 4 篇内容",
+                  "--no-audit", "站点要登录才能打开", "--confirm"))
+        w.ok(w.ob("show", "--ring", "5"))
+        w.ok(w.ob("answer", "--ring", "5", "--set", "market_first=en", "--set", "deny_topics=不写竞品对比",
+                  "--quote", "先做英文市场,不写竞品对比", "--confirm"))
+        return w
+
+    def test_showing_ring6_builds_the_plan_and_the_block_lists_it(self):
+        w = self._to_ring6()
+        self.assertFalse(os.path.exists(os.path.join(w.ws, "plan")))
+        screen = w.ok(w.ob("show", "--ring", "6")).stdout
+        with open(os.path.join(w.ws, "plan", "plan.json"), encoding="utf-8") as f:
+            plan = json.load(f)
+        self.assertEqual(plan["status"], "draft")
+        block = user_block(screen)
+        self.assertIn("方案草稿", block)
+        for st in plan["strategies"]:
+            self.assertIn(st["name"], block)
+        for it in plan["items"][:10]:
+            self.assertIn("- 路线 %d:%s" % (it["rank"], it["title"]), block)
+        self.assertIn("不写竞品对比", block)
+        # 方案摘要用「- 」开头,不占问题编号:这一环还是 3 个问题
+        self.assertEqual([m.group(1) for m in map(QLINE.match, block.splitlines()) if m], ["1", "2", "3"])
+
+    def test_existing_plan_is_not_rebuilt_when_ring6_is_shown_again(self):
+        w = self._to_ring6()
+        w.ok(w.ob("show", "--ring", "6"))
+        pj = os.path.join(w.ws, "plan", "plan.json")
+        with open(pj, encoding="utf-8") as f:
+            plan = json.load(f)
+        plan["items"][0]["title"] = "用户改过的第一条"
+        with open(pj, "w", encoding="utf-8") as f:
+            json.dump(plan, f, ensure_ascii=False)
+        screen = w.ok(w.ob("show", "--ring", "6")).stdout
+        self.assertIn("用户改过的第一条", user_block(screen))
+
+    def test_ring6_confirm_without_a_plan_is_refused_then_passes_after_show(self):
+        w = self._to_ring6()
+        w.ok(w.ob("show", "--ring", "6"))
+        shutil.rmtree(os.path.join(w.ws, "plan"))
+        r = w.ob("answer", "--ring", "6", "--set", "approve_plan=可以", "--quote", "Approved, go ahead", "--confirm")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("show --ring 6", r.stderr)
+        p = w.prof()
+        self.assertNotEqual(p["rings"]["6"]["status"], "confirmed")
+        self.assertEqual(p["rings"]["6"]["answers"].get("approve_plan"), "可以", "答案照样存下")
+        again = next(ln for ln in r.stderr.splitlines() if "show --ring 6" in ln and ln.strip().startswith("python3 "))
+        s2 = subprocess.run([sys.executable] + shlex.split(again.strip())[1:], capture_output=True, text=True, cwd="/")
+        self.assertEqual(s2.returncode, 0, s2.stderr)
+        self.assertIn("方案草稿", user_block(s2.stdout))
+        w.ok(w.ob("answer", "--ring", "6", "--quote", "Approved, go ahead", "--confirm"))
+        with open(os.path.join(w.ws, "plan", "plan.json"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["status"], "approved")
+
+    def test_peeking_at_ring6_early_does_not_build_a_plan(self):
+        w = Ws(self)
+        w.ring1()
+        w.ok(w.ob("show", "--ring", "6"))
+        self.assertFalse(os.path.exists(os.path.join(w.ws, "plan", "plan.json")))
+
+
+class SectionSamplingTests(unittest.TestCase):
+    """试跑 3 的已上线场景:站点的目录叫 /shop/、/brew-guides/、/subscription/,读站点时这三类一页没读
+    (只读了首页和 /about/),产品线读成「未知」。"""
+
+    HOST = "shop.example"
+
+    def _urls(self, *paths):
+        return ["https://%s%s" % (self.HOST, p) for p in paths]
+
+    def test_unclassified_sections_get_one_page_each(self):
+        urls = self._urls("/", "/about/", "/shop/", "/shop/ethiopia-guji/", "/shop/kenya-aa/", "/shop/decaf/",
+                          "/brew-guides/", "/brew-guides/v60/", "/brew-guides/aeropress/", "/subscription/")
+        got = product_scan.pick_samples(urls, self.HOST, 20)
+        self.assertEqual(got[0], ("about", "https://shop.example/about/"))
+        secs = [u for t, u in got if t == "section"]
+        # 页数多的目录先抽;有子页抽子页(路径最短的那个),只有一页的目录抽那一页
+        self.assertEqual(secs, ["https://shop.example/shop/decaf/", "https://shop.example/brew-guides/v60/",
+                                "https://shop.example/subscription/"])
+
+    def test_section_samples_are_capped_and_prefer_pages_without_a_language_prefix(self):
+        urls = self._urls("/de/shop/kaffee/", "/shop/kenya-aa/", "/a/1/", "/b/1/", "/c1/1/", "/d/1/", "/e/1/")
+        secs = [u for t, u in product_scan.pick_samples(urls, self.HOST, 20) if t == "section"]
+        self.assertEqual(len(secs), product_scan.SECTION_SAMPLES_MAX)
+        self.assertEqual(secs[0], "https://shop.example/shop/kenya-aa/")
+        self.assertEqual(product_scan.pick_samples(urls, self.HOST, 2)[2:], [])
+
+    def test_start_reads_the_shop_page_of_a_live_site(self):
+        site = make_site(self)
+        w = Ws(self, site=site)
+        self.assertIn("- 200 %s/shop/" % site, w.start.stdout)
+
 if __name__ == "__main__":
     unittest.main()

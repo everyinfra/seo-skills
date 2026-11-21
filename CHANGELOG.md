@@ -48,8 +48,6 @@ Future content or structure changes must bump the version and add a dated entry.
 - **第 5 批修复后第 2 次试跑的修复**:
   Fixes after the second pilot run on the batch-5 fixes:
   - 工作区不再建错地方:`onboard.py start --repo <目录>` 没给 `--ws` 时工作区默认是 `<目录>/seo-ops`;任何脚本(`onboard.py`、`plan.py`、`loops.py`、`project.py`、`site_move.py`、`teach.py`、`lifecycle.py`)的工作区落在 skill 安装目录里都退出码 2、什么都不写,报错给出 `cd <站点仓库>` 或加 `--ws` 的照抄命令;不带 `--ws`、当前目录也没有 `seo-ops/` 时报「当前目录下没有工作区」,不再悄悄新建(`site_move.py baseline` 不给 `--out` 时写进 `<ws>/baselines/`)。`start` 第一屏第一行打印工作区绝对路径,屏幕上的后续命令都带 `--ws`。
-  - 档案里的仓库路径可搬动:工作区在仓库里面时 `profile.json` 的 `repo` 记相对工作区的路径(`..`),仓库换目录、换机器或另 clone 一份后脚本仍找得到 `data/` 和产品上下文,本机绝对路径也不进 git;旧档案里已经失效的绝对路径退回工作区的上一级。
-  - 档案校验值只管用户确认过的内容(答案、原话、事实的值和状态、阶段、禁用清单):时间戳、事实出处、站点地址、指标出处和改动记录变了不算手改,工作区从备份恢复或站点换地址后不再把 6 环全部退回;因手改退回待确认的环,`show` 重新发给用户时补记发出时间,可以再次确认(修前一直报「还没发给用户」)。
     Workspaces land in the right place: `start --repo <dir>` defaults to `<dir>/seo-ops`; a workspace inside the skill's install directory is refused with exit 2 and nothing written, with copy-paste commands to fix it; a missing `./seo-ops` is reported instead of silently created; `start` prints the absolute workspace path first and every printed follow-up command carries `--ws`.
   - `project.py run triage` 接受 `--site`(和工作区记的站点一致就照常跑,不一致报错并说出记的是哪个站)和 `--ws`(同 `--dir`);第 4 环「agent 先做」打印完整的体检命令,本机站点自动带 `--allow-local`。
     `project.py run triage` accepts `--site` (must match the workspace's site) and `--ws` (same as `--dir`); ring 4 prints the full triage command, with `--allow-local` for local sites.
@@ -59,6 +57,14 @@ Future content or structure changes must bump the version and add a dated entry.
     With a live site (stages 2–5), confirming ring 4 requires a successful triage record (and, for a redesign, a `site_move.py baseline`); otherwise exit 2 with copy-paste commands and the answers kept. `--no-audit "<reason>"` is the escape hatch; the reason is stored unconfirmed and shown as "audit not run" in status, later recaps and the plan.
   - 第 1 环:`metric`、`note` 改了当前环草稿后,把更新后的整块(带「开局第 N 环」标题)重新打印,写明上一版作废;产品线来自 agent 记的材料时第 1 问写实际出处,只有按网址推的才说「按网址推的」;收费方式没读到时写「没读到」(不再把内部值 `unknown` 打给用户)并在第 1 问里请用户说;免运费、免费配送、free shipping / delivery / returns 不再算成免费档。
     Ring 1: after `metric` or `note` changes the current ring's draft, the whole block is re-printed with its title; the product-line question names the real source; an unread pricing model shows as "没读到" and is asked in question 1; free shipping, delivery and returns no longer count as a free tier.
+  - 档案里的仓库路径可搬动:工作区在仓库里面时 `profile.json` 的 `repo` 记相对工作区的路径(`..`),仓库换目录、换机器或另 clone 一份后脚本仍找得到 `data/` 和产品上下文,本机绝对路径也不进 git;旧档案里已经失效的绝对路径退回工作区的上一级。
+    The repo path in the profile is portable: when the workspace is inside the repo, `repo` is stored relative to the workspace (`..`), so scripts still find `data/` and the product context after the repo moves; a stale absolute path in an old profile falls back to the workspace's parent.
+  - 档案校验值只管用户确认过的内容(答案、原话、事实的值和状态、阶段、禁用清单):时间戳、事实出处、站点地址、指标出处和改动记录变了不算手改,工作区从备份恢复或站点换地址后不再把 6 环全部退回;因手改退回待确认的环,`show` 重新发给用户时补记发出时间,可以再次确认(修前一直报「还没发给用户」)。
+    The profile checksum covers only what the user confirmed (answers, quotes, fact values and status, stage, deny list). Changed timestamps, fact sources, the site address, metric sources and the change log are not a hand edit. A ring reopened by a hand edit gets its sent time when `show` prints it again, so it can be confirmed again.
+  - 第 6 环先有方案再问:`show --ring 6` 发现工作区里还没有 `plan/plan.json` 就当场跑 `plan.py build`(已有的方案不重出),策略、路线前 10 条和「不做什么」印在发给用户的那一块里;没有方案时 `answer --ring 6 --confirm` 退出码 2、答案照存,出了方案重新发给用户再确认(修前没出方案也能确认)。
+    Ring 6 needs a plan first: `show --ring 6` runs `plan.py build` when there is no `plan/plan.json` (an existing plan is kept) and prints the strategies, the first 10 roadmap items and the deny list in the block for the user. `answer --ring 6 --confirm` without a plan exits with code 2 and keeps the answers.
+  - 读站点时,目录名不在定价、文档、博客、产品这几类里的一级目录(比如 `/shop/`、`/brew-guides/`、`/subscription/`)也各抽 1 页读,页数多的目录先抽,最多 4 页;`scan.json` 的 `samples` 里记成 `type: section`(修前这类站只读首页和 /about/)。
+    The site scan also reads one page from each top-level directory that is not one of the known types (for example `/shop/`, `/brew-guides/`, `/subscription/`), largest directory first, at most 4 pages; `samples` records them as `type: section`.
 
 ## 0.47.1 - 2026-11-21
 
