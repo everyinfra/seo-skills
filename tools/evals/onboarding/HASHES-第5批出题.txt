@@ -1,4 +1,5 @@
 # RQ-237 第 5 批出题(独立出题人,开跑前定稿)。每行:sha256  相对本文件所在目录的路径  出题日期(SGT)
 bcbff97105691850edd02d4dff1d00975b83231d4d14f7fc9db1fcbf0262c5ac  rubric_example3.json  2026-11-21
-592124d9b4bd8faafe55d72eb0a3bb95084a6092b7765f14ddf5a53159ca38b3  scenarios_ext.json  2026-11-21
+69e6816d21b6b4a9b24eecf65a0b74fc220664011e442e2202e0a9200238280d  scenarios_ext.json  2026-11-21
 ba4f8a755c87db32f4f7321cda979059f94fd7e408eec5250f482b239976927f  hosts_static.json  2026-11-21
+# 2026-11-22 开跑前更正(执行方,正式评测前):ex5-new-line 的 resume 段先写的 /wholesale/ 新页导航里已带 Wholesale 链接,同一段后面的 replace_in_files 又给全站导航加一次,新页会出现两个 Wholesale 链接。只把新页 content 里那一个 Wholesale 导航链接去掉(由 replace_in_files 统一加),断言、提示词、模拟用户回话一个字没动。更正前 scenarios_ext.json 的 sha256:592124d9b4bd8faafe55d72eb0a3bb95084a6092b7765f14ddf5a53159ca38b3
