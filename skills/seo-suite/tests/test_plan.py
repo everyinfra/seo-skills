@@ -77,7 +77,7 @@ class Workspace:
                    5: ["market_first=zh", "deny_topics=%s" % deny]}
         for r_, sets in answers.items():
             self.test.assertEqual(self.ob("show", "--ring", str(r_)).returncode, 0)
-            args = ["answer", "--ring", str(r_)] + sum((["--set", s] for s in sets), []) + ["--quote", "答 %d" % r_, "--confirm"]
+            args = ["answer", "--ring", str(r_)] + sum((["--set", s] for s in sets), []) + ["--quote", "第 %d 环就按这些答" % r_, "--confirm"]
             res = self.ob(*args)
             self.test.assertEqual(res.returncode, 0, res.stderr)
         self.ob("show", "--ring", "6")
