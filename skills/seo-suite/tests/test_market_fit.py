@@ -95,9 +95,9 @@ class MarketFitUsageTests(unittest.TestCase):
 class MarketFitStructuralTests(unittest.TestCase):
     """无 GSC=结构因素模式:等权需求+诚实标注;Top3 结构;因子来自 markets.json"""
 
-    def test_default_all_18_markets_equal_demand(self):
+    def test_default_all_19_markets_equal_demand(self):
         doc = run_json([])
-        self.assertEqual(len(doc["markets"]), 18)
+        self.assertEqual(len(doc["markets"]), 19)
         self.assertEqual(doc["demand_basis"], "structural-only(缺数据按结构因素)")
         demands = {m["factors"]["demand"]["score"] for m in doc["markets"]}
         self.assertEqual(demands, {0.5})          # 全候选等权——不编数字
