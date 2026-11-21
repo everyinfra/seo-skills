@@ -80,7 +80,8 @@ python3 $G onboard-prelaunch --ws WS --transcript <转录> --driver-log RUN/driv
 python3 $G report RESULTS
 ```
 
-- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63、R64。
+- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63–R65。
+- R65:认 onboard.py / plan.py 等脚本调用前,把同一条 Bash 命令里前面赋过值的 `$NAME` / `${NAME}`(整词或路径前缀)展开,跨调用不展开,展开后其余判定规则不变。
 - `report` 按产品 × arm 汇总:`outcome_pass_pct`、`outcome_gap_pp`(skill − baseline、v043 − baseline、skill − v043,单位百分点)只算 outcome 类;process 类在 `process` 下单列,不进差距(红队致命 2)。`maturity_exact` 是例 9 的 5 维完全一致数(null 只和「未知」对得上)。
 - void 的 run 列在 `void`,不进任何汇总。
 - 判分器改了要先过校准:`python3 -m unittest tools/evals/onboarding/test_grade.py`(发版门 `tools/evals/fast_checks.py` 也跑它)。
@@ -96,7 +97,7 @@ python3 $G report RESULTS
 
 第 5 批的题是另一位出题人写的,**一个字不改**,开跑前核 hash:公开的 `scenarios_ext.json`、`rubric_example3.json`、`hosts_static.json` 对本目录 `HASHES-第5批出题.txt`(`cd tools/evals/onboarding && grep -v '^#' HASHES-第5批出题.txt | awk '{print $1"  "$2}' | shasum -a 256 -c`);私有的 `<PRIVATE>/scenarios-real.json` 和它的答案表对私有目录里的 `HASHES-第5批出题.txt`。真实站的场景 id、产品名和结果文件都只放私有目录,不进本仓。
 
-第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R64。出题人更正过的回话记在场景的 `superseded_replies` 里:收到旧回话的 run,列出的断言记 voided、不进汇总(R63)。
+第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R65。出题人更正过的回话记在场景的 `superseded_replies` 里:收到旧回话的 run,列出的断言记 voided、不进汇总(R63)。
 
 ### 6.1 真实站 3 个(场景 id 见 `<PRIVATE>/scenarios-real.json`,下面写成 `REAL_ID`)
 

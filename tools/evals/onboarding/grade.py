@@ -258,6 +258,10 @@ skip_handled(定义里 kind 是 outcome+process)
       环号取回话发过去,驱动日志这一行带 "unnumbered": true;这一回合不算停下(R3、R4 不变,stops_per_ring 照样不过),只是会话
       不因格式错误提前结束、把流程分扣进结果分(需求卡第 7 节红队致命 2:流程类单独判)。每段最多 3 次,上一回合已经是这种回话
       就结束。出题人 11-22 裁定。
+  R65 认脚本调用(onboard.py、plan.py,R29 的 *.py 输出文件)前,先把同一条 Bash 命令里前面纯赋值段(NAME=值、export NAME=值,
+      可和别的命令用 && / ; / 换行连着)赋过的 $NAME / ${NAME} 展开:整词或作路径前缀($S/onboard.py、${S}/scripts/onboard.py)。
+      没在同一条命令里赋值的变量不展开(shell 状态不跨调用),不认命令替换和别的 shell 写法;展开后其余规则一条不变(结果不是报错、
+      --quote 是此前回话的子串等)。第 5 批发现「O=…/onboard.py 换行 python3 $O answer --ring 1 --confirm」漏判第 1 环确认,出题人 11-22 补。
   R62 report 递归读目录下全部 JSON:按 family 分 products(第 0 批)/ real / ext(按场景);void 不进汇总;盲比按产品列,
       blind_broken 的只作参考、不计入通过数;宿主检查按 label 列各宿主 verdict。第 5 批开跑前定。
 """
@@ -571,16 +575,41 @@ def split_simple(cmd):
     return segs
 
 
+ASSIGN_WORD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
+VAR_PREFIX = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))(?=/|$)")
+
+
+def expand_var(tok, env):
+    """R65:词以 $NAME / ${NAME} 开头(整词,或后面紧跟 /)且 NAME 在 env 里 → 换成它的值;其余原样。"""
+    m = VAR_PREFIX.match(tok)
+    if not m:
+        return tok
+    name = m.group(1) or m.group(2)
+    return env[name] + tok[m.end():] if name in env else tok
+
+
+def expanded_segments(cmd):
+    """R65:split_simple 的每一段 → (展开后的词, 是不是纯赋值段, 到这一段为止的赋值)。纯赋值段 = 全是 NAME=值
+    (可带 export);值里的 $NAME 按前面的赋值展开。只看同一条 Bash 命令,不认命令替换和别的 shell 写法。"""
+    env, out = {}, []
+    for seg in split_simple(cmd):
+        words = seg[1:] if seg and seg[0] == "export" else seg
+        assign = bool(words) and all(ASSIGN_WORD.match(w) for w in words)
+        if assign:
+            for w in words:
+                k, v = w.split("=", 1)
+                env[k] = expand_var(v, env)
+            out.append((seg, True, dict(env)))
+        else:
+            out.append(([expand_var(t, env) for t in seg], False, dict(env)))
+    return out
+
+
 def onboard_calls(call):
     """一个 Bash 调用里的 onboard.py 调用:[{"sub","ring","confirm","quote"}]。"""
     out = []
-    env = {}
-    for seg in split_simple(bash_cmd(call)):
-        words = seg[1:] if seg and seg[0] == "export" else seg
-        if words and all(re.match(r"[A-Za-z_][A-Za-z0-9_]*=", w) for w in words):
-            for w in words:
-                k, v = w.split("=", 1)
-                env[k] = v
+    for seg, assign, env in expanded_segments(bash_cmd(call)):
+        if assign:
             continue
         idx = next((i for i, t in enumerate(seg) if t.endswith("onboard.py")), None)
         if idx is None:
@@ -661,7 +690,7 @@ def writes_plan(call):
         p = str(call["input"].get("file_path") or call["input"].get("notebook_path") or "")
         return "seo-ops/plan/" in p.replace("\\", "/")
     cmd = HEREDOC.sub("", bash_cmd(call))
-    for seg in split_simple(cmd):
+    for seg, _, _ in expanded_segments(cmd):
         i = next((k for k, t in enumerate(seg) if t.endswith("plan.py")), None)
         if i is not None and (i + 1 >= len(seg) or seg[i + 1] != "show"):
             return True
@@ -1338,7 +1367,7 @@ def script_output_files(call, ws):
     按命令里最近一次 cd 的目录(没有就是工作区)解析成绝对路径。手写的 Write / Edit 和 heredoc 里的 python - 不算。"""
     cmd = HEREDOC.sub("", bash_cmd(call))
     out, cwd = [], ws
-    for seg in split_simple(cmd):
+    for seg, _, _ in expanded_segments(cmd):
         if seg and seg[0] == "cd" and len(seg) > 1:
             cwd = seg[1] if os.path.isabs(seg[1]) else os.path.join(cwd, seg[1])
             continue

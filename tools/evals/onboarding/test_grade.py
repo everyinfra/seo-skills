@@ -304,6 +304,44 @@ class Driver(unittest.TestCase):
         call = {"name": "Bash", "input": {"command": 'python3 onboard.py answer --ring 2 --confirm --quote "$Q"'}}
         self.assertEqual(G.onboard_calls(call)[0]["quote"], "$Q")
 
+    # R65:同一条命令里先赋值、再用 $VAR / ${VAR} 调 onboard.py
+    def test_script_var_expanded(self):
+        def ring1(cmd):
+            return [(o["sub"], o["ring"], o["confirm"]) for o in G.onboard_calls({"name": "Bash", "input": {"command": cmd}})
+                    if o["sub"] == "answer" and o["ring"] == 1 and o["confirm"]]
+        hit = [("answer", 1, True)]
+        cases = (
+            ('cd /r && O=/k/skills/seo-suite/scripts/onboard.py\npython3 $O answer --ring 1 --set a=b --quote "对的" '
+             '--confirm 2>&1 | tail -20', hit),
+            ("S=/k/skills/seo-suite/scripts/onboard.py; python3 $S answer --ring 1 --confirm", hit),
+            ("S=/k/skills/seo-suite/scripts; python3 $S/onboard.py answer --ring 1 --confirm", hit),
+            ("export S=/k/skills/seo-suite; python3 ${S}/scripts/onboard.py answer --ring 1 --confirm", hit),
+            ('S="/k/skills/seo-suite" && O=$S/scripts/onboard.py && python3 "$O" answer --ring 1 --confirm', hit),
+            # 该不过的仍不过:变量不在同一条命令里赋值;变量赋的是别的脚本;命令前缀赋值(shell 里不展开到参数)
+            ("python3 $O answer --ring 1 --confirm", []),
+            ("O=/x/other.py; python3 $O answer --ring 1 --confirm", []),
+            ("O=/x/onboard.py python3 $O answer --ring 1 --confirm", []),
+            ("python3 $(echo /x/onboard.py) answer --ring 1 --confirm", []),
+        )
+        for cmd, want in cases:
+            with self.subTest(cmd=cmd):
+                self.assertEqual(ring1(cmd), want)
+
+    def test_ring1_confirm_via_var_needs_ok_result(self):
+        cmd = "O=/k/scripts/onboard.py\npython3 $O answer --ring 1 --quote \"对,就是这个产品。\" --confirm"
+        for err, want in ((False, 7), (True, None)):
+            with self.subTest(err=err):
+                tr = G.Transcript.__new__(G.Transcript)
+                tr.events = [{"kind": "call", "id": "c1", "name": "Bash", "input": {"command": cmd}, "line": 7}]
+                tr.results = {"c1": {"is_error": err, "text": "ok"}}
+                self.assertEqual(G.ring1_confirm_line(tr), want)
+
+    def test_plan_and_output_via_var(self):
+        self.assertTrue(G.writes_plan({"name": "Bash", "input": {"command": "cd /r && P=/k/scripts/plan.py\npython3 $P add x"}}))
+        self.assertFalse(G.writes_plan({"name": "Bash", "input": {"command": "python3 $P add x"}}))
+        c = {"name": "Bash", "input": {"command": "cd /w && T=/k/scripts/site_crawl.py && $T --out a.txt"}}
+        self.assertEqual(G.script_output_files(c, "/w"), ["/w/a.txt"])
+
     def test_ring_of(self):
         self.assertEqual(G.ring_of("第 1 环确认了。\n\n【第 2 环 · 客户】\n1. 谁在搜?", self.tmp)[0], 2)
         self.assertEqual(G.ring_of("Ring 4 · Assets\n1. How many posts?", self.tmp)[0], 4)
