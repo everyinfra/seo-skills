@@ -225,7 +225,8 @@
      "id": "deny_topics",
      "text": "哪些主题、渠道或做法明确不做?(会写进禁用清单,之后不再建议)",
      "options": [
-      "没有"
+      "没有",
+      "有(请写,会进禁用清单)"
      ],
      "required": false,
      "deny": true

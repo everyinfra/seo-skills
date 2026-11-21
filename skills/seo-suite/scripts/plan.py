@@ -204,13 +204,48 @@ def user_goals(prof):
     return found, text.strip()
 
 
+LANG_RES = {
+    "zh": r"中文|简体|繁体|汉语|普通话|chinese|mandarin|\bzh(?:-[a-z]{2,4})?\b",
+    "en": r"英文|英语|english|\ben(?:-[a-z]{2})?\b",
+    "de": r"德语|德文|german|deutsch|\bde(?:-[a-z]{2})?\b",
+    "es": r"西班牙语|西语|spanish|español|espanol|\bes(?:-[a-z0-9]{2,3})?\b",
+    "fr": r"法语|法文|french|français|\bfr(?:-[a-z]{2})?\b",
+    "ja": r"日语|日文|japanese|日本語|\bja\b",
+    "ko": r"韩语|韩文|korean|한국어|\bko\b",
+    "pt": r"葡萄牙语|葡语|portuguese|português|\bpt(?:-[a-z]{2})?\b",
+    "ar": r"阿拉伯语|arabic|\bar\b",
+    "ru": r"俄语|russian|\bru\b",
+    "it": r"意大利语|italian|\bit-it\b",
+}
+REGION_RES = {
+    "cn": r"中国大陆|大陆|中国|\bchina\b|\bprc\b", "us": r"美国|(?-i:\bUS\b)|\busa\b|united states|america",
+    "uk": r"英国|(?-i:\bUK\b)|united kingdom|britain", "ca": r"加拿大|canada", "de": r"德国|germany|deutschland",
+    "au": r"澳洲|澳大利亚|australia", "jp": r"日本|japan", "fr": r"法国|france", "es": r"西班牙|spain",
+    "mx": r"墨西哥|mexico", "br": r"巴西|brazil", "in": r"印度|india", "tw": r"台湾|taiwan", "hk": r"香港|hong kong",
+}
+ONLY_RE = re.compile(r"只做|只有|只要|仅|单一|一个市场|一种语言|\bonly\b|just one|single|solo|únicamente", re.I)
+
+
+def _mentions(table, text):
+    return {k for k, rx in table.items() if re.search(rx, text, re.I)}
+
+
 def one_market(prof):
-    """用户已确认只做一个市场 / 一种语言 → True(打法换用不出多语言的文案)。"""
+    """用户已确认只做一个市场 / 一种语言 → True(打法换用不出多语言的文案)。
+    看第 5 环的回答和用户原话:说了「只做 / only」且只提到一种语言,或者语言、地区都只提到一个
+    (「中国大陆、简体中文」是一个市场,不是两个)。"""
     rings = prof.get("rings") or {}
     ans = _answers(prof).get("market_first")
     if ans and _ok(ans[0]) and (rings.get(str(ans[1])) or {}).get("status") == "confirmed":
+        quotes = " ".join(str(q.get("text") or "") for q in (rings.get(str(ans[1])) or {}).get("quotes") or []
+                          if isinstance(q, dict))
         t = str(ans[0])
-        if re.search(r"只做|只有|只要|仅|单一|一个市场|一种语言|\bonly\b|just one|single|solo|únicamente", t, re.I):
+        langs, regions = _mentions(LANG_RES, t + " " + quotes), _mentions(REGION_RES, t)
+        if len(langs) >= 2:
+            return False
+        if ONLY_RE.search(t) or (ONLY_RE.search(quotes) and len(_mentions(REGION_RES, quotes)) <= 1):
+            return True
+        if (langs or regions) and len(regions) <= 1:
             return True
         if re.search(r"[、,,;;/]|和|与|及|\band\b|plus|later|以后|之后|再做|也做|también", t, re.I):
             return False

@@ -43,11 +43,13 @@ scan.json、diagnosis.json、private/answers.json。不写 project.yaml,不改�
 """
 import argparse
 import datetime as dt
+import ipaddress
 import json
 import os
 import re
 import subprocess
 import sys
+import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -129,11 +131,16 @@ def load_profile(ws):
         raise UsageError("profile.json 的 schema 不是数字")
     tamper = lifecycle.check_seal(p)
     problems = lifecycle.normalize_profile(p)
+    want = lifecycle.profile_format(json.loads(json.dumps(p)))["_schema"]
+    schema_fixed = p.get("_schema") != want and not (tamper and tamper.get("legacy"))
     for msg in problems:
         warn("档案不合格:" + msg)
     changes = []
     if problems:
         changes.append("补默认值:" + ";".join(problems))
+    if schema_fixed:
+        warn("顶层 _schema 和脚本写的映射不一样,已写回脚本那份(_schema 由脚本维护,不算手改;事实在 facts[])")
+        changes.append("_schema 写回脚本的映射")
     if tamper and tamper.get("legacy"):
         warn("档案没有校验值(旧版 seo-suite 写的或手写的);从这次起由脚本记校验值,以后手改会被发现")
         changes.append("补校验值")
@@ -218,20 +225,20 @@ def fact_value(prof, key):
 
 # 第 1 环这两问的回答同时记成事实(档案 _schema 按事实键找它们);列表类事实拆成列表存
 ANSWER_FACTS = {"customers": "customers", "conversion": "conversion.primary"}
-LIST_SEPS = "\u3001,\uff0c;\uff1b\n"
+LIST_SEP = ";"                                   # 屏幕上教 agent 用的分隔符
+STRONG_SEPS = ";\uff1b|\uff5c\u3001\n"            # ; ; | | 、 换行:出现就只按它们拆
+SOFT_SEPS = ",\uff0c"                             # 逗号:一项里可能自带(「Portland, Maine」),没有强分隔符时才拆
+DENY_SEPS = ";\uff1b|\uff5c\u3001\n"               # 禁用项是一句话:不按英文逗号拆
 
 
-def split_list(v):
-    """「A、B(x, y);C」→ [A, B(x, y), C]:按顿号、逗号、分号、换行拆,括号里的不拆。已是列表原样返回。"""
-    if isinstance(v, list):
-        return v
+def _split_on(text, seps):
     out, buf, depth = [], "", 0
-    for ch in str(v):
+    for ch in text:
         if ch in "(\uff08[":
             depth += 1
         elif ch in ")\uff09]" and depth:
             depth -= 1
-        if ch in LIST_SEPS and not depth:
+        if ch in seps and not depth:
             if buf.strip():
                 out.append(buf.strip())
             buf = ""
@@ -240,6 +247,26 @@ def split_list(v):
     if buf.strip():
         out.append(buf.strip())
     return out
+
+
+def split_list(v):
+    """「A;B(x, y)|C」→ [A, B(x, y), C]。有分号、竖线、顿号、换行就只按它们拆;都没有才按逗号拆,
+    而且要拆出三段以上、每段都像一个条目(不超过 60 个字符),否则当一整项。括号里的不拆。已是列表原样返回。"""
+    if isinstance(v, list):
+        return v
+    text = str(v)
+    depth_free = re.sub(r"[(\uff08\[][^)\uff09\]]*[)\uff09\]]", "", text)
+    if any(ch in depth_free for ch in STRONG_SEPS):
+        return _split_on(text, STRONG_SEPS)
+    parts = _split_on(text, SOFT_SEPS)
+    if len(parts) >= 3 and all(len(x) <= 60 for x in parts):
+        return parts                              # 三项以上的逗号串才当清单;两段的(「Portland, Maine」)当一整项
+    return [text.strip()] if text.strip() else []
+
+
+def split_deny(v):
+    """第 5 环「明确不做」:一句完整的话不拆;只按分号、竖线、换行分成几条(括号里的不拆)。"""
+    return _split_on(str(v), DENY_SEPS)
 
 
 def fact_shape(key, v):
@@ -278,8 +305,12 @@ def facts_from_scan(scan):
     for f in (scan or {}).get("facts") or []:
         key = str(f.get("key") or "")
         ring = next((r for r, d in b.items() if key.startswith(tuple(d.get("fact_prefixes") or ()))), None)
-        out.append({"key": key, "value": f.get("value"), "source": f.get("source"),
-                    "kind": f.get("kind") or "inferred", "status": "unconfirmed", "ring": ring, "at": now()})
+        rec = {"key": key, "value": f.get("value"), "source": f.get("source"),
+               "kind": f.get("kind") or "inferred", "status": "unconfirmed", "ring": ring, "at": now()}
+        for extra in ("note", "enum", "billing"):
+            if f.get(extra):
+                rec[extra] = f[extra]
+        out.append(rec)
     return out
 
 
@@ -325,9 +356,18 @@ def cmd_start(ns):
     ws = ws_dir(ns)
     if not ns.site and not ns.repo:
         raise UsageError("至少给 --site 或 --repo")
+    host = (urllib.parse.urlsplit(ns.site if "://" in (ns.site or "") else "http://%s" % (ns.site or "")).hostname or "")
+    if ns.site and is_loopback(host) and not ns.allow_local:
+        # 本机地址不加 --allow-local 一页都读不到,起出来的草稿只有仓库那一半;先停,这次什么都不写
+        raise UsageError("站点 %s 是本机地址:审本机开发站加 --allow-local 重跑(onboard.py start --site %s%s --allow-local);"
+                         "这次什么都没写" % (ns.site, ns.site, " --repo %s" % ns.repo if ns.repo else ""))
     if os.path.isfile(ctx(ws, "profile.json")) and not ns.force:
-        print("已经开过局(%s);接着问用 onboard.py show,要从头来加 --force" % ctx(ws, "profile.json"))
-        return cmd_show(argparse.Namespace(ws=ns.ws, ring=None, json=False))
+        old = read_json(ctx(ws, "profile.json"), {}) or {}
+        if not ring1_touched(old):
+            print("第 1 环还没有用户的回答,按这次的参数重新读产品(档案里没有要保留的用户答案)")
+        else:
+            print("已经开过局(%s);接着问用 onboard.py show,要从头来加 --force" % ctx(ws, "profile.json"))
+            return cmd_show(argparse.Namespace(ws=ns.ws, ring=None, json=False))
     if not os.path.isfile(os.path.join(ws, "project.yaml")):
         if not ns.site:
             os.makedirs(ws, exist_ok=True)
@@ -382,6 +422,26 @@ def cmd_start(ns):
     return cmd_show(argparse.Namespace(ws=ns.ws, ring=1, json=ns.json))
 
 
+def is_loopback(host):
+    """127.0.0.0/8、::1、localhost(--allow-local 放行的就是这些)。"""
+    h = (host or "").strip("[]").lower().rstrip(".")
+    if h == "localhost" or h.endswith(".localhost"):
+        return True
+    try:
+        return ipaddress.ip_address(h).is_loopback
+    except ValueError:
+        return False
+
+
+def ring1_touched(prof):
+    """档案里有没有用户给过的东西(任何一环的回答、原话,或 agent 记过的 note):有就不能悄悄重开。"""
+    for r in (prof.get("rings") or {}).values():
+        if isinstance(r, dict) and (r.get("answers") or r.get("quotes") or r.get("status") in ("confirmed", "skipped")):
+            return True
+    return any(isinstance(f, dict) and (f.get("by") == "agent" or f.get("status") not in (None, "unconfirmed"))
+               for f in prof.get("facts") or []) or bool(prof.get("events") or prof.get("metrics"))
+
+
 def print_fetched(scan):
     """把 product_scan 实际请求过的 URL 一行一个列出来(robots.txt、sitemap、llms.txt、抽样页都在里面)。"""
     log = ((scan or {}).get("site_scan") or {}).get("fetched") or []
@@ -395,6 +455,17 @@ def print_fetched(scan):
 # ---------------------------------------------------------------------------
 # show
 # ---------------------------------------------------------------------------
+
+def missing_core(prof):
+    """评测和下游都要读的 7 个事实键里,扫描没读到值的(conversion.primary、customers 由第 1 环的回答填)。"""
+    out = []
+    for key in lifecycle.PROFILE_FACT_KEYS:
+        if key in ("conversion.primary", "customers"):
+            continue
+        if not any(f.get("key") == key and has_value(f.get("value")) for f in prof.get("facts") or []):
+            out.append(key)
+    return out
+
 
 def site_type_of(prof):
     return str(fact_value(prof, "site.type") or "")
@@ -604,8 +675,9 @@ def render_question(i, q):
     for m in q.get("merged") or []:
         if m["guess"]:
             guesses.append("最想先做 %s(%s)" % (m["guess"], m["guess_from"]))
-    if guesses:
-        line += "\n   我猜:" + ";".join(guesses)
+    if guesses:                                    # 猜测和选项都留在问题这一行:贴的时候选项被挪到下一行,猜测也还在
+        head, sep, tail = line.partition("　")
+        line = head + "　我猜:" + ";".join(guesses) + (sep + tail if sep else "")
     if q["sensitive"]:
         line += "\n   (答案只存本地 context/private/,不进 git)"
     return line
@@ -619,6 +691,15 @@ def render_ring(prof, view, ws):
     L += ["- " + s for s in view["agent_steps"]]
     if r == 1 and prof.get("existing_context"):
         L.append("- 已有产品上下文文件(先读它当草稿):" + "、".join(c.get("path", "") for c in prof["existing_context"]))
+    if r == 1:
+        miss = missing_core(prof)
+        if miss:
+            L.append("- 档案还缺:%s(产品说明、brief、README 这类材料里读得到就先记下再贴:python3 %s note --ring 1 --key <键> "
+                     "--value <值> --source <文件>;列表项用「%s」隔开;读不到就留着,第 1 问里请用户说)"
+                     % ("、".join(miss), ob, LIST_SEP))
+        if lines_state(prof) == "missing":
+            L.append("- 产品线是未知的:用户回话里说了几条就用 --correct product.lines=<A%sB%sC> 记;只说了最重要的一条,"
+                     "从站点导航 / sitemap 里挑出产品类目一起写进去,下一环开头复述给用户" % (LIST_SEP, LIST_SEP))
     L += ["", BLOCK_START + "(到下面那行等号为止;不改写、不删「← 出处」和选项、不合并问题)=====",
           "**开局第 %d 环 · %s**%s" % (r, view["title"], "(这一环要你确认完才往下)" if view["must_confirm"] else ""), ""]
     rec = recap_lines(prof, r) if r > 1 else []
@@ -643,13 +724,16 @@ def render_ring(prof, view, ws):
     L += [BLOCK_END + " =====", "", "## 停",
           "把上面那一块原样发给用户(连同编号、选项、「← 出处」),现在停下等用户回答;不要先给建议、不要替用户答、"
           "不要改写成自己的话。只剩 1 个问题也照样编号。",
+          "排版也照原样:每个问题一行「数字. 问题?　我猜:…　A. …　B. …」,选项和「我猜」不要挪到下一行"
+          "(另起一行的「A.」会被当成下一个问题,这一问就成了没带选项),不加粗、不加前缀。",
           "- Claude Code:可以改用提问工具(AskUserQuestion),但每问的选项和你的猜测都要带上,猜测放第一个选项。",
           "- 没有提问工具的宿主:贴完那一块就结束这一回合。",
           "问题编号对应的 id(记答案用):" + ";".join("%d → %s" % (i, "+".join("[id=%s]" % x for x in q["ids"]))
                                              for i, q in enumerate(view["questions"], 1)),
           "纠正草稿时用的键:" + "、".join("%s=%s" % (FACT_LABELS.get(f["key"], f["key"]), f["key"]) for f in facts[:12]),
           "用户回了以后:python3 %s answer --ring %d --set <id>=<答案> ... --quote \"<用户这次回话的原文>\" --confirm" % (ob, r),
-          "用户纠正草稿:加 --correct <键>=<改后的值>(列表只改其中一项:写那一项的新值,或 <键>[N]=<新值>;整份换就写全部项);"
+          "用户纠正草稿:加 --correct <键>=<改后的值>(列表只改其中一项:写那一项的新值,或 <键>[N]=<新值>;"
+          "整份换就写全部项,列表项用「%s」隔开);" % LIST_SEP +
           "用户只是说哪条产品线最重要:用 --set main_line=<那条>,不要改 product.lines;用户说不知道:加 --unknown <id>。",
           "用户说「按你的判断来 / 按你的猜测来 / best guess / carry on / 好」:意思是按草稿确认这一环——"
           "answer --ring %d --set <id>=<上面我猜的值> --quote \"<原话>\" --confirm,再 show 下一环;这不是跳过。" % r]
@@ -705,10 +789,11 @@ def cmd_note(ns):
     if not ns.source:
         raise UsageError("note 必须带 --source(脚本输出、URL 或文件路径)")
     prof["facts"] = [f for f in prof["facts"] if not (f["key"] == ns.key and f.get("status") == "unconfirmed")]
-    prof["facts"].append({"key": ns.key, "value": ns.value, "source": ns.source, "kind": "inferred",
-                          "status": "unconfirmed", "ring": ns.ring, "at": now()})
+    prof["facts"].append({"key": ns.key, "value": fact_shape(ns.key, ns.value), "source": ns.source, "kind": "inferred",
+                          "status": "unconfirmed", "ring": ns.ring, "at": now(), "by": "agent"})
     save_profile(ws, prof, "agent 记:%s(第 %s 环,未确认)" % (ns.key, ns.ring))
-    print("记下 %s(未确认)" % ns.key)
+    v = fact_value(prof, ns.key)
+    print("记下 %s(未确认)%s" % (ns.key, (":%d 项 %s" % (len(v), " | ".join(map(str, v)))) if isinstance(v, list) else ""))
     return 0
 
 
@@ -826,6 +911,18 @@ def apply_correction(prof, r, key, v, quote):
     return base
 
 
+def merge_customers(prof, v):
+    """「主要客户是谁」的回答放第一项;草稿里(还没确认的)别的客户群留在后面,和回答说的是同一群的去掉。"""
+    new = split_list(v)
+    cur = next((f for f in prof.get("facts") or [] if f.get("key") == "customers"), None)
+    if not cur or cur.get("status") != "unconfirmed" or not isinstance(cur.get("value"), list):
+        return new
+    def same(a, b):
+        ta, tb = _tokens(a), _tokens(b)
+        return bool(ta and tb) and len(ta & tb) / float(min(len(ta), len(tb))) >= 0.4
+    return new + [x for x in cur["value"] if not any(same(x, n) for n in new)]
+
+
 def fill_from_draft(prof, r, d, ring):
     """确认时:已有上下文文件覆盖的问题取那份文件的值;并进第 1 问、没单独答的取猜测。→ 补了哪些 id。"""
     filled = []
@@ -883,9 +980,10 @@ def cmd_answer(ns):
         else:
             ring["answers"][k] = v
             if k in ANSWER_FACTS:
-                upsert_fact(prof, ANSWER_FACTS[k], v, "confirmed", r, ns.quote, "用户回答(第 %d 环 %s)" % (r, k))
-        if q.get("deny") and v and v not in ("没有", "无", "none"):
-            for item in [x.strip() for x in v.replace(";", ",").replace(",", ",").replace("、", ",").split(",") if x.strip()]:
+                fv = merge_customers(prof, v) if k == "customers" else v
+                upsert_fact(prof, ANSWER_FACTS[k], fv, "confirmed", r, ns.quote, "用户回答(第 %d 环 %s)" % (r, k))
+        if q.get("deny") and v and v.strip().lower() not in ("没有", "无", "none", "no", "a", "a.", "a. 没有"):
+            for item in split_deny(v):
                 if item not in [x["item"] for x in prof["deny"]]:
                     prof["deny"].append({"item": item, "at": now(), "quote": ns.quote})
     for k in ns.unknown or []:
@@ -908,6 +1006,12 @@ def cmd_answer(ns):
     msg = "第 %d 环记答案 %d 条" % (r, len(sets) + len(ns.unknown or []))
     if corrections:
         msg += ",纠正 %s" % "、".join(corrections)
+    for key in lifecycle.PROFILE_LIST_KEYS:          # 列表字段拆成了几项,打出来让 agent 当场核对
+        if key in [re.sub(r"\[\d+\]$", "", k) for k in corrections] or (
+                key == "customers" and "customers" in sets):
+            v = fact_value(prof, key)
+            if isinstance(v, list):
+                print("%s 记成 %d 项:%s" % (key, len(v), " | ".join(map(str, v))))
     if ns.confirm:
         missing = [q["id"] for q in d["questions"]
                    if question_required(q, prof) and q["id"] not in ring["answers"] and not covered_fact(q, prof)]
@@ -939,8 +1043,10 @@ def cmd_answer(ns):
         if res and res["changed"]:
             save_profile(ws, prof, "写回 %s:%s" % (res["path"], "、".join(prof["context_sync"]["fields"])))
             print("已写回 %s(改了 %s;别的段落没动)" % (res["path"], "、".join(prof["context_sync"]["fields"])))
-        diag = lifecycle.diagnose(read_json(ctx(ws, "scan.json")), ws)
-        write_json(ctx(ws, "diagnosis.json"), diag)
+    if ns.confirm or any(re.sub(r"\[\d+\]$", "", k) == "stage" for k in corrections):
+        diag = refresh_diagnosis(ws)
+        if "stage" in corrections:
+            print("阶段改成:%s(用户确认,之后重算不会改回)" % diag["stage"]["name"])
     if ns.confirm and r == 6:
         plan_path = os.path.join(ws, "plan", "plan.json")
         plan = read_json(plan_path)
@@ -1032,7 +1138,7 @@ def cmd_metric(ns):
 def cmd_status(ns):
     ws = ws_dir(ns)
     prof = load_profile(ws)
-    diag = read_json(ctx(ws, "diagnosis.json"), {}) or {}
+    diag = refresh_diagnosis(ws)                  # 现算,不读旧的 diagnosis.json:用户确认或纠正过的阶段压过规则
     b = bank()
     rows = [{"ring": r, "title": b[r]["title"], "status": prof["rings"][str(r)]["status"],
              "confirmed_at": prof["rings"][str(r)].get("confirmed_at")} for r in range(1, 7)]
@@ -1050,7 +1156,15 @@ def cmd_status(ns):
                                     (" " + row["confirmed_at"]) if row["confirmed_at"] else ""))
     if out["deny"]:
         print("明确不做:" + "、".join(out["deny"]))
+    print("档案的键:事实在 facts[](每条 key / value / status / source),顶层 _schema 是脚本写好的映射"
+          "(%s → facts 里 key 等于它的那一条;stage → stage.id);读档案按它取,不用手加。" % "、".join(lifecycle.PROFILE_FACT_KEYS))
     return 0
+
+
+def refresh_diagnosis(ws):
+    diag = lifecycle.diagnose(read_json(ctx(ws, "scan.json")), ws)
+    write_json(ctx(ws, "diagnosis.json"), diag)
+    return diag
 
 
 def cmd_diagnose(ns):
