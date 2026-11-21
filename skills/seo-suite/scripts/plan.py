@@ -9,10 +9,12 @@
   - only_if 不成立 → 不适用(比如没有新产品线就不出「新产品线回第 1 环」)
   - done_if 全部成立 → 已经做完(比如已有 llms.txt)
   - veto 任一成立 → 本轮出局,附理由(比如页面不到 100 不做内链)
-  - 禁用清单(profile.deny,开局第 5 环「明确不做」)→ 整条命中就去掉;只沾边的保留并注明「不含 X」
+  - 禁用清单(开局第 5 环「明确不做」和 teach.py 记的 playbook/deny.json,playbook.load_deny 合并)
+    → 整条命中就去掉;只沾边的保留并注明「不含 X」(规则在 playbook.deny_match,所有出建议的脚本共用)
   - force_first_if 成立 → 排第一(体检有 CRITICAL 时先修技术,strategy-fit「先基座」)
 
-用户在 seo-ops/playbook/plays.json 写 {"plays": [...]} 可以加自己的打法,同 id 覆盖内置的。
+用户在 seo-ops/playbook/plays.json 写 {"plays": [...]} 可以加自己的打法(格式同 data/playbooks.json,必须带
+stages 阶段标签),同 id 覆盖内置的;和内置打法一起排序,同样过 only_if / veto / 禁用清单。
 
 用法:
   python3 plan.py build --ws seo-ops [--metrics m.json] [--top 10] [--json]
@@ -31,6 +33,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import lifecycle as LC  # noqa: E402
+import playbook as PB  # noqa: E402
 
 PLAYBOOKS = os.path.join(os.path.dirname(HERE), "data", "playbooks.json")
 WEEKS = 13
@@ -198,20 +201,9 @@ def _conds(conds, ev):
 
 
 def deny_match(play, deny):
-    """→ ("drop", item) 整条命中 / ("note", [items]) 沾边 / None。"""
-    text = " ".join([play.get("title", ""), play.get("title_en", ""), " ".join(play.get("tags") or [])]).lower()
-    tags = [t.lower() for t in play.get("tags") or []]
-    notes = []
-    for d in deny or []:
-        item = str(d.get("item") if isinstance(d, dict) else d).strip()
-        il = item.lower()
-        if not il:
-            continue
-        if il in tags or il in text:
-            return ("drop", item)
-        if any(t in il for t in tags if len(t) >= 2):
-            notes.append(item)
-    return ("note", notes) if notes else None
+    """→ ("drop", item) 整条命中 / ("note", [items]) 沾边 / None。规则在 playbook.deny_match,所有出建议的脚本共用。"""
+    text = " ".join([play.get("title", ""), play.get("title_en", ""), play.get("do", ""), " ".join(play.get("tags") or [])])
+    return PB.deny_match(text, play.get("tags") or [], deny)
 
 
 def weak_order(diag, stage):
@@ -321,7 +313,8 @@ def build(ws, metrics=None, top=10, today=None):
     ev.update(profile_evidence(prof))
     pb, plays, pb_hash = load_playbooks(ws)
     weak = weak_order(diag, stage)
-    cand, skipped = select(plays, stage, ev, prof.get("deny") or [], weak)
+    deny = PB.load_deny(ws, prof)
+    cand, skipped = select(plays, stage, ev, deny, weak)
     sched, backlog = schedule(cand)
     sched.sort(key=lambda p: (-p["score"], p["start"], p["id"]))
     facts = product_facts(prof)
@@ -343,7 +336,7 @@ def build(ws, metrics=None, top=10, today=None):
                             "plays": [r["id"] for r in recs[:top] if r["theme"] == t]} for t in top_themes],
             "recommendations": recs[:top], "more": recs[top:],
             "backlog": [{"id": p["id"], "title": p["title"]} for p in backlog], "skipped": skipped,
-            "deny": [d.get("item") if isinstance(d, dict) else d for d in prof.get("deny") or []],
+            "deny": [d["item"] for d in deny],
             "assumptions": {"unconfirmed_facts": unconfirmed, "skipped_rings": skipped_rings,
                             "missing_slots": sorted({m for r in recs[:top] for m in r["facts_missing"]})},
             "metrics_by_stage": pb["metrics_by_stage"].get(str(stage), []),

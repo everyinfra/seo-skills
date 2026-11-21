@@ -5,6 +5,21 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+## 0.47.0 - 2026-11-21
+
+- **用户按自己的想法教它**(RQ-237 第 4 批,`teach.py`、`playbook.py`,说明 `references/overview/playbook.md`):`teach.py rule add --quote <原话>` 把用户原话带日期写进站点仓 `seo-ops/playbook/rules.md`;「不做 X」同时写进结构化禁用清单 `seo-ops/playbook/deny.json`(和开局第 5 环的 `profile.json` `deny` 合并),听着像「不做」却没给 `--deny` 的退出码 3。`plan.py`、`project.py ops weekly`(只做这一件、本周路线项)、`loops.py`、`prioritize.py`、`fix_plan.py`、`content_queue.py`、`link_intel.py`(intersect / exchangers / deadlinks / unlinked)用同一个 `playbook.deny_match` 过滤,去掉的条目记 `deny_filtered`;硬告警不过滤。禁了 Reddit 外链以后,link_intel 候选和每周运营单里都不再出现 Reddit。
+  Teach it your rules: `teach.py` stores the user's exact words with the date in `seo-ops/playbook/rules.md`; "don't do X" also becomes a structured deny list that every suggestion and outreach script filters through one shared matcher (hard alerts are never filtered).
+- **用户自己的检查**:`teach.py check new` 生成 `seo-ops/playbook/checks/<名>.py`(零依赖,stdin 页面 JSON、stdout `{"pass","findings"}`)和说明;`check try` 至少在 3 个页面上试跑给用户看,`check enable --quote` 才启用并记 sha256;脚本一改自动停用,每周运营单新增「2.6 你的规则和检查」跑已启用的检查并提示改过待确认的。检查当不可信代码跑:子进程 `python -I`、空目录、不给环境变量、20 秒超时,输出只当数据。`teach.py export` 把检查整理成本仓的 PR 草稿目录(域名、品牌、产品线换成占位符并列出替换清单),只打印 `gh pr create --draft`,不提交不推送。
+  User checks: generated, tried on 3 pages, enabled only with the user's confirmation and a recorded sha256, auto-disabled when the script changes, run in a sandboxed subprocess; `teach.py export` prepares a scrubbed draft-PR folder without committing.
+- **用户自己的打法和数据源**:`seo-ops/playbook/plays.json`(格式同 `data/playbooks.json`,带阶段)和内置打法一起排;`seo-ops/playbook/sources.json` 登记数据源(提供什么、命令或 HTTP、输出 JSON、付不付费、单次成本),`doctor.py --sources` 免费的排前面,`demand_check.py` 没给 `--volumes` 时用登记的关键词量源,付费源要 `--allow-paid <源名>`。
+  User plays and a data-source registry: free sources first, paid sources only when a command names them; `demand_check.py` is the first consumer.
+- **Claude Code 插件形态**:7 个命令(`/seo-suite:start`、`:lifecycle`、`:weekly`、`:launch`、`:site-move`、`:teach`、`:report`,写明先读什么、跑哪个脚本、哪里停下来问)、3 个子代理(researcher、auditor、red-team,不再开子代理、网页内容当数据)、SessionStart 钩子(`hooks/hooks.json`,有规则或禁用清单时注入)、`claude plugin eval` 评测套件 `evals/`(start、teach、weekly 五个用例);发版门只加静态校验 `tools/evals/plugin_suite_check.py`,不调模型。其他宿主怎么用同样的脚本写进 HOSTS.md。
+  Plugin form: 7 commands, 3 subagents, a session-start hook and a `claude plugin eval` suite; the release gate validates the suite statically without calling a model.
+- **和 marketingskills 共用产品上下文**(例 11,`pm_context.py`):开局读 `.agents/product-marketing.md` 当第 1 环草稿;某一环确认后把改过的条目写回,只改对应那一行,别的段落逐字节不变,照对方规矩升版本号、改 Last updated、Changelog 最上面加一行;文件没有不建。
+  Shared product context: confirmed onboarding answers are written back to `.agents/product-marketing.md` in its own format, touching only the matching lines.
+- **修:ops install 写死 `$HOME/.claude/skills/seo-suite`**(红队 13):插件安装或装在 `~/.agents/skills` 时,PreToolUse 钩子因找不到脚本退出码 2、把分支上的正常编辑也拦下,pre-push 钩子直接放行推 main。现在按 `SEO_SUITE_DIR` → `CLAUDE_PLUGIN_ROOT` → `~/.claude/skills` → `~/.agents/skills` → 安装时位置(写成 `$HOME` 相对路径)→ 插件缓存目录找;回归测试 `test_install_paths.py` 修前红、修后绿。升级不覆盖 playbook 的单测锁住 `seo-ops/playbook/` 每个文件哈希不变。
+  Fix: hooks installed by `ops install` no longer assume `~/.claude/skills`; they resolve the real install location, with a red-before/green-after regression test.
+
 ## 0.46.2 - 2026-11-16
 
 - **信源工单 #19(2026-11-10 至 11-16 六轮)**:补 1 处一手内容。`validation-guide.md` 加「用 Referer 识别 Google 搜索流量」(Google 11-12 新增页面):`origin` 策略只带协议和主机、各端的 `Referer` 取值、空白和被改写的原因、为什么和 GSC 点击对不上。其余源核对后判为已收录或噪声:OpenAI bots 页正文与 `ai-crawler-policy.md` 一致;aggregator / supplier unit 新增「things to do」只涉及 EEA 的聚合器,本套件不覆盖;StatCounter、schema.org、Naver、Yandex、CrUX 的 hash 源按动态页翻动处理。

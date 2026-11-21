@@ -608,7 +608,8 @@ def render_markdown(view, fixes, est, applied, show_estimate, branch_info=None, 
 
 
 USAGE = f"""usage: fix_plan.py (--url URL | --audit audit.json) [--only CATS] [--apply] [--estimate] [--json]
-                   [--git-branch [BRANCH]]
+                   [--git-branch [BRANCH]] [--ws seo-ops] [--no-deny]
+用户禁用清单(站点仓 seo-ops/playbook,playbook.py)命中的修复物不生成,记进 deny_filtered;--no-deny 关掉。
 审计→修复物生成器:跑(--url,内部调用 site_audit)或读(--audit,site_audit --json 输出)
 审计结果,产出 6 类 FixItem {{category, description, content, file_name, action(create|append|snippet)}}。
 
@@ -672,8 +673,8 @@ def parse_only(arg):
 
 
 def parse_args(argv):
-    url = audit_path = only_arg = branch_arg = None
-    do_apply = do_estimate = as_json = False
+    url = audit_path = only_arg = branch_arg = ws_arg = None
+    do_apply = do_estimate = as_json = no_deny = False
     i = 0
     while i < len(argv):
         x = argv[i]
@@ -697,6 +698,10 @@ def parse_args(argv):
             do_estimate = True; i += 1
         elif x == "--json":
             as_json = True; i += 1
+        elif x == "--ws":
+            ws_arg = _val(argv, i, "--ws"); i += 2
+        elif x == "--no-deny":
+            no_deny = True; i += 1
         else:
             raise BadInput(f"未知参数 {x}")
     if bool(url) == bool(audit_path):
@@ -711,7 +716,7 @@ def parse_args(argv):
         raise BadInput("--git-branch 分支名含空白或为空: %r" % branch_arg)
     return {"url": url, "audit": audit_path, "only": parse_only(only_arg),
             "apply": do_apply, "estimate": do_estimate, "json": as_json,
-            "git_branch": branch_arg, "help": False}
+            "git_branch": branch_arg, "help": False, "ws": ws_arg, "no_deny": no_deny}
 
 
 def main(argv=None):
@@ -733,6 +738,15 @@ def main(argv=None):
             print(json.dumps({"error": str(e), "fixes": []}, ensure_ascii=False))
         return 2
     fixes = build_fixes(view, opts["only"])
+    denied = []
+    if not opts.get("no_deny"):
+        import playbook as PB
+        fixes, dropped, _ = PB.filter_for(None, fixes, lambda f: "%s %s %s" % (
+            f.get("category", ""), f.get("description", ""), f.get("file_name", "")), explicit_ws=opts.get("ws"))
+        denied = [{"category": d["item"].get("category"), "denied_by": d["denied_by"]} for d in dropped]
+        if denied:
+            sys.stderr.write("[fix_plan] 按禁用清单去掉 %d 个修复物:%s\n" % (
+                len(denied), "、".join("%s(%s)" % (d["category"], d["denied_by"]) for d in denied)))
     est = estimate(view, fixes)
     applied, branch_info, pr = [], None, None
     if opts["apply"] and fixes:
@@ -753,7 +767,7 @@ def main(argv=None):
         payload = {"site": view["url"], "source": view["source"], "verdict": view["verdict"],
                    "ai_search_health_score": (view["ai_health"] or {}).get("score"),
                    "dry_run": not opts["apply"], "only": list(opts["only"]),
-                   "estimate": est, "fixes": fixes}
+                   "estimate": est, "fixes": fixes, "deny_filtered": denied}
         if opts["apply"]:
             payload["applied_files"] = applied
         if branch_info:

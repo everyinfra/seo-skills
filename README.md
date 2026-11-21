@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.46.2-brightgreen" alt="version 0.46.2">
+  <img src="https://img.shields.io/badge/version-0.47.0-brightgreen" alt="version 0.47.0">
   <img src="https://img.shields.io/badge/license-Apache--2.0-brightgreen" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/markets-18-brightgreen" alt="18 language markets">
   <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Python standard library only">
@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 > 由 [EveryInfra（万有引擎）](https://everyinfra.com/) 维护。需要实时数据时，可以接 EveryInfra 的[全网搜索 API](https://everyinfra.com/products/search)（17 种检索工具）和 [90 个平台的数据接口](https://everyinfra.com/market)（<img src="assets/icons/xiaohongshu.svg" width="16" height="16" alt=""> 小红书、<img src="assets/icons/douyin.svg" width="16" height="16" alt=""> 抖音、<img src="assets/icons/taobao.svg" width="16" height="16" alt=""> 淘宝等）；本 Skill 不依赖它们。
 
-EveryInfra SEO Skills 的版本为 `0.46.2`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度来自你自己的 AI 工具。
+EveryInfra SEO Skills 的版本为 `0.47.0`，采用 Apache-2.0 许可协议。仓库里是一个 SEO / GEO 工作台 Skill：`seo-suite`。它是一组工作说明、参考资料和输出模板，本身不调用模型，不捆绑模型提供商，也没有 API Key 或运行时依赖。模型和模型额度来自你自己的 AI 工具。
 
 **独有差异化：全球 SEO/GEO 一把做。** 面向全球做产品的团队不想装十几个单市场工具——本套件把 **18 个语言市场**放进同一个工作台，逐市场分开评分：中文（实测引用经济学）、英文、俄语区（Yandex/Alice）、韩语区（<img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver/AI Briefing）、日语区（Yahoo! Japan+Bing+AIO）、西语（es-419 拉美分裂）、葡语（巴西=<img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT 最强市场）、阿拉伯语（RTL+MSA/方言）、法语（Bill 96）、德语（DACH Sie/du）、印尼语（baku/gaul）、印地语（Hinglish 三种书写）、意大利语（it-CH 独立 locale）、土耳其语（第二个 Yandex 市场，~26%）、越南语（有调/无调+Coc Cốc）、泰语（无空格分词）、波兰语（变音符规范化）、荷兰语（nl-NL/nl-BE 弗拉芒）。**全球能力不做成独立模块，而是融入五类能力文件的每一类**——主干是 `overview/multilingual-workflow.md`（市场总表、逐市场工具栈、语言规范、合规速查）。
 
@@ -78,6 +78,10 @@ EveryInfra SEO Skills 的版本为 `0.46.2`，采用 Apache-2.0 许可协议。�
 
 `seo-suite` 是一个统一的 SEO 入口。第一次进一个产品时先开局：自己读透产品（站点、定价、文档、llms.txt、代码仓库），再分 6 环和你一环一环核对（产品、客户与搜索意图、竞品、资产与限制、市场与关键词版图、策略与路线），每环停下等你确认；同时判断产品在哪个阶段（想法、上线前、刚上线、增长、成熟、改版）、技术 / 内容 / 外链与品牌 / AI 可见度 / 团队与测量哪方面最弱。最后一环按阶段出方案：只选这个阶段该做的事，每条写清动哪类页面、看哪个数、第几周做，并生成中英两份战略书；想法阶段用真实联想词验证需求，上线前跑一份每项有负责人的上线清单。开局做完，把任务路由到 overview、research、content、technical、monitoring 五类能力，最后按固定结构给出结论、优先级和验证方法。
 
+你可以按自己的想法教它：说「以后对比文都放一张价格对照表」「别再建议 Reddit 外链了」「加一个检查：每个平台页都要有 MCP 调用示例」，它用 `teach.py` 把原话带日期写进站点仓的 `seo-ops/playbook/`；「不做」的事写成结构化禁用清单，方案、每周运营单、外联候选的脚本直接过滤；自定义检查先在 3 个页面上试跑给你看，你确认后才启用，脚本一改就自动停用。skill 升级不碰这个目录；通用的检查可以整理成本仓的 PR 草稿（去掉你站点的专属内容，不自动提交）。自己的关键词量、SERP、外链数据源登记在 `seo-ops/playbook/sources.json`，免费的优先，付费的要在命令里点名才用。
+
+在 Claude Code 里以插件安装时，另有 7 个命令入口（`/seo-suite:start`、`:lifecycle`、`:weekly`、`:launch`、`:site-move`、`:teach`、`:report`）和 3 个子代理（调研、审计、红队审稿），会话开始时自动读入你的规则；其他工具跑同样的脚本，见 [HOSTS.md](HOSTS.md)。
+
 它强调证据：不报告页面上不存在的信号，不承诺排名、流量或 AI 引用的提升。GEO（AI 搜索可见度）相关建议以 `references/content/geo-evidence.md` 的证据约束为准。
 
 ## 能做哪些 SEO 任务
@@ -90,7 +94,7 @@ EveryInfra SEO Skills 的版本为 `0.46.2`，采用 Apache-2.0 许可协议。�
 | technical | 技术 SEO 与单页审计、robots.txt 与 AI 爬虫政策（含区域爬虫/MistralAI/Bytespider）、hreflang 国际化、结构化数据（含富结果状态速查）、内链与架构、实体、Programmatic SEO、Core Web Vitals、**JS 渲染与 SPA SEO**（五引擎渲染差异）、**Agent-Readiness 协议层**（ARD/WebMCP）、**服务器日志分析**（AI 到访测量/a11y 三分法）、归因埋点 |
 | monitoring | 排名追踪、外链（含各市场本地目录与 Google 链接垃圾政策边界；买链价格表已于 2026-10 删除）、品牌提及（四级引用阶梯+各市场监控通道）、**算法更新归因**（官方时间线/数据文件）、SEO 漂移监控、指标与报告 |
 | **专项模块** | 域名策略（选域/过期域尽调/迁移 checklist/AI 引用继承）、站群光谱与白帽替代、pSEO 九章手册、站型打法（SaaS/电商/媒体/本地/文档/工具/Marketplace/YMYL）、CWV 四指标、移动 SEO、惩罚恢复、重定向与 canonical、UGC 与站内搜索 |
-| **可执行层** | 92 个 stdlib 脚本+markets.json 数据层+1,982 个测试(2026-11-07)——AI 用 skill 时直接跑脚本拿事实再按能力文件解读 |
+| **可执行层** | 103 个 stdlib 脚本+markets.json 数据层+1,982 个测试(2026-11-07)——AI 用 skill 时直接跑脚本拿事实再按能力文件解读 |
 
 **全球能力不是独立模块,而是融在每个能力集合里**：`overview/multilingual-workflow.md` 是全球主干（18 个市场的引擎格局、逐市场工具栈、语言规范、合规速查），各能力文件按需携带对应区域知识。
 
@@ -193,10 +197,14 @@ seo-skills/
 ├── NOTICE                 署名与第三方资料说明
 ├── CHANGELOG.md           版本记录
 ├── manifest.json          包信息
+├── commands/            Claude Code 插件的 7 个命令入口(/seo-suite:start 等)
+├── agents/              Claude Code 插件的 3 个子代理(调研、审计、红队审稿)
+├── hooks/hooks.json     插件钩子:会话开始时读入站点仓 seo-ops/playbook/ 的规则
+├── evals/               `claude plugin eval` 评测套件(start、teach、weekly)
 └── skills/
     └── seo-suite/
         ├── SKILL.md       入口：intake、能力路由表、输出结构(脚本说明在 references/overview/script-catalog.md)
-        ├── scripts/       92 个可执行脚本(审计/多语言/GSC/归因/网格排名/监控/信源检查…)+markets.json
+        ├── scripts/       103 个可执行脚本(审计/多语言/GSC/归因/网格排名/监控/信源检查…)+markets.json
         ├── tests/         1,982 个测试(self_check 全跑)
         ├── examples/      金标准样例输出
         ├── references/

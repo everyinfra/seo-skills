@@ -38,3 +38,6 @@ crawl.json
 .intel-update-task.md
 # 上面的 briefs/ 规则不该吞掉 trend-watch 的 commit-back 目录
 !.github/state/trend/briefs/
+
+# claude plugin eval 的运行结果(官方文档:results/ 不进 git)
+evals/results/

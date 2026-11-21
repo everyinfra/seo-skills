@@ -1,6 +1,6 @@
 {
  "schema_version": "1.0",
- "updated": "2026-11-08",
+ "updated": "2026-11-21",
  "governance": {
   "origin": "references/research/niubigeo-deep-read.md N10(CAPABILITY_MATRIX 治理格式)",
   "completion_rule": "能力=完成 三条件:真实代码存在 + 测试守护存在 + data-source-contract 对勘入表(脚本存在≠能力完成)",
@@ -23,11 +23,11 @@
   "④": "静默跳过可选增强(核心功能照常)"
  },
  "summary": {
-  "script": 100,
+  "script": 103,
   "template": 25,
   "reference": 13,
   "stable": 76,
-  "beta": 61,
+  "beta": 64,
   "draft": 1
  },
  "entries": [
@@ -1873,7 +1873,7 @@
     "Google、Bing、DuckDuckGo 公开联想接口;rdap.org"
    ],
    "outputs_schema": "json",
-   "data_source": "公开联想接口(联想数是信号不是搜索量 [est]);可选 --volumes 关键词工具导出 [real];RDAP 域名注册记录",
+   "data_source": "公开联想接口(联想数是信号不是搜索量 [est]);可选 --volumes 关键词工具导出 [real] 或 seo-ops/playbook/sources.json 登记的 keyword_volume 源(付费源要 --allow-paid 点名);RDAP 域名注册记录",
    "fallback_mode": "②",
    "tests_file": null,
    "status": "beta"
@@ -1904,6 +1904,50 @@
    "data_source": "新旧站实时抓取(本机回环需 --allow-local);可选 GSC 网页导出算点击保留 [est]",
    "fallback_mode": "②",
    "tests_file": "tests/test_site_move.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "playbook.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "hook(SessionStart 事件 stdin JSON)|context [--ws]|skill-dir",
+    "seo-ops/playbook/:rules.md、deny.json、checks/、plays.json、sources.json"
+   ],
+   "outputs_schema": "json",
+   "data_source": "站点仓 seo-ops/playbook/ 用户原话、禁用清单、检查登记、数据源登记(只读;检查在子进程里跑)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_playbook_teach.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "teach.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "rule add|list|remove --quote 用户原话 [--deny 词]",
+    "check new|try|enable|disable|list|run <名> [--url ×3] [--quote]",
+    "export <名> [--out]",
+    "show [--json]"
+   ],
+   "outputs_schema": "json",
+   "data_source": "用户原话;check try 时实时抓取用户给的页面(本机回环需 --allow-local);档案里的域名和品牌名(export 去站点专属内容)",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_playbook_teach.py",
+   "status": "beta"
+  },
+  {
+   "type": "script",
+   "script": "pm_context.py",
+   "group": "工作流与编排",
+   "inputs": [
+    "read [--repo .] [--json]",
+    "write --repo . --set \"段/标签=值\" [--reason] [--dry-run]"
+   ],
+   "outputs_schema": "json",
+   "data_source": "站点仓 .agents/product-marketing.md(marketingskills product-marketing 的格式);开局档案确认过的条目",
+   "fallback_mode": "②",
+   "tests_file": "tests/test_pm_context.py",
    "status": "beta"
   }
  ]

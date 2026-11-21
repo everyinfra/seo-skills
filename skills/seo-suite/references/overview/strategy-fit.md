@@ -15,6 +15,8 @@
 
 本文的九条策略是给**已上线、有数据**的站用的(阶段 2–4)。开局第 6 环先按产品阶段过滤:`plan.py build` 只从 `data/playbooks.json` 里 `stages` 含当前阶段的打法里选,打法的 `theme` 对应策略(技术修复 → tech,内容刷新 → refresh,pSEO → content 下的 pseo-gated,多语言 → expand,GEO → entity,外链 → links,内链 → content 下的 internal-links)。阶段 0、1 没有本文的候选池,用 [stage-0-idea](../lifecycle/stage-0-idea.md)、[stage-1-prelaunch](../lifecycle/stage-1-prelaunch.md) 的打法;阶段 5 用改版保护的打法。
 
+用户自己的打法(RQ-237 第 4 批):站点仓 `seo-ops/playbook/plays.json` 里的打法(格式同 `data/playbooks.json`,必须带 `stages`)和内置打法进同一个候选池、按同一套分数排,同样过阶段、`only_if`、`veto`;用户禁用清单(`seo-ops/playbook/deny.json` 和档案的 `deny`)整条命中的打法不进候选、只沾边的注明「不含 X」,方案书里列出「你说过不做:……」。格式见 [playbook](playbook.md) 第四、二节。
+
 - 本文的反指标在打法库里写成 `veto` 条件(比如页面不到 100 不做内链、不到 200 不做退役和实验),命中的写进战略书「不做什么」。
 - 「先基座」写成 `force_first_if`:体检查到 CRITICAL 时技术修复排第一;没跑过体检时不强制。
 - 加权:成熟度最弱的一维 +2、第二弱 +1(`lifecycle.py` 的补短顺序),替代本文第三节公式里的 S 项;资源、风险两项在开局第 4 环答完后由 agent 按第三节人工复核。
