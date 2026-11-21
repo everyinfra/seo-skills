@@ -241,7 +241,13 @@
    [
     "需求验证",
     "起名",
-    "域名"
+    "选域名",
+    "挑域名",
+    "域名选择",
+    "买域名",
+    "brand naming",
+    "choose a domain",
+    "pick a domain"
    ]
   ],
   [
@@ -257,5 +263,8 @@
   "lifecycle_sites.py TM_BRIEF / TM_POSTS",
   "gsc/Pages_*.csv(合计 1,850 → 1,450)",
   "site/sitemap.xml lastmod"
+ ],
+ "corrections": [
+  "2026-11-22 第 5 批第 1 轮后出题人更正(疑问 5,和 change.json 同一处):禁项「需求验证、起名和域名」的别名「域名」收窄为需求验证 / 起名 / 选域名 / 挑域名 / 域名选择 / 买域名 / brand naming / choose a domain / pick a domain;成熟期多市场扩张的正当建议(子域名还是子目录)不再命中。"
  ]
 }

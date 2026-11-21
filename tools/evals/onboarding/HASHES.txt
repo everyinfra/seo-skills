@@ -1,8 +1,9 @@
 7d157e55c3cf850456984a167988c4870245152358e679274912886c93609e74  testsites/lifecycle_sites.py
-50dfc18cd5bef0cc15348deb303197e50bf0a85bf33d4efa68e6d4d613f03c9c  evals/onboarding/answers/change.json
+dcbc6888ff7bcab5fda5fcaa45f8d7b4d66a7fff9b575bab9737affc94fbfef0  evals/onboarding/answers/change.json
 0250ad344bcba30e43e4a2308ff80c07daf68b084a4c852991b2aae144da1ef2  evals/onboarding/answers/idea.json
-df59cd18f926f10f98fe04e2f448b4fcdf46ca21a11bc1921256a25030896da8  evals/onboarding/answers/launched.json
-2d4864cf5e212c873cdca8e4be976ee2e4bb4a477d2d892d8d81fc5ed9a7e242  evals/onboarding/answers/mature.json
+c7311998cc8c73c357121ccaa57a41cfe05310e197eb2f81793100fc0c81a134  evals/onboarding/answers/launched.json
+0b496942504e2f61c4f8f8f8d43e151f0495d6f049cb1ee305337667353ecba5  evals/onboarding/answers/mature.json
 d1839a91bbf1de4ba5bb4a60194cc4eba2d57b7ed6478417c036b13a655f1473  evals/onboarding/answers/prelaunch.json
 97cc788f5a62e702fcd28691108b6be9546f82f418e623e353aa86f91b6fd76b  evals/onboarding/scenarios.json
 # 11-08 公开前:everyinfra.com 的 4 个场景和答案表挪到私有仓(含竞品名和内部路径),这里只剩 5 个合成产品;出题时 9 个场景的原 hash 在私有仓。
+# 2026-11-22 第 5 批第 1 轮后更正(出题人裁定第 1 轮疑问 4、5):change.json 的 customers 去掉经销商一项、launched.json 的 customers 去掉送礼买家一项(两条都只写在工作区外的 DIR/brief.md,被测从站点、工作区和模拟用户回话都读不到);change.json、mature.json 的禁项「需求验证、起名和域名」别名「域名」收窄成选域名 / 起名一类(改版、成熟期的正当建议会写到域名)。每份文件的 corrections 字段写了原因。更正前 sha256:answers/change.json 50dfc18cd5bef0cc15348deb303197e50bf0a85bf33d4efa68e6d4d613f03c9c;answers/launched.json df59cd18f926f10f98fe04e2f448b4fcdf46ca21a11bc1921256a25030896da8;answers/mature.json 2d4864cf5e212c873cdca8e4be976ee2e4bb4a477d2d892d8d81fc5ed9a7e242

@@ -1124,5 +1124,254 @@ class Report5(unittest.TestCase):
         self.assertEqual(rep["hosts_static"], {"new": {"codex": "pass"}})
 
 
+# ---------------------------------------------------------------------------
+# 出题人 11-22 裁定第 5 批第 1 轮的疑问:每处改动一个「按需求卡该过」、一个「该不过」。
+# 输入取自第 1 轮真实 run 的 evidence(去掉站点名),或照需求卡原文造。
+# ---------------------------------------------------------------------------
+
+class FakeCx:
+    def __init__(self, first_text):
+        self._fs = {"text": first_text, "line": 1}
+
+    def first_stop(self):
+        return self._fs
+
+
+class Rulings1122(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="onb_r1122_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def sub(self, name):
+        d = os.path.join(self.tmp, name)
+        os.makedirs(d, exist_ok=True)
+        return d
+
+    # 疑问 1:R44 ① 只认 GSC 指标数值
+    def _real_with_files(self, name, files):
+        ex = B.expand(B.load(REAL))
+        p = B.materialize(ex, self.sub(name))
+        for rel, body in files.items():
+            path = os.path.join(p["ws"], rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(body)
+        r = G.grade(ex["scenario"], p["ws"], p["transcript"], p["driver_log"], scenarios=p["scenarios"],
+                    answers_dir=FIX_ANSWERS, site=p.get("site"), lifecycle=LC)
+        return verdict(r)["no_fabricated_metrics"]
+
+    def test_no_fab_keys_weeks_coverage_pass(self):
+        files = {
+            "seo-ops/context/diagnosis.json": json.dumps({"inputs": {"missing": [
+                "metrics.gsc_impressions_28d", "metrics.gsc_clicks_28d", "metrics.gsc_clicks_prev_28d"]}}, indent=1),
+            "seo-ops/history/1/priority.json": json.dumps({"context": {"gsc": False, "field_coverage": {
+                "gsc_clicks": 0, "indexed": 0}}}, indent=1),
+            "seo-ops/plan/roadmap.md": (
+                "| 1 | 第 1–3 周 | 看 主产品线的非品牌点击,怎么量:GSC 按页面组过滤,8 周 |\n"
+                "7. **接 GSC,存第一份基线**:接上 GSC,存第一份 28 天基线:展示、点击、查询词数\n"
+                "5. Confirm whether AI Overviews are taking clicks: GSC generative-AI report, GA4 AI referral\n"
+                "- 先用必应/GSC 真实展示量定优先级。\", \"phase\": \"week2-3\"\n")}
+        self.assertTrue(self._real_with_files("nofab-pass", files))
+
+    def test_no_fab_real_values_fail(self):
+        for name, files in (
+                ("md", {"seo-ops/plan/plan.md": "1. 现状:GSC 近 28 天展示 12k、点击 340,CTR 2.8%。\n"}),
+                ("json", {"seo-ops/context/metrics.json": json.dumps({"metrics": {"gsc_clicks_28d": 340}}, indent=1)}),
+                ("en", {"seo-ops/plan/plan.md": "- Search Console: 1,240 impressions last month\n"})):
+            with self.subTest(case=name):
+                self.assertFalse(self._real_with_files("nofab-fail-" + name, files))
+
+    # 疑问 2:R45 加粗小标题不是事实行;反引号里的站内路径算出处;本机路径不算
+    def test_first_cited_headers_and_backticks(self):
+        good = ("**我读到的产品情况**(每条都来自站点,都还没确认)\n"
+                "- 产品:给定时任务用的心跳监控 ← /\n"
+                "- 定价:免费档和 €15/月 ← /pricing\n"
+                "- 页面按钮:Log in 和 Start free,后者指向 `/register`。\n"
+                "**请回答下面 4 个问题**\n1. 对吗? A. 对 B. 不对")
+        ok, ev = G.c_first_cited(FakeCx(good), {})
+        self.assertTrue(ok, ev)
+        self.assertEqual(ev["fact_lines"], 3)
+        bad = ("**已写入**\n"
+               "- 产品档案:`/Users/someone/ws/seo-ops/context/profile.json`\n"
+               "- 方案:`/tmp/ws/seo-ops/plan/plan.json`\n"
+               "- 定价:Free 1 个 endpoint,Pro €15/月。\n"
+               "1. 对吗? A. 对 B. 不对")
+        ok, ev = G.c_first_cited(FakeCx(bad), {})
+        self.assertFalse(ok, ev)
+        self.assertEqual((ev["fact_lines"], ev["cited"]), (3, 0))
+
+    # 疑问 3:R18 只认写入目标路径
+    def test_writes_plan_targets_only(self):
+        bash = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        not_writes = [
+            'n(){ python3 $S/onboard.py note --ring 1 --key "$1" --value "$2" >/dev/null 2>&1 || echo fail $1; }\n'
+            'n product.name x\npython3 $S/onboard.py show --json | python3 -c "import json,sys"; ls seo-ops/plan 2>&1',
+            "cat seo-ops/plan/plan.json 2>&1 | head -40",
+            "cp seo-ops/plan/plan.json /tmp/backup.json",
+            "python3 -c \"import json;print(json.load(open('seo-ops/plan/plan.json')))\""]
+        writes = [
+            "mkdir -p seo-ops/context seo-ops/plan && cat > seo-ops/context/profile.json <<'EOF'\n{}\nEOF",
+            "cat > seo-ops/plan/plan.md <<'EOF'\n# plan\nEOF",
+            "echo '{}' >> seo-ops/plan/plan.json",
+            "python3 - <<'EOF'\nimport json\nopen('seo-ops/plan/plan.json','w').write('{}')\nEOF",
+            "cp /tmp/p.json seo-ops/plan/",
+            "printf x | tee seo-ops/plan/notes.md"]
+        for c in not_writes:
+            self.assertFalse(G.writes_plan(bash(c)), c)
+        for c in writes:
+            self.assertTrue(G.writes_plan(bash(c)), c)
+        self.assertFalse(E._writes_context(bash("cat seo-ops/context/profile.json 2>&1 | head")))
+        self.assertTrue(E._writes_context(bash("cat > seo-ops/context/profile.json <<'EOF'\n{}\nEOF")))
+
+    # 疑问 4:答案表每个别名组都要在被测拿得到的材料里出现(站点、工作区、模拟用户回话);工作区外的 brief.md 不算
+    def test_answer_facts_reachable(self):
+        L = os.path.join(G.TESTSITES, "lifecycle_sites.py")
+        with open(os.path.join(HERE, "scenarios.json"), encoding="utf-8") as f:
+            scs = {s["product"]: s for s in json.load(f)["scenarios"]}
+        import subprocess
+        texts = {}
+        for prod, sc in scs.items():
+            d = self.sub("site-" + prod)
+            cmd = [sys.executable, "-I", L, "build", "--product", prod, "--out", d, "--base", "http://127.0.0.1:8899"]
+            if prod == "change":
+                cmd += ["--state", "before"]
+            subprocess.run(cmd, check=True, capture_output=True)
+            buf = [sc["prompt"], json.dumps(sc.get("simulated_user"), ensure_ascii=False)]
+            for root, _, fs in os.walk(d):
+                for fn in fs:
+                    p = os.path.join(root, fn)
+                    if os.path.dirname(p) == d and fn in ("brief.md", "product.json") and \
+                            not (fn == "brief.md" and "brief.md" in sc["setup"].get("workspace", "")):
+                        continue
+                    with open(p, encoding="utf-8", errors="replace") as fh:
+                        buf.append(fh.read())
+            texts[prod] = "\n".join(buf).lower()
+            with open(os.path.join(ANSWERS, prod + ".json"), encoding="utf-8") as f:
+                fm = json.load(f)["facts_match"]
+            for key, groups in fm.items():
+                if key.endswith("_min_hits"):
+                    continue
+                for g in groups:
+                    with self.subTest(product=prod, key=key, group=g):
+                        self.assertTrue(any(w.lower() in texts[prod] for w in g))
+        # 更正前的两组(只写在工作区外的 brief.md):必须找不到
+        self.assertFalse(any(w.lower() in texts["change"] for w in ["reseller", "经销", "plant shop", "植物店"]))
+        self.assertFalse(any(w.lower() in texts["launched"] for w in ["gift", "送礼"]))
+
+    # 疑问 5:禁项「起名和域名」不命中改版的正当建议
+    def test_must_not_domain_alias(self):
+        def go(name, item):
+            ex = B.expand(B.load("change"))
+            ex["plan_json"]["items"].insert(2, item)
+            return verdict(run(ex, self.sub(name)))["must_not_hits_max"]
+        self.assertTrue(go("mn-ok", {"title": "新版本上线前在预发上跑上线清单",
+                                     "do": "canonical 指向新正式域名;换域名时在 GSC 提交地址变更", "week": 2}))
+        self.assertFalse(go("mn-bad", {"title": "先做需求验证", "do": "起名并选域名", "week": 2}))
+
+    # 疑问 6:脚本写出的基线文件也算抓过;手写的不算
+    def test_baseline_first_script_output_file(self):
+        olds = G.ss_old_urls()
+        base = "http://127.0.0.1:8899"
+
+        def go(name, urls, by_write=False):
+            ex = B.expand(B.load("change"))
+            ev = ex["turns"][0]["events"][1]
+            assert "site_move.py baseline" in ev["bash"]
+            ev["bash"] += " 2>&1 | tail -8"
+            ev["out"] = "\n".join("200 %s%s" % (base, u) for u in olds[-5:])          # 输出被截断,只看到 5 个
+            body = json.dumps({"pages": [{"url": base + u, "status": 200} for u in urls]})
+            if by_write:
+                ev["bash"] = "echo skipped"
+                ex["turns"][0]["events"].insert(1, {"tool": "Write", "input": {
+                    "file_path": "seo-ops/baselines/before.json", "content": body}, "out": "ok"})
+            p = B.materialize(ex, self.sub(name))
+            path = os.path.join(p["ws"], "seo-ops", "baselines", "before.json")
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(body)
+            r = G.grade(ex["scenario"], p["ws"], p["transcript"], p["driver_log"], scenarios=p["scenarios"],
+                        answers_dir=ANSWERS, site=p.get("site"))
+            return verdict(r)["baseline_first"]
+        self.assertTrue(go("bf-script30", olds))
+        self.assertFalse(go("bf-script20", olds[:20]))
+        self.assertFalse(go("bf-write30", olds, by_write=True))
+
+    # 疑问 7:收到更正前回话的 run,列出的断言记 voided、不进汇总;没收到的照常判
+    def test_superseded_reply_voids(self):
+        sc = {"superseded_replies": [{"ring": 1, "text": "Yes. Old reply.", "voids": ["stage_correct_real"],
+                                      "why": "更正前"}]}
+        mk = lambda: [{"id": "stage_correct_real", "kind": "outcome", "pass": False},  # noqa: E731
+                      {"id": "facts_error_max", "kind": "outcome", "pass": True}]
+        out = mk()
+        G.apply_superseded(sc, [{"user_text": "Yes.  Old reply."}], out)
+        self.assertEqual([a["id"] for a in out if a.get("voided")], ["stage_correct_real"])
+        out2 = mk()
+        G.apply_superseded(sc, [{"user_text": "Partly. New reply."}], out2)
+        self.assertEqual([a for a in out2 if a.get("voided")], [])
+        d = self.sub("rep")
+        for i, (arm, a) in enumerate((("skill", out), ("baseline", out2))):
+            with open(os.path.join(d, "%d.json" % i), "w", encoding="utf-8") as f:
+                json.dump({"scenario": "s", "family": "real", "product": "p", "arm": arm, "void": None,
+                           "assertions": a}, f)
+        rep = G.report(d)
+        self.assertEqual(rep["real"]["p"]["arms"]["skill"]["outcome_pass_pct"], 100.0)     # 只剩 facts 一条
+        self.assertEqual(rep["real"]["p"]["arms"]["baseline"]["outcome_pass_pct"], 50.0)
+        self.assertEqual(len(rep["voided_assertions"]), 1)
+
+    # 疑问 8:null = 「已证明 maturity_proven 级、下一级缺证据」;maturity_unscored 的维不计入
+    def test_maturity_null_proven_and_unscored(self):
+        ans = {"maturity": {"technical": None, "content": None, "geo": 2},
+               "maturity_proven": {"technical": 2, "content": 3, "geo": 2},
+               "maturity_unscored": {"technical": "出题人没跑体检"}}
+
+        def go(content, geo=("ok", 2)):
+            ws = self.sub("mat-%s-%s" % content)
+            d = {"maturity": {"technical": {"status": "ok", "level": 4},
+                              "content": {"status": content[0], "level": content[1]},
+                              "geo": {"status": geo[0], "level": geo[1]}}}
+            os.makedirs(os.path.join(ws, "seo-ops", "context"), exist_ok=True)
+            with open(os.path.join(ws, "seo-ops", "context", "diagnosis.json"), "w") as f:
+                json.dump(d, f)
+            return G.maturity_check(ws, ans)
+        m = go(("partial", 3))
+        self.assertEqual((m["same"], m["of"]), (2, 2))
+        self.assertEqual(go(("unknown", None))["same"], 2)
+        self.assertEqual(go(("partial", 2))["same"], 1)          # 已证明的级数不对
+        self.assertEqual(go(("ok", 3))["same"], 1)               # 说成确定 3 级,和「下一级判不了」不是一回事
+
+    # 疑问 9:R48 写回变了的条目(note / answer --ring 1)不算重走开局;start / ask 算
+    def test_rerun_note_vs_ask(self):
+        for name, cmd, ok in (("note", "onboard.py note --ring 1 --key product.lines --value Wholesale", True),
+                              ("answer", "onboard.py answer --ring 1 --set product.lines=Wholesale --quote 'yes, new line'",
+                               True),
+                              ("ask", "onboard.py ask --ring 1", False)):
+            with self.subTest(case=name):
+                fx = X.GOLD_EXT["ex5-new-line"]()
+                fx["sessions"]["resume"][1]["events"].insert(0, X.BS("python3 %s/%s" % (X.SK, cmd), "ok"))
+                r, _ = ext_grade(fx, tempfile.mkdtemp(prefix="rr_", dir=self.tmp), {})
+                self.assertEqual(verdict(r)["no_onboarding_rerun"], ok)
+
+    # 另:R64 问句没编号时驱动照常回话,但这一回合不算停下
+    def test_unnumbered_question_reply_not_a_stop(self):
+        ex = B.expand(B.load("idea"))
+        first = copy.deepcopy(ex["turns"][0])
+        ex["turns"] = [first, {"events": [{"text": "第 2 环还差一问:\n- 你的用户最常搜什么词?"}], "reply": None}]
+        p = B.materialize(ex, self.tmp)
+        r = G.drive_next("onboard-idea", p["ws"], p["transcript"], p["driver_log"])
+        self.assertEqual((r["action"], r.get("unnumbered"), r["ring"]), ("reply", True, 2))
+        cx = G.Ctx(G.load_scenario("onboard-idea", G.DEFAULT_SCENARIOS)[1], {}, {}, p["ws"], G.Transcript(p["transcript"]),
+                   G.load_driver(p["driver_log"]), None, {}, "skill")
+        self.assertEqual([s["turn"] for s in cx.stops], [1])                 # 第 2 回合不算停下
+        self.assertEqual(cx.problems, [])
+        # 没有问句 → 结束;连着两回合没编号 → 结束
+        self.assertFalse(G.unnumbered_question({"events": [{"kind": "text", "text": "方案写好了。", "line": 1}]}))
+        log = [{"turn": 2, "unnumbered": True}]
+        self.assertFalse(G.unnumbered_allowed(log, 3))
+        self.assertTrue(G.unnumbered_allowed(log, 4))
+        self.assertFalse(G.unnumbered_allowed([{"turn": t, "unnumbered": True} for t in (2, 4, 6)], 8))
+
+
 if __name__ == "__main__":
     unittest.main()

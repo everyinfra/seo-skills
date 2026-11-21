@@ -55,7 +55,9 @@ python3 $G prompt onboard-prelaunch --arm v043     --ws WS --base http://127.0.0
 2. 等它这一回合结束的通知(不要在它还在跑时调 next)
 3. python3 $G next <场景> --ws WS --transcript <转录> --driver-log RUN/driver.jsonl [--scenarios <PRIVATE>/scenarios-everyinfra.json]
    - {"action":"reply","ring":N,"user_text":…} → SendMessage(to=agentId, message=user_text 原文,一个字不加)→ 回到 2
-   - {"action":"end"} → 这个 run 结束(最后一回合没有编号问题、也不是以提问工具结束;或到了 20 回合)
+   - {"action":"end"} → 这个 run 结束(最后一回合没有编号问题、也不是以提问工具结束,而且文本里也没有问句;或到了 20 回合)
+   - 回合以文本结束、有问句(含 ? / ？)却没按编号列出:`next` 照常按环号给回话(驱动日志带 `"unnumbered": true`),
+     这一回合**不算停下**(R3、R4 不变),只是会话不在这里断掉;每段最多 3 次,连着两回合都这样就结束(R64)
    - {"action":"error"} → 看原因(同一回合已回过 / 转录为空),不要硬发
 ```
 
@@ -63,6 +65,9 @@ python3 $G prompt onboard-prelaunch --arm v043     --ws WS --base http://127.0.0
 
 - **判环号**:最后一条 assistant 文本里找「第 N 环 / Ring N」;提到好几个不同环号时按 R32:档案顶层的 `ring` / `current_ring` 在其中就取它,否则取第一个问题行之前出现次数最多的那个(一样多取最近的)。文本里没有环号就读 `seo-ops/context/profile.json` 顶层的 `ring` / `current_ring`。都没有 → 发 `fallback_unknown_ring`,驱动日志 `ring: null`(这一次停下不计入任何环)。
 - **取回话**:`simulated_user[环号]` 按顺序取下一条,取完了发 `fallback`。
+- **问句没编号**:同上取回话,只在有 `simulated_user` 的段做(例 7 这类小任务段不回)。需求卡第 2 节例 1 和第 3 节「宿主适配」写的是
+  「没有提问工具的宿主用编号问题后结束回合」,所以编号仍是停下的条件;但会话因此提前结束会让方案类结果断言一起挂,把流程分扣进结果分,
+  和卡第 7 节红队致命 2「流程类单独判、不进差距」冲突,所以驱动照常回话(出题人 11-22 裁定)。
 - **写驱动日志**:一行 `{"turn","ring","ring_from","user_text","source","at","profile_snapshot"}`;`profile_snapshot` 是这次停下时 `profile.json` 的副本(放在 `RUN/snapshots/`),判「第 1 环确认后的档案」用。
 - SendMessage 的消息必须是 `user_text` 原文:判分器在下一回合的用户消息里按「去空白后包含」核对,对不上的那次停下不算数。
 
@@ -75,7 +80,7 @@ python3 $G onboard-prelaunch --ws WS --transcript <转录> --driver-log RUN/driv
 python3 $G report RESULTS
 ```
 
-- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R31。
+- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63、R64。
 - `report` 按产品 × arm 汇总:`outcome_pass_pct`、`outcome_gap_pp`(skill − baseline、v043 − baseline、skill − v043,单位百分点)只算 outcome 类;process 类在 `process` 下单列,不进差距(红队致命 2)。`maturity_exact` 是例 9 的 5 维完全一致数(null 只和「未知」对得上)。
 - void 的 run 列在 `void`,不进任何汇总。
 - 判分器改了要先过校准:`python3 -m unittest tools/evals/onboarding/test_grade.py`(发版门 `tools/evals/fast_checks.py` 也跑它)。
@@ -91,7 +96,7 @@ python3 $G report RESULTS
 
 第 5 批的题是另一位出题人写的,**一个字不改**,开跑前核 hash:公开的 `scenarios_ext.json`、`rubric_example3.json`、`hosts_static.json` 对本目录 `HASHES-第5批出题.txt`(`cd tools/evals/onboarding && grep -v '^#' HASHES-第5批出题.txt | awk '{print $1"  "$2}' | shasum -a 256 -c`);私有的 `<PRIVATE>/scenarios-real.json` 和它的答案表对私有目录里的 `HASHES-第5批出题.txt`。真实站的场景 id、产品名和结果文件都只放私有目录,不进本仓。
 
-第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R62。
+第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R64。出题人更正过的回话记在场景的 `superseded_replies` 里:收到旧回话的 run,列出的断言记 voided、不进汇总(R63)。
 
 ### 6.1 真实站 3 个(场景 id 见 `<PRIVATE>/scenarios-real.json`,下面写成 `REAL_ID`)
 

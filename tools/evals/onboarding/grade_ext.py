@@ -570,6 +570,11 @@ def drive_next_ext(run, name, transcript, max_turns=20):
     if any(int(d.get("turn") or 0) == turn["n"] for d in log):
         return {"action": "error", "why": "第 %d 回合已经回过话了" % turn["n"]}
     cand = G.stop_candidate(turn)
+    un_text = None
+    if not cand and turn["n"] < max_turns and sess.get("simulated_user"):
+        un_text = G.unnumbered_question(turn)
+        if un_text and G.unnumbered_allowed(log, turn["n"]):
+            cand = {"text": un_text, "questions": [], "unnumbered": True}
     _, ut_start = first_message(sess)
     uts = sess.get("user_turns") or []
     sent_ut = sum(1 for d in log if d.get("kind") == "user_turn")
@@ -618,6 +623,8 @@ def drive_next_ext(run, name, transcript, max_turns=20):
         snap = os.path.join(sd, "turn%02d.profile.json" % turn["n"])
         shutil.copyfile(prof, snap)
     row.update(turn=turn["n"], session=name, at=now_iso(), at_epoch=time.time(), profile_snapshot=snap)
+    if cand and cand.get("unnumbered"):
+        row["unnumbered"] = True
     with open(dl, "a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
     return dict(row, action="reply")
@@ -717,7 +724,7 @@ def stop_info(c):
 # ext 断言
 # ---------------------------------------------------------------------------
 
-READONLY_SUBS = ("status", "show")
+RERUN_SUBS = ("start", "ask")
 
 
 def c_no_onboarding_rerun(ec, cr):
@@ -729,7 +736,7 @@ def c_no_onboarding_rerun(ec, cr):
     calls = []
     for c in s.tr.calls():
         for o in G.onboard_calls(c):
-            if o["sub"] in ("start", "ask") or (o["ring"] is not None and 1 <= o["ring"] <= 6 and o["sub"] not in READONLY_SUBS):
+            if o["sub"] in RERUN_SUBS:
                 calls.append({"line": c["line"], "sub": o["sub"], "ring": o["ring"]})
     ring_stops = [stop_info(c) for c in s.cands if G.RING_RE.search(_stop_text(c))]
     ok = not calls and not ring_stops and len(s.cands) <= mx
@@ -1656,9 +1663,7 @@ def _writes_context(c):
     inp = c.get("input") or {}
     if c["name"] in G.WRITE_TOOLS:
         return "seo-ops/context/" in str(inp.get("file_path") or "").replace("\\", "/")
-    cmd = G.bash_cmd(c)
-    return "seo-ops/context" in cmd and bool(re.search(r">|\btee\b|\bcp\b|\bmv\b|\bmkdir\b|\btouch\b|open\([^)]*['\"][wa]|"
-                                                       r"write_text|\.write\(", cmd))
+    return G.bash_writes_under(G.bash_cmd(c), "seo-ops/context")
 
 
 def c_direct_edit(ec, cr):
