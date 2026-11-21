@@ -295,6 +295,15 @@ class Driver(unittest.TestCase):
         self.assertEqual(G.ring_of("第 1 环确认了。\n\n【第 2 环 · 客户】\n1. 谁在搜?", self.tmp)[0], 2)
         self.assertEqual(G.ring_of("Ring 4 · Assets\n1. How many posts?", self.tmp)[0], 4)
         self.assertEqual(G.ring_of("1. 什么?", self.tmp)[0], None)
+        # R32:提到不止一个环号
+        self.assertEqual(G.ring_of("第 2 环第 1 问已记下。第 2 环还差两问,也还没进第 3 环。\n\n2. 最常问什么?　A. 我写", self.tmp)[0], 2)
+        self.assertEqual(G.ring_of("第 2 环已确认,现在进入第 3 环。\n\n**第 3 环的问题**\n1. 竞品是谁?", self.tmp)[0], 3)
+        os.makedirs(os.path.join(self.tmp, "seo-ops", "context"), exist_ok=True)
+        with open(os.path.join(self.tmp, "seo-ops", "context", "profile.json"), "w", encoding="utf-8") as f:
+            json.dump({"current_ring": 3}, f)
+        self.assertEqual(G.ring_of("第 2 环做完了,第 3 环的问题见下。\n1. 竞品是谁?", self.tmp), (3, "text+profile.current_ring"))
+        self.assertEqual(G.ring_of("1. 竞品是谁?", self.tmp), (3, "profile.current_ring"))
+        self.assertEqual(G.ring_of("第 5 环\n1. 语言?", self.tmp), (5, "text"))
 
     def test_report_gap_only_outcome(self):
         d = os.path.join(self.tmp, "res")

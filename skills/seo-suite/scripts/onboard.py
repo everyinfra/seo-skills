@@ -113,6 +113,8 @@ def save_profile(ws, prof, change):
     prof["version"] = int(prof.get("version") or 0) + 1
     prof["updated"] = now()
     prof.setdefault("changelog", []).append({"version": prof["version"], "at": prof["updated"], "change": change})
+    if isinstance(prof.get("rings"), dict):
+        prof["current_ring"] = current_ring(prof)
     write_json(ctx(ws, "profile.json"), prof)
     with open(ctx(ws, "product.md"), "w", encoding="utf-8") as f:
         f.write(render_product_md(prof))

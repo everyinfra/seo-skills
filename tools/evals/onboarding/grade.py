@@ -117,6 +117,9 @@ skip_handled(定义里 kind 是 outcome+process)
 作废
   R31 baseline 组转录里出现 Skill 工具调用或任何调用参数含 skills/seo-suite → void;v043 组参数含当前仓
       skills/seo-suite(不是导出目录)→ void。void 的 run 不进汇总。
+  R32 判环号时文本里提到不止一个环号(如「第 2 环还差两问,也还没进第 3 环」):profile.json 顶层的 ring / current_ring
+      在这几个环号里就取它;否则取第一个问题行之前出现次数最多的那个,一样多取最近的那个;没有问题行取最后一个。
+      只提到一个环号时照旧取它。(第 5 批试跑发现「最近的那个」会把「还没进第 3 环」读成第 3 环,正式开跑前定。)
 """
 import argparse
 import datetime as dt
@@ -1289,22 +1292,34 @@ def report(d):
 
 def ring_of(text, ws):
     """scenarios.json driver:先看最后一条文本里的「第 N 环 / Ring N」;没有就读 profile.json 的 ring / current_ring。
-    文本里提到好几个环时,取第一个问题行之前最近的那个(没有问题行就取最后一个)。"""
-    ms = list(RING_RE.finditer(text or ""))
-    if ms:
-        ql = [m.start() for m in re.finditer(r"(?m)^\s*(?:\d+[.、]|[A-Za-z]\.).*[?\uff1f]", text)]
-        pick = None
-        if ql:
-            before = [m for m in ms if m.start() < ql[0]]
-            pick = before[-1] if before else ms[0]
-        else:
-            pick = ms[-1]
-        g = pick.group(1) or pick.group(2)
-        return CN_NUM.get(g) or int(g), "text"
+    文本里提到好几个不同的环号时按 R32 取。"""
     prof = read_json(os.path.join(ws, "seo-ops", "context", "profile.json")) or {}
+    pr = pk = None
     for k in ("ring", "current_ring"):
         if _int(prof.get(k)) is not None:
-            return _int(prof.get(k)), "profile.%s" % k
+            pr, pk = _int(prof.get(k)), k
+            break
+    ms = list(RING_RE.finditer(text or ""))
+    if ms:
+        def num(m):
+            g = m.group(1) or m.group(2)
+            return CN_NUM.get(g) or int(g)
+        nums = {num(m) for m in ms}
+        if len(nums) == 1:
+            return nums.pop(), "text"
+        if pr in nums:
+            return pr, "text+profile.%s" % pk
+        ql = [m.start() for m in re.finditer(r"(?m)^\s*(?:\d+[.、]|[A-Za-z]\.).*[?\uff1f]", text)]
+        if not ql:
+            return num(ms[-1]), "text"
+        before = [m for m in ms if m.start() < ql[0]] or ms[:1]
+        counts = {}
+        for m in before:
+            counts[num(m)] = counts.get(num(m), 0) + 1
+        top = max(counts.values())
+        return num([m for m in before if counts[num(m)] == top][-1]), "text"
+    if pr is not None:
+        return pr, "profile.%s" % pk
     return None, None
 
 

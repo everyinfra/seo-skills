@@ -61,7 +61,7 @@ python3 $G prompt onboard-prelaunch --arm v043     --ws WS --base http://127.0.0
 
 `next` 做的事(和 scenarios.json 的 driver 段一致,主会话不用自己判):
 
-- **判环号**:最后一条 assistant 文本里找「第 N 环 / Ring N」;提到好几个时取第一个问题行之前最近的那个。没有就读 `seo-ops/context/profile.json` 顶层的 `ring` / `current_ring`。都没有 → 发 `fallback_unknown_ring`,驱动日志 `ring: null`(这一次停下不计入任何环)。
+- **判环号**:最后一条 assistant 文本里找「第 N 环 / Ring N」;提到好几个不同环号时按 R32:档案顶层的 `ring` / `current_ring` 在其中就取它,否则取第一个问题行之前出现次数最多的那个(一样多取最近的)。文本里没有环号就读 `seo-ops/context/profile.json` 顶层的 `ring` / `current_ring`。都没有 → 发 `fallback_unknown_ring`,驱动日志 `ring: null`(这一次停下不计入任何环)。
 - **取回话**:`simulated_user[环号]` 按顺序取下一条,取完了发 `fallback`。
 - **写驱动日志**:一行 `{"turn","ring","ring_from","user_text","source","at","profile_snapshot"}`;`profile_snapshot` 是这次停下时 `profile.json` 的副本(放在 `RUN/snapshots/`),判「第 1 环确认后的档案」用。
 - SendMessage 的消息必须是 `user_text` 原文:判分器在下一回合的用户消息里按「去空白后包含」核对,对不上的那次停下不算数。
