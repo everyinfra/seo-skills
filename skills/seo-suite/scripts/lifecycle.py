@@ -273,9 +273,22 @@ def normalize_profile(prof):
     return problems
 
 
+# 校验值只管「用户确认过什么」:答案、原话、事实的值和状态、阶段、禁用清单。下面这些键不是确认的内容,不进校验值:
+# 时间戳(工作区从备份恢复、换时区重写都会变)和事实的出处(站点换域名、换端口会变)
+VOLATILE_KEYS = frozenset(("at", "asked_at", "confirmed_at", "created", "updated", "source"))
+
+
+def _stable(obj):
+    if isinstance(obj, dict):
+        return {k: _stable(v) for k, v in obj.items() if k not in VOLATILE_KEYS}
+    if isinstance(obj, list):
+        return [_stable(v) for v in obj]
+    return obj
+
+
 def _digest(obj):
     import hashlib
-    return hashlib.sha256(json.dumps(obj, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+    return hashlib.sha256(json.dumps(_stable(obj), ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
 
 
 def _ring_parts(prof, prefixes):
@@ -291,7 +304,8 @@ def _ring_parts(prof, prefixes):
 
 # 不进校验值的键:校验值本身;_schema 是脚本按固定规则生成的映射(每次写入都重写),读档案的人照它取值,
 # 有人照着评测说明在顶层补一份 _schema 不算改了档案内容
-UNSEALED = ("_integrity", "_schema")
+# 站点地址、指标出处(文件名带日期)和改动记录同样不是用户确认的内容
+UNSEALED = ("_integrity", "_schema", "site", "metric_sources", "changelog")
 
 
 def seal_profile(prof):

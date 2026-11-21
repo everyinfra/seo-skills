@@ -906,7 +906,8 @@ def cmd_show(ns):
         raise GateError("第 1 环还没确认,不能先问第 %d 环" % r)
     view = ring_view(prof, r)
     ring = prof["rings"][str(r)]
-    if ring["status"] in ("pending",):
+    if ring["status"] == "pending" or (ring["status"] == "asking" and not ring.get("asked_at")):
+        # 退回待确认的环(档案被手改)asked_at 是空的:重新发给用户时同样记一次,否则这一环永远确认不了
         ring["status"] = "asking"
         ring["asked_at"] = now()
         save_profile(ws, prof, "第 %d 环发给用户" % r)

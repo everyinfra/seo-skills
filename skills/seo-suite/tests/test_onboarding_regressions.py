@@ -517,6 +517,54 @@ class TamperTests(unittest.TestCase):
         r = run("plan.py", ["build", "--ws", w.ws], w.tmp)
         self.assertEqual(r.returncode, 3)
 
+    def test_restored_workspace_with_shifted_dates_and_new_site_address_is_not_tamper(self):
+        """评测试跑里的真实情况:做完开局的工作区从备份解到另一处,所有时间戳整体往前挪了 31 天,
+        站点地址换了端口(档案里 site 和每条事实的出处跟着变)。用户确认过的内容一个字没动,不该判手改。"""
+        w = Ws(self)
+        w.ring1()
+        w.rest()
+
+        def shift(o):
+            if isinstance(o, dict):
+                return {k: shift(v) for k, v in o.items()}
+            if isinstance(o, list):
+                return [shift(v) for v in o]
+            if isinstance(o, str):
+                o = re.sub(r"\b(20\d\d)-(\d\d)-(\d\d)T", lambda m: "%s-%02d-%sT" % (
+                    m.group(1), (int(m.group(2)) - 2) % 12 + 1, m.group(3)), o)
+                return o.replace("https://acme.example", "https://acme-new.example")
+            return o
+        before = w.prof()
+        seal = before["_integrity"]
+        moved = shift({k: v for k, v in before.items() if k != "_integrity"})
+        moved["_integrity"] = seal
+        self.assertNotEqual(moved["rings"]["1"]["confirmed_at"], before["rings"]["1"]["confirmed_at"])
+        self.assertNotEqual(moved["site"], before["site"])
+        w.write_prof(moved)
+        r = w.ok(w.ob("status"))
+        self.assertNotIn("手改", r.stderr + r.stdout)
+        after = w.prof()
+        for n in "123456":
+            self.assertEqual(after["rings"][n]["status"], before["rings"][n]["status"], n)
+        self.assertEqual(run("plan.py", ["build", "--ws", w.ws], w.tmp).returncode, 0)
+
+    def test_reopened_ring_can_be_shown_and_confirmed_again(self):
+        """试跑里卡住 5 个 run 的死锁:环被退回待确认后 asked_at 是空的,show 不补,answer --confirm 一直报「还没发给用户」。"""
+        w = Ws(self)
+        w.ring1()
+        p = w.prof()
+        for f in p["facts"]:
+            if f["key"] == "customers":
+                f["value"] = ["Enterprise CFOs"]
+        w.write_prof(p)
+        w.ob("status")
+        self.assertEqual(w.prof()["rings"]["1"]["status"], "asking")
+        self.assertIsNone(w.prof()["rings"]["1"]["asked_at"])
+        w.ok(w.ob("show", "--ring", "1"))
+        self.assertTrue(w.prof()["rings"]["1"]["asked_at"])
+        w.ring1(quote="客户改成企业财务负责人,其余都对,确认", customers="企业财务负责人")
+        self.assertEqual(w.prof()["rings"]["1"]["status"], "confirmed")
+
     def test_script_writes_are_not_flagged(self):
         w = Ws(self)
         w.ring1()
