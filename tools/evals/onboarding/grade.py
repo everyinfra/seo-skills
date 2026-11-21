@@ -60,7 +60,9 @@ stops_per_ring / questions_per_ring_max
   R15 按驱动日志的环号记账;ring=null 的停下不计入任何环。
   R16 每次停下的问题数 = AskUserQuestion 的 questions 长度,或编号问题行数;每个问题都要带选项或猜测:
       AskUserQuestion 的那一问 options 非空;文本问题同一行或下一行同时出现 A 和 B 两个字母选项标记
-      (「A.」「A、」「A)」「A 」等),或出现「我猜 / 推测 / 猜测」。只写「选项:x | y」不算 A/B/C 选项。
+      (「A.」「A、」「A)」「A 」等),或出现「我猜 / 推测 / 猜测」或英文 guess(my guess、I guess 等;
+      主会话 11-21 在任何新版被测会话开跑前定:criteria_defs 用中文写、3 个合成场景是英文,本意是「带 agent 的猜测」,
+      英文对应词算同一个意思,不是放宽)。只写「选项:x | y」不算 A/B/C 选项。
       「下一行」本身是编号行时不算(那是下一个问题,不是这一问的选项)。
 ring1_not_skipped
   R17 窗口 = 从开头到「第 1 环拿到用户回话」和「第 1 环确认调用(onboard answer --ring 1 … --confirm,且调用结果不是报错)」
@@ -140,7 +142,7 @@ HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n.*?\n\s*\1\s*(?:\n|$)", r
 QLINE = re.compile(r"^\s*(?:\d+[.、]|[A-Za-z]\.)")
 OPT_A = re.compile(r"(?<![A-Za-z0-9])A(?:[.)、:：\uff09]|\s)")
 OPT_B = re.compile(r"(?<![A-Za-z0-9])B(?:[.)、:：\uff09]|\s)")
-GUESS = ("我猜", "推测", "猜测")
+GUESS = ("我猜", "推测", "猜测", "guess")
 RING_RE = re.compile(r"第\s*([1-6一二三四五六])\s*环|\bRing\s*([1-6])\b", re.I)
 CN_NUM = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6}
 PLAN_HEAD_WORDS = ("建议", "优先级", "方案", "recommend", "priority", "roadmap")
