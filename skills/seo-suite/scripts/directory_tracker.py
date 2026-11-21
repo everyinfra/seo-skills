@@ -25,7 +25,11 @@ quarterly 队列非空(cron 消费,照 trend_watch 口径接 notify) / 2 输入�
 fetch()(单点,便于测试打桩)。"""
 import contextlib
 import csv
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows 没有 fcntl,改用 msvcrt.locking 加同样的排他锁
+    fcntl = None
+    import msvcrt
 import ipaddress
 import json
 import os
@@ -274,7 +278,10 @@ def data_lock(path, timeout=120.0):
         deadline = time.monotonic() + timeout
         while True:
             try:
-                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if fcntl:
+                    fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                else:
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
                 break
             except OSError:
                 if time.monotonic() > deadline:
@@ -285,7 +292,13 @@ def data_lock(path, timeout=120.0):
         yield
     finally:
         try:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+            if fcntl:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+            else:
+                try:
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+                except OSError:  # 等锁超时、没拿到锁时解锁会报错;close 也会释放锁
+                    pass
         finally:
             fh.close()
 

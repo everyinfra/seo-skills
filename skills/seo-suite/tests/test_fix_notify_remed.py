@@ -361,7 +361,7 @@ class ConcurrencyTests(unittest.TestCase):
             [sys.executable, os.path.join(SCRIPTS, "remediation.py"),
              "update", tid, "--status", "accepted"],
             cwd=self.tmp, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True)
+            text=True, encoding="utf-8")
             for tid in ("REM-001", "REM-002")]
         for p in procs:
             out, err = p.communicate(timeout=60)
