@@ -5,7 +5,7 @@ title/desc 限值按 markets.json 市场单位(chars/fullwidth/grapheme)/ H1 唯
 llms.txt·sitemap / AI 爬虫放行 / staging 子域。
 S2 实测修复(2026-10-09):title 收集只在 <title>…</title> 内(script/JSON-LD 不再吞入);
 泰文字素计长、天城文按字符计词、拉丁扩展(越南/波兰/土耳其等)词不被 ASCII 正则切碎;
---market 接线 markets.json 阈值(18 市场)。
+--market 接线 markets.json 阈值(19 市场)。
 S3 扩展(2026-10-10,borrow-specs A3/A4):AI Search Health 独立子分(Semrush 8 bot 名单/
 llms.txt/Last-Modified>183 天/语义 HTML 比值/词数>15000/BLUF 密度,--json 新增 ai_search_health 节)+
 rendering 5 检查(geo-aeo-tracker 源码口径:CSR/noscript/JS 重量/服务端内容/H1-H2)。
@@ -320,7 +320,7 @@ def lang_findings(lang, hreflangs, url, canonical_abs):
 USAGE = """usage: site_audit.py URL [URL...] [--market XX] [--json] [--export-dir DIR] [--serp-titles FILE]
 单页全项审计:title/desc 限值(市场单位)/H1/词数/链接/alt/canonical/robots/og/JSON-LD/
 llms.txt/sitemap/AI 爬虫放行/staging 子域。
-  --market XX      markets.json 18 市场阈值(chars/fullwidth/grapheme)
+  --market XX      markets.json 19 市场阈值(chars/fullwidth/grapheme)
   --json           结构化输出(findings+meta+verdict+ai_search_health,供 agent 消费):
                    stdout 只有一个 JSON 对象(可直接 jq / json.loads),人读行改写到 stderr;
                    顶层含 market 与 limits(本次 title/description 区间,单位随市场)
