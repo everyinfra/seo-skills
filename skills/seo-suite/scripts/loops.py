@@ -151,8 +151,17 @@ def load_state(ws):
     prof = read_json(os.path.join(ws, "context", "profile.json"))
     if not prof:
         raise GateError("还没有开局档案:先跑 onboard.py start")
+    tamper = LC.check_seal(prof)
+    if tamper and not tamper.get("legacy"):
+        raise GateError(LC.tamper_message(tamper) + "。先跑 onboard.py status(会把受影响的环退回待确认)")
+    for msg in LC.normalize_profile(prof):
+        print("注意: 档案不合格:%s" % msg, file=sys.stderr)
     plan = read_json(os.path.join(ws, "plan", "plan.json"))
     return prof, plan
+
+
+def save_profile(ws, prof):
+    write_json(os.path.join(ws, "context", "profile.json"), LC.seal_profile(LC.profile_format(prof)))
 
 
 def onboarding_done(prof):
@@ -183,7 +192,11 @@ def roadmap_this_week(plan, today):
     if not wk:
         return wk, []
     recs = plan.get("items") if isinstance(plan.get("items"), list) else (plan.get("recommendations") or [])
-    items = [r for r in recs if r.get("weeks") and r["weeks"][0] <= wk <= r["weeks"][1]]
+    items = []
+    for i, r in enumerate(x for x in recs if isinstance(x, dict)):
+        w = LC.norm_weeks(r.get("weeks"))
+        if w and w[0] <= wk <= w[1]:
+            items.append(dict(r, weeks=list(w), rank=r.get("rank") if isinstance(r.get("rank"), int) else 1000 + i))
     items.sort(key=lambda r: r["rank"])
     return wk, items
 
@@ -219,7 +232,7 @@ def diff_scan(prof, old_scan, new_scan):
     """新读的站点 和 档案(已确认值优先)比:新产品线、定价变了、新页面类型。"""
     changes = []
     nf = _scan_fact(new_scan, "product.lines")
-    if nf:
+    if nf and nf.get("value") not in (None, "", []):
         have = _as_set(_fact_value(prof, "product.lines"))
         add = [x for x in (nf["value"] if isinstance(nf["value"], list) else [nf["value"]])
                if str(x).strip().lower() not in have]
@@ -246,11 +259,26 @@ def diff_scan(prof, old_scan, new_scan):
     return changes
 
 
-def stage_trend(ws, prof, loop):
+def backfill_history(ws, prof, record=True):
+    """指标历史 + 逐日 gsc-pages.csv 每周一个检查点(近 28 天点击、展示、上一期点击);同一天已有记录的不重复。
+    record=True 时把新算出的检查点追加进 metrics_history.jsonl。→ 按日期排好的历史。"""
+    hist = read_jsonl(history_path(ws))
+    path, rows = LC.find_daily_pages(ws, prof)
+    if not rows:
+        return hist
+    have = {str(h.get("at"))[:10] for h in hist}
+    new = [dict(pt, source="%s 逐日回填" % os.path.basename(path)) for pt in LC.weekly_checkpoints(rows) if pt["at"] not in have]
+    if record:
+        for row in new:
+            append_jsonl(history_path(ws), row)
+    return sorted(hist + new, key=lambda h: str(h.get("at")))
+
+
+def stage_trend(ws, prof, loop, record=True):
     """最近 N 次指标记录逐次重判阶段;都判成同一个、和已确认阶段不同、跨度够长 → 返回目标阶段。"""
     p = (loop.get("params") or {})
     n, span = int(p.get("points", 4)), int(p.get("min_span_days", 21))
-    hist = read_jsonl(history_path(ws))
+    hist = backfill_history(ws, prof, record)
     if len(hist) < n:
         return None, "指标记录 %d 次,不到 %d 次" % (len(hist), n)
     pts = hist[-n:]
@@ -338,7 +366,7 @@ def evaluate(ws, today=None, new_scan=None, record=True):
                 emit(lp, "quiet", "档案超过 %d 天没核,重新读了站点,没有变化" % lp["trigger"]["cadence_days"])
                 if record:
                     prof["profile_confirmed_at"] = today.isoformat()
-                    write_json(os.path.join(ws, "context", "profile.json"), LC.profile_format(prof))
+                    save_profile(ws, prof)
 
     # product-change(只在给了新扫描时)
     lp = loops.get("product-change")
@@ -371,7 +399,7 @@ def evaluate(ws, today=None, new_scan=None, record=True):
     # stage-threshold
     lp = loops.get("stage-threshold")
     if lp:
-        to, why = stage_trend(ws, prof, lp)
+        to, why = stage_trend(ws, prof, lp, record)
         if to is None:
             emit(lp, "quiet", why)
         else:
@@ -429,7 +457,8 @@ def status(ws, today=None):
             "stage": {"id": st.get("value"), "name": names.get(st.get("value")), "confirmed": st.get("confirmed")},
             "weakest": [d for d in (diag.get("weakest") or [])][:2] if isinstance(diag.get("weakest"), list) else None,
             "plan": {"status": (plan or {}).get("status"), "approved_at": (plan or {}).get("approved_at"), "week": wk,
-                     "this_week": [{"rank": r["rank"], "title": r["title"], "weeks": r["weeks"]} for r in items]},
+                     "this_week": [{"rank": r["rank"], "title": r.get("title") or r.get("id") or "—", "weeks": r["weeks"]}
+                                   for r in items]},
             "deny": [d["item"] for d in deny]}
 
 
@@ -543,7 +572,7 @@ def cmd_resolve(ns):
     prof["version"] = int(prof.get("version") or 0) + 1
     prof.setdefault("changelog", []).append({"version": prof["version"], "at": today.isoformat(),
                                              "change": "循环 %s:用户确认%s" % (ns.loop, (",改了 " + "、".join(changed)) if changed else "")})
-    write_json(os.path.join(ws, "context", "profile.json"), LC.profile_format(prof))
+    save_profile(ws, prof)
     append_jsonl(os.path.join(ws, "ledger", "loops.jsonl"),
                  {"at": today.isoformat(), "loop": ns.loop, "result": "resolved", "fp": fpr, "quote": ns.quote, "changed": changed})
     nxt = ""

@@ -69,7 +69,7 @@ class Ws:
         for r_, sets in {2: ["jargon=开票"], 3: ["real_competitors=Rival"], 4: ["capacity=每月 4 篇"],
                          5: ["market_first=zh", "deny_topics=没有"]}.items():
             self.ok(self.ob("show", "--ring", str(r_)))
-            self.ok(self.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []), "--quote", "答", "--confirm"))
+            self.ok(self.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []), "--quote", "这一环就按这些答", "--confirm"))
         self.ok(self.ob("show", "--ring", "6"))
         self.ok(run("plan.py", ["build", "--ws", self.ws], self.tmp))
         if approve:
