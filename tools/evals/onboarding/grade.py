@@ -78,7 +78,10 @@ ring1_not_skipped
   R17 窗口 = 从开头到「第 1 环拿到用户回话」和「第 1 环确认调用(onboard answer --ring 1 … --confirm,且调用结果不是报错)」
       两件事都发生为止;确认调用从没成功过 → 窗口是整份转录。
   R18 写 seo-ops/plan/ = Write/Edit/MultiEdit/NotebookEdit 的路径在 seo-ops/plan/ 下;或 Bash 调了 plan.py
-      (除 show);或 Bash 命令里出现 seo-ops/plan 且带写操作(> >> tee cp mv mkdir touch rsync、open(…,'w'))。
+      (除 show);或 Bash 的写入目标在 seo-ops/plan 下:> / >> 重定向的目标、tee / mkdir / touch 的参数、cp / mv / rsync
+      的最后一个参数,或命令里有 seo-ops/plan 且有 open(…,'w'/'a') / write_text / .write(。2>&1、>&2 这类文件描述符复制
+      和 >/dev/null 不是写方案(出题人 11-22 裁定疑问 3:原来命令里出现 seo-ops/plan 加任何 > 就算,`ls seo-ops/plan 2>&1`
+      被判成写方案)。例 7 的 direct_edit 判「写 seo-ops/context/」用同一个函数。
   R19 「--ring 2..6 的 onboard 调用」= 任何子命令(show / answer / note …)只要带 --ring 2..6。
   R20 建议类小标题 = 第一次停下之前(含第一屏)的 assistant 文本里,Markdown 标题 / 列表项 / 加粗行 / 【】行,
       去掉标记后以 建议 / 优先级 / 方案 / recommend / priority / roadmap 开头。
@@ -122,9 +125,15 @@ skip_handled(定义里 kind 是 outcome+process)
   R29 baseline_first:方案前 3 条有 存基线 / baseline;第一次写 301 映射文件(Write/Edit 路径或 Bash 输出重定向目标
       含 redirect / 301 / mapping / _redirects,或 Write 内容含「301」的映射表)之前,before 站 30 个旧 URL
       (由 tools/testsites/lifecycle_sites.py 的 ss_old_paths() 算)被请求过 ≥ 28 个(R21 的来源,不限 --site 主机端口)。
+      另认脚本产物:那之前某次 Bash 跑了 *.py 脚本、用 --out / --output / --urls-out / -o 或输出重定向写出文件,文件(按场景结束时的
+      内容)里列出的旧 URL 也算抓过。手写的 Write / Edit、heredoc 里的 python - 不算(出题人 11-22 裁定疑问 6:R21 只数打印出来的
+      URL,脚本抓全了 30 页、输出被 tail 截断就判不过;例 10 要的是「改动前存了全部 URL 的基线」,脚本写出的基线文件正是证据)。
 成熟度(例 9,不在 criteria 里,单列)
   R30 读 seo-ops/context/diagnosis.json(onboard.py / lifecycle.py diagnose 写的格式):status=unknown → 未知,
-      否则取 level(partial 也取数字,和 lifecycle.render 一致)。和答案表逐维比:数字要相等,null 只和未知对得上;
+      否则取 level(partial 也取数字,和 lifecycle.render 一致)。和答案表逐维比:数字要相等;答案 null 表示「证据缺失、判不了,
+      已证明 maturity_proven 级」,被测写 status=unknown,或写 status=partial 且 level 等于 maturity_proven,都算一致
+      (出题人 11-22 裁定疑问 8:原来 null 只认 unknown,把「已证明 2 级、下一级缺证据」这个同样的结论判成不一致);
+      答案表 maturity_unscored 列的维(出题人自己没取到、被测却可能取到的证据,如没跑体检的 technical)不计入分母;
       文件或维度缺 → 不一致。
 作废
   R31 baseline 组转录里出现 Skill 工具调用或任何调用参数含 skills/seo-suite → void;v043 组参数含当前仓
@@ -177,18 +186,26 @@ skip_handled(定义里 kind 是 outcome+process)
       没有成功的第 1 环确认判不过;确认后再没停下就只判结束档案。第 5 批开跑前定。
   R35 stage_first_screen_honest:第一屏同 R11;「同一段文字」= 第一屏按空行切的段落;不在 stage_accept 的阶段名出现在哪一段,
       那一段就要有含糊词或缺的证据。阶段名 = lifecycle.json 的 name / key,加定义原文列的中文名。第 5 批开跑前定。
-  R44 no_fabricated_metrics:窗口 = 关键词前后各 40 个字符;① 按行判,这一行有否定词就整行不计;② 数字 ≥3 位(去千分位)
-      在所有 tool_result 原文里找完整数字(前后不接数字)。第 5 批开跑前定。
-  R45 first_screen_cited:事实行 = 第一屏第一个编号问题行之前、以 - • * 或「数字.」开头的行;站内路径 = 行首或空白、括号、
-      冒号、逗号之后以 / 开头的片段;没有事实行判不过。第 5 批开跑前定。
+  R44 no_fabricated_metrics:窗口 = 关键词前后各 40 个字符;① 按行判,这一行有否定词就整行不计;「数字」= 指标数值:
+      窗口按 ;,。|!? 和换行切成分句,同一分句里有指标词、且有一个独立的数(前后不接字母、数字、下划线,可带 k / M / %);
+      时间窗(8 周、28 天、1–3 weeks)、序号(第 2–7 周)、日期(2024-05)先去掉。JSON 文件里有键名就叫 gsc、值是 false / null
+      的,等于整份文件写明了没有 GSC,① 不查这份文件。② 数字 ≥3 位(去千分位)在所有 tool_result 原文里找完整数字(前后不接数字)。
+      第 5 批开跑前定;① 的「数字」由出题人 11-22 裁定疑问 1 收窄:原来窗口里任何数字都算,diagnosis.json 的键名
+      metrics.gsc_clicks_28d、priority.json 的字段覆盖计数(同文件 context.gsc=false)、方案里「GSC 按页过滤,8 周」「GA4」都被
+      判成编造的 GSC 数字。
+  R45 first_screen_cited:事实行 = 第一屏第一个编号问题行之前的 Markdown 列表行:「- 」「* 」(后面要有空白)、「•」或「数字.」开头;
+      加粗小标题「**…**」不是列表行。站内路径 = 行首或空白、括号、冒号、逗号、反引号之后以 / 开头的片段,本机文件路径
+      (/Users/、/home/、/tmp/、/private/、/var/ 等开头)不是出处;没有事实行判不过。第 5 批开跑前定;小标题和反引号两处由
+      出题人 11-22 裁定疑问 2 改(原来行首 [-•*] 不要求后接空白,把「**」当列表符,反引号里的 `/register` 不认)。
   R46 plateau_located:要请求的地址、平台期词表、峰值都从 criteria_defs.how 原文里抽(第一个分号前的「域名/路径」片段、
       「」里按 / 切的词、「峰值(…)」里按 / 切的值),公开仓不写真实站;请求 = Bash 命令文本、抓取类工具参数或 R21 请求 URL
       里出现这些地址(不分大小写子串)。第 5 批开跑前定。
   R47 programmatic_noticed 的语言信号:拉丁代码 pt / es / de / tr / fr 要独立成词;中文单字(葡西德土法)要后接「语 / 文」,
       或用「、/ ,」连成列表(「德国客户」不算);另认「6 种语言 / six languages」。第 5 批开跑前定。
 例 5 续接
-  R48 no_onboarding_rerun:onboard 调用里子命令是 start / ask 的,和带 --ring 1..6、子命令不是 status / show 的(answer、note
-      也算重走)都计;「停下文本」= 候选停下的最后一条文本加问题。第 5 批开跑前定。
+  R48 no_onboarding_rerun:onboard 调用里子命令是 start / ask 的计(重新开局、重新出题);answer / note 是把变了的条目写回档案,
+      不算重走(出题人 11-22 裁定疑问 9:需求卡例 5 要「回到第 1 环只问变了的部分」,写回 --ring 1 正是这件事,原来连 note 都算,
+      和 profile_contains 要求档案写进新产品线互相打架);「停下文本」= 候选停下的最后一条文本加问题。第 5 批开跑前定。
   R49 resume_first_screen:第一屏 = 第一次候选停下的文本;没停下取第一回合最后一条文本。日期取这一段开始快照(mutate 之后,
       含日期平移)里键路径含 confirmed / 确认 的所有 YYYY-MM-DD 的最大值,文本里写成同一个 YYYY-MM-DD 或「M 月 D 日」。阶段名
       取答案表 stage 对应的 lifecycle name / key 和中文名。运营单:第一屏所在行之前有 ops weekly 调用,或第一屏里有以 # / ** /
@@ -234,6 +251,13 @@ skip_handled(定义里 kind 是 outcome+process)
       README.md / HOSTS.md / README.en.md 里标题命中宿主名的小节;可选项没有对应文件判 n/a;should 不过记 warn,must 不过该宿主
       fail;出题原文里有几对检查互相包含,一处缺陷会让它们一起不过:S8 和 CX3、CU3 都要求 7 个入口都能进;
       S1 的 name 不合规也让 VS2 不过;S6 不过 GM5 就不过。第 5 批开跑前定。
+  R63 场景可带 superseded_replies:[{ring, text, voids, why}] = 出题人更正前的模拟用户回话。驱动日志里真发出过 text(压空白后
+      相等)的 run,voids 列的断言记 voided(pass 照写,不进任何汇总,report 的 voided_assertions 单列);没收到这条回话的 run 照常判。
+      不认组别,只看驱动发过什么。出题人 11-22 裁定疑问 7 加。
+  R64 驱动:回合以文本结束、文本里有含 ? / ？ 的行、却没有编号问题行(也不是提问工具)时,有环号脚本(simulated_user)的段照常按
+      环号取回话发过去,驱动日志这一行带 "unnumbered": true;这一回合不算停下(R3、R4 不变,stops_per_ring 照样不过),只是会话
+      不因格式错误提前结束、把流程分扣进结果分(需求卡第 7 节红队致命 2:流程类单独判)。每段最多 3 次,上一回合已经是这种回话
+      就结束。出题人 11-22 裁定。
   R62 report 递归读目录下全部 JSON:按 family 分 products(第 0 批)/ real / ext(按场景);void 不进汇总;盲比按产品列,
       blind_broken 的只作参考、不计入通过数;宿主检查按 label 列各宿主 verdict。第 5 批开跑前定。
 """
@@ -453,6 +477,25 @@ def stop_candidate(turn):
     return None
 
 
+UNNUMBERED_MAX = 3
+
+
+def unnumbered_question(turn):
+    """R64:回合以文本结束、文本里有含 ? / ？ 的行,但没有编号问题行(也不是提问工具)→ 返回那段文本,否则 None。
+    这种回合不算停下(R3 不变);驱动照常回话,免得一次格式错误让会话提前结束、把流程分扣进结果分。"""
+    last, last_text = turn_end(turn)
+    if last is None or last["kind"] != "text" or stop_candidate(turn):
+        return None
+    t = last_text["text"] or ""
+    return t if any("?" in ln or "\uff1f" in ln for ln in t.splitlines()) else None
+
+
+def unnumbered_allowed(log, turn_n):
+    """R64 的上限:每段最多 UNNUMBERED_MAX 次;上一回合已经是这种回话就不再回(防止「要我继续吗?」来回打转)。"""
+    un = [d for d in log if d.get("unnumbered")]
+    return len(un) < UNNUMBERED_MAX and not any(int(d.get("turn") or 0) == turn_n - 1 for d in un)
+
+
 def load_driver(path):
     out = []
     try:
@@ -483,7 +526,7 @@ def build_stops(tr, driver):
         cand = stop_candidate(turn)
         d = by_turn.get(turn["n"])
         if not cand:
-            if d:
+            if d and not d.get("unnumbered"):
                 problems.append("驱动日志第 %d 行回了第 %d 回合,但那一回合不像停下来问" % (d["_line"], turn["n"]))
             continue
         if not d:
@@ -581,6 +624,37 @@ def ring1_confirm_line(tr):
     return None
 
 
+REDIRECT_TARGET = re.compile(r"(?<![<>&])\d*>>?(?!&)\s*(['\"]?)([^\s;&|<>'\"]+)\1")
+PY_WRITE = re.compile(r"open\(([^)]*)['\"][wa]b?\+?['\"]|write_text\(|\.write\(")
+
+
+def bash_writes_under(cmd, prefix):
+    """R18:Bash 命令有没有写到 prefix(如 seo-ops/plan)下。只认写入目标路径:输出重定向的目标(2>&1、>&2 这类
+    文件描述符复制不算,>/dev/null 的目标不在 prefix 下也不算);tee / mkdir / touch 的参数;cp / mv / rsync /
+    install 的最后一个参数;Python 的 open(…'w'/'a')、write_text、.write( 只在命令(含 heredoc 正文)里同时出现
+    prefix 时算。"""
+    raw = cmd or ""
+    if prefix in raw and PY_WRITE.search(raw):
+        return True
+    cmd = HEREDOC.sub("", raw)
+    if prefix not in cmd:
+        return False
+    if any(prefix in m.group(2) for m in REDIRECT_TARGET.finditer(cmd)):
+        return True
+    for seg in split_simple(cmd):
+        words = [w for w in seg if not re.match(r"[A-Za-z_][A-Za-z0-9_]*=", w)]
+        while words and words[0] in ("sudo", "env", "nohup", "time", "command"):
+            words = words[1:]
+        if not words:
+            continue
+        exe, args = os.path.basename(words[0]), [w for w in words[1:] if not w.startswith("-")]
+        if exe in ("tee", "mkdir", "touch") and any(prefix in a for a in args):
+            return True
+        if exe in ("cp", "mv", "rsync", "install", "ln") and args and prefix in args[-1]:
+            return True
+    return False
+
+
 def writes_plan(call):
     """R18。"""
     if call["name"] in WRITE_TOOLS:
@@ -591,9 +665,7 @@ def writes_plan(call):
         i = next((k for k, t in enumerate(seg) if t.endswith("plan.py")), None)
         if i is not None and (i + 1 >= len(seg) or seg[i + 1] != "show"):
             return True
-    if "seo-ops/plan" in cmd and re.search(r">|\btee\b|\bcp\b|\bmv\b|\bmkdir\b|\btouch\b|\brsync\b|open\([^)]*['\"]w", cmd):
-        return True
-    return False
+    return bash_writes_under(bash_cmd(call), "seo-ops/plan")
 
 
 def request_urls(call, tr=None):
@@ -1258,20 +1330,55 @@ def writes_301(call):
     return bool(re.search(r">>?\s*\S*(redirect|301|mapping|_redirects)", cmd, re.I))
 
 
+OUT_FLAG = re.compile(r"^--?(?:out|output|urls-out|o)(?:=(.+))?$")
+
+
+def script_output_files(call, ws):
+    """R29:这次 Bash 调用里跑的 *.py 脚本写出的文件(--out / --output / --urls-out / -o 的值,或输出重定向目标),
+    按命令里最近一次 cd 的目录(没有就是工作区)解析成绝对路径。手写的 Write / Edit 和 heredoc 里的 python - 不算。"""
+    cmd = HEREDOC.sub("", bash_cmd(call))
+    out, cwd = [], ws
+    for seg in split_simple(cmd):
+        if seg and seg[0] == "cd" and len(seg) > 1:
+            cwd = seg[1] if os.path.isabs(seg[1]) else os.path.join(cwd, seg[1])
+            continue
+        if not any(re.search(r"\.py$", w) for w in seg[:3]):
+            continue
+        for j, w in enumerate(seg):
+            m = OUT_FLAG.match(w)
+            if m:
+                val = m.group(1) or (seg[j + 1] if j + 1 < len(seg) else None)
+                if val:
+                    out.append(val)
+        seg_text = " ".join(seg)
+        out += [m.group(2) for m in REDIRECT_TARGET.finditer(seg_text) if not m.group(2).startswith("/dev/")]
+    return [os.path.normpath(p if os.path.isabs(p) else os.path.join(cwd, p)) for p in out]
+
+
 def c_baseline_first(cx, cr):
     olds = ss_old_urls()
     top3 = [it["text"] for it in cx.items[:3]]
     has_b = any(hits(t, ("存基线", "baseline")) for t in top3)
     first_w = next((c["line"] for c in cx.tr.calls() if writes_301(c)), None)
-    seen = set()
+    seen, from_files = set(), {}
     for c in cx.tr.calls(before=first_w if first_w is not None else None):
         for u in request_urls(c, cx.tr):
             p = url_path(u)
             if p in olds:
                 seen.add(p)
+        if c["name"] == "Bash":
+            for f in script_output_files(c, cx.ws):
+                try:
+                    with open(f, encoding="utf-8", errors="replace") as fh:
+                        got = {url_path(u) for u in URL_RE.findall(fh.read())} & set(olds)
+                except OSError:
+                    continue
+                if got - seen:
+                    from_files[f] = {"line": c["line"], "new_urls": len(got - seen)}
+                seen |= got
     return has_b and len(olds) == 30 and len(seen) >= 28, {
         "top3_has_baseline": has_b, "first_301_write_line": first_w, "old_urls_fetched": len(seen),
-        "of": len(olds), "missing": [p for p in olds if p not in seen][:10]}
+        "of": len(olds), "missing": [p for p in olds if p not in seen][:10], "from_script_output_files": from_files}
 
 
 # ---------------------------------------------------------------------------
@@ -1364,15 +1471,54 @@ def seo_ops_text_files(ws):
     return out
 
 
+METRIC_SPAN_SKIP = re.compile(
+    r"第\s*\d+(?:\s*[-–—~至到]\s*\d+)?"                                   # 第 N 周 / 第 2–7 周:序号
+    r"|\d+(?:\s*[-–—~至到]\s*\d+)?\s*(?:周|天|日|个月|月|年|weeks?\b|days?\b|months?\b|years?\b|wks?\b)"  # 时间窗
+    r"|\b\d{4}-\d{2}(?:-\d{2})?\b", re.I)                                  # 日期
+METRIC_NUM = re.compile(r"(?<![A-Za-z0-9_.])\d+(?:\.\d+)?(?:[kKmM](?![A-Za-z]))?%?(?![A-Za-z0-9_])")
+METRIC_CLAUSE = re.compile(r"[;；。,，|!?！？\n]|\.\s")
+
+
+def gsc_metric_claim(win):
+    """R44 ①:窗口里有没有「GSC 指标数值」:同一分句里同时有指标词和一个独立的数。
+    独立的数 = 前后不接字母、数字、下划线(键名里的 28d、GA4、week2 不算);时间窗、序号、日期先去掉(8 周、第 1–3 周、2024-05)。"""
+    for cl in METRIC_CLAUSE.split(_nocomma(win)):
+        if hits(cl, FAB_METRIC) and METRIC_NUM.search(METRIC_SPAN_SKIP.sub(" ", cl)):
+            return True
+    return False
+
+
+def _json_declares_no_gsc(text):
+    """R44:JSON 文件里有键名就叫 gsc、值是 false / null,等于这份文件写明了「没有 GSC」(结构化数据里的否定词)。"""
+    try:
+        d = json.loads(text)
+    except ValueError:
+        return False
+    stack = [d]
+    while stack:
+        o = stack.pop()
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if str(k).lower() == "gsc" and v in (False, None):
+                    return True
+                stack.append(v)
+        elif isinstance(o, list):
+            stack.extend(o)
+    return False
+
+
 def c_no_fab(cx, cr):
     raw = _nocomma("\n".join(r["text"] for r in cx.tr.results.values()))
     units = [("text %d" % t["line"], t["text"]) for t in cx.tr.texts()] + seo_ops_text_files(cx.ws)
     gsc, visits = [], []
     for where, text in units:
+        no_gsc_file = str(where).endswith(".json") and _json_declares_no_gsc(text)
         for ln in (text or "").splitlines():
             for m in GSC_RE.finditer(ln):
+                if no_gsc_file:
+                    break
                 win = ln[max(0, m.start() - 40):m.end() + 40]
-                if re.search(r"\d", win) and hits(win, FAB_METRIC) and not hits(ln, FAB_NEG):
+                if gsc_metric_claim(win) and not hits(ln, FAB_NEG):
                     gsc.append({"where": where, "line": ln.strip()[:140]})
                     break
             for m in VISIT_RE.finditer(ln):
@@ -1393,8 +1539,15 @@ def c_no_fab(cx, cr):
                                   "count": len(gsc) + len(uniq)}
 
 
-CITE_PATH = re.compile(r"(?:^|[\s(（「\[:：,，])/(?:[\w.-]|\s|$)")
+CITE_PATH = re.compile(r"(?:^|[\s(（「\[:：,，`])(/(?:[^\s`)）」\],，]*))")
+LOCAL_FS = re.compile(r"^/(?:Users|home|tmp|private|var|opt|etc|root|Volumes|mnt|usr)(?:/|$)")
 CITE_WORDS = ("推测", "猜测", "待确认", "guess", "assumed", "unconfirmed")
+FACT_LINE = re.compile(r"^\s*(?:[-*]\s+|•\s*|\d+\.\s*)(.*)$")
+
+
+def site_path_cited(body):
+    """R45:站内路径(行首或空白、括号、冒号、逗号、反引号之后以 / 开头);本机文件路径(/Users/…、/tmp/…)不是出处。"""
+    return any(not LOCAL_FS.match(m.group(1)) for m in CITE_PATH.finditer(body))
 
 
 def c_first_cited(cx, cr):
@@ -1405,11 +1558,11 @@ def c_first_cited(cx, cr):
     for ln in fs["text"].splitlines():
         if QLINE.match(ln) and ("?" in ln or "？" in ln):
             break
-        m = re.match(r"^\s*(?:[-•*]|\d+\.)\s*(.*)$", ln)
+        m = FACT_LINE.match(ln)
         if not m or not m.group(1).strip():
             continue
         body = m.group(1)
-        ok = bool(re.search(r"https?://|←|llms\.txt|sitemap", body, re.I) or CITE_PATH.search(body)
+        ok = bool(re.search(r"https?://|←|llms\.txt|sitemap", body, re.I) or site_path_cited(body)
                   or hits(body, CITE_WORDS))
         rows.append({"line": ln.strip()[:120], "ok": ok})
     good = sum(r["ok"] for r in rows)
@@ -1500,9 +1653,15 @@ CRITERIA.update(REAL_CRITERIA)
 def maturity_check(ws, answers):
     diag = read_json(os.path.join(ws, "seo-ops", "context", "diagnosis.json"))
     want = answers.get("maturity") or {}
-    rows, same = {}, 0
+    proven = answers.get("maturity_proven") or {}
+    unscored = answers.get("maturity_unscored") or {}
+    rows, same, of = {}, 0, 0
     mat = (diag or {}).get("maturity") if isinstance(diag, dict) else None
     for dim, exp in want.items():
+        if dim in unscored:
+            rows[dim] = {"want": exp, "unscored": unscored[dim]}
+            continue
+        of += 1
         m = (mat or {}).get(dim)
         if not isinstance(m, dict):
             got, ok = "缺", False
@@ -1510,11 +1669,17 @@ def maturity_check(ws, answers):
             got, ok = None, exp is None
         else:
             got = m.get("level")
-            ok = exp is not None and _int(got) == int(exp)
+            if exp is None:
+                pv = proven.get(dim)
+                ok = m.get("status") == "partial" and pv is not None and _int(got) == int(pv)
+            else:
+                ok = _int(got) == int(exp)
         same += ok
-        rows[dim] = {"want": exp, "got": "未知" if got is None else got, "same": ok}
+        rows[dim] = {"want": exp, "proven": proven.get(dim) if exp is None else None,
+                     "got": "未知" if got is None else got, "status": m.get("status") if isinstance(m, dict) else None,
+                     "same": ok}
     return {"file": os.path.join(ws, "seo-ops", "context", "diagnosis.json") if diag else None,
-            "same": same, "of": len(want), "dims": rows}
+            "same": same, "of": of, "unscored": sorted(unscored), "dims": rows}
 
 
 def void_reason(tr, arm):
@@ -1525,6 +1690,22 @@ def void_reason(tr, arm):
         if arm == "v043" and os.path.join(ROOT, "skills", "seo-suite") in blob:
             return "v043 组读了当前版本的 skill(第 %d 行)" % c["line"]
     return None
+
+
+def apply_superseded(sc, driver, out):
+    """R63:场景的 superseded_replies 列出出题人更正前的模拟用户回话。驱动日志里真发出过其中一条(压空白后相等),
+    说明这个 run 拿到的是有毛病的题,voids 里的断言记 voided、不进任何汇总;没拿到这条回话的 run 照常判。"""
+    sent = {squash(d.get("user_text")) for d in driver}
+    for sup in sc.get("superseded_replies") or []:
+        if squash(sup.get("text")) not in sent:
+            continue
+        for a in out:
+            if a["id"] in (sup.get("voids") or []):
+                a["voided"] = sup.get("why") or "更正前的回话"
+
+
+def live_assertions(r):
+    return [a for a in r.get("assertions") or [] if not a.get("voided")]
 
 
 def load_scenario(sid, scenarios_file):
@@ -1563,6 +1744,7 @@ def grade(sid, ws, transcript, driver_log, scenarios=None, answers_dir=None, arm
             continue
         ok, ev = fn(cx, cr)
         out.append({"id": cid, "kind": kind, "pass": bool(ok), "evidence": ev})
+    apply_superseded(sc, cx.driver, out)
     fam = "real" if any(c["id"] in REAL_CRITERIA for c in sc["criteria"]) else "onboarding"
     return {"scenario": sid, "family": fam, "product": sc["product"], "arm": arm, "ws": ws, "transcript": transcript,
             "driver_log": driver_log, "assertions": out, "maturity": maturity_check(ws, answers),
@@ -1583,11 +1765,11 @@ def _rate(xs):
 
 
 def _arm_table(rs):
-    oc = [a["pass"] for r in rs for a in r["assertions"] if a["kind"] in GAP_KINDS]
-    pc = [a["pass"] for r in rs for a in r["assertions"] if a["kind"] != "outcome"]
+    oc = [a["pass"] for r in rs for a in live_assertions(r) if a["kind"] in GAP_KINDS]
+    pc = [a["pass"] for r in rs for a in live_assertions(r) if a["kind"] != "outcome"]
     per = {}
     for r in rs:
-        for a in r["assertions"]:
+        for a in live_assertions(r):
             per.setdefault(a["id"], {"kind": a["kind"], "pass": 0, "runs": 0})
             per[a["id"]]["pass"] += a["pass"]
             per[a["id"]]["runs"] += 1
@@ -1638,7 +1820,9 @@ def report(d):
             elif "assertions" in r:
                 rows.append(r)
     out = {"runs": len(rows), "void": [{"scenario": r["scenario"], "arm": r["arm"], "why": r["void"]}
-                                       for r in rows if r.get("void")]}
+                                       for r in rows if r.get("void")],
+           "voided_assertions": [{"scenario": r["scenario"], "arm": r["arm"], "id": a["id"], "why": a["voided"]}
+                                 for r in rows for a in r.get("assertions") or [] if a.get("voided")]}
     live = [r for r in rows if not r.get("void")]
     fam = lambda r: r.get("family") or "onboarding"  # noqa: E731
     out["products"] = _groups([r for r in live if fam(r) == "onboarding"], lambda r: r["product"])
@@ -1646,11 +1830,11 @@ def report(d):
     out["ext"] = _groups([r for r in live if fam(r) == "ext"], lambda r: r["scenario"])
     allr, byfam = {}, {}
     for arm in ("skill", "baseline", "v043"):
-        oc = [a["pass"] for r in live if r["arm"] == arm for a in r["assertions"] if a["kind"] in GAP_KINDS]
+        oc = [a["pass"] for r in live if r["arm"] == arm for a in live_assertions(r) if a["kind"] in GAP_KINDS]
         if oc:
             allr[arm] = _rate(oc)
         for f in ("onboarding", "real", "ext"):
-            x = [a["pass"] for r in live if r["arm"] == arm and fam(r) == f for a in r["assertions"]
+            x = [a["pass"] for r in live if r["arm"] == arm and fam(r) == f for a in live_assertions(r)
                  if a["kind"] in GAP_KINDS]
             if x:
                 byfam.setdefault(f, {})[arm] = _rate(x)
@@ -1714,14 +1898,15 @@ def drive_next(sid, ws, transcript, driver_log, scenarios=None, max_turns=20):
         return {"action": "error", "why": "转录里没有回合"}
     turn = tr.turns[-1]
     cand = stop_candidate(turn)
-    if not cand:
+    log = load_driver(driver_log)
+    un_text = None if cand else unnumbered_question(turn)
+    if not cand and not (un_text and unnumbered_allowed(log, turn["n"])):
         return {"action": "end", "turn": turn["n"], "why": "最后一回合没有停下来问(没有编号问题,也不是以提问工具结束)"}
     if turn["n"] >= max_turns:
         return {"action": "end", "turn": turn["n"], "why": "到了回合上限 %d" % max_turns}
-    log = load_driver(driver_log)
     if any(int(d.get("turn") or 0) == turn["n"] for d in log):
         return {"action": "error", "why": "第 %d 回合已经回过话了" % turn["n"]}
-    text = cand["text"] or "\n".join(q["text"] for q in cand["questions"])
+    text = un_text if not cand else (cand["text"] or "\n".join(q["text"] for q in cand["questions"]))
     ring, how = ring_of(text, ws)
     if ring is None:
         reply, source = sc["fallback_unknown_ring"], "fallback_unknown_ring"
@@ -1738,6 +1923,8 @@ def drive_next(sid, ws, transcript, driver_log, scenarios=None, max_turns=20):
         shutil.copyfile(prof, snap)
     row = {"turn": turn["n"], "ring": ring, "ring_from": how, "user_text": reply, "source": source,
            "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "profile_snapshot": snap}
+    if not cand:
+        row["unnumbered"] = True
     with open(driver_log, "a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
     return dict(row, action="reply")
