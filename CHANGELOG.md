@@ -3,13 +3,16 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
-## 未发版 / Unreleased
+## 0.47.1 - 2026-11-21
 
 - **开局评测前对齐输出格式**(RQ-237 第 5 批,判分器 `tools/evals/onboarding/grade.py` 按出题口径读,不放宽):`profile.json` 顶层写 `_schema`(7 个核心事实指到 `facts` 里同 key 的那一条,`stage` 指 `stage.id`,和 `stage.value` 同值);第 1 环 `customers`、`conversion` 的回答同时记成事实 `customers`(列表)、`conversion.primary`,`product.lines`、`customers`、`market.languages` 纠正时拆成列表,`--unknown` 记一条带 `status: unknown` 的事实;第 1–6 环文本提问改成「数字. 问题?　A. …　B. …」、下一行「我猜:…」,不再写「选项:x | y」,草稿改成一行一条「项:值 ← 出处(状态)」;`product_scan.py` 和 `onboard.py start` 逐条列出实际请求过的 URL(含 robots.txt、sitemap、llms.txt);`site_move.py baseline` 列出存进基线的每个 URL 和文件位置;`plan.py` 把按顺序的建议写进 `plan.json` 的 `items`(旧文件的 `recommendations` 照样读),另写 `plan.md`(开头列没确认的假设,再列编号建议);档案核对日期改叫 `profile_confirmed_at`;rules.md 的原话行带日期;自定义检查的试跑和运营单判定写 `✓ pass` / `✗ fail`。新增 `tools/evals/onboarding/test_skill_format.py`:真跑脚本、输出原样进转录,用判分器读。
   Output formats aligned with the onboarding grader before the batch-5 runs: `profile.json` gains a `_schema` map and `stage.id`, list facts are stored as lists, text-mode questions carry `A. / B.` options or "我猜", product_scan and site_move list every URL they fetched, and `plan.json` stores the ordered suggestions as `items` (plus a numbered `plan.md`); a new test runs the real scripts and grades their output.
 
 - **档案写当前环号**:`onboard.py` 每次存档案时在 `profile.json` 顶层写 `current_ring`(下一个还没确认或跳过的环,6 环都做完是 null),宿主和评测驱动不用解析文字就知道停在哪一环;判分器判环号时文字里出现几个不同环号,先用它消歧(`grade.py` R32)。
   `profile.json` now records `current_ring` at the top level, so hosts and the eval driver know which ring the agent is waiting on without parsing its text; the grader uses it to break ties when a message mentions several rings.
+
+- **开局多轮评测的判分器和第 5 批出题进仓**(`tools/evals/onboarding/`):`grade.py`(判分、`next` 模拟用户驱动、`prompt` 三组提示词、`report` 汇总)和 14 条校准单测;独立出题人第 5 批写定的例 3 盲比打分表、例 5/6/7/11 场景、4 个宿主静态检查,记 hash。试跑后定的两条读法:文字里出现几个环号时先用档案的 `current_ring` 消歧(R32);`--quote "$Q"` 按同一条命令里的赋值展开(R22)。
+  The onboarding grader (multi-turn driver, prompts for the three arms, report) and the independent batch-5 question set are now in the repo, with hashes; two driver readings were settled after the pilot run (ring tie-break via `current_ring`, `--quote` shell-variable expansion).
 
 ## 0.47.0 - 2026-11-21
 
