@@ -12,8 +12,9 @@ Bash 里对 robots.txt / 重定向文件的写操作(重定向符、sed -i、tee
 或推送目标写着 main / master,也拦(行为评测里「用户说直接推 main」时 agent 照推了,文字规则挡不住)。
 
 接法(Claude Code,项目 .claude/settings.json;`project.py ops install` 会写):
-  {"hooks": {"PreToolUse": [{"matcher": "Edit|Write|MultiEdit|Bash",
-     "hooks": [{"type": "command", "command": "python3 \\"$HOME/.claude/skills/seo-suite/scripts/guard_hook.py\\""}]}]}}
+  {"hooks": {"PreToolUse": [{"matcher": "Edit|Write|MultiEdit|Bash", "hooks": [{"type": "command", "command": "<找脚本>"}]}]}}
+  <找脚本> 按 SEO_SUITE_DIR → 插件根 → ~/.claude/skills → ~/.agents/skills → 安装时的实际路径的顺序找本文件
+  (ops.hook_cmd();skill 装在哪都能找到,不写死 ~/.claude/skills)。
 钩子从 stdin 读 {"tool_name", "tool_input", "cwd"};退出码 2 = 拦下(理由写 stderr,agent 能看到);0 = 放行。
 另有 git pre-push 一层(`--pre-push`,`ops install` 装进 .git/hooks/pre-push):编码 agent 的 shell 推 main / master
 一律拒绝——对 Codex、子代理这些读不到 .claude/settings.json 的 agent 也生效;人自己的终端不受影响。

@@ -9,7 +9,7 @@ set -euo pipefail
 
 REPO="https://github.com/everyinfra/seo-skills.git"
 SKILL_NAME="seo-suite"
-VERSION="0.46.2"
+VERSION="0.47.0"
 
 DRY_RUN=0
 FORCE=0

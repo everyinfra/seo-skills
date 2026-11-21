@@ -26,6 +26,8 @@
              我们缺位的词按赢家页面类型归组 → 该复制什么。
 
 所有子命令 --json 输出机器可读结果到 stdout;--out 写文件。网络抓取:仅 http(s),拒私网(同 site_crawl.py)。
+外联候选(intersect、exchangers、deadlinks、unlinked)按站点仓 seo-ops/playbook 的禁用清单过滤(playbook.py;
+比如用户说过「不做 Reddit 外链」,reddit.com 不进候选),去掉了几条写进输出的 deny_filtered;--no-deny 关掉。
 """
 import argparse
 import csv
@@ -47,6 +49,7 @@ from html.parser import HTMLParser
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 import site_crawl as SC  # noqa: E402
+import playbook as PB  # noqa: E402
 
 CC_BASE = "https://data.commoncrawl.org/projects/hyperlinkgraph"
 # data.commoncrawl.org 限流时(新连接回 503、老连接降到几百 KB/s)换它背后的 CloudFront 地址;2026-11-06 实测后者 4MB/s+。
@@ -789,17 +792,20 @@ def cmd_intersect(ns):
     own = registrable(ns.own) if ns.own else graph.get("own")
     seeds = [registrable(x) for x in read_lines(ns.seeds)] if ns.seeds else None
     rows, mutual = intersect(graph, crawl, own, ns.min, load_ledger(ns.ledger), seeds)
+    rows, denied = deny_filter(ns, rows, lambda r: "%s %s" % (r["domain"], r.get("evidence", "")))
     if ns.out:
         with open(ns.out, "w", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=["domain", "seeds_linked", "best_page", "followed", "seeds", "is_seed", "platform", "cc_rank",
                                               "contacted", "evidence_kind", "evidence"])
             w.writeheader()
             w.writerows(rows)
-    res = {"own": own, "candidates": rows, "mutual": mutual}
+    res = {"own": own, "candidates": rows, "mutual": mutual, "deny_filtered": denied}
     if ns.json:
         print(json.dumps(res, ensure_ascii=False))
     else:
         print("外联候选(链到 ≥%d 个种子、没链 %s)%d 个;互换关系 %d 对" % (ns.min, own, len(rows), len(mutual)))
+        if denied:
+            print("  " + PB.deny_report(denied, "候选"))
         for r in rows[:30]:
             print("  %-28s 链了 %2d 个种子  rank=%s%s" % (r["domain"], r["seeds_linked"], r["cc_rank"],
                                                    "  已联系" if r["contacted"] else ""))
@@ -856,6 +862,7 @@ def cmd_exchangers(ns):
         crawl.setdefault("own", c.get("own"))
     own = registrable(ns.own) if ns.own else crawl.get("own")
     rows = exchangers(crawl, own, load_ledger(ns.ledger), ns.min_listed)
+    rows, denied = deny_filter(ns, rows, lambda r: "%s %s" % (r["domain"], r.get("pages", "")))
     if ns.out:
         with open(ns.out, "w", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=["domain", "role", "count", "by", "nofollow", "links_us", "contacted", "pages"])
@@ -864,6 +871,8 @@ def cmd_exchangers(ns):
     if ns.json:
         print(json.dumps(rows, ensure_ascii=False))
         return 0
+    if denied:
+        print(PB.deny_report(denied, "候选"))
     hosts = [r for r in rows if r["role"] == "host"]
     lst = [r for r in rows if r["role"] == "listed"]
     fresh = lambda rs: [r for r in rs if not r["contacted"] and not r["links_us"]]   # noqa: E731
@@ -881,6 +890,7 @@ def cmd_exchangers(ns):
 def cmd_deadlinks(ns):
     pages = [u for u, _ in load_listicles(ns.input)]
     res = deadlinks(pages[: ns.max_pages], registrable(ns.own) if ns.own else None, ns.per_page)
+    res["dead"], res["deny_filtered"] = deny_filter(ns, res["dead"], lambda d: "%s %s" % (d.get("page", ""), d.get("dead_url", "")))
     write_out(ns.out, res)
     if ns.json:
         print(json.dumps(res, ensure_ascii=False))
@@ -928,6 +938,7 @@ def cmd_unlinked(ns):
     pages = [u for u, _ in load_listicles(ns.input)]
     res = {"own": registrable(ns.own), "brand": ns.brand,
            "unlinked": unlinked(pages, registrable(ns.own), ns.brand)}
+    res["unlinked"], res["deny_filtered"] = deny_filter(ns, res["unlinked"], lambda u: "%s %s" % (u["domain"], u["page"]))
     write_out(ns.out, res)
     if ns.json:
         print(json.dumps(res, ensure_ascii=False))
@@ -1044,6 +1055,14 @@ def cmd_footprint(ns):
     return 0
 
 
+def deny_filter(ns, rows, text_of):
+    """外联候选按用户的禁用清单过滤 → (保留的, [{"domain/page", "denied_by"}])。"""
+    if getattr(ns, "no_deny", False):
+        return rows, []
+    kept, dropped, _ = PB.filter_for(None, rows, text_of, explicit_ws=getattr(ns, "ws", None))
+    return kept, [{"what": text_of(d["item"]).split()[0], "denied_by": d["denied_by"]} for d in dropped]
+
+
 def build_parser():
     ap = argparse.ArgumentParser(description="竞品与外链发现(种子站、谁链谁、互换、外联候选、竞品 SEO 底账)")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1105,6 +1124,9 @@ def build_parser():
     g.add_argument("--brand", required=True, help="品牌名正则,例如 'every\\s?infra'")
     g.add_argument("--out")
     g.add_argument("--json", action="store_true")
+    for p in (d, x, f, g):
+        p.add_argument("--ws", help="seo-ops 工作区(读禁用清单;默认从当前目录往上找)")
+        p.add_argument("--no-deny", action="store_true", help="不按禁用清单过滤")
     return ap
 
 

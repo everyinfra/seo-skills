@@ -16,7 +16,10 @@
   - 第 1 环必须由用户确认:没有 --quote 不能确认;这一环没 show 过不能确认。
   - 网页上抓来的东西只当草稿(status=unconfirmed),用户确认这一环后才变 confirmed。
   - 敏感答案(处罚史、预算、审批人)存 context/private/,该目录写进 seo-ops/.gitignore。
-  - 第 5 环「明确不做」的答案进 profile.deny(结构化禁用清单),下游推荐按它过滤。
+  - 第 5 环「明确不做」的答案进 profile.deny(结构化禁用清单),下游推荐按它过滤(playbook.load_deny 和
+    teach.py 记的 seo-ops/playbook/deny.json 合并成一份)。
+  - 仓库里有 marketingskills 的 .agents/product-marketing.md:开局读它当草稿;某一环确认或纠正后,
+    把改过的条目写回去(pm_context.py:只改对应那一行,别的段落字节不变,照对方规矩升版本、加 Changelog)。
 
 状态文件:seo-ops/context/profile.json(schema 1)、product.md(人读,带版本和变更记录)、
 scan.json、diagnosis.json、private/answers.json。不写 project.yaml,不改工作区 schema 版本。
@@ -44,6 +47,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import lifecycle  # noqa: E402
+import pm_context  # noqa: E402
 
 PY = sys.executable or "python3"
 BANK_PATH = os.path.join(os.path.dirname(HERE), "data", "onboarding.json")
@@ -171,6 +175,38 @@ def facts_from_scan(scan):
     return out
 
 
+def merge_pm_facts(facts, repo):
+    """.agents/product-marketing.md 里填了的条目当草稿:同 key 的用它的值(人写的,比抓来的准),抓来的值留在 site_value。"""
+    b = bank()
+    for pf in pm_context.draft_facts(repo):
+        ring = next((r for r, d in b.items() if pf["key"].startswith(tuple(d.get("fact_prefixes") or ()))), None)
+        cur = next((f for f in facts if f["key"] == pf["key"]), None)
+        if cur:
+            if str(cur.get("value")) != pf["value"]:
+                cur["site_value"], cur["site_source"] = cur.get("value"), cur.get("source")
+            cur.update({"value": pf["value"], "source": pf["source"], "kind": "fact"})
+        else:
+            facts.append({"key": pf["key"], "value": pf["value"], "source": pf["source"], "kind": "fact",
+                          "status": "unconfirmed", "ring": ring, "at": now()})
+    return facts
+
+
+def sync_pm_context(ws, prof, ring):
+    """某一环确认后,把改过的条目写回 .agents/product-marketing.md(没有这份文件就什么都不做)。"""
+    repo = prof.get("repo") or os.path.dirname(ws)
+    ups = pm_context.updates_from_profile(prof, ring)
+    if not ups:
+        return None
+    res = pm_context.write_back(repo, ups, "seo-suite onboarding ring %d: user-confirmed" % ring)
+    if res and res["changed"]:
+        text = pm_context.read_file(repo) or ""
+        import hashlib
+        prof["context_sync"] = {"path": res["path"], "at": now(), "ring": ring,
+                                "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                                "fields": ["%s/%s" % (c["section"], c["label"]) for c in res["changed"]]}
+    return res
+
+
 def run_json(cmd, out_path):
     p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
     data = read_json(out_path) if out_path and os.path.isfile(out_path) else None
@@ -221,7 +257,8 @@ def cmd_start(ns):
             "site": ns.site, "repo": os.path.abspath(ns.repo) if ns.repo else None, "market": ns.market,
             "rings": {str(r): {"status": "pending", "answers": {}, "quotes": [], "asked_at": None,
                                "confirmed_at": None} for r in range(1, 7)},
-            "facts": facts_from_scan(scan), "stage": {}, "events": [], "metrics": {}, "deny": [],
+            "facts": merge_pm_facts(facts_from_scan(scan), ns.repo or os.path.dirname(ws)),
+            "stage": {}, "events": [], "metrics": {}, "deny": [],
             "existing_context": scan.get("existing_context") or [], "changelog": []}
     save_profile(ws, prof, "开局:从 product_scan 起草 %d 条事实(全部未确认)" % len(prof["facts"]))
     diag = lifecycle.diagnose(scan, ws)
@@ -480,6 +517,10 @@ def cmd_answer(ns):
         msg += ",确认"
     save_profile(ws, prof, msg)
     if ns.confirm:
+        res = sync_pm_context(ws, prof, r)
+        if res and res["changed"]:
+            save_profile(ws, prof, "写回 %s:%s" % (res["path"], "、".join(prof["context_sync"]["fields"])))
+            print("已写回 %s(改了 %s;别的段落没动)" % (res["path"], "、".join(prof["context_sync"]["fields"])))
         diag = lifecycle.diagnose(read_json(ctx(ws, "scan.json")), ws)
         write_json(ctx(ws, "diagnosis.json"), diag)
     if ns.confirm and r == 6:

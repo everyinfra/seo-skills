@@ -545,6 +545,8 @@ def cmd_collect(rest):
                     help="serp_overlap.py 预跑存盘输出(表格文本;可多份)")
     ap.add_argument("--file", default=DEFAULT_FILE, help="队列数据文件(默认 contentops.json)")
     ap.add_argument("--json", action="store_true", help="机读输出")
+    ap.add_argument("--ws", help="seo-ops 工作区(读用户禁用清单;默认从当前目录往上找)")
+    ap.add_argument("--no-deny", action="store_true", help="不按禁用清单过滤")
     a = ap.parse_args(rest)          # 参数错/--help 由 argparse 处理(exit 2/0,同口径)
     if len(a.gsc) > 2:
         die("--gsc 至多两个文件(cur [prev]);更多期对比请用 --gsc-out 预跑")
@@ -607,6 +609,9 @@ def cmd_collect(rest):
         sys.stderr.write("[warn] 跳过 serp 源: 未提供 --serp-out\n")
 
     any_source = any(v["state"] == "ok" for v in src_status.values())
+    candidates, denied = deny_filter(a, candidates)
+    for d in denied:
+        sys.stderr.write("[deny] 不入队:%s(禁用清单:%s)\n" % (d["topic"], d["denied_by"]))
     new_items, skipped = [], 0
     with data_lock(a.file):
         data = load_data(a.file, create=True)
@@ -633,7 +638,7 @@ def cmd_collect(rest):
         print(json.dumps({"schema_version": SCHEMA_VERSION,
                           "file": os.path.abspath(a.file), "new": len(new_items),
                           "skipped_dup": skipped, "total": len(data["items"]),
-                          "sources": src_status,
+                          "sources": src_status, "deny_filtered": denied,
                           "ideas": new_items}, ensure_ascii=False, indent=1))
     else:
         for name in ("trend_watch", "gsc_mining", "serp_overlap"):
@@ -669,6 +674,17 @@ def pipeline_for(source):
             "结论先行→对比表→分维度→各自适合谁")
 
 
+def deny_filter(a, items):
+    """选题按站点仓 seo-ops/playbook 的禁用清单过滤(规则同 plan.py)→ (保留的, [{"topic", "denied_by"}])。"""
+    if getattr(a, "no_deny", False):
+        return items, []
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import playbook as PB
+    kept, dropped, _ = PB.filter_for(None, items, lambda c: "%s %s" % (c.get("topic", ""), c.get("evidence", "")),
+                                     explicit_ws=getattr(a, "ws", None))
+    return kept, [{"topic": d["item"].get("topic"), "denied_by": d["denied_by"]} for d in dropped]
+
+
 def cmd_plan(rest):
     ap = argparse.ArgumentParser(prog="content_queue.py plan")
     ap.add_argument("--week", default=None,
@@ -677,6 +693,8 @@ def cmd_plan(rest):
     ap.add_argument("--wip", type=int, default=3,
                     help="WIP 上限(briefed+drafting+gated;默认 3;超限只列不排)")
     ap.add_argument("--file", default=DEFAULT_FILE)
+    ap.add_argument("--ws", help="seo-ops 工作区(读用户禁用清单)")
+    ap.add_argument("--no-deny", action="store_true")
     a = ap.parse_args(rest)
     if a.top < 0 or a.wip < 0:
         die("--top/--wip 须为非负整数")
@@ -688,6 +706,7 @@ def cmd_plan(rest):
     wip_items = sorted((it for it in items if it["status"] in WIP_STATUSES), key=sort_key)
     ideas = sorted((it for it in items if it["status"] == "idea"),
                    key=lambda it: (-(it.get("score") or 0), sort_key(it)))
+    ideas, denied = deny_filter(a, ideas)
     wip_now = len(wip_items)
     slots = max(0, a.wip - wip_now)
     top = ideas[:a.top]
@@ -725,6 +744,10 @@ def cmd_plan(rest):
         L.append("")
         L.append("## 候补(超 WIP 上限,只列不排;%d 条)" % len(deferred))
         L.append(table(deferred))
+    if denied:
+        L.append("")
+        L.append("## 按你的禁用清单不排(%d 条)" % len(denied))
+        L += ["- %s(%s)" % (esc(str(d["topic"])[:56]), d["denied_by"]) for d in denied]
     L.append("")
     L.append("## 建议管线对照")
     L.append("- trend 源 → trend-jack 管线: %s" % pipeline_for("trend_watch")[1])

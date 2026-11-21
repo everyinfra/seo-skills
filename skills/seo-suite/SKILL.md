@@ -14,11 +14,16 @@ metadata:
 
 ## 启动协议(每次调用先做)
 
-先看站点仓库根目录(或当前目录)有没有 `seo-ops/context/profile.json`:
+先看站点仓库根目录(或当前目录)有没有 `seo-ops/playbook/`:有就先读用户自己定的规则(`python3 scripts/playbook.py context`;Claude Code 插件形态由 SessionStart 钩子自动注入)。之后的 brief、方案、运营单、外联候选都遵守;用户说过不做的事不再建议。
+
+再看有没有 `seo-ops/context/profile.json`:
 
 1. **没有,且是站点级任务**(做 SEO、整站优化、新站开局、GEO 整体):走[开局 6 环](references/overview/onboarding.md)。跑 `python3 scripts/onboard.py start --site <URL> [--repo .]`,照屏幕做:「agent 先做」的事做完,再把问题发给用户,**停下等回复**(Claude Code 用 AskUserQuestion,其他宿主列编号问题后结束回合)。每环都停;第 1 环必须由用户确认,用户原话传 `--quote`。开局没做完,不给方案和建议。
 2. **有**:先 `onboard.py status` 和 `lifecycle.py diagnose --ws seo-ops`,读档案、产品阶段、禁用清单(`deny`)。开局没做完就接着问(`onboard.py show`);做完了走每周循环(`project.py ops weekly`)。
 3. **小任务**(改一个标题或描述、写一篇 brief、查一个 hreflang 簇)直接做;有档案就用里面的产品事实、关键词和禁用清单,不再问。
+4. **用户在教它**(「以后都这样做」「别再建议 X」「加一个检查」):用 `teach.py` 写进 `seo-ops/playbook/`,用户原话传 `--quote`;「不做 X」要带 `--deny`,写成结构化禁用清单;自定义检查先 `check try` 在 3 个页面上跑给用户看,用户确认后才 `check enable`。见 [playbook](references/overview/playbook.md)。
+
+Claude Code 插件形态另有 7 个命令入口(`/seo-suite:start`、`:lifecycle`、`:weekly`、`:launch`、`:site-move`、`:teach`、`:report`)和 3 个子代理(researcher、auditor、red-team);其他宿主照本节直接跑同样的脚本,见仓库根目录 HOSTS.md。
 
 产品在哪个阶段决定打法,见 [lifecycle-stages](references/overview/lifecycle-stages.md)。
 
@@ -67,6 +72,9 @@ metadata:
 | 上线前:上线清单(每项有负责人) | [stage-1-prelaunch](references/lifecycle/stage-1-prelaunch.md) | `launch_check.py` |
 | 第二次打开、定期核档案、产品变了、换阶段 | [loops-and-site-move](references/lifecycle/loops-and-site-move.md) | `loops.py status`、`loops.py run` |
 | 改版、换域名、改 URL 结构前后对比 | [loops-and-site-move](references/lifecycle/loops-and-site-move.md)、[redirects-canonical](references/technical/redirects-canonical.md) | `site_move.py baseline` → `site_move.py compare` |
+| 用户教它:以后都这样做 / 别再建议 X / 加一个检查 / 提给开源仓 | [playbook](references/overview/playbook.md) | `teach.py rule add`、`teach.py check new → try → enable`、`teach.py export` |
+| 登记自己的数据源(关键词量、SERP、外链) | [playbook](references/overview/playbook.md) 第五节 | `seo-ops/playbook/sources.json`、`doctor.py --sources` |
+| 和 marketingskills 共用产品上下文 | [onboarding](references/overview/onboarding.md) | `pm_context.py read`、开局确认后自动写回 |
 | 关键词研究 | [keyword-intent-taxonomy](references/research/keyword-intent-taxonomy.md)、[topic-cluster-templates](references/research/topic-cluster-templates.md) | `gsc_mining.py`、`serp_overlap.py` |
 | SERP 与内容缺口 | [serp-feature-taxonomy](references/research/serp-feature-taxonomy.md)、[gap-analysis-frameworks](references/research/gap-analysis-frameworks.md) | `serp_occupancy.py`、`fanout_analysis.py` |
 | 竞品 / alternative / vs 页 | [competitor-page-patterns](references/research/competitor-page-patterns.md)、[battlecard-template](references/research/battlecard-template.md) | — |

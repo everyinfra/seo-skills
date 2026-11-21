@@ -1,0 +1,27 @@
+---
+description: 教它你的规则:「以后都这样做」「别再建议 X」「加一个检查」,写进 seo-ops/playbook/,升级不覆盖;通用的整理成开源仓 PR 草稿。Teach seo-suite your own rules and checks.
+argument-hint: "<你的原话>"
+---
+
+# /seo-suite:teach — 按你的想法教它
+
+参数:$ARGUMENTS(用户原话,原样用)。
+
+## 先读
+- `${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/references/overview/playbook.md`(规则、禁用清单、自定义检查、自定义打法、数据源怎么写)。
+- 现有的:`python3 "${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/scripts/teach.py" show`,避免记重复。
+
+## 跑(按原话属于哪一类)
+- **以后都这样做**:`python3 "${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/scripts/teach.py" rule add --quote "<原话>" --no-deny`。
+- **别再建议 X / 我们不做 X**:`python3 "${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/scripts/teach.py" rule add --quote "<原话>" --deny <X 的关键词>`(关键词写推荐里会出现的词,比如 reddit);之后 plan、每周运营单、link_intel、prioritize、fix_plan、content_queue 都按它直接过滤。
+- **加一个检查**:
+  1. `teach.py check new <名> --desc "<用用户的话写>" --match "<页面网址正则>"`,按原话改 `seo-ops/playbook/checks/<名>.py`(零依赖,stdin 读页面 JSON,stdout 打印 {"pass", "findings"});
+  2. `teach.py check try <名> --url U1 --url U2 --url U3`,把 3 个页面的结果原样给用户看;
+  3. 用户说可以:`teach.py check enable <名> --quote "<原话>"`(记 sha256;脚本一改就自动停用)。
+- **自定义打法**:写进 `seo-ops/playbook/plays.json`(格式同 `${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/data/playbooks.json`,必须带 stages),再 `plan.py build`。
+- **提给开源仓**:`teach.py export <检查名>`,把换掉的站点专属内容和 PR 草稿给用户看。
+
+## 停下来问用户
+- 写之前把要记的规则(和禁用关键词)念给用户确认;「不做 X」的 X 拿不准时问,不替用户猜。
+- 检查启用前一定先 try、给用户看结果;用户写的脚本当不可信代码,只在确认后跑。
+- export 只生成文件:不提交、不推送;用户确认后他自己跑屏幕上给的 `gh pr create --draft …`。

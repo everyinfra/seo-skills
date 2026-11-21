@@ -12,6 +12,7 @@
   3. 单元测试:skills/seo-suite/tests 全绿。
   4. self_check.py(能力矩阵、文件结构)、freshness.py --fail-stale(过期断言)。
   5. 行为评测的快速档(不调模型、结果固定):tools/evals/fast_checks.py 存在就跑。
+  6. 插件形态的静态校验(不调模型):tools/evals/plugin_suite_check.py,查 evals/ 套件结构、命令、子代理、hooks 引用的文件都在。
 
 用法:
   python3 tools/release_check.py                 # 本机发版前
@@ -110,6 +111,9 @@ def main(argv=None):
         fast = os.path.join(ROOT, "tools", "evals", "fast_checks.py")
         if os.path.isfile(fast):
             results.append(run_step("行为评测快速档", [PY, "-I", fast], ROOT))
+        suite = os.path.join(ROOT, "tools", "evals", "plugin_suite_check.py")
+        if os.path.isfile(suite):
+            results.append(run_step("插件静态校验(evals/、commands/、agents/、hooks/)", [PY, "-I", suite, "-q"], ROOT))
 
     bad = [r for r in results if not r["ok"]]
     for r in results:

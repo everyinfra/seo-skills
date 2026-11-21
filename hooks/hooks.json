@@ -1,0 +1,18 @@
+{
+  "description": "seo-suite: when the current repo has seo-ops/playbook rules or a deny list, inject them as context at session start (also after /clear and compaction).",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/scripts/playbook.py", "hook"],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
