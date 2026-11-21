@@ -51,6 +51,28 @@ def read_json(path, default=None):
         return default
 
 
+# 档案的读取契约:别的工具(评测、其他 skill)按 _schema 找每个核心事实。事实存在 facts 列表里
+# ({"key", "value", "status", ...}),_schema 的值是段列表,{"key": K} 表示「列表里 key 等于 K 的第一项」,
+# 取到的对象再取 .value。阶段编号在 stage.value,另写一份 stage.id。
+PROFILE_FACT_KEYS = ("product.name", "product.one_liner", "product.lines", "pricing.model",
+                     "conversion.primary", "customers", "market.languages")
+PROFILE_LIST_KEYS = ("product.lines", "customers", "market.languages")
+
+
+def profile_format(prof):
+    """写 profile.json 之前调:补 _schema 映射和 stage.id(和 stage.value 同值)。原地改,返回同一个对象。"""
+    st = prof.get("stage")
+    if isinstance(st, dict):
+        if st.get("value") is not None:
+            st["id"] = st["value"]
+        else:
+            st.pop("id", None)
+    schema = {k: ["facts", {"key": k}] for k in PROFILE_FACT_KEYS}
+    schema["stage"] = "stage.id"
+    prof["_schema"] = schema
+    return prof
+
+
 def load_rules(ws=None):
     rules = read_json(RULES_PATH)
     if not rules:

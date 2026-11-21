@@ -18,7 +18,7 @@ metadata:
 
 再看有没有 `seo-ops/context/profile.json`:
 
-1. **没有,且是站点级任务**(做 SEO、整站优化、新站开局、GEO 整体):走[开局 6 环](references/overview/onboarding.md)。跑 `python3 scripts/onboard.py start --site <URL> [--repo .]`,照屏幕做:「agent 先做」的事做完,再把问题发给用户,**停下等回复**(Claude Code 用 AskUserQuestion,其他宿主列编号问题后结束回合)。每环都停;第 1 环必须由用户确认,用户原话传 `--quote`。开局没做完,不给方案和建议。
+1. **没有,且是站点级任务**(做 SEO、整站优化、新站开局、GEO 整体):走[开局 6 环](references/overview/onboarding.md)。跑 `python3 scripts/onboard.py start --site <URL> [--repo .]`,照屏幕做:「agent 先做」的事做完,再把问题发给用户,**停下等回复**(Claude Code 用 AskUserQuestion;其他宿主照屏幕格式列问题:每问一行「数字. 问题?」、选项同一行「A. …　B. …」、猜测下一行「我猜:…」,然后结束回合)。每环都停;第 1 环必须由用户确认,用户原话传 `--quote`。开局没做完,不给方案和建议。
 2. **有**:先 `onboard.py status` 和 `lifecycle.py diagnose --ws seo-ops`,读档案、产品阶段、禁用清单(`deny`)。开局没做完就接着问(`onboard.py show`);做完了走每周循环(`project.py ops weekly`)。
 3. **小任务**(改一个标题或描述、写一篇 brief、查一个 hreflang 簇)直接做;有档案就用里面的产品事实、关键词和禁用清单,不再问。
 4. **用户在教它**(「以后都这样做」「别再建议 X」「加一个检查」):用 `teach.py` 写进 `seo-ops/playbook/`,用户原话传 `--quote`;「不做 X」要带 `--deny`,写成结构化禁用清单;自定义检查先 `check try` 在 3 个页面上跑给用户看,用户确认后才 `check enable`。见 [playbook](references/overview/playbook.md)。

@@ -190,7 +190,26 @@ def cmd_baseline(ns):
         json.dump(base, f, ensure_ascii=False, indent=1)
     ok = sum(1 for r in pages.values() if r.get("status") == 200)
     print("基线:%d 个 URL(%d 个 200),写到 %s" % (len(pages), ok, out))
+    print_baseline_urls(fetch, pages, origin_of(ns.site), out)
     return 0
+
+
+BASELINE_LIST_MAX = 500
+
+
+def print_baseline_urls(fetch, pages, origin, out):
+    """逐条列出存进基线的 URL(状态码 + 完整地址)和另外请求过的 robots.txt / sitemap。"""
+    print("存进基线的 URL(%d 个,每条的 title、canonical、hreflang、结构化数据、站内链接在 %s):" % (len(pages), out))
+    for path in list(pages)[:BASELINE_LIST_MAX]:
+        print("- %s %s" % (pages[path].get("status") or "失败", origin + path))
+    if len(pages) > BASELINE_LIST_MAX:
+        print("- …另 %d 个见 %s 的 pages" % (len(pages) - BASELINE_LIST_MAX, out))
+    extra = [u for u in fetch.cache if path_of(u) not in pages]
+    if extra:
+        print("另外请求过(robots.txt、sitemap 等,不算页面):")
+        for u in extra[:BASELINE_LIST_MAX]:
+            r = fetch.cache[u]
+            print("- %s %s" % ((r or {}).get("status") or "失败", u))
 
 
 def compare(baseline, new_site, old_origin=None, mapping=None, polite=0.0):

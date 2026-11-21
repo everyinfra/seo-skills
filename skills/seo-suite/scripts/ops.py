@@ -1377,9 +1377,11 @@ def render_playbook(pb):
     ch = pb.get("checks") or {}
     for c in ch.get("ran") or []:
         L.append("- 检查 %s(%s):过 %d、没过 %d、出错 %d" % (c["name"], c.get("desc") or "", c["pass"], c["fail"], c["error"]))
-        for r in [r for r in c["results"] if r["result"] != "pass"][:5]:
-            L.append("  - %s %s:%s" % ("没过" if r["result"] == "fail" else "出错", r["url"],
-                                       r.get("error") or ";".join(r["findings"][:2]) or "—"))
+        bad = [r for r in c["results"] if r["result"] != "pass"]
+        good = [r for r in c["results"] if r["result"] == "pass"]
+        for r in bad[:5] + good[:max(0, 3 - len(bad[:5]))]:
+            L.append("  - %s %s:%s" % ({"pass": "✓ pass 过", "fail": "✗ fail 没过"}.get(r["result"], "error 出错"),
+                                       r["url"], r.get("error") or ";".join(r["findings"][:2]) or "—"))
     for c in ch.get("changed") or []:
         L.append("- **检查 %s 的脚本改过了**(启用时 sha %s,现在 %s),已自动停用。给用户看改了什么,"
                  "确认后 `teach.py check try %s --url …` 再 `check enable`" % (c["name"], c["enabled_sha"], c["now_sha"], c["name"]))

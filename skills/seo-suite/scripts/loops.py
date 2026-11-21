@@ -161,8 +161,8 @@ def onboarding_done(prof):
 
 
 def profile_checked_at(prof):
-    """档案最后一次被用户核过的日期:reviewed_at,否则第 1 环确认日。"""
-    cands = [day(prof.get("reviewed_at"))]
+    """档案最后一次被用户核过的日期:profile_confirmed_at(旧档案叫 reviewed_at),否则各环确认日。"""
+    cands = [day(prof.get("profile_confirmed_at")), day(prof.get("reviewed_at"))]
     for r in (prof.get("rings") or {}).values():
         cands.append(day(r.get("confirmed_at")))
     cands = [c for c in cands if c]
@@ -182,7 +182,8 @@ def roadmap_this_week(plan, today):
     wk = plan_week(plan, today)
     if not wk:
         return wk, []
-    items = [r for r in plan.get("recommendations") or [] if r.get("weeks") and r["weeks"][0] <= wk <= r["weeks"][1]]
+    recs = plan.get("items") if isinstance(plan.get("items"), list) else (plan.get("recommendations") or [])
+    items = [r for r in recs if r.get("weeks") and r["weeks"][0] <= wk <= r["weeks"][1]]
     items.sort(key=lambda r: r["rank"])
     return wk, items
 
@@ -336,8 +337,8 @@ def evaluate(ws, today=None, new_scan=None, record=True):
             else:
                 emit(lp, "quiet", "档案超过 %d 天没核,重新读了站点,没有变化" % lp["trigger"]["cadence_days"])
                 if record:
-                    prof["reviewed_at"] = today.isoformat()
-                    write_json(os.path.join(ws, "context", "profile.json"), prof)
+                    prof["profile_confirmed_at"] = today.isoformat()
+                    write_json(os.path.join(ws, "context", "profile.json"), LC.profile_format(prof))
 
     # product-change(只在给了新扫描时)
     lp = loops.get("product-change")
@@ -519,7 +520,7 @@ def cmd_resolve(ns):
         if "=" not in kv:
             raise UsageError("--set 要写成 key=value")
         k, v = kv.split("=", 1)
-        val = [x.strip() for x in v.replace("、", ",").split(",") if x.strip()] if k == "product.lines" else v
+        val = [x.strip() for x in v.replace("、", ",").split(",") if x.strip()] if k in LC.PROFILE_LIST_KEYS else v
         hit = False
         for f in prof.get("facts") or []:
             if f.get("key") == k:
@@ -533,7 +534,7 @@ def cmd_resolve(ns):
         prof.setdefault("stage", {}).update({"value": int(ns.stage), "confirmed": True, "confirmed_at": today.isoformat()})
         changed.append("stage")
     if ns.loop in ("profile-review", "product-change"):
-        prof["reviewed_at"] = today.isoformat()
+        prof["profile_confirmed_at"] = today.isoformat()
         new = os.path.join(ws, "context", "scan-new.json")
         if os.path.isfile(new):
             os.replace(new, os.path.join(ws, "context", "scan.json"))
@@ -542,7 +543,7 @@ def cmd_resolve(ns):
     prof["version"] = int(prof.get("version") or 0) + 1
     prof.setdefault("changelog", []).append({"version": prof["version"], "at": today.isoformat(),
                                              "change": "循环 %s:用户确认%s" % (ns.loop, (",改了 " + "、".join(changed)) if changed else "")})
-    write_json(os.path.join(ws, "context", "profile.json"), prof)
+    write_json(os.path.join(ws, "context", "profile.json"), LC.profile_format(prof))
     append_jsonl(os.path.join(ws, "ledger", "loops.jsonl"),
                  {"at": today.isoformat(), "loop": ns.loop, "result": "resolved", "fp": fpr, "quote": ns.quote, "changed": changed})
     nxt = ""

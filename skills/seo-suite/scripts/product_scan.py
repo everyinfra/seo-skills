@@ -157,11 +157,14 @@ class Fetcher:
     def __init__(self, errors):
         self.errors = errors
         self.n = 0
+        self.log = []                  # 实际请求过的每个 URL:{"url", "status"}(失败 status=None)
 
     def get(self, url, quiet_404=False):
         if self.n:
             sc._sleep(POLITE_DELAY)
         self.n += 1
+        rec = {"url": url, "status": None}
+        self.log.append(rec)
         try:
             r = sc.robust_fetch(url, timeout=FETCH_TIMEOUT)
         except (sc.GuardError, sc.FetchError) as e:
@@ -171,6 +174,7 @@ class Fetcher:
             self.errors.append("抓取异常 %s: %s" % (url, e))
             return None
         st = r.get("status")
+        rec["status"] = st
         if st and st >= 400 and not quiet_404:
             self.errors.append("HTTP %s %s" % (st, url))
         return r
@@ -567,7 +571,7 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
            "robots": {"status": None, "disallow_all": False, "sitemaps": []},
            "sitemap": {"url_count": 0, "sources": [], "truncated": False},
            "llms": {"llms_txt": False, "llms_full": False, "title": None, "summary": None},
-           "page_types": {}, "locales": {}, "samples": [], "first_seen": None}
+           "page_types": {}, "locales": {}, "samples": [], "first_seen": None, "fetched": fetcher.log}
     ctx = {"origin": origin, "host": host}
 
     r = fetcher.get(site)
@@ -1166,6 +1170,15 @@ def _short(v, n=160):
     return s if len(s) <= n else s[:n - 1] + "…"
 
 
+def fetched_lines(rep, indent=""):
+    """实际请求过的 URL,一行一个(含 robots.txt、sitemap、llms.txt、抽样页)。"""
+    log = ((rep or {}).get("site_scan") or {}).get("fetched") or []
+    if not log:
+        return []
+    return ["%s请求过的 URL(%d 个):" % (indent, len(log))] + [
+        "%s- %s %s" % (indent, x.get("status") or "失败", x["url"]) for x in log]
+
+
 def render_md(rep, elapsed=None):
     L = ["# 产品速读(product_scan)", ""]
     L.append("- 站点: %s | 仓库: %s | 生成: %s%s" % (rep["site"] or "-", rep["repo"] or "-", rep["generated_at"],
@@ -1178,6 +1191,8 @@ def render_md(rep, elapsed=None):
     if ss:
         L.append("- 页面类型: %s" % (_short(["%s:%s" % kv for kv in ss["page_types"].items()], 300) or "-"))
         L.append("- 语言前缀: %s" % (_short(["%s:%s" % kv for kv in ss["locales"].items()], 300) or "-"))
+    if ss:
+        L += [""] + fetched_lines(rep)
     L += ["", "## 事实(每条带出处)", ""]
     for f in rep["facts"]:
         L.append("- **%s** [%s] %s  ← %s" % (f["key"], f["kind"], _short(f["value"]), f["source"]))
@@ -1242,6 +1257,7 @@ def main(argv=None):
         os.makedirs(os.path.dirname(os.path.abspath(ns.out)), exist_ok=True)
         with open(ns.out, "w", encoding="utf-8") as fh:
             fh.write(text + "\n")
+        print("\n".join(fetched_lines(rep) + ["写到 %s" % ns.out]))
     else:
         sys.stdout.write(text + "\n")
     if ns.md:

@@ -309,7 +309,7 @@ def next_rule_id(text):
 def append_rule(ws, quote, applies, deny_items):
     text = read_rules(ws) or RULES_HEAD
     rid = next_rule_id(text)
-    lines = ["", "## %s · %s" % (rid, today()), "- 原话:「%s」" % quote.strip(),
+    lines = ["", "## %s · %s" % (rid, today()), "- 原话:「%s」(%s)" % (quote.strip(), today()),
              "- 适用:%s" % ("、".join(applies) if applies else "所有建议、brief、方案和每周运营单")]
     if deny_items:
         lines.append("- 禁用:%s(结构化,见 deny.json;推荐代码直接过滤)" % "、".join(

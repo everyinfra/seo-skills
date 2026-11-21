@@ -5,6 +5,9 @@ Future content or structure changes must bump the version and add a dated entry.
 
 ## 未发版 / Unreleased
 
+- **开局评测前对齐输出格式**(RQ-237 第 5 批,判分器 `tools/evals/onboarding/grade.py` 按出题口径读,不放宽):`profile.json` 顶层写 `_schema`(7 个核心事实指到 `facts` 里同 key 的那一条,`stage` 指 `stage.id`,和 `stage.value` 同值);第 1 环 `customers`、`conversion` 的回答同时记成事实 `customers`(列表)、`conversion.primary`,`product.lines`、`customers`、`market.languages` 纠正时拆成列表,`--unknown` 记一条带 `status: unknown` 的事实;第 1–6 环文本提问改成「数字. 问题?　A. …　B. …」、下一行「我猜:…」,不再写「选项:x | y」,草稿改成一行一条「项:值 ← 出处(状态)」;`product_scan.py` 和 `onboard.py start` 逐条列出实际请求过的 URL(含 robots.txt、sitemap、llms.txt);`site_move.py baseline` 列出存进基线的每个 URL 和文件位置;`plan.py` 把按顺序的建议写进 `plan.json` 的 `items`(旧文件的 `recommendations` 照样读),另写 `plan.md`(开头列没确认的假设,再列编号建议);档案核对日期改叫 `profile_confirmed_at`;rules.md 的原话行带日期;自定义检查的试跑和运营单判定写 `✓ pass` / `✗ fail`。新增 `tools/evals/onboarding/test_skill_format.py`:真跑脚本、输出原样进转录,用判分器读。
+  Output formats aligned with the onboarding grader before the batch-5 runs: `profile.json` gains a `_schema` map and `stage.id`, list facts are stored as lists, text-mode questions carry `A. / B.` options or "我猜", product_scan and site_move list every URL they fetched, and `plan.json` stores the ordered suggestions as `items` (plus a numbered `plan.md`); a new test runs the real scripts and grades their output.
+
 ## 0.47.0 - 2026-11-21
 
 - **用户按自己的想法教它**(RQ-237 第 4 批,`teach.py`、`playbook.py`,说明 `references/overview/playbook.md`):`teach.py rule add --quote <原话>` 把用户原话带日期写进站点仓 `seo-ops/playbook/rules.md`;「不做 X」同时写进结构化禁用清单 `seo-ops/playbook/deny.json`(和开局第 5 环的 `profile.json` `deny` 合并),听着像「不做」却没给 `--deny` 的退出码 3。`plan.py`、`project.py ops weekly`(只做这一件、本周路线项)、`loops.py`、`prioritize.py`、`fix_plan.py`、`content_queue.py`、`link_intel.py`(intersect / exchangers / deadlinks / unlinked)用同一个 `playbook.deny_match` 过滤,去掉的条目记 `deny_filtered`;硬告警不过滤。禁了 Reddit 外链以后,link_intel 候选和每周运营单里都不再出现 Reddit。
