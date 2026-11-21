@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-20T08:30:27.057415+00:00",
+ "checked_at": "2026-11-21T08:15:04.663963+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "30c12250c7ed55b4ddf4bb51d9c8b47e",
-   "ts": "2026-11-20T08:30:04.332586+00:00"
+   "hash": "0aeef771efcedbf2edd4b8f86eae31c9",
+   "ts": "2026-11-21T08:14:45.324470+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -99,8 +99,8 @@
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "2f828eb1a17438b49343ba680a3b4ac5",
-   "ts": "2026-11-20T08:30:07.359335+00:00"
+   "hash": "1cb7e046235dca629208cacf2561fb3b",
+   "ts": "2026-11-21T08:14:49.878663+00:00"
   },
   "naver-wm": {
    "hash": "ad2962e7521a6622f26fbf62a8d752e5",
@@ -111,25 +111,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "35c9da20b9d179bdd5f61e2784e74d2c",
-   "ts": "2026-11-20T08:30:23.088951+00:00"
+   "hash": "f7737e1a584bd0bb5a55bfeb727c2495",
+   "ts": "2026-11-21T08:15:00.684163+00:00"
   },
   "statcounter-ai": {
-   "hash": "ac2db9503b09b29731b5ae22190cf297",
-   "ts": "2026-11-20T08:30:23.546307+00:00"
+   "hash": "237d5b82bcaf79d4c53ef658be945e73",
+   "ts": "2026-11-21T08:15:01.077206+00:00"
   },
   "semrush-sensor": {
    "hash": "031f563a5e4f4408383903ac8e8cae54",
    "ts": "2026-11-20T08:30:23.936348+00:00"
   },
   "seroundtable": {
-   "top": "Google Search Officially Rolls Out Collapsible Sidebar",
+   "top": "Daily Search Forum Recap: November 20, 2026",
    "seen": [
-    "OpenAI Working On ChatGPT Tools For Business For Analytics & Citations",
-    "Daily Search Forum Recap: November 6, 2026",
-    "Search News Buzz Video Recap: Google Scaled Content Abuse From Facebook, ChatGPT Search 20% Of Google & More SEO, PPC & Local",
-    "Google Business Profiles Manage Offers Help Document",
-    "Google AI Mode Asking Searchers To Continue With This Search",
     "Daily Search Forum Recap: November 9, 2026",
     "Google Search Ranking Volatility Status: Update November 8th/9th?",
     "Google AI Mode Multiturn Ads Are Live - Follow-Up Query Ads",
@@ -174,9 +169,14 @@
     "Microsoft Confirms Ads Are In AI Overviews On Bing Search",
     "Daily Search Forum Recap: November 19, 2026",
     "Google Search What People Are Saying AI-Generated Emojis",
-    "Google Hotel Search Listings With Continue On Google To Book"
+    "Google Hotel Search Listings With Continue On Google To Book",
+    "Daily Search Forum Recap: November 20, 2026",
+    "Search News Buzz Video Recap: Google November Core Update Status, FBI Alert On SEO Poisoning, Bing & ChatGPT Web Only Links, Microsoft Ads Bid Upgrade",
+    "Google, ChatGPT & Others AI Engines Provide Coupon Codes",
+    "ChatGPT Card Design",
+    "Google Expands & Clarifies Sexual Content Advertising Policy Examples"
    ],
-   "ts": "2026-11-20T08:30:24.697973+00:00"
+   "ts": "2026-11-21T08:15:02.877945+00:00"
   },
   "google-docs-rss": {
    "top": "Removed the Data Feed validation tool from the book actions documentation",
