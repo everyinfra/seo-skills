@@ -3,6 +3,23 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.48.0 - 2026-11-22
+
+- **开局第 1 环问得少、问得准**:草稿里的收费方式照页面原文写(带出处,另记「订阅 / 按量 / 免费档」等归类);产品线不再拿首页 H2 凑,读不到可靠出处就记「未知」并在第 1 环问,按路由推出来的标成猜测、在第 1 环确认;`.agents/product-marketing.md` 已经写了的转化和客户不再重复问,「最重要的产品线」并进第 1 问,第 1 环最多 3 问。
+  Ring 1 asks less and asks better: pricing keeps the page's own wording with its source, product lines are never guessed from page headings (unknown lines are asked, route-derived ones are marked as guesses), questions already answered by `.agents/product-marketing.md` are skipped, and ring 1 has at most 3 questions.
+- **`show` 给一块可以原样贴给用户的文字**:用等号行框住,连同编号、选项和「← 出处」;只剩 1 个问题也编号。从第 2 环起,开头先复述前面已确认和纠正过的内容。
+  `show` prints one block to paste to the user verbatim (numbered even when only one question is left), and from ring 2 on it opens with a recap of what was confirmed or corrected.
+- **跳过、原话、纠正更严格**:`skip` 只认明确的「跳过 / skip / 直接出方案」;「按你的判断来」「best guess」「好」是按草稿确认当前环,会被拒并提示用 `answer`。`--quote` 太短会被拒(中文一个字按 1.5 计,至少 6),只回「对 / 好 / Yes」这类确认词时仍可确认,但不能同时带 `--correct` 或 `--unknown`。`--correct` 改列表时只改最接近的那一项(也可写 `键[N]=值`,写全部项是整份换);「X 最重要」提示用 `--set main_line=X`,不改产品线。
+  Stricter skip, quote and correction rules: `skip` only accepts an explicit skip, short quotes are rejected except bare confirmations without corrections, and a single-item `--correct` on a list replaces only the matching item.
+- **档案手改检测**:`profile.json` 存档时写校验和;脚本发现被手改,会把改动所在的环退回待确认并提示,`plan.py build` 在确认前拒绝出方案。字段缺失的旧档案或手写档案会先补齐再用,不再崩溃。
+  Profile integrity: each save writes a checksum; a hand-edited ring goes back to unconfirmed, and `plan.py build` refuses until it is confirmed again. Old or hand-written profiles with missing fields are repaired instead of crashing.
+- **方案用上第 1 环的目标和实测下滑**:`plan.py` 按第 1 环选的转化目标给对口打法加分、在条目里写明目标;用户确认只做一个市场时,文案不再提 hreflang 和多语言;工作区旁 `data/` 里有 GSC 页面导出(两份 `Pages_*.csv` 或逐日 `gsc-pages.csv`)时,把实测掉得最多的页面组写进诊断类条目。`plan.json` 新增 `goals`、`one_market`、`measured_drop`,`items` 格式不变。
+  Plans use the ring-1 goal, drop hreflang wording for single-market sites, and write the measured drop from GSC page exports into diagnosis items; `plan.json` gains `goals`, `one_market` and `measured_drop`, `items` unchanged.
+- **第二次打开**:`loops.py` 发现历史只有一个检查点时,用 `gsc-pages.csv` 逐日回填每周检查点,阶段趋势一开始就有数。
+  On a second open, `loops.py` backfills weekly checkpoints from a daily `gsc-pages.csv` so the stage trend has data right away.
+- **本地站点**:主机是 localhost、内网或回环地址时不查 Wayback;`project.py run triage --allow-local` 可以体检本地站点。
+  Local hosts skip the Wayback lookup, and `project.py run triage --allow-local` can triage a local site.
+
 ## 0.47.1 - 2026-11-21
 
 - **开局评测前对齐输出格式**(RQ-237 第 5 批,判分器 `tools/evals/onboarding/grade.py` 按出题口径读,不放宽):`profile.json` 顶层写 `_schema`(7 个核心事实指到 `facts` 里同 key 的那一条,`stage` 指 `stage.id`,和 `stage.value` 同值);第 1 环 `customers`、`conversion` 的回答同时记成事实 `customers`(列表)、`conversion.primary`,`product.lines`、`customers`、`market.languages` 纠正时拆成列表,`--unknown` 记一条带 `status: unknown` 的事实;第 1–6 环文本提问改成「数字. 问题?　A. …　B. …」、下一行「我猜:…」,不再写「选项:x | y」,草稿改成一行一条「项:值 ← 出处(状态)」;`product_scan.py` 和 `onboard.py start` 逐条列出实际请求过的 URL(含 robots.txt、sitemap、llms.txt);`site_move.py baseline` 列出存进基线的每个 URL 和文件位置;`plan.py` 把按顺序的建议写进 `plan.json` 的 `items`(旧文件的 `recommendations` 照样读),另写 `plan.md`(开头列没确认的假设,再列编号建议);档案核对日期改叫 `profile_confirmed_at`;rules.md 的原话行带日期;自定义检查的试跑和运营单判定写 `✓ pass` / `✗ fail`。新增 `tools/evals/onboarding/test_skill_format.py`:真跑脚本、输出原样进转录,用判分器读。
