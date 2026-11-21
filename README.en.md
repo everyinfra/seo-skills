@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.46.2-brightgreen" alt="version 0.46.2">
+  <img src="https://img.shields.io/badge/version-0.47.0-brightgreen" alt="version 0.47.0">
   <img src="https://img.shields.io/badge/license-Apache--2.0-brightgreen" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/markets-18-brightgreen" alt="18 language markets">
   <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Python standard library only">
@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/everyinfra/seo-skills/main/install.
 
 > Maintained by [EveryInfra](https://everyinfra.com/en). When a task needs live data, EveryInfra offers a [web search API](https://everyinfra.com/en/products/search) (17 tools) and [data APIs for 90 platforms](https://everyinfra.com/en/market); this Skill does not depend on them.
 
-EveryInfra SEO Skills is version `0.46.2`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency. The model and its quota are whatever AI tool you already use.
+EveryInfra SEO Skills is version `0.47.0`, licensed under Apache-2.0. One SEO / GEO workbench Skill: `seo-suite` — instructions, reference notes and output templates. No model calls, no bundled provider, no API key, no runtime dependency. The model and its quota are whatever AI tool you already use.
 
 **The differentiator: global SEO/GEO in one pass.** Teams shipping worldwide don't want a dozen single-market tools. This suite puts **18 language markets** in one workbench, scored market-by-market: Chinese, English, Russian (Yandex/Alice), Korean (<img src="assets/icons/naver.svg" width="16" height="16" alt=""> Naver/AI Briefing), Japanese (Yahoo! Japan + Bing + AI Overviews), Spanish (es-419 LatAm splits), Portuguese (Brazil = <img src="assets/icons/codex.svg" width="16" height="16" alt=""> ChatGPT's strongest market), Arabic (RTL + MSA vs dialects), French (Bill 96), German (DACH Sie/du), Indonesian (baku vs gaul), Hindi (Hinglish three-script reality), Italian (it-CH as its own locale), Turkish (a second Yandex market, ~26%), Vietnamese (diacritic variants + Coc Cốc), Thai (spaceless script segmentation), Polish (diacritic canonicalization), Dutch (Flemish nl-BE). Global capability is **woven into every capability set**, not a separate module — the spine is `overview/multilingual-workflow.md`.
 
@@ -76,7 +76,7 @@ Global markets (checked 2026-10-21; unverified rows removed):
 
 ## What it does
 
-A single entry point. The first time it meets a product it runs onboarding: it reads the product itself (site, pricing, docs, llms.txt, code repo), then checks it with you ring by ring — product, audience and search intent, competitors, assets and constraints, markets and keywords, strategy and roadmap — stopping for your confirmation after each ring. It also places the product on a lifecycle stage (idea, pre-launch, launched, growth, mature, change) and finds the weakest of five areas (technical, content, links and brand, AI visibility, team and measurement). The last ring builds a stage-specific plan: only actions that fit the stage, each with the page type, the metric, how to measure it and the week, plus a strategy book in Chinese and English. At the idea stage it validates demand with real autocomplete data; before launch it runs a launch checklist with an owner per item. After onboarding it routes across five capability sets — overview / research / content / technical / monitoring — then structured output: conclusions, priorities, and how to validate each one. The target market is the first mandatory intake field, because it decides which engines, toolchains, thresholds and language conventions apply.
+A single entry point. The first time it meets a product it runs onboarding: it reads the product itself (site, pricing, docs, llms.txt, code repo), then checks it with you ring by ring — product, audience and search intent, competitors, assets and constraints, markets and keywords, strategy and roadmap — stopping for your confirmation after each ring. It also places the product on a lifecycle stage (idea, pre-launch, launched, growth, mature, change) and finds the weakest of five areas (technical, content, links and brand, AI visibility, team and measurement). The last ring builds a stage-specific plan: only actions that fit the stage, each with the page type, the metric, how to measure it and the week, plus a strategy book in Chinese and English. At the idea stage it validates demand with real autocomplete data; before launch it runs a launch checklist with an owner per item. You can teach it your own way of working: say "every comparison page gets a pricing table", "stop suggesting Reddit backlinks" or "add a check: every platform page needs an MCP call example", and `teach.py` writes your exact words, dated, into `seo-ops/playbook/` in your site repo. "Don't do X" becomes a structured deny list that the plan, weekly agenda and outreach scripts filter on directly; a custom check is first run on 3 pages for you to review, enabled only after you confirm, and disabled automatically if its code changes. Upgrades never touch that folder, and a check worth sharing can be turned into a draft PR for this repo with your site-specific details removed (nothing is committed for you). Your own keyword-volume, SERP or backlink sources go in `seo-ops/playbook/sources.json`: free ones are used first, paid ones only when a command names them. Installed as a Claude Code plugin it also adds 7 commands (`/seo-suite:start`, `:lifecycle`, `:weekly`, `:launch`, `:site-move`, `:teach`, `:report`), 3 subagents (research, audit, red-team review) and a session-start hook that loads your rules; other hosts run the same scripts ([HOSTS.md](HOSTS.md)). After onboarding it routes across five capability sets — overview / research / content / technical / monitoring — then structured output: conclusions, priorities, and how to validate each one. The target market is the first mandatory intake field, because it decides which engines, toolchains, thresholds and language conventions apply.
 
 | Capability | Typical tasks |
 |---|---|
@@ -86,7 +86,7 @@ A single entry point. The first time it meets a product it runs onboarding: it r
 | technical | Technical SEO and single-page audits, robots.txt and AI-crawler policy (incl. regional crawlers, MistralAI, Bytespider), hreflang internationalization, structured data (incl. rich-result status), internal linking and site architecture, entity signals, programmatic SEO, Core Web Vitals, JS rendering and SPA SEO (five-engine rendering differences), Agent-Readiness protocol layer (ARD / WebMCP), server-log analysis (AI-visit measurement, a11y triage), attribution instrumentation |
 | monitoring | Rank tracking, backlinks (incl. per-market local directories and Google's link-spam policy boundary; link-price tables removed in Oct 2026), brand mentions (four-tier citation ladder + per-market monitoring channels), algorithm-update attribution (official timelines and data files), SEO drift monitoring, metrics and reporting |
 | **Specialist modules** | Domain strategy (selection, expired-domain due diligence, migration checklist, AI-citation inheritance), site-network spectrum and white-hat equivalents, 9-stage programmatic-SEO playbook, site-type playbooks (SaaS / ecommerce / media / local / docs / tools / marketplace / YMYL), CWV four metrics, mobile SEO, penalty recovery, redirects and canonicalization, UGC and site search |
-| **Executable layer** | 92 stdlib scripts + the `markets.json` 18-market data layer + 1,982 tests (Nov 2026) — the AI runs the scripts to get facts first, then interprets them per the capability files |
+| **Executable layer** | 103 stdlib scripts + the `markets.json` 18-market data layer + 1,982 tests (Nov 2026) — the AI runs the scripts to get facts first, then interprets them per the capability files |
 
 Global capability is **woven into every capability set**, not a separate module: [multilingual-workflow.md](skills/seo-suite/references/overview/multilingual-workflow.md) is the spine (market table, per-market tool stacks, language conventions, compliance), and each capability file carries the regional knowledge relevant to it.
 
@@ -147,9 +147,11 @@ seo-skills/
 ├── LICENSE / NOTICE / CHANGELOG.md
 ├── action.yml                 CI composite action (PR SEO gate)
 ├── install.sh                 One-command installer
+├── commands/ agents/ hooks/   Claude Code plugin: 7 commands, 3 subagents, session-start hook
+├── evals/                     `claude plugin eval` suite (start, teach, weekly)
 └── skills/seo-suite/
     ├── SKILL.md               Entry point: intake, routing table (script map: references/overview/script-catalog.md)
-    ├── scripts/               85 stdlib scripts + markets.json (18-market rule layer)
+    ├── scripts/               103 stdlib scripts + markets.json (18-market rule layer)
     ├── tests/                 1,982 tests (self_check runs all)
     ├── examples/              Golden-sample outputs
     ├── references/

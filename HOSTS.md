@@ -40,11 +40,28 @@
 - **description ≤1024 且关键词前置**(Codex 预算/截断);**name 纯小写连字符且与目录同名**(VS Code 静默失败/Kiro 强校验)。
 - 纯 stdlib 脚本在所有宿主都能由 agent 执行(权限模型不同,首次会请求确认)。
 
+## 只在 Claude Code 插件形态里有的东西(0.47.0 起)
+
+插件根目录(仓库根)另有三样东西,**只有以插件安装(`claude plugin install seo-suite@everyinfra-seo-skills`)的 Claude Code 会加载**;
+裸 skill 安装(install.sh、复制到 `~/.claude/skills` 或 `~/.agents/skills`)和其他宿主都没有。ZCode 挂 Claude 插件源时会不会加载它们,未实测。
+
+| 东西 | 位置 | 其他宿主怎么用同样的功能 |
+|---|---|---|
+| 7 个命令入口 `/seo-suite:start`、`:lifecycle`、`:weekly`、`:launch`、`:site-move`、`:teach`、`:report` | `commands/*.md` | 命令文件只是「先读什么、跑哪个脚本、哪里停下来问」的说明,脚本都在 skill 里:直接说需求(「开局」「出这周运营单」),或照 `commands/<名>.md` 跑 `skills/seo-suite/scripts/` 下同名的命令 |
+| 3 个子代理 researcher、auditor、red-team | `agents/*.md` | 没有子代理的宿主在主会话里照 `agents/<名>.md` 的「做什么、用哪些脚本、交回什么格式」做;有自己子代理机制的宿主(Codex、Cursor)可以把这份说明当子代理提示词 |
+| 会话开始时注入用户规则 | `hooks/hooks.json` → `playbook.py hook` | 开工前跑 `python3 <skill>/scripts/playbook.py context`,把输出当用户规则读;SKILL.md 启动协议里写着这一步 |
+
+脚本里不写死安装路径:钩子和运营段按 `SEO_SUITE_DIR` → `CLAUDE_PLUGIN_ROOT/skills/seo-suite` → `~/.claude/skills/seo-suite` → `~/.agents/skills/seo-suite`
+→ 安装时的实际位置 → 插件缓存目录的顺序找(`playbook.py skill-dir` 打印找到的位置)。插件命令和子代理里的路径写成
+`${CLAUDE_PLUGIN_ROOT}/skills/seo-suite/...`,Claude Code 加载时替换。
+
+插件评测套件在 `evals/`(`claude plugin eval . --scaffold --allow-tools Bash,Write,Edit`),发版门只做静态校验(`tools/evals/plugin_suite_check.py`)。
+
 ## 分发通道对照
 
 | 通道 | 覆盖 | 状态 |
 |---|---|---|
-| Plugin/Marketplace(Claude Code) | Claude Code + ZCode(同构/直挂) | ✅ `.claude-plugin/` 已建 |
+| Plugin/Marketplace(Claude Code) | Claude Code + ZCode(同构/直挂) | ✅ `.claude-plugin/` 已建;命令、子代理、钩子、评测套件在仓库根 |
 | `.zcode-plugin/` | ZCode 原生插件形态 | ✅ 薄清单已建 |
 | 裸 skill + install.sh | 全部 10 宿主 | ✅ 多宿主安装器 |
 | GitHub Actions | CI/定时审计人群 | ✅ `seo-monitor.yml`/`intel-update.yml` |

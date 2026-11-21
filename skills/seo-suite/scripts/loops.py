@@ -30,6 +30,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import lifecycle as LC  # noqa: E402
+import playbook as PB  # noqa: E402
 
 LOOPS = os.path.join(os.path.dirname(HERE), "data", "loops.json")
 
@@ -419,6 +420,8 @@ def status(ws, today=None):
     st = prof.get("stage") or {}
     names = {s["id"]: s["name"] for s in LC.load_rules(ws)["stages"]}
     wk, items = roadmap_this_week(plan, today)
+    deny = PB.load_deny(ws, prof)
+    items, _ = PB.apply_deny(items, deny, lambda r: "%s %s" % (r.get("title", ""), r.get("do", "")))
     chk = profile_checked_at(prof)
     return {"date": today.isoformat(), "site": prof.get("site"), "profile_version": prof.get("version"),
             "profile_checked_at": chk.isoformat() if chk else None, "onboarding_done": onboarding_done(prof),
@@ -426,7 +429,7 @@ def status(ws, today=None):
             "weakest": [d for d in (diag.get("weakest") or [])][:2] if isinstance(diag.get("weakest"), list) else None,
             "plan": {"status": (plan or {}).get("status"), "approved_at": (plan or {}).get("approved_at"), "week": wk,
                      "this_week": [{"rank": r["rank"], "title": r["title"], "weeks": r["weeks"]} for r in items]},
-            "deny": [d.get("item") if isinstance(d, dict) else d for d in prof.get("deny") or []]}
+            "deny": [d["item"] for d in deny]}
 
 
 def render_status(s, ev=None):

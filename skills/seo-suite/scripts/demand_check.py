@@ -12,9 +12,14 @@
 起名核对(--names a,b):每个名字查 RDAP(rdap.org)看各后缀域名有没有被注册(404 = 没查到注册记录,
 多半可注册,以注册商为准),再看搜这个名字时的联想是不是已经被别的东西占满。
 
+登记的数据源(seo-ops/playbook/sources.json,格式见 references/overview/playbook.md 第五节):没给 --volumes 时,
+有登记 keyword_volume 的源就先用它补月搜索量(标 [源名]);免费源按登记顺序先用,付费源只有命令里写了
+--allow-paid <源名> 才用,用了在报告里写调用次数和估算花费。--no-sources 不用登记的源。
+
 用法:
   python3 demand_check.py --seeds seeds.txt [--seed "invoice software"] [--market en] [--no-modifiers]
                           [--volumes vol.csv] [--names petledger,pawbook --tlds com,io,app] [--json|--md] [--out FILE]
+                          [--ws seo-ops] [--allow-paid 源名] [--no-sources]
 退出码:0 正常;2 输入错。网络失败的接口记进 errors,不中断。
 """
 import argparse
@@ -27,6 +32,10 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import playbook as PB  # noqa: E402
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) seo-suite-demand-check"
 DELAY = 0.25
@@ -201,7 +210,30 @@ def read_seeds(path, extra):
     return list(collections.OrderedDict.fromkeys(seeds))
 
 
-def build(seeds, market="en", names=None, tlds=("com",), volumes=None, modifiers=True):
+def source_volumes(seeds, market, ws=None, allow_paid=()):
+    """→ (volumes 或 None, 源说明或 None, 备注)。只取登记了 keyword_volume 的源;付费源要 allow_paid 点名。"""
+    notes = []
+    w = PB.find_ws(None, ws)
+    if not w:
+        return None, None, notes
+    src, why = PB.pick_source(w, "keyword_volume", allow_paid)
+    notes += why
+    if not src:
+        return None, None, notes
+    vols, calls = {}, 0
+    for s in seeds:
+        calls += 1
+        try:
+            vols[norm(s)] = PB.volume_from(PB.call_source(src, {"keyword": s, "market": market}), s)
+        except Exception as e:  # noqa: BLE001 — 源坏了记下,不中断
+            notes.append("源 %s 查「%s」失败:%s" % (src["name"], s, str(e)[:160]))
+            vols[norm(s)] = None
+    info = {"name": src["name"], "paid": src["paid"], "calls": calls,
+            "est_cost_usd": round(calls * float(src.get("cost_per_call_usd") or 0), 4)}
+    return vols, info, notes
+
+
+def build(seeds, market="en", names=None, tlds=("com",), volumes=None, modifiers=True, volume_tag="real"):
     errors = []
     net = Net(errors)
     rep = {"schema": 1, "market": market, "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -211,6 +243,7 @@ def build(seeds, market="en", names=None, tlds=("com",), volumes=None, modifiers
         r = seed_report(net, s, market, modifiers)
         if volumes is not None:
             r["volume"] = volumes.get(norm(s))
+            r["volume_tag"] = volume_tag
         rep["seeds"].append(r)
     for n in names or []:
         rep["names"].append(name_report(net, n, tlds, market))
@@ -232,7 +265,7 @@ def render_md(rep):
                 r["seed"], r["signal"], r["suggestions"], ",".join(r["engines"]) or "—",
                 i["question"], i["compare"], i["price"], "、".join(r["recurring_terms"][:6]) or "—")
             if "volume" in r:
-                row += " %s |" % ("%s [real]" % r["volume"] if r["volume"] is not None else "—")
+                row += " %s |" % ("%s [%s]" % (r["volume"], r.get("volume_tag", "real")) if r["volume"] is not None else "—")
             L.append(row)
         L.append("")
         for r in rep["seeds"]:
@@ -251,6 +284,13 @@ def render_md(rep):
     s = rep["summary"]
     L += ["结论:%d 个种子词里信号强 %d 个(%s),没有信号 %d 个(%s)。" % (
         s["seeds"], len(s["strong"]), "、".join(s["strong"]) or "—", len(s["none"]), "、".join(s["none"]) or "—")]
+    vs = rep.get("volume_source")
+    if vs:
+        L += ["", "月搜索量来自登记的数据源 %s(%s,调用 %d 次%s)。" % (
+            vs["name"], "付费" if vs["paid"] else "免费", vs["calls"],
+            ",估算 $%s" % vs["est_cost_usd"] if vs["paid"] else "")]
+    for n in rep.get("source_notes") or []:
+        L.append("- 数据源:" + n)
     if rep["errors"]:
         L += ["", "接口问题:"] + ["- " + e for e in rep["errors"][:8]]
     return "\n".join(L) + "\n"
@@ -268,6 +308,10 @@ def main(argv=None):
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--md", action="store_true")
     ap.add_argument("--out")
+    ap.add_argument("--ws", help="seo-ops 工作区(读登记的数据源;默认从当前目录往上找)")
+    ap.add_argument("--allow-paid", action="append", default=[], metavar="源名",
+                    help="允许用这个付费源(按次计费;不写就不用付费源)")
+    ap.add_argument("--no-sources", action="store_true", help="不用登记的数据源")
     ns = ap.parse_args(argv)
     try:
         seeds = read_seeds(ns.seeds, ns.seed)
@@ -279,7 +323,16 @@ def main(argv=None):
     if not seeds and not names:
         print("错误:至少给 --seeds / --seed 或 --names", file=sys.stderr)
         return 2
-    rep = build(seeds, ns.market, names, [t for t in ns.tlds.split(",") if t.strip()], vols, not ns.no_modifiers)
+    src_info, src_notes, tag = None, [], "real"
+    if vols is None and seeds and not ns.no_sources:
+        vols, src_info, src_notes = source_volumes(seeds, ns.market, ns.ws, ns.allow_paid)
+        tag = src_info["name"] if src_info else tag
+    rep = build(seeds, ns.market, names, [t for t in ns.tlds.split(",") if t.strip()], vols, not ns.no_modifiers, tag)
+    if src_info:
+        rep["volume_source"] = src_info
+        rep["basis"] += ";[%s] 来自登记的数据源 %s" % (src_info["name"], src_info["name"])
+    if src_notes:
+        rep["source_notes"] = src_notes
     text = render_md(rep) if ns.md and not ns.json else json.dumps(rep, ensure_ascii=False, indent=1)
     if ns.out:
         with open(ns.out, "w", encoding="utf-8") as f:

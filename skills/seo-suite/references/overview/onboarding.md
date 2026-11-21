@@ -46,6 +46,8 @@ python3 scripts/onboard.py status | diagnose
 
 每环结束写回档案,下一环开头先复述上一环定下的东西(`show` 的「前面已确认」)。
 
+和 marketingskills 共用产品上下文(例 11):仓库里有 `.agents/product-marketing.md`(它的 product-marketing skill 写的)时,`start` 把里面填了值的一句话介绍、收费方式、目标客户、转化动作读成第 1 环的草稿(来源写这份文件,仍是「未确认」),第 1 环只问它没覆盖或和站点对不上的。某一环 `--confirm` 以后,onboard 调 `pm_context.py` 把用户确认或纠正过的条目写回那份文件:只改对应标签那一行,别的段落逐字节不变,照对方规矩版本号 +1、`Last updated` 改成当天、`## Changelog` 最上面加一行;文件没有就不建(建它归对方的 skill)。档案里 `context_sync` 记下写回的时间、字段和文件 sha256。
+
 ## 四、档案
 
 `seo-ops/context/`:

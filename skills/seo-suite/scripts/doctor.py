@@ -36,6 +36,9 @@ home 路径→<home> / email→<redacted-email> / token·password·secret·api_k
                                # env 模板:全部支持键名+一行注释的 shell 模板(值留空,
                                # 可整段粘进 shell profile;键集=data-onboarding.md T1-T4
                                # + SEO_MONITOR_* 通知/监控组,R2-9)
+  python3 doctor.py --sources [--ws seo-ops] [--json]
+                               # 列站点仓 seo-ops/playbook/sources.json 登记的数据源:免费在前、付费在后,
+                               # 写明能提供什么、怎么取、单次成本;格式错的单列(不调用任何源,零网络)
   python3 doctor.py --keys --check [--json]
                                # 逐键校验已配置项(只探存在性不读值,复用 redact);
                                # keys 模式独立 exit 0,不做 ready 判定
@@ -464,6 +467,39 @@ EPILOG = """\
 退出码: 0=ready / 3=需处理(channels/tier/net 不影响 ready;--keys 模式独立 exit 0)。"""
 
 
+def sources_report(ws_flag=None):
+    """→ {"ws", "free": [...], "paid": [...], "problems": [...]}。只读登记文件,不调用源。"""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import playbook as PB
+    ws = PB.find_ws(None, ws_flag)
+    srcs, bad = PB.load_sources(ws) if ws else ([], [])
+    row = lambda s: {"name": s["name"], "provides": s["provides"], "kind": s["kind"],   # noqa: E731
+                     "how": " ".join(s["command"]) if s["kind"] == "command" else s["url"].split("?")[0],
+                     "paid": s["paid"], "cost_per_call_usd": s.get("cost_per_call_usd", 0)}
+    return {"ws": bool(ws), "free": [row(s) for s in srcs if not s["paid"]],
+            "paid": [row(s) for s in srcs if s["paid"]], "problems": bad}
+
+
+def print_sources(args):
+    rep = sources_report(args.ws)
+    if args.json:
+        print(redact(json.dumps(rep, ensure_ascii=False, indent=2)))
+        return 0
+    if not rep["ws"]:
+        print("sources: 没找到 seo-ops/ 工作区(在站点仓根目录跑,或 --ws)")
+        return 0
+    print("sources: 登记了 %d 个(免费 %d、付费 %d)" % (len(rep["free"]) + len(rep["paid"]), len(rep["free"]), len(rep["paid"])))
+    for tag, rows in (("免费", rep["free"]), ("付费", rep["paid"])):
+        for r in rows:
+            cost = ",单次 $%s,命令里要 --allow-paid %s 才用" % (r["cost_per_call_usd"], r["name"]) if r["paid"] else ""
+            print(redact("  [%s] %s — 提供 %s;%s:%s%s" % (tag, r["name"], "/".join(r["provides"]), r["kind"], r["how"], cost)))
+    for b in rep["problems"]:
+        print(redact("  ✗ " + b))
+    if not rep["free"] and not rep["paid"]:
+        print("  (没有登记;格式见 references/overview/playbook.md 第五节)")
+    return 0
+
+
 def build_parser():
     ap = argparse.ArgumentParser(
         description=__doc__.splitlines()[0], epilog=EPILOG,
@@ -484,6 +520,9 @@ def build_parser():
                          "键全集=data-onboarding.md T1-T4 + SEO_MONITOR_* 组;独立 exit 0")
     ap.add_argument("--print-env", action="store_true", dest="print_env",
                     help="须与 --keys 同用:输出全部支持 env 名+一行注释的 shell 模板(值留空)")
+    ap.add_argument("--sources", action="store_true",
+                    help="列 seo-ops/playbook/sources.json 登记的数据源(免费在前、付费在后;不调用)")
+    ap.add_argument("--ws", help="--sources 用:seo-ops 工作区(默认从当前目录往上找)")
     ap.add_argument("--check", action="store_true",
                     help="须与 --keys 同用:校验已配置项(只探存在性,不读值;复用 redact)")
     return ap
@@ -501,6 +540,9 @@ def main(argv=None):
             build_parser().error("--want 需与 --wizard 同用")
     if (args.print_env or args.check) and not args.keys:
         build_parser().error("--print-env/--check 需与 --keys 同用")
+
+    if args.sources:                                    # 数据源登记:独立 exit 0,不做 ready 判定
+        return print_sources(args)
 
     if args.keys:                                       # keys 模式:独立 exit 0,不做 ready 判定
         if args.wizard or args.want:

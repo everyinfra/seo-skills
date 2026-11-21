@@ -12,8 +12,9 @@
 - 组合信号型:重定向 × canonical 交叉(3xx 页再指他页 canonical = 信号打架)
 - --segment regex:切换 segment 重算优先级【Botify 官方行为】
 - --rules-json custom.json:用户自定义规则(同 schema,按 id 覆盖内置/新 id 追加合并)
+- 用户禁用清单(站点仓 seo-ops/playbook,playbook.py):命中的规则项从两栏里去掉,记进 deny_filtered;--no-deny 关掉
 用法: python3 prioritize.py --audit audit.json [--segment "/pricing|/docs"]
-                             [--rules-json custom.json] [--json]
+                             [--rules-json custom.json] [--ws seo-ops] [--no-deny] [--json]
 退出码: 0 正常 / 2 输入或参数错误。"""
 import json
 import os
@@ -362,7 +363,7 @@ AREA_RULE = {"title": "title_missing", "description": "desc_missing", "h1": "h1_
 AREA_CONDITIONAL = {"robots": "noindex_intent", "canonical": "canonical_pagerank"}
 
 USAGE = """usage: prioritize.py --audit audit.json [--segment regex] [--rules-json custom.json]
-                     [--market XX] [--json]
+                     [--market XX] [--json] [--ws seo-ops] [--no-deny]
 条件优先级引擎(Botify ActionBoard 口径):
   impact = 命中 URL 占比 × 严重度权重(CRITICAL=3/WARN=2/INFO=1)× 放大器
   放大器【Botify 官方】:问题页被内链指向>10 次 → 该规则 impact×1.5
@@ -373,6 +374,8 @@ USAGE = """usage: prioritize.py --audit audit.json [--segment regex] [--rules-js
     未索引+GSC clicks>0=紧急 / 零流量=低 / 缺 GSC 上下文=按中优先级(降级标注);
     组合信号:重定向×canonical 交叉。
 选项:
+  --ws seo-ops          站点仓工作区(默认从当前目录往上找);用户禁用清单(seo-ops/playbook)命中的条目不进两栏,记 deny_filtered
+  --no-deny             不按禁用清单过滤(只给人核对)
   --audit audit.json    site_audit.py --json 输出(逐页数据,完整引擎);也接受
                         health_score.py --json 摘要(优先识别——条件依赖型规则降级)
   --segment regex       URL 正则(如 "/pricing|/docs")——切换 segment 重算优先级【Botify 官方行为】
@@ -754,6 +757,7 @@ def main():
         print(USAGE)
         return
     audit_path, seg_re, rules_path, as_json, market_flag = None, None, None, False, None
+    ws_flag, use_deny = None, True
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -769,6 +773,10 @@ def main():
             rules_path = argv[i + 1]; i += 2
         elif a == "--json":
             as_json = True; i += 1
+        elif a == "--ws" and i + 1 < len(argv):
+            ws_flag = argv[i + 1]; i += 2
+        elif a == "--no-deny":
+            use_deny = False; i += 1
         elif a == "--market" and i + 1 < len(argv) and not argv[i + 1].startswith("-"):
             market_flag = argv[i + 1]; i += 2
         else:
@@ -807,11 +815,30 @@ def main():
         rep["urls_matched_segment"] = len(matched)
         rep["urls_total"] = len(matched)
         rep.update(compute(matched, rules))
+    if use_deny:
+        apply_user_deny(rep, ws_flag)
     if as_json:
         print(json.dumps(rep, ensure_ascii=False, indent=1))
     else:
         print(render(rep))
+        if rep.get("deny_filtered"):
+            print("按禁用清单去掉:" + "、".join("%s(%s)" % (d["rule"], d["denied_by"]) for d in rep["deny_filtered"]))
     sys.exit(0)
+
+
+def apply_user_deny(rep, ws_flag=None):
+    """用户在 seo-ops/playbook 说过不做的,从「立即处理」「值得探索」里去掉(规则同 plan.py)。"""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import playbook as PB
+    text = lambda d: " ".join([d.get("rule", ""), d.get("category", ""), d.get("fix_instruction", "")])  # noqa: E731
+    out = []
+    for key in ("fix_now", "explore"):
+        kept, dropped, _ = PB.filter_for(None, rep.get(key) or [], text, explicit_ws=ws_flag)
+        rep[key] = kept
+        out += [{"rule": d["item"]["rule"], "denied_by": d["denied_by"]} for d in dropped]
+    if out:
+        rep["deny_filtered"] = out
+    return rep
 
 
 if __name__ == "__main__":
