@@ -1082,7 +1082,7 @@ def build_parser():
 
     p = sub.add_parser("init", help="建立/刷新 seo-ops/ 工作区(project.yaml+history/+ledger/;幂等)")
     p.add_argument("--site", required=True, metavar="URL", help="站点 URL 或裸域名(自动补 https://)")
-    p.add_argument("--market", default="en", metavar="XX", help="市场代码(markets.json 18 市场,默认 en)")
+    p.add_argument("--market", default="en", metavar="XX", help="市场代码(markets.json 19 市场,默认 en)")
     p.add_argument("--type", default="", metavar="站型", help="站型自报(8 张站型卡名,见 site-type-playbooks.md)")
     p.add_argument("--dir", metavar="WS", help="工作区路径(默认 seo-ops/;同一仓库多站点用 seo-ops-<名>)")
     p.add_argument("--json", action="store_true", help="结果 JSON 打 stdout")
