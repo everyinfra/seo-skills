@@ -49,6 +49,7 @@ Future content or structure changes must bump the version and add a dated entry.
   Fixes after the second pilot run on the batch-5 fixes:
   - 工作区不再建错地方:`onboard.py start --repo <目录>` 没给 `--ws` 时工作区默认是 `<目录>/seo-ops`;任何脚本(`onboard.py`、`plan.py`、`loops.py`、`project.py`、`site_move.py`、`teach.py`、`lifecycle.py`)的工作区落在 skill 安装目录里都退出码 2、什么都不写,报错给出 `cd <站点仓库>` 或加 `--ws` 的照抄命令;不带 `--ws`、当前目录也没有 `seo-ops/` 时报「当前目录下没有工作区」,不再悄悄新建(`site_move.py baseline` 不给 `--out` 时写进 `<ws>/baselines/`)。`start` 第一屏第一行打印工作区绝对路径,屏幕上的后续命令都带 `--ws`。
   - 档案里的仓库路径可搬动:工作区在仓库里面时 `profile.json` 的 `repo` 记相对工作区的路径(`..`),仓库换目录、换机器或另 clone 一份后脚本仍找得到 `data/` 和产品上下文,本机绝对路径也不进 git;旧档案里已经失效的绝对路径退回工作区的上一级。
+  - 档案校验值只管用户确认过的内容(答案、原话、事实的值和状态、阶段、禁用清单):时间戳、事实出处、站点地址、指标出处和改动记录变了不算手改,工作区从备份恢复或站点换地址后不再把 6 环全部退回;因手改退回待确认的环,`show` 重新发给用户时补记发出时间,可以再次确认(修前一直报「还没发给用户」)。
     Workspaces land in the right place: `start --repo <dir>` defaults to `<dir>/seo-ops`; a workspace inside the skill's install directory is refused with exit 2 and nothing written, with copy-paste commands to fix it; a missing `./seo-ops` is reported instead of silently created; `start` prints the absolute workspace path first and every printed follow-up command carries `--ws`.
   - `project.py run triage` 接受 `--site`(和工作区记的站点一致就照常跑,不一致报错并说出记的是哪个站)和 `--ws`(同 `--dir`);第 4 环「agent 先做」打印完整的体检命令,本机站点自动带 `--allow-local`。
     `project.py run triage` accepts `--site` (must match the workspace's site) and `--ws` (same as `--dir`); ring 4 prints the full triage command, with `--allow-local` for local sites.
