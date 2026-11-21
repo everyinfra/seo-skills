@@ -60,7 +60,7 @@ import urllib.request
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GSC_REL = os.path.join(".config", "seo-suite", "gsc.json")
-EXPECTED_MARKETS = 18
+EXPECTED_MARKETS = 19
 TEMPLATE_DIRS = ("audit", "content", "monitor", "research")
 NET_URL = "https://developers.google.com"
 NET_TIMEOUT = 5
