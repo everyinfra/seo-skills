@@ -10,7 +10,7 @@
       "desc_min": "desc_min:description 长度下限,与 desc_limit 同单位;默认取 desc_limit 的一半(向下取整),必须小于上限。本套件口径——Google 对描述无长度要求(snippet 文档「There's no limit on how long a meta description can be」)"
     },
     "sections": {
-      "markets": "18 个语言市场规则(market_lint.py / local_format.py);special_checks=逐语区独有检查项标记(2026-10-09 R5 深度吸收轮,源自 multilingual-workflow.md 十一B)",
+      "markets": "19 个语言市场规则(market_lint.py / local_format.py);special_checks=逐语区独有检查项标记(2026-10-09 R5 深度吸收轮,源自 multilingual-workflow.md 十一B)",
       "payment_words": "支付即意图词表(payment_intent.py);区域键非语言市场键(BR=pt 市场语言但支付区域 BR)",
       "serp_occupancy": "SERP 占位平台表(serp_occupancy.py);键为区域码(in=印度)",
       "complaint_lookalikes": "品牌词审计必查的本国投诉/UGC 同构平台"
@@ -1313,6 +1313,79 @@
           "over.bol.com / Partnerplatform 公告 + Yoast 版本日志(llms.txt 行为)"
         ],
         "next": "2027-01-09"
+      }
+    },
+    "uk": {
+      "title_limit": {
+        "value": 60,
+        "unit": "chars",
+        "note": "本套件口径:西里尔字母按码点计,与 en 同值"
+      },
+      "desc_limit": {
+        "value": 155,
+        "unit": "chars"
+      },
+      "desc_min": 77,
+      "sentence_ideal": {
+        "min": 15,
+        "max": 20,
+        "unit": "words"
+      },
+      "sentence_split": "latin",
+      "pillar_min": 2000,
+      "pillar_unit": "words",
+      "pillar_note": "本套件口径(第三方观察),不是排名要求:Google 原文「Are you writing to a particular word count because you've heard or read that Google has a preferred word count? (No, we don't.)」(developers.google.com/search/docs/fundamentals/creating-helpful-content,核对 2026-10-21);只作体裁参考,不凑字数",
+      "marketing_words": [
+        "найкращий",
+        "лідер",
+        "революційний"
+      ],
+      "formats": {
+        "number": "1 234,56(空格千分位+逗号小数)",
+        "date": "21 листопада 2026 / 2026-11-21",
+        "phone_prefix": "+380"
+      },
+      "formality": "ви 正式 / ти 非正式;B2B 默认 ви(本套件口径)",
+      "engines": [
+        "google",
+        "bing",
+        "chatgpt",
+        "perplexity",
+        "gemini",
+        "copilot"
+      ],
+      "entity_sources": [
+        "wikipedia.org",
+        "wikidata.org",
+        "rozetka.com.ua",
+        "prom.ua",
+        "olx.ua",
+        "hotline.ua"
+      ],
+      "hreflang_codes": [
+        "uk",
+        "uk-UA"
+      ],
+      "notes": "Google 90.35% + Yandex 6.54%(StatCounter UA 2026-10,全设备引荐流量);Yandex 自 2017 年被封锁(Decree 133/2017),残留 6.54% 不做优化;Telegram 头号信息渠道(82% 跟踪频道,Internews 2026-07/08 调查)",
+      "special_checks": [
+        "Yandex 不做优化(2017 年封锁,残留流量不代表可触达受众)",
+        "乌克兰语版默认加载、内容不少于他语版(《国家语言法》第 27 条,2022-07-16 起)",
+        "і/ї/є/ґ 不与俄语 и/ы/э/ъ 混淆,关键词用乌克兰语形",
+        "Telegram 频道是头号信息层,品牌词先查 Telegram",
+        "电商价格/库存先过 Rozetka / Prom.ua / Hotline.ua 比价层"
+      ],
+      "review_cycle": {
+        "interval_days": 90,
+        "next": "2027-02-19",
+        "last": "2026-11-21",
+        "signals": [
+          "StatCounter 乌克兰月度份额(Yandex 残留量异动时重读)",
+          "Internews 媒体调查(每年 11 月左右)",
+          "语言法执法动态",
+          "Rozetka / Prom.ua 流量结构变化",
+          "AI Overviews 乌克兰覆盖与引用构成变化"
+        ],
+        "note": "2026-11-21 首版建立(StatCounter 2026-10 + Internews 2026 + 语言法条文);本地实测轮(真实站审计)尚未做,列入下次复审"
       }
     }
   },
