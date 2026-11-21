@@ -43,6 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import site_crawl as sc  # noqa: E402
 import launch_check as LK  # noqa: E402
+import lifecycle as LC  # noqa: E402
 
 SEVERITY = {"missing_redirect": "block", "bad_target": "block", "to_homepage": "block", "wrong_target": "block",
             "not_moved": "block", "canonical_old": "block", "noindex_added": "block", "hreflang_broken": "block",
@@ -173,6 +174,14 @@ def load_map(path):
 
 
 def cmd_baseline(ns):
+    if ns.out:
+        out = ns.out
+        if LC.inside_skill(out):
+            raise UsageError("--out %s 落在 seo-suite 自己的安装目录里,这次什么都没写;写到站点仓库的 seo-ops/baselines/ 下"
+                             "(或用 --ws <站点仓库>/seo-ops)" % os.path.abspath(out))
+    else:                                       # 默认写进工作区的 baselines/(开局第 4 环按这里找基线)
+        ws = LC.resolve_ws(ns.ws, __file__, sys.argv[1:])
+        out = os.path.join(ws, "baselines", dt.date.today().isoformat() + ".json")
     fetch = Fetch(0 if ns.allow_local else 0.2)
     pages = crawl(fetch, ns.site, ns.max)
     if not pages:
@@ -184,7 +193,6 @@ def cmd_baseline(ns):
     base = {"schema": 1, "site": ns.site.rstrip("/"), "taken_at": dt.datetime.now().isoformat(timespec="seconds"),
             "pages": pages, "sitemap": [path_of(u) for u in sitemap_list(fetch, origin_of(ns.site))],
             "errors": fetch.errors}
-    out = ns.out or os.path.join("seo-ops", "baselines", dt.date.today().isoformat() + ".json")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(base, f, ensure_ascii=False, indent=1)
@@ -391,6 +399,7 @@ def main(argv=None):
     b.add_argument("--max", type=int, default=2000)
     b.add_argument("--gsc-pages", help="GSC 网页导出 CSV(page, clicks)")
     b.add_argument("--out")
+    b.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops;没给 --out 时基线写到 <ws>/baselines/<日期>.json)")
     b.add_argument("--allow-local", action="store_true", help=sc.LOCAL_HINT)
     c = sub.add_parser("compare")
     c.add_argument("--baseline", required=True)
@@ -405,7 +414,7 @@ def main(argv=None):
     sc.ALLOW_LOCAL = bool(getattr(ns, "allow_local", False))
     try:
         return {"baseline": cmd_baseline, "compare": cmd_compare}[ns.cmd](ns)
-    except (UsageError, OSError, ValueError) as e:
+    except (UsageError, LC.UsageError, OSError, ValueError) as e:
         print("错误:%s" % e, file=sys.stderr)
         return 2
 

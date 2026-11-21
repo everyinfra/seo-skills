@@ -440,6 +440,8 @@ def build(ws, metrics=None, top=10, today=None):
     unconfirmed = [f["key"] for f in prof.get("facts") or [] if f.get("status") == "unconfirmed"]
     unknown = [f.get("id") or f["key"] for f in prof.get("facts") or [] if f.get("status") == "unknown"]
     skipped_rings = [r for r, v in (prof.get("rings") or {}).items() if v.get("status") == "skipped"]
+    audit = prof.get("audit") or {}
+    audit_skipped = audit.get("reason") if audit.get("ran") is False else None
     plan = {"schema": 1, "generated_at": (today or dt.date.today()).isoformat(),
             "profile_version": prof.get("version"), "playbooks_sha": pb_hash,
             "site": prof.get("site"), "stage": {"id": stage, "name": stage_info.get("name"),
@@ -452,6 +454,7 @@ def build(ws, metrics=None, top=10, today=None):
             "backlog": [{"id": p["id"], "title": p["title"]} for p in backlog], "skipped": skipped,
             "deny": [d["item"] for d in deny],
             "assumptions": {"unconfirmed_facts": unconfirmed, "unknown_facts": unknown, "skipped_rings": skipped_rings,
+                            "audit_skipped": audit_skipped,
                             "missing_slots": sorted({m for r in recs[:top] for m in r["facts_missing"]})},
             "metrics_by_stage": pb["metrics_by_stage"].get(str(stage), []),
             "goals": {"text": goal_text, "kinds": goals}, "one_market": one_mkt, "measured_drop": drop,
@@ -500,7 +503,11 @@ def by_week(recs):
 
 def render_roadmap(plan):
     L = ["# 90 天路线(%s,%s)" % (plan.get("site") or "", (plan.get("stage") or {}).get("name") or "阶段未知"), "",
-         "按开始周排;# 是优先级(1 最先)。", "", "| # | 周 | 做什么 | 动哪类页面 | 预期动哪个数 | 怎么量 | 用到的产品事实 |", "|---|---|---|---|---|---|---|"]
+         "按开始周排;# 是优先级(1 最先)。", ""]
+    skipped = (plan.get("assumptions") or {}).get("audit_skipped")
+    if skipped:
+        L += ["体检没跑:%s(未确认)" % skipped, ""]
+    L += ["| # | 周 | 做什么 | 动哪类页面 | 预期动哪个数 | 怎么量 | 用到的产品事实 |", "|---|---|---|---|---|---|---|"]
     for r in by_week(plan_items(plan)):
         L.append("| %d | %s | **%s**:%s | %s | %s | %s | %s |" % (
             r["rank"], _wk(r), r["title"], r["do"] + ("(不含:%s)" % "、".join(r["deny_notes"]) if r["deny_notes"] else ""),
@@ -574,6 +581,8 @@ def render_book(plan, lang="zh"):
     L += ["", "## 7. 还没确认的假设" if zh else "## 7. Unconfirmed assumptions", ""]
     if a["skipped_rings"]:
         L.append(("- 跳过的开局环:第 %s 环,用的是猜测" if zh else "- Skipped onboarding rings: %s (guesses used)") % "、".join(a["skipped_rings"]))
+    if a.get("audit_skipped"):
+        L.append(("- 体检没跑:%s(未确认)" if zh else "- Technical audit not run: %s (unconfirmed)") % a["audit_skipped"])
     if a["unconfirmed_facts"]:
         L.append(("- 没确认的事实:" if zh else "- Unconfirmed facts: ") + "、".join(a["unconfirmed_facts"][:12]))
     if a.get("unknown_facts"):
@@ -596,7 +605,8 @@ def render_plan_md(plan):
     L = ["# SEO / GEO 方案(%s,%s%s)" % (plan.get("site") or "", st["name"], "" if st["confirmed"] else ",阶段待确认"), "",
          "> 生成于 %s,档案第 %s 版;状态 %s。plan.json 的 items 和下面的编号列表是同一份。" % (
              plan["generated_at"], plan["profile_version"], plan.get("status")), ""]
-    guesses = (["第 %s 环跳过了,用的是猜测(未确认)" % r for r in a["skipped_rings"]]
+    guesses = (["体检没跑:%s(未确认)" % a["audit_skipped"]] if a.get("audit_skipped") else []) + (
+               ["第 %s 环跳过了,用的是猜测(未确认)" % r for r in a["skipped_rings"]]
                + ["%s:未确认(猜测)" % k for k in dict.fromkeys(a["unconfirmed_facts"])]
                + ["%s:用户不知道(未确认)" % k for k in a.get("unknown_facts") or []]
                + ["%s:档案里缺,用了通用说法(假设)" % k for k in a["missing_slots"]])
@@ -618,7 +628,7 @@ def render_plan_md(plan):
 
 
 def cmd_build(ns):
-    ws = ns.ws
+    ws = ns.ws = LC.resolve_ws(ns.ws, __file__, ns.argv)
     metrics = read_json(ns.metrics) if ns.metrics else None
     plan = build(ws, metrics, ns.top)
     d = os.path.join(ws, "plan")
@@ -640,6 +650,7 @@ def cmd_build(ns):
 
 
 def cmd_show(ns):
+    ns.ws = LC.resolve_ws(ns.ws, __file__, ns.argv)
     plan = read_json(os.path.join(ns.ws, "plan", "plan.json"))
     if not plan:
         raise UsageError("还没有方案:先 plan.py build")
@@ -652,13 +663,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="按产品阶段出方案、90 天路线和战略书")
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
-    b.add_argument("--ws", default="seo-ops")
+    b.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops)")
     b.add_argument("--metrics")
     b.add_argument("--top", type=int, default=10)
     b.add_argument("--json", action="store_true")
     s = sub.add_parser("show")
-    s.add_argument("--ws", default="seo-ops")
+    s.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops)")
     ns = ap.parse_args(argv)
+    ns.argv = list(sys.argv[1:] if argv is None else argv)
     try:
         return {"build": cmd_build, "show": cmd_show}[ns.cmd](ns)
     except GateError as e:

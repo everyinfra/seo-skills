@@ -29,6 +29,8 @@ import unittest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
+# 扫描文件造的站没有真站可体检:第 4 环走逃生口(站点已上线时确认第 4 环要体检记录)
+NO_AUDIT = ["--no-audit", "测试用扫描文件造的站,没有真站可体检"]
 ROOT = os.path.dirname(os.path.dirname(BASE))
 SITES = os.path.join(ROOT, "tools", "testsites", "lifecycle_sites.py")
 sys.path.insert(0, SCRIPTS)
@@ -268,7 +270,7 @@ class Ws:
         for r_, sets in answers.items():
             self.ok(self.ob("show", "--ring", str(r_)))
             self.ok(self.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []),
-                            "--quote", "第 %d 环的回答就是这些" % r_, "--confirm"))
+                            "--quote", "第 %d 环的回答就是这些" % r_, *(NO_AUDIT if r_ == 4 else []), "--confirm"))
         self.ok(self.ob("show", "--ring", "6"))
 
 

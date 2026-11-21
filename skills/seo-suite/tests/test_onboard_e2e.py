@@ -20,6 +20,7 @@
 import json
 import os
 import re
+import shlex
 import shutil
 import socket
 import subprocess
@@ -326,6 +327,8 @@ class Flow:
                     b = self.run("plan.py", ["build", "--ws", "seo-ops"])
                     self.tc.assertEqual(b.returncode, 0, b.stderr[-600:])
                 screen = self.ob("show", "--ring", str(r)).stdout
+                if r == 4 and self.audit_from_screen(screen):
+                    screen = self.ob("show", "--ring", str(r)).stdout
             block = user_block(screen)
             self.check_block(r, block)
             self.answer(r, screen, block)
@@ -334,6 +337,28 @@ class Flow:
         b = self.run("plan.py", ["build", "--ws", "seo-ops"])
         self.tc.assertEqual(b.returncode, 0, b.stderr[-600:])
         self.check_end()
+
+    def audit_from_screen(self, screen):
+        """照第 4 环「agent 先做」打印的完整命令跑体检(改版阶段还有基线);站点已上线的场景必须打印出来。"""
+        ran = []
+        for ln in screen.splitlines():
+            m = re.match(r"^- (体检|改版前存基线)[^:]*:(python3 .+)$", ln)
+            if not m:
+                continue
+            for cmd in m.group(2).split(" && "):
+                argv = shlex.split(cmd)
+                if "triage" in argv:
+                    argv += ["--max", "10"]
+                r = subprocess.run([PY] + argv[1:], cwd=self.ws, capture_output=True, text=True, encoding="utf-8")
+                self.tc.assertNotEqual(r.returncode, 2, "%s 照抄 %s 报用法错:%s" % (self.product, cmd, r.stderr[-600:]))
+            ran.append(m.group(1))
+        live = self.ans["stage"] >= 2
+        self.tc.assertEqual("体检" in ran, live, "%s 第 4 环体检命令:%s" % (self.product, ran))
+        self.tc.assertEqual("改版前存基线" in ran, self.ans["stage"] == 5, "%s 第 4 环基线命令:%s" % (self.product, ran))
+        if live and self.site and "127.0.0.1" in self.site:
+            tri = next(ln for ln in screen.splitlines() if ln.startswith("- 体检"))
+            self.tc.assertIn("--allow-local", tri)
+        return ran
 
     def triage(self):
         """上线前的本机预览站 robots 全封:体检不被它挡住,「robots 全封」作为一条发现报出来。"""

@@ -587,7 +587,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name in ("status", "run", "resolve"):
         s = sub.add_parser(name)
-        s.add_argument("--ws", default="seo-ops")
+        s.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops)")
         s.add_argument("--today", help="YYYY-MM-DD(测试和回放用)")
         if name != "resolve":
             s.add_argument("--json", action="store_true")
@@ -601,6 +601,7 @@ def main(argv=None):
             s.add_argument("--stage", type=int)
     ns = ap.parse_args(argv)
     try:
+        ns.ws = LC.resolve_ws(ns.ws, __file__, list(sys.argv[1:] if argv is None else argv))
         return {"status": cmd_status, "run": cmd_run, "resolve": cmd_resolve}[ns.cmd](ns)
     except GateError as e:
         print("停:%s" % e, file=sys.stderr)

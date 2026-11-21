@@ -25,6 +25,8 @@ import unittest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
+# 扫描文件造的站没有真站可体检:第 4 环走逃生口(站点已上线时确认第 4 环要体检记录)
+NO_AUDIT = ["--no-audit", "测试用扫描文件造的站,没有真站可体检"]
 
 with open(os.path.join(BASE, "data", "lifecycle.json"), encoding="utf-8") as _f:
     STAGE_NAMES = {s["id"]: s["name"] for s in json.load(_f)["stages"]}
@@ -93,7 +95,8 @@ class Ws:
         for r_, sets in answers.items():
             self.ok(self.ob("show", "--ring", str(r_)))
             self.ok(self.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []),
-                            "--quote", "第 %d 环的回答是 %s" % (r_, ";".join(sets)), "--confirm"))
+                            "--quote", "第 %d 环的回答是 %s" % (r_, ";".join(sets)), *(NO_AUDIT if r_ == 4 else []),
+                            "--confirm"))
         self.ok(self.ob("show", "--ring", "6"))
 
 
@@ -164,7 +167,7 @@ class QuestionChoiceTests(unittest.TestCase):
                          4: ["capacity=每月 4 篇"]}.items():
             w.ok(w.ob("show", "--ring", str(r_)))
             w.ok(w.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []),
-                      "--quote", "第 %d 环的回答是 %s" % (r_, ";".join(sets)), "--confirm"))
+                      "--quote", "第 %d 环的回答是 %s" % (r_, ";".join(sets)), *(NO_AUDIT if r_ == 4 else []), "--confirm"))
         self.check(w.ok(w.ob("show", "--ring", "5")).stdout)
 
 

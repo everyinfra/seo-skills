@@ -32,6 +32,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import lifecycle as LC  # noqa: E402
 import playbook as PB  # noqa: E402
 
 CHECK_TEMPLATE = '''#!/usr/bin/env python3
@@ -70,10 +71,12 @@ CHECK_DOC = """# 检查:%(name)s
 
 def ws_of(ns, create=False):
     ws = PB.find_ws(None, ns.ws)
+    if ws and LC.inside_skill(ws):
+        LC.resolve_ws(ws, __file__, sys.argv[1:])     # 落在 skill 安装目录里:报错给照抄命令,不写
     if ws:
         return ws
     if create:
-        ws = os.path.abspath(ns.ws or "seo-ops")
+        ws = LC.resolve_ws(ns.ws, __file__, sys.argv[1:], must_exist=False)
         os.makedirs(PB.pb_dir(ws), exist_ok=True)
         return ws
     raise PB.PlaybookError("找不到 seo-ops/ 工作区(在站点仓根目录跑,或用 --ws 指定)")
@@ -419,6 +422,9 @@ def main(argv=None):
     except (PB.PlaybookError, PB.GateError) as e:
         print("错误:%s" % e, file=sys.stderr)
         return e.code
+    except LC.UsageError as e:
+        print("错误:%s" % e, file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

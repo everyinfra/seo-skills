@@ -32,11 +32,15 @@ import datetime as dt
 import glob
 import json
 import os
+import shlex
 import sys
+import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RULES_PATH = os.path.join(os.path.dirname(HERE), "data", "lifecycle.json")
+SKILL_ROOT = os.path.dirname(HERE)
+RULES_PATH = os.path.join(SKILL_ROOT, "data", "lifecycle.json")
 DIMS = ("technical", "content", "authority", "geo", "measurement")
+OPS_DIR = "seo-ops"
 
 
 class UsageError(Exception):
@@ -49,6 +53,105 @@ def read_json(path, default=None):
             return json.load(f)
     except (OSError, ValueError):
         return default
+
+
+# ---------------------------------------------------------------------------
+# 工作区定位(onboard / plan / loops / project / site_move / teach 共用)
+# ---------------------------------------------------------------------------
+
+def inside_skill(path):
+    """path 落在 seo-suite 安装目录(scripts/ 的上一级)里面 → True。工作区不许建在这里。"""
+    root = os.path.realpath(SKILL_ROOT)
+    p = os.path.realpath(os.path.abspath(path))
+    return p == root or p.startswith(root + os.sep)
+
+
+def drop_ws_args(argv, names=("--ws", "--dir")):
+    """命令行里去掉 --ws / --dir 和它的值(给出改过的照抄命令用)。"""
+    out, skip = [], False
+    for a in argv or []:
+        if skip:
+            skip = False
+            continue
+        if a in names:
+            skip = True
+            continue
+        if any(a.startswith(n + "=") for n in names):
+            continue
+        out.append(a)
+    return out
+
+
+def shell_cmd(script, argv):
+    return "python3 " + " ".join(shlex.quote(x) for x in [os.path.abspath(script)] + list(argv))
+
+
+def find_ws_up(start=None):
+    """从 start(默认当前目录)往上找开过局的 seo-ops/(只用来给提示,不改变用哪个工作区)。"""
+    cur = os.path.abspath(start or os.getcwd())
+    home = os.path.expanduser("~")
+    while True:
+        cand = os.path.join(cur, OPS_DIR)
+        if not inside_skill(cand) and (os.path.isfile(os.path.join(cand, "context", "profile.json"))
+                                       or os.path.isfile(os.path.join(cand, "project.yaml"))):
+            return cand
+        parent = os.path.dirname(cur)
+        if parent == cur or cur == home:
+            return None
+        cur = parent
+
+
+def ws_fix_hint(script, argv, flag="--ws", repo=None):
+    """两条照抄就能跑的命令:cd 到站点仓库再跑,或者加 --ws <站点仓库>/seo-ops。"""
+    base = drop_ws_args(argv)
+    r = repo or "<站点仓库>"
+    cmd = shell_cmd(script, base)
+    head = "照抄其一%s:" % ("" if repo else "(<站点仓库> 换成站点仓库的绝对路径)")
+    return "%s\n  cd %s && %s\n  %s %s %s" % (head, shlex.quote(r) if repo else r, cmd, cmd, flag,
+                                           shlex.quote(os.path.join(r, OPS_DIR)) if repo else r + "/" + OPS_DIR)
+
+
+def host_key(url):
+    """比较两个站点地址是不是同一个站用:主机名(小写、去 www.)+ 显式端口;协议不比。"""
+    u = str(url or "").strip()
+    p = urllib.parse.urlsplit(u if "://" in u else "http://" + u)
+    host = (p.hostname or "").lower().rstrip(".")
+    host = host[4:] if host.startswith("www.") else host
+    try:
+        port = p.port
+    except ValueError:
+        port = None
+    return host, port
+
+
+def same_site(a, b):
+    return bool(a and b) and host_key(a) == host_key(b)
+
+
+def resolve_ws(explicit, script, argv, flag="--ws", must_exist=True, repo=None):
+    """→ 工作区绝对路径:explicit 给了用它,否则 ./seo-ops。
+    落在 skill 安装目录里 → UsageError(调用方这时还什么都没写);must_exist 而目录不在 → UsageError,
+    说清当前目录没有工作区、怎么指过去(不悄悄新建空工作区)。"""
+    ws = os.path.abspath(explicit or OPS_DIR)
+    if inside_skill(ws):
+        stray = read_json(os.path.join(ws, "context", "profile.json"), {}) or {}
+        known = repo or (stray.get("repo") if not inside_skill(stray.get("repo") or SKILL_ROOT) else None)
+        extra = ""
+        if stray and known and not os.path.exists(os.path.join(known, OPS_DIR)):
+            extra = "\nskill 目录里已经有一份建错地方的工作区,先挪回站点仓库:mv %s %s" % (
+                shlex.quote(ws), shlex.quote(os.path.join(known, OPS_DIR)))
+        raise UsageError("工作区 %s 落在 seo-suite 自己的安装目录(%s)里,这次什么都没写。工作区要放在站点仓库里"
+                         "(当前目录是 %s)。%s%s" % (ws, SKILL_ROOT, os.getcwd(),
+                                                ws_fix_hint(script, argv, flag, known), extra))
+    if must_exist and not os.path.isdir(ws):
+        if explicit:
+            raise UsageError("%s 指的工作区 %s 不存在(没新建)。还没开局先跑 onboard.py start --site <URL> --repo <站点仓库>;"
+                             "开过局就把 %s 改成 <站点仓库>/seo-ops" % (flag, ws, flag))
+        up = find_ws_up()
+        hint = ("上级目录里有工作区:照抄 %s %s %s" % (shell_cmd(script, drop_ws_args(argv)), flag, shlex.quote(up))
+                if up else ws_fix_hint(script, argv, flag, repo))
+        raise UsageError("当前目录 %s 下没有工作区 seo-ops/(没新建)。%s" % (os.getcwd(), hint))
+    return ws
 
 
 # 档案的读取契约:别的工具(评测、其他 skill)按 _schema 找每个核心事实。事实存在 facts 列表里
@@ -743,8 +846,8 @@ def main(argv=None):
             raise UsageError("读不到 --scan %s" % ns.scan)
         metrics = read_json(ns.metrics) if ns.metrics else None
         today = dt.date.fromisoformat(ns.today) if ns.today else None
-        if ns.ws and not os.path.isdir(ns.ws):
-            raise UsageError("--ws 不是目录: %s" % ns.ws)
+        if ns.ws:
+            resolve_ws(ns.ws, __file__, sys.argv[1:] if argv is None else argv)
         d = diagnose(scan, ns.ws, metrics, today)
     except UsageError as e:
         print("错误: %s" % e, file=sys.stderr)

@@ -21,6 +21,8 @@ import unittest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
+# 扫描文件造的站没有真站可体检:第 4 环走逃生口(站点已上线时确认第 4 环要体检记录)
+NO_AUDIT = ["--no-audit", "测试用扫描文件造的站,没有真站可体检"]
 sys.path.insert(0, SCRIPTS)
 import lifecycle as LC  # noqa: E402
 
@@ -78,6 +80,7 @@ class Workspace:
         for r_, sets in answers.items():
             self.test.assertEqual(self.ob("show", "--ring", str(r_)).returncode, 0)
             args = ["answer", "--ring", str(r_)] + sum((["--set", s] for s in sets), []) + ["--quote", "第 %d 环就按这些答" % r_, "--confirm"]
+            args += NO_AUDIT if r_ == 4 else []
             res = self.ob(*args)
             self.test.assertEqual(res.returncode, 0, res.stderr)
         self.ob("show", "--ring", "6")

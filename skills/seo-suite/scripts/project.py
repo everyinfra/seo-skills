@@ -72,6 +72,9 @@ monitor/gsc.csv
 """
 PY = sys.executable or "python3"
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import lifecycle as LC  # noqa: E402
+
 SCRIPTS_DIR = os.path.abspath(os.environ.get("SEO_PROJECT_SCRIPTS_DIR") or HERE)
 
 TRIAGE_MAX_PAGES = 50        # R1-7:首答轮爬取预算(大站建议后续另跑全量 site_crawl)
@@ -234,13 +237,24 @@ def site_slug(site):
     return slug, canon
 
 
+def guard_ws(ws, flag="--dir"):
+    """工作区不许落在 seo-suite 安装目录里:是的话报错(带照抄命令),什么都不写。"""
+    if LC.inside_skill(ws):
+        try:
+            LC.resolve_ws(ws, me_path(), sys.argv[1:], flag=flag, must_exist=False)
+        except LC.UsageError as e:
+            die(str(e))
+    return ws
+
+
 def find_workspace(explicit):
-    """定位工作区:--dir 显式 > cwd 下唯一 *.seo/(含 project.yaml);无 → 2,多个 → 2。"""
+    """定位工作区:--dir 显式 > cwd 下的 seo-ops/(或唯一 *.seo/,含 project.yaml);无 → 2,多个 → 2。"""
     if explicit:
-        ws = os.path.abspath(explicit)
+        ws = guard_ws(os.path.abspath(explicit))
         if not os.path.isfile(os.path.join(ws, "project.yaml")):
             die("--dir 指定的目录缺 project.yaml(不是 project 工作区): %s" % ws)
         return ws
+    guard_ws(os.path.abspath(OPS_DIR))
     pats = (OPS_DIR, OPS_DIR + "-*", "*.seo")
     cands = []
     for pat in pats:                            # 新版 seo-ops 优先;旧版 *.seo 照样能读
@@ -251,8 +265,11 @@ def find_workspace(explicit):
     if any(not c.endswith(".seo") for c in cands):
         cands = [c for c in cands if not c.endswith(".seo")]
     if not cands:
-        die("当前目录未发现 *.seo/ 工作区;先运行: python3 %s init --site <URL>"
-            % os.path.relpath(me_path(), os.getcwd() if os.getcwd() != HERE else "."))
+        up = LC.find_ws_up()
+        hint = ("上级目录里有工作区:照抄 %s --dir %s" % (LC.shell_cmd(me_path(), LC.drop_ws_args(sys.argv[1:])),
+                                                        up) if up else LC.ws_fix_hint(me_path(), sys.argv[1:], "--dir"))
+        die("当前目录 %s 下没有工作区(seo-ops/ 或 *.seo/)。%s\n还没建工作区就先: python3 %s init --site <URL>"
+            % (os.getcwd(), hint, me_path()))
     if len(cands) > 1:
         die("发现多个工作区(%s);请用 --dir 指定其一" % ", ".join(cands))
     return os.path.abspath(cands[0])
@@ -351,7 +368,7 @@ def cmd_init(ns):
     mk = known_markets()
     if mk is not None and ns.market not in mk:
         die("未知市场 %s;可用: %s" % (ns.market, ", ".join(sorted(mk))))
-    ws = os.path.abspath(ns.dir or OPS_DIR)
+    ws = guard_ws(os.path.abspath(ns.dir or OPS_DIR))
     ypath = os.path.join(ws, "project.yaml")
     created = now_utc_iso()
     old = {}
@@ -421,7 +438,7 @@ def cmd_migrate(ns):
               if os.path.isfile(os.path.join(d, "project.yaml"))]
     if len(legacy) > 1:
         die("发现多个旧工作区(%s);一次迁一个:先把其余的挪走" % ", ".join(legacy))
-    dest = os.path.abspath(ns.to or os.path.join(base, OPS_DIR))
+    dest = guard_ws(os.path.abspath(ns.to or os.path.join(base, OPS_DIR)), "--to")
     if os.path.isfile(os.path.join(dest, "project.yaml")):
         die("目标 %s 已有工作区;不覆盖。换 --to 或先处理它" % dest)
     old_ws = legacy[0] if legacy else None
@@ -724,6 +741,9 @@ def cmd_run_triage(ns):
     ws = find_workspace(ns.dir)
     proj = load_project(ws)
     site = proj["site"]
+    if ns.site and not LC.same_site(ns.site, site):
+        die("--site %s 和工作区 %s 里记的站点 %s 不一致;体检的是工作区里那个站。要审别的站换工作区:"
+            "python3 %s init --site %s --dir <另一个工作区>" % (ns.site, ws, site, me_path(), ns.site))
     market = proj.get("market") or "en"
     hist = new_history_dir(ws)
 
@@ -1149,7 +1169,8 @@ def build_parser():
 
     p = sub.add_parser("run", help="运行管线(目前: triage 技术审计链)")
     p.add_argument("action", choices=("triage",), help="triage=体检→优先级一条链(R1-7)")
-    p.add_argument("--dir", metavar="WS", help="工作区路径(默认自动发现 cwd 下唯一 *.seo/)")
+    p.add_argument("--dir", "--ws", dest="dir", metavar="WS", help="工作区路径(默认 cwd 下的 seo-ops/;--ws 同 --dir)")
+    p.add_argument("--site", metavar="URL", help="可不给:和工作区里记的站点一致就照常跑,不一致报错")
     p.add_argument("--max", type=int, default=TRIAGE_MAX_PAGES, metavar="N",
                    help="爬取页数预算(默认 %d;site_audit 取前 %d 个 2xx/3xx URL)"
                         % (TRIAGE_MAX_PAGES, TRIAGE_AUDIT_URLS))

@@ -148,6 +148,13 @@ BILLING_RES = (
     ("试用", re.compile(r"free trial|\btrial\b|试用|prueba (gratis|gratuita)", re.I)),
     ("一次性购买", re.compile(r"one[- ]time|lifetime|一次性|买断|pago [uú]nico", re.I)),
 )
+# 免运费、免费配送、免费退换这类说法不是免费档:算收费方式之前先去掉
+SHIPPING_FREE_RE = re.compile(
+    r"\bfree\s+(?:[\w$€£.,-]+\s+){0,3}?(?:shipping|delivery|returns?|exchanges?)\b|"
+    r"\b(?:shipping|delivery|returns?)\s+(?:is\s+|are\s+)?(?:always\s+)?free\b|"
+    r"免运费|包邮|免邮|免费(?:配送|送货|快递|邮寄|退换货?|退货|换货|运送)|"
+    r"env[ií]o\s+gratis|env[ií]o\s+gratuito|gratis\s+env[ií]o|devoluci[oó]n(?:es)?\s+gratis|"
+    r"kostenlose[rn]?\s+(?:versand|lieferung|r[üu]cksendung)|versandkostenfrei|livraison\s+gratuite", re.I)
 SENT_SPLIT = re.compile(r"(?<=[.!?。!?])\s+")
 BRAND_SPLIT = re.compile(r"\s+[|\u2013\u2014\u00b7\-:»]\s+|\s*[|｜:：]\s*")
 
@@ -1108,8 +1115,13 @@ def pricing_snippets(chunks):
     return out[:PRICE_SNIPPETS_MAX]
 
 
+def strip_shipping(text):
+    return SHIPPING_FREE_RE.sub(" ", text or "")
+
+
 def billing_modes(text):
-    return [name for name, rx in BILLING_RES if rx.search(text or "")]
+    text = strip_shipping(text)
+    return [name for name, rx in BILLING_RES if rx.search(text)]
 
 
 def build_facts(site_scan, ctx, repo_scan, existing):
@@ -1212,7 +1224,7 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         txt += " " + hx.get("text", "")
         cta_txt = " ".join(c["text"] for c in (home.get("ctas") or []) + ((pp or {}).get("ctas") or []))
         has_prices = bool((pp or {}).get("prices") or home.get("prices"))
-        has_free = bool(FREE_RE.search(txt) or FREE_RE.search(cta_txt))
+        has_free = bool(FREE_RE.search(strip_shipping(txt)) or FREE_RE.search(strip_shipping(cta_txt)))
         contact = bool(re.search(r"contact sales|talk to sales|联系销售|contactar ventas|hablar con ventas|"
                                  r"book a demo|request a demo|预约演示", (txt + " " + cta_txt).lower()))
         if has_prices:
@@ -1232,7 +1244,7 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         modes = billing_modes(" ".join(snips) + " " + txt)
         if snips:                                  # 原文价格、档位、计费方式;枚举只作附加字段
             add("pricing.model", " / ".join(snips), snip_src, "fact", enum=model, billing=modes)
-        elif home.get("status") or pp:
+        elif (home.get("status") or pp) and model != "unknown":   # 没读到就留给下面的 unknown(),不把内部值当原文
             add("pricing.model", model, ref_src, "inferred", enum=model, billing=modes)
     if not has("pricing.model") and rprice.get("chunks"):   # 站点读不到时:仓库定价页源码里的原文
         snips = pricing_snippets(rprice["chunks"])
@@ -1241,7 +1253,8 @@ def build_facts(site_scan, ctx, repo_scan, existing):
             prices = _dedup([p for c in rprice["chunks"] for p in extract_prices(c)])[:PRICES_MAX]
             if prices and not has("pricing.prices"):
                 add("pricing.prices", prices, rprice["src"], "fact")
-            model = ("freemium" if FREE_RE.search(rtxt) else "paid") if prices else ("free" if FREE_RE.search(rtxt) else "unknown")
+            ftxt = strip_shipping(rtxt)
+            model = ("freemium" if FREE_RE.search(ftxt) else "paid") if prices else ("free" if FREE_RE.search(ftxt) else "unknown")
             add("pricing.model", " / ".join(snips), rprice["src"], "fact", enum=model,
                 billing=billing_modes(" ".join(snips) + " " + rtxt))
     unknown("pricing.model", "定价页、首页、仓库里都没读到价格或收费方式的原文",

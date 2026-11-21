@@ -47,6 +47,7 @@ import ipaddress
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import urllib.parse
@@ -62,6 +63,7 @@ SCHEMA = 1
 PRIVATE_IGNORE = "context/private/"
 BLOCK_START = "===== 下面这块原样发给用户"
 BLOCK_END = "===== 原样发给用户到这里为止"
+ARGV = []                                          # 这次的命令行(报错里给照抄命令用;main 填)
 
 
 class UsageError(Exception):
@@ -101,7 +103,21 @@ def bank():
 
 
 def ws_dir(ns):
-    return os.path.abspath(ns.ws or "seo-ops")
+    """--ws 给了用它,否则 ./seo-ops;落在 skill 安装目录里、或当前目录没有工作区 → 退出码 2,不新建。"""
+    return lifecycle.resolve_ws(ns.ws, __file__, ARGV)
+
+
+def start_ws(ns):
+    """start 的工作区:--ws > <--repo>/seo-ops > ./seo-ops;不许落在 skill 安装目录里(这时什么都还没写)。"""
+    repo = os.path.abspath(ns.repo) if ns.repo else None
+    explicit = ns.ws or (os.path.join(repo, lifecycle.OPS_DIR) if repo else None)
+    return lifecycle.resolve_ws(explicit, __file__, ARGV, must_exist=False,
+                                repo=repo if repo and not lifecycle.inside_skill(repo) else None)
+
+
+def ob_cmd(ws, *args):
+    """屏幕上教 agent 的 onboard.py 命令:脚本绝对路径 + 参数 + --ws <工作区绝对路径>(在哪个目录跑都对)。"""
+    return "python3 %s %s --ws %s" % (os.path.join(HERE, "onboard.py"), " ".join(args), shlex.quote(ws))
 
 
 def ctx(ws, *parts):
@@ -352,22 +368,30 @@ def run_json(cmd, out_path):
     return p.returncode, data, (p.stderr or "")[-800:]
 
 
+def ws_banner(ws, to_stderr=False):
+    """start 第一屏的第一行:工作区在哪、后面的命令在哪跑。"""
+    msg = ("工作区:%s(档案、体检、方案都写在这里)。后面的命令在 %s 里跑,或者每条都带 --ws %s;"
+           "下面打印的命令已经带上了。" % (ws, os.path.dirname(ws), shlex.quote(ws)))
+    print(msg, file=sys.stderr if to_stderr else sys.stdout)
+
+
 def cmd_start(ns):
-    ws = ws_dir(ns)
     if not ns.site and not ns.repo:
         raise UsageError("至少给 --site 或 --repo")
     host = (urllib.parse.urlsplit(ns.site if "://" in (ns.site or "") else "http://%s" % (ns.site or "")).hostname or "")
     if ns.site and is_loopback(host) and not ns.allow_local:
         # 本机地址不加 --allow-local 一页都读不到,起出来的草稿只有仓库那一半;先停,这次什么都不写
-        raise UsageError("站点 %s 是本机地址:审本机开发站加 --allow-local 重跑(onboard.py start --site %s%s --allow-local);"
-                         "这次什么都没写" % (ns.site, ns.site, " --repo %s" % ns.repo if ns.repo else ""))
+        raise UsageError("站点 %s 是本机地址:审本机开发站加 --allow-local 重跑(%s);这次什么都没写"
+                         % (ns.site, lifecycle.shell_cmd(__file__, ARGV + ["--allow-local"])))
+    ws = start_ws(ns)
     if os.path.isfile(ctx(ws, "profile.json")) and not ns.force:
         old = read_json(ctx(ws, "profile.json"), {}) or {}
         if not ring1_touched(old):
             print("第 1 环还没有用户的回答,按这次的参数重新读产品(档案里没有要保留的用户答案)")
         else:
-            print("已经开过局(%s);接着问用 onboard.py show,要从头来加 --force" % ctx(ws, "profile.json"))
-            return cmd_show(argparse.Namespace(ws=ns.ws, ring=None, json=False))
+            ws_banner(ws, ns.json)
+            print("已经开过局(%s);接着问用 %s,要从头来加 --force" % (ctx(ws, "profile.json"), ob_cmd(ws, "show")))
+            return cmd_show(argparse.Namespace(ws=ws, ring=None, json=False))
     if not os.path.isfile(os.path.join(ws, "project.yaml")):
         if not ns.site:
             os.makedirs(ws, exist_ok=True)
@@ -415,11 +439,13 @@ def cmd_start(ns):
     prof["stage"] = {"value": diag["stage"]["stage"], "rule_value": diag["stage"]["stage"],
                      "confidence": diag["stage"]["confidence"], "confirmed": False}
     save_profile(ws, prof, "阶段初判:%s(%s)" % (diag["stage"]["name"], diag["stage"]["confidence"]))
+    ws_banner(ws, ns.json)
     if not ns.json:
         print_fetched(scan)
     if errors:
-        print("读取时有 %d 个错误(已记进 scan.json):%s" % (len(errors), ";".join(map(str, errors[:3]))))
-    return cmd_show(argparse.Namespace(ws=ns.ws, ring=1, json=ns.json))
+        print("读取时有 %d 个错误(已记进 scan.json):%s" % (len(errors), ";".join(map(str, errors[:3]))),
+              file=sys.stderr if ns.json else sys.stdout)
+    return cmd_show(argparse.Namespace(ws=ws, ring=1, json=ns.json))
 
 
 def is_loopback(host):
@@ -462,7 +488,7 @@ def missing_core(prof):
     for key in lifecycle.PROFILE_FACT_KEYS:
         if key in ("conversion.primary", "customers"):
             continue
-        if not any(f.get("key") == key and has_value(f.get("value")) for f in prof.get("facts") or []):
+        if not any(f.get("key") == key and known_value(f.get("value")) for f in prof.get("facts") or []):
             out.append(key)
     return out
 
@@ -498,6 +524,11 @@ def has_value(v):
     return bool(str(v).strip())
 
 
+def known_value(v):
+    """有值、而且不是扫描器的内部占位值 unknown。"""
+    return has_value(v) and not (isinstance(v, str) and v.strip().lower() == "unknown")
+
+
 def lines_state(prof):
     """产品线草稿:"missing"(没有或未知)/ "inferred"(按网址推的)/ "known"。"""
     f = next((x for x in prof.get("facts") or [] if x.get("key") == "product.lines"), None)
@@ -521,7 +552,12 @@ def question_text(q, prof):
         if st == "missing" and q.get("text_missing"):
             return q["text_missing"]
         if st == "inferred" and q.get("text_inferred"):
+            f = next((x for x in prof.get("facts") or [] if x.get("key") == "product.lines"), {})
+            if f.get("by") == "agent":              # agent 从材料里记的:写实际出处,不说「按网址推的」
+                return "产品线是我从 %s 读的(见上面草稿),对吗?最想先做哪条?" % (f.get("source") or "材料")
             return q["text_inferred"]
+    if q.get("id") == "profile_ok" and not known_value(fact_value(prof, "pricing.model")):
+        return q["text"] + " 没读到收费方式:你们靠什么收钱(订阅、一次性购买、广告或联盟佣金……)?"
     return q["text"]
 
 
@@ -591,9 +627,11 @@ def fact_line(f):
     st = STATUS_ZH.get(f.get("status"), f.get("status") or "未确认")
     if f.get("status") == "unconfirmed" and f.get("kind") == "inferred":
         st += ",推测"
-    if not has_value(f.get("value")):
-        return "- %s:未知%s ← %s(%s)" % (label, ("(%s)" % f["note"]) if f.get("note") else "",
-                                        f.get("source") or "没读到可靠出处", "第 1 环请你说" if f["key"] == "product.lines" else st)
+    if not known_value(f.get("value")):
+        ask = f["key"] in ("product.lines", "pricing.model")
+        return "- %s:%s%s ← %s(%s)" % (label, "没读到" if f["key"] == "pricing.model" else "未知",
+                                      ("(%s)" % f["note"]) if f.get("note") else "",
+                                      f.get("source") or "没读到可靠出处", "第 1 环请你说" if ask else st)
     extra = ""
     if f.get("billing"):
         extra = ";页面写到的计费方式:%s" % "、".join(f["billing"])
@@ -628,7 +666,16 @@ def recap_lines(prof, r):
             label = ANSWER_LABELS.get(k) or qtext.get(k, k).split("?")[0][:24]
             corrected = any(f.get("key") == ANSWER_FACTS.get(k) and f.get("status") == "corrected" for f in prof["facts"])
             L.append("- %s:%s ← 第 %d 环你%s" % (label, fmt_val(v)[:200], i, "纠正过" if corrected else "答的"))
+    skipped = audit_skipped(prof)
+    if skipped and r > 4:
+        L.append("- 体检没跑:%s ← 第 4 环记的(未确认)" % skipped)
     return L
+
+
+def audit_skipped(prof):
+    """第 4 环走了 --no-audit → 原因;否则 None。"""
+    a = prof.get("audit") or {}
+    return a.get("reason") if a.get("ran") is False else None
 
 
 ANSWER_LABELS = {"conversion": "SEO 要带来的结果", "customers": "主要客户", "main_line": "最先做的产品线",
@@ -683,25 +730,100 @@ def render_question(i, q):
     return line
 
 
-def render_ring(prof, view, ws):
+# ---------------------------------------------------------------------------
+# 第 4 环的体检门:站点已上线,确认前工作区里要有一次成功的体检(改版阶段另要改动前基线)
+# ---------------------------------------------------------------------------
+
+_host_key = lifecycle.host_key
+same_site = lifecycle.same_site
+
+
+def stage_value(prof):
+    return (prof.get("stage") or {}).get("value")
+
+
+def audit_needed(prof, ws):
+    """站点已上线(阶段 2–5;阶段没定时看 start 读没读到页面)→ 第 4 环确认前要体检。想法、上线前(0、1)不要。"""
+    st = stage_value(prof)
+    if st in (0, 1):
+        return False
+    if st in (2, 3, 4, 5):
+        return True
+    sig = (read_json(ctx(ws, "scan.json"), {}) or {}).get("signals") or {}
+    return bool(prof.get("site") and sig.get("site_live"))
+
+
+def triage_record(ws, site):
+    """最近一次成功的体检(project.py run triage 写的 history/<时间>/triage.json,爬取和审计两步都成功、
+    站点和档案一致)→ 相对工作区的目录;没有 → None。"""
+    root = os.path.join(ws, "history")
+    if not os.path.isdir(root):
+        return None
+    for d in sorted(os.listdir(root), reverse=True):
+        tri = read_json(os.path.join(root, d, "triage.json"))
+        if not isinstance(tri, dict):
+            continue
+        ok = {s.get("name"): bool(s.get("ok")) for s in tri.get("steps") or [] if isinstance(s, dict)}
+        if ok.get("crawl") and ok.get("audit") and (not site or same_site(tri.get("site"), site)):
+            return os.path.join("history", d)
+    return None
+
+
+def baseline_record(ws, site):
+    """改动前基线(site_move.py baseline 写的 baselines/*.json:schema 1、站点和档案一致、至少一个 200 页面)→ 相对路径。"""
+    root = os.path.join(ws, "baselines")
+    if not os.path.isdir(root):
+        return None
+    for fn in sorted(os.listdir(root), reverse=True):
+        b = read_json(os.path.join(root, fn)) if fn.endswith(".json") else None
+        if not isinstance(b, dict) or not isinstance(b.get("pages"), dict):
+            continue
+        if any(isinstance(r, dict) and r.get("status") == 200 for r in b["pages"].values()) \
+                and (not site or same_site(b.get("site"), site)):
+            return os.path.join("baselines", fn)
+    return None
+
+
+def audit_cmds(prof, ws):
+    """体检(和改版阶段的基线)要跑的完整命令:脚本绝对路径、实际工作区;本机站点自动带 --allow-local。"""
+    site = prof.get("site")
+    loc = " --allow-local" if site and is_loopback(_host_key(site)[0]) else ""
+    q = shlex.quote(ws)
+    out = []
+    if not os.path.isfile(os.path.join(ws, "project.yaml")):
+        out.append("python3 %s init --site %s --dir %s" % (os.path.join(HERE, "project.py"),
+                                                          shlex.quote(site) if site else "<线上站点地址>", q))
+    out.append("python3 %s run triage --dir %s%s" % (os.path.join(HERE, "project.py"), q, loc))
+    base = None
+    if stage_value(prof) == 5:
+        base = "python3 %s baseline --site %s --ws %s%s" % (os.path.join(HERE, "site_move.py"),
+                                                            shlex.quote(site) if site else "<改版前的站点地址>", q, loc)
+    return out, base
+
+
+def audit_steps(prof, ws):
+    """第 4 环「agent 先做」里的体检那几行:照抄的命令、现在有没有记录、跑不了时的逃生口。"""
+    if not audit_needed(prof, ws):
+        return ["- 这个阶段还没有线上站:不跑体检,改成看技术选型(上面那条);第 4 环确认不查体检记录"]
+    site = prof.get("site")
+    tri, base_cmd = audit_cmds(prof, ws)
+    L = ["- 体检(站点已上线,确认这一环之前必须跑过,脚本会查):" + " && ".join(tri)]
+    rec = triage_record(ws, site)
+    L.append("  现在:" + ("已有体检记录 %s" % rec if rec else "还没有成功的体检记录"))
+    if base_cmd:
+        L.append("- 改版前存基线(改版阶段确认这一环之前必须有):" + base_cmd)
+        b = baseline_record(ws, site)
+        L.append("  现在:" + ("已有基线 %s" % b if b else "还没有基线"))
+    L.append("- 站点打不开、没权限这类真跑不了的情况才用逃生口:answer 加 --no-audit \"<原因>\"(原因记进档案、标未确认,"
+             "之后的屏幕和方案里都写「体检没跑:原因」)")
+    return L
+
+
+def render_block(prof, view, ws):
+    """「原样发给用户」那一整块(含首尾两行等号);show、note、metric 打印的是同一块。"""
     r = view["ring"]
-    ob = os.path.join(HERE, "onboard.py")
-    L = ["# 开局第 %d 环 · %s%s" % (r, view["title"], "(这一环必须确认完才往下)" if view["must_confirm"] else ""), "",
-         "目标:" + view["goal"], "", "## agent 先做(做完再问)"]
-    L += ["- " + s for s in view["agent_steps"]]
-    if r == 1 and prof.get("existing_context"):
-        L.append("- 已有产品上下文文件(先读它当草稿):" + "、".join(c.get("path", "") for c in prof["existing_context"]))
-    if r == 1:
-        miss = missing_core(prof)
-        if miss:
-            L.append("- 档案还缺:%s(产品说明、brief、README 这类材料里读得到就先记下再贴:python3 %s note --ring 1 --key <键> "
-                     "--value <值> --source <文件>;列表项用「%s」隔开;读不到就留着,第 1 问里请用户说)"
-                     % ("、".join(miss), ob, LIST_SEP))
-        if lines_state(prof) == "missing":
-            L.append("- 产品线是未知的:用户回话里说了几条就用 --correct product.lines=<A%sB%sC> 记;只说了最重要的一条,"
-                     "从站点导航 / sitemap 里挑出产品类目一起写进去,下一环开头复述给用户" % (LIST_SEP, LIST_SEP))
-    L += ["", BLOCK_START + "(到下面那行等号为止;不改写、不删「← 出处」和选项、不合并问题)=====",
-          "**开局第 %d 环 · %s**%s" % (r, view["title"], "(这一环要你确认完才往下)" if view["must_confirm"] else ""), ""]
+    L = [BLOCK_START + "(到下面那行等号为止;不改写、不删「← 出处」和选项、不合并问题)=====",
+         "**开局第 %d 环 · %s**%s" % (r, view["title"], "(这一环要你确认完才往下)" if view["must_confirm"] else ""), ""]
     rec = recap_lines(prof, r) if r > 1 else []
     if rec:
         L += ["前面已确认的(档案第 %s 版;不对直接说):" % prof.get("version")] + rec + [""]
@@ -721,7 +843,31 @@ def render_ring(prof, view, ws):
     L.append("## 问用户(这一环 %d 个问题;每个带我的猜测或 A/B 选项)" % len(view["questions"]))
     for i, q in enumerate(view["questions"], 1):
         L.append(render_question(i, q))
-    L += [BLOCK_END + " =====", "", "## 停",
+    L.append(BLOCK_END + " =====")
+    return L
+
+
+def render_ring(prof, view, ws):
+    r = view["ring"]
+    L = ["# 开局第 %d 环 · %s%s" % (r, view["title"], "(这一环必须确认完才往下)" if view["must_confirm"] else ""), "",
+         "目标:" + view["goal"], "", "## agent 先做(做完再问)"]
+    L += ["- " + s for s in view["agent_steps"]]
+    if r == 1 and prof.get("existing_context"):
+        L.append("- 已有产品上下文文件(先读它当草稿):" + "、".join(c.get("path", "") for c in prof["existing_context"]))
+    if r == 1:
+        miss = missing_core(prof)
+        if miss:
+            L.append("- 档案还缺:%s(产品说明、brief、README 这类材料里读得到就先记下再贴:%s;列表项用「%s」隔开;"
+                     "读不到就留着,第 1 问里请用户说)"
+                     % ("、".join(miss), ob_cmd(ws, "note --ring 1 --key <键> --value <值> --source <文件>"), LIST_SEP))
+        if lines_state(prof) == "missing":
+            L.append("- 产品线是未知的:用户回话里说了几条就用 --correct product.lines=<A%sB%sC> 记;只说了最重要的一条,"
+                     "从站点导航 / sitemap 里挑出产品类目一起写进去,下一环开头复述给用户" % (LIST_SEP, LIST_SEP))
+    if r == 4:
+        L += audit_steps(prof, ws)
+    facts = list(view["facts"])
+    L += [""] + render_block(prof, view, ws)
+    L += ["", "## 停",
           "把上面那一块原样发给用户(连同编号、选项、「← 出处」),现在停下等用户回答;不要先给建议、不要替用户答、"
           "不要改写成自己的话。只剩 1 个问题也照样编号。",
           "排版也照原样:每个问题一行「数字. 问题?　我猜:…　A. …　B. …」,选项和「我猜」不要挪到下一行"
@@ -731,15 +877,17 @@ def render_ring(prof, view, ws):
           "问题编号对应的 id(记答案用):" + ";".join("%d → %s" % (i, "+".join("[id=%s]" % x for x in q["ids"]))
                                              for i, q in enumerate(view["questions"], 1)),
           "纠正草稿时用的键:" + "、".join("%s=%s" % (FACT_LABELS.get(f["key"], f["key"]), f["key"]) for f in facts[:12]),
-          "用户回了以后:python3 %s answer --ring %d --set <id>=<答案> ... --quote \"<用户这次回话的原文>\" --confirm" % (ob, r),
+          "用户回了以后:" + ob_cmd(ws, "answer --ring %d --set <id>=<答案> ... --quote \"<用户这次回话的原文>\" --confirm" % r),
           "用户纠正草稿:加 --correct <键>=<改后的值>(列表只改其中一项:写那一项的新值,或 <键>[N]=<新值>;"
           "整份换就写全部项,列表项用「%s」隔开);" % LIST_SEP +
           "用户只是说哪条产品线最重要:用 --set main_line=<那条>,不要改 product.lines;用户说不知道:加 --unknown <id>。",
+          "用户只答了一部分:答到的题用 --set 记,答到的题里没说到的细节写「未说」,不另编追问;没答到的题,"
+          "不带 --confirm 跑一次 answer,脚本会把没答的题原样打出来再问。",
           "用户说「按你的判断来 / 按你的猜测来 / best guess / carry on / 好」:意思是按草稿确认这一环——"
           "answer --ring %d --set <id>=<上面我猜的值> --quote \"<原话>\" --confirm,再 show 下一环;这不是跳过。" % r]
     if r > 1:
-        L.append("用户明确说要跳过(「跳过」「skip」「不用问了」「直接出方案」):python3 %s skip --quote \"<用户原话>\""
-                 "(剩下的环用猜测补齐、写明未确认)" % ob)
+        L.append("用户明确说要跳过(「跳过」「skip」「不用问了」「直接出方案」):%s"
+                 "(剩下的环用猜测补齐、写明未确认)" % ob_cmd(ws, "skip --quote \"<用户原话>\""))
     else:
         L.append("用户说「别问了」也要先把这一环答完:第 1 环最多这 %d 问,说明原因再问一次。" % len(view["questions"]))
     return "\n".join(L)
@@ -794,7 +942,22 @@ def cmd_note(ns):
     save_profile(ws, prof, "agent 记:%s(第 %s 环,未确认)" % (ns.key, ns.ring))
     v = fact_value(prof, ns.key)
     print("记下 %s(未确认)%s" % (ns.key, (":%d 项 %s" % (len(v), " | ".join(map(str, v)))) if isinstance(v, list) else ""))
+    if ns.ring == current_ring(prof):
+        reprint_block(ws)
     return 0
+
+
+def reprint_block(ws):
+    """当前环发给用户以后、确认以前,草稿变了(note、metric):把更新后的整块再打一遍,旧的那块作废。"""
+    prof = load_profile(ws)
+    r = current_ring(prof)
+    if r is None:
+        return
+    ring = prof["rings"][str(r)]
+    if not ring.get("asked_at") or (r > 1 and prof["rings"]["1"]["status"] != "confirmed"):
+        return
+    print("草稿变了:上一版作废,贴这一版(两行等号之间整块原样发给用户,标题行也要):")
+    print("\n".join(render_block(prof, ring_view(prof, r), ws)))
 
 
 # --quote 的长度:中文一个字按 1.5 算,合计不到 6 就太短(中文少于 4 个字、英文少于 6 个字符)。
@@ -1021,6 +1184,8 @@ def cmd_answer(ns):
             if "main_line" in missing and lines_state(prof) == "missing":
                 hint = "(产品线草稿是未知:用户说的产品线用 --correct product.lines=<A、B、C> 记,最重要的那条用 --set main_line=<那条>)"
             raise GateError("第 %d 环还有必答题没答:%s%s" % (r, ", ".join(missing), hint))
+        if r == 4:
+            audit_gate(ws, prof, ns, msg)
         filled = fill_from_draft(prof, r, d, ring)
         if filled:
             msg += ",按草稿补 %s" % "、".join(filled)
@@ -1057,9 +1222,77 @@ def cmd_answer(ns):
             print("方案已定稿(plan/plan.json status=approved)。")
         elif plan:
             print("用户要改方案:按原话改 seo-ops/playbook/plays.json 或档案后重跑 plan.py build,再发给用户确认。")
+    if not ns.confirm:
+        print(msg + "(这一环还没确认)。")
+        print(partial_report(prof, r, ws, ns.quote))
+        return 0
     nxt = current_ring(prof)
-    print("%s。%s" % (msg, ("下一环:onboard.py show --ring %d" % nxt) if nxt else "6 环都完成了。"))
+    print("%s。%s" % (msg, ("下一环:%s" % ob_cmd(ws, "show --ring %d" % nxt)) if nxt else "6 环都完成了。"))
     return 0
+
+
+def audit_gate(ws, prof, ns, msg):
+    """第 4 环确认前:站点已上线就要有成功的体检记录(改版阶段另要基线);没有就停(退出码 2),答案照样存下。
+    --no-audit "<原因>" 是逃生口:原因记进档案 audit,标未确认。"""
+    if not audit_needed(prof, ws):
+        prof.pop("audit", None)
+        return
+    site = prof.get("site")
+    tri = triage_record(ws, site)
+    base = baseline_record(ws, site) if stage_value(prof) == 5 else None
+    need_base = stage_value(prof) == 5 and not base
+    if tri and not need_base:
+        prof["audit"] = {"ran": True, "triage": tri, "baseline": base, "at": now()}
+        if ns.no_audit:
+            warn("体检记录已经有了(%s),--no-audit 没用上" % tri)
+        return
+    reason = (ns.no_audit or "").strip()
+    if reason:
+        prof["audit"] = {"ran": False, "reason": reason, "status": "unconfirmed", "at": now(), "quote": ns.quote,
+                         "triage": tri, "baseline": base}
+        return
+    save_profile(ws, prof, msg)
+    tri_cmds, base_cmd = audit_cmds(prof, ws)
+    todo = []                                   # 每行一条能直接粘进 shell 的命令,说明放在行尾 # 后面
+    if not tri:
+        todo.append(" && ".join(tri_cmds) + "  # 体检")
+    if need_base:
+        todo.append(base_cmd + "  # 改版前基线")
+    again = ob_cmd(ws, "answer --ring 4 --quote %s --confirm" % shlex.quote(ns.quote or ""))
+    raise UsageError("站点已上线,第 4 环确认前工作区里要有%s;这次答案已存下,这一环没确认。照抄跑:\n  %s\n跑完再确认:\n  %s\n"
+                     "真跑不了(站点打不开、没权限)才加 --no-audit \"<原因>\" 确认,原因会写进档案和方案"
+                     % ("一次成功的体检记录" + ("和改动前基线" if need_base else "") if not tri else "改动前基线",
+                        "\n  ".join(todo), again))
+
+
+def question_answered(q, answers):
+    """一个编号问题(可能并了几个 id)算答了:主 id 有答案,并进来的必答 id 也有。"""
+    if q["id"] not in answers:
+        return False
+    return all(m["id"] in answers for m in q.get("merged") or [] if m.get("required"))
+
+
+def partial_report(prof, r, ws, quote):
+    """answer 不带 --confirm:哪几题记了、还没答的题原样再问(编号、选项、猜测不变)、怎么确认。"""
+    view = ring_view(prof, r)
+    answers = prof["rings"][str(r)].get("answers") or {}
+    done = [(i, q) for i, q in enumerate(view["questions"], 1) if question_answered(q, answers)]
+    todo = [(i, q) for i, q in enumerate(view["questions"], 1) if not question_answered(q, answers)]
+    L = ["已记答案:" + ("、".join("第 %d 题(%s)" % (i, "+".join(q["ids"])) for i, q in done) if done else "没有")]
+    rule = ("已答的题里用户没说到的细节不追问、不另编问题:在那一题的答案里写「未说」,或用 --unknown <id>,"
+            "然后直接 --confirm。")
+    if todo:
+        L += ["还没答的题 %d 个:把下面这块原样发给用户,停下等回答(编号、选项和猜测照原样,不加别的问题)。" % len(todo), "",
+              BLOCK_START + "(到下面那行等号为止;不改写、不删选项、不合并问题)=====",
+              "**开局第 %d 环 · %s**(还没答的题)" % (r, view["title"]), ""]
+        L += [render_question(i, q) for i, q in todo]
+        L += [BLOCK_END + " =====", "", rule,
+              "用户回了以后:" + ob_cmd(ws, "answer --ring %d --set <id>=<答案> ... --quote \"<用户这次回话的原文>\" --confirm" % r),
+              "用户说「按你的猜测来」:没答的题用上面的猜测 --set,或 --unknown <id>,带 --confirm。"]
+    else:
+        L += ["这一环的题都有答案了。" + rule, "确认这一环,照抄:",
+              "  " + ob_cmd(ws, "answer --ring %d --quote %s --confirm" % (r, shlex.quote(quote or "")))]
+    return "\n".join(L)
 
 
 def cmd_skip(ns):
@@ -1132,6 +1365,7 @@ def cmd_metric(ns):
                               "confidence": diag["stage"]["confidence"]})
         save_profile(ws, prof, "阶段按新指标重判:%s" % diag["stage"]["name"])
     print("记下。阶段:%s(%s)" % (diag["stage"]["name"], diag["stage"]["confidence"]))
+    reprint_block(ws)
     return 0
 
 
@@ -1145,12 +1379,15 @@ def cmd_status(ns):
     out = {"version": prof.get("version"), "updated": prof.get("updated"), "rings": rows,
            "stage": (diag.get("stage") or {}).get("name"), "current_ring": current_ring(prof),
            "unconfirmed": sum(1 for f in prof["facts"] if f.get("status") == "unconfirmed"),
-           "deny": [d["item"] for d in prof.get("deny") or []]}
+           "deny": [d["item"] for d in prof.get("deny") or []], "audit": prof.get("audit")}
     if ns.json:
         print(json.dumps(out, ensure_ascii=False, indent=1))
         return 0
     zh = {"pending": "没开始", "asking": "问了在等回答", "confirmed": "已确认", "skipped": "跳过(按猜测)"}
     print("档案 v%s(更新 %s);阶段:%s;未确认事实 %d 条" % (out["version"], out["updated"], out["stage"], out["unconfirmed"]))
+    print("工作区:%s" % ws)
+    if audit_skipped(prof):
+        print("体检没跑:%s(未确认)" % audit_skipped(prof))
     for row in rows:
         print("  第 %d 环 %-8s %s%s" % (row["ring"], row["title"], zh.get(row["status"], row["status"]),
                                     (" " + row["confirmed_at"]) if row["confirmed_at"] else ""))
@@ -1233,6 +1470,8 @@ def build_parser():
     p.add_argument("--unknown", action="append")
     p.add_argument("--quote")
     p.add_argument("--confirm", action="store_true")
+    p.add_argument("--no-audit", metavar="原因",
+                   help="第 4 环:站点已上线但真跑不了体检时用,原因写进档案、标未确认")
     p = sub.add_parser("skip")
     add_ws(p)
     p.add_argument("--quote")
@@ -1256,6 +1495,8 @@ def build_parser():
 
 
 def main(argv=None):
+    global ARGV
+    ARGV = list(sys.argv[1:] if argv is None else argv)
     ns = build_parser().parse_args(argv)
     fn = {"start": cmd_start, "show": cmd_show, "note": cmd_note, "answer": cmd_answer, "skip": cmd_skip,
           "event": cmd_event, "metric": cmd_metric, "status": cmd_status, "diagnose": cmd_diagnose}[ns.cmd]
