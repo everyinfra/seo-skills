@@ -10,7 +10,10 @@
       载体1: HTML  <head> 里 <link rel="alternate" hreflang=... href=...>
       载体2: HTTP  Link 头  <url>; rel="alternate"; hreflang="xx"
       载体3: XML   /sitemap.xml 里 <xhtml:link rel="alternate" hreflang=... href=...> (递归 1 层)
-  * 未作为入参提供的 alternate 页面会自动补抓 (--max-extra 控制上限) 以验证回报
+  * 入参页面跟随跳转(按落地页审,输出里写明跳到了哪);未作为入参提供的 alternate 页面自动补抓,
+    新抓到的页面里的 alternate 接着补,直到不动点(--max-extra 控制最多补几页,到上限会写明还有几个没抓)
+  * alternate 不跟随跳转:hreflang 指向的地址返回 3xx 记硬失败,写出最终地址(应写成最终 URL)
+  * 回指按语言判:对方要用本页自引用的语言码指回本页;x-default 不算某个语言的回指
   * 检查列 (行=URL):
       条目数 / 自引用 / 语言码合法 / URL 绝对 / HTTP 200 / 双向回报 (return tag)
       语言码: ISO 639-1(拒绝 eng / jp / en_GB 下划线);可选 ISO 15924 文字码(zh-Hans、zh-Hant)
@@ -23,7 +26,7 @@
   出处: https://developers.google.com/search/docs/specialty/international/localized-versions
        (2026-09-21 更新,2026-10-18 核对)
 
-退出码: 存在硬失败 (语言码非法 / 非绝对 URL / 非 200 / 回报缺失) -> 1, 否则 0.
+退出码: 存在硬失败 (语言码非法 / 非绝对 URL / 非 200 / 指向跳转地址 / 回报缺失) -> 1, 否则 0.
 """
 from __future__ import annotations
 
@@ -77,12 +80,22 @@ class LinkGrab(HTMLParser):
             self.entries.append((hreflang, href))
 
 
-def fetch(url, timeout=12.0, max_bytes=3_000_000):
-    """跟随重定向的 GET (hreflang 以最终页面为准). 返回 (status, headers, final_url, body)."""
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_NO_REDIRECT = urllib.request.build_opener(_NoRedirect)
+
+
+def fetch(url, timeout=12.0, max_bytes=3_000_000, follow=True):
+    """GET。follow=True 跟随重定向(用户给的入口页用);follow=False 不跟随(hreflang 指向的地址用:
+    指向跳转地址本身就是错,要看到 3xx 和 Location)。返回 (status, headers, final_url, body)。"""
     req = urllib.request.Request(url, headers={
         "User-Agent": UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        opener = urllib.request.urlopen if follow else _NO_REDIRECT.open
+        with opener(req, timeout=timeout) as resp:
             return resp.status, resp.headers, resp.geturl(), resp.read(max_bytes)
     except urllib.error.HTTPError as e:
         try:
@@ -90,6 +103,11 @@ def fetch(url, timeout=12.0, max_bytes=3_000_000):
         except Exception:
             body = b""
         return e.code, getattr(e, "headers", None), url, body
+
+
+def location_of(headers, base):
+    loc = (headers.get("Location") or "") if headers else ""
+    return urllib.parse.urljoin(base, loc.strip()) if loc.strip() else None
 
 
 def decode(body, headers):
@@ -295,9 +313,10 @@ def main(argv=None):
     args = ap.parse_args(argv)
     timeout = args.timeout
 
-    entries = {}   # page_url -> {(lang, norm_href): {"orig": href, "carriers": set}}
-    statuses = {}  # url -> HTTP status (None=不可达)
-    order = []     # 矩阵行序
+    entries = {}   # norm(页面) -> {(lang, norm_href): {"orig": href, "carriers": set}}
+    statuses = {}  # norm(url) -> HTTP status (None=不可达);alternate 的是不跟随跳转时的状态
+    redirects = {}  # norm(url) -> 跳转后的最终地址(alternate 指向它就是硬失败)
+    order = []     # 矩阵行序(norm 后的页面)
 
     def record(page, lang, href, carrier):
         d = entries.setdefault(page, {})
@@ -306,59 +325,86 @@ def main(argv=None):
         item["orig"] = href
         item["carriers"].add(carrier)
 
-    def harvest(url):
-        """抓页面并记录两个载体的 hreflang; 返回 (final_url, status) 或抛异常."""
-        status, headers, final, body = fetch(url, timeout=timeout)
+    def harvest(url, follow=True):
+        """抓页面并记录两个载体的 hreflang; 返回 (norm(final_url), status, headers) 或抛异常。3xx 不记条目。"""
+        status, headers, final, body = fetch(url, timeout=timeout, follow=follow)
+        fn = norm_url(final)
+        if status is not None and 300 <= status < 400:
+            return fn, status, headers
         text = decode(body, headers)
         lg = LinkGrab()
         try:
             lg.feed(text[:500000])
         except Exception:
             pass
+        entries.setdefault(fn, {})
         for lang, href in lg.entries:
-            record(final, lang, href, "html-head")
+            record(fn, lang, href, "html-head")
         for lang, href in parse_link_headers(headers):
-            record(final, lang, href, "http-link")
-        return final, status
+            record(fn, lang, href, "http-link")
+        return fn, status, headers
 
-    # 1) 入参页面
+    # 1) 入参页面:跟随跳转,以落地页为准,并写明跳到了哪
     for u in args.urls:
         if not u.lower().startswith(("http://", "https://")):
             u = "https://" + u
+        un = norm_url(u)
         try:
-            final, status = harvest(u)
+            final, status, _h = harvest(u)
             statuses[final] = status
             if final not in order:
                 order.append(final)
-            if norm_url(final) != norm_url(u):
-                statuses[u] = status
-                if u not in order:
-                    order.append(u)
+            if final != un:
+                redirects[un] = final
+                print("[入口跳转] {0} 跳到了 {1},按落地页审".format(u, final))
         except Exception as e:
-            statuses[u] = None
-            if u not in order:
-                order.append(u)
+            statuses[un] = None
+            if un not in order:
+                order.append(un)
             print("[WARN] 抓取失败 {0}: {1}: {2}".format(u, type(e).__name__, e), file=sys.stderr)
 
-    # 2) 补抓未提供的 alternate (有界)
+    # 2) 补抓 alternate:不跟随跳转;新抓到的页面里的 alternate 也接着补,直到不动点或 --max-extra 页
     budget = args.max_extra
-    for _page, d in list(entries.items()):
+    seen = set(statuses) | set(redirects)
+    queue = [(hn, item["orig"]) for d in list(entries.values()) for (_l, hn), item in d.items()]
+    skipped = 0
+    while queue:
+        hn, orig = queue.pop(0)
+        if hn in seen or not hn.lower().startswith(("http://", "https://")):
+            continue
         if budget <= 0:
-            break
-        for (_lang, hn), item in list(d.items()):
-            if budget <= 0:
-                break
-            if hn in entries or hn in statuses or not hn.lower().startswith(("http://", "https://")):
-                continue
-            try:
-                final, status = harvest(item["orig"])
-                statuses[hn] = status
-                statuses[final] = status
-                if final not in order:
-                    order.append(final)
-            except Exception:
-                statuses[hn] = None
-            budget -= 1
+            skipped += 1
+            seen.add(hn)
+            continue
+        seen.add(hn)
+        budget -= 1
+        try:
+            final, status, headers = harvest(orig, follow=False)
+        except Exception:
+            statuses[hn] = None
+            continue
+        statuses[hn] = status
+        if status is not None and 300 <= status < 400:
+            nxt = location_of(headers, orig)
+            if nxt:                                   # 顺着跳转找最终地址(只为写出「应写哪个」;落地页也是簇成员)
+                try:
+                    st2, _h2, fin, _b = fetch(nxt, timeout=timeout)
+                    redirects[hn] = norm_url(fin)
+                    if norm_url(fin) not in seen:
+                        seen.add(norm_url(fin))
+                        f2, s2, _h3 = harvest(fin)
+                        statuses[f2] = s2
+                        if f2 not in order:
+                            order.append(f2)
+                        queue += [(h, it["orig"]) for (_l, h), it in entries.get(f2, {}).items()]
+                except Exception:
+                    redirects[hn] = norm_url(nxt)
+            continue
+        if final != hn:
+            statuses[final] = status
+        if final not in order:
+            order.append(final)
+        queue += [(h, it["orig"]) for (_l, h), it in entries.get(final, {}).items()]
 
     # 3) sitemap 载体 + 冲突检测素材
     smap = {}
@@ -396,21 +442,35 @@ def main(argv=None):
         alt_unverified = 0
         for (lang, hn) in d.keys():
             st2 = statuses.get(hn)
-            if st2 is None and hn not in entries:
+            if hn in redirects and hn != page_norm:
+                alt_bad.append("{0} -> {1} (HTTP {2}): hreflang 指向跳转地址,应写 {3}".format(
+                    lang, hn, st2 if st2 is not None and 300 <= st2 < 400 else "跳转", redirects[hn]))
+            elif st2 is None and hn not in entries:
                 alt_unverified += 1
             elif st2 is not None and st2 != 200:
                 alt_bad.append("{0} -> {1} (HTTP {2})".format(lang, hn, st2))
         ok200 = page_ok and not alt_bad
 
+        # 回指按语言判:对方要用本页自己的语言码(本页自引用时写的那个)指回本页;x-default 不算哪种语言的回指
+        mine = {l.lower() for (l, hn) in d.keys() if hn == page_norm and l.lower() != "x-default"}
         ret_missing = []
         ret_unverified = 0
         for (lang, hn) in sorted(d.keys()):
+            if hn == page_norm:
+                continue
+            if hn in redirects:
+                ret_missing.append("{0} -> {1}: 指向跳转地址,对方页面不在这个地址上,这一对不成立".format(lang, hn))
+                continue
             if hn not in entries:
                 ret_unverified += 1
                 continue
-            back = any(hn2 == page_norm for (_l2, hn2) in entries[hn].keys())
-            if not back:
-                ret_missing.append("{0} -> {1}: 对方未回指本页 —— Google 忽略这一对注解 (只影响这一对, 其余互指照常)".format(lang, hn))
+            back = [l2 for (l2, hn2) in entries[hn].keys() if hn2 == page_norm]
+            real = [l2 for l2 in back if l2.lower() != "x-default" and (not mine or l2.lower() in mine)]
+            if not real:
+                why = ("只有 x-default 指回本页,x-default 不算回指" if back and all(l.lower() == "x-default" for l in back)
+                       else "回指用的语言码 {0} 和本页自引用的 {1} 不一样".format("/".join(back), "/".join(sorted(mine)))
+                       if back else "对方未回指本页")
+                ret_missing.append("{0} -> {1}: {2} —— Google 忽略这一对注解 (只影响这一对, 其余互指照常)".format(lang, hn, why))
         ret_ok = not ret_missing
 
         row_hard_fail = bool(lang_bad or abs_bad or alt_bad or ret_missing or not page_ok)
@@ -448,7 +508,7 @@ def main(argv=None):
             for s in abs_bad[:10]:
                 print("     - {0}".format(s))
         if alt_bad:
-            print("   * alternate 不可达:")
+            print("   * alternate 不可达或指向跳转地址:")
             for s in alt_bad[:10]:
                 print("     - {0}".format(s))
         if ret_missing:
@@ -459,6 +519,9 @@ def main(argv=None):
             print("   * 缺少自引用 (建议每页声明指向自己的 hreflang)")
         if ret_unver or alt_unver:
             print("   * {0} 个 alternate 因超出 --max-extra 未验证回报".format(ret_unver + alt_unver))
+    if skipped:
+        print("\n[注意] 补抓到 --max-extra={0} 页就停了,还有 {1} 个 alternate 没抓;加大 --max-extra 重跑才算查完".format(
+            args.max_extra, skipped))
 
     # 7) 载体冲突
     conflicts = []

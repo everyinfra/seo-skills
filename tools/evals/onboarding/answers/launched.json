@@ -17,8 +17,7 @@
   "pricing.model": "按件零售,12 oz 一袋 $18–$26;订阅 $22/月起;满 $40 美国包邮",
   "conversion.primary": "下单购买;最看重开始订阅(用户第 1 环确认)",
   "customers": [
-   "在家手冲的美国咖啡爱好者",
-   "Q4 送礼买家"
+   "在家手冲的美国咖啡爱好者"
   ],
   "market.languages": [
    "en-US"
@@ -73,7 +72,9 @@
     "gear",
     "器具",
     "V60",
-    "kit"
+    "kit",
+    "套装",
+    "器材"
    ]
   ],
   "pricing.model": [
@@ -104,10 +105,6 @@
     "pour-over",
     "手冲",
     "home"
-   ],
-   [
-    "gift",
-    "送礼"
    ]
   ],
   "market.languages": [
@@ -263,5 +260,9 @@
  "sources": [
   "lifecycle_sites.py NF_BRIEF / NF_PAGES",
   "gsc/Pages_*.csv(合计见 product.json gsc_totals)"
+ ],
+ "corrections": [
+  "2026-11-22 第 5 批第 1 轮后出题人更正(疑问 4 的同类):customers 去掉「Q4 送礼买家」和它的别名组(gift / 送礼)。这条只写在 DIR/brief.md,被测工作区 RUN/ws 只有 README 和 data/,测试站页面和模拟用户回话都没有送礼买家;答案表只收被测能读到的事实。",
+  "2026-11-22 第 5 批试跑 3 后出题人更正(疑问 12):product.lines 第 3 组(冲煮器具)补「套装」「器材」。站点原文是 pour-over kit / Brewing gear / V60 starter kit,英文 kit、gear 早就认,本表 facts 自己写的也是「V60 入门套装」,中文这边却只认「器具」;被测把产品线记成「手冲套装」是站点原词的直译,不算错。卡上例 1 的第一屏本身就用中文写产品线(「社交与电商数据、全网搜索…」,出处是英文 llms.txt),卡没要求照原文逐字记;只补站点原词的标准译法,不补「手冲」「冲煮」这种会撞到豆子、指南的宽词。"
  ]
 }

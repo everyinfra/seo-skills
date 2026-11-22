@@ -17,7 +17,7 @@
   1. 档案里声明了改版类事件(change_events)→ 5 改版;另报底层阶段
   2. 站点不可访问:仓库有公开路由 → 1 上线前;否则 → 0 想法(只给了仓库、没给站点时同样判,标「猜测」)
   3. 站点可访问但 robots 全封或首页 noindex → 1 上线前
-  4. 有 GSC:近 28 天展示 < 阈值,或站龄 < 90 天 → 2 刚上线;点击环比 ≥ +10% → 3;≤ -10% → 4;
+  4. 有 GSC:近 28 天展示 < 阈值 → 2 刚上线(有展示数时站龄不拦;只有点击、没有展示数时站龄 < 90 天 → 2);点击环比 ≥ +10% → 3;≤ -10% → 4;
      其余站龄 ≥ 2 年 → 4(平台期),否则 → 3
   5. 没有 GSC:站龄 < 90 天 → 2;否则是猜测(URL 数少 → 2,否则 → 3),confidence=guess,
      列候选、要用户确认
@@ -32,11 +32,16 @@ import datetime as dt
 import glob
 import json
 import os
+import re
+import shlex
 import sys
+import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RULES_PATH = os.path.join(os.path.dirname(HERE), "data", "lifecycle.json")
+SKILL_ROOT = os.path.dirname(HERE)
+RULES_PATH = os.path.join(SKILL_ROOT, "data", "lifecycle.json")
 DIMS = ("technical", "content", "authority", "geo", "measurement")
+OPS_DIR = "seo-ops"
 
 
 class UsageError(Exception):
@@ -51,12 +56,164 @@ def read_json(path, default=None):
         return default
 
 
+# ---------------------------------------------------------------------------
+# 工作区定位(onboard / plan / loops / project / site_move / teach 共用)
+# ---------------------------------------------------------------------------
+
+def inside_skill(path):
+    """path 落在 seo-suite 安装目录(scripts/ 的上一级)里面 → True。工作区不许建在这里。"""
+    root = os.path.realpath(SKILL_ROOT)
+    p = os.path.realpath(os.path.abspath(path))
+    return p == root or p.startswith(root + os.sep)
+
+
+def drop_ws_args(argv, names=("--ws", "--dir")):
+    """命令行里去掉 --ws / --dir 和它的值(给出改过的照抄命令用)。"""
+    out, skip = [], False
+    for a in argv or []:
+        if skip:
+            skip = False
+            continue
+        if a in names:
+            skip = True
+            continue
+        if any(a.startswith(n + "=") for n in names):
+            continue
+        out.append(a)
+    return out
+
+
+def shell_cmd(script, argv):
+    return "python3 " + " ".join(shlex.quote(x) for x in [os.path.abspath(script)] + list(argv))
+
+
+def find_ws_up(start=None):
+    """从 start(默认当前目录)往上找开过局的 seo-ops/(只用来给提示,不改变用哪个工作区)。"""
+    cur = os.path.abspath(start or os.getcwd())
+    home = os.path.expanduser("~")
+    while True:
+        cand = os.path.join(cur, OPS_DIR)
+        if not inside_skill(cand) and (os.path.isfile(os.path.join(cand, "context", "profile.json"))
+                                       or os.path.isfile(os.path.join(cand, "project.yaml"))):
+            return cand
+        parent = os.path.dirname(cur)
+        if parent == cur or cur == home:
+            return None
+        cur = parent
+
+
+def ws_fix_hint(script, argv, flag="--ws", repo=None):
+    """两条照抄就能跑的命令:cd 到站点仓库再跑,或者加 --ws <站点仓库>/seo-ops。"""
+    base = drop_ws_args(argv)
+    r = repo or "<站点仓库>"
+    cmd = shell_cmd(script, base)
+    head = "照抄其一%s:" % ("" if repo else "(<站点仓库> 换成站点仓库的绝对路径)")
+    return "%s\n  cd %s && %s\n  %s %s %s" % (head, shlex.quote(r) if repo else r, cmd, cmd, flag,
+                                           shlex.quote(os.path.join(r, OPS_DIR)) if repo else r + "/" + OPS_DIR)
+
+
+def host_key(url):
+    """比较两个站点地址是不是同一个站用:主机名(小写、去 www.)+ 显式端口;协议不比。"""
+    u = str(url or "").strip()
+    p = urllib.parse.urlsplit(u if "://" in u else "http://" + u)
+    host = (p.hostname or "").lower().rstrip(".")
+    host = host[4:] if host.startswith("www.") else host
+    try:
+        port = p.port
+    except ValueError:
+        port = None
+    return host, port
+
+
+def same_site(a, b):
+    return bool(a and b) and host_key(a) == host_key(b)
+
+
+def resolve_ws(explicit, script, argv, flag="--ws", must_exist=True, repo=None):
+    """→ 工作区绝对路径:explicit 给了用它,否则 ./seo-ops。
+    落在 skill 安装目录里 → UsageError(调用方这时还什么都没写);must_exist 而目录不在 → UsageError,
+    说清当前目录没有工作区、怎么指过去(不悄悄新建空工作区)。"""
+    ws = os.path.abspath(explicit or OPS_DIR)
+    if inside_skill(ws):
+        stray = read_json(os.path.join(ws, "context", "profile.json"), {}) or {}
+        stray_repo = profile_repo(ws, stray)
+        known = repo or (stray_repo if not inside_skill(stray_repo or SKILL_ROOT) else None)
+        extra = ""
+        if stray and known and not os.path.exists(os.path.join(known, OPS_DIR)):
+            extra = "\nskill 目录里已经有一份建错地方的工作区,先挪回站点仓库:mv %s %s" % (
+                shlex.quote(ws), shlex.quote(os.path.join(known, OPS_DIR)))
+        raise UsageError("工作区 %s 落在 seo-suite 自己的安装目录(%s)里,这次什么都没写。工作区要放在站点仓库里"
+                         "(当前目录是 %s)。%s%s" % (ws, SKILL_ROOT, os.getcwd(),
+                                                ws_fix_hint(script, argv, flag, known), extra))
+    if must_exist and not os.path.isdir(ws):
+        if explicit:
+            raise UsageError("%s 指的工作区 %s 不存在(没新建)。还没开局先跑 onboard.py start --site <URL> --repo <站点仓库>;"
+                             "开过局就把 %s 改成 <站点仓库>/seo-ops" % (flag, ws, flag))
+        up = find_ws_up()
+        hint = ("上级目录里有工作区:照抄 %s %s %s" % (shell_cmd(script, drop_ws_args(argv)), flag, shlex.quote(up))
+                if up else ws_fix_hint(script, argv, flag, repo))
+        raise UsageError("当前目录 %s 下没有工作区 seo-ops/(没新建)。%s" % (os.getcwd(), hint))
+    return ws
+
+
 # 档案的读取契约:别的工具(评测、其他 skill)按 _schema 找每个核心事实。事实存在 facts 列表里
 # ({"key", "value", "status", ...}),_schema 的值是段列表,{"key": K} 表示「列表里 key 等于 K 的第一项」,
 # 取到的对象再取 .value。阶段编号在 stage.value,另写一份 stage.id。
 PROFILE_FACT_KEYS = ("product.name", "product.one_liner", "product.lines", "pricing.model",
                      "conversion.primary", "customers", "market.languages")
 PROFILE_LIST_KEYS = ("product.lines", "customers", "market.languages")
+
+# 双引号里的 $22 会被 shell 当成变量:zsh 换成空,bash 换成「2」(取第 2 个参数再接上 2)。原话和值留下这类痕迹时
+# 挡住,什么都不写;否则错的金额会写进档案和用户的 .agents/product-marketing.md。
+AMOUNT_RE = re.compile(r"[$€£¥]\s?(\d[\d,]*(?:\.\d+)?)")
+UNIT = r"(?:(?:mo|month|yr|year|user|seat|week|wk|day|request|call|licen[cs]e)s?\b|[月年周天人次])"
+GAP_NEXT = r"(?:(?:a|an|per|each|every|and|or|to|off|for|plus|monthly|yearly|annually)\b|[/–—,.;)-])"
+SHELL_EATEN = (
+    (re.compile(r"(?:^|[\s(（,，])/\s?" + UNIT, re.I), "「from /month」:金额的位置空着"),
+    (re.compile(r"(?:^|\s)[–—-]\s*(?:[;,)]|$)"), "「bags –;」:价格区间两头都空着"),
+    (re.compile(r"\b(?:is|are|was|costs?|from|over|under|at)[ \t]{2,}\S|[^\s.!?。！？][ \t]{2,}" + GAP_NEXT, re.I),
+     "「is  a month」:两个空格中间少了金额"),
+    (re.compile("[一-鿿][ \t]{2,}[一-鿿]"), "「价格是  一个月」:两个空格中间少了金额"),
+    (re.compile(r"(?:^|\s)(?:[.,](?=\s|$)|\.\d{2}\b|,\d{3}\b)"), "「charge .」「 ,299」:标点或小数点前面的数没了"),
+    (re.compile(r"[(（]\s*[)）]"), "「()」:括号里的金额没了"),
+    (re.compile(r"^[ \t]|[ \t]$"), "开头或结尾多出空格:金额可能在那儿"),
+    (re.compile(r"\b(?:zsh|bash)(?:\.\d|/)"), "「zsh.50」:$0 被换成了 shell 的名字"),
+)
+SHELL_EATEN_MONEY = (
+    (re.compile(r"\b(?:over|under|from)\s*(?:[;,)]|$)", re.I), "「over」后面没有数"),
+)
+BARE_PER_RE = re.compile(r"(?<![$€£¥\d.,\w])\d[\d,.]*(?:\s?/\s?|\s(?:a|an|per|each)\s+)" + UNIT, re.I)
+
+
+def shell_damage(text, quote=None, old=None, money=False):
+    """值或原话像是被 shell 吃掉了金额 → 原因列表(空列表 = 没看出问题)。
+    只看文字认得出 zsh 留下的空位(两个空格、开头结尾的空格、「/month」「()」「,299」);bash 把 $22 换成「2」,
+    只看文字认不出,要 money=True(收费方式、价格这类键)时拿用户原话和原来的值对照:原话里写了 $22、值里有数字
+    却一个金额都没有、也没有 22;或原来的值带货币符号、新值里有「2/month」「2 a month」这种没有符号的按期金额。"""
+    t = str(text or "")
+    out = [why for rx, why in SHELL_EATEN + (SHELL_EATEN_MONEY if money else ()) if rx.search(t)]
+    if money:
+        said = AMOUNT_RE.findall(quote or "")
+        nums = set(re.findall(r"\d+", t))
+        if said and not t.strip():
+            out.append("用户原话里有 %s,值是空的" % "、".join("$" + n for n in said[:3]))
+        if said and nums and not AMOUNT_RE.search(t) and not any(re.sub(r"[,.].*$", "", n) in nums for n in said):
+            out.append("用户原话里有 %s,值里一个金额都没有" % "、".join("$" + n for n in said[:3]))
+        bare = BARE_PER_RE.search(t)
+        if bare and old and AMOUNT_RE.search(str(old)) and not AMOUNT_RE.search(t):
+            out.append("原来的值带货币符号,新值里的「%s」没有" % bare.group(0))
+    return out
+
+
+def is_money_key(key):
+    base = re.sub(r"\[\d+\]$", "", str(key or ""))
+    return base.startswith("pricing") or "price" in base
+
+
+def shell_damage_message(what, reasons):
+    return ("%s像是被 shell 改过(%s)。双引号里的 $22 会被当成变量:zsh 换成空,bash 换成「2」。"
+            "这段改用单引号包住再跑一次;原话里本身有单引号(it's)就还用双引号,把每个 $ 写成 \\$。"
+            "原话本来就是这样(用户自己多打了空格)就去掉多余的空格再跑。这次什么都没写。" % (what, ";".join(reasons)))
 
 
 def profile_format(prof):
@@ -71,6 +228,537 @@ def profile_format(prof):
     schema["stage"] = "stage.id"
     prof["_schema"] = schema
     return prof
+
+
+def candidate_names(cands, names=None):
+    """阶段候选 → 名字列表;候选可以是 {"id","name"},也可以是旧版写的阶段编号。"""
+    if names is None:
+        try:
+            names = {s["id"]: s["name"] for s in load_rules()["stages"]}
+        except UsageError:
+            names = {}
+    out = []
+    for c in cands or []:
+        if isinstance(c, dict):
+            out.append(str(c.get("name") or names.get(c.get("id"), c.get("id"))))
+        else:
+            out.append(str(names.get(c, c)))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 档案的形状与校验值(onboard / loops / plan 共用)
+# ---------------------------------------------------------------------------
+
+BANK_PATH = os.path.join(os.path.dirname(HERE), "data", "onboarding.json")
+RING_KEYS = {"status": "pending", "answers": {}, "quotes": [], "asked_at": None, "confirmed_at": None}
+RING_STATUSES = ("pending", "asking", "confirmed", "skipped")
+
+
+def ring_prefixes():
+    b = read_json(BANK_PATH, {}) or {}
+    return {int(r["ring"]): tuple(r.get("fact_prefixes") or ()) for r in b.get("rings") or []}
+
+
+def fact_ring(f, prefixes=None):
+    """事实属于哪一环:写了 ring 就用它,否则按键前缀。"""
+    r = f.get("ring") if isinstance(f, dict) else None
+    if r is not None:
+        try:
+            return int(r)
+        except (TypeError, ValueError):
+            return None
+    key = str((f or {}).get("key") or "")
+    for ring, pre in (prefixes or ring_prefixes()).items():
+        if pre and key.startswith(pre):
+            return ring
+    return None
+
+
+def normalize_profile(prof):
+    """手写或旧版档案缺键时补默认值(原地改);→ 补了什么的说明列表,空列表 = 合格。"""
+    problems = []
+    if not isinstance(prof, dict):
+        raise UsageError("profile.json 顶层不是对象")
+    rings = prof.get("rings")
+    if isinstance(rings, list):
+        conv = {}
+        for i, r in enumerate(rings, 1):
+            if isinstance(r, dict):
+                conv[str(r.get("ring") or i)] = r
+        rings = prof["rings"] = conv
+        problems.append("rings 是列表,已按环号转成对象")
+    if not isinstance(rings, dict):
+        prof["rings"] = rings = {}
+        problems.append("缺 rings(6 环状态),已按「都没开始」补上")
+    for r in range(1, 7):
+        cur = rings.get(str(r))
+        if not isinstance(cur, dict):
+            if str(r) in rings or rings:
+                problems.append("rings 缺第 %d 环,已按「没开始」补上" % r)
+            rings[str(r)] = cur = {}
+        for k, v in RING_KEYS.items():
+            if k not in cur or (k in ("answers", "quotes") and not isinstance(cur[k], type(v))):
+                cur[k] = json.loads(json.dumps(v))
+        if cur["status"] not in RING_STATUSES:
+            problems.append("第 %d 环状态 %r 不认识,已改成「没开始」" % (r, cur["status"]))
+            cur["status"] = "pending"
+    st = prof.get("stage")
+    if isinstance(st, (int, float)) and not isinstance(st, bool):
+        prof["stage"] = {"value": int(st), "confirmed": False, "source": "手写档案"}
+        problems.append("stage 是一个数字,已改成 {value: %d},待用户确认" % int(st))
+    elif not isinstance(st, dict):
+        prof["stage"] = {}
+        problems.append("缺 stage(产品阶段),已按「未知」补上")
+    facts = prof.get("facts")
+    if not isinstance(facts, list):
+        prof["facts"] = []
+        problems.append("缺 facts,已按空列表补上")
+    else:
+        prof["facts"] = [f for f in facts if isinstance(f, dict) and f.get("key")]
+        if len(prof["facts"]) != len(facts):
+            problems.append("facts 里有 %d 条不是 {key, value} 形状,已忽略" % (len(facts) - len(prof["facts"])))
+        for f in prof["facts"]:
+            f.setdefault("status", "unconfirmed")
+    for k, v in (("events", []), ("deny", []), ("metrics", {}), ("changelog", []), ("existing_context", [])):
+        if not isinstance(prof.get(k), type(v)):
+            prof[k] = json.loads(json.dumps(v))
+    return problems
+
+
+# 校验值只管「用户确认过什么」:答案、原话、事实的值和状态、阶段、禁用清单。下面这些键不是确认的内容,不进校验值:
+# 时间戳(工作区从备份恢复、换时区重写都会变)和事实的出处(站点换域名、换端口会变)
+VOLATILE_KEYS = frozenset(("at", "asked_at", "confirmed_at", "created", "updated", "source"))
+
+
+def _stable(obj):
+    if isinstance(obj, dict):
+        return {k: _stable(v) for k, v in obj.items() if k not in VOLATILE_KEYS}
+    if isinstance(obj, list):
+        return [_stable(v) for v in obj]
+    return obj
+
+
+def _digest(obj):
+    import hashlib
+    return hashlib.sha256(json.dumps(_stable(obj), ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _ring_parts(prof, prefixes):
+    parts = {str(r): {"ring": (prof.get("rings") or {}).get(str(r)), "facts": []} for r in range(1, 7)}
+    for f in prof.get("facts") or []:
+        r = fact_ring(f, prefixes)
+        if r is not None and str(r) in parts:
+            parts[str(r)]["facts"].append(f)
+    parts["1"]["stage"] = {k: v for k, v in (prof.get("stage") or {}).items() if k != "id"}
+    parts["5"]["deny"] = prof.get("deny")
+    return parts
+
+
+# 不进校验值的键:校验值本身;_schema 是脚本按固定规则生成的映射(每次写入都重写),读档案的人照它取值,
+# 有人照着评测说明在顶层补一份 _schema 不算改了档案内容
+# 站点地址、指标出处(文件名带日期)和改动记录同样不是用户确认的内容
+UNSEALED = ("_integrity", "_schema", "site", "metric_sources", "changelog")
+
+
+def seal_profile(prof):
+    """写 profile.json 前最后一步:记整份和每一环的内容校验值(档案只能经脚本写)。原地改,返回同一个对象。"""
+    prefixes = ring_prefixes()
+    body = {k: v for k, v in prof.items() if k not in UNSEALED}
+    prof["_integrity"] = {"by": "seo-suite", "sha256": _digest(body),
+                          "rings": {r: _digest(p) for r, p in _ring_parts(prof, prefixes).items()}}
+    return prof
+
+
+def check_seal(prof):
+    """→ None(没被手改)/ {"legacy": True}(没有校验值:旧版或手写)/ {"rings": [被改动的环], "other": bool}。"""
+    seal = prof.get("_integrity")
+    if not isinstance(seal, dict) or not seal.get("sha256"):
+        return {"legacy": True, "rings": [], "other": False}
+    body = {k: v for k, v in prof.items() if k not in UNSEALED}
+    if _digest(body) == seal["sha256"]:
+        return None
+    old = seal.get("rings") or {}
+    now_ = {r: _digest(p) for r, p in _ring_parts(prof, ring_prefixes()).items()}
+    changed = sorted((int(r) for r in now_ if old.get(r) != now_[r]))
+    return {"legacy": False, "rings": changed, "other": not changed}
+
+
+def tamper_message(t):
+    if not t or t.get("legacy"):
+        return None
+    where = ("第 %s 环" % "、".join(map(str, t["rings"]))) if t["rings"] else "环以外的部分(指标、事件等)"
+    return ("profile.json 被手改过(%s和脚本最后一次写入时的校验值对不上)。档案只能经 onboard.py 写:"
+            "改内容用 answer --correct / note;受影响的环要把改后的内容给用户看、用户确认后再往下" % where)
+
+
+def norm_weeks(w):
+    """路线条目的周数 → (起, 止) 整数;认 [1, 2]、["1", "2"]、"1"、"1-2"、"1–2"、"Week 3"、"第 2–4 周"、3;认不出 → None。"""
+    if w is None or isinstance(w, bool):
+        return None
+    if isinstance(w, (int, float)):
+        return (int(w), int(w))
+    if isinstance(w, (list, tuple)):
+        nums = []
+        for x in w[:2]:
+            r = norm_weeks(x)
+            if r:
+                nums.append(r[0])
+        if not nums:
+            return None
+        a, b = nums[0], nums[-1]
+        return (min(a, b), max(a, b))
+    import re as _re
+    nums = [int(x) for x in _re.findall(r"\d+", str(w))[:2]]
+    if not nums:
+        return None
+    return (min(nums[0], nums[-1]), max(nums[0], nums[-1]))
+
+
+# ---------------------------------------------------------------------------
+# GSC 逐页导出(gsc-pages.csv 逐日、或两期「网页」界面导出 Pages_起_止.csv)
+# ---------------------------------------------------------------------------
+
+def repo_for_profile(ws, repo):
+    """档案里记仓库路径:工作区在仓库里面时记相对工作区的路径(一般是 ..),仓库换目录、换机器后还找得到,
+    本机绝对路径也不进 git;仓库在别处才记绝对路径。"""
+    if not repo:
+        return None
+    ws, repo = os.path.abspath(ws), os.path.abspath(repo)
+    rel = os.path.relpath(repo, ws)
+    if rel.replace(os.sep, "/").strip("./") == "" and rel != ".":
+        return rel.replace(os.sep, "/")
+    return repo
+
+
+def profile_repo(ws, prof):
+    """档案里的仓库路径 → 绝对路径。相对路径按工作区解析;旧档案里的绝对路径已经不在了(仓库挪过)就退回工作区的上一级。"""
+    repo = (prof or {}).get("repo")
+    if not repo:
+        return None
+    ws = os.path.abspath(ws)
+    if not os.path.isabs(repo):
+        return os.path.normpath(os.path.join(ws, repo))
+    if not os.path.isdir(repo) and os.path.isdir(os.path.dirname(ws)):
+        return os.path.dirname(ws)
+    return repo
+
+
+def gsc_dirs(ws, prof=None):
+    """工作区附近放 GSC 导出的目录:<ws>/data、<ws 所在目录>/data、档案里 repo 的 data/。"""
+    cands = [os.path.join(ws, "data"), os.path.join(os.path.dirname(os.path.abspath(ws)), "data")]
+    repo = profile_repo(ws, prof)
+    if repo:
+        cands.append(os.path.join(repo, "data"))
+    out = []
+    for d in cands:
+        d = os.path.abspath(d)
+        if os.path.isdir(d) and d not in out:
+            out.append(d)
+    return out
+
+
+def _csv_rows(path):
+    import csv
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as f:
+            return list(csv.DictReader(f))
+    except (OSError, csv.Error, UnicodeDecodeError):
+        return []
+
+
+def _num(v):
+    try:
+        return float(str(v).replace(",", "").strip() or 0)
+    except ValueError:
+        return 0.0
+
+
+def read_daily_pages(path):
+    """gsc-pages.csv(page,date,clicks,impressions)→ [(date, page, clicks, impressions)];读不了 → []。"""
+    out = []
+    for r in _csv_rows(path):
+        low = {str(k).strip().lower(): v for k, v in r.items() if k}
+        try:
+            d = dt.date.fromisoformat(str(low.get("date") or "")[:10])
+        except ValueError:
+            continue
+        out.append((d, str(low.get("page") or low.get("url") or ""), _num(low.get("clicks")), _num(low.get("impressions"))))
+    return out
+
+
+def find_daily_pages(ws, prof=None):
+    for d in gsc_dirs(ws, prof):
+        p = os.path.join(d, "gsc-pages.csv")
+        rows = read_daily_pages(p) if os.path.isfile(p) else []
+        if rows:
+            return p, rows
+    return None, []
+
+
+def weekly_checkpoints(rows, window=28, min_days=None):
+    """逐日行 → 每周一个检查点(从最后一天往回每 7 天),每点算近 28 天点击、展示和上一期 28 天点击;
+    默认 28 天窗口没被数据盖满的点不出。给了 min_days 时,窗口里有 ≥min_days 天数据的点也出,
+    标 partial_days(数据盖到的天数;这时的合计只是下界)。每点另记 top2_impressions(窗口里展示最多的两天之和),
+    判「一次性冲高」用。→ [{"at", "metrics", "top2_impressions"[, "partial_days"]}](按日期升序)。"""
+    if not rows:
+        return []
+    by_day = {}
+    for d, _p, c, i in rows:
+        a = by_day.setdefault(d, [0.0, 0.0])
+        a[0] += c
+        a[1] += i
+    first, last = min(by_day), max(by_day)
+    need = window if not min_days else max(1, min(int(min_days), window))
+
+    def tot(lo, hi, k):
+        return sum(v[k] for d, v in by_day.items() if lo <= d <= hi)
+    pts, cp = [], last
+    while (cp - first).days + 1 >= need:
+        lo = cp - dt.timedelta(days=window - 1)
+        m = {"gsc_clicks_28d": int(tot(lo, cp, 0)), "gsc_impressions_28d": int(tot(lo, cp, 1))}
+        plo = lo - dt.timedelta(days=window)
+        if plo >= first:
+            m["gsc_clicks_prev_28d"] = int(tot(plo, lo - dt.timedelta(days=1), 0))
+        top = sorted((v[1] for d, v in by_day.items() if lo <= d <= cp), reverse=True)[:2]
+        pt = {"at": cp.isoformat(), "metrics": m, "top2_impressions": int(sum(top))}
+        if lo < first:
+            pt["partial_days"] = (cp - first).days + 1
+        pts.append(pt)
+        cp -= dt.timedelta(days=7)
+    return pts[::-1]
+
+
+LOCALE_SEG = re.compile(r"[a-z]{2}(?:-[a-z0-9]{2,4})?")
+
+
+def url_section(url):
+    """URL → 一级栏目(第一段路径,去掉 en、es、pt-br 这类语言前缀);首页和读不出路径的 → None。"""
+    path = urllib.parse.urlsplit(url).path if "://" in str(url) else str(url)
+    segs = [x for x in path.lower().split("/") if x]
+    if segs and LOCALE_SEG.fullmatch(segs[0]) and len(segs) > 1:
+        segs = segs[1:]
+    if not segs or "." in segs[0] and len(segs) == 1:          # /robots.txt、/feed.xml 这类文件不算栏目
+        return None
+    return segs[0]
+
+
+def section_counts(urls):
+    out = {}
+    for u in urls:
+        s = url_section(u)
+        if s:
+            out[s] = out.get(s, 0) + 1
+    return out
+
+
+def read_period_pages(path):
+    """「网页」界面导出 Pages_起_止.csv → {url: [clicks, impressions]};读不了 → {}。"""
+    out = {}
+    for r in _csv_rows(path):
+        low = {str(k).strip().lower(): v for k, v in r.items() if k}
+        url = low.get("top pages") or low.get("page") or low.get("url") or ""
+        if url:
+            a = out.setdefault(url, [0.0, 0.0])
+            a[0] += _num(low.get("clicks"))
+            a[1] += _num(low.get("impressions"))
+    return out
+
+
+def gsc_export_sources(ws, prof=None):
+    """工作区旁 data/ 里的 GSC 导出 → 和外部数据包同形的几个窗口(运营单在没有外部数据包时用):
+    逐日 gsc-pages.csv → gsc_totals(逐日总数)、gsc_page_daily(逐页逐日)、gsc_pages(近 28 天按页,带上一期);
+    只有两期 Pages_起_止.csv → gsc_pages(这一期按页,上一期点击)。→ {"sources", "label", "files", "window"};没有 → None。"""
+    path, rows = find_daily_pages(ws, prof)
+    if rows:
+        last = max(r[0] for r in rows)
+        first = min(r[0] for r in rows)
+        lo, plo = last - dt.timedelta(days=27), last - dt.timedelta(days=55)
+        tot, pages = {}, {}
+        daily = []
+        for d, p, c, i in rows:
+            t = tot.setdefault(d, [0.0, 0.0])
+            t[0] += c
+            t[1] += i
+            daily.append({"page": p, "date": d.isoformat(), "clicks": int(c), "impressions": int(i)})
+            pg = pages.setdefault(p, {"page": p, "clicks": 0, "impressions": 0, "prev_clicks": 0, "prev_impressions": 0})
+            if lo <= d <= last:
+                pg["clicks"] += int(c)
+                pg["impressions"] += int(i)
+            elif plo <= d < lo:
+                pg["prev_clicks"] += int(c)
+                pg["prev_impressions"] += int(i)
+        label = "%s(GSC 逐日导出,页面级,%s~%s;没有查询级)" % (_shown(ws, path), first.isoformat(), last.isoformat())
+        win = {"start": max(lo, first).isoformat(), "end": last.isoformat()}
+        return {"label": label, "files": [path], "window": win, "first": first.isoformat(), "last": last.isoformat(),
+                "sources": {"gsc_totals": {"rows": [{"date": d.isoformat(), "clicks": int(v[0]), "impressions": int(v[1])}
+                                                    for d, v in sorted(tot.items())], "source": label},
+                            "gsc_page_daily": {"rows": sorted(daily, key=lambda r: (r["date"], r["page"])), "source": label},
+                            "gsc_pages": {"rows": sorted(pages.values(), key=lambda r: -r["clicks"]), "window": win,
+                                          "source": label}}}
+    per = _period_totals(ws, prof)
+    if per:
+        a, b, _c, _i, p = per[-1]
+        cur = read_period_pages(p)
+        prev = read_period_pages(per[-2][4]) if len(per) >= 2 else {}
+        rows_ = [{"page": u, "clicks": int(v[0]), "impressions": int(v[1]),
+                  "prev_clicks": int((prev.get(u) or [0, 0])[0]), "prev_impressions": int((prev.get(u) or [0, 0])[1])}
+                 for u, v in cur.items()]
+        files = [p] + ([per[-2][4]] if len(per) >= 2 else [])
+        label = "%s(GSC 网页导出,%s~%s,页面级;没有逐日和查询级)" % (
+            "、".join(_shown(ws, f) for f in files), a.isoformat(), b.isoformat())
+        win = {"start": a.isoformat(), "end": b.isoformat()}
+        return {"label": label, "files": files, "window": win, "first": a.isoformat(), "last": b.isoformat(),
+                "sources": {"gsc_pages": {"rows": sorted(rows_, key=lambda r: -r["clicks"]), "window": win, "source": label}}}
+    return None
+
+
+def data_metrics(ws, prof=None):
+    """data/ 里最新一份 GSC 导出算出的近 28 天点击、展示(和运营单首屏、阶段门槛同一份数)→ (metrics, 来源) 或 (None, None)。
+    逐日导出取最后一天往回 28 天(数据不满 28 天就是已有天数的合计),否则取最新一期 Pages_起_止.csv。"""
+    path, rows = find_daily_pages(ws, prof)
+    if rows:
+        pt = weekly_checkpoints(rows, min_days=1)[-1]
+        return dict(pt["metrics"]), "%s 截至 %s" % (_shown(ws, path), pt["at"])
+    per = _period_totals(ws, prof)
+    if per:
+        a, b, c, i, p = per[-1]
+        m = {"gsc_clicks_28d": int(c), "gsc_impressions_28d": int(i)}
+        if len(per) >= 2:
+            m["gsc_clicks_prev_28d"] = int(per[-2][2])
+        return m, "%s(%s~%s)" % (_shown(ws, p), a.isoformat(), b.isoformat())
+    return None, None
+
+
+def page_group(url):
+    """按网址归页型:评测 review、对比 vs / alternatives、榜单 best-;其余取第一段路径(/blog/、/shop/)。"""
+    import urllib.parse as _up
+    path = _up.urlsplit(url).path if "://" in url else url
+    segs = [s for s in path.lower().split("/") if s]
+    for s in segs:
+        toks = s.split("-")
+        if "review" in toks or "reviews" in toks:
+            return "review(评测页)"
+        if "vs" in toks or "versus" in toks or "alternative" in toks or "alternatives" in toks:
+            return "vs(对比页)"
+        if toks[0] == "best":
+            return "best-(榜单页)"
+    return ("/%s/" % segs[0]) if segs else "/(首页)"
+
+
+def _period_exports(ws, prof):
+    """两期「网页」界面导出 Pages_起_止.csv → (前一期 {url: clicks}, 这一期 {url: clicks}, 两期日期);缺 → None。"""
+    import re as _re
+    for d in gsc_dirs(ws, prof):
+        got = []
+        for f in sorted(os.listdir(d)):
+            m = _re.match(r"^Pages_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.csv$", f)
+            if m:
+                rows = {}
+                for r in _csv_rows(os.path.join(d, f)):
+                    low = {str(k).strip().lower(): v for k, v in r.items() if k}
+                    url = low.get("top pages") or low.get("page") or low.get("url") or ""
+                    if url:
+                        rows[url] = rows.get(url, 0.0) + _num(low.get("clicks"))
+                got.append(((m.group(1), m.group(2)), rows, os.path.join(d, f)))
+        if len(got) >= 2:
+            (pa, prev, pf), (ca, cur, cf) = got[-2], got[-1]
+            return prev, cur, (pa, ca), (pf, cf)
+    return None
+
+
+def _period_totals(ws, prof):
+    """「网页」界面导出 Pages_起_止.csv(每期约 28 天)→ [(起, 止, 点击合计, 展示合计, 路径)](按止日升序);
+    空表(只有表头,那一期还没有数据)记 0。"""
+    import re as _re
+    for d in gsc_dirs(ws, prof):
+        got = []
+        for f in sorted(os.listdir(d)):
+            m = _re.match(r"^Pages_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.csv$", f)
+            if not m:
+                continue
+            try:
+                a, b = dt.date.fromisoformat(m.group(1)), dt.date.fromisoformat(m.group(2))
+            except ValueError:
+                continue
+            if not 26 <= (b - a).days + 1 <= 30:
+                continue
+            clicks = imps = 0.0
+            for r in _csv_rows(os.path.join(d, f)):
+                low = {str(k).strip().lower(): v for k, v in r.items() if k}
+                clicks += _num(low.get("clicks"))
+                imps += _num(low.get("impressions"))
+            got.append((a, b, clicks, imps, os.path.join(d, f)))
+        if got:
+            return sorted(got, key=lambda x: x[1])
+    return []
+
+
+def _shown(ws, path):
+    """导出文件在屏幕和档案里的写法:相对工作区所在目录(一般是 data/xxx.csv)。"""
+    rel = os.path.relpath(os.path.abspath(path), os.path.dirname(os.path.abspath(ws)))
+    return rel.replace(os.sep, "/") if not rel.startswith("..") else os.path.basename(path)
+
+
+def gsc_export_metrics(ws, prof=None):
+    """工作区旁 data/ 里的 GSC 导出 → 近两个 28 天的点击和展示(和 onboard.py metric 记的是同几个键)。
+    优先两期「网页」导出(Pages_起_止.csv,期间写在文件名里);没有就用逐日 gsc-pages.csv 里 28 天窗口
+    被数据盖满的最近一个检查点。→ {"metrics", "source", "at"};没有导出 → None。"""
+    per = _period_totals(ws, prof)
+    if per:
+        a, b, c, i, p = per[-1]
+        m = {"gsc_clicks_28d": int(c), "gsc_impressions_28d": int(i)}
+        names = [_shown(ws, p)]
+        if len(per) >= 2 and per[-2][1] < a:
+            m["gsc_clicks_prev_28d"] = int(per[-2][2])
+            names.insert(0, _shown(ws, per[-2][4]))
+        return {"metrics": m, "at": b.isoformat(),
+                "source": "%s(GSC 网页导出,这一期 %s~%s%s)" % (
+                    "、".join(names), a.isoformat(), b.isoformat(), ";上一期是前一份" if len(names) > 1 else "")}
+    path, rows = find_daily_pages(ws, prof)
+    pts = weekly_checkpoints(rows)
+    if pts:
+        last = pts[-1]
+        return {"metrics": last["metrics"], "at": last["at"],
+                "source": "%s(GSC 逐日导出,截至 %s 的 28 天)" % (_shown(ws, path), last["at"])}
+    return None
+
+
+def page_drop(ws, prof=None):
+    """两期按页点击 → 掉量按页型拆;→ None(没有导出)或
+    {"prev","cur","delta_pct","groups":[{"group","prev","cur","delta","share"}](掉得最多的在前),"source"}。"""
+    got = _period_exports(ws, prof)
+    if got:
+        prev, cur, periods, files = got
+        src = "%s → %s" % (os.path.basename(files[0]), os.path.basename(files[1]))
+    else:
+        path, rows = find_daily_pages(ws, prof)
+        if not rows:
+            return None
+        last = max(r[0] for r in rows)
+        lo, plo = last - dt.timedelta(days=27), last - dt.timedelta(days=55)
+        if min(r[0] for r in rows) > plo:
+            return None
+        prev, cur = {}, {}
+        for d, p, c, _i in rows:
+            if lo <= d <= last:
+                cur[p] = cur.get(p, 0.0) + c
+            elif plo <= d < lo:
+                prev[p] = prev.get(p, 0.0) + c
+        src = "%s(%s 前后两个 28 天)" % (os.path.basename(path), last.isoformat())
+    tp, tc = sum(prev.values()), sum(cur.values())
+    if not tp:
+        return None
+    groups = {}
+    for url in set(prev) | set(cur):
+        g = groups.setdefault(page_group(url), [0.0, 0.0])
+        g[0] += prev.get(url, 0.0)
+        g[1] += cur.get(url, 0.0)
+    loss = tp - tc
+    rows_ = [{"group": k, "prev": int(a), "cur": int(b), "delta": int(b - a),
+              "share": round((a - b) / loss, 3) if loss > 0 else 0.0} for k, (a, b) in groups.items()]
+    rows_.sort(key=lambda x: (x["delta"], x["group"]))
+    return {"prev": int(tp), "cur": int(tc), "delta_pct": round((tc - tp) / tp * 100, 1), "groups": rows_, "source": src}
 
 
 def load_rules(ws=None):
@@ -119,6 +807,10 @@ def collect_evidence(scan=None, ws=None, metrics=None, today=None):
         ev["signals.brand_name"] = name if isinstance(name, str) else ""
         same = sig.get("same_as") or []
         ev["signals.same_as_count"] = len(same) if isinstance(same, list) else 0
+        repo_scan = scan.get("repo_scan") or {}
+        plans = repo_scan.get("migration_plans") if isinstance(repo_scan, dict) else None
+        if plans:
+            ev["signals.migration_plans"] = list(plans)
         site_scan = scan.get("site_scan") or {}
         pt = site_scan.get("page_types") if isinstance(site_scan, dict) else None
         if isinstance(pt, dict):
@@ -263,14 +955,22 @@ def stage(rules, ev, prof=None):
     if "signals.site_live" not in ev and "signals.repo_public_routes" in ev:
         # 只给了仓库、没给站点:空仓库多半是想法阶段,有公开路由多半是上线前;是猜测,第 1 环让用户确认
         sid = 1 if routes > 0 else 0
-        return {"stage": sid, "name": names[sid], "base_stage": None, "base_name": None, "confidence": "guess",
-                "why": ["没给站点地址,只读了仓库:" + ("有 %d 条公开路由" % routes if routes else "没有公开路由")
-                        + ";站点已经上线的话补 --site 重跑"],
-                "candidates": [0, 1, 2], "missing": ["signals.site_live"], "conflicts": []}
+        why = ["没给站点地址,只读了仓库:" + ("有 %d 条公开路由" % routes if routes else "没有公开路由")
+               + ";站点已经上线的话补 --site 重跑"]
+        cands = [0, 1, 2]
+        plans = ev.get("signals.migration_plans") or []
+        if plans and not events:
+            why.insert(0, "仓库里有改版 / 迁移计划:%s" % "、".join(plans[:3]))
+            sid, cands = 5, [5, 1, 2, 3, 4]
+        res = {"stage": sid, "name": names[sid], "base_stage": None, "base_name": None, "confidence": "guess",
+               "why": why, "candidates": [{"id": c, "name": names[c]} for c in cands], "missing": ["signals.site_live"],
+               "conflicts": []}
+        return _confirmed_override(res, prof, names)
     if "signals.site_live" not in ev:
-        return {"stage": None, "name": "未知", "base_stage": None, "base_name": None, "confidence": "unknown",
-                "why": ["没有站点和仓库的证据,先跑 product_scan.py"], "candidates": [],
-                "missing": ["signals.site_live"], "conflicts": []}
+        res = {"stage": None, "name": "未知", "base_stage": None, "base_name": None, "confidence": "unknown",
+               "why": ["没有站点和仓库的证据,先跑 product_scan.py"], "candidates": [],
+               "missing": ["signals.site_live"], "conflicts": []}
+        return _confirmed_override(res, prof, names)
     if not live:
         base = 1 if routes > 0 else 0
         why.append("站点不可访问" + ("(仓库有 %d 条公开路由)" % routes if routes else ",仓库里也没有公开路由"))
@@ -278,7 +978,10 @@ def stage(rules, ev, prof=None):
         base = 1
         why.append("站点可访问但 robots 全封或首页 noindex")
     elif impr is not None or clicks is not None:
-        if (impr is not None and impr < th["low_impressions_28d"]) or (age is not None and age < th["new_site_age_days"]):
+        # 有展示数时按展示判:站龄不足 90 天、展示已经过了「刚上线」的上限,也按数据往后判(阶段门槛循环会提示换阶段,
+        # 用户确认后才改档案);站龄只在没有展示数时兜底
+        young = age is not None and age < th["new_site_age_days"]
+        if (impr is not None and impr < th["low_impressions_28d"]) or (impr is None and young):
             base = 2
             why.append("近 28 天展示 %s(门槛 %d),站龄 %s(门槛 %d 天)" % (impr, th["low_impressions_28d"], ("%d 天" % age) if age is not None else "未知", th["new_site_age_days"]))
         elif clicks is not None and prev:
@@ -308,20 +1011,39 @@ def stage(rules, ev, prof=None):
             why.append("没有 GSC 数据,按 URL 数 %s%s猜;请用户确认" % (n, (",站龄 %d 天" % age) if age is not None else ",站龄未知"))
             cands = [2, 3, 4]
     sid = base
+    plans = ev.get("signals.migration_plans") or []
     if events:
         sid = 5
         why.insert(0, "档案声明了改版类事件:%s" % ",".join(events))
+    elif plans:
+        # 仓库里摆着改版 / 迁移计划(MIGRATION.md 这类):按「改版 / 迁移」猜,底层阶段照常报;第 1 环让用户确认
+        sid, conf = 5, "guess"
+        why.insert(0, "仓库里有改版 / 迁移计划:%s" % "、".join(plans[:3]))
+        cands = _dedup_ids([5, base] + list(cands))
     res = {"stage": sid, "name": names.get(sid), "base_stage": base, "base_name": names.get(base),
            "confidence": conf, "why": why, "candidates": [{"id": c, "name": names[c]} for c in cands],
            "missing": [] if (impr is not None or clicks is not None or not live) else ["metrics.gsc_impressions_28d", "metrics.gsc_clicks_28d", "metrics.gsc_clicks_prev_28d"],
            "conflicts": []}
+    return _confirmed_override(res, prof, names)
+
+
+def _confirmed_override(res, prof, names):
+    """用户在第 1 环确认(或纠正)过的阶段压过规则;规则结果写进 conflicts,不覆盖用户的。"""
     confirmed = ((prof or {}).get("stage") or {})
     if confirmed.get("confirmed") and confirmed.get("value") is not None:
         cv = int(confirmed["value"])
-        if cv != sid:
-            res["conflicts"].append("用户确认的阶段是 %s,规则判的是 %s" % (names.get(cv), names.get(sid)))
+        if res["stage"] is not None and cv != res["stage"]:
+            res["conflicts"].append("用户确认的阶段是 %s,规则判的是 %s" % (names.get(cv), names.get(res["stage"])))
         res.update({"stage": cv, "name": names.get(cv), "confidence": "confirmed"})
     return res
+
+
+def _dedup_ids(ids):
+    out = []
+    for i in ids:
+        if i is not None and i not in out:
+            out.append(i)
+    return out
 
 
 def diagnose(scan=None, ws=None, metrics=None, today=None):
@@ -352,9 +1074,14 @@ def render(diag):
     if st["stage"] == 5 and st.get("base_name"):
         L.append("底层阶段:%s" % st["base_name"])
     if st["candidates"]:
-        L.append("候选:" + "、".join(c["name"] for c in st["candidates"]))
+        L.append("候选:" + "、".join(candidate_names(st["candidates"])))
+    if diag.get("metrics_source"):
+        L.append("指标:" + diag["metrics_source"])
     for c in st["conflicts"]:
         L.append("冲突:" + c)
+    if st["conflicts"]:
+        L.append("以你确认的阶段为准。这里只按最新一期判;要不要换阶段看每周运营单:最近 4 个每周检查点都超过上限才提示"
+                 "(一两天冲高不算),你确认以后才改。")
     L += ["", "## 成熟度(1 零散 · 2 能重复 · 3 有体系 · 4 可度量 · 5 持续优化)", "",
           "| 方面 | 级别 | 下一级要做 | 缺的证据 |", "|---|---|---|---|"]
     for d in DIMS:
@@ -386,9 +1113,16 @@ def main(argv=None):
             raise UsageError("读不到 --scan %s" % ns.scan)
         metrics = read_json(ns.metrics) if ns.metrics else None
         today = dt.date.fromisoformat(ns.today) if ns.today else None
-        if ns.ws and not os.path.isdir(ns.ws):
-            raise UsageError("--ws 不是目录: %s" % ns.ws)
+        _src = None
+        if ns.ws:
+            resolve_ws(ns.ws, __file__, sys.argv[1:] if argv is None else argv)
+            if scan is None:                       # 只给 --ws:读工作区自己存的站点读取结果(和 onboard.py status 同一份)
+                scan = read_json(os.path.join(ns.ws, "context", "scan.json"))
+            if metrics is None:                    # 指标以 data/ 里最新的 GSC 导出为准,和运营单首屏同一份数
+                metrics, _src = data_metrics(ns.ws, read_json(os.path.join(ns.ws, "context", "profile.json"), {}))
         d = diagnose(scan, ns.ws, metrics, today)
+        if ns.ws and not ns.metrics and _src:
+            d["metrics_source"] = _src
     except UsageError as e:
         print("错误: %s" % e, file=sys.stderr)
         return 2

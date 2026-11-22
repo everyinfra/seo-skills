@@ -33,6 +33,11 @@ FIELDS = {
 DRAFT_KEYS = {"product.one_liner": "product.one_liner", "pricing.model": "pricing.model",
               "answer.customers": "context.pm_customers", "answer.conversion": "conversion.pm_action"}
 EMPTY_RE = re.compile(r"^\s*(\[[^\]]*\]|-|—|n/?a|tbd)?\s*$", re.I)
+# 产品线:上游模板没有固定标签,人写的文件里常见的几种叫法(值写在同一行,或下面一行一个「- 条目」)。
+# 只认明确叫「产品 / 产品线 / 套餐 / 服务项」的标签;「What it does」「Use cases」这类散文不拆。
+LINE_LABEL_RE = re.compile(r"^(products?|product lines?|product range|offerings?|offers|services|"
+                           r"产品线?|产品列表|服务项目?)$", re.I)
+LINES_KEY = "product.lines"
 
 
 def path_in(repo):
@@ -79,6 +84,37 @@ def read_fields(text):
     return out
 
 
+def read_lines_field(text):
+    """产品线标签 → (段/标签, [条目]);没有 → (None, [])。同一行的值按分号、顿号、竖线拆(三项以上的逗号串也拆);
+    同一行没写值就收下面紧跟的「- 条目」。"""
+    _, lines, _ = _split(text)
+    for sec, (a, b) in sections(lines).items():
+        for i in range(a + 1, b):
+            m = re.match(r"^\s*\*\*([^*]+?):?\*\*:?\s*(.*)$", lines[i])
+            if not m or not LINE_LABEL_RE.match(m.group(1).strip()):
+                continue
+            label, val = m.group(1).strip(), m.group(2).strip()
+            items = []
+            if val and not EMPTY_RE.match(val):
+                parts = [x.strip() for x in re.split(r"[;；|、]", val) if x.strip()]
+                if len(parts) == 1:
+                    commas = [x.strip() for x in re.split(r",\s+|，", val) if x.strip()]
+                    parts = commas if len(commas) >= 3 else parts
+                items = parts
+            else:
+                for ln in lines[i + 1:b]:
+                    bm = re.match(r"^\s*[-*]\s+(.+?)\s*$", ln)
+                    if not bm:
+                        break
+                    if not EMPTY_RE.match(bm.group(1)):
+                        items.append(bm.group(1))
+            items = [re.sub(r"\*\*", "", x).strip().rstrip(".") for x in items]
+            items = [x for x in items if x]
+            if items:
+                return "%s/%s" % (sec, label), items
+    return None, []
+
+
 def read_file(repo):
     p = path_in(repo)
     try:
@@ -99,6 +135,9 @@ def draft_facts(repo):
         v = got.get("%s/%s" % (sec, label))
         if v:
             out.append({"key": DRAFT_KEYS[key], "value": v, "source": PATH, "kind": "fact"})
+    where, items = read_lines_field(text)
+    if items:
+        out.append({"key": LINES_KEY, "value": items, "source": "%s(%s)" % (PATH, where), "kind": "fact"})
     return out
 
 

@@ -445,7 +445,15 @@ def pr_suggestion(view, fixes, est, branch_info):
     body = "\n".join(L)
     command = "gh pr create --draft --title %s --body %s --head %s" % (
         shlex.quote(title), shlex.quote(body), branch_info["branch"])
-    return {"title": title, "body": body, "command": command}
+    r = _git(["remote"])
+    remotes = [x for x in (r.stdout or "").split() if x] if r.returncode == 0 else []
+    if remotes:
+        push = "git push -u %s %s" % (remotes[0], shlex.quote(branch_info["branch"]))
+        note = None
+    else:
+        push = "git remote add origin <远端仓库地址> && git push -u origin %s" % shlex.quote(branch_info["branch"])
+        note = "仓库还没有远端:建好远端仓库后照这两条执行(先推分支,再开草稿 PR);这本身就是交付,不用停下来问"
+    return {"title": title, "body": body, "command": command, "push": push, "no_remote_note": note}
 
 
 # ---------------------------------------------------------------------------
@@ -603,7 +611,9 @@ def render_markdown(view, fixes, est, applied, show_estimate, branch_info=None, 
     if pr:
         L += ["", "## 建议的 PR(外发动作人审边界——gh 命令只打印,不自动执行)", "",
               "标题: " + pr["title"], "", "描述:", "", *("    " + ln for ln in pr["body"].splitlines()),
-              "", "命令行(人审后手动执行):", "", "    " + pr["command"], ""]
+              "", "命令行(人审后手动执行;先推分支,再开草稿 PR):", "",
+              *(["    # " + pr["no_remote_note"]] if pr.get("no_remote_note") else []),
+              *(["    " + pr["push"]] if pr.get("push") else []), "    " + pr["command"], ""]
     return "\n".join(L) + "\n"
 
 

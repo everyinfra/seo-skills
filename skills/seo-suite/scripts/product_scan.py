@@ -20,6 +20,7 @@ facts 的 kind:"fact" = 页面/文件上原文就有;"inferred" = 推出来的(�
 """
 import argparse
 import gzip
+import ipaddress
 import json
 import os
 import re
@@ -39,10 +40,14 @@ FETCH_TIMEOUT = 15.0
 POLITE_DELAY = 0.3               # 两次请求之间的礼貌间隔(秒);走 sc._sleep,测试打桩为零延时
 H2_MAX = 12
 PRICES_MAX = 10
+PRICE_SNIPPETS_MAX = 8          # 定价原文最多留几句
+LINES_MAX = 8                   # 路由推出的「产品线」超过这个数,多半是条目清单(工具、商品),不当产品线
 CTAS_MAX = 10
 ROUTES_MAX = 200
 README_MAX = 300
 SAMPLE_TYPES = ("pricing", "about", "docs", "blog", "product", "compare", "integrations")
+SECTION_SAMPLES_MAX = 4          # 没归进上面几类的一级目录,最多再各抽 1 页
+SECTION_LABEL_MAX = 40           # 栏目页大标题超过这么长多半是一句卖点,不拿来当产品线名
 SKIP_DIRS = {"node_modules", ".git", ".next", "dist", "build", ".nuxt", ".output", ".svelte-kit",
              ".astro", ".turbo", ".vercel", ".cache", "coverage", "__pycache__", ".venv", "venv", "out"}
 SOURCE_EXT = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".html", ".htm", ".vue", ".svelte", ".astro",
@@ -130,6 +135,29 @@ ANALYTICS_PATTERNS = (
     ("vercel-analytics", re.compile(r"@vercel/analytics|/_vercel/insights")),
 )
 FREE_RE = re.compile(r"\bfree\b|免费|gratis|\$0(?![\d.,])", re.I)
+# 计费方式:页面原文里出现这些说法就记下(档案里和原文价格一起给用户确认)
+BILLING_RES = (
+    ("预充值", re.compile(r"top[- ]?ups?\b|prepaid|pre-paid|充值|预付|预存|recarga", re.I)),
+    ("按次 / 按量", re.compile(r"pay[- ]as[- ]you[- ]go|usage[- ]based|metered|按次|按量|每次|每千次|每 ?1,?000 ?次|"
+                           r"per (request|call|query|search|use|unit|1k|1,000|thousand|million|token|image|page|minute|gb)\b|"
+                           r"(?<=\d)\s?/\s?(request|call|1k|k)\b|por (solicitud|uso|consulta)", re.I)),
+    ("额度包", re.compile(r"credit packs?|credits? bundles?|\bpacks? of\b|额度包|点数包|积分包|流量包|"
+                       r"\d[\d,]* credits\b|paquetes? de cr[eé]ditos", re.I)),
+    ("订阅", re.compile(r"(?<=\d)\s?/\s?(mo|month|yr|year)\b|per (month|year|seat|user)\b|monthly|annual(ly)?|yearly|"
+                      r"subscription|subscribe|包月|包年|/月|/年|每月|每年|月付|年付|suscripci|mensual|anual", re.I)),
+    ("免费档 / 免费额度", re.compile(r"free (tier|plan|quota|credits?|requests?|calls?|searches?)|\d[\d,]* free\b|"
+                               r"\bfree\b(?!\s*trial)|免费额度|免费次数|免费版|免费套餐|gratis|plan gratuito", re.I)),
+    ("试用", re.compile(r"free trial|\btrial\b|试用|prueba (gratis|gratuita)", re.I)),
+    ("一次性购买", re.compile(r"one[- ]time|lifetime|一次性|买断|pago [uú]nico", re.I)),
+)
+# 免运费、免费配送、免费退换这类说法不是免费档:算收费方式之前先去掉
+SHIPPING_FREE_RE = re.compile(
+    r"\bfree\s+(?:[\w$€£.,-]+\s+){0,3}?(?:shipping|delivery|returns?|exchanges?)\b|"
+    r"\b(?:shipping|delivery|returns?)\s+(?:is\s+|are\s+)?(?:always\s+)?free\b|"
+    r"免运费|包邮|免邮|免费(?:配送|送货|快递|邮寄|退换货?|退货|换货|运送)|"
+    r"env[ií]o\s+gratis|env[ií]o\s+gratuito|gratis\s+env[ií]o|devoluci[oó]n(?:es)?\s+gratis|"
+    r"kostenlose[rn]?\s+(?:versand|lieferung|r[üu]cksendung)|versandkostenfrei|livraison\s+gratuite", re.I)
+SENT_SPLIT = re.compile(r"(?<=[.!?。!?])\s+")
 BRAND_SPLIT = re.compile(r"\s+[|\u2013\u2014\u00b7\-:»]\s+|\s*[|｜:：]\s*")
 
 
@@ -343,8 +371,9 @@ def page_features(resp, url):
         names |= sc.header_robots(xrt)
     feat["noindex"] = "noindex" in names or "none" in names
     feat["word_count"] = len(sc._TOKEN_RE.findall(text))
+    chunks = [" ".join(t.split()) for t in p.text if t and t.strip()]
     extra = {"org_name": org_name, "hreflangs": [c for c, _ in p.hreflangs], "hrefs": p.hrefs, "text": text,
-             "html": body}
+             "chunks": chunks, "html": body}
     return feat, extra
 
 
@@ -382,6 +411,49 @@ def route_lines(paths):
             seen.add(key)
             out.append(name[:1].upper() + name[1:])
     return out
+
+
+def section_label(name, head=None):
+    """一级目录的候选产品线名:栏目页(/shop/)的大标题短、不是一句话就用它(「Shop coffee beans」),
+    读不到或像一句卖点就用目录名(「Shop」)。"""
+    base = re.sub(r"[-_]+", " ", name).strip()
+    base = base[:1].upper() + base[1:]
+    h = " ".join(str((head or {}).get("h1") or "").split())
+    if not h or len(h) > SECTION_LABEL_MAX or re.search(r"[。!?!?,,;;::|]|\.(\s|$)", h):
+        return base
+    return h
+
+
+def section_lines(paths, samples=None, heads=None):
+    """没归进已知类型、下面有子页的一级目录(/shop/<x>、/gear/<x>)→ 候选产品线(页数多的在前)。
+    名字先取栏目页的大标题(heads:目录名 → {"h1"}),读不到用目录名;两个目录取到同一个标题时都退回目录名。
+    只有一页的目录(/about/、/shipping/ 这类)不算。读站点时抽过这些目录的页(samples 里 type=section):
+    有的抽样页上有价格、有的没有,就只留有价格的(卖东西的目录),都没有价格就全留。"""
+    dirs = {}
+    for path in paths or []:
+        _, segs = split_locale(urllib.parse.urlsplit(path).path)
+        if len(segs) < 2 or classify_segments(segs) not in ("other", "category"):
+            continue
+        name = segs[0]
+        if name.startswith(("[", ":")) or "." in name:
+            continue
+        dirs.setdefault(name.lower(), [name, set()])[1].add("/".join(segs[1:]).lower())
+    priced = {}
+    for s in samples or []:
+        if s.get("type") != "section":
+            continue
+        _, segs = split_locale(urllib.parse.urlsplit(s.get("url") or "").path)
+        if segs:
+            priced[segs[0].lower()] = bool(s.get("prices"))
+    if any(priced.values()):
+        dirs = {k: v for k, v in dirs.items() if priced.get(k, True)}
+    ranked = sorted(dirs.items(), key=lambda kv: (-len(kv[1][1]), kv[0]))
+    labels = [section_label(name, (heads or {}).get(key)) for key, (name, _) in ranked]
+    seen = {}
+    for x in labels:
+        seen[x.lower()] = seen.get(x.lower(), 0) + 1
+    return [x if seen[x.lower()] == 1 else section_label(name)
+            for x, (_, (name, _)) in zip(labels, ranked)]
 
 
 def classify_segments(segs):
@@ -501,6 +573,20 @@ def scan_llms(fetcher, origin):
     return out, lines_h2, src
 
 
+def is_local_host(host):
+    """本机或私网主机(localhost、*.localhost、回环、私网、链路本地):这类站不拿去问外部历史服务。"""
+    h = (host or "").strip().strip("[]").lower().rstrip(".")
+    if not h:
+        return False
+    if h == "localhost" or h.endswith(".localhost"):
+        return True
+    try:
+        ip = ipaddress.ip_address(h.split("%", 1)[0])
+    except ValueError:
+        return False
+    return ip.is_loopback or ip.is_private or ip.is_link_local
+
+
 def wayback_first_seen(fetcher, host):
     api = "https://archive.org/wayback/available?url=%s&timestamp=19960101" % urllib.parse.quote(host)
     r = fetcher.get(api)
@@ -514,7 +600,7 @@ def wayback_first_seen(fetcher, host):
 
 
 def pick_samples(urls, host, max_pages):
-    """每个关键类型取 1 个:同主机、优先无语言前缀、再按路径最短。"""
+    """每个关键类型取 1 个:同主机、优先无语言前缀、再按路径最短;没归类的一级目录再各抽 1 页(type=section)。"""
     best = {}
     for u in urls:
         pu = urllib.parse.urlsplit(u)
@@ -530,6 +616,22 @@ def pick_samples(urls, host, max_pages):
     for t in SAMPLE_TYPES:
         if t in best and len(out) < max_pages:
             out.append((t, best[t][1]))
+    # 目录名不在上面几类里的站(/shop/、/brew-guides/、/subscription/ 这类):按一级目录各抽 1 页,
+    # 页数多的目录先抽;目录下有子页就抽子页(看得到卖的、写的是什么),只有一页就抽那一页
+    sections = {}
+    for u in urls:
+        pu = urllib.parse.urlsplit(u)
+        if (pu.hostname or "").lower() != host:
+            continue
+        loc, segs = split_locale(pu.path)
+        if not segs or classify_segments(segs) not in ("other", "category"):
+            continue
+        sections.setdefault(segs[0].lower(), []).append((loc is not None, len(segs) < 2, len(pu.path), u))
+    ranked = sorted(sections.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    for name, items in ranked[:SECTION_SAMPLES_MAX]:
+        if len(out) >= max_pages:
+            break
+        out.append(("section", min(items)[3]))
     return out
 
 
@@ -623,6 +725,9 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
             locales[loc] = locales.get(loc, 0) + 1
     res["page_types"] = dict(sorted(types.items(), key=lambda kv: (-kv[1], kv[0])))
     res["locales"] = dict(sorted(locales.items(), key=lambda kv: (-kv[1], kv[0])))
+    if urls:                                           # 一级栏目页数:以后每周运营单拿 sitemap 和它比,认新栏目
+        from lifecycle import section_counts
+        res["sections"] = dict(sorted(section_counts(urls).items()))
 
     llms, h2s, llms_src = scan_llms(fetcher, origin)
     res["llms"] = llms
@@ -637,8 +742,24 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
         f, fx = page_features(sr, u)
         res["samples"].append(dict({"type": t}, **f))
         ctx["sample_extra"][u] = fx
+    # 没归类的一级目录:抽到的是子页(/shop/<x>)时再读一次栏目页(/shop/),拿它的大标题给候选产品线起名
+    ctx["section_heads"] = {}
+    for s in [x for x in res["samples"] if x.get("type") == "section"]:
+        su = urllib.parse.urlsplit(s["url"])
+        parts = [x for x in su.path.split("/") if x]
+        _, segs = split_locale(su.path)
+        if not segs:
+            continue
+        head = s
+        if len(segs) > 1:
+            idx = "%s://%s/%s/" % (su.scheme, su.netloc, "/".join(parts[:len(parts) - len(segs) + 1]))
+            head, _ = page_features(fetcher.get(idx, quiet_404=True), idx)
+        if head.get("status") == 200 and head.get("h1"):
+            ctx["section_heads"][segs[0].lower()] = {"h1": head["h1"][0], "url": head.get("final_url") or head.get("url")}
 
-    if wayback:
+    if wayback and is_local_host(host):
+        errors.append("本机 / 私网站点(%s)不查 Wayback 最早快照" % host)
+    elif wayback:
         res["first_seen"], ctx["wayback_src"] = wayback_first_seen(fetcher, host)
     return res, ctx
 
@@ -776,6 +897,74 @@ def file_routes(pages_dir, exts, skip_api=True):
     return routes
 
 
+PAGE_FILES = {"home": ("app/page", "src/app/page", "pages/index", "src/pages/index"),
+              "pricing": ("app/pricing/page", "src/app/pricing/page", "pages/pricing", "pages/pricing/index",
+                          "src/pages/pricing", "src/pages/pricing/index"),
+              "layout": ("app/layout", "src/app/layout", "pages/_document", "src/pages/_document", "pages/_app")}
+PAGE_EXTS = (".tsx", ".jsx", ".ts", ".js", ".mdx", ".md", ".astro", ".vue", ".svelte")
+MIGRATION_FILE_RE = re.compile(r"^(?:migration|site[-_]?migration|url[-_]?migration|redirect[-_]?(?:map|plan)|"
+                               r"replatform(?:ing)?|relaunch)[\w.-]*\.(?:md|markdown|txt|csv)$", re.I)
+
+
+def _find_page(app_root, kind):
+    for stem in PAGE_FILES[kind]:
+        for ext in PAGE_EXTS:
+            p = os.path.join(app_root, stem + ext)
+            if os.path.isfile(p):
+                return p
+    return None
+
+
+def _js_string(raw):
+    try:
+        return json.loads('"%s"' % raw.replace('"', '\\"')) if "\\u" in raw else raw
+    except ValueError:
+        return raw
+
+
+def page_source_facts(text):
+    """页面源码(Next / Astro / 一般 JSX)里读得出的:metadata 的 title / description、siteName、<html lang>、可见文字块。"""
+    out = {}
+    for key in ("title", "description", "siteName"):
+        m = re.search(r"\b%s\s*:\s*([\"'`])((?:\\.|(?!\1).){2,400})\1" % key, text)
+        if m:
+            out[key] = _js_string(m.group(2)).strip()
+    m = re.search(r"<html\b[^>]*\blang=[\"']([A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?)[\"']", text)
+    if m:
+        out["lang"] = m.group(1)
+    chunks = []
+    for m in re.finditer(r">([^<>{}]{3,600})<", text):
+        t = re.sub(r"\s+", " ", m.group(1)).strip()
+        if len(t) >= 3 and re.search(r"[A-Za-z一-鿿]", t) and t not in chunks:
+            chunks.append(t)
+    out["chunks"] = chunks
+    return out
+
+
+def repo_pages(repo, app_root):
+    """仓库里首页、定价页、根布局的源码事实(没有站点或站点读不到时当草稿);→ {kind: {"src", ...}}。"""
+    out = {}
+    for kind in PAGE_FILES:
+        p = _find_page(app_root, kind)
+        if p:
+            out[kind] = dict(page_source_facts(_read(p, 256 * 1024)), src=_rel(repo, p))
+    return out
+
+
+def migration_plans(repo):
+    """仓库根和 docs/ 下的改版 / 迁移计划文件(MIGRATION.md、redirect-map.csv 这类)→ 相对路径列表。"""
+    found = []
+    for d in (repo, os.path.join(repo, "docs")):
+        try:
+            names = sorted(os.listdir(d))
+        except OSError:
+            continue
+        for n in names:
+            if MIGRATION_FILE_RE.match(n) and os.path.isfile(os.path.join(d, n)):
+                found.append(_rel(repo, os.path.join(d, n)))
+    return found
+
+
 SEO_FILE_RES = {
     "robots": re.compile(r"^robots(?:\.txt)?(?:\.(?:ts|tsx|js|jsx|mjs|cjs|txt|astro|xml))?$", re.I),
     "sitemap": re.compile(r"^(?:sitemap[\w.-]*\.(?:ts|tsx|js|jsx|mjs|cjs|xml|astro)|sitemap\.xml|"
@@ -911,8 +1100,13 @@ def scan_repo(repo):
     out["seo_files"] = {k: (sorted(v) if v else None) for k, v in seo.items()}
 
     if readme:
-        out["readme_summary"] = readme_summary(_read(readme, 64 * 1024))
+        rtext = _read(readme, 64 * 1024)
+        out["readme_summary"] = readme_summary(rtext)
+        m = re.search(r"^#\s+(.+?)\s*#*\s*$", rtext, re.M)
+        out["readme_title"] = m.group(1).strip() if m else None
         ev["readme"] = _rel(repo, readme)
+    out["pages"] = repo_pages(repo, app_root)
+    out["migration_plans"] = migration_plans(repo)
     out["_ev"] = ev
     return out
 
@@ -970,13 +1164,51 @@ def brand_from_title(title, host):
     return parts[-1] if len(parts) > 1 and len(parts[-1]) <= len(parts[0]) else parts[0]
 
 
+def _has_price(s):
+    return any(rx.search(s) for rx in PRICE_RES)
+
+
+def pricing_snippets(chunks):
+    """定价页的文字块 → 写到价格或计费方式的原句(保留档位名;短标题接到下一句前面),最多 PRICE_SNIPPETS_MAX 句。"""
+    out, label = [], None
+    for ch in chunks or []:
+        if len(ch) <= 40 and not _has_price(ch) and not re.search(r"[.!?。!?]$", ch):
+            label = ch
+            continue
+        used = False
+        for sent in SENT_SPLIT.split(ch):
+            sent = sent.strip()
+            if not sent or len(sent) > 240:
+                continue
+            if _has_price(sent) or any(rx.search(sent) for _, rx in BILLING_RES):
+                if label and not used and ":" not in sent[:40] and ":" not in sent[:40]:
+                    sent = "%s: %s" % (label, sent)
+                used = True
+                if sent not in out:
+                    out.append(sent)
+        if used or not _has_price(ch):
+            label = None
+        if len(out) >= PRICE_SNIPPETS_MAX:
+            break
+    return out[:PRICE_SNIPPETS_MAX]
+
+
+def strip_shipping(text):
+    return SHIPPING_FREE_RE.sub(" ", text or "")
+
+
+def billing_modes(text):
+    text = strip_shipping(text)
+    return [name for name, rx in BILLING_RES if rx.search(text)]
+
+
 def build_facts(site_scan, ctx, repo_scan, existing):
     facts = []
 
-    def add(key, value, source, kind):
+    def add(key, value, source, kind, **extra):
         if value in (None, "", [], {}):
             return
-        facts.append({"key": key, "value": value, "source": source, "kind": kind})
+        facts.append(dict({"key": key, "value": value, "source": source, "kind": kind}, **extra))
 
     ss, hx = site_scan, (ctx or {}).get("home_extra") or {}
     home = (ss or {}).get("homepage") or {}
@@ -986,7 +1218,21 @@ def build_facts(site_scan, ctx, repo_scan, existing):
     ev = (repo_scan or {}).get("_ev") or {}
     pkg = (repo_scan or {}).get("package") or {}
 
-    # product.name
+    rp = (repo_scan or {}).get("pages") or {}
+    rhome, rlayout, rprice = rp.get("home") or {}, rp.get("layout") or {}, rp.get("pricing") or {}
+
+    def has(key):
+        return any(f["key"] == key for f in facts)
+
+    def unknown(key, note, *looked):
+        # 读不到也留下这个键(值为空、标 unknown、写明查过哪里),开局第 1 环拿它问用户;不让键整个缺掉
+        if has(key) or not (ss or repo_scan):
+            return
+        src = _dedup([x for x in looked if x])
+        facts.append({"key": key, "value": None, "kind": "unknown", "note": note,
+                      "source": ("查过:" + "、".join(src)) if src else "没读到可靠出处"})
+
+    # product.name:站点 og:site_name / Organization / title > 仓库根布局的 siteName > package.json name > README 标题
     if ss and home.get("status") and home["status"] < 400:
         if home.get("og_site_name"):
             add("product.name", home["og_site_name"], home_src, "fact")
@@ -994,8 +1240,14 @@ def build_facts(site_scan, ctx, repo_scan, existing):
             add("product.name", hx["org_name"], home_src, "fact")
         else:
             add("product.name", brand_from_title(home.get("title"), ctx.get("host")), home_src, "inferred")
-    if not any(f["key"] == "product.name" for f in facts) and pkg.get("name"):
+    if not has("product.name") and (rlayout.get("siteName") or rhome.get("siteName")):
+        src = rlayout if rlayout.get("siteName") else rhome
+        add("product.name", src["siteName"], src["src"], "fact")
+    if not has("product.name") and pkg.get("name"):
         add("product.name", pkg["name"], ev.get("package"), "inferred")
+    if not has("product.name") and (repo_scan or {}).get("readme_title"):
+        add("product.name", repo_scan["readme_title"], ev.get("readme"), "inferred")
+    unknown("product.name", "首页、package.json、README 都没读到产品名", home_src, ev.get("package"), ev.get("readme"))
 
     # product.one_liner
     llms = (ss or {}).get("llms") or {}
@@ -1005,23 +1257,42 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         add("product.one_liner", home["description"], home_src, "fact")
     elif home.get("h1"):
         add("product.one_liner", home["h1"][0], home_src, "fact")
+    elif rhome.get("description"):                 # 站点读不到时:仓库首页源码的 metadata description
+        add("product.one_liner", rhome["description"], rhome["src"], "fact")
     elif pkg.get("description"):
         add("product.one_liner", pkg["description"], ev.get("package"), "fact")
     elif (repo_scan or {}).get("readme_summary"):
         add("product.one_liner", repo_scan["readme_summary"], ev.get("readme"), "fact")
+    unknown("product.one_liner", "首页、llms.txt、仓库都没读到一句话介绍", home_src, rhome.get("src"), ev.get("readme"))
 
     # product.lines:llms.txt 里「产品 / 服务 / 方案」那一节的条目 > /products/<x> 这类路由 > 首页 h2(llms 的 ## 标题多半是栏目名,不是产品)
     llms_sections = ((ss or {}).get("llms") or {}).get("sections") or {}
     prod_sec = next((v for k, v in llms_sections.items() if v and PRODUCT_SECTION_RE.search(k)), None)
     rl_site = route_lines((ctx or {}).get("pool_paths"))
     rl_repo = route_lines((repo_scan or {}).get("routes"))
+    # 首页 h2 多半是「为什么选我们」这类卖点句,不拿来兜底;路由推的只算推测,条目太多(工具、商品清单)不算产品线。
+    # 拿不准就留一条「未知」,开局第 1 环问用户。
+    rl = rl_site or rl_repo
+    sl = [] if rl else section_lines((ctx or {}).get("pool_paths"), samples, (ctx or {}).get("section_heads"))
     if prod_sec:
-        add("product.lines", prod_sec[:8], ctx.get("llms_src") if ctx else None, "fact")
-    elif rl_site or rl_repo:                      # 路由比首页小标题可靠:h2 多半是「为什么选我们」这类卖点句
-        add("product.lines", (rl_site or rl_repo)[:8],
-            (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
-    elif home.get("h2"):
-        add("product.lines", home["h2"], home_src, "inferred")
+        add("product.lines", prod_sec[:LINES_MAX], ctx.get("llms_src") if ctx else None, "fact")
+    elif rl and len(rl) <= LINES_MAX:
+        add("product.lines", rl, (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
+    elif sl and len(sl) <= LINES_MAX:
+        add("product.lines", sl, (ctx or {}).get("pool_src"), "inferred",
+            note="按 sitemap 里有子页的一级目录猜的(名字取栏目页的大标题,读不到就用目录名)")
+    elif ss or repo_scan:
+        if sl and not rl:
+            note = "sitemap 里有 %d 个带子页的一级目录(例:%s),太多,不当产品线" % (len(sl), "、".join(sl[:3]))
+        elif rl:
+            note = "网址里有 %d 个同一层的子页(例:%s),像是条目清单,不当产品线" % (len(rl), "、".join(rl[:3]))
+        elif home.get("h2"):
+            note = "llms.txt 没有产品段,网址里没有 /products/<x> 这类子页;首页的 %d 个小标题多半是卖点句,不当产品线" % len(home["h2"])
+        else:
+            note = "llms.txt 没有产品段,网址里也没有 /products/<x> 这类子页"
+        looked = [x for x in ((ctx or {}).get("llms_src"), (ctx or {}).get("pool_src"), home_src, ev.get("routes")) if x]
+        facts.append({"key": "product.lines", "value": None, "kind": "unknown", "note": note,
+                      "source": "查过:" + "、".join(_dedup(looked)) if looked else "没读到可靠出处"})
 
     # pricing.prices / pricing.model
     pp = by_type.get("pricing")
@@ -1037,7 +1308,7 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         txt += " " + hx.get("text", "")
         cta_txt = " ".join(c["text"] for c in (home.get("ctas") or []) + ((pp or {}).get("ctas") or []))
         has_prices = bool((pp or {}).get("prices") or home.get("prices"))
-        has_free = bool(FREE_RE.search(txt) or FREE_RE.search(cta_txt))
+        has_free = bool(FREE_RE.search(strip_shipping(txt)) or FREE_RE.search(strip_shipping(cta_txt)))
         contact = bool(re.search(r"contact sales|talk to sales|联系销售|contactar ventas|hablar con ventas|"
                                  r"book a demo|request a demo|预约演示", (txt + " " + cta_txt).lower()))
         if has_prices:
@@ -1048,8 +1319,30 @@ def build_facts(site_scan, ctx, repo_scan, existing):
             model = "free"
         else:
             model = "unknown"
-        if home.get("status") or pp:
-            add("pricing.model", model, ref_src, "inferred")
+        page_chunks = ((ctx.get("sample_extra") or {}).get(pp["url"]) or {}).get("chunks") if pp else None
+        snips = pricing_snippets(page_chunks) if page_chunks else []
+        snip_src = ref_src
+        if not snips:
+            snips = [x for x in pricing_snippets(hx.get("chunks")) if _has_price(x)]
+            snip_src = home_src
+        modes = billing_modes(" ".join(snips) + " " + txt)
+        if snips:                                  # 原文价格、档位、计费方式;枚举只作附加字段
+            add("pricing.model", " / ".join(snips), snip_src, "fact", enum=model, billing=modes)
+        elif (home.get("status") or pp) and model != "unknown":   # 没读到就留给下面的 unknown(),不把内部值当原文
+            add("pricing.model", model, ref_src, "inferred", enum=model, billing=modes)
+    if not has("pricing.model") and rprice.get("chunks"):   # 站点读不到时:仓库定价页源码里的原文
+        snips = pricing_snippets(rprice["chunks"])
+        if snips:
+            rtxt = " ".join(rprice["chunks"])
+            prices = _dedup([p for c in rprice["chunks"] for p in extract_prices(c)])[:PRICES_MAX]
+            if prices and not has("pricing.prices"):
+                add("pricing.prices", prices, rprice["src"], "fact")
+            ftxt = strip_shipping(rtxt)
+            model = ("freemium" if FREE_RE.search(ftxt) else "paid") if prices else ("free" if FREE_RE.search(ftxt) else "unknown")
+            add("pricing.model", " / ".join(snips), rprice["src"], "fact", enum=model,
+                billing=billing_modes(" ".join(snips) + " " + rtxt))
+    unknown("pricing.model", "定价页、首页、仓库里都没读到价格或收费方式的原文",
+            (pp or {}).get("final_url") or (pp or {}).get("url"), home_src, rprice.get("src"), rhome.get("src"))
 
     # conversion.ctas:按钮归成转化类型(注册 / 付费 / 试用 / 联系销售 / 演示);登录、文档入口不算转化
     ctas = home.get("ctas") or []
@@ -1073,6 +1366,9 @@ def build_facts(site_scan, ctx, repo_scan, existing):
         add("market.languages", [home["lang"]], home_src, "fact")
     if repo_scan and repo_scan.get("locales"):
         add("market.languages", repo_scan["locales"], ev.get("locales"), "inferred")
+    if not has("market.languages") and rlayout.get("lang"):
+        add("market.languages", [rlayout["lang"]], rlayout["src"], "fact")
+    unknown("market.languages", "页面没写 lang / hreflang,仓库里也没有语言目录", home_src, rlayout.get("src"))
 
     # site.page_types / site.url_count
     if ss and ss.get("page_types"):

@@ -17,7 +17,8 @@
 stages 阶段标签),同 id 覆盖内置的;和内置打法一起排序,同样过 only_if / veto / 禁用清单。
 
 用法:
-  python3 plan.py build --ws seo-ops [--metrics m.json] [--top 10] [--json]
+  python3 plan.py build --ws seo-ops [--metrics m.json] [--top 10] [--json] [--replan]
+    已有定稿方案(status=approved)时不加 --replan 不重排、不改文件,只把定稿的路线再印一遍。
   python3 plan.py show --ws seo-ops
 产出:seo-ops/plan/plan.json、roadmap.md、strategy-book.zh.md、strategy-book.en.md
 退出码:0 正常;2 输入错;3 开局第 1 环没确认或阶段未知(先回开局)。
@@ -185,6 +186,77 @@ def load_playbooks(ws=None):
     return pb, list(plays.values()), h
 
 
+GOAL_RES = (("lead", re.compile(r"候补|waitlist|wait ?list|留资|预约|名单|线索|询盘|咨询|newsletter|订阅邮件|\blead|demo|演示", re.I)),
+            ("signup", re.compile(r"注册|sign ?up|试用|trial|开户|create (an )?account|激活", re.I)),
+            ("purchase", re.compile(r"购买|下单|付费|成交|收入|营收|佣金|联盟|purchase|checkout|\bsales?\b|\bbuy|revenue|"
+                                    r"affiliate|click-?outs?|subscription|订阅(?!邮件)", re.I)),
+            ("awareness", re.compile(r"曝光|品牌|知名度|awareness|brand", re.I)),
+            ("ai", re.compile(r"AI ?引用|被 ?AI|引用率|cited|citation|GEO", re.I)))
+GOAL_BONUS = 3
+
+
+def user_goals(prof):
+    """第 1 环用户说的目标(SEO 要带来的结果 + 第 1 环原话)→ (目标类别列表, 用户原文)。"""
+    ans = _answers(prof)
+    text = str((ans.get("conversion") or ("", 0))[0])
+    r1 = (prof.get("rings") or {}).get("1") or {}
+    quotes = " ".join(str(q.get("text") or "") for q in r1.get("quotes") or [] if isinstance(q, dict))
+    found = [g for g, rx in GOAL_RES if rx.search(text)] or [g for g, rx in GOAL_RES if rx.search(quotes)]
+    return found, text.strip()
+
+
+LANG_RES = {
+    "zh": r"中文|简体|繁体|汉语|普通话|chinese|mandarin|\bzh(?:-[a-z]{2,4})?\b",
+    "en": r"英文|英语|english|\ben(?:-[a-z]{2})?\b",
+    "de": r"德语|德文|german|deutsch|\bde(?:-[a-z]{2})?\b",
+    "es": r"西班牙语|西语|spanish|español|espanol|\bes(?:-[a-z0-9]{2,3})?\b",
+    "fr": r"法语|法文|french|français|\bfr(?:-[a-z]{2})?\b",
+    "ja": r"日语|日文|japanese|日本語|\bja\b",
+    "ko": r"韩语|韩文|korean|한국어|\bko\b",
+    "pt": r"葡萄牙语|葡语|portuguese|português|\bpt(?:-[a-z]{2})?\b",
+    "ar": r"阿拉伯语|arabic|\bar\b",
+    "ru": r"俄语|russian|\bru\b",
+    "it": r"意大利语|italian|\bit-it\b",
+}
+REGION_RES = {
+    "cn": r"中国大陆|大陆|中国|\bchina\b|\bprc\b", "us": r"美国|(?-i:\bUS\b)|\busa\b|united states|america",
+    "uk": r"英国|(?-i:\bUK\b)|united kingdom|britain", "ca": r"加拿大|canada", "de": r"德国|germany|deutschland",
+    "au": r"澳洲|澳大利亚|australia", "jp": r"日本|japan", "fr": r"法国|france", "es": r"西班牙|spain",
+    "mx": r"墨西哥|mexico", "br": r"巴西|brazil", "in": r"印度|india", "tw": r"台湾|taiwan", "hk": r"香港|hong kong",
+}
+ONLY_RE = re.compile(r"只做|只有|只要|仅|单一|一个市场|一种语言|\bonly\b|just one|single|solo|únicamente", re.I)
+
+
+def _mentions(table, text):
+    return {k for k, rx in table.items() if re.search(rx, text, re.I)}
+
+
+def one_market(prof):
+    """用户已确认只做一个市场 / 一种语言 → True(打法换用不出多语言的文案)。
+    看第 5 环的回答和用户原话:说了「只做 / only」且只提到一种语言,或者语言、地区都只提到一个
+    (「中国大陆、简体中文」是一个市场,不是两个)。"""
+    rings = prof.get("rings") or {}
+    ans = _answers(prof).get("market_first")
+    if ans and _ok(ans[0]) and (rings.get(str(ans[1])) or {}).get("status") == "confirmed":
+        quotes = " ".join(str(q.get("text") or "") for q in (rings.get(str(ans[1])) or {}).get("quotes") or []
+                          if isinstance(q, dict))
+        t = str(ans[0])
+        langs, regions = _mentions(LANG_RES, t + " " + quotes), _mentions(REGION_RES, t)
+        if len(langs) >= 2:
+            return False
+        if ONLY_RE.search(t) or (ONLY_RE.search(quotes) and len(_mentions(REGION_RES, quotes)) <= 1):
+            return True
+        if (langs or regions) and len(regions) <= 1:
+            return True
+        if re.search(r"[、,,;;/]|和|与|及|\band\b|plus|later|以后|之后|再做|也做|también", t, re.I):
+            return False
+        return True
+    f = _fact(prof, "market.languages")
+    if f and f.get("status") in ("confirmed", "corrected") and _ok(f.get("value")):
+        return len(_split(f["value"])) == 1
+    return False
+
+
 def profile_evidence(prof):
     ans = _answers(prof)
     ev = {}
@@ -213,7 +285,7 @@ def weak_order(diag, stage):
     return sorted(pri, key=lambda d: ((mat.get(d) or {}).get("level", 0), pri.index(d)))
 
 
-def select(plays, stage, ev, deny, weak):
+def select(plays, stage, ev, deny, weak, goals=()):
     cand, skipped = [], {"done": [], "vetoed": [], "denied": [], "not_applicable": []}
     for p in plays:
         if stage not in (p.get("stages") or []):
@@ -243,10 +315,14 @@ def select(plays, stage, ev, deny, weak):
             elif len(weak) > 1 and d == weak[1]:
                 bonus = max(bonus, 1)
         score += bonus
+        goal_hit = [g for g in (p.get("goals") or []) if g in goals]
+        if goal_hit:
+            score += GOAL_BONUS
         forced = any(r is True for _, r in _conds(p.get("force_first_if"), ev))
         if forced:
             score += 100
-        cand.append(dict(p, score=score, dim_bonus=bonus, forced=forced, deny_notes=dm[1] if dm else []))
+        cand.append(dict(p, score=score, dim_bonus=bonus, forced=forced, deny_notes=dm[1] if dm else [],
+                         goal_hit=goal_hit))
     cand.sort(key=lambda p: (-p["score"], p.get("week", 1), p["id"]))
     return cand, skipped
 
@@ -255,7 +331,7 @@ def schedule(cand):
     end, starts, out, backlog = {}, {}, [], []
     ids = {p["id"] for p in cand}
     for p in cand:
-        s = int(p.get("week", 1))
+        s = (LC.norm_weeks(p.get("week", 1)) or (1, 1))[0]
         for dep in p.get("after") or []:
             if dep in end:
                 s = max(s, end[dep] + 1)
@@ -266,19 +342,42 @@ def schedule(cand):
         if s > WEEKS:
             backlog.append(dict(p, start=None, end=None))
             continue
-        e = min(WEEKS, s + max(1, int(p.get("weeks", 1))) - 1)
+        span = LC.norm_weeks(p.get("weeks", 1)) or (1, 1)
+        e = min(WEEKS, s + max(1, span[1] - span[0] + 1 if span[0] != span[1] else span[0]) - 1)
         starts[s] = starts.get(s, 0) + 1
         end[p["id"]] = e
         out.append(dict(p, start=s, end=e))
     return out, backlog
 
 
-def recommendation(p, facts, rank):
+def drop_text(drop, zh=True):
+    """量到的掉量 → 一句话(总数、环比、掉得最多的页型,带来源)。"""
+    if not drop:
+        return ""
+    fmt = lambda n: "{:,}".format(int(n))  # noqa: E731
+    head = ("实测:近 28 天点击 %s,上一期 %s(%+.1f%%)" if zh else "Measured: clicks %s in the last 28 days vs %s before (%+.1f%%)") % (
+        fmt(drop["cur"]), fmt(drop["prev"]), drop["delta_pct"])
+    worst = [g for g in drop.get("groups") or [] if g["delta"] < 0][:3]
+    if worst:
+        head += (";掉得最多的页型:" if zh else "; biggest drops by page type: ") + ("、" if zh else ", ").join(
+            ("%s %s → %s(占掉量 %d%%)" if zh else "%s %s → %s (%d%% of the loss)") % (
+                g["group"], fmt(g["prev"]), fmt(g["cur"]), round(g["share"] * 100)) for g in worst)
+    if drop.get("source"):
+        head += (";来源 %s" if zh else "; source %s") % drop["source"]
+    return head
+
+
+def recommendation(p, facts, rank, one_mkt=False, goal_text="", drop=None):
+    do_src = p.get("do_one_market") if one_mkt and p.get("do_one_market") else p["do"]
+    do_en_src = p.get("do_en_one_market") if one_mkt and p.get("do_en_one_market") else p.get("do_en", p["do"])
     title, u1, m1 = fill(p["title"], facts)
-    do, u2, m2 = fill(p["do"], facts)
+    do, u2, m2 = fill(do_src, facts)
     metric, u3, _ = fill(p.get("metric", ""), facts)
     title_en, _, _ = fill(p.get("title_en", p["title"]), facts, "en")
-    do_en, _, _ = fill(p.get("do_en", p["do"]), facts, "en")
+    do_en, _, _ = fill(do_en_src, facts, "en")
+    if p.get("uses_measured_drop") and drop and drop.get("delta_pct", 0) < 0:
+        do += "。" + drop_text(drop)
+        do_en += ". " + drop_text(drop, zh=False)
     cmd, _, _ = fill(p.get("cmd", ""), facts)
     used = list(dict.fromkeys(u1 + u2 + u3))
     missing = [m for m in dict.fromkeys(m1 + m2) if m not in used]
@@ -289,7 +388,9 @@ def recommendation(p, facts, rank):
             "dims": p.get("dims") or [], "dim_bonus": p["dim_bonus"],
             "facts_used": [{"slot": s, "value": facts[s]["value"], "source": facts[s]["source"],
                             "confirmed": facts[s]["confirmed"]} for s in used],
-            "facts_missing": missing, "deny_notes": p.get("deny_notes") or [], "ref": p.get("ref", ""), "cmd": cmd}
+            "facts_missing": missing, "deny_notes": p.get("deny_notes") or [], "ref": p.get("ref", ""), "cmd": cmd,
+            "needs": list(p.get("needs") or []),
+            "goal": ("对上第 1 环的目标:「%s」" % goal_text) if p.get("goal_hit") and goal_text else ""}
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +401,11 @@ def build(ws, metrics=None, top=10, today=None):
     prof = read_json(os.path.join(ws, "context", "profile.json"))
     if not prof:
         raise GateError("还没有开局档案:先跑 onboard.py start")
+    tamper = LC.check_seal(prof)
+    if tamper and not tamper.get("legacy"):
+        raise GateError(LC.tamper_message(tamper) + "。先跑 onboard.py status(会把受影响的环退回待确认),用户重新确认后再出方案")
+    for msg in LC.normalize_profile(prof):
+        print("注意: 档案不合格:%s" % msg, file=sys.stderr)
     if (prof.get("rings") or {}).get("1", {}).get("status") != "confirmed":
         raise GateError("开局第 1 环还没确认,不出方案(onboard.py show --ring 1)")
     scan = read_json(os.path.join(ws, "context", "scan.json"))
@@ -314,11 +420,22 @@ def build(ws, metrics=None, top=10, today=None):
     pb, plays, pb_hash = load_playbooks(ws)
     weak = weak_order(diag, stage)
     deny = PB.load_deny(ws, prof)
-    cand, skipped = select(plays, stage, ev, deny, weak)
+    goals, goal_text = user_goals(prof)
+    cand, skipped = select(plays, stage, ev, deny, weak, goals)
     sched, backlog = schedule(cand)
     sched.sort(key=lambda p: (-p["score"], p["start"], p["id"]))
     facts = product_facts(prof)
-    recs = [recommendation(p, facts, i + 1) for i, p in enumerate(sched)]
+    one_mkt = one_market(prof)
+    drop = LC.page_drop(ws, prof)
+    if not drop:
+        m = dict(prof.get("metrics") or {}, **(metrics or {}))
+        if m.get("gsc_clicks_28d") is not None and m.get("gsc_clicks_prev_28d"):
+            c, pv = float(m["gsc_clicks_28d"]), float(m["gsc_clicks_prev_28d"])
+            drop = {"cur": c, "prev": pv, "delta_pct": round((c - pv) / pv * 100, 1), "groups": [],
+                    "source": (prof.get("metric_sources") or {}).get("gsc_clicks_28d") or "档案 metrics"}
+    recs = [recommendation(p, facts, i + 1, one_mkt, goal_text, drop) for i, p in enumerate(sched)]
+    user_rules = PB.rules_for(ws, "plan")
+    apply_user_rules(recs, user_rules)
     themes = {}
     for r in recs[:top]:
         themes.setdefault(r["theme"], []).append(r["score"])
@@ -327,6 +444,8 @@ def build(ws, metrics=None, top=10, today=None):
     unconfirmed = [f["key"] for f in prof.get("facts") or [] if f.get("status") == "unconfirmed"]
     unknown = [f.get("id") or f["key"] for f in prof.get("facts") or [] if f.get("status") == "unknown"]
     skipped_rings = [r for r, v in (prof.get("rings") or {}).items() if v.get("status") == "skipped"]
+    audit = prof.get("audit") or {}
+    audit_skipped = audit.get("reason") if audit.get("ran") is False else None
     plan = {"schema": 1, "generated_at": (today or dt.date.today()).isoformat(),
             "profile_version": prof.get("version"), "playbooks_sha": pb_hash,
             "site": prof.get("site"), "stage": {"id": stage, "name": stage_info.get("name"),
@@ -338,9 +457,12 @@ def build(ws, metrics=None, top=10, today=None):
             "items": recs[:top], "more": recs[top:],
             "backlog": [{"id": p["id"], "title": p["title"]} for p in backlog], "skipped": skipped,
             "deny": [d["item"] for d in deny],
+            "user_rules": user_rules,
             "assumptions": {"unconfirmed_facts": unconfirmed, "unknown_facts": unknown, "skipped_rings": skipped_rings,
+                            "audit_skipped": audit_skipped,
                             "missing_slots": sorted({m for r in recs[:top] for m in r["facts_missing"]})},
             "metrics_by_stage": pb["metrics_by_stage"].get(str(stage), []),
+            "goals": {"text": goal_text, "kinds": goals}, "one_market": one_mkt, "measured_drop": drop,
             "status": "draft"}
     return plan
 
@@ -359,24 +481,96 @@ def _wk(r, lang="zh"):
     return "Week %d" % a if a == b else "Weeks %d-%d" % (a, b)
 
 
+ITEM_DEFAULTS = {"title": "", "do": "", "page_types": [], "metric": "", "measure": "", "facts_used": [],
+                 "deny_notes": [], "theme": "", "id": ""}
+
+
 def plan_items(plan):
-    """按优先级排好的建议;旧版 plan.json 叫 recommendations,照样读。"""
+    """按优先级排好的建议;旧版 plan.json 叫 recommendations,照样读。手写或旧版的条目缺键时补默认值,周数统一成 [起, 止]。"""
     v = plan.get("items")
-    return v if isinstance(v, list) else (plan.get("recommendations") or [])
+    raw = v if isinstance(v, list) else (plan.get("recommendations") or [])
+    out = []
+    for i, r in enumerate(x for x in raw if isinstance(x, dict)):
+        it = dict(ITEM_DEFAULTS, **r)
+        if not isinstance(it.get("rank"), int):
+            it["rank"] = i + 1
+        wk = LC.norm_weeks(r.get("weeks"))
+        it["weeks"] = list(wk) if wk else None
+        it.setdefault("title_en", it["title"])
+        it.setdefault("do_en", it["do"])
+        out.append(it)
+    return out
+
+
+RULE_STOP_EN = {"first", "pages", "build", "start", "draft", "every", "there", "where", "which", "their", "about"}
+
+
+def rule_touches(quote, rec):
+    """用户规则的原话里点到了这条路线项做的那类页面(「对比文都要放价格对照表」↔ 对比页和替代页)。
+    只拿路线项自己的页面类型和标题去原话里找,规则没有结构化的触发条件,宁可多带一条提醒。"""
+    q = (quote or "").lower()
+    terms = set()
+    for t in list(rec.get("page_types") or []) + re.split(r"[和、,,::/\s]+", rec.get("title") or ""):
+        t = re.sub(r"(页面|页|文章|文)$", "", str(t).strip())
+        if len(t) >= 2 and not t.isascii():
+            terms.add(t.lower())
+    for w in re.findall(r"[A-Za-z]{5,}", rec.get("title_en") or ""):
+        w = w.lower()
+        if w not in RULE_STOP_EN:
+            terms.add(w)
+            if w.endswith("s"):
+                terms.add(w[:-1])
+    return any(t in q for t in terms)
+
+
+def apply_user_rules(recs, rules):
+    """适用于方案的用户规则:点到哪条路线项,就把原话写进那一项的做法(中英都写)和 rule_notes。"""
+    for r in recs:
+        hit = [u for u in rules if rule_touches(u.get("quote"), r)]
+        if not hit:
+            continue
+        r["rule_notes"] = [{"id": u["id"], "quote": u["quote"]} for u in hit]
+        r["do"] = (r.get("do") or "") + "".join(";照你的规则 %s:「%s」" % (u["id"], u["quote"]) for u in hit)
+        r["do_en"] = (r.get("do_en") or "") + "".join('; per your rule %s: "%s"' % (u["id"], u["quote"]) for u in hit)
+    return recs
 
 
 def by_week(recs):
     return sorted(recs, key=lambda r: ((r["weeks"] or [99])[0], r["rank"]))
 
 
+def rules_lines(plan, lang="zh"):
+    """「按你的规则」一节:用户用 teach.py 教的、适用于方案的规则,原话照抄(不是禁用清单那类)。"""
+    rules = plan.get("user_rules") or []
+    if not rules:
+        return []
+    zh = lang == "zh"
+    L = ["", "## 按你的规则" if zh else "## Your rules", "",
+         "下面每条都适用于这份方案,路线里相关的每一项都要照做(原话照抄,来自 seo-ops/playbook/rules.md):" if zh else
+         "Each rule below applies to this plan; every related roadmap item must follow it "
+         "(quoted as you said it, from seo-ops/playbook/rules.md):", ""]
+    for r in rules:
+        ap = r.get("applies") or ""
+        if not zh:
+            ap = "all" if ap == "全部" else ap.replace("、", ", ")
+        L.append(("- %s:「%s」(适用:%s)" if zh else "- %s: \"%s\" (applies to: %s)") % (r["id"], r["quote"], ap))
+    return L
+
+
 def render_roadmap(plan):
-    L = ["# 90 天路线(%s,%s)" % (plan.get("site") or "", plan["stage"]["name"]), "",
-         "按开始周排;# 是优先级(1 最先)。", "", "| # | 周 | 做什么 | 动哪类页面 | 预期动哪个数 | 怎么量 | 用到的产品事实 |", "|---|---|---|---|---|---|---|"]
+    L = ["# 90 天路线(%s,%s)" % (plan.get("site") or "", (plan.get("stage") or {}).get("name") or "阶段未知"), "",
+         "按开始周排;# 是优先级(1 最先)。", ""]
+    skipped = (plan.get("assumptions") or {}).get("audit_skipped")
+    if skipped:
+        L += ["体检没跑:%s(未确认)" % skipped, ""]
+    L += ["| # | 周 | 做什么 | 动哪类页面 | 预期动哪个数 | 怎么量 | 用到的产品事实 |", "|---|---|---|---|---|---|---|"]
     for r in by_week(plan_items(plan)):
         L.append("| %d | %s | **%s**:%s | %s | %s | %s | %s |" % (
             r["rank"], _wk(r), r["title"], r["do"] + ("(不含:%s)" % "、".join(r["deny_notes"]) if r["deny_notes"] else ""),
             "、".join(r["page_types"]), r["metric"], r["measure"],
-            "、".join("%s=%s%s" % (f["slot"], f["value"], "" if f["confirmed"] else "(未确认)") for f in r["facts_used"]) or "—"))
+            "、".join("%s=%s%s" % (f.get("slot"), f.get("value"), "" if f.get("confirmed") else "(未确认)")
+                      for f in r["facts_used"] if isinstance(f, dict)) or "—"))
+    L += rules_lines(plan)
     return "\n".join(L) + "\n"
 
 
@@ -428,6 +622,7 @@ def render_book(plan, lang="zh"):
         L.append("| %d | %s | **%s**:%s%s | %s | %s | %s |" % (
             r["rank"], _wk(r, lang), r["title"] if zh else r["title_en"], r["do"] if zh else r["do_en"], note,
             "、".join(r["page_types"]), r["metric"], r["measure"]))
+    L += rules_lines(plan, lang)
     L += ["", "## 5. 这个阶段看哪些数" if zh else "## 5. Metrics for this stage", ""]
     L += ["- %s:%s" % (a, b) for a, b in plan["metrics_by_stage"]]
     sk = plan["skipped"]
@@ -444,6 +639,8 @@ def render_book(plan, lang="zh"):
     L += ["", "## 7. 还没确认的假设" if zh else "## 7. Unconfirmed assumptions", ""]
     if a["skipped_rings"]:
         L.append(("- 跳过的开局环:第 %s 环,用的是猜测" if zh else "- Skipped onboarding rings: %s (guesses used)") % "、".join(a["skipped_rings"]))
+    if a.get("audit_skipped"):
+        L.append(("- 体检没跑:%s(未确认)" if zh else "- Technical audit not run: %s (unconfirmed)") % a["audit_skipped"])
     if a["unconfirmed_facts"]:
         L.append(("- 没确认的事实:" if zh else "- Unconfirmed facts: ") + "、".join(a["unconfirmed_facts"][:12]))
     if a.get("unknown_facts"):
@@ -466,7 +663,8 @@ def render_plan_md(plan):
     L = ["# SEO / GEO 方案(%s,%s%s)" % (plan.get("site") or "", st["name"], "" if st["confirmed"] else ",阶段待确认"), "",
          "> 生成于 %s,档案第 %s 版;状态 %s。plan.json 的 items 和下面的编号列表是同一份。" % (
              plan["generated_at"], plan["profile_version"], plan.get("status")), ""]
-    guesses = (["第 %s 环跳过了,用的是猜测(未确认)" % r for r in a["skipped_rings"]]
+    guesses = (["体检没跑:%s(未确认)" % a["audit_skipped"]] if a.get("audit_skipped") else []) + (
+               ["第 %s 环跳过了,用的是猜测(未确认)" % r for r in a["skipped_rings"]]
                + ["%s:未确认(猜测)" % k for k in dict.fromkeys(a["unconfirmed_facts"])]
                + ["%s:用户不知道(未确认)" % k for k in a.get("unknown_facts") or []]
                + ["%s:档案里缺,用了通用说法(假设)" % k for k in a["missing_slots"]])
@@ -476,7 +674,9 @@ def render_plan_md(plan):
     for r in plan_items(plan):
         note = "(不含:%s)" % "、".join(r["deny_notes"]) if r["deny_notes"] else ""
         L.append("%d. **%s**:%s%s" % (r["rank"], r["title"], r["do"], note))
-        L.append("   %s;看 %s,怎么量:%s。%s" % (_wk(r), r["metric"] or "—", r["measure"] or "—", r["title_en"]))
+        L.append("   %s;看 %s,怎么量:%s。%s%s" % (_wk(r), r["metric"] or "—", r["measure"] or "—", r["title_en"],
+                                            (" " + r["goal"]) if r.get("goal") else ""))
+    L += rules_lines(plan)
     sk = plan["skipped"]
     nots = (["你说过不做:%s" % x for x in plan["deny"]]
             + ["%s:%s(%s)" % (label, x["title"], x["why"]) for k, label in
@@ -487,11 +687,18 @@ def render_plan_md(plan):
 
 
 def cmd_build(ns):
-    ws = ns.ws
+    ws = ns.ws = LC.resolve_ws(ns.ws, __file__, ns.argv)
     metrics = read_json(ns.metrics) if ns.metrics else None
     plan = build(ws, metrics, ns.top)
     d = os.path.join(ws, "plan")
     old = read_json(os.path.join(d, "plan.json"))
+    if old and old.get("status") == "approved" and not ns.replan:
+        # 用户确认过的方案不因为顺手再跑一次 build 就退回草稿;真要重排要明说
+        print(render_roadmap(old))
+        print("方案已定稿(%s,用户原话「%s」),这次没有重排,文件没动。" % (
+            old.get("approved_at") or old.get("generated_at") or "日期未记", old.get("approved_quote") or ""))
+        print("档案、规则或阶段变了要重排:plan.py build --replan(新方案回到草稿,要发给用户再确认)。只看方案:plan.py show。")
+        return 0
     if old and old.get("status") == "approved":
         plan["previous_approved"] = {"generated_at": old.get("generated_at"), "approved_quote": old.get("approved_quote")}
     write_text(os.path.join(d, "plan.json"), json.dumps(plan, ensure_ascii=False, indent=1))
@@ -504,11 +711,15 @@ def cmd_build(ns):
     else:
         print(render_roadmap(plan))
         print("写了:%s/{plan.json,plan.md,roadmap.md,strategy-book.zh.md,strategy-book.en.md}" % d)
-        print("下一步:把三条策略和路线发给用户(开局第 6 环),停下等确认。")
+        if plan.get("previous_approved"):
+            print("注意:原来定稿的方案已被这份新草稿替换。下一步:把新路线发给用户,停下等确认(onboard.py show --ring 6)。")
+        else:
+            print("下一步:把三条策略和路线发给用户(开局第 6 环),停下等确认。")
     return 0
 
 
 def cmd_show(ns):
+    ns.ws = LC.resolve_ws(ns.ws, __file__, ns.argv)
     plan = read_json(os.path.join(ns.ws, "plan", "plan.json"))
     if not plan:
         raise UsageError("还没有方案:先 plan.py build")
@@ -521,13 +732,16 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="按产品阶段出方案、90 天路线和战略书")
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
-    b.add_argument("--ws", default="seo-ops")
+    b.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops)")
     b.add_argument("--metrics")
     b.add_argument("--top", type=int, default=10)
     b.add_argument("--json", action="store_true")
+    b.add_argument("--replan", action="store_true",
+                   help="已有定稿方案时重排:新方案回到草稿,要发给用户再确认(不加这个参数,定稿方案原样不动)")
     s = sub.add_parser("show")
-    s.add_argument("--ws", default="seo-ops")
+    s.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops)")
     ns = ap.parse_args(argv)
+    ns.argv = list(sys.argv[1:] if argv is None else argv)
     try:
         return {"build": cmd_build, "show": cmd_show}[ns.cmd](ns)
     except GateError as e:

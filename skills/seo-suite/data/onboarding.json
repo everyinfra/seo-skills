@@ -1,5 +1,5 @@
 {
- "about": "RQ-237 开局 6 环的问题库(onboard.py 读)。每环先由 agent 自己做 agent_steps 里的事,再把 questions 带着猜测发给用户,用户回了话才能确认这一环。每环最多 4 个问题;required=true 的问题不答不能确认;sensitive=true 的答案存进 seo-ops/context/private/(不进 git);when 写了条件的只在条件成立时问。",
+ "about": "RQ-237 开局 6 环的问题库(onboard.py 读)。每环先由 agent 自己做 agent_steps 里的事,再把 questions 带着猜测发给用户,用户回了话才能确认这一环。每环最多 4 个问题(第 1 环最多 3 个:merge_into 的问题并进同一行问);covered_by 写的草稿事实已经由 .agents/product-marketing.md 给出时,这一问不再问、确认时取那份文件的值;required_if_missing 写的事实缺了才必答;required=true 的问题不答不能确认;sensitive=true 的答案存进 seo-ops/context/private/(不进 git);when 写了条件的只在条件成立时问。",
  "rings": [
   {
    "ring": 1,
@@ -22,12 +22,13 @@
    "questions": [
     {
      "id": "profile_ok",
-     "text": "上面这份产品理解(含产品阶段)对吗?哪里不对直接改。",
+     "text": "上面这份产品理解(含产品阶段和收费方式)对吗?哪里不对直接改。",
      "options": [
       "都对",
       "有几处要改(请写出来)"
      ],
-     "required": true
+     "required": true,
+     "answered_by_corrections": true
     },
     {
      "id": "conversion",
@@ -40,20 +41,30 @@
       "品牌曝光",
       "被 AI 引用"
      ],
-     "required": true
+     "required": true,
+     "covered_by": [
+      "conversion.pm_action"
+     ]
     },
     {
      "id": "customers",
      "text": "主要客户是谁?(越具体越好:行业、角色、规模)",
      "options": [],
-     "required": true
+     "required": true,
+     "covered_by": [
+      "context.pm_customers"
+     ]
     },
     {
      "id": "main_line",
-     "text": "哪条产品线最重要、最想先做?",
+     "text": "最想先做哪条产品线?",
      "options_from": "product.lines",
      "options": [],
-     "required": true
+     "required": false,
+     "required_if_missing": "product.lines",
+     "merge_into": "profile_ok",
+     "text_inferred": "产品线是我按网址推的(见上面草稿),对吗?最想先做哪条?",
+     "text_missing": "没读到可靠的产品线:有哪些产品线、最想先做哪条?"
     }
    ]
   },
@@ -148,7 +159,7 @@
     "history."
    ],
    "agent_steps": [
-    "站点已上线:跑技术体检链 project.py run triage,按页面类型分组看问题;想法阶段改成看技术选型(框架能不能服务端渲染、URL 和多语言方案)",
+    "站点已上线:跑技术体检链(完整命令在下面「体检」那一行,照抄),按页面类型分组看问题;想法阶段改成看技术选型(框架能不能服务端渲染、URL 和多语言方案)",
     "lifecycle.py diagnose 算 5 维成熟度(脚本算,不问用户)",
     "把体检结论写成 note(kind=inferred)"
    ],
@@ -215,7 +226,8 @@
      "id": "deny_topics",
      "text": "哪些主题、渠道或做法明确不做?(会写进禁用清单,之后不再建议)",
      "options": [
-      "没有"
+      "没有",
+      "有(请写,会进禁用清单)"
      ],
      "required": false,
      "deny": true
@@ -244,8 +256,8 @@
     "strategy."
    ],
    "agent_steps": [
-    "跑 plan.py build --ws seo-ops:只从本阶段的打法里选(data/playbooks.json + 用户的 playbook/plays.json),按成熟度最弱的一格加权,禁用清单直接过滤",
-    "每条建议已写好动哪类页面、预期动哪个数、怎么量、第几周做;把三条策略、前 10 条路线和「不做什么」发给用户",
+    "方案由 show --ring 6 生成(没有就当场跑 plan.py build):只从本阶段的打法里选(data/playbooks.json + 用户的 playbook/plays.json),按成熟度最弱的一格加权,禁用清单直接过滤;先读 seo-ops/plan/plan.md",
+    "每条建议已写好动哪类页面、预期动哪个数、怎么量、第几周做;策略、路线前 10 条和「不做什么」已经在发给用户的那一块里,原样发;要补的说明写在那块前面,不另加问题",
     "产出在 seo-ops/plan/:plan.json、roadmap.md、strategy-book.zh.md / .en.md;用户说可以就用 answer --ring 6 --set approve_plan=可以 定稿"
    ],
    "questions": [

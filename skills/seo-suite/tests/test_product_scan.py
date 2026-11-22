@@ -169,7 +169,7 @@ class SiteScanTests(unittest.TestCase):
                                              "first_seen", "repo_public_routes", "analytics", "has_llms_txt",
                                              "has_jsonld", "jsonld_types", "hreflang_locales", "same_as"})
         self.assertEqual(set(r["site_scan"]), {"reachable", "homepage", "robots", "sitemap", "llms", "page_types",
-                                               "locales", "samples", "first_seen", "fetched"})
+                                               "locales", "samples", "first_seen", "fetched", "sections"})
 
     def test_fetched_lists_every_request(self):
         # 评测按输出里列出的 URL 数页面类型(robots.txt、sitemap、llms.txt 各算一种):列表必须和实际请求逐条一致
@@ -227,20 +227,25 @@ class SiteScanTests(unittest.TestCase):
                    "context.existing"}
         self.assertTrue(set(fk) <= allowed, set(fk) - allowed)
         for f in self.rep["facts"]:
-            self.assertIn(f["kind"], ("fact", "inferred"))
+            if f["kind"] == "unknown":                       # 拿不准的产品线留一条「未知」,第 1 环问用户
+                self.assertEqual((f["key"], f["value"]), ("product.lines", None))
+            else:
+                self.assertIn(f["kind"], ("fact", "inferred"))
             self.assertTrue(f["source"])
         name = fk["product.name"][0]
         self.assertEqual((name["value"], name["source"], name["kind"]), ("Acme Cloud", ORIGIN + "/", "fact"))
         ol = fk["product.one_liner"][0]
         self.assertEqual((ol["value"], ol["source"], ol["kind"]),
                          ("API hosting and monitoring for small teams.", ORIGIN + "/llms.txt", "fact"))
-        lines = fk["product.lines"][0]
-        self.assertEqual((lines["value"], lines["kind"]), (["Hosting", "Monitoring"], "inferred"))
+        lines = fk["product.lines"][0]                                      # 首页 h2 不当产品线
+        self.assertEqual((lines["value"], lines["kind"]), (None, "unknown"))
         pr = fk["pricing.prices"][0]
         self.assertEqual((pr["source"], pr["kind"]), (ORIGIN + "/pricing/", "fact"))
         self.assertIn("$9/mo", pr["value"])
-        self.assertEqual(fk["pricing.model"][0]["value"], "freemium")       # 有价 + 页面写 free
-        self.assertEqual(fk["pricing.model"][0]["kind"], "inferred")
+        pm = fk["pricing.model"][0]
+        self.assertEqual(pm["enum"], "freemium")                             # 有价 + 页面写 free(枚举留作附加字段)
+        self.assertIn("Pro costs $9/mo per workspace.", pm["value"])         # 原文价格
+        self.assertEqual((pm["kind"], pm["source"]), ("fact", ORIGIN + "/pricing/"))
         self.assertEqual(fk["market.languages"][0]["value"], ["en", "es"])
         self.assertEqual(fk["entity.same_as"][0]["value"], ["https://github.com/acme", "https://x.com/acme"])
         self.assertEqual(fk["site.url_count"][0]["value"], "9")

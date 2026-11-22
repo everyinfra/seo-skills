@@ -16,8 +16,7 @@
   "pricing.model": "硬件一次性购买 $29 / $59 / $79;App 免费,Premium $3/月",
   "conversion.primary": "在线商店下单(checkout 完成)",
   "customers": [
-   "美国和德国(DACH)的家庭园艺和室内植物爱好者",
-   "植物店经销商(次要)"
+   "美国和德国(DACH)的家庭园艺和室内植物爱好者"
   ],
   "market.languages": [
    "en",
@@ -90,12 +89,6 @@
     "园艺",
     "houseplant",
     "植物"
-   ],
-   [
-    "reseller",
-    "经销",
-    "plant shop",
-    "植物店"
    ]
   ],
   "market.languages": [
@@ -219,7 +212,13 @@
    [
     "需求验证",
     "起名",
-    "域名"
+    "选域名",
+    "挑域名",
+    "域名选择",
+    "买域名",
+    "brand naming",
+    "choose a domain",
+    "pick a domain"
    ]
   ],
   [
@@ -246,5 +245,9 @@
   "recall_min": 9,
   "false_positive_max": 0,
   "false_positive_rule": "--state after 里,不在 PLANT_URLS 的 URL 上报出的迁移问题算误报;MIGRATION.md 里其余 18 条映射是一跳 301,正确"
- }
+ },
+ "corrections": [
+  "2026-11-22 第 5 批第 1 轮后出题人更正(疑问 4):customers 去掉「植物店经销商(次要)」和它的别名组。这条只写在 lifecycle_sites.py 产出的 DIR/brief.md 里,被测工作区是 DIR/repo,站点页面、MIGRATION.md 和模拟用户回话都没有经销商,被测拿不到;答案表只收被测能从站点、工作区和模拟用户回话读到的事实。",
+  "2026-11-22 同上(疑问 5):禁项「需求验证、起名和域名」的别名「域名」会命中改版阶段的正当建议(canonical 指向新域名、在 GSC 提交地址变更),改成只指想法阶段的动作:需求验证 / 起名 / 选域名 / 挑域名 / 域名选择 / 买域名 / brand naming / choose a domain / pick a domain。"
+ ]
 }

@@ -49,6 +49,7 @@ import sys
 import time
 import urllib.parse
 import urllib.robotparser
+from html.parser import HTMLParser
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
@@ -235,6 +236,34 @@ def collect_locs(site, timeout, notes):
     return locs, errors, len(seen)
 
 
+class TitleNav(HTMLParser):
+    """<title> 文本和 <nav> / <header> 里的链接(找首页导航里的栏目用)。"""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.title, self.nav, self._in_title, self._depth = "", [], False, 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "title":
+            self._in_title = True
+        elif tag in ("nav", "header"):
+            self._depth += 1
+        elif tag == "a" and self._depth:
+            href = dict(attrs).get("href")
+            if href:
+                self.nav.append(href)
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self._in_title = False
+        elif tag in ("nav", "header") and self._depth:
+            self._depth -= 1
+
+    def handle_data(self, data):
+        if self._in_title and len(self.title) < 200:
+            self.title += data
+
+
 def check_one(url, timeout):
     row = {"url": url}
     try:
@@ -254,6 +283,15 @@ def check_one(url, timeout):
             pass
         robots = " ".join(hp.meta_robots + [xr]).lower()
         row["noindex"] = "noindex" in robots
+        tn = TitleNav()
+        try:
+            tn.feed(SM.decode(body, headers))
+        except Exception:  # noqa: BLE001
+            pass
+        if tn.title.strip():
+            row["title"] = " ".join(tn.title.split())[:160]
+        if urllib.parse.urlsplit(url).path in ("", "/") and tn.nav:
+            row["nav"] = [urllib.parse.urljoin(url, h) for h in tn.nav[:80]]
         if hp.canonical:
             canon = urllib.parse.urljoin(url, hp.canonical)
             row["canonical"] = canon
@@ -854,12 +892,18 @@ def run_ops(args, kind):
     t0 = time.time()
     cov = {"ran": [], "skipped": []}
 
+    args.allow_local = bool(args.allow_local) or ws_allows_local(ws, site)
     ext_path, ext = latest_external(ws, args.external)
+    data_src = None
     if ext:
         cov["ran"].append("外部数据包 %s(生成于 %s,来自 %s)" % (os.path.basename(ext_path), ext.get("generated_at"),
                                                            ext.get("producer", "?")))
     else:
         cov["skipped"].append("外部数据包:seo-ops/raw/ 下没有 %s 文件" % EXTERNAL_SCHEMA)
+        data_src = data_exports(ws)
+        if data_src:                       # 没有外部数据包时,读工作区旁 data/ 里的 GSC 导出(和开局、循环同一套读法)
+            ext = {"schema": EXTERNAL_SCHEMA, "producer": "data/ 下的 GSC 导出", "sources": data_src["sources"]}
+            cov["ran"].append("GSC:%s" % data_src["label"])
 
     gsc_pages = ((ext or {}).get("sources", {}).get("gsc_pages") or {}).get("rows") or []
     site_host = host_of(site)
@@ -1014,7 +1058,8 @@ def run_ops(args, kind):
     # 数据
     gsc = gsc_summary(ext)
     sa = default_sa(args.gsc_sa)
-    cross, cross_err = (None, "--no-net") if args.no_net else gsc_crosscheck(ext, sa, site)
+    cross, cross_err = (None, "--no-net") if args.no_net else (
+        (None, "GSC 来自 data/ 导出,没有第二个来源可对") if data_src else gsc_crosscheck(ext, sa, site))
     if cross_err:
         cov["skipped"].append("GSC 两个来源对账:%s" % cross_err)
     ga4, ga4_err = (None, "--no-net") if args.no_net else ga4_ai(
@@ -1067,10 +1112,12 @@ def run_ops(args, kind):
 
     rec = recommend(hard, states, lists, ctr, geo, clicks_by_url, args.repo)
     # RQ-237 第 3 批:开局档案和定稿方案接进运营单。优先级:硬告警 > 方案本周路线项 > 原来的「只做这一件」
-    loops_ev, roadmap, _ = lifecycle_loops(ws, ext, date)
+    sections = site_sections(light, site_host) if light else None
+    loops_ev, roadmap, _ = lifecycle_loops(ws, ext, date, sections=sections, data_ext=bool(data_src))
     # RQ-237 第 4 批:用户的禁用清单先过滤路线项和推荐,再按优先级挑;已启用的自定义检查在本周轻检过的页面上跑
     pb = user_playbook(ws, light, args)
     roadmap = deny_roadmap(pb, roadmap)
+    needs = roadmap_needs(ws, roadmap, site, date)
     rec, single_pick = with_plan(hard, rec, roadmap)
     rec, single_pick = deny_recs(pb, hard, rec, single_pick)
     if pb and pb.get("checks_skipped_reason"):
@@ -1089,14 +1136,20 @@ def run_ops(args, kind):
               "score_gate": gate, "score": (score or {}).get("main_score") if gate_ok else None,
               "markets": markets, "monthly": monthly, "external": ext_path, "first_run": not prev_issues,
               "roadmap": roadmap, "single_pick": single_pick, "loops": loops_ev, "playbook": pb,
-              "signups": signup_summary(cmodel)}
+              "signups": signup_summary(cmodel), "needs": needs, "gsc_export": gsc_export_line(ws, data_src, date),
+              "ws": os.path.abspath(ws)}
+    screen = first_screen(ws, agenda, date)
+    agenda["first_screen"] = screen
     write_json(os.path.join(run_dir, "agenda.json"), agenda)
     md = render(agenda, score)
     with open(os.path.join(run_dir, "agenda.md"), "w", encoding="utf-8") as f:
-        f.write(md)
+        f.write("> 存档:%s 生成。第二次打开要看现状,重跑 `project.py ops weekly`(会现算首屏和循环),不读这份旧运营单。\n\n"
+                % agenda["generated_at"] + md)
     if args.json:
         print(json.dumps(agenda, ensure_ascii=False, indent=1))
     else:
+        if screen:
+            print(screen)
         print(md)
         print("\n写到 %s" % os.path.join(run_dir, "agenda.md"))
     return 1 if hard else 0
@@ -1162,15 +1215,24 @@ def with_plan(hard, rec, roadmap):
     """优先级:硬告警 > 方案本周路线项 > 原来的「只做这一件」(被让位的那件放进 single_pick 照样列出来)。"""
     if hard or not roadmap or not roadmap.get("items"):
         return rec, None
-    top = roadmap["items"][0]
+    ready = [it for it in roadmap["items"] if not it.get("blocked_by")]
+    if not ready:
+        return rec, None
+    top = ready[0]
+    held = [it for it in roadmap["items"] if it.get("blocked_by") and it["rank"] < top["rank"]]
     new = {"what": "本周路线项 #%d:%s" % (top["rank"], top["title"]),
-           "why": "方案第 %d 周;%s;看 %s,怎么量:%s" % (roadmap["week"], top["do"], top["metric"], top["measure"]),
+           "why": "方案第 %d 周;%s;看 %s,怎么量:%s" % (roadmap["week"], top["do"], top.get("metric", ""), top.get("measure", "")),
            "url": None, "source": "plan/plan.json(%s 定稿)" % roadmap.get("approved_at", "")}
+    if held:
+        new["why"] += ";排在前面的 %s 先放着:缺 %s" % ("、".join("#%d" % it["rank"] for it in held),
+                                                "、".join(dict.fromkeys(n for it in held for n in it["blocked_by"])))
     return new, rec
 
 
-def lifecycle_loops(ws, ext, date):
-    """读开局档案、定稿方案和循环(loops.py);没开局或没做完时三项都是 None,运营单照旧。"""
+def lifecycle_loops(ws, ext, date, sections=None, data_ext=False):
+    """读开局档案、定稿方案和循环(loops.py);没开局或没做完时三项都是 None,运营单照旧。
+    sections:本周轻检拿到的一级栏目,给「产品变了」循环和开局基线比;data_ext:ext 是 data/ 导出转来的
+    (指标历史由循环按逐日导出回填,这里不再按外部数据包记一遍)。"""
     try:
         import loops as LP
     except ImportError:
@@ -1178,17 +1240,241 @@ def lifecycle_loops(ws, ext, date):
     if not os.path.isfile(os.path.join(ws, "context", "profile.json")):
         return None, None, None
     d = dt.date.fromisoformat(date)
-    mx = LP.metrics_from_external(ext)
+    mx = None if data_ext else LP.metrics_from_external(ext)
     if mx:
         LP.append_metrics(ws, mx[0], "ops.py 外部数据包 gsc_totals", mx[1])
     try:
-        ev = LP.evaluate(ws, d)
+        ev = LP.evaluate(ws, d, sections=sections)
     except (LP.GateError, LP.UsageError) as e:
         return {"skipped": str(e)}, None, None
     plan = read_json(os.path.join(ws, "plan", "plan.json"))
     wk, items = LP.roadmap_this_week(plan, d)
     road = {"week": wk, "approved_at": (plan or {}).get("approved_at", "")[:10], "items": items} if wk else None
     return ev, road, None
+
+
+def ws_allows_local(ws, site):
+    """站点是本机预览地址、开局时带过 --allow-local(记在 project.yaml,旧工作区看开局读站点的结果)→ 不用再带。"""
+    if not is_local(host_of(site)):
+        return False
+    try:
+        import loops as LP
+    except ImportError:
+        return False
+    return LP.allow_local(ws)
+
+
+def data_exports(ws):
+    """工作区旁 data/ 的 GSC 导出 → lifecycle.gsc_export_sources 的结果(没有 → None)。"""
+    try:
+        import lifecycle as LC
+    except ImportError:
+        return None
+    prof = read_json(os.path.join(ws, "context", "profile.json"))
+    try:
+        return LC.gsc_export_sources(ws, prof)
+    except Exception:  # noqa: BLE001 — 导出读不了就当没有,覆盖节照写
+        return None
+
+
+def gsc_export_line(ws, data_src, date):
+    """首屏用的一行 GSC:哪份导出、日期范围、近 28 天展示和点击;导出和上次运营单看到的不一样时标「新导出」。"""
+    if not data_src:
+        return None
+    rows = ((data_src["sources"].get("gsc_pages") or {}).get("rows")) or []
+    h = hashlib.sha1()
+    for f in data_src["files"]:
+        try:
+            with open(f, "rb") as fh:
+                h.update(fh.read())
+        except OSError:
+            pass
+    digest = h.hexdigest()[:12]
+    path = os.path.join(ws, "ledger", "data_exports.json")
+    seen = read_json(path, {}) or {}
+    new = bool(seen.get("sha")) and seen.get("sha") != digest       # 第一次看到不算「新」,和上次运营单看到的不同才算
+    if seen.get("sha") != digest:
+        write_json(path, {"sha": digest, "at": date, "files": [os.path.basename(f) for f in data_src["files"]]})
+    return {"label": data_src["label"], "first": data_src["first"], "last": data_src["last"], "new": new,
+            "impressions": sum(int(r.get("impressions") or 0) for r in rows),
+            "clicks": sum(int(r.get("clicks") or 0) for r in rows),
+            "files": [os.path.relpath(f, os.path.dirname(os.path.abspath(ws))) for f in data_src["files"]]}
+
+
+def site_sections(light, site_host):
+    """本周轻检的 sitemap URL → 一级栏目页数、首页导航里的栏目、栏目首页的标题(给「产品变了」循环)。"""
+    try:
+        import loops as LP
+    except ImportError:
+        return None
+    urls = [u for u in light.get("in_sitemap") or [] if same_site(u, site_host)]
+    if not urls:
+        return None
+    nav, titles = set(), {}
+    for r in light["rows"]:
+        for h in r.get("nav") or []:
+            if same_site(h, site_host) and LP.url_section(h):
+                nav.add(LP.url_section(h))
+        segs = [x for x in urllib.parse.urlsplit(r["url"]).path.split("/") if x]
+        if r.get("title") and len(segs) == 1:
+            titles[segs[0].lower()] = r["title"]
+    return {"current": LP.section_counts(urls), "nav": sorted(nav), "titles": titles}
+
+
+# 路线项要的材料:blocking = 缺了这一项就做不了(「只做这一件」跳过它);其余缺了也能做,只是产出换成改动稿或占位
+NEEDS = {
+    "entity.profiles": {"blocking": True},
+    "site.source": {"blocking": False},
+    "site.public_domain": {"blocking": False},
+}
+SOURCE_EXT = (".html", ".htm", ".jsx", ".tsx", ".vue", ".svelte", ".astro", ".njk", ".liquid", ".hbs", ".erb",
+              ".php", ".mdx", ".twig", ".ejs", ".pug")
+SOURCE_MARKERS = ("package.json", "hugo.toml", "config.toml", "_config.yml", "astro.config.mjs", "next.config.js",
+                  "next.config.mjs", "gatsby-config.js", "nuxt.config.ts", "svelte.config.js", "eleventy.config.js",
+                  ".eleventy.js", "mkdocs.yml", "docusaurus.config.js", "wp-config.php", "Gemfile")
+
+
+def has_site_source(repo, ws):
+    """档案里的仓库目录里有没有页面源码(模板、页面文件或站点框架的配置);不看 seo-ops/、data/。"""
+    if not repo or not os.path.isdir(repo):
+        return False
+    skip = {"seo-ops", "data", "node_modules", ".git", "history", "__pycache__", os.path.basename(os.path.abspath(ws))}
+    for root, dirs, files in os.walk(repo):
+        dirs[:] = [d for d in dirs if d not in skip and not d.startswith(".")]
+        if root[len(repo):].count(os.sep) > 4:
+            dirs[:] = []
+        for f in files:
+            if f in SOURCE_MARKERS or f.lower().endswith(SOURCE_EXT):
+                return True
+    return False
+
+
+def _play_needs():
+    try:
+        with open(os.path.join(os.path.dirname(BASE), "data", "playbooks.json"), encoding="utf-8") as f:
+            return {p["id"]: p.get("needs") or [] for p in json.load(f)["plays"]}
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+def roadmap_needs(ws, roadmap, site, date):
+    """本周路线项要的材料有没有;缺的写成陈述句(不编号、不带问号),同一项 30 天内只列一次(ledger/needs.jsonl)。
+    缺了做不了的(blocking)在路线项上标 blocked_by,「只做这一件」跳过它。→ {"list", "listed_before", "no_source"}。"""
+    out = {"list": [], "listed_before": [], "no_source": False}
+    if not roadmap or not roadmap.get("items"):
+        return out
+    try:
+        import lifecycle as LC
+    except ImportError:
+        return out
+    prof = read_json(os.path.join(ws, "context", "profile.json"), {}) or {}
+    scan = read_json(os.path.join(ws, "context", "scan.json"), {}) or {}
+    same = []
+    for f in prof.get("facts") or []:
+        if f.get("key") in ("entity.same_as", "entity.profiles") and f.get("status") != "unknown":
+            v = f.get("value")
+            same += v if isinstance(v, list) else [x for x in str(v or "").split(",") if x.strip()]
+    same = same or list((scan.get("signals") or {}).get("same_as") or [])
+    repo = LC.profile_repo(ws, prof)
+    src = has_site_source(repo, ws)
+    out["no_source"] = not src
+    by_id = _play_needs()
+    texts = {}
+    for it in roadmap["items"]:
+        needs = it.get("needs") if isinstance(it.get("needs"), list) else by_id.get(it.get("id"), [])
+        blocked = []
+        for n in needs:
+            tag = "#%d" % it["rank"]
+            if n == "entity.profiles":
+                if same:
+                    hosts = "、".join(dict.fromkeys(host_of(u).removeprefix("www.") for u in same if host_of(u)))
+                    texts.setdefault(n + ":more", ["除了 %s 以外的品牌平台主页链接:有就一起写进 sameAs,没有就只用已有的" % hosts, []])[1].append(tag)
+                else:
+                    blocked.append("品牌平台主页链接")
+                    texts.setdefault(n, ["品牌在各平台的主页链接(Instagram、LinkedIn、YouTube 这类,有几个给几个):"
+                                         "sameAs 要用真实链接,拿到之前这一项先放着", []])[1].append(tag)
+            elif n == "site.source" and not src:
+                texts.setdefault(n, ["站点源码位置:工作区里没有页面源码,改页面的事我先出改动稿(改前 / 改后),"
+                                     "源码在别处的话告诉我路径", []])[1].append(tag)
+            elif n == "site.public_domain" and is_local(host_of(site)):
+                texts.setdefault(n, ["正式域名:档案里的站点是本机预览地址(%s),提交收录和结构化数据里的网址要用正式域名,"
+                                     "拿到之前先用占位符" % site, []])[1].append(tag)
+        if blocked:
+            it["blocked_by"] = list(dict.fromkeys(blocked))
+    path = os.path.join(ws, "ledger", "needs.jsonl")
+    prev = {}
+    for row in read_jsonl(path):
+        prev[row.get("fp")] = row
+    today = dt.date.fromisoformat(date)
+    for key, (text, tags) in texts.items():
+        fpv = hashlib.sha1(("%s|%s" % (key, text)).encode("utf-8")).hexdigest()[:12]
+        line = "%s(%s 要用)" % (text, "、".join(dict.fromkeys(tags)))
+        old = prev.get(fpv)
+        try:
+            age = (today - dt.date.fromisoformat(str(old.get("at"))[:10])).days if old else None
+        except ValueError:
+            age = None
+        if old and age is not None and age < 30:
+            out["listed_before"].append({"text": line, "at": old.get("at")})
+            continue
+        out["list"].append(line)
+        append_jsonl(path, {"at": date, "need": key, "fp": fpv, "text": line})
+    return out
+
+
+def first_screen(ws, a, date):
+    """第二次打开的首屏:等号行框住的一块「原样发给用户」+ 给 agent 的一段。开局没做完 → None。"""
+    lp = a.get("loops") or {}
+    if not lp.get("loops"):
+        return None
+    try:
+        import loops as LP
+        st = LP.status(ws, dt.date.fromisoformat(date))
+    except Exception:  # noqa: BLE001
+        return None
+    d = dt.date.fromisoformat(date)
+    chk = st.get("profile_checked_at")
+    age = (d - dt.date.fromisoformat(chk)).days if chk else None
+    p = st["plan"]
+    qs = lp.get("questions") or []
+    rec = a["recommendation"]
+    L = ["===== 下面这块原样发给用户(到下面那行等号为止;不改写、不删、不加别的问题)=====",
+         "**%s · 每周运营 · %s**" % (a["site"], date), ""]
+    L.append("- 档案:上次和你核对是 %s%s" % (chk or "—", ("(%d 天前)" % age) if age is not None else ""))
+    L.append("- 产品阶段:%s%s" % (st["stage"]["name"] or "未知", "(你确认过)" if st["stage"]["confirmed"] else "(还没确认)"))
+    if p["status"] == "approved":
+        L.append("- 方案:%s 定稿,现在是第 %s 周;本周路线项:%s" % (
+            (p["approved_at"] or "")[:10], p["week"],
+            ";".join("#%d %s" % (r["rank"], r["title"]) for r in (a.get("roadmap") or {}).get("items") or []) or "无"))
+    else:
+        L.append("- 方案:还没定稿")
+    L.append("- 这周做:%s" % rec["what"])
+    ge = a.get("gsc_export")
+    if ge:
+        L.append("- GSC:%s(%s~%s)近 28 天展示 %d、点击 %d%s" % (
+            "、".join(ge["files"]), ge["first"], ge["last"], ge["impressions"], ge["clicks"], ";这是新导出" if ge["new"] else ""))
+    if a["hard_alerts"]:
+        L.append("- 硬告警 %d 条,先处理:%s" % (len(a["hard_alerts"]), a["hard_alerts"][0]["title"]))
+    mats = (a.get("needs") or {}).get("list") or []
+    if mats:
+        L += ["", "待你补的材料(不急,不用现在回;有了直接发我):"] + ["- %s" % m for m in mats]
+    L.append("")
+    if qs:
+        L.append("这周要问你的(%d 个):" % len(qs))
+        L += [LP.question_line(i, q) for i, q in enumerate(qs, 1)]
+    else:
+        L.append("这周不需要你回答,我直接做「%s」。" % rec["what"])
+    L += ["===== 原样发给用户到这里为止 =====", "", "## 给 agent(不发给用户)"]
+    if qs:
+        L.append("- 把上面那块原样发给用户,停下等回复(Claude Code 可以用提问工具,选项照带)。")
+    else:
+        L.append("- 把上面那块原样发给用户,不停:接着直接做「这周做」那一件,做完报告做了什么、产出在哪。")
+    L += LP.agent_lines(ws, lp)
+    for m in (a.get("needs") or {}).get("listed_before") or []:
+        L.append("- 待补材料 %s 已经列过:%s。这次不再列给用户,也不为它停下;先用已有材料做。" % (m["at"], m["text"]))
+    L += ["- 现状以这条命令现算的为准:不要读 runs/*/agenda.md 旧运营单当现状,也不要自己写摘要替代上面那块。",
+          "- 运营单全文在下面,做完照最后一节「做完运营单以后」做。", ""]
+    return "\n".join(L)
 
 
 def monthly_extras(ext, model=None):
@@ -1253,12 +1539,23 @@ def render(a, score):
         for r in (lp or {}).get("loops") or []:
             if r["status"] in ("ask", "due", "waiting"):
                 L.append("- %s:%s" % (r["name"], r["why"]))
+            elif r["status"] == "skip":
+                L.append("- 没查:%s(%s)" % (r["name"], r["why"]))
         qs = (lp or {}).get("questions") or []
         if qs:
+            import loops as LP
             L.append("- 要问用户的(最多 3 个,只问变了的):")
-            L += ["  %d. %s" % (i, q["text"]) for i, q in enumerate(qs, 1)]
-        if lp and not qs and not [r for r in lp.get("loops") or [] if r["status"] in ("ask", "due", "waiting")]:
+            L += ["  " + LP.question_line(i, q) for i, q in enumerate(qs, 1)]
+        if lp and lp.get("loops") and a.get("ws"):
+            import loops as LP
+            L += LP.agent_lines(a["ws"], lp)
+        if lp and not qs and not [r for r in lp.get("loops") or [] if r["status"] in ("ask", "due", "waiting", "skip")]:
             L.append("- 循环都查了,没事")
+        elif lp and not qs and not [r for r in lp.get("loops") or [] if r["status"] in ("ask", "due", "waiting")]:
+            L.append("- 查了的循环都没事;上面写「没查」的这周没查")
+        nd = a.get("needs") or {}
+        if nd.get("list") or nd.get("listed_before"):
+            L.append("- 待你补的材料(陈述,不是问题):" + ";".join(nd.get("list") or [m["text"] for m in nd["listed_before"]]))
         L.append("")
     L += render_playbook(a.get("playbook"))
     L.append("## 3. 问题和上期比")
@@ -1361,7 +1658,25 @@ def render(a, score):
     for x in a["coverage"]["skipped"]:
         L.append("- 没跑:%s" % x)
     L.append("")
+    if a.get("loops") and (a["loops"] or {}).get("loops"):
+        L += after_agenda_lines(a)
     return "\n".join(L)
+
+
+def after_agenda_lines(a):
+    """运营单末尾给 agent 的固定指引:什么时候停、缺材料怎么写、起草类直接做。"""
+    qs = (a.get("loops") or {}).get("questions") or []
+    L = ["## 8. 做完运营单以后(给 agent;固定指引)",
+         "- 停不停:%s" % ("首屏「这周要问你的」有 %d 个问题:发完那一块就停,等用户回复;用户答了先跑上面印的 resolve 落档" % len(qs)
+                         if qs else "首屏没有要问的:不停,直接做「这周做」那一件"),
+         "- 缺材料不提问:写成陈述句的「待你补的材料」(不编号、不带问号),先用已有材料做能做的部分;同一项 30 天内不再列。",
+         "- 起草类直接做,不先问要不要做:brief、正文草稿、改动稿、提交清单、外联稿都写进 seo-ops/(或站点仓库的分支),"
+         "真正对外的动作(提交、发布、发信、合并)留给用户点。"]
+    if (a.get("needs") or {}).get("no_source"):
+        L.append("- 工作区里没有站点源码:改页面类的事出改动稿(改前 / 改后,或 patch),放 seo-ops/drafts/,不问仓库在哪。")
+    L += ["- 用户回「carry on / 继续 / 你定 / 按你的判断」:按默认做(这一屏写的那件事和上面的指引),不把问题再问一遍。",
+          "- 回合结束报告做了什么、产出在哪;后续能做的写成陈述句的建议,不留编号问题。", ""]
+    return L
 
 
 def render_playbook(pb):
@@ -1385,6 +1700,10 @@ def render_playbook(pb):
     for c in ch.get("changed") or []:
         L.append("- **检查 %s 的脚本改过了**(启用时 sha %s,现在 %s),已自动停用。给用户看改了什么,"
                  "确认后 `teach.py check try %s --url …` 再 `check enable`" % (c["name"], c["enabled_sha"], c["now_sha"], c["name"]))
+    for c in ch.get("unreadable") or []:
+        L.append("- **检查 %s 已停用:registry.json 读不了**(%s),启用记录和启用时的校验值都读不到,等用户重新确认:"
+                 "`teach.py check try %s --url …` 给用户看结果,再 `teach.py check enable %s --quote \"<原话>\"`"
+                 % (c["name"], c.get("why"), c["name"], c["name"]))
     for c in ch.get("skipped") or []:
         L.append("- 检查 %s 没跑:%s" % (c["name"], c["why"]))
     L.append("")

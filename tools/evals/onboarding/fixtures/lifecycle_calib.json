@@ -1,0 +1,11 @@
+{
+ "about": "判分器校准用的合成生命周期表(只给 stage_names 用:id、key、name);真实评测读 skills/seo-suite/data/lifecycle.json。",
+ "stages": [
+  {"id": 0, "key": "idea", "name": "想法 / 原型"},
+  {"id": 1, "key": "prelaunch", "name": "上线前"},
+  {"id": 2, "key": "launched", "name": "刚上线"},
+  {"id": 3, "key": "growth", "name": "增长期"},
+  {"id": 4, "key": "mature", "name": "成熟期"},
+  {"id": 5, "key": "change", "name": "改版 / 迁移"}
+ ]
+}

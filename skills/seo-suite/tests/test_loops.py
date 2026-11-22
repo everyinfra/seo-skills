@@ -20,6 +20,8 @@ import unittest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(BASE, "scripts")
+# 扫描文件造的站没有真站可体检:第 4 环走逃生口(站点已上线时确认第 4 环要体检记录)
+NO_AUDIT = ["--no-audit", "测试用扫描文件造的站,没有真站可体检"]
 # onboard.py 用 UTC 日期盖「上次核对」戳;测试用同一个日期,否则 UTC 与本地跨日(如新加坡 00:00–08:00)会误红
 TODAY = dt.datetime.now(dt.timezone.utc).date()
 
@@ -69,7 +71,8 @@ class Ws:
         for r_, sets in {2: ["jargon=开票"], 3: ["real_competitors=Rival"], 4: ["capacity=每月 4 篇"],
                          5: ["market_first=zh", "deny_topics=没有"]}.items():
             self.ok(self.ob("show", "--ring", str(r_)))
-            self.ok(self.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []), "--quote", "答", "--confirm"))
+            self.ok(self.ob("answer", "--ring", str(r_), *sum((["--set", s] for s in sets), []), "--quote", "这一环就按这些答",
+                            *(NO_AUDIT if r_ == 4 else []), "--confirm"))
         self.ok(self.ob("show", "--ring", "6"))
         self.ok(run("plan.py", ["build", "--ws", self.ws], self.tmp))
         if approve:

@@ -301,6 +301,34 @@ def parse_rules(text):
     return out
 
 
+SCOPE_WORDS = {"plan": ("plan", "方案", "路线"), "brief": ("brief",), "weekly": ("weekly", "每周运营单", "运营单"),
+               "outreach": ("outreach", "外联")}
+
+
+def rules_for(ws, scope, include_deny=False):
+    """适用范围含 scope(plan / brief / weekly / outreach)、没撤销的规则 → [{"id","quote","applies"}]。
+    「适用」写的是默认的「所有建议…」或没写,算全部适用。include_deny=False 时不含「不做 X」类
+    (那类已经由禁用清单逐条过滤)。规则只有原话,没有结构化的触发条件,所以不逐条匹配建议。"""
+    out = []
+    words = SCOPE_WORDS.get(scope, (scope,))
+    for r in parse_rules(read_rules(ws)) if ws else []:
+        if r["removed"]:
+            continue
+        body = r["body"]
+        m = re.search(r"^- 适用:(.*)$", body, re.M)
+        applies = m.group(1).strip() if m else ""
+        everywhere = not applies or applies.startswith("所有")
+        if not everywhere and not any(w in applies.lower() for w in words):
+            continue
+        deny = re.search(r"^- 禁用:(.*)$", body, re.M)
+        if not include_deny and deny and not deny.group(1).strip().startswith("无"):
+            continue
+        q = re.search(r"^- 原话:「(.*)」", body, re.M)
+        out.append({"id": r["id"], "quote": q.group(1) if q else r["head"],
+                    "applies": "全部" if everywhere else applies})
+    return out
+
+
 def next_rule_id(text):
     ids = [int(r["id"][1:]) for r in parse_rules(text)]
     return "R%d" % (max(ids) + 1 if ids else 1)
@@ -365,20 +393,73 @@ def check_paths(ws, name):
     return pb_dir(ws, "checks", name + ".py"), pb_dir(ws, "checks", name + ".md")
 
 
+REG_CORRUPT_STATE = "unreadable"
+
+
+def registry_problem(ws):
+    """registry.json 存在但读不了(不是合法 JSON、顶层不是对象、checks 不是对象)→ 一句原因(带行号);
+    文件不存在或读得了 → None。"""
+    path = pb_dir(ws, "checks", "registry.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except ValueError as e:
+        return "第 %s 行:%s" % (getattr(e, "lineno", "?"), getattr(e, "msg", str(e)))
+    except OSError as e:
+        return "打不开:%s" % e
+    if not isinstance(data, dict):
+        return "顶层不是对象"
+    if not isinstance(data.get("checks", {}), dict):
+        return "checks 不是对象"
+    return None
+
+
 def registry(ws):
-    data = read_json(pb_dir(ws, "checks", "registry.json"), {}) or {}
+    """→ {"schema", "checks": {...}}。文件不存在 = 空表;存在但读不了 → 空表外加 "unreadable"(原因),
+    这时所有检查按「已停用、等用户重新确认」处理(check_state 给 unreadable),写入一律拒绝(save_registry)。"""
+    bad = registry_problem(ws)
+    data = {} if bad else (read_json(pb_dir(ws, "checks", "registry.json"), {}) or {})
     data.setdefault("schema", SCHEMA)
     data.setdefault("checks", {})
+    if bad:
+        data["unreadable"] = bad
     return data
 
 
-def save_registry(ws, data):
-    write_json(pb_dir(ws, "checks", "registry.json"), data)
+def reconfirm_hint(name=None):
+    n = name or "<名>"
+    return ("重新确认:teach.py check try %s --url … ×3 把结果给用户看,用户说可以再 "
+            "teach.py check enable %s --quote \"<原话>\"" % (n, n))
+
+
+def unreadable_message(ws, name=None):
+    return ("checks/registry.json 读不了(%s):启用记录和启用时的校验值都读不到,所有自定义检查按已停用处理,"
+            "等用户重新确认。%s" % (registry_problem(ws) or "已修好", reconfirm_hint(name)))
+
+
+def save_registry(ws, data, recover=False):
+    """写 registry.json。磁盘上的那份读不了时拒写(不把它覆盖成空表);recover=True(重新确认的 try)
+    先把读不了的原文件原样改名留下(registry.json.unreadable-<时间>),新表里记下当时有哪些检查要重新确认。"""
+    path = pb_dir(ws, "checks", "registry.json")
+    bad = registry_problem(ws)
+    if bad and not recover:
+        raise GateError(unreadable_message(ws) + ";这次什么都没写")
+    data = {k: v for k, v in data.items() if k != "unreadable"}
+    if bad:
+        keep = "%s.unreadable-%s" % (path, now().replace(":", ""))
+        os.replace(path, keep)
+        d = pb_dir(ws, "checks")
+        names = sorted(f[:-3] for f in os.listdir(d) if f.endswith(".py") and NAME_RE.match(f[:-3]))
+        data["recovered"] = {"at": now(), "why": bad, "kept_as": os.path.basename(keep), "reconfirm": names}
+    write_json(path, data)
 
 
 def check_state(ws, name, reg=None):
-    """→ {"name", "state", "sha256", ...}。state:missing / draft / tried / enabled / changed / disabled。
-    changed = 启用后脚本内容变了 → 自动停用,等用户再确认。"""
+    """→ {"name", "state", "sha256", ...}。state:missing / draft / tried / enabled / changed / disabled / unreadable。
+    changed = 启用后脚本内容变了 → 自动停用,等用户再确认。unreadable = registry.json 读不了(或读不了之后
+    还没重新确认)→ 一样按停用处理。"""
     reg = reg or registry(ws)
     script, _ = check_paths(ws, name)
     ent = reg["checks"].get(name) or {}
@@ -386,6 +467,12 @@ def check_state(ws, name, reg=None):
         return {"name": name, "state": "missing", "entry": ent}
     sha = sha256_file(script)
     en = ent.get("enabled")
+    if reg.get("unreadable"):
+        return {"name": name, "state": REG_CORRUPT_STATE, "sha256": sha, "entry": ent, "why": reg["unreadable"]}
+    rec = reg.get("recovered") or {}
+    if name in (rec.get("reconfirm") or []) and not (en and en.get("at", "") >= rec.get("at", "")):
+        return {"name": name, "state": REG_CORRUPT_STATE, "sha256": sha, "entry": ent,
+                "why": "%s;原文件留在 checks/%s,这个检查还没重新启用" % (rec.get("why"), rec.get("kept_as"))}
     if en:
         st = "enabled" if en.get("sha256") == sha else "changed"
     elif ent.get("disabled"):
@@ -458,9 +545,12 @@ def run_enabled(ws, urls, fetch=None, allow_local=False, sample=10):
     """每周运营单用:跑所有已启用(sha 对得上)的检查。→ {"ran": [...], "changed": [...], "skipped": [...]}。
     每个检查只在 registry 里 match(正则)命中的 URL 上跑,最多 sample 个;没写 match 就用前 sample 个。"""
     fetch = fetch or (lambda u: fetch_page(u, allow_local))
-    out = {"ran": [], "changed": [], "skipped": []}
+    out = {"ran": [], "changed": [], "skipped": [], "unreadable": []}
     cache = {}
     for st in list_checks(ws):
+        if st["state"] == REG_CORRUPT_STATE:
+            out["unreadable"].append({"name": st["name"], "why": st.get("why")})
+            continue
         if st["state"] == "changed":
             out["changed"].append({"name": st["name"], "enabled_sha": st["entry"]["enabled"]["sha256"][:12],
                                    "now_sha": st["sha256"][:12]})
@@ -597,7 +687,7 @@ def context_text(ws):
     rules = [r for r in parse_rules(read_rules(ws)) if not r["removed"]]
     deny = load_deny(ws)
     checks = list_checks(ws) if os.path.isdir(pb_dir(ws, "checks")) else []
-    if not rules and not deny:
+    if not rules and not deny and not any(c["state"] == REG_CORRUPT_STATE for c in checks):
         return ""
     L = ["seo-suite:这个仓库有用户自己定的 SEO 规则(%s)。出任何建议、brief、方案、外联候选前先遵守它们;"
          "「不做」的事不要再建议,沾边的写明不含它。" % pb_dir(ws, "rules.md")]
@@ -609,10 +699,17 @@ def context_text(ws):
             "%s(%s)" % (d["item"], "/".join(d["terms"])) for d in deny))
     en = [c["name"] for c in checks if c["state"] == "enabled"]
     ch = [c["name"] for c in checks if c["state"] == "changed"]
+    bad = [c for c in checks if c["state"] == REG_CORRUPT_STATE]
+    if bad:
+        L.append("已停用:registry.json 读不了,等用户重新确认的检查:%s(%s;%s)" % (
+            "、".join(c["name"] for c in bad), bad[0].get("why"), reconfirm_hint()))
     if en:
         L.append("已启用的自定义检查(每周运营单会跑):" + "、".join(en))
     if ch:
         L.append("脚本改过、已自动停用、等用户再确认的检查:" + "、".join(ch) + "(teach.py check try 再 enable)")
+    if rules:
+        L.append("规则要求产出必须有的元素(表格、清单、某一节):brief 和大纲阶段就画出来——表格写好表头和行名,"
+                 "数还没有就留空格;不能只写一句「第 N 节放某某表」。")
     L.append("改规则用 teach.py(rule add / rule remove),不要手改 deny.json。")
     text = "\n".join(L)
     return text[:CONTEXT_MAX]

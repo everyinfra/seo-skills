@@ -28,7 +28,7 @@ O start --site https://acme.example --scan scan.json --market en
 O answer --ring 1 --set profile_ok=ok --set conversion=signup --set customers=SMB --set main_line=Invoicing --quote ok --confirm
 O show --ring 2; O answer --ring 2 --set jargon=invoice --quote ok --confirm
 O show --ring 3; O answer --ring 3 --set real_competitors=Rival --quote ok --confirm
-O show --ring 4; O answer --ring 4 --set capacity=4 --quote ok --confirm
+O show --ring 4; O answer --ring 4 --set capacity=4 --quote ok --no-audit "评测预置:扫描文件造的站,没有真站可体检" --confirm
 O show --ring 5; O answer --ring 5 --set market_first=en --set deny_topics=none --quote ok --confirm
 O show --ring 6
 python3 "$S/plan.py" build --ws seo-ops >/dev/null

@@ -32,6 +32,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import lifecycle as LC  # noqa: E402
 import playbook as PB  # noqa: E402
 
 CHECK_TEMPLATE = '''#!/usr/bin/env python3
@@ -70,16 +71,32 @@ CHECK_DOC = """# 检查:%(name)s
 
 def ws_of(ns, create=False):
     ws = PB.find_ws(None, ns.ws)
+    if ws and LC.inside_skill(ws):
+        LC.resolve_ws(ws, __file__, sys.argv[1:])     # 落在 skill 安装目录里:报错给照抄命令,不写
     if ws:
         return ws
     if create:
-        ws = os.path.abspath(ns.ws or "seo-ops")
+        ws = LC.resolve_ws(ns.ws, __file__, sys.argv[1:], must_exist=False)
         os.makedirs(PB.pb_dir(ws), exist_ok=True)
         return ws
     raise PB.PlaybookError("找不到 seo-ops/ 工作区(在站点仓根目录跑,或用 --ws 指定)")
 
 
+# 记完规则、启用检查以后给 agent 的固定收尾:顺带要补的页面写成陈述句的待办,不变成每轮都重列一遍的编号问题;
+# 要用户拍板才能往下做的事不在此列,照常编号问、停下。
+DONE_NOTE = ("顺带要补的现有页面(规则碰到的、试跑没过的)写成一句陈述的待办(「/a/、/b/ 两页还没有这一项,要补时说一声」),"
+             "不编号、不问要不要补。要用户拍板才能往下做的事(启用一个检查、「不做 X」的 X 拿不准)照常编号问、停下等回复。"
+             "用户只回「对」「好」「先这样」「carry on」就收尾,不把问题再列一遍。")
+
+
 def need_quote(q):
+    bad = LC.shell_damage(q)
+    if bad:
+        raise LC.UsageError(LC.shell_damage_message("--quote 的原话", bad))
+    return _need_quote(q)
+
+
+def _need_quote(q):
     if not (q or "").strip():
         raise PB.GateError("必须用 --quote 带上用户原话(用户没说过的不写进 playbook)")
     return q.strip()
@@ -134,7 +151,10 @@ def cmd_rule(ns):
     for d in items:
         print("禁用清单 + %s(关键词 %s)。之后 plan、每周运营单、link_intel、prioritize、fix_plan、content_queue "
               "出的建议和外联候选都按它过滤" % (d["item"], "/".join(d["terms"])))
-    print("请把这一条念给用户确认;说错了用 teach.py rule remove %s --quote … 撤掉重写。" % rid)
+    print("请把这一条念给用户(记成了什么、适用范围、禁用了什么),不用专门问「对吗」,用户下一句没纠正就算确认。"
+          "先和用户原话逐字对一遍(标点、全角半角也算):不一样就 teach.py rule remove %s --quote … 撤掉,照原话重记。"
+          % rid)
+    print(DONE_NOTE)
     return 0
 
 
@@ -142,7 +162,7 @@ def cmd_rule(ns):
 # check
 # ---------------------------------------------------------------------------
 
-VERDICT = {"pass": "✓ pass 过", "fail": "✗ fail 没过", "error": "error 出错"}
+VERDICT = {"pass": "✓ pass", "fail": "✗ fail", "error": "error"}
 
 
 def _summary(rows):
@@ -151,9 +171,10 @@ def _summary(rows):
 
 def print_rows(name, rows):
     print("检查 %s 在 %d 个页面上的结果:" % (name, len(rows)))
-    for r in rows:
-        extra = r.get("error") or ";".join(r["findings"][:3]) or "—"
-        print("  [%s] %s  %s" % (VERDICT[r["result"]], r["url"], extra))
+    for r in rows:                                  # 判定行只有判定和网址;说明另起缩进行(说明里常带「有 / 要」这类字)
+        print("  [%s] %s" % (VERDICT[r["result"]], r["url"]))
+        for x in ([r["error"]] if r.get("error") else r["findings"][:3]):
+            print("      %s" % x)
 
 
 def cmd_check(ns):
@@ -164,9 +185,13 @@ def cmd_check(ns):
             print(json.dumps([{k: v for k, v in r.items() if k != "entry"} for r in rows], ensure_ascii=False, indent=1))
             return 0
         zh = {"enabled": "已启用", "changed": "脚本改过、已自动停用(等再确认)", "tried": "试跑过、没启用",
-              "draft": "草稿", "disabled": "已停用", "missing": "脚本不在了"}
+              "draft": "草稿", "disabled": "已停用", "missing": "脚本不在了",
+              PB.REG_CORRUPT_STATE: "已停用:registry.json 读不了,等用户重新确认"}
         for r in rows:
             print("- %s:%s%s" % (r["name"], zh[r["state"]], ("(%s)" % r["entry"].get("desc")) if r["entry"].get("desc") else ""))
+        if any(r["state"] == PB.REG_CORRUPT_STATE for r in rows):
+            bad = next(r for r in rows if r["state"] == PB.REG_CORRUPT_STATE)
+            print("registry.json 读不了(%s)。%s" % (bad.get("why"), PB.reconfirm_hint()))
         if not rows:
             print("还没有自定义检查(teach.py check new <名> --desc …)")
         return 0
@@ -182,12 +207,17 @@ def cmd_check(ns):
                 print_rows(c["name"], c["results"])
             for c in res["changed"]:
                 print("- %s 的脚本改过(启用时 %s,现在 %s),已自动停用,等用户再确认" % (c["name"], c["enabled_sha"], c["now_sha"]))
+            for c in res.get("unreadable") or []:
+                print("- %s 已停用:registry.json 读不了(%s),等用户重新确认;%s" % (c["name"], c["why"], PB.reconfirm_hint(c["name"])))
         return 0
     name = ns.name
     if not name:
         raise PB.PlaybookError("check %s 要给检查名" % ns.action)
     script, doc = PB.check_paths(ws, name)
     reg = PB.registry(ws)
+    if reg.get("unreadable") and ns.action != "try":
+        # registry 读不了:不往里写(会把它覆盖成空表);重新确认从 check try 开始,它会先把原文件改名留下
+        raise PB.GateError(PB.unreadable_message(ws, name) + ";这次什么都没写")
     ent = reg["checks"].setdefault(name, {})
     if ns.action == "new":
         if os.path.exists(script):
@@ -217,13 +247,19 @@ def cmd_check(ns):
         ent.setdefault("tries", []).append({"at": PB.now(), "sha256": sha, "urls": urls, "summary": _summary(rows),
                                             "results": rows})
         ent["tries"] = ent["tries"][-5:]
-        PB.save_registry(ws, reg)
+        kept = reg.get("unreadable")
+        PB.save_registry(ws, reg, recover=bool(kept))
+        if kept:
+            print("registry.json 读不了(%s):原文件已改名留在 checks/%s,新表从这次试跑记起;"
+                  "别的检查仍按已停用处理,各自 try + enable 重新确认。"
+                  % (kept, (PB.registry(ws).get("recovered") or {}).get("kept_as")))
         if ns.json:
             print(json.dumps({"name": name, "sha256": sha, "results": rows}, ensure_ascii=False, indent=1))
         else:
             print_rows(name, rows)
-            print("把上面的结果原样给用户看,问对不对;用户说可以,再 teach.py check enable %s --quote \"<原话>\"。"
-                  "没启用前每周运营单不跑它。" % name)
+            print("把上面的结果原样给用户看,编号问一句「1. 这样判对不对?对的话我就启用。」,然后停下等回复(这是要用户拍板的事,"
+                  "不写成陈述句);用户说可以,再 teach.py check enable %s --quote \"<原话>\"。没启用前每周运营单不跑它。"
+                  "没过的页面写成陈述的待办,不放进编号问题。" % name)
         return 0
     if ns.action == "enable":
         quote = need_quote(ns.quote)
@@ -235,6 +271,7 @@ def cmd_check(ns):
         ent.pop("disabled", None)
         PB.save_registry(ws, reg)
         print("启用 %s(sha256 %s…)。每周运营单会跑它;脚本内容一变就自动停用,等你再确认。" % (name, sha[:12]))
+        print("这件事做完了。" + DONE_NOTE)
         return 0
     if ns.action == "disable":
         ent["disabled"] = {"at": PB.now(), "quote": ns.quote}
@@ -419,6 +456,9 @@ def main(argv=None):
     except (PB.PlaybookError, PB.GateError) as e:
         print("错误:%s" % e, file=sys.stderr)
         return e.code
+    except LC.UsageError as e:
+        print("错误:%s" % e, file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

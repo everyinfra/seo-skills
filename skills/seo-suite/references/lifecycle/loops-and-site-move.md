@@ -4,13 +4,15 @@
 
 相关:每周运营单见 [ops-agenda](../monitoring/ops-agenda.md);阶段怎么判见 [lifecycle-stages](../overview/lifecycle-stages.md);方案怎么出见 `plan.py`。
 
-## 1. 第二次打开:一屏现状
+## 1. 第二次打开:一条命令,一块首屏
 
 ```bash
-python3 scripts/loops.py status --ws seo-ops
+python3 scripts/project.py ops weekly --ws seo-ops     # 本机预览站开局带过 --allow-local 的,工作区记着,不用再带
 ```
 
-一屏写清:档案上次核对是哪天、现在是哪个阶段、方案进行到第几周、本周路线项(来自定稿的 `plan/roadmap.md`)、每个循环的状态(`quiet` 没事 / `ask` 要问 / `waiting` 问过、等回复)。
+输出最前面是两行等号框住的「原样发给用户」块:档案上次和你核对是哪天(几天前)、产品阶段(用户确认过的照用)、方案第几周和本周路线项、这周做哪一件、GSC 导出(data/ 下有的话:哪份、日期范围、近 28 天展示和点击,换了新导出会标出来)、「待你补的材料」(陈述句,不编号、不带问号)、循环要问的问题(最多 3 个,每个带 A/B 选项;没有就写「这周不需要你回答」)。块后面是「给 agent」:停不停、每个问题答完照抄哪条 `loops.py resolve`、上次问过还没记下回答的怎么补记。当天已经出过运营单再跑,这一块照样现算;不读旧的 `runs/*/agenda.md`。
+
+只看循环、不出运营单时用 `python3 scripts/loops.py status --ws seo-ops`(同样的档案、阶段、周次和循环状态:`quiet` 没事 / `skip` 没查 / `ask` 要问 / `waiting` 问过、等回复)。
 
 ## 2. 六个循环
 
@@ -21,20 +23,23 @@ python3 scripts/loops.py status --ws seo-ops
 | weekly-ops 每周运营单 | 每 7 天 | 有硬告警、本周路线项或变差的问题 | 0(只出运营单) |
 | profile-review 档案核对 | 档案上次核对满 30 天 | 重新读站后有事实和档案不一样;或满 30 天没核 | 3 |
 | quarterly-review 季度复盘 | 方案定稿满 90 天 | 用这一季真实数据重跑 `plan.py`,和定稿方案比 | 2 |
-| product-change 产品变了 | 重新读站(`--scan` / `--rescan`) | 新产品线、定价变了、sitemap 出现新页面类型;**只问变了的部分** | 3 |
-| stage-threshold 到了下一阶段门槛 | 每次记指标 | 最近 4 次指标(跨度 ≥ 21 天)都判成同一个新阶段;一次冲高不算 | 1 |
+| product-change 产品变了 | 每周运营单(拿轻检的 sitemap 一级栏目和开局基线比);重新读站(`--scan` / `--rescan`) | sitemap 多了一级栏目(基线里没有、现在 ≥2 页或进了首页导航);新产品线、定价变了、新页面类型;**只问变了的部分** | 3 |
+| stage-threshold 到了下一阶段门槛 | 每次记指标;逐日导出每周一个检查点 | 最近 4 次指标(跨度 ≥ 21 天)都判成同一个新阶段;一次冲高不算 | 1 |
 | site-move 改版保护 | 档案里记了改版类事件 | 见第 4 节 | 1 |
 
 ```bash
 python3 scripts/loops.py run --ws seo-ops [--scan new-scan.json | --rescan]   # 退出码 1 = 有问题要问
-python3 scripts/loops.py resolve --ws seo-ops product-change --quote "<用户原话>" --set product.lines=发票,报销,差旅
+python3 scripts/loops.py resolve --ws seo-ops product-change --quote "<用户原话>" --add product.lines=差旅
+python3 scripts/loops.py resolve --ws seo-ops profile-review --quote "都没变"     # 原样确认:档案核对日更新,30 天内不再问
 ```
 
 规则:
 
 - 问过的同一件事按指纹记在 `seo-ops/ledger/loops.jsonl`,`ask_again_days` 天内不再问;用户没回复时状态是 `waiting`,不重复问。
 - 一轮所有循环加起来最多问 3 个问题。
-- 用户的回答用 `resolve` 写回档案,带原话;改了产品线或阶段会提示重跑 `plan.py`。
+- 用户的回答用 `resolve` 写回档案,带原话;首屏的「给 agent」里每个问题都印了整条命令。「都没变 / carry on」也要 resolve,不然下次打开还是「等回复」。`--add` 往列表里加一项(不用整份重写产品线);改了阶段会提示重跑 `plan.py` 并发给用户确认;只加了产品线不用当场停下重排路线。
+- 栏目基线:用户答过新栏目以后,这周的栏目存进 `context/site_sections.json`,同一个栏目不再问。旧工作区没存过栏目时,退回开局体检的 `history/*/urls.txt`;两样都没有,这周的栏目存成基线、循环写「没查」,下周起能比。
+- 阶段门槛的指标按**数据截止日**排(`Pages_起_止.csv` 取「止」),不按写入日;逐日导出盖到的日期以导出现算为准,来源文件已经被新导出换掉的旧行作废。逐日导出不满 28 天的窗口(至少 7 天)也算一次:合计已经超过「刚上线」的展示上限,按下界算超过;没超过的记「判不了」,不当「没超过」,有判不了的就不提示。超过上限只靠一两天(去掉展示最多的两天就不到上限)的算一次冲高,按去掉那两天的数判。
 - 用户在 `seo-ops/playbook/loops.json` 写 `{"loops": [...]}` 可以加自己的循环或改阈值,同 id 覆盖内置的。
 
 ## 3. 运营单里的优先级
