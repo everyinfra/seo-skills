@@ -22,10 +22,7 @@ PSI key 免费约 5 分钟,`export PSI_API_KEY=…`(CrUX 用 CRUX_API_KEY),不�
   cumulative_layout_shift 的 p75 是 2 位小数字符串("0.23"),其余为 int 毫秒。
   page(url=)与 origin(origin=)两种查询模式(--crux-scope)。无 key 时整源跳过并告警
   (降级:仅 PSI,不算失败)。
-  软导航实验指标(2026-10-13 起,CrUX 2026-09 数据集):同一请求另要
-  experimental_{largest_contentful_paint,interaction_to_next_paint,cumulative_layout_shift}
-  _with_softnavs(类型同稳定版:CLS 为 2 位小数字符串,其余 int 毫秒;CrUX API 文档
-  「Metric value types」表,核对 2026-11-05)。有就单列「含软导航(experimental)」,
+  软导航实验指标(2026-10-13 起,CrUX 2026-09 数据集;2026-11-11 起再加 FCP): 同一请求另要 experimental_{largest_contentful_paint,interaction_to_next_paint,cumulative_layout_shift, first_contentful_paint}_with_softnavs(类型同稳定版:CLS 为 2 位小数字符串,其余 int 毫秒; CrUX API 文档「Metric value types」表,核对 2026-11-22)。导航类型软导航版 experimental_navigation_types_with_softnavs 是 fractions 占比,不是 p75,本脚本不请求,见 references/overview/facts.md#crux-softnav。有就单列「含软导航(experimental)」,
   没有就不显示、不报错;只作参考,不进退出码、不进 CSV、不覆盖稳定版现场值。
 阈值判定(官方 CWV 口径,写死;与 references/technical/cwv-playbook.md 同源):
   LCP good≤2.5s / NI≤4s;INP good≤200ms / NI≤500ms;CLS good≤0.1 / NI≤0.25;
@@ -86,7 +83,9 @@ CRUX_METRICS = {"largest_contentful_paint": "LCP", "cumulative_layout_shift": "C
 # 预计 2027-05 转正,转正前标 experimental、只作参考,见 references/overview/facts.md#crux-softnav)
 CRUX_SOFTNAV_METRICS = {"experimental_largest_contentful_paint_with_softnavs": "LCP",
                         "experimental_interaction_to_next_paint_with_softnavs": "INP",
-                        "experimental_cumulative_layout_shift_with_softnavs": "CLS"}
+                        "experimental_cumulative_layout_shift_with_softnavs": "CLS",
+                        # FCP 版 2026-11-11 起在 CruX API,见 CruX 发布说明 October 2026)
+                        "experimental_first_contentful_paint_with_softnavs": "FCP"}
 FORM_FACTOR = {"mobile": "PHONE", "desktop": "DESKTOP"}
 
 USAGE = """usage: field_data.py --url U | --urls list.txt [--strategy mobile|desktop|both]
@@ -346,7 +345,7 @@ def collect(url, strategy, psi_key=None, crux_key=None, scope="page", timeout=DE
             if crux_field:
                 srcs.append("crux")
             softnav = parse_crux(cdata, CRUX_SOFTNAV_METRICS)
-            for name in CORE_FIELD:                 # 实验指标:单列,不并入 field
+            for name in CORE_FIELD + ("FCP",):                 # 实验指标:单列,不并入 field
                 if name in softnav:
                     ent = field_entry(name, softnav[name], None, "crux")
                     ent["experimental"] = True
