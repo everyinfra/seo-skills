@@ -271,7 +271,7 @@ SPA（单页应用）点链接时不重载整页，只用 JS 换内容并改 URL
   4. 软导航的数据记在用户导航到的那个 URL 下，按页定位问题比以前容易：先按 URL 查实验版，找出哪个路由差。
   5. 自建 RUM：按 Chrome 的[测量软导航文档](https://developer.chrome.com/docs/web-platform/soft-navigations)接入，口径和 CrUX 对齐。
 - **脚本**：`python3 scripts/field_data.py --url URL --key KEY` 有软导航数据时单列「含软导航（experimental）」一节，没有就不显示；实验值不进退出码、不进 `--as-cwv-csv`。
-- **会变的地方**：官方说转正前每月都可能调整测量方法；11 月的发布预计加导航类型和 FCP 的软导航版。按月复核事实表。
+- **会变的地方**：官方说转正前每月都可能调整测量方法；2026-11-11 发布的 CrUX 2026-10 数据集已加导航类型和 FCP 的软导航实验版（见[事实表](../overview/facts.md#crux-softnav)），先在 CrUX API 和 CrUX Vis，BigQuery 下月加入。按月复核事实表。
 
 ## 检查清单
 
