@@ -3,6 +3,23 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 0.48.1 - 2026-11-22
+
+- **成熟度判级的证据补齐**(`lifecycle.py diagnose` 和开局诊断):
+  Maturity evidence fixes (`lifecycle.py diagnose` and the onboarding diagnosis):
+  - 内容维第 4 级要「近 28 天拿到点击的非首页页数」,以前没有代码算,任何站都到不了 4 级。现在工作区旁 `data/` 里有 GSC 页面导出(`Pages_*.csv` 或逐日 `gsc-pages.csv`)时算出 `pages_with_clicks`,开局读导出和 `diagnose --ws` 都带上。
+    Content level 4 needs the number of non-home pages with clicks in the last 28 days. Nothing computed it, so no site could reach level 4. `pages_with_clicks` is now computed from the GSC page exports next to the workspace, at onboarding and in `diagnose --ws`.
+  - 想法阶段、没给站点:技术、内容、外链与品牌、AI 可见度记 0 级(没有站点本身就是确定证据),不再记「未知」。其他阶段读不到站点仍记「未知」。
+    Idea stage with no site: technical, content, authority and AI visibility are level 0 (having no site is evidence), not "unknown". In later stages a missing site still reads as unknown.
+- **页面归类**(`product_scan.py`):
+  Page classification (`product_scan.py`):
+  - `/shop/`、`/store/`、`/subscription(s)/` 算产品页,`/membership(s)/`、`/premium/` 算定价页。卖货目录照样按栏目抽样,拿栏目页的大标题起候选产品线名。
+    `/shop/`, `/store/` and `/subscription(s)/` are product pages; `/membership(s)/` and `/premium/` are pricing pages. Shop sections are still sampled and named as candidate product lines.
+  - 路径里任意一段带 `-vs-`、`-versus-`、`-alternatives` 的算对比页,`/blog/a-vs-b/` 也算。
+    A path segment with `-vs-`, `-versus-` or `-alternatives` makes a comparison page, `/blog/a-vs-b/` included.
+  - 按网址归不了类的抽样页,页面上写着按月或按年的价格(`/pro/`、`/plus/` 这类付费档页面),算定价页;改了哪页记进 `site_scan.page_types_by_content`。运费这类一次性价格不算。
+    A sampled page that the URL rules cannot classify is a pricing page when it shows a monthly or yearly price (paid-tier pages such as `/pro/`). Each change is recorded in `site_scan.page_types_by_content`. One-off prices such as shipping fees do not count.
+
 ## 0.48.0 - 2026-11-22
 
 - **开局第 1 环问得少、问得准**:草稿里的收费方式照页面原文写(带出处,另记「订阅 / 按量 / 免费档」等归类);产品线不再拿首页 H2 凑,读不到可靠出处就记「未知」并在第 1 环问,按路由推出来的标成猜测、在第 1 环确认;`.agents/product-marketing.md` 已经写了的转化和客户不再重复问,「最重要的产品线」并进第 1 问,第 1 环最多 3 问。

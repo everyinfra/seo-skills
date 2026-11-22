@@ -58,7 +58,8 @@ SOURCE_SCAN_MAX_BYTES = 512 * 1024
 # ---- 页面类型(URL 路径归类)----
 # 先按首段整段命中(精确),再按首段 "-" 分词命中;compare 另认任意段里的 -vs- / alternative(s)。
 PAGE_TYPE_RULES = (
-    ("pricing", ("pricing", "price", "prices", "plans", "plan", "定价", "precios", "tarifs", "preise")),
+    ("pricing", ("pricing", "price", "prices", "plans", "plan", "定价", "precios", "tarifs", "preise",
+                 "membership", "memberships", "premium")),
     ("compare", ("vs", "compare", "comparison", "comparisons", "alternatives", "alternative", "versus")),
     ("docs", ("docs", "doc", "documentation", "reference", "guide", "guides", "quickstart", "tutorials",
               "tutorial", "manual", "learn")),
@@ -77,12 +78,14 @@ PAGE_TYPE_RULES = (
     ("help", ("help", "support", "faq", "faqs", "kb", "knowledge-base", "help-center", "helpcenter", "status")),
     ("api", ("api", "apis", "developers", "developer", "sdk", "sdks", "openapi")),
     ("product", ("product", "products", "features", "feature", "solutions", "solution", "platform",
-                 "platforms", "use-cases", "usecases", "tools", "tool", "services", "capabilities")),
+                 "platforms", "use-cases", "usecases", "tools", "tool", "services", "capabilities",
+                 "shop", "store", "subscription", "subscriptions")),
     ("category", ("category", "categories", "collections", "collection", "c", "tag", "tags", "topics", "topic")),
 )
 PAGE_TYPES = tuple(t for t, _ in PAGE_TYPE_RULES) + ("other",)
 TOKEN_RULES = (("compare", ("vs", "alternative", "alternatives", "versus")),
                ("pricing", ("pricing",)),
+               ("product", ("subscription",)),
                ("api", ("api", "sdk")),
                ("docs", ("docs",)),
                ("integrations", ("integration", "integrations")))
@@ -101,6 +104,7 @@ PRICE_RES = (
     re.compile(r"(?<![\d.,\-/:])\d[\d,]*(?:\.\d+)?\s?(?:美元|元|欧元|英镑|USD|EUR|GBP|CNY|RMB|dólares|euros)"
                r"(?:\s?/\s?(?:月|年|mo|month|mes|año))?", re.I),
 )
+RECURRING_PRICE = re.compile(r"(?:/|\bper\s)\s?(?:mo|month|yr|year|mes|año|月|年)", re.I)
 CTA_WORDS = (
     # en
     "sign up", "signup", "sign-up", "register", "log in", "login", "sign in", "signin", "get started", "start free",
@@ -392,6 +396,8 @@ def split_locale(path):
 
 
 LINE_ROUTE_SEGS = {"products", "product", "features", "feature", "solutions", "solution", "tools", "apps", "modules"}
+# 归进 product 的卖货目录(/shop/<x>、/store/<x>):照样按一级目录抽样、拿栏目页大标题起候选产品线名
+COMMERCE_SEGS = {"shop", "store", "subscription", "subscriptions"}
 
 
 def route_lines(paths):
@@ -432,7 +438,7 @@ def section_lines(paths, samples=None, heads=None):
     dirs = {}
     for path in paths or []:
         _, segs = split_locale(urllib.parse.urlsplit(path).path)
-        if len(segs) < 2 or classify_segments(segs) not in ("other", "category"):
+        if len(segs) < 2 or (classify_segments(segs) not in ("other", "category") and segs[0].lower() not in COMMERCE_SEGS):
             continue
         name = segs[0]
         if name.startswith(("[", ":")) or "." in name:
@@ -460,13 +466,13 @@ def classify_segments(segs):
     if not segs:
         return "other"
     first = segs[0].lower()
-    for t, words in PAGE_TYPE_RULES:
-        if first in words:
-            return t
-    for seg in segs:                       # 任意段里的 x-vs-y / x-alternatives → compare
+    for seg in segs:                       # 任意段里的 x-vs-y / x-alternatives → compare(/blog/a-vs-b/ 也是对比页)
         toks = seg.lower().split("-")
         if len(toks) > 1 and ("vs" in toks or "versus" in toks or "alternative" in toks or "alternatives" in toks):
             return "compare"
+    for t, words in PAGE_TYPE_RULES:
+        if first in words:
+            return t
     toks = first.split("-")
     for t, words in TOKEN_RULES:
         if any(w in toks for w in words):
@@ -624,7 +630,7 @@ def pick_samples(urls, host, max_pages):
         if (pu.hostname or "").lower() != host:
             continue
         loc, segs = split_locale(pu.path)
-        if not segs or classify_segments(segs) not in ("other", "category"):
+        if not segs or (classify_segments(segs) not in ("other", "category") and segs[0].lower() not in COMMERCE_SEGS):
             continue
         sections.setdefault(segs[0].lower(), []).append((loc is not None, len(segs) < 2, len(pu.path), u))
     ranked = sorted(sections.items(), key=lambda kv: (-len(kv[1]), kv[0]))
@@ -633,6 +639,28 @@ def pick_samples(urls, host, max_pages):
             break
         out.append(("section", min(items)[3]))
     return out
+
+
+def reclassify_by_content(res):
+    """按网址归不了类的抽样页(/pro/、/plus/ 这类付费档页面),页面上写着按月或按年的价格 → 算定价页。
+    只改抽到的这一页的计数;依据记进 page_types_by_content。"""
+    moved = []
+    for s in res.get("samples") or []:
+        if s.get("type") != "section" or s.get("status") != 200:
+            continue
+        if classify_url(s["url"])[1] != "other":
+            continue
+        rec = [p for p in (s.get("prices") or []) if RECURRING_PRICE.search(p)]
+        if rec:
+            moved.append({"url": s["url"], "from": "other", "to": "pricing",
+                          "why": "页面上有按月或按年的价格:%s" % "、".join(rec[:2])})
+    if not moved:
+        return
+    pt = dict(res.get("page_types") or {})
+    pt["other"] = pt.get("other", 0) - len(moved)
+    pt["pricing"] = pt.get("pricing", 0) + len(moved)
+    res["page_types"] = dict(sorted(((k, v) for k, v in pt.items() if v > 0), key=lambda kv: (-kv[1], kv[0])))
+    res["page_types_by_content"] = moved
 
 
 def site_framework_hint(html, headers):
@@ -742,6 +770,7 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
         f, fx = page_features(sr, u)
         res["samples"].append(dict({"type": t}, **f))
         ctx["sample_extra"][u] = fx
+    reclassify_by_content(res)
     # 没归类的一级目录:抽到的是子页(/shop/<x>)时再读一次栏目页(/shop/),拿它的大标题给候选产品线起名
     ctx["section_heads"] = {}
     for s in [x for x in res["samples"] if x.get("type") == "section"]:

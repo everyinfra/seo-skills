@@ -613,21 +613,52 @@ def gsc_export_sources(ws, prof=None):
     return None
 
 
+def _is_home(url):
+    path = urllib.parse.urlsplit(url).path if "://" in str(url) else str(url)
+    segs = [x for x in path.lower().split("/") if x]
+    return not segs or (len(segs) == 1 and bool(LOCALE_SEG.fullmatch(segs[0])))
+
+
+def pages_with_clicks(ws, prof=None):
+    """最近 28 天拿到点击的非首页页数(内容维第 4 级的条件)→ int;没有 GSC 导出 → None。
+    逐日 gsc-pages.csv 取最后一天往回 28 天;否则取最新一期 Pages_起_止.csv。"""
+    _path, rows = find_daily_pages(ws, prof)
+    if rows:
+        last = max(r[0] for r in rows)
+        lo = last - dt.timedelta(days=27)
+        clicks = {}
+        for d, p, c, _i in rows:
+            if lo <= d <= last:
+                clicks[p] = clicks.get(p, 0.0) + c
+    else:
+        per = _period_totals(ws, prof)
+        if not per:
+            return None
+        clicks = {u: v[0] for u, v in read_period_pages(per[-1][4]).items()}
+    return sum(1 for u, c in clicks.items() if c > 0 and not _is_home(u))
+
+
 def data_metrics(ws, prof=None):
     """data/ 里最新一份 GSC 导出算出的近 28 天点击、展示(和运营单首屏、阶段门槛同一份数)→ (metrics, 来源) 或 (None, None)。
     逐日导出取最后一天往回 28 天(数据不满 28 天就是已有天数的合计),否则取最新一期 Pages_起_止.csv。"""
     path, rows = find_daily_pages(ws, prof)
+    m, src = None, None
     if rows:
         pt = weekly_checkpoints(rows, min_days=1)[-1]
-        return dict(pt["metrics"]), "%s 截至 %s" % (_shown(ws, path), pt["at"])
-    per = _period_totals(ws, prof)
-    if per:
-        a, b, c, i, p = per[-1]
-        m = {"gsc_clicks_28d": int(c), "gsc_impressions_28d": int(i)}
-        if len(per) >= 2:
-            m["gsc_clicks_prev_28d"] = int(per[-2][2])
-        return m, "%s(%s~%s)" % (_shown(ws, p), a.isoformat(), b.isoformat())
-    return None, None
+        m, src = dict(pt["metrics"]), "%s 截至 %s" % (_shown(ws, path), pt["at"])
+    else:
+        per = _period_totals(ws, prof)
+        if per:
+            a, b, c, i, p = per[-1]
+            m = {"gsc_clicks_28d": int(c), "gsc_impressions_28d": int(i)}
+            if len(per) >= 2:
+                m["gsc_clicks_prev_28d"] = int(per[-2][2])
+            src = "%s(%s~%s)" % (_shown(ws, p), a.isoformat(), b.isoformat())
+    if m is not None:
+        n = pages_with_clicks(ws, prof)
+        if n is not None:
+            m["pages_with_clicks"] = n
+    return m, src
 
 
 def page_group(url):
@@ -712,6 +743,7 @@ def gsc_export_metrics(ws, prof=None):
         if len(per) >= 2 and per[-2][1] < a:
             m["gsc_clicks_prev_28d"] = int(per[-2][2])
             names.insert(0, _shown(ws, per[-2][4]))
+        m["pages_with_clicks"] = sum(1 for u, v in read_period_pages(p).items() if v[0] > 0 and not _is_home(u))
         return {"metrics": m, "at": b.isoformat(),
                 "source": "%s(GSC 网页导出,这一期 %s~%s%s)" % (
                     "、".join(names), a.isoformat(), b.isoformat(), ";上一期是前一份" if len(names) > 1 else "")}
@@ -719,7 +751,11 @@ def gsc_export_metrics(ws, prof=None):
     pts = weekly_checkpoints(rows)
     if pts:
         last = pts[-1]
-        return {"metrics": last["metrics"], "at": last["at"],
+        m = dict(last["metrics"])
+        n = pages_with_clicks(ws, prof)
+        if n is not None:
+            m["pages_with_clicks"] = n
+        return {"metrics": m, "at": last["at"],
                 "source": "%s(GSC 逐日导出,截至 %s 的 28 天)" % (_shown(ws, path), last["at"])}
     return None
 
@@ -873,6 +909,9 @@ def collect_evidence(scan=None, ws=None, metrics=None, today=None):
             pass
         if os.path.isfile(os.path.join(ws, "ledger", "changes.jsonl")):
             ev["ops.content_changes_90d"] = n_content
+    st = prof.get("stage") or {}
+    if st.get("value") == 0 and not prof.get("site") and not (scan or {}).get("site"):
+        ev["signals.no_site"] = True               # 想法阶段、没给站点:没有站点本身就是确定证据
     m = dict(prof.get("metrics") or {})
     m.update(metrics or {})
     for k, v in m.items():
@@ -921,11 +960,12 @@ def check(cond, ev):
 
 
 def maturity(rules, ev):
+    no_site = bool(ev.get("signals.no_site"))     # 没有站点:站点信号一律「未达到」,不算证据缺失
     out = {}
     for d in rules["maturity"]:
         level, missing, nxt, cmd, basis = 0, [], None, None, []
         for lv in d["levels"]:
-            res = [(c, check(c, ev)) for c in lv["all"]]
+            res = [(c, False if no_site and c["key"].startswith("signals.") else check(c, ev)) for c in lv["all"]]
             if all(r is True for _, r in res):
                 level = lv["level"]
                 basis.append("L%d:%s" % (lv["level"], ",".join(
