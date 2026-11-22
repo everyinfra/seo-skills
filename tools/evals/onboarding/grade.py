@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""grade.py — RQ-237 开局多轮评测的确定性判分器(stdlib only;不调模型)。
+r"""grade.py — RQ-237 开局多轮评测的确定性判分器(stdlib only;不调模型)。
 
 判分规则逐字照 scenarios.json 的 criteria_defs 实现(第 0 批出题人写定、记 hash,本文件不改它们)。
 所有断言只读:被测会话的转录 JSONL、驱动日志 JSONL、工作区 seo-ops/ 下的文件。
