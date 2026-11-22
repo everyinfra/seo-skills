@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""多语言市场 lint v3(stdlib,规则读 markets.json——18 市场数据与逻辑分离)。
+"""多语言市场 lint v3(stdlib,规则读 markets.json——19 市场数据与逻辑分离)。
 v1 保留:① title/desc 长度按市场单位(chars|fullwidth|grapheme;ja/ko 全角、th 字素);
 ② 句长按 sentence_ideal;③ 营销词>3 警告;④ fr :;!? 前窄空格/de 数字逆序;
 ⑤ de Sie/du、ja ですます、ko 합니다体;⑥ zh 简繁混检。
