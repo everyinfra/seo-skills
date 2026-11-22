@@ -80,7 +80,11 @@ python3 $G onboard-prelaunch --ws WS --transcript <转录> --driver-log RUN/driv
 python3 $G report RESULTS
 ```
 
-- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63、R64。
+- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63–R84。
+- R65:认 onboard.py / plan.py 等脚本调用前,把同一条 Bash 命令里前面赋过值的 `$NAME` / `${NAME}`(整词或路径前缀)展开,跨调用不展开,展开后其余判定规则不变。R26 审计脚本、R42 执行、ops weekly 同一口径;纯赋值段和命令前缀赋值(`O=… python3 $O …`)里写的脚本不算调用。
+- R66–R76(出题人 11-22 裁定试跑 3 的 12 个疑问,全文在 `grade.py` 文件头):包装命令 `check try <名>` 输出里有平台页判定就算执行(停用断言同口径,运营单内部跑了也算);启用按简单命令判、不认 `seo-ops/` 里的 ops;判定词英文 / 符号优先;启用确认看「停下问启用 + 回话是确认」;Reddit 否定看前 30 字、同分句后文和标签冒号后;价格表认紧邻上方的价格标题加货币金额,`vs` 独立成词、「月度对比」不算对比;开局脚本输出里原样带出 product-marketing.md 内容算读过;脚本写到默认位置的基线文件按 mtime 窗口归给那次调用;脚本输出里转印本地文件的行和报错行不算请求。R74、R75 要用到工作区文件的 mtime 和转录时间戳:**判分前不要复制或改动工作区**(要复制用 `cp -p` / `shutil.copy2`)。R76(疑问 12):档案里产品线用中文译名记算对,答案表别名组补了站点原词的标准译法(改的是 `answers/*.json`,hash 见 `HASHES.txt`)。
+- R77–R80(出题人 11-22 裁定试跑 3b 例 5 的 8 个疑问,全文在 `grade.py` 文件头):threshold 的「连续 4 周」按 note 的算法,数据起始日前的日子按 0 算、下界过 1000 就算超过;gsc_series.py 的排名和点击改成和开局导出一致,spike 不改写开局导出已有的日子,threshold 加一条「新旧导出对不上」的回话(题目 hash 换了,见 `HASHES-第5批出题.txt`);回话外面那层「The coordinator sent a message…」是宿主加的,提示词照实说明,首条消息被改过记 `driver_deviations`;第一屏的阶段名要和「阶段 / stage」同一行;「提示进入增长期」另认「换成 / 切换到增长期」一类说法,否定和条件句里的不算。疑问 1、2、5、6、7 维持原读法。
+- R81–R84(出题人第三轮裁定,11-22,第 5 批第 2 轮检查跑的疑问 A–D,全文在 `grade.py` 文件头):agent 文本里用「通过 / 没过」贴的试跑结果也算给用户看了结果(只用于「结果出现」,trial_matches 的判定词不变),确认停点于是落在试跑之后、启用之前;已写明排除 Reddit 的条目里解释来由的那处(分句里没有发帖、可以、建议一类动作词)不记违例;「brand vs non-brand / 品牌词 vs 非品牌词」是测量口径,不算对比条目;从命令取 `--quote` 等参数时双引号里的 `\$`、`` \` `` 按 bash 规则去掉反斜杠。题目改了一处:ex6 teach 段启用话题 `max_uses` 2 → 1(被测启用后报告里的「已启用」又触发一次「结果对,启用吧。」),hash 见 `HASHES-第5批出题.txt`。
 - `report` 按产品 × arm 汇总:`outcome_pass_pct`、`outcome_gap_pp`(skill − baseline、v043 − baseline、skill − v043,单位百分点)只算 outcome 类;process 类在 `process` 下单列,不进差距(红队致命 2)。`maturity_exact` 是例 9 的 5 维完全一致数(null 只和「未知」对得上)。
 - void 的 run 列在 `void`,不进任何汇总。
 - 判分器改了要先过校准:`python3 -m unittest tools/evals/onboarding/test_grade.py`(发版门 `tools/evals/fast_checks.py` 也跑它)。
@@ -96,7 +100,11 @@ python3 $G report RESULTS
 
 第 5 批的题是另一位出题人写的,**一个字不改**,开跑前核 hash:公开的 `scenarios_ext.json`、`rubric_example3.json`、`hosts_static.json` 对本目录 `HASHES-第5批出题.txt`(`cd tools/evals/onboarding && grep -v '^#' HASHES-第5批出题.txt | awk '{print $1"  "$2}' | shasum -a 256 -c`);私有的 `<PRIVATE>/scenarios-real.json` 和它的答案表对私有目录里的 `HASHES-第5批出题.txt`。真实站的场景 id、产品名和结果文件都只放私有目录,不进本仓。
 
-第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R64。出题人更正过的回话记在场景的 `superseded_replies` 里:收到旧回话的 run,列出的断言记 voided、不进汇总(R63)。
+2026-11-22 出题人裁定试跑 3 后改了 `scenarios_ext.json` 两处(ex6 teach 段的话题回话、ex7-hreflang-broken 第 3 组正则),新旧 hash 和原因记在 `HASHES-第5批出题.txt` 末行;已经跑完的 run 判分时 run.json 里的 `scenarios_file` 指到哪份就用哪份,要按新题判,在内存里把 `R["scenarios_file"]` 换成本检出的文件再调 `grade_ext.grade_ext(R, …)` / `grade.grade(…)`,不改 run 目录。
+
+2026-11-22 出题人裁定试跑 3b 后又改了 `scenarios_ext.json`(ex5 的 gsc_series.py 配方、threshold 一条话题回话、两个 note),新旧 hash 记在同一文件末行;已经跑完的 ex5 run 的 data/ 是旧配方生成的,重判时断言照旧配方的数据判(这些断言本身不随配方变),结果里标明。
+
+第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R65。出题人更正过的回话记在场景的 `superseded_replies` 里:收到旧回话的 run,列出的断言记 voided、不进汇总(R63)。
 
 ### 6.1 真实站 3 个(场景 id 见 `<PRIVATE>/scenarios-real.json`,下面写成 `REAL_ID`)
 
@@ -137,6 +145,9 @@ python3 $G <场景> --run RUN --out RESULTS/<场景>-skill-1.json
 ```
 
 - 同一个 W0 的变体默认沿用 W0 的端口,只能串行;要并行就各给 `--port` 并带 `--rebase-port`。
+- **首条消息照 `mutate` 打印的原文发,一个字不加**(R78)。不要在末尾补「Harness note: … There is no coordinator …」之类的说明:回话经 SendMessage 续跑,宿主一定会包一层「The coordinator sent a message while you were working: … Address this before completing your current task.」,提示词里已经照实说明这层包装;驱动另加的说明和包装矛盾,被测会把回话当成第三方消息。判分器逐段拿转录首条用户消息和 `RUN/sessions/<段>/prompt.txt` 比,不一致记进结果的 `driver_deviations`,`report` 单列。
+- 回话照旧用 SendMessage 发 `user_text` 原文;包装去不掉(这是宿主续跑子代理时加的固定格式;出题人能看到的工具里,续跑子代理只有 SendMessage 一条路,Agent 工具没有续跑参数),判分器 R1 认它。
+- **ex5-threshold、ex5-spike-decoy 的 T 不早于 2026-11-15**(R77):数据从 10-19 起,T 再早 threshold 最早那个周检查点的窗口下界就不到 1000,「连续 4 周超过」不成立。
 - `next` 的回话顺序:停下时先按 `simulated_user_by_topic` 回,没命中再发下一条 `user_turns`,再按环号取 `simulated_user`,最后 `fallback`;没停下时发下一条 `user_turns`,发完就结束这一段。
 - **例 6**:setup 加 `--skill-src <旧版 skill 目录>`(装进 `RUN/skill/seo-suite`,被测会话用这份);第 4 段 `t1_compare_brief` 的 mutate 带 `--install-from <被测版本 skill 目录>`(reinstall_skill 只删 run 本地那份再装)。baseline 组没有 skill,reinstall 跳过;它拿不到 playbook 的路径提示,这部分差距里有一部分量的是「知不知道文件放哪」。
 - **例 11**:判分要带 `--ref`,指向同 arm、同一轮 `onboard-launched` 的判分结果(第 1 环问题数的基线);不给判不过。

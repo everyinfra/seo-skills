@@ -489,7 +489,7 @@ SHORT_PROMPT = (
     "{arm_line}\n\n"
     "用户说:「{prompt}」\n\n"
     "注意:你没有提问工具;需要问用户时,把问题按编号列出来,然后结束这一回合(不要替用户回答、不要编用户的答案)。"
-    "用户的回话会作为下一条消息发给你。")
+    + G.REPLY_CHANNEL)
 
 
 def first_message(sess):
@@ -764,10 +764,15 @@ def _dates_under_confirmed(prof):
 
 WEEKLY_CALL = re.compile(r"\bops(?:\.py)?\b[^\n;|&]*\bweekly\b", re.I)
 HEADING_LINE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*|【)")
+# R79:阶段名要和「阶段 / stage / phase」在同一行(launched、growth、change 这些键名是常用英文词)
+STAGE_WORD = re.compile(r"阶段|\bstage\b|\bphase\b", re.I)
 
 
 def weekly_calls(s):
-    return [c for c in s.tr.calls() if c["name"] == "Bash" and WEEKLY_CALL.search(G.bash_cmd(c))]
+    """原文整条匹配照旧;另按 R65 展开后的段再认一遍(O=…/ops.py; python3 $O weekly)。"""
+    return [c for c in s.tr.calls() if c["name"] == "Bash" and (
+        WEEKLY_CALL.search(G.bash_cmd(c))
+        or any(WEEKLY_CALL.search(" ".join(seg)) for seg, _ in G.command_segments(G.bash_cmd(c))))]
 
 
 def c_resume_first_screen(ec, cr):
@@ -792,7 +797,7 @@ def c_resume_first_screen(ec, cr):
         d_ok = last in text or bool(re.search(r"(?<!\d)0?%d\s*月\s*0?%d\s*日" % (m, d), text))
     stage = (ec.ans or {}).get("stage")
     names = G.stage_names(ec.lc).get(_i(stage), []) if stage is not None else []
-    st_hits = G.hits(text, names)
+    st_hits = sorted({h for ln in text.splitlines() if STAGE_WORD.search(ln) for h in G.hits(ln, names)})
     weeks = [int(x) for x in cr.get("week_accept") or []]
     wk = [n for n in weeks if re.search(r"第\s*%d\s*周|week\s*%d(?!\d)|\bW\s*%d(?!\d)" % (n, n, n), text, re.I)]
     wcalls = [c["line"] for c in weekly_calls(s) if c["line"] <= upto]
@@ -887,6 +892,40 @@ def c_profile_contains(ec, cr):
                         "match": cr.get("match"), "date": want_date, "matched_paths": good}
 
 
+# R80:「提示进入下一阶段」= 场景 prompt 正则或下面这组「换 / 进入增长期」的说法,命中处不在否定或条件里
+STAGE_SWITCH_RE = re.compile(
+    r"(?:切换|换|转|进入|迈入|升到|到了|算是|已经是|就是)(?:成|到|为|入)?了?.{0,4}增长期|看起来.{0,8}增长期"
+    r"|(?:switch(?:ing)?|move|moving|transition(?:ing)?|upgrade|graduat(?:e|ed|ing))\s+(?:over\s+)?(?:to|into)\s+"
+    r"(?:the\s+)?growth"
+    r"|(?:entered|entering|reached|in)\s+(?:the\s+)?growth\s+(?:stage|phase)"
+    r"|looks like .{0,20}growth\s+(?:stage|phase)"
+    r"|\b(?:this|we|you|it)(?:'re|'s| are| is)\s+(?:now\s+)?(?:in\s+)?(?:the\s+)?growth\s+(?:stage|phase)", re.I)
+STAGE_CLAUSE = re.compile(r"[,，;；。.!?！？()（）\n、:：—–]")
+STAGE_NEG_BEFORE = re.compile(
+    r"没|未|别|并非|(?<!非)非(?!常)|不(?![错少断仅但只久过])|才(?:算|是|能|会|叫|可以)|如果|若|要是|假如|等到|一旦|除非"
+    r"|\b(?:not|no|never|if|unless|until)\b|n't", re.I)
+STAGE_NEG_AFTER = re.compile(r"还早|太早|尚早|过早|不(?:适用|到|是|算)|用不上|还不|还没|\bnot yet\b|\btoo early\b|\byet\b", re.I)
+A_NOT_A = re.compile(r"(.)不\1")
+
+
+def stage_prompt_hits(pattern, text):
+    """R80:场景 prompt 正则和 STAGE_SWITCH_RE 的命中里,去掉分句内前 30 个字符有否定 / 条件词、或后 12 个字符有
+    「还早 / 不到 / not yet」的;「要不要 / 是不是」这类正反问不算否定。返回剩下的命中文字。"""
+    text = text or ""
+    out = []
+    for rx in (re.compile(pattern, re.I), STAGE_SWITCH_RE):
+        for m in rx.finditer(text):
+            cs = max([0] + [x.end() for x in STAGE_CLAUSE.finditer(text, 0, m.start())])
+            nxt = STAGE_CLAUSE.search(text, m.end())
+            ce = nxt.start() if nxt else len(text)
+            before = A_NOT_A.sub("", text[max(cs, m.start() - 30):m.start()])
+            after = text[m.end():min(ce, m.end() + 12)]
+            if STAGE_NEG_BEFORE.search(before) or STAGE_NEG_AFTER.search(after):
+                continue
+            out.append(m.group(0))
+    return out
+
+
 def _stage_of(path):
     v, _ = G.profile_stage(G.read_json(path) if path else None)
     return None if v is G.MISSING or isinstance(v, (dict, list, bool)) else _i(v)
@@ -898,7 +937,7 @@ def c_stage_prompted(ec, cr):
     if bad:
         return bad
     pr = cr["prompt"]
-    hit = next((st for st in s.stops if re.search(pr, _stop_text(st), re.I)), None)
+    hit = next((st for st in s.stops if stage_prompt_hits(pr, _stop_text(st))), None)
     ev = {"session": s.name, "prompt_stop": stop_info(hit) if hit else None}
     if not hit:
         return False, dict(ev, why="没有一次停下命中 prompt 正则(或命中的那次没有驱动回话)")
@@ -927,8 +966,7 @@ def c_no_stage_prompt(ec, cr):
     bad = _not_ran(s)
     if bad:
         return bad
-    hits_ = [{"line": t["line"], "text": re.search(cr["prompt"], t["text"], re.I).group(0)}
-             for t in s.tr.texts() if re.search(cr["prompt"], t["text"], re.I)]
+    hits_ = [{"line": t["line"], "text": h[0]} for t in s.tr.texts() for h in [stage_prompt_hits(cr["prompt"], t["text"])] if h]
     a = _stage_of(os.path.join(s.ws_start() or "", "seo-ops", "context", "profile.json"))
     b = _stage_of(os.path.join(s.ws_end() or "", "seo-ops", "context", "profile.json"))
     ok = not hits_ and a is not None and a == b
@@ -943,8 +981,8 @@ def rules_lines(ws):
 def quotes_recorded(lines, quotes):
     rows = {}
     for q in quotes:
-        sq = G.squash(q)
-        ln = next((x for x in lines if sq in G.squash(x) and re.search(r"(?<!\d)20\d\d-\d\d-\d\d(?!\d)", x)), None)
+        sq = G.squash(G.fold_width(q))
+        ln = next((x for x in lines if sq in G.squash(G.fold_width(x)) and re.search(r"(?<!\d)20\d\d-\d\d-\d\d(?!\d)", x)), None)
         rows[q] = ln.strip()[:160] if ln else None
     return rows
 
@@ -1048,12 +1086,18 @@ VERDICT_NEG = re.compile(r"(?i)\bfail(?:ed|s)?\b|\bmissing\b|\bno\b|✗|✘|❌"
 PLAT_RE = re.compile(r"/platforms/([A-Za-z0-9_-]+)(?=/|\b)")
 
 
+CN_HAVE_NOT_VERDICT = re.compile(r"没有|所有|都要有|要有|应有|需有|需要有|必须有|应该有|缺")
+
+
 def verdict_of(line):
-    """R43:一行里的判定:True / False / None(没有判定词)/ "ambiguous"(正反都有)。"""
-    neg_cn = bool(re.search(r"没有|缺", line))
-    rest = re.sub(r"没有|缺", "", line)
-    pos = bool(VERDICT_POS.search(line)) or ("有" in rest)
-    neg = bool(VERDICT_NEG.search(line)) or neg_cn
+    """R43 / R68:一行里的判定:True / False / None(没有判定词)/ "ambiguous"(正反都有)。
+    先看英文和符号判定词(pass / fail / ok / missing / yes / no / ✓ / ✗);只要有,就按它们判,正反都有记 ambiguous;
+    都没有才看中文「有 / 没有 / 缺」,「所有」「要有」「应有」「必须有」这类要求句里的「有」不算判定。"""
+    pos_en, neg_en = bool(VERDICT_POS.search(line)), bool(VERDICT_NEG.search(line))
+    if pos_en or neg_en:
+        return "ambiguous" if (pos_en and neg_en) else pos_en
+    neg = bool(re.search(r"没有|缺", line))
+    pos = "有" in CN_HAVE_NOT_VERDICT.sub("", line)
     if pos and neg:
         return "ambiguous"
     if pos:
@@ -1077,6 +1121,18 @@ def platform_verdicts(text):
     return out
 
 
+# R81:「试跑结果出现在 agent 文本里」认中文的通过 / 没过(定义没给词表;词表只属于 trial_matches,它读的是工具输出)
+CN_PASS_FAIL = re.compile(r"通过|没过")          # 「不过」是连词,不认
+
+
+def shown_verdicts(text):
+    """R81:agent 文本里的平台页结果:platform_verdicts 认得的判定,或同一行有 /platforms/<x>/ 和「通过 / 没过 / 未通过 /
+    不通过」。只用于「结果出现在 agent 文本 / 运营单里」,不用于判定对不对(trial_matches 照 R43 / R68)。"""
+    if platform_verdicts(text):
+        return True
+    return any(PLAT_RE.search(ln) and CN_PASS_FAIL.search(ln) for ln in (text or "").splitlines())
+
+
 def check_scripts(ws):
     d = os.path.join(ws or "", "seo-ops", "playbook", "checks")
     out = []
@@ -1087,18 +1143,14 @@ def check_scripts(ws):
     return sorted(out)
 
 
-def _segments_with_heredoc(cmd):
-    return G.split_simple(cmd)
-
-
 def exec_calls(tr, script_name):
-    """R42:执行了这个脚本的 Bash 调用(cat / shasum 等读文件不算)。"""
+    """R42:执行了这个脚本的 Bash 调用(cat / shasum 等读文件不算)。按 R65 展开后的段认,纯赋值段不算。"""
     out = []
     base = os.path.basename(script_name)
     for c in tr.calls():
         if c["name"] != "Bash":
             continue
-        for seg in G.split_simple(G.bash_cmd(c)):
+        for seg, _ in G.command_segments(G.bash_cmd(c)):
             toks = [t for t in seg if not re.match(r"^\w+=", t)]
             while toks and toks[0] in ("env", "sudo", "nohup", "time"):
                 toks = toks[1:]
@@ -1115,15 +1167,62 @@ def exec_calls(tr, script_name):
     return out
 
 
+RUN_VERBS = ("try", "run", "test", "exec", "execute")
+
+
+def _names_of(script_name):
+    base = os.path.basename(script_name)
+    stem = os.path.splitext(base)[0]
+    return {base, stem, stem.replace("-", "_"), stem.replace("_", "-")}
+
+
+def wrapper_calls(tr, script_name):
+    """R66:经 skill 自带的包装命令跑这个检查(如 teach.py check try <名>):同一简单命令里有 try / run / test / exec 子命令词,
+    后面跟着检查名(去不去 .py、- 和 _ 互换都认),第一个词不是读文件的命令;而且这次调用的输出里有 R43 的平台页判定
+    (输出里没有判定 = 包装命令拒跑或没跑,不算执行)。"""
+    names = _names_of(script_name)
+    out = []
+    for c in tr.calls():
+        if c["name"] != "Bash":
+            continue
+        res = tr.results.get(c["id"])
+        if not res or not platform_verdicts(res["text"]):
+            continue
+        for seg, _ in G.command_segments(G.bash_cmd(c)):
+            toks = [t for t in seg if not re.match(r"^\w+=", t)]
+            while toks and toks[0] in ("env", "sudo", "nohup", "time"):
+                toks = toks[1:]
+            if not toks or os.path.basename(toks[0]) in NOT_EXEC:
+                continue
+            if any(t.lower() in RUN_VERBS and any(x in names for x in toks[i + 1:]) for i, t in enumerate(toks)):
+                out.append(c)
+                break
+    return out
+
+
+def run_calls(tr, script_name):
+    """R42 直接执行 ∪ R66 包装命令执行,按行号排。"""
+    seen, out = set(), []
+    for c in sorted(exec_calls(tr, script_name) + wrapper_calls(tr, script_name), key=lambda c: c["line"]):
+        if c["id"] not in seen:
+            seen.add(c["id"])
+            out.append(c)
+    return out
+
+
 ENABLE_WORDS = re.compile(r"(?i)enable|register|activate|启用|登记|\badd\b|loops|\bops\b")
+READ_HEADS = ("cat", "head", "tail", "less", "more", "shasum", "sha256sum", "ls", "stat", "grep", "rg", "wc", "diff",
+              "file", "md5", "md5sum")
 
 
 def enable_calls(tr, ws_abs, script_name):
-    """R42:启用动作 = 写 seo-ops/(playbook / loops / ops 配置)里一个提到脚本名的文件(不是脚本本身、不是 checks/ 下的说明),
-    或 Bash 命令提到脚本名并带 enable/register/启用/登记/add/loops/ops 之一、又不是执行这个脚本。"""
+    """R42 / R67:启用动作 = 写 seo-ops/(playbook / loops / ops 配置)里一个提到脚本名的文件(不是脚本本身、不是 checks/ 下的说明),
+    或 Bash 命令里某个简单命令(R65 展开后)提到脚本名并带 enable/register/启用/登记/add/loops/ops 之一、又不是执行这个脚本。
+    R67:按简单命令判,读文件的简单命令(cat / head / grep / jq …,不论在命令的第几段)不算;匹配启用词前先去掉路径里的
+    「seo-ops」(整词 ops 原本会命中 seo-ops/ 这个目录名)。"""
     base = os.path.basename(script_name)
     stem = os.path.splitext(base)[0]
-    ex = {c["id"] for c in exec_calls(tr, script_name)}
+    ex = {c["id"] for c in run_calls(tr, script_name)}
     out = []
     for c in tr.calls():
         inp = c.get("input") or {}
@@ -1139,10 +1238,16 @@ def enable_calls(tr, ws_abs, script_name):
             if stem in body or base in body:
                 out.append(c)
         elif c["name"] == "Bash" and c["id"] not in ex:
-            cmd = G.bash_cmd(c)
-            if (base in cmd or stem in cmd) and ENABLE_WORDS.search(cmd) and not re.search(
-                    r"^\s*(cat|head|tail|less|shasum|sha256sum|ls|stat)\b", cmd):
-                out.append(c)
+            for seg, _ in G.command_segments(G.HEREDOC.sub("", G.bash_cmd(c))):
+                toks = [t for t in seg if not re.match(r"^\w+=", t)]
+                while toks and toks[0] in ("env", "sudo", "nohup", "time"):
+                    toks = toks[1:]
+                if not toks or os.path.basename(toks[0]) in READ_HEADS:
+                    continue
+                txt = " ".join(toks)
+                if (base in txt or stem in txt) and ENABLE_WORDS.search(re.sub(r"(?i)seo-ops", "", txt)):
+                    out.append(c)
+                    break
     return out
 
 
@@ -1152,7 +1257,7 @@ def the_check(s_teach):
     if not scripts:
         return None
     for p in scripts:
-        if exec_calls(s_teach.tr, p):
+        if run_calls(s_teach.tr, p):
             return p
     return scripts[0]
 
@@ -1270,7 +1375,7 @@ def c_custom_check_created(ec, cr):
 
 
 def _trial(s, script):
-    ex = exec_calls(s.tr, script)
+    ex = run_calls(s.tr, script)
     en = enable_calls(s.tr, s.live_ws, script)
     first_en = en[0]["line"] if en else None
     pre = [c for c in ex if first_en is None or c["line"] < first_en]
@@ -1304,6 +1409,22 @@ def c_custom_check_trial(ec, cr):
                 "ignored_pages": sorted({v["page"] for v in vs if v["page"] not in gt})}
 
 
+ENABLE_ASK = re.compile(r"(?i)启用|开启|激活|\benable|\bturn (?:it )?on\b|\bactivate")
+AFFIRM = re.compile(r"(?i)好|行|可以|对|是的|没问题|启用|确认|同意|\byes\b|\bok(?:ay)?\b|\bsure\b|\bgo ahead\b|\bapproved?\b|\benable")
+DENY_REPLY = re.compile(r"(?i)不|别|先放|暂缓|\bno\b|\bnot\b|don'?t|later|wait")
+
+
+def asks_enable(st):
+    """R69:这次停下问的是要不要启用:停下文本(最后一条文本加问题)里有 启用 / 开启 / 激活 / enable / turn on / activate。"""
+    return bool(ENABLE_ASK.search((st.get("text") or "") + "\n" + "\n".join(q["text"] for q in st.get("questions") or [])))
+
+
+def affirmative(reply):
+    """R69:驱动的回话是确认:含 好 / 行 / 可以 / 对 / 是的 / 启用 / 确认 / yes / ok / go ahead … 之一,且没有否定或缓办词。"""
+    r = (reply or "").strip()
+    return bool(r) and bool(AFFIRM.search(r)) and not DENY_REPLY.search(r)
+
+
 def c_custom_check_confirm(ec, cr):
     s = ec.sess(cr)
     bad = _not_ran(s)
@@ -1317,10 +1438,9 @@ def c_custom_check_confirm(ec, cr):
           "enable_lines": [c["line"] for c in en]}
     if not trial:
         return False, dict(ev, why="没有试跑")
-    shown = next((t for t in s.tr.texts(after=trial["line"]) if platform_verdicts(t["text"])), None)
-    stop = next((st for st in s.stops if shown and st["line"] >= shown["line"]
-                 and str(next((d.get("source") for d in s.driver if d["_line"] == st["driver_line"]), "")).startswith("topic")),
-                None)
+    shown = next((t for t in s.tr.texts(after=trial["line"]) if shown_verdicts(t["text"])), None)
+    stop = next((st for st in s.stops if shown and st["line"] >= shown["line"] and asks_enable(st)
+                 and affirmative(st.get("reply"))), None)
     ev.update(result_text_line=shown["line"] if shown else None, confirm_stop=stop_info(stop) if stop else None)
     if not shown or not stop:
         return False, dict(ev, why="试跑结果没进 agent 文本,或之后没有停下问、驱动回确认")
@@ -1362,7 +1482,7 @@ def c_custom_check_weekly(ec, cr):
         return False, {"session": s.name, "why": "这一段没有每周运营单(ops weekly)调用"}
     w0 = wk[0]
     turn_end = next((t["events"][-1]["line"] for t in s.tr.turns if any(e is w0 for e in t["events"])), s.tr.end_line)
-    runs = [c["line"] for c in exec_calls(s.tr, script) if w0["line"] <= c["line"] <= turn_end]
+    runs = [c["line"] for c in run_calls(s.tr, script) if w0["line"] <= c["line"] <= turn_end]
     internal = []
     for c in wk:
         res = s.tr.results.get(c["id"])
@@ -1371,7 +1491,7 @@ def c_custom_check_weekly(ec, cr):
     units = [("weekly output %d" % c["line"], (s.tr.results.get(c["id"]) or {}).get("text", "")) for c in wk]
     units += [("text %d" % t["line"], t["text"]) for t in s.tr.texts()]
     units += [("file " + p, read_text(os.path.join(s.ws_end() or "", p)) or "") for p in s.changed_paths("seo-ops/")]
-    shown = next((n for n, t in units if platform_verdicts(t)), None)
+    shown = next((n for n, t in units if shown_verdicts(t)), None)
     ok = bool(runs or internal) and shown is not None
     return ok, {"session": s.name, "script": os.path.basename(script), "weekly_line": w0["line"], "exec_lines": runs,
                 "internal_run_in_weekly": internal, "results_shown_in": shown}
@@ -1389,7 +1509,11 @@ def c_custom_check_disabled(ec, cr):
     if not script:
         return False, {"session": s.name, "why": "teach 段结束时没有检查脚本"}
     names = check_names(script)
-    ran = [c["line"] for c in exec_calls(s.tr, script)]
+    ran = [c["line"] for c in run_calls(s.tr, script)]
+    for c in weekly_calls(s):                       # R66:运营单在内部跑了它(输出点名这个检查、又有平台页判定)也算执行
+        res = s.tr.results.get(c["id"])
+        if res and G.hits(res["text"], names) and platform_verdicts(res["text"]) and c["line"] not in ran:
+            ran.append(c["line"])
     units = [("text %d" % t["line"], t["text"]) for t in s.tr.texts()]
     units += [("weekly output %d" % c["line"], (s.tr.results.get(c["id"]) or {}).get("text", "")) for c in weekly_calls(s)]
     units += [("file " + p, read_text(os.path.join(s.ws_end() or "", p)) or "") for p in s.changed_paths("seo-ops/")]
@@ -1417,10 +1541,27 @@ def c_playbook_survives(ec, cr):
                 "skipped": re_.get("skipped"), "rules_after": rows}
 
 
-VS_RE = re.compile(r"(?i)vs|versus|对比|alternative|替代")
+# R71:vs 要独立成词(原来子串匹配,devs、canvas 都算对比);「月度 / 同比 / 环比 / 前后 / 每月 / 每周 / 基线 对比」是量数的说法,不是对比文
+VS_RE = re.compile(r"(?i)(?<![a-z])vs\.?(?![a-z])|versus|(?<!月度)(?<!同比)(?<!环比)(?<!前后)(?<!每月)(?<!每周)(?<!基线)对比|alternative|替代")
+# R83:「品牌词 vs 非品牌词 / brand vs non-brand」是测量口径(GSC 查询词分组),不是对比文;先去掉再配 VS_RE
+BRAND_VS = re.compile(r"(?i)\b(?:non-?\s?|un)?brand(?:ed)?(?:\s+(?:queries|query|terms|keywords|search(?:es)?|clicks))?"
+                      r"\s*(?:vs\.?|versus|/)\s*(?:non-?\s?|un)?brand(?:ed)?\b"
+                      r"|非?品牌(?:词|查询)?\s*(?:vs\.?|versus|对比|和|与|/)\s*非?品牌(?:词|查询)?")
+
+
+def vs_hit(text):
+    """R71 / R83:对比 / 替代类的词(VS_RE),品牌词和非品牌词的分组不算。"""
+    return VS_RE.search(BRAND_VS.sub(" ", text or ""))
+
+
 PRICE_HEAD = re.compile(r"(?i)价格|price|pricing|定价|plan")
 PRICE_TABLE_WORDS = ("价格对照表", "价格表", "price comparison table", "pricing table")
 NEG_REDDIT = ("不", "别", "不做", "排除", "已排除", "按规则去掉", "don't", "not", "excluded", "skip")
+# R70:出题原文的否定词表,加上「没 / 禁用 / excluding / ruled out」;英文词按整词认(原来子串,note、nothing 里的 not 也算否定)
+NEG_REDDIT_CN = ("不", "别", "排除", "按规则去掉", "没", "禁用")
+NEG_REDDIT_EN = re.compile(r"(?i)\bdon['’]?t\b|\bnot\b|\bcannot\b|\bexclud(?:e|ed|ing)\b|\bskip(?:ped)?\b|\bruled out\b")
+LABEL_AFTER = re.compile(r"^\s*(?:[(（][^)）\n]{0,12}[)）])?\s*\**\s*[:：]\s*\**")
+CURRENCY = re.compile(r"(?i)[$€£¥]\s?\d|\d(?:[\d,.]*)\s?(?:usd|eur|美元|元)(?![a-z])")
 
 
 def text_entries(text):
@@ -1461,17 +1602,60 @@ def json_entries(obj):
     return out
 
 
+def _neg_reddit(s):
+    return any(n in s for n in NEG_REDDIT_CN) or bool(NEG_REDDIT_EN.search(s))
+
+
 def reddit_violation(entry):
+    """R53 / R70:条目里每一处 reddit 都要被否定,否则记违例。否定 = 出题原文的「reddit 前 30 个字符内有否定词」,
+    或这一处 reddit 所在分句里、它后面有否定词(「Reddit 帖子我没用」);reddit 是小标题标签(「**Reddit(R2):**」)时,
+    看冒号后面到分句结束。分句按 , , ; ; 。 . ! ? ( ) 和换行切(grade.py 的 CLAUSE_SPLIT),「Post on Reddit, not just HN」
+    的 not 在下一个分句,不算否定。"""
     low = entry.lower()
+    occ = []                                         # [(start, end, negated)]
     for m in re.finditer("reddit", low):
         pre = low[max(0, m.start() - 30):m.start()]
-        if not any(n in pre for n in NEG_REDDIT):
-            return True
+        if _neg_reddit(pre):
+            occ.append((m.start(), m.end(), True))
+            continue
+        rest = low[m.end():]
+        lab = LABEL_AFTER.match(rest)
+        if lab:
+            rest = rest[lab.end():]
+        cut = G.CLAUSE_SPLIT.search(rest)
+        occ.append((m.start(), m.end(), _neg_reddit(rest[:cut.start()] if cut else rest)))
+    excluded = any(n for _, _, n in occ)
+    for a, b, neg in occ:
+        if neg:
+            continue
+        # R82:同一条目已写明排除 Reddit(有一处被否定),其余没被否定的那处所在分句里没有建议动作词,是在解释排除,不是建议
+        if excluded and not SUGGEST_ACT.search(_clause_at(low, a, b)):
+            continue
+        return True
     return False
+
+
+# R82:建议去做的动作词(发帖、投稿、去做、可以、建议、post、submit …);解释排除的分句里没有这些
+SUGGEST_ACT = re.compile(r"发|投|做|去|试|铺|搞|找|推|争取|可以|建议|应该|值得|"
+                         r"(?i:\bpost|\bsubmit|\bshare|\blaunch|\bpitch|\btry\b|\bbuild|\bseed|\bengage|\bcomment"
+                         r"|\bpromote|\brecommend|\bsuggest|\bconsider|\bworth\b|\bdo\b)")
+
+
+def _clause_at(low, a, b):
+    """R82:low[a:b] 所在的整个分句(按 CLAUSE_SPLIT 切)。"""
+    starts = [m.end() for m in G.CLAUSE_SPLIT.finditer(low[:a])]
+    s = starts[-1] if starts else 0
+    cut = G.CLAUSE_SPLIT.search(low, b)
+    return low[s:cut.start() if cut else len(low)]
 
 
 def md_tables(text):
     """[(header_cells, [row_cells...])]。"""
+    return [(h, r) for _, h, r in md_tables_at(text)]
+
+
+def md_tables_at(text):
+    """[(表头所在行号, header_cells, [row_cells...])]。"""
     lines = (text or "").splitlines()
     out = []
     i = 0
@@ -1483,11 +1667,27 @@ def md_tables(text):
             while j < len(lines) and re.match(r"^\s*\|.*\|\s*$", lines[j]):
                 rows.append([c.strip() for c in lines[j].strip().strip("|").split("|")])
                 j += 1
-            out.append((head, rows))
+            out.append((i, head, rows))
             i = j
         else:
             i += 1
     return out
+
+
+def price_caption(lines, i):
+    """R71:表格正上方(跳过空行,最多看 2 个非空行)的标题行:Markdown 标题、整行加粗、或以冒号结尾的说明行。
+    R86:整项加粗的列表项(1. / 1) / - / * / + 后面一整段 **…**)也算。"""
+    seen = 0
+    for k in range(i - 1, -1, -1):
+        ln = lines[k].strip()
+        if not ln:
+            continue
+        seen += 1
+        if re.match(r"^#{1,6}\s+|^(?:(?:\d+[.)]|[-*+])\s+)?\*\*.+\*\*\s*[:：]?$|.+[:：]$", ln):
+            return ln
+        if seen >= 2:
+            break
+    return ""
 
 
 def product_names(ec):
@@ -1503,8 +1703,13 @@ def product_names(ec):
 
 
 def price_table_ok(text, names):
-    for head, rows in md_tables(text):
-        if not PRICE_HEAD.search(" | ".join(head)):
+    """R53 / R71:表头行命中价格词;或表格正上方的标题行命中价格词、且表体至少 2 格写着货币金额($19、€25、30 元…)。
+    另要两列或两行分别含两个产品名(出题原文)。"""
+    lines = (text or "").splitlines()
+    for i, head, rows in md_tables_at(text):
+        cap = price_caption(lines, i)
+        money = sum(1 for r in rows for c in r if CURRENCY.search(c))
+        if not PRICE_HEAD.search(" | ".join(head)) and not (PRICE_HEAD.search(cap) and money >= 2):
             continue
         low_names = [n.lower() for n in names]
 
@@ -1563,13 +1768,13 @@ def c_rule_violations(ec, cr):
             for e in text_entries(t):
                 if "reddit" in e.lower() and reddit_violation(e):
                     r2.append({"where": where, "entry": e[:120]})
-        arts = [("text %d" % tt["line"], tt["text"]) for tt in s.tr.texts() if VS_RE.search(first_heading(tt["text"]))]
+        arts = [("text %d" % tt["line"], tt["text"]) for tt in s.tr.texts() if vs_hit(first_heading(tt["text"]))]
         for p in changed:
             full = os.path.join(ws, p)
             if not is_text_file(full) or p.startswith("seo-ops/plan/"):
                 continue
             body = read_text(full) or ""
-            if VS_RE.search(os.path.basename(p)) or VS_RE.search(first_heading(body)):
+            if vs_hit(os.path.basename(p)) or vs_hit(first_heading(body)):
                 arts.append(("file " + p, body))
         for where, body in arts:
             if not price_table_ok(body, names):
@@ -1577,7 +1782,7 @@ def c_rule_violations(ec, cr):
         if any(p.startswith("seo-ops/plan/") for p in changed):
             items, src = G.plan_items(ws)
             for it in items:
-                if VS_RE.search(it["text"]) and not G.hits(it["text"], PRICE_TABLE_WORDS):
+                if vs_hit(it["text"]) and not G.hits(it["text"], PRICE_TABLE_WORDS):
                     r1.append({"where": it["source"], "why": "方案里的对比 / 替代条目没提价格对照表"})
         per[name] = {"rule_2": r2[:6], "rule_2_count": len(r2), "rule_1": r1[:6], "rule_1_count": len(r1),
                      "artifacts": [w for w, _ in arts]}
@@ -1763,11 +1968,29 @@ def c_hreflang(ec, cr):
         ev.update(clean_hit=clean.group(0) if clean else None, issue_hits=counted[:5])
     seen = set()
     for c in s.tr.calls():
-        for u in G.request_urls(c, s.tr):
+        for u in G.request_urls(c, s.tr, s.ws_end()):
             seen.add(G.url_path(u))
     miss_u = [u for u in cr.get("urls") or [] if u not in seen]
     ev["urls_not_requested"] = miss_u
     return verdict_ok and not miss_u, ev
+
+
+PMM = ".agents/product-marketing.md"
+
+
+def pmm_fragments(s):
+    """R73:这一段开始时 .agents/product-marketing.md 里 ≥20 个字符的内容片段(去掉 Markdown 标记和「**标签:**」,
+    表格按格切),压掉空白后比。"""
+    t = read_text(os.path.join(s.ws_start() or s.live_ws or "", PMM)) or ""
+    out = set()
+    for ln in t.splitlines():
+        x = re.sub(r"^\s*(?:#{1,6}\s+|[-*]\s+)", "", ln)
+        x = re.sub(r"\*\*[^*\n]{1,40}?[:：]\*\*", "", x)
+        for part in re.split(r"\s*\|\s*", x):
+            part = part.strip()
+            if len(part) >= 20:
+                out.add(G.squash(part))
+    return out
 
 
 def c_pmm_read_first(ec, cr):
@@ -1776,11 +1999,22 @@ def c_pmm_read_first(ec, cr):
     if bad:
         return bad
     upto = s.cands[0]["line"] if s.cands else s.tr.end_line + 1
-    reads = [c["line"] for c in s.tr.calls(before=upto) if _reads(c, (".agents/product-marketing.md",))
-             or (c["name"] == "Bash" and ".agents/product-marketing.md" in G.bash_cmd(c)
+    reads = [c["line"] for c in s.tr.calls(before=upto) if _reads(c, (PMM,))
+             or (c["name"] == "Bash" and PMM in G.bash_cmd(c)
                  and not re.search(r">\s*\S*\.agents/product-marketing\.md", G.bash_cmd(c)))]
-    return bool(reads) and bool(s.cands), {"session": s.name, "first_stop_line": s.cands[0]["line"] if s.cands else None,
-                                           "reads": reads}
+    # R73:skill 的脚本在这次 Bash 调用里读了它当草稿:输出里点名这个文件,并原样带出文件里 ≥2 个内容片段
+    frags, via_script = pmm_fragments(s), []
+    for c in s.tr.calls(before=upto):
+        res = s.tr.results.get(c["id"]) if c["name"] == "Bash" else None
+        if not res or PMM not in res["text"]:
+            continue
+        body = G.squash(res["text"])
+        n = sum(1 for f in frags if f in body)
+        if n >= 2:
+            via_script.append({"line": c["line"], "fragments": n})
+    ok = bool(reads or via_script) and bool(s.cands)
+    return ok, {"session": s.name, "first_stop_line": s.cands[0]["line"] if s.cands else None, "reads": reads,
+                "read_via_script_output": via_script}
 
 
 def ring_questions(s, ring):
@@ -1898,11 +2132,32 @@ def kind_of(cid, cr, spec):
     return "process"
 
 
+def driver_deviations(R, ec):
+    """R78:每段转录的首条用户消息要和 mutate 打印、存在 sessions/<段>/prompt.txt 的首条消息一致(压空白后相等)。
+    不一致只记下来(report 单列),不作废:同一轮三组拿到的是同一种改法,组间比较还成立,绝对分要带着这条看。"""
+    out = []
+    for n, s in ec.S.items():
+        if not s.ran:
+            continue
+        want = read_text(os.path.join(sess_dir(R["run"], n), "prompt.txt"))
+        got = s.tr.turns[0]["prompt"]["text"]
+        if want is None:
+            out.append({"session": n, "why": "run 目录里没有这一段的 prompt.txt,核不了首条消息"})
+        elif G.squash(got) != G.squash(want):
+            if G.squash(want) in G.squash(got):
+                k = len(os.path.commonprefix([got, want]))
+                out.append({"session": n, "why": "首条消息在 mutate 打印的原文之外多了内容", "added": got[k:].strip()[:300]})
+            else:
+                out.append({"session": n, "why": "首条消息不是 mutate 打印的原文", "first_message": got[:300]})
+    return out
+
+
 def grade_ext(R, answers_dir=None, lifecycle=None, refs=None):
     spec, sc = G.load_scenario(R["scenario"], R["scenarios_file"])
     answers_dir = answers_dir or os.path.join(os.path.dirname(os.path.abspath(R["scenarios_file"])), "answers")
     answers = G.read_json(os.path.join(answers_dir, (sc.get("product") or "") + ".json"))
     lc = G.read_json(lifecycle or G.DEFAULT_LIFECYCLE) or {}
+    G._LOCAL_IDX.clear()
     ec = ExtCtx(R, spec, sc, answers, lc, refs)
     out = []
     main = ec.S.get("main")
@@ -1928,6 +2183,7 @@ def grade_ext(R, answers_dir=None, lifecycle=None, refs=None):
         void = void or G.void_reason(s.tr, R["arm"])
     return {"scenario": R["scenario"], "family": "ext", "example": sc.get("example"), "product": sc.get("product"),
             "arm": R["arm"], "run": R["run"], "T": R.get("T"), "assertions": out,
+            "driver_deviations": driver_deviations(R, ec),
             "sessions": {n: {"turns": len(s.tr.turns), "stops": len(s.cands), "answered_stops": len(s.stops),
                              "transcript": s.info.get("transcript"), "driver_problems": s.problems,
                              "ended": bool(s.info.get("ended"))} for n, s in ec.S.items()},

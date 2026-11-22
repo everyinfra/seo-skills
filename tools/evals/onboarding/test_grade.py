@@ -11,9 +11,11 @@
 """
 import argparse
 import copy
+import datetime as dt
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -303,6 +305,112 @@ class Driver(unittest.TestCase):
         self.assertEqual(G.onboard_calls(call)[0]["quote"], "Go with it")
         call = {"name": "Bash", "input": {"command": 'python3 onboard.py answer --ring 2 --confirm --quote "$Q"'}}
         self.assertEqual(G.onboard_calls(call)[0]["quote"], "$Q")
+
+    # R65:同一条命令里先赋值、再用 $VAR / ${VAR} 调 onboard.py
+    def test_script_var_expanded(self):
+        def ring1(cmd):
+            return [(o["sub"], o["ring"], o["confirm"]) for o in G.onboard_calls({"name": "Bash", "input": {"command": cmd}})
+                    if o["sub"] == "answer" and o["ring"] == 1 and o["confirm"]]
+        hit = [("answer", 1, True)]
+        cases = (
+            ('cd /r && O=/k/skills/seo-suite/scripts/onboard.py\npython3 $O answer --ring 1 --set a=b --quote "对的" '
+             '--confirm 2>&1 | tail -20', hit),
+            ("S=/k/skills/seo-suite/scripts/onboard.py; python3 $S answer --ring 1 --confirm", hit),
+            ("S=/k/skills/seo-suite/scripts; python3 $S/onboard.py answer --ring 1 --confirm", hit),
+            ("export S=/k/skills/seo-suite; python3 ${S}/scripts/onboard.py answer --ring 1 --confirm", hit),
+            ('S="/k/skills/seo-suite" && O=$S/scripts/onboard.py && python3 "$O" answer --ring 1 --confirm', hit),
+            # 该不过的仍不过:变量不在同一条命令里赋值;变量赋的是别的脚本;命令前缀赋值(shell 里不展开到参数)
+            ("python3 $O answer --ring 1 --confirm", []),
+            ("O=/x/other.py; python3 $O answer --ring 1 --confirm", []),
+            ("O=/x/onboard.py python3 $O answer --ring 1 --confirm", []),
+            ("python3 $(echo /x/onboard.py) answer --ring 1 --confirm", []),
+        )
+        for cmd, want in cases:
+            with self.subTest(cmd=cmd):
+                self.assertEqual(ring1(cmd), want)
+
+    def test_ring1_confirm_via_var_needs_ok_result(self):
+        cmd = "O=/k/scripts/onboard.py\npython3 $O answer --ring 1 --quote \"对,就是这个产品。\" --confirm"
+        for err, want in ((False, 7), (True, None)):
+            with self.subTest(err=err):
+                tr = G.Transcript.__new__(G.Transcript)
+                tr.events = [{"kind": "call", "id": "c1", "name": "Bash", "input": {"command": cmd}, "line": 7}]
+                tr.results = {"c1": {"is_error": err, "text": "ok"}}
+                self.assertEqual(G.ring1_confirm_line(tr), want)
+
+    def test_plan_and_output_via_var(self):
+        self.assertTrue(G.writes_plan({"name": "Bash", "input": {"command": "cd /r && P=/k/scripts/plan.py\npython3 $P add x"}}))
+        self.assertFalse(G.writes_plan({"name": "Bash", "input": {"command": "python3 $P add x"}}))
+        c = {"name": "Bash", "input": {"command": "cd /w && T=/k/scripts/site_crawl.py && $T --out a.txt"}}
+        self.assertEqual(G.script_output_files(c, "/w"), ["/w/a.txt"])
+
+    # R65 补漏 2:R18 写方案 = 调了 plan.py(除 show);赋值段、命令前缀赋值不是调用
+    def test_writes_plan_assign_is_not_call(self):
+        bash = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        not_writes = ["P=/k/scripts/plan.py",
+                      "cd /r && P=/k/scripts/plan.py && ls seo-ops",
+                      "P=/k/scripts/plan.py; python3 $P show",
+                      "export P=/k/scripts/plan.py\npython3 ${P} show --json",
+                      "P=/k/scripts/plan.py python3 $P add x",
+                      "python3 /k/scripts/plan.py show"]
+        writes = ["P=/k/scripts/plan.py; python3 $P add x",
+                  "S=/k/scripts && python3 $S/plan.py set --id 1",
+                  "P=/k/scripts/plan.py; python3 $P status",          # 原文只除 show,status 照旧算
+                  "FOO=1 python3 /k/scripts/plan.py add x",
+                  "python3 /k/scripts/plan.py"]
+        for c in not_writes:
+            self.assertFalse(G.writes_plan(bash(c)), c)
+        for c in writes:
+            self.assertTrue(G.writes_plan(bash(c)), c)
+
+    # R65 补漏 3:R26 要「跑了」审计脚本,按段认调用
+    def test_audit_runs_by_segment(self):
+        bash = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        runs = ["python3 /k/scripts/site_audit.py --site http://h",
+                "S=/k/scripts; python3 $S/site_audit.py --site http://h",
+                "python3 $S/site_audit.py --site http://h",             # 没赋值的 $S/ 前缀:原来就认,词里有脚本名
+                "T=/k/scripts/site_audit.py && python3 $T --site http://h",
+                "export T=/k/scripts/sitemap_audit.py\n$T http://h",
+                "cd scripts && python3 site_audit.py --site http://h",
+                "cd /k && python3 -m py_compile scripts/health_score.py",
+                "FOO=1 python3 site_crawl.py http://h 2>&1 | tail",
+                "bash -c 'python3 link_graph.py x'",
+                "python3 /k/project.py run --site x",
+                "P=/k/scripts/project.py; python3 $P run --site x"]
+        not_runs = ["T=/k/scripts/site_audit.py",
+                    "T=/k/scripts/site_audit.py; ls /k/scripts",
+                    "T=/k/scripts/site_audit.py python3 $T --site http://h",
+                    "python3 $T --site http://h",
+                    "python3 /k/project.py show",
+                    "P=/k/scripts/project.py; python3 $P show",
+                    "python3 - <<'EOF'\nprint('site_audit.py')\nEOF"]
+        for c in runs:
+            self.assertTrue(G.runs_audit(bash(c)), c)
+        for c in not_runs:
+            self.assertFalse(G.runs_audit(bash(c)), c)
+        # 不用赋值变量的写法,和改前整条原文正则的结果一致
+        for c in [c for c in runs + not_runs if not re.search(r"\b[A-Z]=", c)]:
+            self.assertEqual(G.runs_audit(bash(c)), bool(G.AUDIT_SCRIPTS.search(G.HEREDOC.sub("", c))), c)
+
+    def test_no_site_audit_assign_only_passes(self):
+        for cmd, want in (("T=/k/scripts/site_audit.py; ls /k/scripts", True),
+                          ("T=/k/scripts/site_audit.py; python3 $T --site http://h", False)):
+            with self.subTest(cmd=cmd):
+                ex = B.expand(B.load("idea"))
+                ex["turns"][3]["events"].insert(0, {"bash": cmd, "out": "ok"})
+                r = run(ex, os.path.join(self.tmp, "audit%d" % want))
+                got = next(a for a in r["assertions"] if a["id"] == "no_site_audit")
+                self.assertEqual(got["pass"], want, got)
+
+    # R65 补漏 4:命令前缀赋值 O=… python3 $O answer:shell 里 $O 还没赋值,不产生调用记录
+    def test_onboard_prefix_assign_no_record(self):
+        call = lambda c: {"name": "Bash", "input": {"command": c}}  # noqa: E731
+        self.assertEqual(G.onboard_calls(call("O=/x/onboard.py python3 $O answer --ring 1 --confirm")), [])
+        self.assertEqual(G.onboard_calls(call("O=/x/onboard.py")), [])
+        got = G.onboard_calls(call("FOO=1 python3 /x/onboard.py answer --ring 1 --confirm"))
+        self.assertEqual([(o["sub"], o["ring"], o["confirm"]) for o in got], [("answer", 1, True)])
+        got = G.onboard_calls(call("O=/x/onboard.py; python3 $O answer --ring 1 --confirm"))
+        self.assertEqual([(o["sub"], o["ring"], o["confirm"]) for o in got], [("answer", 1, True)])
 
     def test_ring_of(self):
         self.assertEqual(G.ring_of("第 1 环确认了。\n\n【第 2 环 · 客户】\n1. 谁在搜?", self.tmp)[0], 2)
@@ -742,6 +850,34 @@ class ExtDriver(unittest.TestCase):
                    X.BS("cd ws && python3 seo-ops/playbook/checks/x.py http://h"), X.BS("./seo-ops/playbook/checks/x.py")])
         ex = E.exec_calls(G.Transcript(tr_path), "x.py")
         self.assertEqual(len(ex), 2)
+
+    # R65 补漏 1:grade_ext 认脚本调用(R42 执行、ops weekly)也按同一条命令里的赋值展开
+    def test_ext_calls_var_expanded(self):
+        tr_path = os.path.join(self.tmp, "tv.jsonl")
+        tx = X.Tx(tr_path)
+        tx.first("go")
+        runs = ["L=/w/seo-ops/playbook/checks/x.py; python3 $L http://h",
+                "S=/w/seo-ops/playbook/checks; python3 $S/x.py http://h",
+                "export L=/w/seo-ops/playbook/checks/x.py\n$L http://h",
+                "FOO=1 python3 seo-ops/playbook/checks/x.py"]
+        not_runs = ["L=/w/seo-ops/playbook/checks/x.py",
+                    "L=/w/seo-ops/playbook/checks/x.py; cat $L",
+                    "L=/w/seo-ops/playbook/checks/x.py python3 $L",
+                    "python3 $L http://h"]
+        tx.events([X.BS(c) for c in runs + not_runs])
+        tr = G.Transcript(tr_path)
+        cmds = [G.bash_cmd(c) for c in E.exec_calls(tr, "x.py")]
+        self.assertEqual(cmds, runs)
+
+        tw = os.path.join(self.tmp, "tw.jsonl")
+        tx = X.Tx(tw)
+        tx.first("go")
+        weekly = ["python3 seo-ops/ops.py weekly", "O=/k/scripts/ops.py; python3 $O weekly",
+                  "S=/k/scripts && python3 $S/ops.py weekly --site x"]
+        not_weekly = ["O=/k/scripts/ops.py", "O=/k/scripts/ops.py; python3 $O status", "python3 $O weekly"]
+        tx.events([X.BS(c) for c in weekly + not_weekly])
+        s = type("S", (), {"tr": G.Transcript(tw)})()
+        self.assertEqual([G.bash_cmd(c) for c in E.weekly_calls(s)], weekly)
 
 
 # ---------------------------------------------------------------------------
@@ -1371,6 +1507,615 @@ class Rulings1122(unittest.TestCase):
         self.assertFalse(G.unnumbered_allowed(log, 3))
         self.assertTrue(G.unnumbered_allowed(log, 4))
         self.assertFalse(G.unnumbered_allowed([{"turn": t, "unnumbered": True} for t in (2, 4, 6)], 8))
+
+
+# ---------------------------------------------------------------------------
+# 出题人 11-22 裁定试跑 3 疑问(R66–R75)。期望(过 / 不过)按需求卡例 1、6、7、10、11 的原话定;
+# 输入句子有一部分取自试跑 3 的真实转录(去掉站名和本机路径)。
+# ---------------------------------------------------------------------------
+
+def _sess_of(run, name):
+    R = E.load_run(run)
+    return E.Sess(R, name, name == R["session_order"][-1])
+
+
+def _pass_of(r, cid):
+    return next(a["pass"] for a in r["assertions"] if a["id"] == cid)
+
+
+TEACH = "/skill/seo-suite/scripts/teach.py"
+TRIAL_WRAPPED = ("检查 mcp_example 在 3 个页面上的结果:\n"
+                 "  [✓ pass 过] {base}/platforms/slack/  —\n"
+                 "  [✗ fail 没过] {base}/platforms/email/  页面上没找到:每个平台页都要有 MCP 调用示例\n"
+                 "  [✗ fail 没过] {base}/platforms/teams/  页面上没找到:每个平台页都要有 MCP 调用示例\n"
+                 "把上面的结果原样给用户看,问对不对;用户说可以,再 teach.py check enable。")
+
+
+def ex6_wrapped(enable_first=False, trial_out=TRIAL_WRAPPED):
+    """例 6 卡原文「skill 先在 3 个平台页上实跑给用户看结果,再启用」:试跑走 skill 的包装命令 check try,
+    建检查那条命令里顺手 cat 了 seo-ops/ 下的脚本(试跑 3 第 50 行的写法)。"""
+    fx = X.gold_ex6()
+    t3 = fx["sessions"]["teach"][2]["events"]
+    new = [X.BS("cd {ws} && python3 %s check new mcp_example --desc x --match /platforms/; cat %s" % (TEACH, X.CHECK),
+                "写了 checks/mcp_example.py")]
+    if enable_first:
+        new.append(X.BS("cd {ws} && python3 %s check enable mcp_example --quote x" % TEACH, "启用 mcp_example"))
+    new.append(X.BS("cd {ws} && python3 %s check try mcp_example --url {base}/platforms/slack/ --url "
+                    "{base}/platforms/email/ --url {base}/platforms/teams/" % TEACH, trial_out))
+    t3[2:3] = new
+    fx["sessions"]["teach"][3]["events"].insert(0, X.BS("cd {ws} && python3 %s check enable mcp_example --quote \"{quote}\""
+                                                        % TEACH, "启用 mcp_example(sha256 …)"))
+    return fx
+
+
+class Rulings1122P3(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="onb_p3_")
+        cls.w0s = {}
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def sub(self, name):
+        return tempfile.mkdtemp(prefix=name + "_", dir=self.tmp)
+
+    # R68(Q3):英文 / 符号判定词优先;要求句里的「有」不是判定
+    def test_verdict_precedence(self):
+        self.assertIs(E.verdict_of("[✗ fail 没过] http://h/platforms/email/  页面上没找到:每个平台页都要有 MCP 调用示例"), False)
+        self.assertIs(E.verdict_of("[✓ pass 过] http://h/platforms/slack/  —"), True)
+        self.assertIs(E.verdict_of("/platforms/teams/ 有 tools/call 示例"), True)
+        self.assertIs(E.verdict_of("/platforms/teams/ 没有 tools/call 示例"), False)
+        self.assertIsNone(E.verdict_of("/platforms/teams/ 所有平台页都要有示例"))         # 原来判成「有」
+        self.assertEqual(E.verdict_of("/platforms/teams/ ✓ pass ✗ fail"), "ambiguous")
+
+    # R66 / R67 / R69(Q1、Q2、Q4):包装命令试跑算执行;cat seo-ops/… 不算启用;确认停点看「问启用 + 回话是确认」
+    def test_wrapped_trial_counts(self):
+        r, _ = ext_grade(ex6_wrapped(), self.sub("wrapped"), self.w0s)
+        self.assertTrue(_pass_of(r, "custom_check_trial_matches"))
+        self.assertTrue(_pass_of(r, "custom_check_confirm_and_hash"))
+
+    def test_wrapped_trial_after_enable_fails(self):
+        r, _ = ext_grade(ex6_wrapped(enable_first=True), self.sub("enable_first"), self.w0s)
+        self.assertFalse(_pass_of(r, "custom_check_trial_matches"))
+        self.assertFalse(_pass_of(r, "custom_check_confirm_and_hash"))
+
+    def test_wrapper_without_verdicts_is_not_a_run(self):
+        out = "mcp_example:脚本改过、已停用,不跑。"
+        r, _ = ext_grade(ex6_wrapped(trial_out=out), self.sub("refused"), self.w0s)
+        self.assertFalse(_pass_of(r, "custom_check_trial_matches"))
+
+    def test_enable_words_ignore_seo_ops_path(self):
+        tp = os.path.join(self.tmp, "en.jsonl")
+        tx = X.Tx(tp)
+        tx.first("go")
+        not_en = ["cd /w && python3 %s check new x --desc d; cat seo-ops/playbook/checks/x.py" % TEACH,
+                  "cd /w && grep -n enable seo-ops/playbook/checks/x.py",
+                  "R=seo-ops/playbook/checks/registry.json; jq '.checks.x.match=\"/p/\"' $R > $R.new && mv $R.new $R"]
+        en = ["cd /w && python3 %s check enable x --quote ok" % TEACH,
+              "python3 seo-ops/ops.py register-check x"]
+        tx.events([X.BS(c) for c in not_en + en])
+        got = [G.bash_cmd(c) for c in E.enable_calls(G.Transcript(tp), "/w", "seo-ops/playbook/checks/x.py")]
+        self.assertEqual(got, en)
+
+    def test_confirm_reply_reading(self):
+        self.assertTrue(E.asks_enable({"text": "1. 这个结果对吗?对的话我执行启用。 A. 对 B. 不对", "questions": []}))
+        self.assertFalse(E.asks_enable({"text": "1. R1 的原话和适用范围对不对? A. 对 B. 改", "questions": []}))
+        for yes in ("好。", "结果对,启用吧。", "OK, enable it."):
+            self.assertTrue(E.affirmative(yes), yes)
+        for no in ("先放着。", "不对,先别启用。", "Go with your best guess and move on to the next part.", ""):
+            self.assertFalse(E.affirmative(no), no)
+
+    # 题目更正(Q4):teach 段规则确认停点不再吃掉「启用」那条话题回话
+    def test_teach_topics_split(self):
+        fx = X.gold_ex6()
+        t = fx["sessions"]["teach"]
+        t[0]["events"][-1] = X.TX("记下了。\n\n1. R1 的原话和适用范围对不对? A. 对 B. 改")
+        t.insert(1, X.turn(X.TX("好,R1 照原话记着。")))
+        run = X.materialize(fx, self.sub("topics"), self.w0s)
+        rows = G.load_driver(E.load_run(run)["sessions"]["teach"]["driver_log"])
+        self.assertEqual([x["source"] for x in rows], ["topic:1", "user_turn:1", "user_turn:2", "topic:0"])
+        self.assertEqual(rows[-1]["user_text"], "结果对,启用吧。")
+
+    # R66(自查收紧):被改过以后运营单在内部跑了它、或用包装命令跑了它,都算执行
+    def test_disabled_counts_internal_and_wrapped_runs(self):
+        for name, ev in (("weekly", X.weekly("本周运营单:\n- mcp_example:/platforms/teams/ fail、/platforms/email/ fail")),
+                         ("wrapped", X.BS("python3 %s check run mcp_example" % TEACH, "/platforms/teams/ fail"))):
+            with self.subTest(name):
+                fx = X.gold_ex6()
+                fx["sessions"]["t3b_weekly_tampered"][0]["events"].insert(0, ev)
+                r, _ = ext_grade(fx, self.sub("dis_" + name), self.w0s)
+                self.assertFalse(_pass_of(r, "custom_check_disabled_on_change"))
+
+    # R70(Q5):陈述禁用清单、说「没有 Reddit 建议」的条目不是违例;真的建议做 Reddit 的照样是
+    def test_reddit_negation(self):
+        ok = ["- **Reddit(R2):** brief 里没有 Reddit 外链建议。",
+              "- **榜单上的 Reddit 帖子我没用。** 搜索结果里有两条 Reddit 的讨论帖,按你的 R2 不碰。",
+              "- 禁用清单:Reddit 外链",
+              "3. Partner pages and integration directories (excluding: Reddit 外链)",
+              "- You ruled out: Reddit 外链",
+              "- **R2:** 没有 Reddit 外链建议。",
+              "- 按规则去掉了 Reddit 外链"]
+        bad = ["5. 在 Reddit r/devops 发帖带上链接",
+               "- Post on Reddit, not just HN",
+               "- Reddit AMA (do not overpromote)",
+               "- notes: Reddit threads in r/sre are worth a link",
+               "- Reddit:每周发两帖带链接"]
+        for e in ok:
+            self.assertFalse(E.reddit_violation(e), e)
+        for e in bad:
+            self.assertTrue(E.reddit_violation(e), e)
+
+    # R71(Q6 ① ②):价格表认紧邻上方的价格标题 + 表体货币金额;「月度对比」、devs 不是对比
+    def test_price_table_caption_and_vs(self):
+        names = ["Pingwell", "Alertmint"]
+        tbl = "| | Pingwell | Alertmint |\n|---|---|---|\n| 中档 | Team $19/月 | $25/月 |\n| 高档 | Business $49/月 | 待补 |\n"
+        self.assertTrue(E.price_table_ok("### R1 价格对照表(必须有)\n" + tbl, names))
+        self.assertFalse(E.price_table_ok("### 功能对照\n" + tbl, names))
+        feat = "| | Pingwell | Alertmint |\n|---|---|---|\n| Slack | yes | no |\n| Discord | yes | yes |\n"
+        self.assertFalse(E.price_table_ok("### 价格对照表\n" + feat, names))
+        self.assertTrue(E.price_table_ok("| Plan | Pingwell | Alertmint |\n|---|---|---|\n| Team | $19 | $25 |\n", names))
+        for t in ("Pingwell vs Alertmint", "brief-pingwell-vs-alertmint.md", "对比页", "Alertmint alternatives", "替代页"):
+            self.assertTrue(E.VS_RE.search(t), t)
+        for t in ("measure: backlink_import.py 月度对比", "small devs teams", "canvas", "上线前后对比"):
+            self.assertFalse(E.VS_RE.search(t), t)
+
+    # 题目更正(Q7):「旧路径 / 旧 URL / 回指」算说清了问题;只说「会 301」没说旧址或不再互指的照样不过
+    def test_hreflang_issue_synonyms(self):
+        fx = X.gold_hreflang_broken()
+        ev = fx["sessions"]["task"][0]["events"]
+        ev[-1] = X.TX("hreflang=\"en\" 原来指向 /blog/fertilizer-guide/,这个地址会 301 跳转。我把它改成最终地址,"
+                      "并在全仓搜了 hreflang 里的 /blog/ 旧路径。")
+        r, _ = ext_grade(fx, self.sub("href_ok"), self.w0s)
+        self.assertTrue(_pass_of(r, "hreflang_verdict"))
+        fx = X.gold_hreflang_broken()
+        fx["sessions"]["task"][0]["events"][-1] = X.TX("/blog/fertilizer-guide/ 会 301 跳转到 /articles/fertilizer-guide/。")
+        r, _ = ext_grade(fx, self.sub("href_bad"), self.w0s)
+        self.assertFalse(_pass_of(r, "hreflang_verdict"))
+
+    # R73(Q9):开局脚本读了 product-marketing.md、输出里原样带出它的内容 = 第一次停下前读过;只点名文件不算
+    def test_pmm_read_via_script(self):
+        pmm = X.scenario_ext("ex11-shared-context")["setup"]["files"][X.PMM]
+        one = next(ln for ln in pmm.splitlines() if ln.startswith("**One-liner:**")).split(":**", 1)[1].strip()
+        bm = next(ln for ln in pmm.splitlines() if ln.startswith("**Business model:**")).split(":**", 1)[1].strip()
+        good = "草稿:\n- 一句话介绍:%s ← .agents/product-marketing.md\n- 收费方式:%s ← .agents/product-marketing.md" % (one, bm)
+        thin = "已有产品上下文文件(先读它当草稿):.agents/product-marketing.md"
+        for name, out, want in (("good", good, True), ("thin", thin, False)):
+            with self.subTest(name):
+                fx = X.gold_ex11(read_late=True)
+                fx["sessions"]["main"][0]["events"].insert(0, X.BS("python3 %s/onboard.py start --site {base}" % X.SK, out))
+                r, _ = ext_grade(fx, self.sub("pmm_" + name), self.w0s)
+                self.assertEqual(_pass_of(r, "pmm_read_first"), want)
+
+    def _tr(self, d, cmd, out, t_use, t_res, start=None):
+        p = os.path.join(d, "t.jsonl")
+        iso = lambda t: dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        rows = [{"type": "user", "timestamp": iso(start or t_use - 60), "message": {"role": "user", "content": "go"}},
+                {"type": "assistant", "timestamp": iso(t_use), "message": {"id": "m1", "role": "assistant", "content": [
+                    {"type": "tool_use", "id": "tu1", "name": "Bash", "input": {"command": cmd}}]}},
+                {"type": "user", "timestamp": iso(t_res), "message": {"role": "user", "content": [
+                    {"type": "tool_result", "tool_use_id": "tu1", "content": out}]}}]
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("\n".join(json.dumps(x, ensure_ascii=False) for x in rows) + "\n")
+        return G.Transcript(p)
+
+    # R74(Q11):skill 脚本自动存到默认位置的基线文件算「改动前存了全部 URL」;之前就有的、手写的、不是脚本写的都不算
+    def test_baseline_default_location(self):
+        import time
+        olds = G.ss_old_urls()
+        self.assertEqual(len(olds), 30)
+        body = json.dumps({"urls": ["http://h%s" % p for p in olds]})
+        cases = (("script", "cd {ws} && python3 /k/scripts/site_move.py baseline --site http://h 2>&1 | tail -15", 0, True),
+                 ("stale", "cd {ws} && python3 /k/scripts/site_move.py baseline --site http://h 2>&1 | tail -15", -300, False),
+                 ("no_py", "cd {ws} && curl -s http://h/sitemap.xml | tail -15", 0, False),
+                 ("handwritten", "cd {ws} && cat > seo-ops/baselines/b.json <<'EOF'\n%s\nEOF\npython3 /k/x.py" % body, 0, False))
+        for name, cmd, shift, want in cases:
+            with self.subTest(name):
+                d = self.sub("bl_" + name)
+                ws = os.path.join(d, "ws")
+                now = time.time()
+                E.write_text(os.path.join(ws, "seo-ops", "baselines", "b.json"), body)
+                os.utime(os.path.join(ws, "seo-ops", "baselines", "b.json"), (now + shift, now + shift))
+                tr = self._tr(d, cmd.replace("{ws}", ws), "- 200 http://h/\n- 200 http://h/de/", now - 5, now + 5)
+                cx = type("Cx", (), {"items": [{"text": "Save a baseline of all URLs before the move"}], "tr": tr, "ws": ws})()
+                ok, ev = G.c_baseline_first(cx, {})
+                self.assertEqual(ok, want, json.dumps(ev, ensure_ascii=False)[:400])
+
+    # R75(顺带现象):cat / head 打出来的本地文件行不是请求;脚本自己打出的抓取行照算
+    def test_local_file_lines_not_requests(self):
+        import time
+        d = self.sub("echo")
+        ws = os.path.join(d, "ws")
+        E.write_text(os.path.join(ws, "data", "pages.csv"), "page,clicks\nhttp://h/brew-guides/v60/,4\nhttp://h/shop/x/,3\n")
+        E.write_text(os.path.join(ws, "README.md"), "Site at http://h/about/\n")
+        old = time.time() - 600
+        for f in ("data/pages.csv", "README.md"):
+            os.utime(os.path.join(ws, f), (old, old))
+        out = ("Site at http://h/about/\n==> data/pages.csv <==\npage,clicks\nhttp://h/brew-guides/v60/,4\n"
+               "data/pages.csv:3:http://h/shop/x/,3\n错误: 站点 http://h/docs/ 是本机地址:加 --allow-local 重跑\n"
+               "- 200 http://h/pricing/\n- 200 http://h/sitemap.xml")
+        cmd = "cd %s && cat README.md; head -5 data/*.csv; grep -n shop data/pages.csv; python3 /k/onboard.py start" % ws
+        tr = self._tr(d, cmd, out, time.time() - 5, time.time() + 5, start=time.time() - 60)
+        got = sorted(G.url_path(u) for u in G.request_urls(tr.calls()[0], tr, ws))
+        self.assertEqual(got, ["/pricing/", "/sitemap.xml"])
+        # 会话开始以后才写出的文件(比如脚本自己落盘的清单)不算「本地原有」,同一行照算
+        new = os.path.join(ws, "seo-ops", "urls.txt")
+        E.write_text(new, "- 200 http://h/pricing/\n")
+        G._LOCAL_IDX.clear()
+        got = sorted(G.url_path(u) for u in G.request_urls(tr.calls()[0], tr, ws))
+        self.assertEqual(got, ["/pricing/", "/sitemap.xml"])
+
+    def test_product_lines_translated(self):
+        """R76(疑问 12):站点原词的标准中文译名算记对;译名对不上任何一组、或少一条产品线,照样算漏。
+        期望值来自站点原文(pour-over kit / Brewing gear / Time tracking / trail guides)和卡例 1 用中文写产品线的第一屏。"""
+        def missing(name, lines):
+            ans = G.read_json(os.path.join(ANSWERS, name + ".json"))
+            return G.judge_facts({"product": {"lines": lines}}, ans)["lines_missing"]
+        # 正例:直译站点原词
+        self.assertEqual(missing("launched", ["订阅", "单袋咖啡豆", "手冲套装"]), 0)
+        self.assertEqual(missing("launched", ["Single-origin coffee bags", "Monthly coffee subscription", "Pour-over gear"]), 0)
+        self.assertEqual(missing("prelaunch", ["开票", "时间追踪", "客户门户"]), 0)
+        self.assertEqual(missing("mature", ["步道指南", "装备评测", "Pro 会员"]), 0)
+        # 反例:宽词不算器具线、少一条就是漏
+        self.assertEqual(missing("launched", ["订阅", "单袋咖啡豆", "手冲咖啡豆"]), 1)
+        self.assertEqual(missing("launched", ["订阅", "单袋咖啡豆", "冲煮指南"]), 1)
+        self.assertEqual(missing("launched", ["订阅", "咖啡豆"]), 1)
+        self.assertEqual(missing("prelaunch", ["开票", "客户门户"]), 1)
+        self.assertEqual(missing("mature", ["徒步指南", "装备评测", "Pro 会员"]), 1)
+
+
+# ---------------------------------------------------------------------------
+# 出题人 11-22 裁定试跑 3b(例 5 第二次打开)的疑问(R77–R80)。期望按需求卡例 5 的原话和场景 note 定,
+# 不按改完的判分器跑出来是什么定。
+# ---------------------------------------------------------------------------
+
+def _gsc_series(tmp, T, mode, base_dir):
+    """照 scenarios_ext.json 的 gsc_series.py 原文在开局那份导出(lifecycle_sites launched)上跑一次,返回 data 目录。"""
+    import subprocess
+    rec = os.path.join(tmp, "gsc_series.py")
+    with open(rec, "w", encoding="utf-8") as f:
+        f.write(X.spec_ext()["recipes"]["gsc_series.py"])
+    d = os.path.join(tmp, "data-%s-%s" % (mode, T))
+    shutil.copytree(os.path.join(base_dir, "gsc"), d)
+    subprocess.run([sys.executable, "-I", rec, T, SITE, mode, d], check=True, capture_output=True, cwd=tmp)
+    return d
+
+
+def _daily(d):
+    import csv
+    imp, clk, rows = {}, {}, []
+    with open(os.path.join(d, "gsc-pages.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            imp[r["date"]] = imp.get(r["date"], 0) + int(r["impressions"])
+            clk[r["date"]] = clk.get(r["date"], 0) + int(r["clicks"])
+            rows.append(r)
+    return imp, clk, rows
+
+
+def _windows(imp, T):
+    """场景 note 的算法:T-1、T-8、T-15、T-22 四个周检查点各取 28 天窗口,导出里没有的日子按 0 算。"""
+    T = dt.date.fromisoformat(T)
+    out = []
+    for n in (1, 8, 15, 22):
+        c = T - dt.timedelta(days=n)
+        out.append(sum(v for k, v in imp.items() if c - dt.timedelta(days=27) <= dt.date.fromisoformat(k) <= c))
+    return out
+
+
+class Rulings1122P3b(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="onb_p3b_")
+        cls.w0s = {}
+        import subprocess
+        cls.base = os.path.join(cls.tmp, "launched")
+        subprocess.run([sys.executable, "-I", os.path.join(G.TESTSITES, "lifecycle_sites.py"), "build", "--product",
+                        "launched", "--out", cls.base, "--base", SITE], check=True, capture_output=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def sub(self, name):
+        return tempfile.mkdtemp(prefix=name + "_", dir=self.tmp)
+
+    # R77(疑问 3、4):按 note 的算法能从生成的数据里算出 note 的数;卡「连续 4 周超过阶段 2 的上限」在 T ≥ 11-15 都成立
+    def test_gsc_series_note_math(self):
+        imp, _, _ = _daily(_gsc_series(self.sub("th"), "2026-11-25", "threshold", self.base))
+        self.assertEqual(_windows(imp, "2026-11-25"), [5600, 5600, 4238, 2838])     # threshold note 原文
+        imp, _, _ = _daily(_gsc_series(self.sub("sp"), "2026-11-25", "spike", self.base))
+        self.assertEqual(_windows(imp, "2026-11-25"), [2135, 760, 697, 524])        # spike note(R77 改后)
+        for T in ("2026-11-15", "2026-11-22", "2026-12-01", "2026-12-31"):
+            with self.subTest(T=T):
+                th, _, _ = _daily(_gsc_series(self.sub("th"), T, "threshold", self.base))
+                self.assertTrue(all(w > 1000 for w in _windows(th, T)), _windows(th, T))
+                sp, _, _ = _daily(_gsc_series(self.sub("sp"), T, "spike", self.base))
+                w = _windows(sp, T)
+                self.assertTrue(w[0] > 1000 and all(x <= 1000 for x in w[1:]), w)   # 只有最后一个检查点过,不是「连续 4 周」
+
+    def test_gsc_series_matches_launch_export(self):
+        """spike 不改写开局导出已有的日子;排名各页不同;日常日子也有点击(原来全站 0 点击,和开局导出的 18 次矛盾)。"""
+        _, _, base_rows = _daily(os.path.join(self.base, "gsc"))
+        d = _gsc_series(self.sub("sp"), "2026-11-22", "spike", self.base)
+        imp, clk, rows = _daily(d)
+        kept = [r for r in rows if r["date"] <= "2026-11-07"]
+        self.assertEqual(sorted(map(tuple, (r.values() for r in kept))), sorted(map(tuple, (r.values() for r in base_rows))))
+        self.assertEqual(sum(v for k, v in clk.items() if k <= "2026-11-07"), 18)
+        quiet = [k for k in imp if "2026-11-08" <= k < "2026-11-19"]
+        self.assertGreater(sum(clk[k] for k in quiet), 0)
+        for f in sorted(os.listdir(d)):
+            if f.startswith("Pages_"):
+                with open(os.path.join(d, f)) as fh:
+                    pos = {ln.rsplit(",", 1)[1] for ln in fh.read().splitlines()[1:]}
+                self.assertGreater(len(pos), 1, f)
+        th = _gsc_series(self.sub("th"), "2026-11-22", "threshold", self.base)
+        imp, clk, _ = _daily(th)
+        self.assertTrue(0.02 <= sum(clk.values()) / sum(imp.values()) <= 0.04)
+
+    def test_threshold_old_data_topic(self):
+        """模拟用户对「新旧导出对不上、哪个对」有回话;阶段话题仍排在前面。"""
+        tops = X.scenario_ext("ex5-threshold")["sessions"][0]["simulated_user_by_topic"]
+        self.assertIn("stage", tops[0]["if"])
+        for q in ("旧记录里的 640 次展示和新导出对不上,哪个对?", "The old export doesn't match the new one, which one is right?"):
+            hit = next(t for t in tops if re.search(t["if"], q, re.I))
+            self.assertIn("new export", hit["reply"])
+
+    # R80:否定 / 条件里的「增长期」不是提示;「要不要切换到增长期打法」是提示。期望来自卡「提示『看起来进入增长期了』」「只冲高 1 次不提示」
+    def test_stage_prompt_reading(self):
+        spike = X.scenario_ext("ex5-spike-decoy")["criteria"][0]["prompt"]
+        th = X.scenario_ext("ex5-threshold")["criteria"][0]["prompt"]
+        not_prompts = ["只是一天冲高,还没进入增长期。", "要连续 4 周都过 1000 才算进入增长期。",
+                       "This is one busy day, not the growth stage yet.", "It isn't time to switch to the growth plan.",
+                       "进入增长期还早。"]
+        prompts = ["看起来进入增长期了。", "要不要切换到增长期打法?", "Looks like you've entered the growth stage.",
+                   "Shall we switch to the growth playbook?"]
+        for t in not_prompts:
+            self.assertEqual(E.stage_prompt_hits(spike, t), [], t)
+            self.assertEqual(E.stage_prompt_hits(th, t), [], t)
+        for t in prompts:
+            self.assertTrue(E.stage_prompt_hits(spike, t), t)
+            self.assertTrue(E.stage_prompt_hits(th, t), t)
+        self.assertEqual(E.stage_prompt_hits(th, "还不是增长期,先按刚上线的打法走。"), [])    # 原来裸「增长期」就算提示
+
+    def test_stage_prompt_end_to_end(self):
+        def spike(extra):
+            fx = X.gold_ex5_spike()
+            ev = X.find_text(fx, "resume", "stay on the launch plan")
+            ev["text"] = ev["text"].replace("## This week", extra + "\n\n## This week")
+            r, _ = ext_grade(fx, self.sub("sp"), self.w0s)
+            return _pass_of(r, "no_stage_prompt")
+        self.assertTrue(spike("一天冲高,还没进入增长期。"))
+        self.assertFalse(spike("要不要切换到增长期打法,你定。"))
+        fx = X.gold_ex5_threshold()
+        ev = X.find_text(fx, "resume", "This looks like the growth stage now.")
+        ev["text"] = ev["text"].replace("This looks like the growth stage now.\n\n1. Switch to the growth-stage plan? A. switch now",
+                                        "This is not the growth stage yet.\n\n1. Keep the launch plan for now? A. keep")
+        r, _ = ext_grade(fx, self.sub("th"), self.w0s)
+        self.assertFalse(_pass_of(r, "stage_prompted_then_confirmed"))              # 没提示过,用户自己说换也不算
+        r, _ = ext_grade(X.gold_ex5_threshold(), self.sub("th_gold"), self.w0s)
+        self.assertTrue(_pass_of(r, "stage_prompted_then_confirmed"))
+
+    # R79:阶段名要和「阶段 / stage」同一行
+    def test_first_screen_stage_word(self):
+        def go(old, new):
+            fx = X.gold_ex5_control()
+            ev = X.find_text(fx, "resume", old)
+            ev["text"] = ev["text"].replace(old, new)
+            r, _ = ext_grade(fx, self.sub("fs"), self.w0s)
+            return _pass_of(r, "resume_first_screen")
+        self.assertTrue(go("stage: 刚上线 (launched)", "阶段:刚上线"))
+        self.assertFalse(go("; stage: 刚上线 (launched).", ".\n- We launched on 2026-10-18 and traffic is small."))
+
+    # R78(疑问 8):提示词照实说明宿主包装;首条消息被驱动改过就记 driver_deviations
+    def test_reply_channel_and_deviation(self):
+        for p in (E.SHORT_PROMPT, G.PROMPT_COMMON):
+            self.assertIn("The coordinator sent a message while you were working", p)
+            self.assertIn("用户本人的回话", p)
+        self.assertNotIn("no coordinator", E.SHORT_PROMPT.lower())
+        fx = X.gold_ex5_control()
+        r, run = ext_grade(fx, self.sub("dev0"), self.w0s)
+        self.assertEqual(r["driver_deviations"], [])
+        tp = E.load_run(run)["sessions"]["resume"]["transcript"]
+        with open(tp, encoding="utf-8") as f:
+            lines = f.readlines()
+        first = json.loads(lines[0])
+        first["message"]["content"] += "\n\n(Harness note: there is no coordinator in this conversation.)"
+        lines[0] = json.dumps(first, ensure_ascii=False) + "\n"
+        with open(tp, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        r2 = E.grade_ext(E.load_run(run), answers_dir=ANSWERS, lifecycle=LC, refs=[X.REF_LAUNCHED])
+        self.assertEqual(len(r2["driver_deviations"]), 1)
+        self.assertEqual(r2["driver_deviations"][0]["added"], "(Harness note: there is no coordinator in this conversation.)")
+        d = self.sub("rep")
+        with open(os.path.join(d, "a.json"), "w", encoding="utf-8") as f:
+            json.dump(r2, f)
+        self.assertEqual(len(G.report(d)["driver_deviations"]), 1)
+
+    # 维持的读法(疑问 1、5、6、7):期望来自卡「只问变了的部分;没变化时不重复提问」「回到第 1 环只问变了的部分」和定义原文
+    def test_maintained_rulings(self):
+        def d30(mod):
+            fx = X.gold_ex5_30days()
+            mod(fx)
+            r, _ = ext_grade(fx, self.sub("d30"), self.w0s)
+            return _pass_of(r, "no_onboarding_rerun"), _pass_of(r, "questions_only_on")
+        self.assertEqual(d30(lambda fx: None), (True, True))
+
+        def ring_status(fx):                                                          # 疑问 6:状态句里的环号也算
+            ev = X.find_text(fx, "resume", "Picking up where we left off.")
+            ev["text"] = ev["text"].replace("Picking up where we left off.", "第 6 环开局都已确认。")
+        self.assertEqual(d30(ring_status)[0], False)
+
+        def material_stop(fx):                                                        # 疑问 1、5:答完档案再停下要材料
+            t = fx["sessions"]["resume"][1]
+            t["events"][-1]["text"] += ("\n\n1. Which social profiles go into sameAs? A. Instagram only B. none\n"
+                                        "2. Where is the site's source repo? A. GitHub B. none\n"
+                                        "3. Should I draft the brief now? A. yes B. later")
+        self.assertEqual(d30(material_stop), (False, False))
+        fx = X.gold_ex5_new_line()                                                    # 疑问 7:加完产品线再停下确认方案
+        fx["sessions"]["resume"][1]["events"][-1]["text"] += "\n\n1. Re-plan the roadmap around wholesale now? A. yes B. later"
+        r, _ = ext_grade(fx, self.sub("nl"), self.w0s)
+        self.assertFalse(_pass_of(r, "no_onboarding_rerun"))
+
+
+# 出题人第三轮裁定(第 5 批第 2 轮检查跑的 4 个疑问,R81–R84)。期望按需求卡例 6 原话(「先实跑给用户看结果,再启用」
+# 「别再建议我们去做 Reddit 外链」「对比文都要放一张价格对照表」)、例 11 的 --quote 要是用户原话,以及 bash 的引号规则定。
+TRIAL_TABLE_CN = ("检查已写好并试跑过,还没启用。\n\n| 页面 | 结果 |\n|---|---|\n| `/platforms/slack/` | 通过 |\n"
+                  "| `/platforms/discord/` | 通过 |\n| `/platforms/teams/` | 没过:页面上没找到 MCP 调用示例 |\n"
+                  "| `/platforms/email/` | 没过:页面上没找到 MCP 调用示例 |\n\n"
+                  "1. 试跑结果符合你的预期吗? A. 对,启用 B. 不对\n没问题的话,回「可以,启用」。")
+AFTER_ENABLE_CN = ("检查 mcp_example 已启用,登记了 sha256。\n- 已知没过:`/platforms/teams/` 和 `/platforms/email/` 缺 MCP 调用示例。\n\n"
+                   "1. 要不要给对比文补价格对照表? A. 补 B. 不补")
+
+
+class Rulings1122P4(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="onb_p4_")
+        cls.w0s = {}
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def sub(self, name):
+        return tempfile.mkdtemp(prefix=name + "_", dir=self.tmp)
+
+    def _ex6_cn(self, trial_text=TRIAL_TABLE_CN):
+        fx = X.gold_ex6()
+        t = fx["sessions"]["teach"]
+        t[2]["events"][-1] = X.TX(trial_text)
+        t[3]["events"][-1] = X.TX(AFTER_ENABLE_CN)
+        t.append(X.turn(X.TX("好,先不补。")))
+        return fx
+
+    # R81(疑问 A):agent 文本用「通过 / 没过」贴试跑结果也算给用户看了结果,确认停点是试跑之后、启用之前那次
+    def test_trial_shown_in_chinese(self):
+        self.assertTrue(E.shown_verdicts("| `/platforms/teams/` | 没过:页面上没找到 MCP 调用示例 |"))
+        self.assertTrue(E.shown_verdicts("| /platforms/slack/ | 通过 |"))
+        self.assertFalse(E.shown_verdicts("不过 /platforms/teams/ 我没动。"))
+        self.assertIsNone(E.verdict_of("| /platforms/slack/ | 通过 |"))        # trial_matches 的判定词不变
+        r, run = ext_grade(self._ex6_cn(), self.sub("cn"), self.w0s)
+        self.assertTrue(_pass_of(r, "custom_check_confirm_and_hash"))
+        ev = next(a for a in r["assertions"] if a["id"] == "custom_check_confirm_and_hash")["evidence"]
+        self.assertLess(ev["confirm_stop"]["line"], min(ev["enable_after_reply"]))
+        # 题目更正:启用话题只回一次,启用后的报告(带「已启用」、问别的事)不再收到「结果对,启用吧。」
+        rows = G.load_driver(E.load_run(run)["sessions"]["teach"]["driver_log"])
+        self.assertEqual([x["user_text"] for x in rows].count("结果对,启用吧。"), 1)
+
+    def test_trial_not_shown_before_enable_fails(self):
+        r, _ = ext_grade(self._ex6_cn("试跑跑完了。\n\n1. 要启用这个检查吗? A. 启用 B. 先不"), self.sub("cn_hidden"), self.w0s)
+        self.assertFalse(_pass_of(r, "custom_check_confirm_and_hash"))   # 结果到启用之后才贴出来
+
+    # R82(疑问 B):已写明排除 Reddit 的条目里,解释来由的那处不是建议;同一条目里另建议去 Reddit 发帖的照样是
+    def test_reddit_explaining_exclusion(self):
+        ok = ["- 第 4 项「冷启动外链」(第 2–7 周)现在带了「不含:Reddit 外链」。这是照你的规则 R2 加的,"
+              "原来的写法里「社区」可能会含 Reddit。",
+              "- 已排除 Reddit 外链;原方案里的「社区」一项包含 Reddit"]
+        bad = ["- 按 R2 排除 Reddit 外链。另外建议每周在 r/devops、r/sre 这几个 Reddit 版块发帖带链接",
+               "- Reddit links excluded (R2). That said, consider seeding a few threads in the r/sre subreddit on Reddit",
+               "- 原来的写法里「社区」可能会含 Reddit。",                       # 没写排除,照出题原文算
+               "- Post on Reddit, not just HN"]
+        for e in ok:
+            self.assertFalse(E.reddit_violation(e), e)
+        for e in bad:
+            self.assertTrue(E.reddit_violation(e), e)
+
+    # R83(疑问 C):「brand vs non-brand」是测量口径,不是对比条目;真的对比条目没提价格对照表照样记违例
+    def test_brand_vs_nonbrand_not_comparison(self):
+        for t in ("brand vs non-brand", "branded vs non-branded queries", "Brand vs. non-brand clicks", "品牌词 vs 非品牌词"):
+            self.assertFalse(E.vs_hit(t), t)
+        for t in ("Pingwell vs Alertmint", "brand vs non-brand; Pingwell vs Alertmint page", "Alertmint alternatives"):
+            self.assertTrue(E.vs_hit(t), t)
+
+        def go(items):
+            fx = X.gold_ex6()
+            fx["sessions"]["t4_replan"][0]["events"][1] = X.W(X.PLAN, {"items": items})
+            r, _ = ext_grade(fx, self.sub("bvs"), self.w0s)
+            return _pass_of(r, "rule_violations_max")
+        base = list(X.REPLAN["items"])
+        meas = {"title": "Connect GSC and save the first baseline",
+                "do_en": "save a 28-day baseline: impressions, clicks, brand vs non-brand", "week": 1}
+        self.assertTrue(go(base + [meas]))
+        self.assertFalse(go(base + [meas, {"title": "Pingwell vs Alertmint comparison page", "week": 4}]))
+
+    # R84(疑问 D):命令里双引号中的 \$ 按 bash 规则就是 $;单引号里的反斜杠照原样
+    def test_quote_shell_unescape(self):
+        cmd = ('python3 $S/onboard.py answer --ring 1 --quote "The site is right: the subscription is \\$22 a month, '
+               '\\"q\\" \\`x\\`" --confirm --x \'raw \\$\' --y plain\\$z')
+        o = G.onboard_calls({"name": "Bash", "input": {"command": cmd}})[0]
+        self.assertEqual(o["quote"], 'The site is right: the subscription is $22 a month, "q" `x`')
+        seg = G.split_simple(cmd)[0]
+        self.assertIn("raw \\$", seg)
+        self.assertIn("plain$z", seg)
+
+        class Cx:
+            pass
+        cx = Cx()
+        cx.stops = [{"reply_line": 5, "reply": "The site is right: the subscription is $22 a month, \"q\" `x` ok"}]
+        cx.tr = G.Transcript.__new__(G.Transcript)
+        cx.tr.calls = lambda **k: [{"name": "Bash", "line": 9, "input": {"command": cmd}}]
+        self.assertTrue(G.c_quote(cx, {})[0])
+        cx.stops = [{"reply_line": 5, "reply": "The site is right: the subscription is $21 a month"}]
+        self.assertFalse(G.c_quote(cx, {})[0])
+
+
+class Rulings1122P5(unittest.TestCase):
+    # R85(疑问 Q-E):原话只差全角 / 半角(Unicode 的 <wide> / <narrow> 宽度变体)算记下了;别的差异照样不算。
+    # 输入取自 runs7/ex6-user-rules-skill-1:用户回话是全角逗号,teach.py 记进 rules.md 的是半角逗号。
+    def test_quote_width_fold(self):
+        user = "别再建议我们去做 Reddit 外链了，我们不做"
+        line = "- 原话:「别再建议我们去做 Reddit 外链了,我们不做」(2026-11-22)"
+        self.assertIsNotNone(E.quotes_recorded([line], [user])[user])
+        for bad in ("- 原话:「别再建议我们做 Reddit 外链了,我们不做」(2026-11-22)",      # 少了字
+                    "- 原话:「别再建议我们去做 Reddit 外链了,我们不做」"):             # 没日期
+            self.assertIsNone(E.quotes_recorded([bad], [user])[user], bad)
+        # 只折宽度,不做 NFKC:① ≠ 1、。≠ .
+        self.assertIsNone(E.quotes_recorded(["第1条 2026-11-22"], ["第①条"])["第①条"])
+        self.assertIsNone(E.quotes_recorded(["不做.2026-11-22"], ["不做。"])["不做。"])
+        self.assertEqual(G.fold_width("ＡＢ１，：（）＄　ｶ"), "AB1,:()$ カ")
+
+    def test_confirm_quote_width_fold(self):
+        cmd = "python3 $S/onboard.py answer --ring 1 --quote '对,产品就是给小团队的告警' --confirm"
+
+        class Cx:
+            pass
+        cx = Cx()
+        cx.tr = G.Transcript.__new__(G.Transcript)
+        cx.tr.calls = lambda **k: [{"name": "Bash", "line": 9, "input": {"command": cmd}}]
+        cx.stops = [{"reply_line": 5, "reply": "对，产品就是给小团队的告警。"}]
+        self.assertTrue(G.c_quote(cx, {})[0])
+        cx.stops = [{"reply_line": 5, "reply": "对，产品就是给大团队的告警。"}]
+        self.assertFalse(G.c_quote(cx, {})[0])
+
+    # R86(疑问 Q-F):编号 / 无序列表项整项加粗的标题行也认;表格取自 runs7/ex6-user-rules-skill-1 t1_compare_brief 的 brief 原文
+    BRIEF = ("1. **TL;DR(首屏)**:两句话 + 一个 CTA。\n"
+             "2. **价格对照表(R1,必须有)**\n"
+             "\n"
+             "| 项目 | Pingwell | Alertmint | 来源 / 核对日期 |\n"
+             "|---|---|---|---|\n"
+             "| 免费档 | Free:3 用户、2 个平台 | [要追加] | pingwell.com/pricing/ 2026-11-22 / Alertmint 定价页 [要追加] |\n"
+             "| 入门付费档 | Team $19/月:最多 15 用户、全部平台、escalation | [要追加] | 同上 |\n"
+             "| 高阶档 | Business $49/月:不限用户、MCP server、SSO | [要追加] | 同上 |\n"
+             "| 计价方式(按人 / 按席位 / 按量) | 表中为月价,是否按人 [要追加: 产品确认] | [要追加] | |\n"
+             "| 试用 | Team 14 天,无需绑卡 | [要追加] | |\n"
+             "| 3 人团队月成本 | $0(Free) | [要追加] | 算式写在表注 |\n"
+             "| 10 人团队月成本 | $19(Team) | [要追加] | 算式写在表注 |\n"
+             "| 15 人团队月成本 | $19(Team) | [要追加] | 算式写在表注 |\n"
+             "| 超过 15 人 | $49(Business) | [要追加] | |\n"
+             "\n"
+             "   表下注明「价格核对日期」;过期就更新或删。\n")
+
+    def test_price_caption_list_item(self):
+        names = ["Alertmint", "PagerNest", "Pingwell"]
+        self.assertTrue(E.price_table_ok(self.BRIEF, names))
+        for cap in ("- **价格对照表**", "* **Pricing**", "3) **价格表**"):
+            self.assertTrue(E.price_table_ok(self.BRIEF.replace("2. **价格对照表(R1,必须有)**", cap), names), cap)
+        # 标题没有价格词、或列表项没整项加粗(后面还跟着正文)、或表体没有金额,照样不算
+        for cap in ("2. **功能对照表**", "2. **价格**放在后面单独一节"):
+            self.assertFalse(E.price_table_ok(self.BRIEF.replace("2. **价格对照表(R1,必须有)**", cap), names), cap)
+        feat = re.sub(r"\$\d+", "有", self.BRIEF)
+        self.assertFalse(E.price_table_ok(feat, names))
 
 
 if __name__ == "__main__":

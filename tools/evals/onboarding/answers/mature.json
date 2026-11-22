@@ -59,7 +59,8 @@
   "product.lines": [
    [
     "trail",
-    "路线"
+    "路线",
+    "步道"
    ],
    [
     "review",
@@ -265,6 +266,7 @@
   "site/sitemap.xml lastmod"
  ],
  "corrections": [
-  "2026-11-22 第 5 批第 1 轮后出题人更正(疑问 5,和 change.json 同一处):禁项「需求验证、起名和域名」的别名「域名」收窄为需求验证 / 起名 / 选域名 / 挑域名 / 域名选择 / 买域名 / brand naming / choose a domain / pick a domain;成熟期多市场扩张的正当建议(子域名还是子目录)不再命中。"
+  "2026-11-22 第 5 批第 1 轮后出题人更正(疑问 5,和 change.json 同一处):禁项「需求验证、起名和域名」的别名「域名」收窄为需求验证 / 起名 / 选域名 / 挑域名 / 域名选择 / 买域名 / brand naming / choose a domain / pick a domain;成熟期多市场扩张的正当建议(子域名还是子目录)不再命中。",
+  "2026-11-22 同上(疑问 12 的同类,出题人自查):product.lines 的 trail guides 组补「步道」(trail 的标准译法);不补「徒步」,整站都是徒步,会撞到装备评测和会员。"
  ]
 }

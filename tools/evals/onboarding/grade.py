@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""grade.py — RQ-237 开局多轮评测的确定性判分器(stdlib only;不调模型)。
+r"""grade.py — RQ-237 开局多轮评测的确定性判分器(stdlib only;不调模型)。
 
 判分规则逐字照 scenarios.json 的 criteria_defs 实现(第 0 批出题人写定、记 hash,本文件不改它们)。
 所有断言只读:被测会话的转录 JSONL、驱动日志 JSONL、工作区 seo-ops/ 下的文件。
@@ -258,17 +258,130 @@ skip_handled(定义里 kind 是 outcome+process)
       环号取回话发过去,驱动日志这一行带 "unnumbered": true;这一回合不算停下(R3、R4 不变,stops_per_ring 照样不过),只是会话
       不因格式错误提前结束、把流程分扣进结果分(需求卡第 7 节红队致命 2:流程类单独判)。每段最多 3 次,上一回合已经是这种回话
       就结束。出题人 11-22 裁定。
+  R65 认脚本调用(onboard.py、plan.py,R29 的 *.py 输出文件)前,先把同一条 Bash 命令里前面纯赋值段(NAME=值、export NAME=值,
+      可和别的命令用 && / ; / 换行连着)赋过的 $NAME / ${NAME} 展开:整词或作路径前缀($S/onboard.py、${S}/scripts/onboard.py)。
+      没在同一条命令里赋值的变量不展开(shell 状态不跨调用),不认命令替换和别的 shell 写法;展开后其余规则一条不变(结果不是报错、
+      --quote 是此前回话的子串等)。第 5 批发现「O=…/onboard.py 换行 python3 $O answer --ring 1 --confirm」漏判第 1 环确认,出题人 11-22 补。
+      同一口径用到 R26 的审计脚本、R42 的执行和 ops weekly:纯赋值段(只赋值、没跑)不是调用;命令前缀赋值
+      (O=…/onboard.py python3 $O …,shell 里 $O 此时还没赋值)写在前缀里的脚本不算调用,前缀之后的词照常认。
+      R18 的「调了 plan.py(除 show)」照原文:status 等其他子命令照旧算写方案。出题人 11-22 补。
   R62 report 递归读目录下全部 JSON:按 family 分 products(第 0 批)/ real / ext(按场景);void 不进汇总;盲比按产品列,
       blind_broken 的只作参考、不计入通过数;宿主检查按 label 列各宿主 verdict。第 5 批开跑前定。
+—— 出题人 11-22 裁定试跑 3 的疑问(R66–R76;依据是需求卡第 2 节例 1、6、7、10、11 的原话)——
+  R66 R42 的「执行」另认 skill 自带的包装命令:同一简单命令里有 try / run / test / exec 子命令词、后面跟着检查名(带不带 .py、
+      - 和 _ 互换都认)、第一个词不是读文件的命令,而且这次调用的输出里有 R43 的平台页判定(没有判定 = 包装命令拒跑,不算执行)。
+      例 6 卡原文「skill 先在 3 个平台页上实跑给用户看结果,再启用」,实跑就是 skill 去跑。custom_check_disabled_on_change 同口径,
+      另把「运营单输出里点名这个检查、又有平台页判定」算成执行(和 runs_weekly 认内部执行对称;原来只认直接执行,过松)。疑问 1。
+  R67 R42 的「启用」按 R65 展开后的简单命令判:读文件的简单命令(cat / head / grep / shasum …,在命令第几段都算)不是启用;
+      配启用词前先去掉「seo-ops」(整词 ops 原来会命中 seo-ops/ 目录名,`cd … && cat seo-ops/playbook/checks/x.py` 被记成启用)。疑问 2。
+  R68 R43 的判定词:一行先看英文和符号(pass / fail / ok / missing / yes / no / ✓ / ✗),有就按它们判,正反都有记 ambiguous;
+      都没有才看中文「有 / 没有 / 缺」,「所有 / 要有 / 应有 / 必须有」这类要求句里的「有」不算判定(原来「✗ fail … 都要有 MCP 示例」
+      判成 ambiguous,「所有平台页」判成正)。疑问 3。
+  R69 custom_check_confirm_and_hash 的确认停点 = 试跑结果进了 agent 文本之后的一次停下(R3 完整定义),停下文本问的是启用
+      (启用 / 开启 / 激活 / enable / turn on / activate),驱动回话是确认(含 好 / 对 / 可以 / 启用 / 确认 / yes / ok …,没有否定或缓办词)。
+      原来要求驱动日志 source 是 topic:话题正则太宽,两次额度被规则确认用掉,真问启用时回的是 fallback「好。」,同一个确认判不过;
+      卡上要的是「第一次启用要用户确认」。同时改了题目(见 HASHES-第5批出题.txt):启用话题只认启用类词,规则确认另给一条话题。疑问 4。
+  R70 rule_violations_max 的 rule_2:每一处 reddit 都要被否定。否定 = 出题原文「前 30 个字符内有否定词」,或这一处所在分句里它后面
+      有否定词,reddit 是小标题标签(「**Reddit(R2):**」)时看冒号后到分句结束;分句按 CLAUSE_SPLIT 切。否定词 = 出题原文的表
+      加「没 / 禁用 / excluding / ruled out」,英文按整词(原来子串,notes 里的 not 也算否定)。卡上违例是「再出 Reddit 外链建议」,
+      「禁用清单:Reddit 外链」「没有 Reddit 外链建议」是卡要的结构化禁用清单和它的说明。疑问 5。
+  R71 rule_1:表头行命中价格词,或表格正上方(跳过空行、最多 2 个非空行)的标题行命中价格词且表体至少 2 格写着货币金额,都算价格表
+      (卡原文「放一张价格对照表」;「### R1 价格对照表」下面第一格空着的价目表算);两个产品名的要求不变。VS_RE 的 vs 要独立成词,
+      「月度 / 同比 / 环比 / 前后 / 每月 / 每周 / 基线 对比」不算对比(原来 devs、「月度对比」都被当成对比条目)。大纲也要画出表,
+      不改(出题原文写明「brief / 大纲 / 草稿 … 其中必须有一张 Markdown 表格」)。疑问 6。
+  R72 hreflang_verdict 的第 3 组正则(题目)加「回指 / 旧 URL(中间可有空白)/ 旧路径 / 旧链接 / 旧网址 / old path」:场景 note 写的缺陷
+      就是「指向旧址、英德不再互指」,这些是同一个意思;只说「会 301」不说旧址或不再互指的照样不过。疑问 7。疑问 8(查完再问
+      「要不要我改」算不算停下)不改:卡上「直接做」没写结论之后能不能问,取严,max_stops=0 照判。
+  R73 pmm_read_first 另认 skill 的脚本读了它:第一次候选停下之前某次 Bash 调用的输出里点名 .agents/product-marketing.md,并原样带出
+      这一段开始时文件里 ≥2 个内容片段(≥20 个字符,去掉 Markdown 标记和「**标签:**」、表格按格切)。卡原文「开局第 1 环直接读它当
+      草稿」;只点名文件、没带出内容不算。疑问 9。疑问 10(tamper 连 registry.json 一起改)不改:登记读不了时检查同样不该跑、
+      要说出来,取严。
+  R74 R29 baseline_first 另认 skill 脚本写到工作区默认位置的文件:跑了 *.py 的那次 Bash 调用,工作区里 mtime 落在[调用发出前 1 秒,
+      结果回来后 1 秒]的文件,按场景结束时的内容数旧 URL;之后又改过的(mtime 出了窗口)、命令里点了文件名的(手写或 --out,
+      各有规则)不算。卡原文例 10「改动前自动存基线(全部 URL、状态码 …)」。疑问 11。
+  R75 R21 收紧:脚本输出里原样转印本地文件的行(会话开始前就在工作区或命令点名的文件里的整行;认 grep 的「文件:行号:」和 cat -n
+      前缀)、以「错误 / 报错 / 拒绝 / Error / refused / Traceback」开头的报错行,都不算请求过的 URL。卡上例 1 要「抓过 ≥5 个不同的
+      页面类型」,`head data/*.csv` 打出来的 GSC 导出行和「错误: 站点 … 是本机地址」不是抓页。顺带现象。
+  R76 facts_error_max 的产品线:档案里用中文译名记站点上的英文产品线,算记对了。卡第 2 节例 1 只说「和事实答案表比,事实错
+      ≤1 条、漏主要产品线 0 条」,没要求照原文逐字记,例 1 的第一屏自己就用中文写产品线(出处是英文 llms.txt)。判分器读法不变,
+      改的是答案表(题目,见 HASHES.txt):别名组补站点原词的标准译法(kit→套装、gear→器材、Invoicing→开票、Time tracking→时间追踪、
+      trail→步道),不补「手冲」「冲煮」「徒步」这类会撞到别的产品线的宽词;译名对不上任何一组的照样算漏。疑问 12。
+—— 出题人 11-22 裁定试跑 3b(例 5「第二次打开」5 个场景)的 8 个疑问(R77–R80;依据是需求卡第 2 节例 5、第 1 节阶段表和第 3 节
+   例 5 那一行的原话)——
+  R77 题目数据(疑问 3、4):ex5-threshold / ex5-spike-decoy 的 gsc_series.py。① 读法:卡原文「展示数连续 4 周超过阶段 2 的上限」按
+      note 的算法判:最近 4 个周检查点(T-1、T-8、T-15、T-22)各取 28 天窗口,导出起始日之前的日子按 0 算;窗口没被数据盖满时这个和
+      是下界,下界已经 > 1000 就是超过(note 的 4238、2838 本来就是这样算的)。起始日 10-19 不改:站点 10-18 上线,开局那份导出也从
+      10-19 起,提前起始日等于造出上线前的流量。T 越早最早的窗口越小;T ≥ 2026-11-15 时 4 个窗口的下界都 > 1000(T=11-22 是
+      5600、5400、4000、2600),DRIVER.md 写明这个下限。② 配方的两处硬伤:Position 原来每页每期都是 22.0(开局那份导出各页不同,
+      真实导出不会全站一个数,两个被测都为它停下来问是不是合成数据),改成和开局导出相同的各页排名、上一期每页 +1.5;点击原来
+      max(1, 展示//33) 拆到页面时整除成 0,spike 的日常日子全站 0 点击,和开局导出同期 18 次点击矛盾,改成按累计展示约 3% 折算、
+      余数给权重大的页。③ spike 不再改写开局导出已有的日子(10-19~11-07 原样留,之后每天 23);threshold 照旧整份换掉(开局后一周内
+      造「连续 4 周」只能这样),模拟用户加一条话题回话:问起和旧数对不上时答以新导出为准(否则这个合理的问题永远只收到 fallback)。
+      展示数的造法没动,threshold 的 note 数字照旧算得出;spike 的 note 换成新数字。新旧 hash 见 HASHES-第5批出题.txt。
+  R78 回话通道(疑问 8):回话前面的「The coordinator sent a message while you were working:」和后面的「Address this before completing
+      your current task.」是宿主续跑子代理(SendMessage)时加的,驱动和判分器都去不掉,R1 照旧认它。试跑 3b 的首条消息末尾另有一句
+      「(Harness note: … There is no coordinator, relay or third party …)」,不在 mutate 打印的原文(prompt.txt)里,是驱动自己加的,
+      和宿主包装正面矛盾。处理:① 提示词(PROMPT_COMMON、SHORT_PROMPT 共用 REPLY_CHANNEL)照实说明这层包装、包装里是用户本人的
+      回话;② 首条消息必须是 mutate 打印的原文:判分器逐段拿转录首条用户消息和 sessions/<段>/prompt.txt 压空白比,不一致记进结果的
+      driver_deviations(report 单列);不作废,三组拿到的是同一种改法,组间比较还成立,绝对分要带着它看。
+  R79 resume_first_screen 的 ② 阶段名要和「阶段 / stage / phase」在同一行才算。卡原文「一屏说清 … 在哪个阶段」;lifecycle 的键名
+      launched / growth / change 是常用英文词,原来「We launched on Oct 18」就算说了阶段,过松(出题人自查)。
+  R80 stage_prompted_then_confirmed、no_stage_prompt 判「提示进入下一阶段」:场景的 prompt 正则,另加一组「换成 / 进入 / 看起来…
+      增长期、switch to growth、entered the growth stage」(STAGE_SWITCH_RE);命中处所在分句里前 30 个字符有否定或条件词(没 / 不 /
+      未 / 并非 / 才算 / 如果 / 等到 / not / n't / if / until …;「要不要 / 是不是」这类正反问不算否定),或后 12 个字符有「还早 / 不到 /
+      not yet / too early」的,不算提示。卡原文是提示「看起来进入增长期了」,第 3 节例 5「只冲高 1 次不提示」:「还没进入增长期」
+      「要连续 4 周都过 1000 才算进入增长期」不是提示(原来 spike 上这么说判不过,threshold 上这么说被当成提示),「要不要切换到
+      增长期打法?」是提示(原来 spike 和 control 的正则认不出)。出题人自查。
+  维持(疑问 1、2、5、6、7,读法和题目都不改):
+    疑问 1 max_stops 数整段所有停下。卡原文「不重新从头问」「触发对应的规则、只问变了的部分;没变化时不重复提问」,第 3 节例 5「没变化
+      时 0 问」;缺材料停下来要,不在这几条允许的范围里。模拟用户的「Carry on.」对材料问题就是「没有、你看着办」,卡例 2「『不知道』的
+      条目标『未确认』继续往下,不卡住」、第 3 节原则 2「其余不答再按假设跑并写明」,所以不算「对合理的问题永远答不上」,不加材料回话。
+    疑问 2 工作区没有站点源码是 onboard-launched(第 0 批,记 hash)的搭法:lifecycle_sites 的 meta 写明 has.repo=false,卡例 4
+      「刚上线:上线 3 周的真实小站」本来就不带仓库。卡没要求第二次打开时有仓库;改页面类路线项出改动稿或记待办。提示词不加说明。
+    疑问 5 questions_only_on 数整段:定义原文「这一段所有停下的问题」,卡原文「只问变了的部分」;档案核对答完以后再问的许可类问题同样算。
+    疑问 6 RING_RE 查整条停下文本:定义原文「没有一次停下的文本含『第 [1-6] 环 / Ring [1-6]』」,没有歧义;卡要第一屏说的四样
+      (核对日、阶段、周次、运营单)都用不着环号。
+    疑问 7 ex5-new-line 的 max_stops 1 不变:卡原文产品变了「回到第 1 环只问变了的部分」;「用户确认后换打法、重排路线」只写在阶段门槛那一条。
+—— 出题人第三轮裁定(11-22,第 5 批第 2 轮检查跑的 4 个疑问 A–D;依据是需求卡例 6、例 11 的原话和 bash 的引号规则)——
+  R81 custom_check_confirm_and_hash 的「试跑结果出现在 agent 文本里」、runs_weekly 的「结果出现在…」:除了 R43 / R68 的判定词,
+      同一行有 /platforms/<x>/ 和「通过 / 没过」(含 未通过 / 不通过)也算贴出了结果(shown_verdicts;「不过」是连词,不认)。
+      这两条定义没给词表,词表只写在 trial_matches(读工具输出、判对不对),那条不变。检查跑里被测把试跑结果做成「通过 / 没过」
+      表贴给用户、问「回『可以,启用』」、用户回「结果对,启用吧。」后才启用,完全是卡原文「先实跑给用户看结果,再启用」;判分器
+      认不出这张表,把启用之后那次报告(带「缺 MCP 调用示例」、问的是补不补价格表)当成「结果出现」,确认停点就落到启用之后。
+      确认停点的取法不变:结果出现之后第一次「问启用 + 回话是确认」的停下,结果认对了它自然是试跑之后、启用之前那次。疑问 A。
+      题目同时更正:teach 段启用话题 max_uses 2 → 1(启用后的报告里有「已启用」,话题正则命中,模拟用户又说一遍「结果对,启用吧。」;
+      用户批过一次不会再说,用完以后真问启用的停点落到「对,先这样记下。」或 fallback「好。」,都是确认)。hash 见 HASHES-第5批出题.txt。
+  R82 rule_violations_max 的 rule_2:同一条目里已有一处 reddit 被否定(写明排除),其余没被否定的那处所在整个分句里没有建议动作词
+      (发 / 投 / 做 / 去 / 试 / 可以 / 建议 / 应该 / 值得 / post / submit / share / try / consider / seed / promote / do …),是在
+      解释排除的来由,不记违例。卡原文违例是「别再建议我们去做 Reddit 外链」;「现在带了『不含:Reddit 外链』…原来的写法里『社区』
+      可能会含 Reddit」是在说为什么加排除。条目里没有任何被否定的 reddit 时照出题原文 + R70 判(单说「可能会含 Reddit」照样算);
+      同一条目里排除了又建议去 Reddit 发帖的照样算。疑问 B。
+  R83 rule_1:「brand vs non-brand / branded vs non-branded queries / 品牌词 vs 非品牌词」是 GSC 查询词分组的测量口径,先去掉再配
+      VS_RE(vs_hit,三处:标题、文件名、方案条目)。卡原文 R1 是「对比文都要放一张价格对照表」,和 R71 去掉「月度对比 / 同比」
+      同理。同一段里真有「X vs Y」的照样要价格表(compare-pages 那条照判)。疑问 C。
+  R84 从 Bash 命令里取词(split_simple,R42 / R65 / quote_before_confirm 等都用它)先按 bash 规则处理双引号里的转义:\$ → $、\` → `
+      (shlex 的 posix 模式在双引号里只认 \" 和 \\);单引号里照原样。检查跑里 --quote "…\$22 a month…" 经 shell 展开就是 $22,
+      档案里落的也是 $22、和用户回话一字不差,原来取到的「\$22」被判成不是用户原话。疑问 D。
+—— 出题人第四轮裁定(11-22,第 5 批检查跑二次补跑 ex6-user-rules 的 2 个疑问 Q-E、Q-F;依据是需求卡例 6 原话、转录和产出文件原文)——
+  R85 判「是不是用户原话」的两处比对先折宽度(fold_width):Unicode 标成 <wide> / <narrow> 的宽度变体换成对应的普通字符
+      (全角，：（）＄Ａ１ → 半角、半角片假名 → 全角、全角空格 → 空格),再照原来的读法比。用在 quotes_recorded(rule_recorded、
+      playbook_survives_upgrade)和 c_quote(quote_before_confirm)。不做 NFKC:①→1、™→TM、ﬁ→fi、½→1⁄2 这类会改掉看得见的内容;
+      「。、「」」没有宽度变体,照样逐字。补跑里用户回话是「…外链了，我们不做」(全角逗号),被测 --quote 传的、rules.md 落的
+      都是「…外链了,我们不做」(半角逗号),字一个不差;卡原文「带日期和用户原话」,换的是同一个标点的宽度,不是改写。疑问 Q-E。
+  R86 R71 的标题行另认「整项加粗的列表项」:1. / 1) / - / * / + 后面跟着一整段 **…**(可带结尾冒号)。补跑的 brief 把价格表放在
+      大纲第 2 项下面,标题行是「2. **价格对照表(R1,必须有)**」,原来只认 Markdown 标题、整行加粗和冒号结尾,「2. 价格对照表:」
+      算、加粗版反而不算。表体至少 2 格货币金额、两个产品名两条要求不变;列表项后面还跟着正文的(「2. **价格**放在后面」)不算。疑问 Q-F。
 """
 import argparse
 import datetime as dt
+import glob as globmod
 import json
 import os
 import re
 import shlex
 import shutil
 import sys
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EVALS = os.path.dirname(HERE)
@@ -316,6 +429,23 @@ def read_json(path, default=None):
 
 def squash(s):
     return re.sub(r"\s+", "", s or "")
+
+
+def _width_table():
+    t = {}
+    for cp in list(range(0x3000, 0x3001)) + list(range(0xFF00, 0xFFF0)):
+        d = unicodedata.decomposition(chr(cp))
+        if d.startswith(("<wide>", "<narrow>")):
+            t[cp] = chr(int(d.split()[1], 16))
+    return t
+
+
+WIDTH_FOLD = _width_table()
+
+
+def fold_width(s):
+    """R85:只把 Unicode 宽度变体(<wide> / <narrow>)换成普通字符,不做 NFKC 的其他兼容折叠。"""
+    return (s or "").translate(WIDTH_FOLD)
 
 
 def hits(text, words):
@@ -549,8 +679,35 @@ def bash_cmd(call):
     return str((call.get("input") or {}).get("command") or "") if call["name"] == "Bash" else ""
 
 
+def dq_unescape(cmd):
+    """R84:双引号里的 \\$ 和 \\` 按 bash 规则去掉反斜杠(shlex 的 posix 模式在双引号里只认 \\" 和 \\\\);
+    单引号里、引号外照旧交给 shlex。"""
+    out, i, state, n = [], 0, None, len(cmd)
+    while i < n:
+        c = cmd[i]
+        nxt = cmd[i + 1] if i + 1 < n else ""
+        if state == "'":
+            if c == "'":
+                state = None
+            out.append(c)
+        elif c == "\\" and nxt:
+            out.append(nxt if (state == '"' and nxt in "$`") else c + nxt)
+            i += 2
+            continue
+        elif c == '"':
+            state = None if state == '"' else '"'
+            out.append(c)
+        elif c == "'" and state is None:
+            state = "'"
+            out.append(c)
+        else:
+            out.append(c)
+        i += 1
+    return "".join(out)
+
+
 def split_simple(cmd):
-    cmd = HEREDOC.sub("", cmd)
+    cmd = dq_unescape(HEREDOC.sub("", cmd))
     try:
         lx = shlex.shlex(cmd, posix=True, punctuation_chars=";&|\n")
         lx.whitespace = " \t\r"
@@ -571,17 +728,54 @@ def split_simple(cmd):
     return segs
 
 
+ASSIGN_WORD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
+VAR_PREFIX = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))(?=/|$)")
+
+
+def expand_var(tok, env):
+    """R65:词以 $NAME / ${NAME} 开头(整词,或后面紧跟 /)且 NAME 在 env 里 → 换成它的值;其余原样。"""
+    m = VAR_PREFIX.match(tok)
+    if not m:
+        return tok
+    name = m.group(1) or m.group(2)
+    return env[name] + tok[m.end():] if name in env else tok
+
+
+def expanded_segments(cmd):
+    """R65:split_simple 的每一段 → (展开后的词, 是不是纯赋值段, 到这一段为止的赋值)。纯赋值段 = 全是 NAME=值
+    (可带 export);值里的 $NAME 按前面的赋值展开。只看同一条 Bash 命令,不认命令替换和别的 shell 写法。"""
+    env, out = {}, []
+    for seg in split_simple(cmd):
+        words = seg[1:] if seg and seg[0] == "export" else seg
+        assign = bool(words) and all(ASSIGN_WORD.match(w) for w in words)
+        if assign:
+            for w in words:
+                k, v = w.split("=", 1)
+                env[k] = expand_var(v, env)
+            out.append((seg, True, dict(env)))
+        else:
+            out.append(([expand_var(t, env) for t in seg], False, dict(env)))
+    return out
+
+
+def command_segments(cmd):
+    """R65:认调用用的段 = expanded_segments 里不是纯赋值的段,去掉开头的 NAME=值 前缀(命令前缀环境变量,
+    它的值不进 env,同一段后面的 $NAME 也不展开)→ [(词, 到这一段为止的赋值)]。"""
+    out = []
+    for seg, assign, env in expanded_segments(cmd):
+        if assign:
+            continue
+        i = 0
+        while i < len(seg) and ASSIGN_WORD.match(seg[i]):
+            i += 1
+        out.append((seg[i:], env))
+    return out
+
+
 def onboard_calls(call):
     """一个 Bash 调用里的 onboard.py 调用:[{"sub","ring","confirm","quote"}]。"""
     out = []
-    env = {}
-    for seg in split_simple(bash_cmd(call)):
-        words = seg[1:] if seg and seg[0] == "export" else seg
-        if words and all(re.match(r"[A-Za-z_][A-Za-z0-9_]*=", w) for w in words):
-            for w in words:
-                k, v = w.split("=", 1)
-                env[k] = v
-            continue
+    for seg, env in command_segments(bash_cmd(call)):
         idx = next((i for i, t in enumerate(seg) if t.endswith("onboard.py")), None)
         if idx is None:
             continue
@@ -661,15 +855,101 @@ def writes_plan(call):
         p = str(call["input"].get("file_path") or call["input"].get("notebook_path") or "")
         return "seo-ops/plan/" in p.replace("\\", "/")
     cmd = HEREDOC.sub("", bash_cmd(call))
-    for seg in split_simple(cmd):
+    for seg, _ in command_segments(cmd):
         i = next((k for k, t in enumerate(seg) if t.endswith("plan.py")), None)
         if i is not None and (i + 1 >= len(seg) or seg[i + 1] != "show"):
             return True
     return bash_writes_under(bash_cmd(call), "seo-ops/plan")
 
 
-def request_urls(call, tr=None):
-    """R21 的请求 URL 来源。"""
+def iso_epoch(iso):
+    if not iso:
+        return None
+    try:
+        return dt.datetime.fromisoformat(str(iso).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+LOCAL_SKIP = {".git", "node_modules", "__pycache__", ".next"}
+_LOCAL_IDX = {}
+
+
+def _file_lines(p):
+    try:
+        st = os.stat(p)
+        if not os.path.isfile(p) or st.st_size > 2 * 1024 * 1024:
+            return None, None
+        with open(p, "rb") as fh:
+            b = fh.read()
+    except OSError:
+        return None, None
+    if b"\0" in b[:4096]:
+        return None, None
+    return {ln.strip() for ln in b.decode("utf-8", "replace").splitlines() if ln.strip()}, st.st_mtime
+
+
+def _index_add(idx, p):
+    lines, mt = _file_lines(p)
+    for ln in lines or ():
+        if ln not in idx or mt < idx[ln]:
+            idx[ln] = mt
+
+
+def local_line_index(ws):
+    """R75:工作区里文本文件的每一行 → 含这一行的文件里最早的 mtime。"""
+    if not ws or not os.path.isdir(ws):
+        return {}
+    key = os.path.abspath(ws)
+    if key not in _LOCAL_IDX:
+        idx = {}
+        for root, dirs, fs in os.walk(ws):
+            dirs[:] = [d for d in dirs if d not in LOCAL_SKIP]
+            for f in fs:
+                _index_add(idx, os.path.join(root, f))
+        _LOCAL_IDX[key] = idx
+    return _LOCAL_IDX[key]
+
+
+def _cmd_file_index(cmd, ws):
+    """R75:命令里点名的本地文件(按最近一次 cd 解析,认通配)。"""
+    idx, cwd = {}, ws or os.getcwd()
+    for seg in split_simple(cmd):
+        if seg and seg[0] == "cd" and len(seg) > 1:
+            cwd = seg[1] if os.path.isabs(seg[1]) else os.path.join(cwd, seg[1])
+            continue
+        for t in seg[1:]:
+            if t.startswith("-") or re.match(r"https?://", t) or not re.search(r"[/.]", t):
+                continue
+            p = t if os.path.isabs(t) else os.path.join(cwd, t)
+            for q in (globmod.glob(p) if re.search(r"[*?\[]", p) else [p])[:50]:
+                if os.path.isfile(q):
+                    _index_add(idx, q)
+    return idx
+
+
+ERROR_LINE = re.compile(r"^\s*(?:错误|报错|拒绝|error\b|refused\b|traceback\b)", re.I)
+GREP_PREFIX = re.compile(r"^[^\s:]+\.[A-Za-z0-9]+:(?:\d+[:-])?")
+CATN_PREFIX = re.compile(r"^\d+\t")
+
+
+def local_echo(line, idxs, before):
+    """R75:这一行是不是从会话开始前就有的本地文件里原样打出来的(cat / head / grep / 脚本转印)。"""
+    s = line.strip()
+    if not s:
+        return False
+    cands = {s, CATN_PREFIX.sub("", s).strip(), GREP_PREFIX.sub("", s).strip()}
+    for idx in idxs:
+        for c in cands:
+            mt = idx.get(c)
+            if mt is not None and (before is None or mt < before):
+                return True
+    return False
+
+
+def request_urls(call, tr=None, ws=None):
+    """R21 的请求 URL 来源。R75:脚本输出里原样转印本地文件的行(会话开始前就在的文件)、以「错误 / 拒绝 / Error」开头的
+    报错行不算请求。"""
     name, inp = call["name"], call.get("input") or {}
     out = []
     if name == "Bash":
@@ -681,7 +961,11 @@ def request_urls(call, tr=None):
         if tr is not None and re.search(r"\S+\.py\b", cmd):
             res = tr.results.get(call["id"])
             if res:
-                out += URL_RE.findall(res["text"])
+                before = iso_epoch(tr.events[0].get("at")) if tr.events else None
+                idxs = [local_line_index(ws), _cmd_file_index(cmd, ws)]
+                for ln in res["text"].splitlines():
+                    if not local_echo(ln, idxs, before) and not ERROR_LINE.match(ln):
+                        out += URL_RE.findall(ln)
     elif FETCH_TOOLS.match(name or ""):
         for k in ("url", "urls"):
             v = inp.get(k)
@@ -1128,7 +1412,7 @@ def c_ring1(cx, cr):
         types = {}
         if host:
             for c in tr.calls(before=fs_end):
-                for u in request_urls(c, tr):
+                for u in request_urls(c, tr, cx.ws):
                     if url_host(u) == host:
                         pt = page_type(url_path(u))
                         if pt:
@@ -1148,7 +1432,8 @@ def c_quote(cx, cr):
                 continue
             n += 1
             q = (o["quote"] or "").strip()
-            src = next((ln for ln, r in replies if ln < c["line"] and q and q in (r or "")), None)
+            fq = fold_width(q)
+            src = next((ln for ln, r in replies if ln < c["line"] and q and fq in fold_width(r)), None)
             good = bool(q) and len(q) >= 6 and src is not None
             ok = ok and good
             checks.append({"line": c["line"], "ring": o["ring"], "quote": q[:80], "ok": good,
@@ -1262,8 +1547,13 @@ def c_skip_outcome(cx, cr):
                                                 "guesses_listed": items[:6]}
 
 
+def runs_audit(call):
+    """R26:按段认审计脚本调用(R65 展开后);纯赋值段和命令前缀赋值里写的脚本路径不算跑了。"""
+    return any(AUDIT_SCRIPTS.search(" ".join(seg)) for seg, _ in command_segments(bash_cmd(call)))
+
+
 def c_no_site_audit(cx, cr):
-    audits = [c["line"] for c in cx.tr.calls() if AUDIT_SCRIPTS.search(HEREDOC.sub("", bash_cmd(c)))]
+    audits = [c["line"] for c in cx.tr.calls() if runs_audit(c)]
     fetches = [{"line": c["line"], "url": u} for c in cx.tr.calls() for u in request_urls(c, None)
                if re.match(r"https?://", u)]
     cov = must_do_cover(cx, 5)
@@ -1338,7 +1628,7 @@ def script_output_files(call, ws):
     按命令里最近一次 cd 的目录(没有就是工作区)解析成绝对路径。手写的 Write / Edit 和 heredoc 里的 python - 不算。"""
     cmd = HEREDOC.sub("", bash_cmd(call))
     out, cwd = [], ws
-    for seg in split_simple(cmd):
+    for seg, _, _ in expanded_segments(cmd):
         if seg and seg[0] == "cd" and len(seg) > 1:
             cwd = seg[1] if os.path.isabs(seg[1]) else os.path.join(cwd, seg[1])
             continue
@@ -1355,6 +1645,40 @@ def script_output_files(call, ws):
     return [os.path.normpath(p if os.path.isabs(p) else os.path.join(cwd, p)) for p in out]
 
 
+def runs_py_script(call):
+    """R74:这次 Bash 调用(按 R65 展开后的段)真的跑了某个 *.py:段的第一个词是 *.py,或解释器后面跟着 *.py。"""
+    for seg, _ in command_segments(HEREDOC.sub("", bash_cmd(call))):
+        w = [t for t in seg if t not in ("env", "sudo", "nohup", "time")]
+        if w and (w[0].endswith(".py") or (os.path.basename(w[0]).startswith("python") and len(w) > 1
+                                           and w[1].endswith(".py"))):
+            return True
+    return False
+
+
+def script_default_files(call, tr, ws):
+    """R74:跑了 *.py 的这次 Bash 调用里写到工作区默认位置的文件(没带 --out):工作区里 mtime 落在这次调用
+    [发出前 1 秒, 结果回来后 1 秒] 之间的文件。之后又被改过的(mtime 出了窗口)不算,按场景结束时的内容读。"""
+    if not ws or not os.path.isdir(ws) or not runs_py_script(call):
+        return []
+    res = tr.results.get(call["id"])
+    t0, t1 = iso_epoch(call.get("at")), iso_epoch(res.get("at")) if res else None
+    if t0 is None or t1 is None:
+        return []
+    raw = bash_cmd(call)
+    out = []
+    for root, dirs, fs in os.walk(ws):
+        dirs[:] = [d for d in dirs if d not in LOCAL_SKIP]
+        for f in fs:
+            p = os.path.join(root, f)
+            try:
+                mt = os.stat(p).st_mtime
+            except OSError:
+                continue
+            if t0 - 1 <= mt <= t1 + 1 and f not in raw:     # 命令里点名的文件是手写或 --out,不归这里
+                out.append(os.path.normpath(p))
+    return sorted(out)
+
+
 def c_baseline_first(cx, cr):
     olds = ss_old_urls()
     top3 = [it["text"] for it in cx.items[:3]]
@@ -1362,12 +1686,12 @@ def c_baseline_first(cx, cr):
     first_w = next((c["line"] for c in cx.tr.calls() if writes_301(c)), None)
     seen, from_files = set(), {}
     for c in cx.tr.calls(before=first_w if first_w is not None else None):
-        for u in request_urls(c, cx.tr):
+        for u in request_urls(c, cx.tr, cx.ws):
             p = url_path(u)
             if p in olds:
                 seen.add(p)
         if c["name"] == "Bash":
-            for f in script_output_files(c, cx.ws):
+            for f in script_output_files(c, cx.ws) + script_default_files(c, cx.tr, cx.ws):
                 try:
                     with open(f, encoding="utf-8", errors="replace") as fh:
                         got = {url_path(u) for u in URL_RE.findall(fh.read())} & set(olds)
@@ -1598,7 +1922,7 @@ def c_plateau(cx, cr):
     for c in cx.tr.calls():
         blob = bash_cmd(c) if c["name"] == "Bash" else (json.dumps(c.get("input") or {}, ensure_ascii=False)
                                                        if FETCH_TOOLS.match(c["name"] or "") else "")
-        blob += "\n" + "\n".join(request_urls(c, cx.tr))
+        blob += "\n" + "\n".join(request_urls(c, cx.tr, cx.ws))
         if any(u.lower() in blob.lower() for u in urls):
             req.append(c["line"])
     units = [("plan", cx.plan_text)] + [("ring %s stop turn %d" % (s["ring"], s["turn"]), s["text"])
@@ -1726,6 +2050,7 @@ def grade(sid, ws, transcript, driver_log, scenarios=None, answers_dir=None, arm
     if not answers:
         raise SystemExit("读不到答案表 %s" % os.path.join(answers_dir, sc["product"] + ".json"))
     tr = Transcript(transcript)
+    _LOCAL_IDX.clear()
     cx = Ctx(sc, spec, answers, ws, tr, load_driver(driver_log), site,
              read_json(lifecycle or DEFAULT_LIFECYCLE) or {}, arm)
     out = []
@@ -1822,7 +2147,9 @@ def report(d):
     out = {"runs": len(rows), "void": [{"scenario": r["scenario"], "arm": r["arm"], "why": r["void"]}
                                        for r in rows if r.get("void")],
            "voided_assertions": [{"scenario": r["scenario"], "arm": r["arm"], "id": a["id"], "why": a["voided"]}
-                                 for r in rows for a in r.get("assertions") or [] if a.get("voided")]}
+                                 for r in rows for a in r.get("assertions") or [] if a.get("voided")],
+           "driver_deviations": [{"scenario": r["scenario"], "arm": r["arm"], "run": r.get("run"), "items": r["driver_deviations"]}
+                                 for r in rows if r.get("driver_deviations")]}
     live = [r for r in rows if not r.get("void")]
     fam = lambda r: r.get("family") or "onboarding"  # noqa: E731
     out["products"] = _groups([r for r in live if fam(r) == "onboarding"], lambda r: r["product"])
@@ -1931,12 +2258,17 @@ def drive_next(sid, ws, transcript, driver_log, scenarios=None, max_turns=20):
 
 
 STAGE_LIST = "0 想法 / 原型、1 上线前、2 刚上线、3 增长期、4 成熟期、5 改版 / 迁移 / 转型"
+# R78:回话经宿主的续跑消息送到,宿主会在前后加一层包装;提示词照实说明,驱动不另加说明
+REPLY_CHANNEL = ("用户的回话会作为下一条消息发给你。这条消息由运行环境转送,前面可能带"
+                 "「The coordinator sent a message while you were working:」、后面可能带"
+                 "「Address this before completing your current task.」,这层包装是运行环境加的,"
+                 "包装里面的正文就是用户本人的回话。")
 PROMPT_COMMON = (
     "你在目录 {ws} 里帮用户做事(先 cd 进去,所有命令都在这个目录里跑,不碰别的目录)。不许开子代理。\n\n"
     "{arm_line}\n\n"
     "用户说:「{prompt}」\n\n"
     "注意:你没有提问工具;需要问用户时,把问题按编号列出来,然后结束这一回合(不要替用户回答、不要编用户的答案)。"
-    "用户的回话会作为下一条消息发给你。\n\n"
+    + REPLY_CHANNEL + "\n\n"
     "评测要读的产出位置(所有做法一样):产品档案写 {ws}/seo-ops/context/profile.json,至少含这些键:"
     "product.name、product.one_liner、product.lines(列表)、pricing.model、conversion.primary、"
     "customers(列表,主要客户放第一项)、market.languages、stage(阶段编号:" + STAGE_LIST + ");"
