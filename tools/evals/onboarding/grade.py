@@ -306,6 +306,42 @@ skip_handled(定义里 kind 是 outcome+process)
       ≤1 条、漏主要产品线 0 条」,没要求照原文逐字记,例 1 的第一屏自己就用中文写产品线(出处是英文 llms.txt)。判分器读法不变,
       改的是答案表(题目,见 HASHES.txt):别名组补站点原词的标准译法(kit→套装、gear→器材、Invoicing→开票、Time tracking→时间追踪、
       trail→步道),不补「手冲」「冲煮」「徒步」这类会撞到别的产品线的宽词;译名对不上任何一组的照样算漏。疑问 12。
+—— 出题人 11-22 裁定试跑 3b(例 5「第二次打开」5 个场景)的 8 个疑问(R77–R80;依据是需求卡第 2 节例 5、第 1 节阶段表和第 3 节
+   例 5 那一行的原话)——
+  R77 题目数据(疑问 3、4):ex5-threshold / ex5-spike-decoy 的 gsc_series.py。① 读法:卡原文「展示数连续 4 周超过阶段 2 的上限」按
+      note 的算法判:最近 4 个周检查点(T-1、T-8、T-15、T-22)各取 28 天窗口,导出起始日之前的日子按 0 算;窗口没被数据盖满时这个和
+      是下界,下界已经 > 1000 就是超过(note 的 4238、2838 本来就是这样算的)。起始日 10-19 不改:站点 10-18 上线,开局那份导出也从
+      10-19 起,提前起始日等于造出上线前的流量。T 越早最早的窗口越小;T ≥ 2026-11-15 时 4 个窗口的下界都 > 1000(T=11-22 是
+      5600、5400、4000、2600),DRIVER.md 写明这个下限。② 配方的两处硬伤:Position 原来每页每期都是 22.0(开局那份导出各页不同,
+      真实导出不会全站一个数,两个被测都为它停下来问是不是合成数据),改成和开局导出相同的各页排名、上一期每页 +1.5;点击原来
+      max(1, 展示//33) 拆到页面时整除成 0,spike 的日常日子全站 0 点击,和开局导出同期 18 次点击矛盾,改成按累计展示约 3% 折算、
+      余数给权重大的页。③ spike 不再改写开局导出已有的日子(10-19~11-07 原样留,之后每天 23);threshold 照旧整份换掉(开局后一周内
+      造「连续 4 周」只能这样),模拟用户加一条话题回话:问起和旧数对不上时答以新导出为准(否则这个合理的问题永远只收到 fallback)。
+      展示数的造法没动,threshold 的 note 数字照旧算得出;spike 的 note 换成新数字。新旧 hash 见 HASHES-第5批出题.txt。
+  R78 回话通道(疑问 8):回话前面的「The coordinator sent a message while you were working:」和后面的「Address this before completing
+      your current task.」是宿主续跑子代理(SendMessage)时加的,驱动和判分器都去不掉,R1 照旧认它。试跑 3b 的首条消息末尾另有一句
+      「(Harness note: … There is no coordinator, relay or third party …)」,不在 mutate 打印的原文(prompt.txt)里,是驱动自己加的,
+      和宿主包装正面矛盾。处理:① 提示词(PROMPT_COMMON、SHORT_PROMPT 共用 REPLY_CHANNEL)照实说明这层包装、包装里是用户本人的
+      回话;② 首条消息必须是 mutate 打印的原文:判分器逐段拿转录首条用户消息和 sessions/<段>/prompt.txt 压空白比,不一致记进结果的
+      driver_deviations(report 单列);不作废,三组拿到的是同一种改法,组间比较还成立,绝对分要带着它看。
+  R79 resume_first_screen 的 ② 阶段名要和「阶段 / stage / phase」在同一行才算。卡原文「一屏说清 … 在哪个阶段」;lifecycle 的键名
+      launched / growth / change 是常用英文词,原来「We launched on Oct 18」就算说了阶段,过松(出题人自查)。
+  R80 stage_prompted_then_confirmed、no_stage_prompt 判「提示进入下一阶段」:场景的 prompt 正则,另加一组「换成 / 进入 / 看起来…
+      增长期、switch to growth、entered the growth stage」(STAGE_SWITCH_RE);命中处所在分句里前 30 个字符有否定或条件词(没 / 不 /
+      未 / 并非 / 才算 / 如果 / 等到 / not / n't / if / until …;「要不要 / 是不是」这类正反问不算否定),或后 12 个字符有「还早 / 不到 /
+      not yet / too early」的,不算提示。卡原文是提示「看起来进入增长期了」,第 3 节例 5「只冲高 1 次不提示」:「还没进入增长期」
+      「要连续 4 周都过 1000 才算进入增长期」不是提示(原来 spike 上这么说判不过,threshold 上这么说被当成提示),「要不要切换到
+      增长期打法?」是提示(原来 spike 和 control 的正则认不出)。出题人自查。
+  维持(疑问 1、2、5、6、7,读法和题目都不改):
+    疑问 1 max_stops 数整段所有停下。卡原文「不重新从头问」「触发对应的规则、只问变了的部分;没变化时不重复提问」,第 3 节例 5「没变化
+      时 0 问」;缺材料停下来要,不在这几条允许的范围里。模拟用户的「Carry on.」对材料问题就是「没有、你看着办」,卡例 2「『不知道』的
+      条目标『未确认』继续往下,不卡住」、第 3 节原则 2「其余不答再按假设跑并写明」,所以不算「对合理的问题永远答不上」,不加材料回话。
+    疑问 2 工作区没有站点源码是 onboard-launched(第 0 批,记 hash)的搭法:lifecycle_sites 的 meta 写明 has.repo=false,卡例 4
+      「刚上线:上线 3 周的真实小站」本来就不带仓库。卡没要求第二次打开时有仓库;改页面类路线项出改动稿或记待办。提示词不加说明。
+    疑问 5 questions_only_on 数整段:定义原文「这一段所有停下的问题」,卡原文「只问变了的部分」;档案核对答完以后再问的许可类问题同样算。
+    疑问 6 RING_RE 查整条停下文本:定义原文「没有一次停下的文本含『第 [1-6] 环 / Ring [1-6]』」,没有歧义;卡要第一屏说的四样
+      (核对日、阶段、周次、运营单)都用不着环号。
+    疑问 7 ex5-new-line 的 max_stops 1 不变:卡原文产品变了「回到第 1 环只问变了的部分」;「用户确认后换打法、重排路线」只写在阶段门槛那一条。
 """
 import argparse
 import datetime as dt
@@ -2036,7 +2072,9 @@ def report(d):
     out = {"runs": len(rows), "void": [{"scenario": r["scenario"], "arm": r["arm"], "why": r["void"]}
                                        for r in rows if r.get("void")],
            "voided_assertions": [{"scenario": r["scenario"], "arm": r["arm"], "id": a["id"], "why": a["voided"]}
-                                 for r in rows for a in r.get("assertions") or [] if a.get("voided")]}
+                                 for r in rows for a in r.get("assertions") or [] if a.get("voided")],
+           "driver_deviations": [{"scenario": r["scenario"], "arm": r["arm"], "run": r.get("run"), "items": r["driver_deviations"]}
+                                 for r in rows if r.get("driver_deviations")]}
     live = [r for r in rows if not r.get("void")]
     fam = lambda r: r.get("family") or "onboarding"  # noqa: E731
     out["products"] = _groups([r for r in live if fam(r) == "onboarding"], lambda r: r["product"])
@@ -2145,12 +2183,17 @@ def drive_next(sid, ws, transcript, driver_log, scenarios=None, max_turns=20):
 
 
 STAGE_LIST = "0 想法 / 原型、1 上线前、2 刚上线、3 增长期、4 成熟期、5 改版 / 迁移 / 转型"
+# R78:回话经宿主的续跑消息送到,宿主会在前后加一层包装;提示词照实说明,驱动不另加说明
+REPLY_CHANNEL = ("用户的回话会作为下一条消息发给你。这条消息由运行环境转送,前面可能带"
+                 "「The coordinator sent a message while you were working:」、后面可能带"
+                 "「Address this before completing your current task.」,这层包装是运行环境加的,"
+                 "包装里面的正文就是用户本人的回话。")
 PROMPT_COMMON = (
     "你在目录 {ws} 里帮用户做事(先 cd 进去,所有命令都在这个目录里跑,不碰别的目录)。不许开子代理。\n\n"
     "{arm_line}\n\n"
     "用户说:「{prompt}」\n\n"
     "注意:你没有提问工具;需要问用户时,把问题按编号列出来,然后结束这一回合(不要替用户回答、不要编用户的答案)。"
-    "用户的回话会作为下一条消息发给你。\n\n"
+    + REPLY_CHANNEL + "\n\n"
     "评测要读的产出位置(所有做法一样):产品档案写 {ws}/seo-ops/context/profile.json,至少含这些键:"
     "product.name、product.one_liner、product.lines(列表)、pricing.model、conversion.primary、"
     "customers(列表,主要客户放第一项)、market.languages、stage(阶段编号:" + STAGE_LIST + ");"

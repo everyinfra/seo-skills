@@ -1765,5 +1765,198 @@ class Rulings1122P3(unittest.TestCase):
         self.assertEqual(missing("mature", ["徒步指南", "装备评测", "Pro 会员"]), 1)
 
 
+# ---------------------------------------------------------------------------
+# 出题人 11-22 裁定试跑 3b(例 5 第二次打开)的疑问(R77–R80)。期望按需求卡例 5 的原话和场景 note 定,
+# 不按改完的判分器跑出来是什么定。
+# ---------------------------------------------------------------------------
+
+def _gsc_series(tmp, T, mode, base_dir):
+    """照 scenarios_ext.json 的 gsc_series.py 原文在开局那份导出(lifecycle_sites launched)上跑一次,返回 data 目录。"""
+    import subprocess
+    rec = os.path.join(tmp, "gsc_series.py")
+    with open(rec, "w", encoding="utf-8") as f:
+        f.write(X.spec_ext()["recipes"]["gsc_series.py"])
+    d = os.path.join(tmp, "data-%s-%s" % (mode, T))
+    shutil.copytree(os.path.join(base_dir, "gsc"), d)
+    subprocess.run([sys.executable, "-I", rec, T, SITE, mode, d], check=True, capture_output=True, cwd=tmp)
+    return d
+
+
+def _daily(d):
+    import csv
+    imp, clk, rows = {}, {}, []
+    with open(os.path.join(d, "gsc-pages.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            imp[r["date"]] = imp.get(r["date"], 0) + int(r["impressions"])
+            clk[r["date"]] = clk.get(r["date"], 0) + int(r["clicks"])
+            rows.append(r)
+    return imp, clk, rows
+
+
+def _windows(imp, T):
+    """场景 note 的算法:T-1、T-8、T-15、T-22 四个周检查点各取 28 天窗口,导出里没有的日子按 0 算。"""
+    T = dt.date.fromisoformat(T)
+    out = []
+    for n in (1, 8, 15, 22):
+        c = T - dt.timedelta(days=n)
+        out.append(sum(v for k, v in imp.items() if c - dt.timedelta(days=27) <= dt.date.fromisoformat(k) <= c))
+    return out
+
+
+class Rulings1122P3b(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="onb_p3b_")
+        cls.w0s = {}
+        import subprocess
+        cls.base = os.path.join(cls.tmp, "launched")
+        subprocess.run([sys.executable, "-I", os.path.join(G.TESTSITES, "lifecycle_sites.py"), "build", "--product",
+                        "launched", "--out", cls.base, "--base", SITE], check=True, capture_output=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def sub(self, name):
+        return tempfile.mkdtemp(prefix=name + "_", dir=self.tmp)
+
+    # R77(疑问 3、4):按 note 的算法能从生成的数据里算出 note 的数;卡「连续 4 周超过阶段 2 的上限」在 T ≥ 11-15 都成立
+    def test_gsc_series_note_math(self):
+        imp, _, _ = _daily(_gsc_series(self.sub("th"), "2026-11-25", "threshold", self.base))
+        self.assertEqual(_windows(imp, "2026-11-25"), [5600, 5600, 4238, 2838])     # threshold note 原文
+        imp, _, _ = _daily(_gsc_series(self.sub("sp"), "2026-11-25", "spike", self.base))
+        self.assertEqual(_windows(imp, "2026-11-25"), [2135, 760, 697, 524])        # spike note(R77 改后)
+        for T in ("2026-11-15", "2026-11-22", "2026-12-01", "2026-12-31"):
+            with self.subTest(T=T):
+                th, _, _ = _daily(_gsc_series(self.sub("th"), T, "threshold", self.base))
+                self.assertTrue(all(w > 1000 for w in _windows(th, T)), _windows(th, T))
+                sp, _, _ = _daily(_gsc_series(self.sub("sp"), T, "spike", self.base))
+                w = _windows(sp, T)
+                self.assertTrue(w[0] > 1000 and all(x <= 1000 for x in w[1:]), w)   # 只有最后一个检查点过,不是「连续 4 周」
+
+    def test_gsc_series_matches_launch_export(self):
+        """spike 不改写开局导出已有的日子;排名各页不同;日常日子也有点击(原来全站 0 点击,和开局导出的 18 次矛盾)。"""
+        _, _, base_rows = _daily(os.path.join(self.base, "gsc"))
+        d = _gsc_series(self.sub("sp"), "2026-11-22", "spike", self.base)
+        imp, clk, rows = _daily(d)
+        kept = [r for r in rows if r["date"] <= "2026-11-07"]
+        self.assertEqual(sorted(map(tuple, (r.values() for r in kept))), sorted(map(tuple, (r.values() for r in base_rows))))
+        self.assertEqual(sum(v for k, v in clk.items() if k <= "2026-11-07"), 18)
+        quiet = [k for k in imp if "2026-11-08" <= k < "2026-11-19"]
+        self.assertGreater(sum(clk[k] for k in quiet), 0)
+        for f in sorted(os.listdir(d)):
+            if f.startswith("Pages_"):
+                with open(os.path.join(d, f)) as fh:
+                    pos = {ln.rsplit(",", 1)[1] for ln in fh.read().splitlines()[1:]}
+                self.assertGreater(len(pos), 1, f)
+        th = _gsc_series(self.sub("th"), "2026-11-22", "threshold", self.base)
+        imp, clk, _ = _daily(th)
+        self.assertTrue(0.02 <= sum(clk.values()) / sum(imp.values()) <= 0.04)
+
+    def test_threshold_old_data_topic(self):
+        """模拟用户对「新旧导出对不上、哪个对」有回话;阶段话题仍排在前面。"""
+        tops = X.scenario_ext("ex5-threshold")["sessions"][0]["simulated_user_by_topic"]
+        self.assertIn("stage", tops[0]["if"])
+        for q in ("旧记录里的 640 次展示和新导出对不上,哪个对?", "The old export doesn't match the new one, which one is right?"):
+            hit = next(t for t in tops if re.search(t["if"], q, re.I))
+            self.assertIn("new export", hit["reply"])
+
+    # R80:否定 / 条件里的「增长期」不是提示;「要不要切换到增长期打法」是提示。期望来自卡「提示『看起来进入增长期了』」「只冲高 1 次不提示」
+    def test_stage_prompt_reading(self):
+        spike = X.scenario_ext("ex5-spike-decoy")["criteria"][0]["prompt"]
+        th = X.scenario_ext("ex5-threshold")["criteria"][0]["prompt"]
+        not_prompts = ["只是一天冲高,还没进入增长期。", "要连续 4 周都过 1000 才算进入增长期。",
+                       "This is one busy day, not the growth stage yet.", "It isn't time to switch to the growth plan.",
+                       "进入增长期还早。"]
+        prompts = ["看起来进入增长期了。", "要不要切换到增长期打法?", "Looks like you've entered the growth stage.",
+                   "Shall we switch to the growth playbook?"]
+        for t in not_prompts:
+            self.assertEqual(E.stage_prompt_hits(spike, t), [], t)
+            self.assertEqual(E.stage_prompt_hits(th, t), [], t)
+        for t in prompts:
+            self.assertTrue(E.stage_prompt_hits(spike, t), t)
+            self.assertTrue(E.stage_prompt_hits(th, t), t)
+        self.assertEqual(E.stage_prompt_hits(th, "还不是增长期,先按刚上线的打法走。"), [])    # 原来裸「增长期」就算提示
+
+    def test_stage_prompt_end_to_end(self):
+        def spike(extra):
+            fx = X.gold_ex5_spike()
+            ev = X.find_text(fx, "resume", "stay on the launch plan")
+            ev["text"] = ev["text"].replace("## This week", extra + "\n\n## This week")
+            r, _ = ext_grade(fx, self.sub("sp"), self.w0s)
+            return _pass_of(r, "no_stage_prompt")
+        self.assertTrue(spike("一天冲高,还没进入增长期。"))
+        self.assertFalse(spike("要不要切换到增长期打法,你定。"))
+        fx = X.gold_ex5_threshold()
+        ev = X.find_text(fx, "resume", "This looks like the growth stage now.")
+        ev["text"] = ev["text"].replace("This looks like the growth stage now.\n\n1. Switch to the growth-stage plan? A. switch now",
+                                        "This is not the growth stage yet.\n\n1. Keep the launch plan for now? A. keep")
+        r, _ = ext_grade(fx, self.sub("th"), self.w0s)
+        self.assertFalse(_pass_of(r, "stage_prompted_then_confirmed"))              # 没提示过,用户自己说换也不算
+        r, _ = ext_grade(X.gold_ex5_threshold(), self.sub("th_gold"), self.w0s)
+        self.assertTrue(_pass_of(r, "stage_prompted_then_confirmed"))
+
+    # R79:阶段名要和「阶段 / stage」同一行
+    def test_first_screen_stage_word(self):
+        def go(old, new):
+            fx = X.gold_ex5_control()
+            ev = X.find_text(fx, "resume", old)
+            ev["text"] = ev["text"].replace(old, new)
+            r, _ = ext_grade(fx, self.sub("fs"), self.w0s)
+            return _pass_of(r, "resume_first_screen")
+        self.assertTrue(go("stage: 刚上线 (launched)", "阶段:刚上线"))
+        self.assertFalse(go("; stage: 刚上线 (launched).", ".\n- We launched on 2026-10-18 and traffic is small."))
+
+    # R78(疑问 8):提示词照实说明宿主包装;首条消息被驱动改过就记 driver_deviations
+    def test_reply_channel_and_deviation(self):
+        for p in (E.SHORT_PROMPT, G.PROMPT_COMMON):
+            self.assertIn("The coordinator sent a message while you were working", p)
+            self.assertIn("用户本人的回话", p)
+        self.assertNotIn("no coordinator", E.SHORT_PROMPT.lower())
+        fx = X.gold_ex5_control()
+        r, run = ext_grade(fx, self.sub("dev0"), self.w0s)
+        self.assertEqual(r["driver_deviations"], [])
+        tp = E.load_run(run)["sessions"]["resume"]["transcript"]
+        with open(tp, encoding="utf-8") as f:
+            lines = f.readlines()
+        first = json.loads(lines[0])
+        first["message"]["content"] += "\n\n(Harness note: there is no coordinator in this conversation.)"
+        lines[0] = json.dumps(first, ensure_ascii=False) + "\n"
+        with open(tp, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        r2 = E.grade_ext(E.load_run(run), answers_dir=ANSWERS, lifecycle=LC, refs=[X.REF_LAUNCHED])
+        self.assertEqual(len(r2["driver_deviations"]), 1)
+        self.assertEqual(r2["driver_deviations"][0]["added"], "(Harness note: there is no coordinator in this conversation.)")
+        d = self.sub("rep")
+        with open(os.path.join(d, "a.json"), "w", encoding="utf-8") as f:
+            json.dump(r2, f)
+        self.assertEqual(len(G.report(d)["driver_deviations"]), 1)
+
+    # 维持的读法(疑问 1、5、6、7):期望来自卡「只问变了的部分;没变化时不重复提问」「回到第 1 环只问变了的部分」和定义原文
+    def test_maintained_rulings(self):
+        def d30(mod):
+            fx = X.gold_ex5_30days()
+            mod(fx)
+            r, _ = ext_grade(fx, self.sub("d30"), self.w0s)
+            return _pass_of(r, "no_onboarding_rerun"), _pass_of(r, "questions_only_on")
+        self.assertEqual(d30(lambda fx: None), (True, True))
+
+        def ring_status(fx):                                                          # 疑问 6:状态句里的环号也算
+            ev = X.find_text(fx, "resume", "Picking up where we left off.")
+            ev["text"] = ev["text"].replace("Picking up where we left off.", "第 6 环开局都已确认。")
+        self.assertEqual(d30(ring_status)[0], False)
+
+        def material_stop(fx):                                                        # 疑问 1、5:答完档案再停下要材料
+            t = fx["sessions"]["resume"][1]
+            t["events"][-1]["text"] += ("\n\n1. Which social profiles go into sameAs? A. Instagram only B. none\n"
+                                        "2. Where is the site's source repo? A. GitHub B. none\n"
+                                        "3. Should I draft the brief now? A. yes B. later")
+        self.assertEqual(d30(material_stop), (False, False))
+        fx = X.gold_ex5_new_line()                                                    # 疑问 7:加完产品线再停下确认方案
+        fx["sessions"]["resume"][1]["events"][-1]["text"] += "\n\n1. Re-plan the roadmap around wholesale now? A. yes B. later"
+        r, _ = ext_grade(fx, self.sub("nl"), self.w0s)
+        self.assertFalse(_pass_of(r, "no_onboarding_rerun"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -489,7 +489,7 @@ SHORT_PROMPT = (
     "{arm_line}\n\n"
     "用户说:「{prompt}」\n\n"
     "注意:你没有提问工具;需要问用户时,把问题按编号列出来,然后结束这一回合(不要替用户回答、不要编用户的答案)。"
-    "用户的回话会作为下一条消息发给你。")
+    + G.REPLY_CHANNEL)
 
 
 def first_message(sess):
@@ -764,6 +764,8 @@ def _dates_under_confirmed(prof):
 
 WEEKLY_CALL = re.compile(r"\bops(?:\.py)?\b[^\n;|&]*\bweekly\b", re.I)
 HEADING_LINE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*|【)")
+# R79:阶段名要和「阶段 / stage / phase」在同一行(launched、growth、change 这些键名是常用英文词)
+STAGE_WORD = re.compile(r"阶段|\bstage\b|\bphase\b", re.I)
 
 
 def weekly_calls(s):
@@ -795,7 +797,7 @@ def c_resume_first_screen(ec, cr):
         d_ok = last in text or bool(re.search(r"(?<!\d)0?%d\s*月\s*0?%d\s*日" % (m, d), text))
     stage = (ec.ans or {}).get("stage")
     names = G.stage_names(ec.lc).get(_i(stage), []) if stage is not None else []
-    st_hits = G.hits(text, names)
+    st_hits = sorted({h for ln in text.splitlines() if STAGE_WORD.search(ln) for h in G.hits(ln, names)})
     weeks = [int(x) for x in cr.get("week_accept") or []]
     wk = [n for n in weeks if re.search(r"第\s*%d\s*周|week\s*%d(?!\d)|\bW\s*%d(?!\d)" % (n, n, n), text, re.I)]
     wcalls = [c["line"] for c in weekly_calls(s) if c["line"] <= upto]
@@ -890,6 +892,40 @@ def c_profile_contains(ec, cr):
                         "match": cr.get("match"), "date": want_date, "matched_paths": good}
 
 
+# R80:「提示进入下一阶段」= 场景 prompt 正则或下面这组「换 / 进入增长期」的说法,命中处不在否定或条件里
+STAGE_SWITCH_RE = re.compile(
+    r"(?:切换|换|转|进入|迈入|升到|到了|算是|已经是|就是)(?:成|到|为|入)?了?.{0,4}增长期|看起来.{0,8}增长期"
+    r"|(?:switch(?:ing)?|move|moving|transition(?:ing)?|upgrade|graduat(?:e|ed|ing))\s+(?:over\s+)?(?:to|into)\s+"
+    r"(?:the\s+)?growth"
+    r"|(?:entered|entering|reached|in)\s+(?:the\s+)?growth\s+(?:stage|phase)"
+    r"|looks like .{0,20}growth\s+(?:stage|phase)"
+    r"|\b(?:this|we|you|it)(?:'re|'s| are| is)\s+(?:now\s+)?(?:in\s+)?(?:the\s+)?growth\s+(?:stage|phase)", re.I)
+STAGE_CLAUSE = re.compile(r"[,，;；。.!?！？()（）\n、:：—–]")
+STAGE_NEG_BEFORE = re.compile(
+    r"没|未|别|并非|(?<!非)非(?!常)|不(?![错少断仅但只久过])|才(?:算|是|能|会|叫|可以)|如果|若|要是|假如|等到|一旦|除非"
+    r"|\b(?:not|no|never|if|unless|until)\b|n't", re.I)
+STAGE_NEG_AFTER = re.compile(r"还早|太早|尚早|过早|不(?:适用|到|是|算)|用不上|还不|还没|\bnot yet\b|\btoo early\b|\byet\b", re.I)
+A_NOT_A = re.compile(r"(.)不\1")
+
+
+def stage_prompt_hits(pattern, text):
+    """R80:场景 prompt 正则和 STAGE_SWITCH_RE 的命中里,去掉分句内前 30 个字符有否定 / 条件词、或后 12 个字符有
+    「还早 / 不到 / not yet」的;「要不要 / 是不是」这类正反问不算否定。返回剩下的命中文字。"""
+    text = text or ""
+    out = []
+    for rx in (re.compile(pattern, re.I), STAGE_SWITCH_RE):
+        for m in rx.finditer(text):
+            cs = max([0] + [x.end() for x in STAGE_CLAUSE.finditer(text, 0, m.start())])
+            nxt = STAGE_CLAUSE.search(text, m.end())
+            ce = nxt.start() if nxt else len(text)
+            before = A_NOT_A.sub("", text[max(cs, m.start() - 30):m.start()])
+            after = text[m.end():min(ce, m.end() + 12)]
+            if STAGE_NEG_BEFORE.search(before) or STAGE_NEG_AFTER.search(after):
+                continue
+            out.append(m.group(0))
+    return out
+
+
 def _stage_of(path):
     v, _ = G.profile_stage(G.read_json(path) if path else None)
     return None if v is G.MISSING or isinstance(v, (dict, list, bool)) else _i(v)
@@ -901,7 +937,7 @@ def c_stage_prompted(ec, cr):
     if bad:
         return bad
     pr = cr["prompt"]
-    hit = next((st for st in s.stops if re.search(pr, _stop_text(st), re.I)), None)
+    hit = next((st for st in s.stops if stage_prompt_hits(pr, _stop_text(st))), None)
     ev = {"session": s.name, "prompt_stop": stop_info(hit) if hit else None}
     if not hit:
         return False, dict(ev, why="没有一次停下命中 prompt 正则(或命中的那次没有驱动回话)")
@@ -930,8 +966,7 @@ def c_no_stage_prompt(ec, cr):
     bad = _not_ran(s)
     if bad:
         return bad
-    hits_ = [{"line": t["line"], "text": re.search(cr["prompt"], t["text"], re.I).group(0)}
-             for t in s.tr.texts() if re.search(cr["prompt"], t["text"], re.I)]
+    hits_ = [{"line": t["line"], "text": h[0]} for t in s.tr.texts() for h in [stage_prompt_hits(cr["prompt"], t["text"])] if h]
     a = _stage_of(os.path.join(s.ws_start() or "", "seo-ops", "context", "profile.json"))
     b = _stage_of(os.path.join(s.ws_end() or "", "seo-ops", "context", "profile.json"))
     ok = not hits_ and a is not None and a == b
@@ -2051,6 +2086,26 @@ def kind_of(cid, cr, spec):
     return "process"
 
 
+def driver_deviations(R, ec):
+    """R78:每段转录的首条用户消息要和 mutate 打印、存在 sessions/<段>/prompt.txt 的首条消息一致(压空白后相等)。
+    不一致只记下来(report 单列),不作废:同一轮三组拿到的是同一种改法,组间比较还成立,绝对分要带着这条看。"""
+    out = []
+    for n, s in ec.S.items():
+        if not s.ran:
+            continue
+        want = read_text(os.path.join(sess_dir(R["run"], n), "prompt.txt"))
+        got = s.tr.turns[0]["prompt"]["text"]
+        if want is None:
+            out.append({"session": n, "why": "run 目录里没有这一段的 prompt.txt,核不了首条消息"})
+        elif G.squash(got) != G.squash(want):
+            if G.squash(want) in G.squash(got):
+                k = len(os.path.commonprefix([got, want]))
+                out.append({"session": n, "why": "首条消息在 mutate 打印的原文之外多了内容", "added": got[k:].strip()[:300]})
+            else:
+                out.append({"session": n, "why": "首条消息不是 mutate 打印的原文", "first_message": got[:300]})
+    return out
+
+
 def grade_ext(R, answers_dir=None, lifecycle=None, refs=None):
     spec, sc = G.load_scenario(R["scenario"], R["scenarios_file"])
     answers_dir = answers_dir or os.path.join(os.path.dirname(os.path.abspath(R["scenarios_file"])), "answers")
@@ -2082,6 +2137,7 @@ def grade_ext(R, answers_dir=None, lifecycle=None, refs=None):
         void = void or G.void_reason(s.tr, R["arm"])
     return {"scenario": R["scenario"], "family": "ext", "example": sc.get("example"), "product": sc.get("product"),
             "arm": R["arm"], "run": R["run"], "T": R.get("T"), "assertions": out,
+            "driver_deviations": driver_deviations(R, ec),
             "sessions": {n: {"turns": len(s.tr.turns), "stops": len(s.cands), "answered_stops": len(s.stops),
                              "transcript": s.info.get("transcript"), "driver_problems": s.problems,
                              "ended": bool(s.info.get("ended"))} for n, s in ec.S.items()},
