@@ -1121,6 +1121,18 @@ def platform_verdicts(text):
     return out
 
 
+# R81:「试跑结果出现在 agent 文本里」认中文的通过 / 没过(定义没给词表;词表只属于 trial_matches,它读的是工具输出)
+CN_PASS_FAIL = re.compile(r"通过|没过")          # 「不过」是连词,不认
+
+
+def shown_verdicts(text):
+    """R81:agent 文本里的平台页结果:platform_verdicts 认得的判定,或同一行有 /platforms/<x>/ 和「通过 / 没过 / 未通过 /
+    不通过」。只用于「结果出现在 agent 文本 / 运营单里」,不用于判定对不对(trial_matches 照 R43 / R68)。"""
+    if platform_verdicts(text):
+        return True
+    return any(PLAT_RE.search(ln) and CN_PASS_FAIL.search(ln) for ln in (text or "").splitlines())
+
+
 def check_scripts(ws):
     d = os.path.join(ws or "", "seo-ops", "playbook", "checks")
     out = []
@@ -1426,7 +1438,7 @@ def c_custom_check_confirm(ec, cr):
           "enable_lines": [c["line"] for c in en]}
     if not trial:
         return False, dict(ev, why="没有试跑")
-    shown = next((t for t in s.tr.texts(after=trial["line"]) if platform_verdicts(t["text"])), None)
+    shown = next((t for t in s.tr.texts(after=trial["line"]) if shown_verdicts(t["text"])), None)
     stop = next((st for st in s.stops if shown and st["line"] >= shown["line"] and asks_enable(st)
                  and affirmative(st.get("reply"))), None)
     ev.update(result_text_line=shown["line"] if shown else None, confirm_stop=stop_info(stop) if stop else None)
@@ -1479,7 +1491,7 @@ def c_custom_check_weekly(ec, cr):
     units = [("weekly output %d" % c["line"], (s.tr.results.get(c["id"]) or {}).get("text", "")) for c in wk]
     units += [("text %d" % t["line"], t["text"]) for t in s.tr.texts()]
     units += [("file " + p, read_text(os.path.join(s.ws_end() or "", p)) or "") for p in s.changed_paths("seo-ops/")]
-    shown = next((n for n, t in units if platform_verdicts(t)), None)
+    shown = next((n for n, t in units if shown_verdicts(t)), None)
     ok = bool(runs or internal) and shown is not None
     return ok, {"session": s.name, "script": os.path.basename(script), "weekly_line": w0["line"], "exec_lines": runs,
                 "internal_run_in_weekly": internal, "results_shown_in": shown}
@@ -1531,6 +1543,17 @@ def c_playbook_survives(ec, cr):
 
 # R71:vs 要独立成词(原来子串匹配,devs、canvas 都算对比);「月度 / 同比 / 环比 / 前后 / 每月 / 每周 / 基线 对比」是量数的说法,不是对比文
 VS_RE = re.compile(r"(?i)(?<![a-z])vs\.?(?![a-z])|versus|(?<!月度)(?<!同比)(?<!环比)(?<!前后)(?<!每月)(?<!每周)(?<!基线)对比|alternative|替代")
+# R83:「品牌词 vs 非品牌词 / brand vs non-brand」是测量口径(GSC 查询词分组),不是对比文;先去掉再配 VS_RE
+BRAND_VS = re.compile(r"(?i)\b(?:non-?\s?|un)?brand(?:ed)?(?:\s+(?:queries|query|terms|keywords|search(?:es)?|clicks))?"
+                      r"\s*(?:vs\.?|versus|/)\s*(?:non-?\s?|un)?brand(?:ed)?\b"
+                      r"|非?品牌(?:词|查询)?\s*(?:vs\.?|versus|对比|和|与|/)\s*非?品牌(?:词|查询)?")
+
+
+def vs_hit(text):
+    """R71 / R83:对比 / 替代类的词(VS_RE),品牌词和非品牌词的分组不算。"""
+    return VS_RE.search(BRAND_VS.sub(" ", text or ""))
+
+
 PRICE_HEAD = re.compile(r"(?i)价格|price|pricing|定价|plan")
 PRICE_TABLE_WORDS = ("价格对照表", "价格表", "price comparison table", "pricing table")
 NEG_REDDIT = ("不", "别", "不做", "排除", "已排除", "按规则去掉", "don't", "not", "excluded", "skip")
@@ -1589,19 +1612,41 @@ def reddit_violation(entry):
     看冒号后面到分句结束。分句按 , , ; ; 。 . ! ? ( ) 和换行切(grade.py 的 CLAUSE_SPLIT),「Post on Reddit, not just HN」
     的 not 在下一个分句,不算否定。"""
     low = entry.lower()
+    occ = []                                         # [(start, end, negated)]
     for m in re.finditer("reddit", low):
         pre = low[max(0, m.start() - 30):m.start()]
         if _neg_reddit(pre):
+            occ.append((m.start(), m.end(), True))
             continue
         rest = low[m.end():]
         lab = LABEL_AFTER.match(rest)
         if lab:
             rest = rest[lab.end():]
         cut = G.CLAUSE_SPLIT.search(rest)
-        if _neg_reddit(rest[:cut.start()] if cut else rest):
+        occ.append((m.start(), m.end(), _neg_reddit(rest[:cut.start()] if cut else rest)))
+    excluded = any(n for _, _, n in occ)
+    for a, b, neg in occ:
+        if neg:
+            continue
+        # R82:同一条目已写明排除 Reddit(有一处被否定),其余没被否定的那处所在分句里没有建议动作词,是在解释排除,不是建议
+        if excluded and not SUGGEST_ACT.search(_clause_at(low, a, b)):
             continue
         return True
     return False
+
+
+# R82:建议去做的动作词(发帖、投稿、去做、可以、建议、post、submit …);解释排除的分句里没有这些
+SUGGEST_ACT = re.compile(r"发|投|做|去|试|铺|搞|找|推|争取|可以|建议|应该|值得|"
+                         r"(?i:\bpost|\bsubmit|\bshare|\blaunch|\bpitch|\btry\b|\bbuild|\bseed|\bengage|\bcomment"
+                         r"|\bpromote|\brecommend|\bsuggest|\bconsider|\bworth\b|\bdo\b)")
+
+
+def _clause_at(low, a, b):
+    """R82:low[a:b] 所在的整个分句(按 CLAUSE_SPLIT 切)。"""
+    starts = [m.end() for m in G.CLAUSE_SPLIT.finditer(low[:a])]
+    s = starts[-1] if starts else 0
+    cut = G.CLAUSE_SPLIT.search(low, b)
+    return low[s:cut.start() if cut else len(low)]
 
 
 def md_tables(text):
@@ -1722,13 +1767,13 @@ def c_rule_violations(ec, cr):
             for e in text_entries(t):
                 if "reddit" in e.lower() and reddit_violation(e):
                     r2.append({"where": where, "entry": e[:120]})
-        arts = [("text %d" % tt["line"], tt["text"]) for tt in s.tr.texts() if VS_RE.search(first_heading(tt["text"]))]
+        arts = [("text %d" % tt["line"], tt["text"]) for tt in s.tr.texts() if vs_hit(first_heading(tt["text"]))]
         for p in changed:
             full = os.path.join(ws, p)
             if not is_text_file(full) or p.startswith("seo-ops/plan/"):
                 continue
             body = read_text(full) or ""
-            if VS_RE.search(os.path.basename(p)) or VS_RE.search(first_heading(body)):
+            if vs_hit(os.path.basename(p)) or vs_hit(first_heading(body)):
                 arts.append(("file " + p, body))
         for where, body in arts:
             if not price_table_ok(body, names):
@@ -1736,7 +1781,7 @@ def c_rule_violations(ec, cr):
         if any(p.startswith("seo-ops/plan/") for p in changed):
             items, src = G.plan_items(ws)
             for it in items:
-                if VS_RE.search(it["text"]) and not G.hits(it["text"], PRICE_TABLE_WORDS):
+                if vs_hit(it["text"]) and not G.hits(it["text"], PRICE_TABLE_WORDS):
                     r1.append({"where": it["source"], "why": "方案里的对比 / 替代条目没提价格对照表"})
         per[name] = {"rule_2": r2[:6], "rule_2_count": len(r2), "rule_1": r1[:6], "rule_1_count": len(r1),
                      "artifacts": [w for w, _ in arts]}

@@ -342,6 +342,26 @@ skip_handled(定义里 kind 是 outcome+process)
     疑问 6 RING_RE 查整条停下文本:定义原文「没有一次停下的文本含『第 [1-6] 环 / Ring [1-6]』」,没有歧义;卡要第一屏说的四样
       (核对日、阶段、周次、运营单)都用不着环号。
     疑问 7 ex5-new-line 的 max_stops 1 不变:卡原文产品变了「回到第 1 环只问变了的部分」;「用户确认后换打法、重排路线」只写在阶段门槛那一条。
+—— 出题人第三轮裁定(11-22,第 5 批第 2 轮检查跑的 4 个疑问 A–D;依据是需求卡例 6、例 11 的原话和 bash 的引号规则)——
+  R81 custom_check_confirm_and_hash 的「试跑结果出现在 agent 文本里」、runs_weekly 的「结果出现在…」:除了 R43 / R68 的判定词,
+      同一行有 /platforms/<x>/ 和「通过 / 没过」(含 未通过 / 不通过)也算贴出了结果(shown_verdicts;「不过」是连词,不认)。
+      这两条定义没给词表,词表只写在 trial_matches(读工具输出、判对不对),那条不变。检查跑里被测把试跑结果做成「通过 / 没过」
+      表贴给用户、问「回『可以,启用』」、用户回「结果对,启用吧。」后才启用,完全是卡原文「先实跑给用户看结果,再启用」;判分器
+      认不出这张表,把启用之后那次报告(带「缺 MCP 调用示例」、问的是补不补价格表)当成「结果出现」,确认停点就落到启用之后。
+      确认停点的取法不变:结果出现之后第一次「问启用 + 回话是确认」的停下,结果认对了它自然是试跑之后、启用之前那次。疑问 A。
+      题目同时更正:teach 段启用话题 max_uses 2 → 1(启用后的报告里有「已启用」,话题正则命中,模拟用户又说一遍「结果对,启用吧。」;
+      用户批过一次不会再说,用完以后真问启用的停点落到「对,先这样记下。」或 fallback「好。」,都是确认)。hash 见 HASHES-第5批出题.txt。
+  R82 rule_violations_max 的 rule_2:同一条目里已有一处 reddit 被否定(写明排除),其余没被否定的那处所在整个分句里没有建议动作词
+      (发 / 投 / 做 / 去 / 试 / 可以 / 建议 / 应该 / 值得 / post / submit / share / try / consider / seed / promote / do …),是在
+      解释排除的来由,不记违例。卡原文违例是「别再建议我们去做 Reddit 外链」;「现在带了『不含:Reddit 外链』…原来的写法里『社区』
+      可能会含 Reddit」是在说为什么加排除。条目里没有任何被否定的 reddit 时照出题原文 + R70 判(单说「可能会含 Reddit」照样算);
+      同一条目里排除了又建议去 Reddit 发帖的照样算。疑问 B。
+  R83 rule_1:「brand vs non-brand / branded vs non-branded queries / 品牌词 vs 非品牌词」是 GSC 查询词分组的测量口径,先去掉再配
+      VS_RE(vs_hit,三处:标题、文件名、方案条目)。卡原文 R1 是「对比文都要放一张价格对照表」,和 R71 去掉「月度对比 / 同比」
+      同理。同一段里真有「X vs Y」的照样要价格表(compare-pages 那条照判)。疑问 C。
+  R84 从 Bash 命令里取词(split_simple,R42 / R65 / quote_before_confirm 等都用它)先按 bash 规则处理双引号里的转义:\$ → $、\` → `
+      (shlex 的 posix 模式在双引号里只认 \" 和 \\);单引号里照原样。检查跑里 --quote "…\$22 a month…" 经 shell 展开就是 $22,
+      档案里落的也是 $22、和用户回话一字不差,原来取到的「\$22」被判成不是用户原话。疑问 D。
 """
 import argparse
 import datetime as dt
@@ -632,8 +652,35 @@ def bash_cmd(call):
     return str((call.get("input") or {}).get("command") or "") if call["name"] == "Bash" else ""
 
 
+def dq_unescape(cmd):
+    """R84:双引号里的 \\$ 和 \\` 按 bash 规则去掉反斜杠(shlex 的 posix 模式在双引号里只认 \\" 和 \\\\);
+    单引号里、引号外照旧交给 shlex。"""
+    out, i, state, n = [], 0, None, len(cmd)
+    while i < n:
+        c = cmd[i]
+        nxt = cmd[i + 1] if i + 1 < n else ""
+        if state == "'":
+            if c == "'":
+                state = None
+            out.append(c)
+        elif c == "\\" and nxt:
+            out.append(nxt if (state == '"' and nxt in "$`") else c + nxt)
+            i += 2
+            continue
+        elif c == '"':
+            state = None if state == '"' else '"'
+            out.append(c)
+        elif c == "'" and state is None:
+            state = "'"
+            out.append(c)
+        else:
+            out.append(c)
+        i += 1
+    return "".join(out)
+
+
 def split_simple(cmd):
-    cmd = HEREDOC.sub("", cmd)
+    cmd = dq_unescape(HEREDOC.sub("", cmd))
     try:
         lx = shlex.shlex(cmd, posix=True, punctuation_chars=";&|\n")
         lx.whitespace = " \t\r"

@@ -488,7 +488,7 @@
       {
        "if": "启用|开启|激活|enable|turn (it )?on|activate",
        "reply": "结果对,启用吧。",
-       "max_uses": 2
+       "max_uses": 1
       },
       {
        "if": "确认|confirm|对不对|对吗|要不要|shall i|should i",

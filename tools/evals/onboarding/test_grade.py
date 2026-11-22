@@ -1958,5 +1958,107 @@ class Rulings1122P3b(unittest.TestCase):
         self.assertFalse(_pass_of(r, "no_onboarding_rerun"))
 
 
+# 出题人第三轮裁定(第 5 批第 2 轮检查跑的 4 个疑问,R81–R84)。期望按需求卡例 6 原话(「先实跑给用户看结果,再启用」
+# 「别再建议我们去做 Reddit 外链」「对比文都要放一张价格对照表」)、例 11 的 --quote 要是用户原话,以及 bash 的引号规则定。
+TRIAL_TABLE_CN = ("检查已写好并试跑过,还没启用。\n\n| 页面 | 结果 |\n|---|---|\n| `/platforms/slack/` | 通过 |\n"
+                  "| `/platforms/discord/` | 通过 |\n| `/platforms/teams/` | 没过:页面上没找到 MCP 调用示例 |\n"
+                  "| `/platforms/email/` | 没过:页面上没找到 MCP 调用示例 |\n\n"
+                  "1. 试跑结果符合你的预期吗? A. 对,启用 B. 不对\n没问题的话,回「可以,启用」。")
+AFTER_ENABLE_CN = ("检查 mcp_example 已启用,登记了 sha256。\n- 已知没过:`/platforms/teams/` 和 `/platforms/email/` 缺 MCP 调用示例。\n\n"
+                   "1. 要不要给对比文补价格对照表? A. 补 B. 不补")
+
+
+class Rulings1122P4(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="onb_p4_")
+        cls.w0s = {}
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def sub(self, name):
+        return tempfile.mkdtemp(prefix=name + "_", dir=self.tmp)
+
+    def _ex6_cn(self, trial_text=TRIAL_TABLE_CN):
+        fx = X.gold_ex6()
+        t = fx["sessions"]["teach"]
+        t[2]["events"][-1] = X.TX(trial_text)
+        t[3]["events"][-1] = X.TX(AFTER_ENABLE_CN)
+        t.append(X.turn(X.TX("好,先不补。")))
+        return fx
+
+    # R81(疑问 A):agent 文本用「通过 / 没过」贴试跑结果也算给用户看了结果,确认停点是试跑之后、启用之前那次
+    def test_trial_shown_in_chinese(self):
+        self.assertTrue(E.shown_verdicts("| `/platforms/teams/` | 没过:页面上没找到 MCP 调用示例 |"))
+        self.assertTrue(E.shown_verdicts("| /platforms/slack/ | 通过 |"))
+        self.assertFalse(E.shown_verdicts("不过 /platforms/teams/ 我没动。"))
+        self.assertIsNone(E.verdict_of("| /platforms/slack/ | 通过 |"))        # trial_matches 的判定词不变
+        r, run = ext_grade(self._ex6_cn(), self.sub("cn"), self.w0s)
+        self.assertTrue(_pass_of(r, "custom_check_confirm_and_hash"))
+        ev = next(a for a in r["assertions"] if a["id"] == "custom_check_confirm_and_hash")["evidence"]
+        self.assertLess(ev["confirm_stop"]["line"], min(ev["enable_after_reply"]))
+        # 题目更正:启用话题只回一次,启用后的报告(带「已启用」、问别的事)不再收到「结果对,启用吧。」
+        rows = G.load_driver(E.load_run(run)["sessions"]["teach"]["driver_log"])
+        self.assertEqual([x["user_text"] for x in rows].count("结果对,启用吧。"), 1)
+
+    def test_trial_not_shown_before_enable_fails(self):
+        r, _ = ext_grade(self._ex6_cn("试跑跑完了。\n\n1. 要启用这个检查吗? A. 启用 B. 先不"), self.sub("cn_hidden"), self.w0s)
+        self.assertFalse(_pass_of(r, "custom_check_confirm_and_hash"))   # 结果到启用之后才贴出来
+
+    # R82(疑问 B):已写明排除 Reddit 的条目里,解释来由的那处不是建议;同一条目里另建议去 Reddit 发帖的照样是
+    def test_reddit_explaining_exclusion(self):
+        ok = ["- 第 4 项「冷启动外链」(第 2–7 周)现在带了「不含:Reddit 外链」。这是照你的规则 R2 加的,"
+              "原来的写法里「社区」可能会含 Reddit。",
+              "- 已排除 Reddit 外链;原方案里的「社区」一项包含 Reddit"]
+        bad = ["- 按 R2 排除 Reddit 外链。另外建议每周在 r/devops、r/sre 这几个 Reddit 版块发帖带链接",
+               "- Reddit links excluded (R2). That said, consider seeding a few threads in the r/sre subreddit on Reddit",
+               "- 原来的写法里「社区」可能会含 Reddit。",                       # 没写排除,照出题原文算
+               "- Post on Reddit, not just HN"]
+        for e in ok:
+            self.assertFalse(E.reddit_violation(e), e)
+        for e in bad:
+            self.assertTrue(E.reddit_violation(e), e)
+
+    # R83(疑问 C):「brand vs non-brand」是测量口径,不是对比条目;真的对比条目没提价格对照表照样记违例
+    def test_brand_vs_nonbrand_not_comparison(self):
+        for t in ("brand vs non-brand", "branded vs non-branded queries", "Brand vs. non-brand clicks", "品牌词 vs 非品牌词"):
+            self.assertFalse(E.vs_hit(t), t)
+        for t in ("Pingwell vs Alertmint", "brand vs non-brand; Pingwell vs Alertmint page", "Alertmint alternatives"):
+            self.assertTrue(E.vs_hit(t), t)
+
+        def go(items):
+            fx = X.gold_ex6()
+            fx["sessions"]["t4_replan"][0]["events"][1] = X.W(X.PLAN, {"items": items})
+            r, _ = ext_grade(fx, self.sub("bvs"), self.w0s)
+            return _pass_of(r, "rule_violations_max")
+        base = list(X.REPLAN["items"])
+        meas = {"title": "Connect GSC and save the first baseline",
+                "do_en": "save a 28-day baseline: impressions, clicks, brand vs non-brand", "week": 1}
+        self.assertTrue(go(base + [meas]))
+        self.assertFalse(go(base + [meas, {"title": "Pingwell vs Alertmint comparison page", "week": 4}]))
+
+    # R84(疑问 D):命令里双引号中的 \$ 按 bash 规则就是 $;单引号里的反斜杠照原样
+    def test_quote_shell_unescape(self):
+        cmd = ('python3 $S/onboard.py answer --ring 1 --quote "The site is right: the subscription is \\$22 a month, '
+               '\\"q\\" \\`x\\`" --confirm --x \'raw \\$\' --y plain\\$z')
+        o = G.onboard_calls({"name": "Bash", "input": {"command": cmd}})[0]
+        self.assertEqual(o["quote"], 'The site is right: the subscription is $22 a month, "q" `x`')
+        seg = G.split_simple(cmd)[0]
+        self.assertIn("raw \\$", seg)
+        self.assertIn("plain$z", seg)
+
+        class Cx:
+            pass
+        cx = Cx()
+        cx.stops = [{"reply_line": 5, "reply": "The site is right: the subscription is $22 a month, \"q\" `x` ok"}]
+        cx.tr = G.Transcript.__new__(G.Transcript)
+        cx.tr.calls = lambda **k: [{"name": "Bash", "line": 9, "input": {"command": cmd}}]
+        self.assertTrue(G.c_quote(cx, {})[0])
+        cx.stops = [{"reply_line": 5, "reply": "The site is right: the subscription is $21 a month"}]
+        self.assertFalse(G.c_quote(cx, {})[0])
+
+
 if __name__ == "__main__":
     unittest.main()
