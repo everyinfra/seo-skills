@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Solo la biblioteca estándar de Python">
 </p>
 
-<p align="center"><a href="README.md">简体中文</a> · <a href="README.en.md">English</a> · <b>Español</b></p>
+<p align="center"><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <b>Español</b></p>
 
 **Descarga gratuita. Usa tu propia herramienta de IA y tu propio modelo.**
 
@@ -97,7 +97,7 @@ Ningún equipo conoce por dentro los 18 mercados. Si sabes cómo funciona la bú
 
 ## Más
 
-La descripción completa de capacidades, el apartado «Why now» con sus fuentes y la estructura del repositorio están en el [README en inglés](README.en.md) y en el [README en chino](README.md). Historial de versiones: [CHANGELOG.md](CHANGELOG.md).
+La descripción completa de capacidades, el apartado «Why now» con sus fuentes y la estructura del repositorio están en el [README en inglés](README.md) y en el [README en chino](README.zh-CN.md). Historial de versiones: [CHANGELOG.md](CHANGELOG.md).
 
 Problemas y sugerencias en [GitHub Issues](https://github.com/everyinfra/seo-skills/issues). No pegues API keys, credenciales, datos de clientes ni otra información confidencial.
 

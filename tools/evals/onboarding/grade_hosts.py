@@ -120,7 +120,7 @@ class Pkg:
         self.skill_md_path = os.path.join(self.skill, "SKILL.md")
         self.skill_md = read(self.skill_md_path) or ""
         self.fm, self.body_start = frontmatter(self.skill_md)
-        rs = readmes or [p for p in (os.path.join(self.root, x) for x in ("README.md", "HOSTS.md", "README.en.md"))
+        rs = readmes or [p for p in (os.path.join(self.root, x) for x in ("README.md", "HOSTS.md", "README.zh-CN.md"))
                          if os.path.isfile(p)]
         self.readmes = [(os.path.relpath(p, self.root), read(p) or "") for p in rs]
         self.scripts = scripts_in(self.skill)
@@ -543,7 +543,7 @@ def main(argv):
     ap = argparse.ArgumentParser(prog="grade.py hosts")
     ap.add_argument("--skill-dir", required=True)
     ap.add_argument("--plugin-root", required=True)
-    ap.add_argument("--readme", action="append", help="安装说明文件(默认插件根的 README.md、HOSTS.md、README.en.md)")
+    ap.add_argument("--readme", action="append", help="安装说明文件(默认插件根的 README.md、HOSTS.md、README.zh-CN.md)")
     ap.add_argument("--hosts-file")
     ap.add_argument("--label")
     ap.add_argument("--out")

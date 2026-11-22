@@ -248,7 +248,7 @@ skip_handled(定义里 kind 是 outcome+process)
       的「是 / 否」改机械分;C4 / C5 用评审给的违例数、编造数;反事实按 Jaccard 贪心一对一配。通过 = 新版赢 ≥4 项、5 项都有分、
       两版反事实都做了、不是 blind_broken。第 5 批开跑前定。
   R61 宿主检查:S6 是静态启发式,记下由 __file__ / $0 / import.meta.url 推出来的变量,写操作那一行用到它们判失败;安装段 =
-      README.md / HOSTS.md / README.en.md 里标题命中宿主名的小节;可选项没有对应文件判 n/a;should 不过记 warn,must 不过该宿主
+      README.md / HOSTS.md / README.zh-CN.md 里标题命中宿主名的小节;可选项没有对应文件判 n/a;should 不过记 warn,must 不过该宿主
       fail;出题原文里有几对检查互相包含,一处缺陷会让它们一起不过:S8 和 CX3、CU3 都要求 7 个入口都能进;
       S1 的 name 不合规也让 VS2 不过;S6 不过 GM5 就不过。第 5 批开跑前定。
   R63 场景可带 superseded_replies:[{ring, text, voids, why}] = 出题人更正前的模拟用户回话。驱动日志里真发出过 text(压空白后

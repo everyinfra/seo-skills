@@ -55,7 +55,7 @@ def collect_versions():
         out["skills/seo-suite/VERSION"] = None
     m = re.search(r'^VERSION="([^"]+)"', read("install.sh"), re.M)
     out["install.sh"] = m.group(1) if m else None
-    for rel in ("README.md", "README.en.md", "README.es.md"):
+    for rel in ("README.md", "README.zh-CN.md", "README.es.md"):
         text = read(rel)
         badge = re.search(r"badge/version-([0-9][0-9.]*)-", text)
         body = re.search(r"`([0-9]+\.[0-9]+\.[0-9]+)`", text)

@@ -3,7 +3,7 @@ name: seo-suite
 description: 统一的 SEO / GEO 工作台(在网站仓库里改页面 title、meta 描述、robots.txt、canonical、重定向、sitemap 这类搜索引擎看得到的东西时也要先读它:改动要上分支、开草稿 PR):关键词研究、搜索意图与 SERP 分析、内容缺口、竞品与替代方案页规划、内容与标题描述优化、AI 搜索可见度(GEO)、技术审计(检查抓取、收录、跳转、死链、站内链接)、Schema、内链与架构、实体信号、Programmatic SEO、Core Web Vitals、归因埋点、排名监控、外链分析、报告。先统一 intake,再按 overview/research/content/technical/monitoring 路由;每个任务先定市场(18 个语言市场)。Use for SEO, GEO / AI search visibility, keyword research, SERP analysis, content optimization, technical SEO audits (crawl, indexing, redirects, broken links), schema markup, internal linking, site architecture, programmatic SEO, Core Web Vitals, rank tracking, backlink analysis, SEO reporting, llms.txt, AI crawler robots.txt, hreflang and international SEO, global market-by-market SEO (Yandex, Naver, Yahoo Japan, es-419, pt-BR, Arabic RTL, Bill 96, DACH, Indonesian, Hinglish), video SEO, image search, Google Discover and news SEO, ecommerce GEO ladder, algorithm-update attribution, local SEO by vertical. Not for paid ads management or non-search content writing.
 metadata:
   adapted-hosts: claude-code, codex, cursor, copilot, gemini-cli, windsurf, goose, amp, kiro, zcode
-  install: https://github.com/everyinfra/seo-skills#安装
+  install: https://github.com/everyinfra/seo-skills#install
 ---
 
 # SEO Suite
