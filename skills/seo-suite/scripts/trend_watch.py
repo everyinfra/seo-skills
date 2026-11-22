@@ -78,7 +78,7 @@ DEFAULT_THRESHOLDS = {
     "dedup_overlap_pct": 70,      # 词重叠 >70% → 合并/重复否决
 }
 
-# locale(hl, gl, ceid):Google News/Trends 检索参数,按市场(markets.json 18 市场)
+# locale(hl, gl, ceid):Google News/Trends 检索参数,按市场(markets.json 19 市场)
 LOCALE = {
     "zh": ("zh-CN", "CN", "CN:zh-Hans"), "en": ("en", "US", "US:en"),
     "ru": ("ru", "RU", "RU:ru"), "ko": ("ko", "KR", "KR:ko"),
@@ -796,7 +796,7 @@ def read_tokens_file(path):
 
 
 def validate_market(market):
-    """市场码必须是 markets.json 18 市场之一(markets 数据层);文件缺失时警告放行。"""
+    """市场码必须是 markets.json 19 市场之一(markets 数据层);文件缺失时警告放行。"""
     if not os.path.exists(MARKETS_FILE):
         print("[warn] markets.json 缺失,市场码不再校验: %s" % market, file=sys.stderr)
         return
@@ -807,7 +807,7 @@ def validate_market(market):
         print("[warn] markets.json 解析失败,市场码不再校验", file=sys.stderr)
         return
     if market not in codes:
-        raise ValueError("未知市场码 %s(须为 markets.json 18 市场之一)" % market)
+        raise ValueError("未知市场码 %s(须为 markets.json 19 市场之一)" % market)
 
 
 def _strings(obj):
@@ -1196,7 +1196,7 @@ def build_parser():
     w.add_argument("--sources", default=None,
                    help="逗号分隔信号源(%s;默认按市场:zh=全部热搜源,其余=前三)"
                         % ",".join(SOURCE_FETCHERS))
-    w.add_argument("--market", default="en", help="市场码(markets.json 18 市场;决定热搜源/wire 域名/locale)")
+    w.add_argument("--market", default="en", help="市场码(markets.json 19 市场;决定热搜源/wire 域名/locale)")
     w.add_argument("--vertical", default=None, help="垂直词(空格分隔 token;HIGH 整词+25/MED 部分+10)")
     w.add_argument("--topics", default=None, help="垂直词文件(优先于 --vertical;与 config vertical_tokens 同源)")
     w.add_argument("--config", default=None, help="trend_watch.json(signal_sources/wire_domains/thresholds 等)")

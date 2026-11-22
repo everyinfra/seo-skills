@@ -137,12 +137,12 @@ class CompileCheckTests(unittest.TestCase):
 
 
 class CheckItemsTests(unittest.TestCase):
-    """markets 18 断言 / channels 只报渠道名与已配/未配,绝不打印值。"""
+    """markets 19 断言 / channels 只报渠道名与已配/未配,绝不打印值。"""
 
     def test_markets_pass_on_repo_and_fail_on_bad_json(self):
         c = D.check_markets(os.path.join(SCRIPTS, "markets.json"))
         self.assertTrue(c["pass"])
-        self.assertIn("18/18", c["detail"])
+        self.assertIn("19/19", c["detail"])
         bad = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
         bad.write("{broken")
         bad.close()
