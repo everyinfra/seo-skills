@@ -47,6 +47,7 @@ ROUTES_MAX = 200
 README_MAX = 300
 SAMPLE_TYPES = ("pricing", "about", "docs", "blog", "product", "compare", "integrations")
 SECTION_SAMPLES_MAX = 4          # 没归进上面几类的一级目录,最多再各抽 1 页
+SECTION_LABEL_MAX = 40           # 栏目页大标题超过这么长多半是一句卖点,不拿来当产品线名
 SKIP_DIRS = {"node_modules", ".git", ".next", "dist", "build", ".nuxt", ".output", ".svelte-kit",
              ".astro", ".turbo", ".vercel", ".cache", "coverage", "__pycache__", ".venv", "venv", "out"}
 SOURCE_EXT = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".html", ".htm", ".vue", ".svelte", ".astro",
@@ -412,8 +413,20 @@ def route_lines(paths):
     return out
 
 
-def section_lines(paths, samples=None):
-    """没归进已知类型、下面有子页的一级目录(/shop/<x>、/gear/<x>)→ 候选产品线(按目录名取,页数多的在前)。
+def section_label(name, head=None):
+    """一级目录的候选产品线名:栏目页(/shop/)的大标题短、不是一句话就用它(「Shop coffee beans」),
+    读不到或像一句卖点就用目录名(「Shop」)。"""
+    base = re.sub(r"[-_]+", " ", name).strip()
+    base = base[:1].upper() + base[1:]
+    h = " ".join(str((head or {}).get("h1") or "").split())
+    if not h or len(h) > SECTION_LABEL_MAX or re.search(r"[。!?!?,,;;::|]|\.(\s|$)", h):
+        return base
+    return h
+
+
+def section_lines(paths, samples=None, heads=None):
+    """没归进已知类型、下面有子页的一级目录(/shop/<x>、/gear/<x>)→ 候选产品线(页数多的在前)。
+    名字先取栏目页的大标题(heads:目录名 → {"h1"}),读不到用目录名;两个目录取到同一个标题时都退回目录名。
     只有一页的目录(/about/、/shipping/ 这类)不算。读站点时抽过这些目录的页(samples 里 type=section):
     有的抽样页上有价格、有的没有,就只留有价格的(卖东西的目录),都没有价格就全留。"""
     dirs = {}
@@ -435,11 +448,12 @@ def section_lines(paths, samples=None):
     if any(priced.values()):
         dirs = {k: v for k, v in dirs.items() if priced.get(k, True)}
     ranked = sorted(dirs.items(), key=lambda kv: (-len(kv[1][1]), kv[0]))
-    out = []
-    for _, (name, _) in ranked:
-        n = re.sub(r"[-_]+", " ", name).strip()
-        out.append(n[:1].upper() + n[1:])
-    return out
+    labels = [section_label(name, (heads or {}).get(key)) for key, (name, _) in ranked]
+    seen = {}
+    for x in labels:
+        seen[x.lower()] = seen.get(x.lower(), 0) + 1
+    return [x if seen[x.lower()] == 1 else section_label(name)
+            for x, (_, (name, _)) in zip(labels, ranked)]
 
 
 def classify_segments(segs):
@@ -728,6 +742,20 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
         f, fx = page_features(sr, u)
         res["samples"].append(dict({"type": t}, **f))
         ctx["sample_extra"][u] = fx
+    # 没归类的一级目录:抽到的是子页(/shop/<x>)时再读一次栏目页(/shop/),拿它的大标题给候选产品线起名
+    ctx["section_heads"] = {}
+    for s in [x for x in res["samples"] if x.get("type") == "section"]:
+        su = urllib.parse.urlsplit(s["url"])
+        parts = [x for x in su.path.split("/") if x]
+        _, segs = split_locale(su.path)
+        if not segs:
+            continue
+        head = s
+        if len(segs) > 1:
+            idx = "%s://%s/%s/" % (su.scheme, su.netloc, "/".join(parts[:len(parts) - len(segs) + 1]))
+            head, _ = page_features(fetcher.get(idx, quiet_404=True), idx)
+        if head.get("status") == 200 and head.get("h1"):
+            ctx["section_heads"][segs[0].lower()] = {"h1": head["h1"][0], "url": head.get("final_url") or head.get("url")}
 
     if wayback and is_local_host(host):
         errors.append("本机 / 私网站点(%s)不查 Wayback 最早快照" % host)
@@ -1245,14 +1273,14 @@ def build_facts(site_scan, ctx, repo_scan, existing):
     # 首页 h2 多半是「为什么选我们」这类卖点句,不拿来兜底;路由推的只算推测,条目太多(工具、商品清单)不算产品线。
     # 拿不准就留一条「未知」,开局第 1 环问用户。
     rl = rl_site or rl_repo
-    sl = [] if rl else section_lines((ctx or {}).get("pool_paths"), samples)
+    sl = [] if rl else section_lines((ctx or {}).get("pool_paths"), samples, (ctx or {}).get("section_heads"))
     if prod_sec:
         add("product.lines", prod_sec[:LINES_MAX], ctx.get("llms_src") if ctx else None, "fact")
     elif rl and len(rl) <= LINES_MAX:
         add("product.lines", rl, (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
     elif sl and len(sl) <= LINES_MAX:
         add("product.lines", sl, (ctx or {}).get("pool_src"), "inferred",
-            note="按 sitemap 里有子页的一级目录猜的(目录名,不是页面上写的产品名)")
+            note="按 sitemap 里有子页的一级目录猜的(名字取栏目页的大标题,读不到就用目录名)")
     elif ss or repo_scan:
         if sl and not rl:
             note = "sitemap 里有 %d 个带子页的一级目录(例:%s),太多,不当产品线" % (len(sl), "、".join(sl[:3]))

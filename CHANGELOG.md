@@ -107,6 +107,16 @@ Future content or structure changes must bump the version and add a dated entry.
     After the weekly sheet, missing materials and permission questions no longer become numbered questions: plays declare `needs` in `data/playbooks.json` (brand profile links, site source, production domain) and `plan.py build` copies them; an item that cannot be done without a material is skipped for "the one thing"; missing materials appear in the first screen as plain statements, not numbered and without question marks, at most once per 30 days. A fixed "8. After the sheet" section says to stop only when the first screen has questions, to draft briefs, patches and submission lists directly, to write patches when the workspace has no site source, and to treat "carry on" as the default.
   - 小任务做完直接汇报,后续写成陈述句的建议;`fix_plan.py --git-branch` 的 PR 建议先印推分支的命令,仓库没有远端时印 `git remote add origin <远端仓库地址> && git push -u origin <分支>`,当作交付,不停下来问。用户规则要求的产出元素(比如价格对照表)在 brief 和大纲阶段就画出来(表头、行名填好,数留空格):写进 SKILL.md、`content-structure-templates.md` 和 `playbook.py context` 给 agent 的说明。
     Small tasks end with a report and plain-statement follow-ups; `fix_plan.py --git-branch` prints the push command before the PR command, with `git remote add origin … && git push -u origin <branch>` when the repo has no remote, as a deliverable rather than a question. Elements the user's rules require (such as a price comparison table) are drawn in the brief and outline with headers and row names filled in, per SKILL.md, `content-structure-templates.md` and `playbook.py context`.
+- **检查跑之后的修复**:
+  Fixes after the check run:
+  - 开局草稿里按 sitemap 目录猜的候选产品线,名字先取栏目页(`/shop/`)的大标题,读不到或像一句卖点(带逗号、句号,超过 40 个字符)就用目录名;修前只写目录名(「Shop」),看不出卖的是什么。
+    Candidate product lines guessed from sitemap sections are named after the section page's main heading; the directory name is the fallback when the heading is missing or reads like a sentence.
+  - 用户规则的原话点到某条路线项做的那类页面时(规则说「对比文」,路线项是「对比页和替代页」),`plan.py build` 把原话写进那一项的 `do`、`do_en` 和新字段 `rule_notes`;「按你的规则」一节照旧。`plan.json` 的其他字段不变。
+    When a user rule names the kind of page a roadmap item produces, `plan.py build` writes the rule's words into that item's `do`, `do_en` and a new `rule_notes` field; the "Your rules" section stays.
+  - 方案定稿以后再跑 `plan.py build` 不重排、不改文件,只把定稿的路线再印一遍;要重排用新参数 `--replan`(新方案回到草稿、要用户再确认)。`loops.py resolve` 换阶段、季度复盘之后的提示改成 `plan.py build --replan`。修前顺手再跑一次 build 会把用户确认过的方案换成草稿。
+    Running `plan.py build` on an approved plan no longer replaces it: it prints the approved roadmap and changes nothing. Use the new `--replan` flag to rebuild (the new plan is a draft until the user confirms again).
+  - `onboard.py answer` 新增 `--add <列表键>=<一项>`(产品线、客户、语言):现有的留着,新的接在后面;`--set` 的问题 id 只差后缀、且只有一个对得上时(`market` → `market_first`)代填并打印记成了哪个。
+    `onboard.py answer` gains `--add <list key>=<item>` to append to a list field, and fills in a question id that only lacks its suffix when exactly one id matches.
 
 ## 0.47.1 - 2026-11-21
 

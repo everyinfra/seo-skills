@@ -676,7 +676,7 @@ def resolve_hint(loop_id):
     return {"profile-review": "都没变就只带 --quote;有变的加 --set <键>=<新值>(列表加一项用 --add <键>=<新项>)",
             "product-change": "是新产品线:加 --add product.lines=<产品线名>;不是:只带 --quote",
             "stage-threshold": "确认换阶段:加 --stage <阶段号>;不换:只带 --quote",
-            "quarterly-review": "路线要改的,记完再 plan.py build 出新草稿",
+            "quarterly-review": "路线要改的,记完再 plan.py build --replan 出新草稿",
             "site-move": "同意存基线就只带 --quote,再跑 site_move.py baseline"}.get(loop_id, "")
 
 
@@ -800,10 +800,10 @@ def cmd_resolve(ns):
                  {"at": today.isoformat(), "loop": ns.loop, "result": "resolved", "fp": fpr, "quote": ns.quote, "changed": changed})
     nxt = ""
     if "stage" in changed or ns.loop == "quarterly-review":
-        nxt = "下一步:plan.py build 重排路线,发给用户确认(开局第 6 环)。"
+        nxt = "下一步:plan.py build --replan 重排路线,发给用户确认(开局第 6 环)。"
     elif "product.lines" in changed:
         nxt = ("产品线记进档案了。这周照原路线做,不用为它再停下;要把新产品线排进路线,季度复盘或用户提出时再跑 "
-               "plan.py build。")
+               "plan.py build --replan。")
     print("记下了:%s%s。%s" % (ns.loop, (",改了 " + "、".join(changed)) if changed else "", nxt))
     return 0
 

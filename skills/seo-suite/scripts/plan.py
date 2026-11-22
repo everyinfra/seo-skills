@@ -17,7 +17,8 @@
 stages 阶段标签),同 id 覆盖内置的;和内置打法一起排序,同样过 only_if / veto / 禁用清单。
 
 用法:
-  python3 plan.py build --ws seo-ops [--metrics m.json] [--top 10] [--json]
+  python3 plan.py build --ws seo-ops [--metrics m.json] [--top 10] [--json] [--replan]
+    已有定稿方案(status=approved)时不加 --replan 不重排、不改文件,只把定稿的路线再印一遍。
   python3 plan.py show --ws seo-ops
 产出:seo-ops/plan/plan.json、roadmap.md、strategy-book.zh.md、strategy-book.en.md
 退出码:0 正常;2 输入错;3 开局第 1 环没确认或阶段未知(先回开局)。
@@ -433,6 +434,8 @@ def build(ws, metrics=None, top=10, today=None):
             drop = {"cur": c, "prev": pv, "delta_pct": round((c - pv) / pv * 100, 1), "groups": [],
                     "source": (prof.get("metric_sources") or {}).get("gsc_clicks_28d") or "档案 metrics"}
     recs = [recommendation(p, facts, i + 1, one_mkt, goal_text, drop) for i, p in enumerate(sched)]
+    user_rules = PB.rules_for(ws, "plan")
+    apply_user_rules(recs, user_rules)
     themes = {}
     for r in recs[:top]:
         themes.setdefault(r["theme"], []).append(r["score"])
@@ -454,7 +457,7 @@ def build(ws, metrics=None, top=10, today=None):
             "items": recs[:top], "more": recs[top:],
             "backlog": [{"id": p["id"], "title": p["title"]} for p in backlog], "skipped": skipped,
             "deny": [d["item"] for d in deny],
-            "user_rules": PB.rules_for(ws, "plan"),
+            "user_rules": user_rules,
             "assumptions": {"unconfirmed_facts": unconfirmed, "unknown_facts": unknown, "skipped_rings": skipped_rings,
                             "audit_skipped": audit_skipped,
                             "missing_slots": sorted({m for r in recs[:top] for m in r["facts_missing"]})},
@@ -497,6 +500,39 @@ def plan_items(plan):
         it.setdefault("do_en", it["do"])
         out.append(it)
     return out
+
+
+RULE_STOP_EN = {"first", "pages", "build", "start", "draft", "every", "there", "where", "which", "their", "about"}
+
+
+def rule_touches(quote, rec):
+    """用户规则的原话里点到了这条路线项做的那类页面(「对比文都要放价格对照表」↔ 对比页和替代页)。
+    只拿路线项自己的页面类型和标题去原话里找,规则没有结构化的触发条件,宁可多带一条提醒。"""
+    q = (quote or "").lower()
+    terms = set()
+    for t in list(rec.get("page_types") or []) + re.split(r"[和、,,::/\s]+", rec.get("title") or ""):
+        t = re.sub(r"(页面|页|文章|文)$", "", str(t).strip())
+        if len(t) >= 2 and not t.isascii():
+            terms.add(t.lower())
+    for w in re.findall(r"[A-Za-z]{5,}", rec.get("title_en") or ""):
+        w = w.lower()
+        if w not in RULE_STOP_EN:
+            terms.add(w)
+            if w.endswith("s"):
+                terms.add(w[:-1])
+    return any(t in q for t in terms)
+
+
+def apply_user_rules(recs, rules):
+    """适用于方案的用户规则:点到哪条路线项,就把原话写进那一项的做法(中英都写)和 rule_notes。"""
+    for r in recs:
+        hit = [u for u in rules if rule_touches(u.get("quote"), r)]
+        if not hit:
+            continue
+        r["rule_notes"] = [{"id": u["id"], "quote": u["quote"]} for u in hit]
+        r["do"] = (r.get("do") or "") + "".join(";照你的规则 %s:「%s」" % (u["id"], u["quote"]) for u in hit)
+        r["do_en"] = (r.get("do_en") or "") + "".join('; per your rule %s: "%s"' % (u["id"], u["quote"]) for u in hit)
+    return recs
 
 
 def by_week(recs):
@@ -656,6 +692,13 @@ def cmd_build(ns):
     plan = build(ws, metrics, ns.top)
     d = os.path.join(ws, "plan")
     old = read_json(os.path.join(d, "plan.json"))
+    if old and old.get("status") == "approved" and not ns.replan:
+        # 用户确认过的方案不因为顺手再跑一次 build 就退回草稿;真要重排要明说
+        print(render_roadmap(old))
+        print("方案已定稿(%s,用户原话「%s」),这次没有重排,文件没动。" % (
+            old.get("approved_at") or old.get("generated_at") or "日期未记", old.get("approved_quote") or ""))
+        print("档案、规则或阶段变了要重排:plan.py build --replan(新方案回到草稿,要发给用户再确认)。只看方案:plan.py show。")
+        return 0
     if old and old.get("status") == "approved":
         plan["previous_approved"] = {"generated_at": old.get("generated_at"), "approved_quote": old.get("approved_quote")}
     write_text(os.path.join(d, "plan.json"), json.dumps(plan, ensure_ascii=False, indent=1))
@@ -668,7 +711,10 @@ def cmd_build(ns):
     else:
         print(render_roadmap(plan))
         print("写了:%s/{plan.json,plan.md,roadmap.md,strategy-book.zh.md,strategy-book.en.md}" % d)
-        print("下一步:把三条策略和路线发给用户(开局第 6 环),停下等确认。")
+        if plan.get("previous_approved"):
+            print("注意:原来定稿的方案已被这份新草稿替换。下一步:把新路线发给用户,停下等确认(onboard.py show --ring 6)。")
+        else:
+            print("下一步:把三条策略和路线发给用户(开局第 6 环),停下等确认。")
     return 0
 
 
@@ -690,6 +736,8 @@ def main(argv=None):
     b.add_argument("--metrics")
     b.add_argument("--top", type=int, default=10)
     b.add_argument("--json", action="store_true")
+    b.add_argument("--replan", action="store_true",
+                   help="已有定稿方案时重排:新方案回到草稿,要发给用户再确认(不加这个参数,定稿方案原样不动)")
     s = sub.add_parser("show")
     s.add_argument("--ws", help="seo-ops 工作区(默认 ./seo-ops)")
     ns = ap.parse_args(argv)

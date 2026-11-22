@@ -1280,7 +1280,7 @@ def cmd_answer(ns):
     r = ns.ring
     if not 1 <= r <= 6:
         raise UsageError("--ring 只能是 1–6")
-    check_quote(ns.quote, bool(ns.correct or ns.unknown))
+    check_quote(ns.quote, bool(ns.correct or ns.add or ns.unknown))
     if r > 1 and prof["rings"]["1"]["status"] != "confirmed":
         raise GateError("第 1 环还没确认,不能记第 %d 环" % r)
     ring = prof["rings"][str(r)]
@@ -1289,10 +1289,26 @@ def cmd_answer(ns):
     d = bank()[r]
     qmap = {q["id"]: q for q in d["questions"]}
     sets = parse_kv(ns.set, "--set")
-    for k in sets:
+    for k in list(sets):
         if k not in qmap:
-            raise UsageError("第 %d 环没有问题 %s;有:%s" % (r, k, ", ".join(qmap)))
+            near = [q for q in qmap if q.startswith(k + "_")]     # market → market_first:只有一个对得上才代填
+            if len(near) != 1 or near[0] in sets:
+                raise UsageError("第 %d 环没有问题 %s;有:%s" % (r, k, ", ".join(qmap)))
+            print("--set %s 记成 %s(这一环的问题 id)" % (k, near[0]))
+            sets = {(near[0] if x == k else x): v for x, v in sets.items()}
     corrections = parse_kv(ns.correct, "--correct")
+    for k, v in parse_kv(ns.add, "--add").items():   # 列表字段加一项(用户说还有一条产品线):现有的留着,新的接在后面
+        if k not in lifecycle.PROFILE_LIST_KEYS:
+            raise UsageError("--add 只能往列表字段加一项(%s);改别的字段用 --correct %s=<新值>" % (
+                "、".join(lifecycle.PROFILE_LIST_KEYS), k))
+        if k in corrections:
+            raise UsageError("%s 同时写了 --correct 和 --add:整份换用 --correct,只加一项用 --add" % k)
+        cur = fact_value(prof, k)
+        cur = [str(x) for x in (cur if isinstance(cur, list) else split_list(cur) if has_value(cur) else [])]
+        have = {x.strip().lower() for x in cur}
+        new = [x for x in split_list(v) if x.strip().lower() not in have]
+        if new:
+            corrections[k] = ";".join(cur + new)
     staged = json.loads(json.dumps(prof))         # 纠正先在副本上做:被挡住时档案不动
     for k, v in corrections.items():
         apply_correction(staged, r, k, v, ns.quote)
@@ -1676,6 +1692,8 @@ def build_parser():
     p.add_argument("--ring", type=int, required=True)
     p.add_argument("--set", action="append")
     p.add_argument("--correct", action="append")
+    p.add_argument("--add", action="append", metavar="键=新项",
+                   help="往列表字段(产品线、客户等)加一项,现有的留着;整份换用 --correct")
     p.add_argument("--unknown", action="append")
     p.add_argument("--quote")
     p.add_argument("--confirm", action="store_true")

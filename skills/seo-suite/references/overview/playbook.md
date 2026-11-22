@@ -34,7 +34,11 @@ python3 "$S/teach.py" rule remove R2 --quote "Reddit 外链可以做了"     # �
 - 不改 rules.md 和 deny.json 的手写格式;要改就用 teach.py。
 - 不是「不做 X」的规则(`--no-deny`),适用范围含 plan(或没限定)的,`plan.py build` 原话照抄进 `plan.json` 的
   `user_rules` 和 plan.md、roadmap.md、两本战略书的「按你的规则」/「Your rules」一节,第 6 环那一块里也列出来。
-  规则只存原话、没有结构化的触发条件,所以不逐条判断哪条建议该套哪条规则。
+  规则原话里点到某条路线项做的那类页面时(规则说「对比文」,路线项的页面类型是「对比页」),原话还会写进那一项的
+  做法(`do`、`do_en`)和 `rule_notes`。规则只存原话、没有结构化的触发条件,这里只按页面类型和标题里的词去对,
+  对不上的规则只出现在「按你的规则」一节。
+- 方案定稿(`status=approved`)以后,`plan.py build` 不加 `--replan` 不重排、不改文件,只把定稿的路线再印一遍;
+  档案、规则或阶段变了要重排用 `plan.py build --replan`,新方案回到草稿,发给用户再确认。
 
 ## 二、禁用清单:推荐代码直接过滤
 
