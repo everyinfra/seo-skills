@@ -1,5 +1,5 @@
 {
- "about": "RQ-237 第 2 批:按产品阶段的打法库(plan.py 读)。每条打法只属于列出的阶段,plan.py 只从当前阶段里选,不跨阶段。字段:stages 适用阶段;theme 归哪条策略;dims 补哪一维成熟度(按 lifecycle 的最弱一格加权);base 本阶段内的基础优先级 1-5(base_by_stage 按阶段改写,比如需求验证在想法阶段 5、上线前 2);do / do_en 动作模板,{product} {main_line} {lines} {customers} {conversion} {competitor} {market} 从开局档案取,取不到用括号里的通用说法并标出缺哪条;page_types 动哪类页面;metric 预期动哪个数;measure 怎么量;week 最早第几周开始、weeks 持续几周、after 依赖哪几条;veto 任一条件成立就本轮出局(理由写进战略书);done_if 条件全部成立就当已做完、不再建议;tags 给禁用清单匹配用;ref 详细做法;cmd 首条命令。条件写法和 data/lifecycle.json 相同(key 来自 lifecycle 的证据表)。用户在 seo-ops/playbook/plays.json 里写 {\"plays\": [...]} 可以加自己的打法,同 id 覆盖内置的。 goals:这条打法对上第 1 环哪类目标(lead 留资 / 候补、signup 注册 / 试用、purchase 购买 / 订阅 / 联盟点击、awareness 品牌曝光、ai 被 AI 引用),对上的排序加分;do_one_market / do_en_one_market:已确认只做一个市场时换用的文案(不出多语言);uses_measured_drop:方案里写进量到的掉量页型和数字。",
+ "about": "RQ-237 第 2 批:按产品阶段的打法库(plan.py 读)。每条打法只属于列出的阶段,plan.py 只从当前阶段里选,不跨阶段。字段:stages 适用阶段;theme 归哪条策略;dims 补哪一维成熟度(按 lifecycle 的最弱一格加权);base 本阶段内的基础优先级 1-5(base_by_stage 按阶段改写,比如需求验证在想法阶段 5、上线前 2);do / do_en 动作模板,{product} {main_line} {lines} {customers} {conversion} {competitor} {market} 从开局档案取,取不到用括号里的通用说法并标出缺哪条;page_types 动哪类页面;metric 预期动哪个数;measure 怎么量;week 最早第几周开始、weeks 持续几周、after 依赖哪几条;veto 任一条件成立就本轮出局(理由写进战略书);done_if 条件全部成立就当已做完、不再建议;tags 给禁用清单匹配用;ref 详细做法;cmd 首条命令。条件写法和 data/lifecycle.json 相同(key 来自 lifecycle 的证据表)。用户在 seo-ops/playbook/plays.json 里写 {\"plays\": [...]} 可以加自己的打法,同 id 覆盖内置的。 goals:这条打法对上第 1 环哪类目标(lead 留资 / 候补、signup 注册 / 试用、purchase 购买 / 订阅 / 联盟点击、awareness 品牌曝光、ai 被 AI 引用),对上的排序加分;do_one_market / do_en_one_market:已确认只做一个市场时换用的文案(不出多语言);uses_measured_drop:方案里写进量到的掉量页型和数字。 needs 这一项要的材料(ops.py 每周检查:entity.profiles 品牌平台主页链接,缺了这一项先放着;site.source 站点源码,缺了出改动稿;site.public_domain 正式域名,本机预览站时提醒)。",
  "themes": {
   "validate": {
    "name": "需求验证与定位",
@@ -485,6 +485,9 @@
    "cmd": "python3 scripts/robots_posture.py --help",
    "goals": [
     "ai"
+   ],
+   "needs": [
+    "site.source"
    ]
   },
   {
@@ -518,6 +521,9 @@
    "goals": [
     "signup",
     "purchase"
+   ],
+   "needs": [
+    "site.source"
    ]
   },
   {
@@ -583,7 +589,10 @@
     "GSC"
    ],
    "ref": "references/technical/validation-guide.md",
-   "cmd": "python3 scripts/indexnow.py --help"
+   "cmd": "python3 scripts/indexnow.py --help",
+   "needs": [
+    "site.public_domain"
+   ]
   },
   {
    "id": "cold-start-links",
@@ -654,6 +663,11 @@
    "cmd": "python3 scripts/schema_lint.py --help",
    "goals": [
     "awareness"
+   ],
+   "needs": [
+    "entity.profiles",
+    "site.source",
+    "site.public_domain"
    ]
   },
   {
@@ -725,6 +739,9 @@
    "cmd": "python3 scripts/llmstxt.py --help",
    "goals": [
     "ai"
+   ],
+   "needs": [
+    "site.source"
    ]
   },
   {
@@ -804,7 +821,10 @@
     "体检"
    ],
    "ref": "references/technical/audit-rule-catalog.md",
-   "cmd": "python3 scripts/project.py run triage"
+   "cmd": "python3 scripts/project.py run triage",
+   "needs": [
+    "site.source"
+   ]
   },
   {
    "id": "cluster-expand",
@@ -986,6 +1006,9 @@
    },
    "goals": [
     "purchase"
+   ],
+   "needs": [
+    "site.source"
    ]
   },
   {
@@ -1646,7 +1669,11 @@
     "schema"
    ],
    "ref": "references/technical/schema-templates.md",
-   "cmd": "python3 scripts/schema_lint.py --help"
+   "cmd": "python3 scripts/schema_lint.py --help",
+   "needs": [
+    "site.source",
+    "site.public_domain"
+   ]
   },
   {
    "id": "launch-day-pack",
@@ -1677,7 +1704,10 @@
     "上架"
    ],
    "ref": "references/technical/validation-guide.md",
-   "cmd": "python3 scripts/directory_tracker.py --help"
+   "cmd": "python3 scripts/directory_tracker.py --help",
+   "needs": [
+    "site.public_domain"
+   ]
   },
   {
    "id": "launch-baseline",
@@ -1830,7 +1860,10 @@
     "hreflang"
    ],
    "ref": "references/technical/redirects-canonical.md",
-   "cmd": "python3 scripts/link_graph.py --help"
+   "cmd": "python3 scripts/link_graph.py --help",
+   "needs": [
+    "site.source"
+   ]
   },
   {
    "id": "top-links-update",

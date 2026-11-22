@@ -405,6 +405,8 @@ def cmd_start(ns):
                 raise UsageError("project.py init 失败:%s" % (p.stderr or p.stdout)[-400:])
     os.makedirs(ctx(ws), exist_ok=True)
     ensure_private_ignored(ws)
+    if ns.allow_local:
+        remember_allow_local(ws)
     scan_path = ctx(ws, "scan.json")
     errors = []
     if ns.scan:
@@ -454,6 +456,23 @@ def cmd_start(ns):
         print("读取时有 %d 个错误(已记进 scan.json):%s" % (len(errors), ";".join(map(str, errors[:3]))),
               file=sys.stderr if ns.json else sys.stdout)
     return cmd_show(argparse.Namespace(ws=ws, ring=1, json=ns.json))
+
+
+def remember_allow_local(ws):
+    """本机预览站开局时带了 --allow-local:记进 project.yaml(allow_local: true),之后的运营单、循环不用再带。"""
+    path = os.path.join(ws, "project.yaml")
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        text = ""
+    if re.search(r"(?m)^allow_local:", text):
+        text = re.sub(r"(?m)^allow_local:.*$", "allow_local: true", text)
+    else:
+        text = text + ("" if not text or text.endswith("\n") else "\n") + "allow_local: true\n"
+    os.makedirs(ws, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
 
 
 def is_loopback(host):
@@ -1575,6 +1594,9 @@ def cmd_status(ns):
         print("明确不做:" + "、".join(out["deny"]))
     print("档案的键:事实在 facts[](每条 key / value / status / source),顶层 _schema 是脚本写好的映射"
           "(%s → facts 里 key 等于它的那一条;stage → stage.id);读档案按它取,不用手加。" % "、".join(lifecycle.PROFILE_FACT_KEYS))
+    if all(row["status"] in ("confirmed", "skipped") for row in rows):
+        print("开局已完成。第二次打开只跑这一条,把它最前面「原样发给用户」那一块原样贴出:%s"
+              % lifecycle.shell_cmd(os.path.join(HERE, "project.py"), ["ops", "weekly", "--ws", ws]))
     return 0
 
 
@@ -1671,7 +1693,7 @@ def build_parser():
     add_ws(p)
     p.add_argument("--set", action="append")
     p.add_argument("--source")
-    p.add_argument("--at", help="这批指标的截止日 YYYY-MM-DD(默认今天;记进指标历史,阶段门槛循环用)")
+    p.add_argument("--at", help="这批指标的截止日 YYYY-MM-DD(默认从 --source 里的 Pages_起_止.csv 取「止」,取不到用今天;记进指标历史,阶段门槛循环用)")
     p = sub.add_parser("status")
     add_ws(p)
     p.add_argument("--json", action="store_true")

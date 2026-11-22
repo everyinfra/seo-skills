@@ -707,6 +707,9 @@ def context_text(ws):
         L.append("已启用的自定义检查(每周运营单会跑):" + "、".join(en))
     if ch:
         L.append("脚本改过、已自动停用、等用户再确认的检查:" + "、".join(ch) + "(teach.py check try 再 enable)")
+    if rules:
+        L.append("规则要求产出必须有的元素(表格、清单、某一节):brief 和大纲阶段就画出来——表格写好表头和行名,"
+                 "数还没有就留空格;不能只写一句「第 N 节放某某表」。")
     L.append("改规则用 teach.py(rule add / rule remove),不要手改 deny.json。")
     text = "\n".join(L)
     return text[:CONTEXT_MAX]

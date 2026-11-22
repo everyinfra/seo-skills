@@ -711,6 +711,9 @@ def scan_site(site, max_pages, max_urls, wayback, errors):
             locales[loc] = locales.get(loc, 0) + 1
     res["page_types"] = dict(sorted(types.items(), key=lambda kv: (-kv[1], kv[0])))
     res["locales"] = dict(sorted(locales.items(), key=lambda kv: (-kv[1], kv[0])))
+    if urls:                                           # 一级栏目页数:以后每周运营单拿 sitemap 和它比,认新栏目
+        from lifecycle import section_counts
+        res["sections"] = dict(sorted(section_counts(urls).items()))
 
     llms, h2s, llms_src = scan_llms(fetcher, origin)
     res["llms"] = llms

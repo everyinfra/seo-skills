@@ -388,6 +388,7 @@ def recommendation(p, facts, rank, one_mkt=False, goal_text="", drop=None):
             "facts_used": [{"slot": s, "value": facts[s]["value"], "source": facts[s]["source"],
                             "confirmed": facts[s]["confirmed"]} for s in used],
             "facts_missing": missing, "deny_notes": p.get("deny_notes") or [], "ref": p.get("ref", ""), "cmd": cmd,
+            "needs": list(p.get("needs") or []),
             "goal": ("对上第 1 环的目标:「%s」" % goal_text) if p.get("goal_hit") and goal_text else ""}
 
 

@@ -11,7 +11,9 @@ python3 scripts/project.py ops weekly            # 在站点仓库根目录(有 
 python3 scripts/project.py ops monthly           # 周单 + 内容退役候选 + 事实重抽提醒
 ```
 
-常用参数:`--top-n 50`(深审页数)、`--workers 6`(轻检并发)、`--repo PATH --rev origin/main`(给推荐项找源码)、`--external FILE`(指定外部数据包)、`--no-net`(只用已有数据)、`--allow-local`(站点是 localhost / 127.0.0.1 预览时才加;不加就拒跑,防止把预览当生产记进台账)。
+常用参数:`--top-n 50`(深审页数)、`--workers 6`(轻检并发)、`--repo PATH --rev origin/main`(给推荐项找源码)、`--external FILE`(指定外部数据包)、`--no-net`(只用已有数据)、`--allow-local`(站点是 localhost / 127.0.0.1 预览时才加;不加就拒跑,防止把预览当生产记进台账。开局 `onboard.py start --allow-local` 过的工作区记在 `project.yaml` 的 `allow_local: true`,之后不用再带)。
+
+开局做完以后,输出最前面先印「原样发给用户」的首屏块和「给 agent」一段(见 [loops-and-site-move](../lifecycle/loops-and-site-move.md) 第 1 节),后面才是运营单全文;`agenda.md` 是存档,第二次打开不读它当现状。
 
 同一天重跑会先删掉台账里当天的行再写,结果不翻倍。问题五态里「变差」也认「同一页同一类问题换了说法」(比如标题过长 → 标题缺失)。
 
@@ -43,6 +45,10 @@ python3 scripts/project.py ops monthly           # 周单 + 内容退役候选 +
    - AI 引用检测的出现率、AI 爬虫访问量和最多的几个爬虫、GA4 的 AI 引荐会话(有「AI Assistant」渠道就用它,没有按来源域名认)。
    - 多语言站按路径前缀分市场列点击和未结问题。
 6. **有点击却有问题的页**。GSC 近 28 天有点击的页 × 本周轻检,五张清单:noindex、4xx、403、3xx、非规范页。没有 GSC 写「跳过:缺 GSC」。
+
+没有外部数据包时,第 5、6 节和到期复验读工作区旁 `data/` 里的 GSC 导出(逐日 `gsc-pages.csv` 优先,其次两期 `Pages_起_止.csv`),和开局、阶段门槛循环同一套读法;覆盖节写明用的是哪份导出、页面级还是逐日、有没有查询级。这时不做「两个来源对账」(只有一个来源)。
+
+最后一节「8. 做完运营单以后」是给 agent 的固定指引:只有首屏列了问题才停;缺材料写成陈述句的「待你补的材料」,同一项 30 天内不再列(`ledger/needs.jsonl`);起草类(brief、正文草稿、改动稿、提交清单)直接做;工作区里没有站点源码时,改页面的事出改动稿;用户回「carry on / 继续 / 你定」就按默认做。路线项要什么材料写在打法的 `needs` 里(`data/playbooks.json`):缺了做不了的(品牌平台主页链接)「只做这一件」先跳过它、选下一条能做的;缺了也能做的(站点源码、正式域名)照做,产出换成改动稿或占位。
 7. **覆盖率和分数**。sitemap 覆盖率、深审页数、没跑的检查和原因。**覆盖不够不出分**:sitemap 覆盖 ≥95%,深审 ≥ min(20, 有点击页数) 页且 ≥80% 目标页,才给健康分(Ahrefs 口径:无 CRITICAL 页占比)。
 
 ## 3. 轻检和深审

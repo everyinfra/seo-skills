@@ -169,7 +169,7 @@ class SiteScanTests(unittest.TestCase):
                                              "first_seen", "repo_public_routes", "analytics", "has_llms_txt",
                                              "has_jsonld", "jsonld_types", "hreflang_locales", "same_as"})
         self.assertEqual(set(r["site_scan"]), {"reachable", "homepage", "robots", "sitemap", "llms", "page_types",
-                                               "locales", "samples", "first_seen", "fetched"})
+                                               "locales", "samples", "first_seen", "fetched", "sections"})
 
     def test_fetched_lists_every_request(self):
         # 评测按输出里列出的 URL 数页面类型(robots.txt、sitemap、llms.txt 各算一种):列表必须和实际请求逐条一致

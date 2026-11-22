@@ -17,7 +17,7 @@
   1. 档案里声明了改版类事件(change_events)→ 5 改版;另报底层阶段
   2. 站点不可访问:仓库有公开路由 → 1 上线前;否则 → 0 想法(只给了仓库、没给站点时同样判,标「猜测」)
   3. 站点可访问但 robots 全封或首页 noindex → 1 上线前
-  4. 有 GSC:近 28 天展示 < 阈值,或站龄 < 90 天 → 2 刚上线;点击环比 ≥ +10% → 3;≤ -10% → 4;
+  4. 有 GSC:近 28 天展示 < 阈值 → 2 刚上线(有展示数时站龄不拦;只有点击、没有展示数时站龄 < 90 天 → 2);点击环比 ≥ +10% → 3;≤ -10% → 4;
      其余站龄 ≥ 2 年 → 4(平台期),否则 → 3
   5. 没有 GSC:站龄 < 90 天 → 2;否则是猜测(URL 数少 → 2,否则 → 3),confidence=guess,
      列候选、要用户确认
@@ -32,6 +32,7 @@ import datetime as dt
 import glob
 import json
 import os
+import re
 import shlex
 import sys
 import urllib.parse
@@ -443,9 +444,11 @@ def find_daily_pages(ws, prof=None):
     return None, []
 
 
-def weekly_checkpoints(rows, window=28):
+def weekly_checkpoints(rows, window=28, min_days=None):
     """逐日行 → 每周一个检查点(从最后一天往回每 7 天),每点算近 28 天点击、展示和上一期 28 天点击;
-    28 天窗口没被数据盖满的点不出。→ [{"at", "metrics"}](按日期升序)。"""
+    默认 28 天窗口没被数据盖满的点不出。给了 min_days 时,窗口里有 ≥min_days 天数据的点也出,
+    标 partial_days(数据盖到的天数;这时的合计只是下界)。每点另记 top2_impressions(窗口里展示最多的两天之和),
+    判「一次性冲高」用。→ [{"at", "metrics", "top2_impressions"[, "partial_days"]}](按日期升序)。"""
     if not rows:
         return []
     by_day = {}
@@ -454,19 +457,125 @@ def weekly_checkpoints(rows, window=28):
         a[0] += c
         a[1] += i
     first, last = min(by_day), max(by_day)
+    need = window if not min_days else max(1, min(int(min_days), window))
 
     def tot(lo, hi, k):
         return sum(v[k] for d, v in by_day.items() if lo <= d <= hi)
     pts, cp = [], last
-    while cp - dt.timedelta(days=window - 1) >= first:
+    while (cp - first).days + 1 >= need:
         lo = cp - dt.timedelta(days=window - 1)
         m = {"gsc_clicks_28d": int(tot(lo, cp, 0)), "gsc_impressions_28d": int(tot(lo, cp, 1))}
         plo = lo - dt.timedelta(days=window)
         if plo >= first:
             m["gsc_clicks_prev_28d"] = int(tot(plo, lo - dt.timedelta(days=1), 0))
-        pts.append({"at": cp.isoformat(), "metrics": m})
+        top = sorted((v[1] for d, v in by_day.items() if lo <= d <= cp), reverse=True)[:2]
+        pt = {"at": cp.isoformat(), "metrics": m, "top2_impressions": int(sum(top))}
+        if lo < first:
+            pt["partial_days"] = (cp - first).days + 1
+        pts.append(pt)
         cp -= dt.timedelta(days=7)
     return pts[::-1]
+
+
+LOCALE_SEG = re.compile(r"[a-z]{2}(?:-[a-z0-9]{2,4})?")
+
+
+def url_section(url):
+    """URL → 一级栏目(第一段路径,去掉 en、es、pt-br 这类语言前缀);首页和读不出路径的 → None。"""
+    path = urllib.parse.urlsplit(url).path if "://" in str(url) else str(url)
+    segs = [x for x in path.lower().split("/") if x]
+    if segs and LOCALE_SEG.fullmatch(segs[0]) and len(segs) > 1:
+        segs = segs[1:]
+    if not segs or "." in segs[0] and len(segs) == 1:          # /robots.txt、/feed.xml 这类文件不算栏目
+        return None
+    return segs[0]
+
+
+def section_counts(urls):
+    out = {}
+    for u in urls:
+        s = url_section(u)
+        if s:
+            out[s] = out.get(s, 0) + 1
+    return out
+
+
+def read_period_pages(path):
+    """「网页」界面导出 Pages_起_止.csv → {url: [clicks, impressions]};读不了 → {}。"""
+    out = {}
+    for r in _csv_rows(path):
+        low = {str(k).strip().lower(): v for k, v in r.items() if k}
+        url = low.get("top pages") or low.get("page") or low.get("url") or ""
+        if url:
+            a = out.setdefault(url, [0.0, 0.0])
+            a[0] += _num(low.get("clicks"))
+            a[1] += _num(low.get("impressions"))
+    return out
+
+
+def gsc_export_sources(ws, prof=None):
+    """工作区旁 data/ 里的 GSC 导出 → 和外部数据包同形的几个窗口(运营单在没有外部数据包时用):
+    逐日 gsc-pages.csv → gsc_totals(逐日总数)、gsc_page_daily(逐页逐日)、gsc_pages(近 28 天按页,带上一期);
+    只有两期 Pages_起_止.csv → gsc_pages(这一期按页,上一期点击)。→ {"sources", "label", "files", "window"};没有 → None。"""
+    path, rows = find_daily_pages(ws, prof)
+    if rows:
+        last = max(r[0] for r in rows)
+        first = min(r[0] for r in rows)
+        lo, plo = last - dt.timedelta(days=27), last - dt.timedelta(days=55)
+        tot, pages = {}, {}
+        daily = []
+        for d, p, c, i in rows:
+            t = tot.setdefault(d, [0.0, 0.0])
+            t[0] += c
+            t[1] += i
+            daily.append({"page": p, "date": d.isoformat(), "clicks": int(c), "impressions": int(i)})
+            pg = pages.setdefault(p, {"page": p, "clicks": 0, "impressions": 0, "prev_clicks": 0, "prev_impressions": 0})
+            if lo <= d <= last:
+                pg["clicks"] += int(c)
+                pg["impressions"] += int(i)
+            elif plo <= d < lo:
+                pg["prev_clicks"] += int(c)
+                pg["prev_impressions"] += int(i)
+        label = "%s(GSC 逐日导出,页面级,%s~%s;没有查询级)" % (_shown(ws, path), first.isoformat(), last.isoformat())
+        win = {"start": max(lo, first).isoformat(), "end": last.isoformat()}
+        return {"label": label, "files": [path], "window": win, "first": first.isoformat(), "last": last.isoformat(),
+                "sources": {"gsc_totals": {"rows": [{"date": d.isoformat(), "clicks": int(v[0]), "impressions": int(v[1])}
+                                                    for d, v in sorted(tot.items())], "source": label},
+                            "gsc_page_daily": {"rows": sorted(daily, key=lambda r: (r["date"], r["page"])), "source": label},
+                            "gsc_pages": {"rows": sorted(pages.values(), key=lambda r: -r["clicks"]), "window": win,
+                                          "source": label}}}
+    per = _period_totals(ws, prof)
+    if per:
+        a, b, _c, _i, p = per[-1]
+        cur = read_period_pages(p)
+        prev = read_period_pages(per[-2][4]) if len(per) >= 2 else {}
+        rows_ = [{"page": u, "clicks": int(v[0]), "impressions": int(v[1]),
+                  "prev_clicks": int((prev.get(u) or [0, 0])[0]), "prev_impressions": int((prev.get(u) or [0, 0])[1])}
+                 for u, v in cur.items()]
+        files = [p] + ([per[-2][4]] if len(per) >= 2 else [])
+        label = "%s(GSC 网页导出,%s~%s,页面级;没有逐日和查询级)" % (
+            "、".join(_shown(ws, f) for f in files), a.isoformat(), b.isoformat())
+        win = {"start": a.isoformat(), "end": b.isoformat()}
+        return {"label": label, "files": files, "window": win, "first": a.isoformat(), "last": b.isoformat(),
+                "sources": {"gsc_pages": {"rows": sorted(rows_, key=lambda r: -r["clicks"]), "window": win, "source": label}}}
+    return None
+
+
+def data_metrics(ws, prof=None):
+    """data/ 里最新一份 GSC 导出算出的近 28 天点击、展示(和运营单首屏、阶段门槛同一份数)→ (metrics, 来源) 或 (None, None)。
+    逐日导出取最后一天往回 28 天(数据不满 28 天就是已有天数的合计),否则取最新一期 Pages_起_止.csv。"""
+    path, rows = find_daily_pages(ws, prof)
+    if rows:
+        pt = weekly_checkpoints(rows, min_days=1)[-1]
+        return dict(pt["metrics"]), "%s 截至 %s" % (_shown(ws, path), pt["at"])
+    per = _period_totals(ws, prof)
+    if per:
+        a, b, c, i, p = per[-1]
+        m = {"gsc_clicks_28d": int(c), "gsc_impressions_28d": int(i)}
+        if len(per) >= 2:
+            m["gsc_clicks_prev_28d"] = int(per[-2][2])
+        return m, "%s(%s~%s)" % (_shown(ws, p), a.isoformat(), b.isoformat())
+    return None, None
 
 
 def page_group(url):
@@ -806,9 +915,10 @@ def stage(rules, ev, prof=None):
                "conflicts": []}
         return _confirmed_override(res, prof, names)
     if "signals.site_live" not in ev:
-        return {"stage": None, "name": "未知", "base_stage": None, "base_name": None, "confidence": "unknown",
-                "why": ["没有站点和仓库的证据,先跑 product_scan.py"], "candidates": [],
-                "missing": ["signals.site_live"], "conflicts": []}
+        res = {"stage": None, "name": "未知", "base_stage": None, "base_name": None, "confidence": "unknown",
+               "why": ["没有站点和仓库的证据,先跑 product_scan.py"], "candidates": [],
+               "missing": ["signals.site_live"], "conflicts": []}
+        return _confirmed_override(res, prof, names)
     if not live:
         base = 1 if routes > 0 else 0
         why.append("站点不可访问" + ("(仓库有 %d 条公开路由)" % routes if routes else ",仓库里也没有公开路由"))
@@ -816,7 +926,10 @@ def stage(rules, ev, prof=None):
         base = 1
         why.append("站点可访问但 robots 全封或首页 noindex")
     elif impr is not None or clicks is not None:
-        if (impr is not None and impr < th["low_impressions_28d"]) or (age is not None and age < th["new_site_age_days"]):
+        # 有展示数时按展示判:站龄不足 90 天、展示已经过了「刚上线」的上限,也按数据往后判(阶段门槛循环会提示换阶段,
+        # 用户确认后才改档案);站龄只在没有展示数时兜底
+        young = age is not None and age < th["new_site_age_days"]
+        if (impr is not None and impr < th["low_impressions_28d"]) or (impr is None and young):
             base = 2
             why.append("近 28 天展示 %s(门槛 %d),站龄 %s(门槛 %d 天)" % (impr, th["low_impressions_28d"], ("%d 天" % age) if age is not None else "未知", th["new_site_age_days"]))
         elif clicks is not None and prev:
@@ -867,7 +980,7 @@ def _confirmed_override(res, prof, names):
     confirmed = ((prof or {}).get("stage") or {})
     if confirmed.get("confirmed") and confirmed.get("value") is not None:
         cv = int(confirmed["value"])
-        if cv != res["stage"]:
+        if res["stage"] is not None and cv != res["stage"]:
             res["conflicts"].append("用户确认的阶段是 %s,规则判的是 %s" % (names.get(cv), names.get(res["stage"])))
         res.update({"stage": cv, "name": names.get(cv), "confidence": "confirmed"})
     return res
@@ -910,8 +1023,13 @@ def render(diag):
         L.append("底层阶段:%s" % st["base_name"])
     if st["candidates"]:
         L.append("候选:" + "、".join(candidate_names(st["candidates"])))
+    if diag.get("metrics_source"):
+        L.append("指标:" + diag["metrics_source"])
     for c in st["conflicts"]:
         L.append("冲突:" + c)
+    if st["conflicts"]:
+        L.append("以你确认的阶段为准。这里只按最新一期判;要不要换阶段看每周运营单:最近 4 个每周检查点都超过上限才提示"
+                 "(一两天冲高不算),你确认以后才改。")
     L += ["", "## 成熟度(1 零散 · 2 能重复 · 3 有体系 · 4 可度量 · 5 持续优化)", "",
           "| 方面 | 级别 | 下一级要做 | 缺的证据 |", "|---|---|---|---|"]
     for d in DIMS:
@@ -943,9 +1061,16 @@ def main(argv=None):
             raise UsageError("读不到 --scan %s" % ns.scan)
         metrics = read_json(ns.metrics) if ns.metrics else None
         today = dt.date.fromisoformat(ns.today) if ns.today else None
+        _src = None
         if ns.ws:
             resolve_ws(ns.ws, __file__, sys.argv[1:] if argv is None else argv)
+            if scan is None:                       # 只给 --ws:读工作区自己存的站点读取结果(和 onboard.py status 同一份)
+                scan = read_json(os.path.join(ns.ws, "context", "scan.json"))
+            if metrics is None:                    # 指标以 data/ 里最新的 GSC 导出为准,和运营单首屏同一份数
+                metrics, _src = data_metrics(ns.ws, read_json(os.path.join(ns.ws, "context", "profile.json"), {}))
         d = diagnose(scan, ns.ws, metrics, today)
+        if ns.ws and not ns.metrics and _src:
+            d["metrics_source"] = _src
     except UsageError as e:
         print("错误: %s" % e, file=sys.stderr)
         return 2
