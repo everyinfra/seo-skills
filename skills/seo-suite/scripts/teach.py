@@ -82,7 +82,19 @@ def ws_of(ns, create=False):
     raise PB.PlaybookError("找不到 seo-ops/ 工作区(在站点仓根目录跑,或用 --ws 指定)")
 
 
+# 记完规则、启用检查以后给 agent 的固定收尾:要补的页面写成陈述句的待办,不变成每轮都重列一遍的编号问题。
+DONE_NOTE = ("规则碰到的现有页面、试跑没过的页面写成一句陈述的待办(「/a/、/b/ 两页还没有这一项,要补时说一声」),"
+             "不编号、不问要不要补;用户只回「对」「好」「先这样」「carry on」就收尾,不把问题再列一遍。")
+
+
 def need_quote(q):
+    bad = LC.shell_damage(q)
+    if bad:
+        raise LC.UsageError(LC.shell_damage_message("--quote 的原话", bad))
+    return _need_quote(q)
+
+
+def _need_quote(q):
     if not (q or "").strip():
         raise PB.GateError("必须用 --quote 带上用户原话(用户没说过的不写进 playbook)")
     return q.strip()
@@ -138,6 +150,7 @@ def cmd_rule(ns):
         print("禁用清单 + %s(关键词 %s)。之后 plan、每周运营单、link_intel、prioritize、fix_plan、content_queue "
               "出的建议和外联候选都按它过滤" % (d["item"], "/".join(d["terms"])))
     print("请把这一条念给用户确认;说错了用 teach.py rule remove %s --quote … 撤掉重写。" % rid)
+    print(DONE_NOTE)
     return 0
 
 
@@ -253,6 +266,7 @@ def cmd_check(ns):
         ent.pop("disabled", None)
         PB.save_registry(ws, reg)
         print("启用 %s(sha256 %s…)。每周运营单会跑它;脚本内容一变就自动停用,等你再确认。" % (name, sha[:12]))
+        print("这件事做完了。" + DONE_NOTE)
         return 0
     if ns.action == "disable":
         ent["disabled"] = {"at": PB.now(), "quote": ns.quote}

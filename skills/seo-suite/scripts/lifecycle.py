@@ -163,6 +163,58 @@ PROFILE_FACT_KEYS = ("product.name", "product.one_liner", "product.lines", "pric
                      "conversion.primary", "customers", "market.languages")
 PROFILE_LIST_KEYS = ("product.lines", "customers", "market.languages")
 
+# 双引号里的 $22 会被 shell 当成变量:zsh 换成空,bash 换成「2」(取第 2 个参数再接上 2)。原话和值留下这类痕迹时
+# 挡住,什么都不写;否则错的金额会写进档案和用户的 .agents/product-marketing.md。
+AMOUNT_RE = re.compile(r"[$€£¥]\s?(\d[\d,]*(?:\.\d+)?)")
+UNIT = r"(?:(?:mo|month|yr|year|user|seat|week|wk|day|request|call|licen[cs]e)s?\b|[月年周天人次])"
+GAP_NEXT = r"(?:(?:a|an|per|each|every|and|or|to|off|for|plus|monthly|yearly|annually)\b|[/–—,.;)-])"
+SHELL_EATEN = (
+    (re.compile(r"(?:^|[\s(（,，])/\s?" + UNIT, re.I), "「from /month」:金额的位置空着"),
+    (re.compile(r"(?:^|\s)[–—-]\s*(?:[;,)]|$)"), "「bags –;」:价格区间两头都空着"),
+    (re.compile(r"\b(?:is|are|was|costs?|from|over|under|at)[ \t]{2,}\S|[^\s.!?。！？][ \t]{2,}" + GAP_NEXT, re.I),
+     "「is  a month」:两个空格中间少了金额"),
+    (re.compile("[一-鿿][ \t]{2,}[一-鿿]"), "「价格是  一个月」:两个空格中间少了金额"),
+    (re.compile(r"(?:^|\s)(?:[.,](?=\s|$)|\.\d{2}\b|,\d{3}\b)"), "「charge .」「 ,299」:标点或小数点前面的数没了"),
+    (re.compile(r"[(（]\s*[)）]"), "「()」:括号里的金额没了"),
+    (re.compile(r"^[ \t]|[ \t]$"), "开头或结尾多出空格:金额可能在那儿"),
+    (re.compile(r"\b(?:zsh|bash)(?:\.\d|/)"), "「zsh.50」:$0 被换成了 shell 的名字"),
+)
+SHELL_EATEN_MONEY = (
+    (re.compile(r"\b(?:over|under|from)\s*(?:[;,)]|$)", re.I), "「over」后面没有数"),
+)
+BARE_PER_RE = re.compile(r"(?<![$€£¥\d.,\w])\d[\d,.]*(?:\s?/\s?|\s(?:a|an|per|each)\s+)" + UNIT, re.I)
+
+
+def shell_damage(text, quote=None, old=None, money=False):
+    """值或原话像是被 shell 吃掉了金额 → 原因列表(空列表 = 没看出问题)。
+    只看文字认得出 zsh 留下的空位(两个空格、开头结尾的空格、「/month」「()」「,299」);bash 把 $22 换成「2」,
+    只看文字认不出,要 money=True(收费方式、价格这类键)时拿用户原话和原来的值对照:原话里写了 $22、值里有数字
+    却一个金额都没有、也没有 22;或原来的值带货币符号、新值里有「2/month」「2 a month」这种没有符号的按期金额。"""
+    t = str(text or "")
+    out = [why for rx, why in SHELL_EATEN + (SHELL_EATEN_MONEY if money else ()) if rx.search(t)]
+    if money:
+        said = AMOUNT_RE.findall(quote or "")
+        nums = set(re.findall(r"\d+", t))
+        if said and not t.strip():
+            out.append("用户原话里有 %s,值是空的" % "、".join("$" + n for n in said[:3]))
+        if said and nums and not AMOUNT_RE.search(t) and not any(re.sub(r"[,.].*$", "", n) in nums for n in said):
+            out.append("用户原话里有 %s,值里一个金额都没有" % "、".join("$" + n for n in said[:3]))
+        bare = BARE_PER_RE.search(t)
+        if bare and old and AMOUNT_RE.search(str(old)) and not AMOUNT_RE.search(t):
+            out.append("原来的值带货币符号,新值里的「%s」没有" % bare.group(0))
+    return out
+
+
+def is_money_key(key):
+    base = re.sub(r"\[\d+\]$", "", str(key or ""))
+    return base.startswith("pricing") or "price" in base
+
+
+def shell_damage_message(what, reasons):
+    return ("%s像是被 shell 改过(%s)。双引号里的 $22 会被当成变量:zsh 换成空,bash 换成「2」。"
+            "这段改用单引号包住再跑一次;原话里本身有单引号(it's)就还用双引号,把每个 $ 写成 \\$。"
+            "原话本来就是这样(用户自己多打了空格)就去掉多余的空格再跑。这次什么都没写。" % (what, ";".join(reasons)))
+
 
 def profile_format(prof):
     """写 profile.json 之前调:补 _schema 映射和 stage.id(和 stage.value 同值)。原地改,返回同一个对象。"""

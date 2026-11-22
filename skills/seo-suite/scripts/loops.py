@@ -748,6 +748,15 @@ def cmd_resolve(ns):
         raise GateError("必须用 --quote 带上用户原话")
     ws = ns.ws
     prof, _ = load_state(ws)
+    bad = LC.shell_damage(ns.quote)
+    if bad:
+        raise UsageError(LC.shell_damage_message("--quote 的原话", bad))
+    for kv in list(ns.set or []) + list(ns.add or []):
+        k, _, v = kv.partition("=")
+        money = LC.is_money_key(k)
+        bad = LC.shell_damage(v, ns.quote, _fact_value(prof, k) if money else None, money)
+        if bad:
+            raise UsageError(LC.shell_damage_message("%s 的值" % k, bad))
     today = day(ns.today) or dt.date.today()
     loops = load_loops(ws)
     if ns.loop not in loops:

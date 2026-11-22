@@ -1139,6 +1139,20 @@ def quote_weight(q):
     return cjk * 1.5 + (len(s) - cjk)
 
 
+def refuse_shell_damage(prof, quote, flagged):
+    """原话或值里的金额像是被 shell 吃掉了:退出码 2,档案和 .agents/product-marketing.md 都不动。"""
+    bad = lifecycle.shell_damage(quote)
+    if bad:
+        raise UsageError(lifecycle.shell_damage_message("--quote 的原话", bad))
+    for flag, items in flagged:
+        for k, v in parse_kv(items, flag).items():
+            money = lifecycle.is_money_key(k)
+            old = fact_value(prof, re.sub(r"\[\d+\]$", "", k)) if money else None
+            bad = lifecycle.shell_damage(v, quote, old, money)
+            if bad:
+                raise UsageError(lifecycle.shell_damage_message("%s %s 的值" % (flag, k), bad))
+
+
 def check_quote(q, corrections):
     s = (q or "").strip()
     if not s:
@@ -1281,6 +1295,7 @@ def cmd_answer(ns):
     if not 1 <= r <= 6:
         raise UsageError("--ring 只能是 1–6")
     check_quote(ns.quote, bool(ns.correct or ns.add or ns.unknown))
+    refuse_shell_damage(prof, ns.quote, (("--set", ns.set), ("--correct", ns.correct), ("--add", ns.add)))
     if r > 1 and prof["rings"]["1"]["status"] != "confirmed":
         raise GateError("第 1 环还没确认,不能记第 %d 环" % r)
     ring = prof["rings"][str(r)]
