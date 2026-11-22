@@ -82,9 +82,11 @@ def ws_of(ns, create=False):
     raise PB.PlaybookError("找不到 seo-ops/ 工作区(在站点仓根目录跑,或用 --ws 指定)")
 
 
-# 记完规则、启用检查以后给 agent 的固定收尾:要补的页面写成陈述句的待办,不变成每轮都重列一遍的编号问题。
-DONE_NOTE = ("规则碰到的现有页面、试跑没过的页面写成一句陈述的待办(「/a/、/b/ 两页还没有这一项,要补时说一声」),"
-             "不编号、不问要不要补;用户只回「对」「好」「先这样」「carry on」就收尾,不把问题再列一遍。")
+# 记完规则、启用检查以后给 agent 的固定收尾:顺带要补的页面写成陈述句的待办,不变成每轮都重列一遍的编号问题;
+# 要用户拍板才能往下做的事不在此列,照常编号问、停下。
+DONE_NOTE = ("顺带要补的现有页面(规则碰到的、试跑没过的)写成一句陈述的待办(「/a/、/b/ 两页还没有这一项,要补时说一声」),"
+             "不编号、不问要不要补。要用户拍板才能往下做的事(启用一个检查、「不做 X」的 X 拿不准)照常编号问、停下等回复。"
+             "用户只回「对」「好」「先这样」「carry on」就收尾,不把问题再列一遍。")
 
 
 def need_quote(q):
@@ -149,7 +151,9 @@ def cmd_rule(ns):
     for d in items:
         print("禁用清单 + %s(关键词 %s)。之后 plan、每周运营单、link_intel、prioritize、fix_plan、content_queue "
               "出的建议和外联候选都按它过滤" % (d["item"], "/".join(d["terms"])))
-    print("请把这一条念给用户确认;说错了用 teach.py rule remove %s --quote … 撤掉重写。" % rid)
+    print("请把这一条念给用户(记成了什么、适用范围、禁用了什么),不用专门问「对吗」,用户下一句没纠正就算确认。"
+          "先和用户原话逐字对一遍(标点、全角半角也算):不一样就 teach.py rule remove %s --quote … 撤掉,照原话重记。"
+          % rid)
     print(DONE_NOTE)
     return 0
 
@@ -253,8 +257,9 @@ def cmd_check(ns):
             print(json.dumps({"name": name, "sha256": sha, "results": rows}, ensure_ascii=False, indent=1))
         else:
             print_rows(name, rows)
-            print("把上面的结果原样给用户看,问对不对;用户说可以,再 teach.py check enable %s --quote \"<原话>\"。"
-                  "没启用前每周运营单不跑它。" % name)
+            print("把上面的结果原样给用户看,编号问一句「1. 这样判对不对?对的话我就启用。」,然后停下等回复(这是要用户拍板的事,"
+                  "不写成陈述句);用户说可以,再 teach.py check enable %s --quote \"<原话>\"。没启用前每周运营单不跑它。"
+                  "没过的页面写成陈述的待办,不放进编号问题。" % name)
         return 0
     if ns.action == "enable":
         quote = need_quote(ns.quote)

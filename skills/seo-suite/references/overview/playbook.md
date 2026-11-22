@@ -1,6 +1,6 @@
 # 用户的规则、检查、打法和数据源(seo-ops/playbook/)
 
-Updated: 2026-11-21
+Updated: 2026-11-22
 
 用户说「以后都这样做」「别再建议 X」「加一个检查」「我们有自己的关键词数据」时走这里(RQ-237 例 6)。
 这些东西放在**站点仓**的 `seo-ops/playbook/`,跟着站点仓提交;skill 升级只换 skill 自己的代码,不碰这个目录。
@@ -22,13 +22,16 @@ seo-ops/playbook/
 ## 一、规则:用户原话进 rules.md
 
 ```sh
-python3 "$S/teach.py" rule add --quote "以后我们的对比文都要放一张价格对照表" --no-deny --applies brief,plan
-python3 "$S/teach.py" rule add --quote "别再建议我们去做 Reddit 外链了,我们不做" --deny reddit
+python3 "$S/teach.py" rule add --quote '以后每篇教程都要放一段能直接复制运行的代码' --no-deny --applies brief
+python3 "$S/teach.py" rule add --quote '别再建议我们去做 Quora 问答了，我们不做' --deny quora
 python3 "$S/teach.py" rule list
-python3 "$S/teach.py" rule remove R2 --quote "Reddit 外链可以做了"     # 原话留档,标「已撤销」,禁用项一起撤
+python3 "$S/teach.py" rule remove R2 --quote 'Quora 问答可以做了'     # 原话留档,标「已撤销」,禁用项一起撤
 ```
 
-- `--quote` 必须是用户原话,不改写。rules.md 每条 `## R<n> · 日期`,下面是原话、适用范围、禁用项。
+- `--quote` 照抄用户这一句,不改写,标点、全角半角也不改(上面只是例子,别抄例子)。rules.md 每条 `## R<n> · 日期`,
+  下面是原话、适用范围、禁用项。
+- 记完把这一条(适用范围、禁用关键词)念给用户,不用专门问「对吗」,用户下一句没纠正就算确认;「不做 X」的 X 拿不准时
+  先编号问、停下等回复。
 - 原话听起来是「不做 X」(不做 / 别再 / 不要 / don't / never……)却既没给 `--deny` 也没写 `--no-deny`,teach.py 退出码 3:
   「不做」必须变成结构化禁用项,不能只留一段文字靠模型自觉(红队 9)。
 - 不改 rules.md 和 deny.json 的手写格式;要改就用 teach.py。
@@ -68,11 +71,12 @@ python3 "$S/teach.py" rule remove R2 --quote "Reddit 外链可以做了"     # �
 python3 "$S/teach.py" check new mcp-example --desc "每个平台页都要有 MCP 调用示例" --pattern "tools/call" --match "/platforms/"
 #   按用户的话改好 checks/mcp-example.py 的判定
 python3 "$S/teach.py" check try mcp-example --url https://site/platforms/a/ --url https://site/platforms/b/ --url https://site/platforms/c/
-#   把结果原样给用户看,问对不对;用户说可以:
+#   把结果原样给用户看,编号问「1. 这样判对不对?对的话我就启用。」,停下等回复;用户说可以:
 python3 "$S/teach.py" check enable mcp-example --quote "<用户原话>"
 python3 "$S/teach.py" check list
 ```
 
+- 试跑完问「这样判对不对、要不要启用」是要用户拍板的事:编号问、停下等回复,不写成陈述句(`try` 的输出也这样说)。
 - 启用完就收尾:试跑没过的页面写成一句陈述的待办(「/a/、/b/ 两页还没有这一项,要补时说一声」),不编号、不问要不要补;
   用户只回「好」「先这样」就是收尾,不把问题再列一遍(`enable` 和 `rule add` 的输出末尾也印这句)。
 - `try` 至少 3 个页面,不足退出码 3。`enable` 要求最近一次 `try` 的脚本 sha256 和现在一致,否则退出码 3;
