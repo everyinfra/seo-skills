@@ -7,11 +7,11 @@
 | # | 检查 | 规则（Google 原文口径） | 违例严重度（本套件口径） |
 |---|---|---|---|
 | 1 | 自引用 | 每个语言版必须列出自己**和**所有其他语言版。文档也写明：难以维护完整双向链接时，可以在某些页面省略部分语言，Google 仍会处理互相指向的那些；新增语言页必须与源页双向链接 | High |
-| 2 | 双向返回 | A 指向 B，B 也要指回 A。两页没有互相指向时，这一对标注被忽略。只影响没互指的那一对，其余互指的照常处理 | Critical（对该对） |
+| 2 | 双向返回 | A 指向 B，B 也要指回 A。两页没有互相指向时，这一对标注被忽略。只影响没互指的那一对，其余互指的照常处理。本套件按语言判：B 要用 A 自引用的语言码指回 A，B 只用 `x-default` 指向 A 不算 A 那个语言的回指 | Critical（对该对） |
 | 3 | x-default | 推荐，不强制；为语言选择页设计，也可用于任何页。回退页本身的语言无关紧要。每组只写一个（本套件口径，官方未写数量） | High |
 | 4 | 语言码 | ISO 639-1（`en`、`zh`、`ja`）；拒 `eng`、`jp`。文字可用 ISO 15924：`zh-Hant`、`zh-Hans`、`zh-Hans-US` 合法；`zh-TW` 这类按地区推导文字；`zh-CN` 合法 | High |
 | 5 | 区域码 | ISO 3166-1 Alpha-2。只写区域码无效（`-US` 必须配语言）。`UK`、`EU`、`UN` 在 Google 搜索里无效果（英国写 `en-GB`）。不在这两个标准里的码不受支持，**`es-419` 明确不受支持**。`es-LA` 的 `LA` 是老挝，不是拉丁美洲 | High |
-| 6 | 与 canonical 的关系 | 用 hreflang 时，canonical 要指向同语言页（没有同语言页时指向最接近的替代语言）。本套件要求：簇内每页自引用 canonical，hreflang 指向的 URL 返回 200 | High |
+| 6 | 与 canonical 的关系 | 用 hreflang 时，canonical 要指向同语言页（没有同语言页时指向最接近的替代语言）。本套件要求：簇内每页自引用 canonical，hreflang 指向的 URL 本身返回 200：指向 301 / 302 等跳转地址算失败，改写成跳转后的最终 URL（校验时不跟随跳转） | High |
 | 7 | URL 写法 | 必须是含协议的完整 URL（`https://example.com/foo`，不是 `//example.com/foo` 或 `/foo`）；不要在 hreflang 里写 HTTP 版本 | Medium |
 | 8 | 跨域 | 允许，两边都要有返回链接 | High |
 
@@ -91,6 +91,8 @@ curl -s https://example.com/sitemap.xml | grep -c 'xhtml:link'
 # 套件脚本：传入簇内全部语言版本，输出互指矩阵
 python3 scripts/hreflang_cluster.py https://example.com/en/page https://example.com/de/seite
 ```
+
+`hreflang_cluster.py` 的口径：入参页面跟随跳转（写明跳到了哪）；hreflang 指向的地址不跟随跳转，3xx 记硬失败并写出最终地址；回指按语言判（第 2 检）；没传入的 alternate 自动补抓，新抓到的页面里的 alternate 接着补，直到没有新地址或到 `--max-extra` 页（到上限会写明还剩几个没抓）。
 
 Google 文档「调试」节列出两个第三方工具（Google 不维护）：Aleyda Solis 的 hreflang 生成器、Merkle 的 hreflang 测试器。Search Console 的「国际定位」报告已弃用（[帮助中心说明](https://support.google.com/webmasters/answer/12474899)），不能再用它查返回链接错误。
 

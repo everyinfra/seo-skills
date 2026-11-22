@@ -9,7 +9,9 @@ Updated: 2026-11-21
 seo-ops/playbook/
   rules.md          用户原话,一条一节,带日期(teach.py rule add 写)
   deny.json         结构化禁用清单:「不做 X」(推荐脚本直接过滤)
-  checks/<名>.py    用户自己的检查(零依赖脚本)+ <名>.md 说明 + registry.json(试跑记录、启用哈希)
+  checks/<名>.py    用户自己的检查(零依赖脚本)+ <名>.md 说明 + registry.json(试跑记录、启用哈希;
+                    文件在但读不了时,所有检查按「已停用:registry.json 读不了,等用户重新确认」处理,写入一律拒绝;
+                    重新确认从 check try 开始,它先把读不了的原文件改名留下,再 check enable --quote)
   plays.json        用户自己的打法(格式同 data/playbooks.json)
   sources.json      用户登记的数据源(关键词量、SERP、外链……)
   export/<名>/      teach.py export 生成的开源仓 PR 草稿(不自动提交)
@@ -30,6 +32,9 @@ python3 "$S/teach.py" rule remove R2 --quote "Reddit 外链可以做了"     # �
 - 原话听起来是「不做 X」(不做 / 别再 / 不要 / don't / never……)却既没给 `--deny` 也没写 `--no-deny`,teach.py 退出码 3:
   「不做」必须变成结构化禁用项,不能只留一段文字靠模型自觉(红队 9)。
 - 不改 rules.md 和 deny.json 的手写格式;要改就用 teach.py。
+- 不是「不做 X」的规则(`--no-deny`),适用范围含 plan(或没限定)的,`plan.py build` 原话照抄进 `plan.json` 的
+  `user_rules` 和 plan.md、roadmap.md、两本战略书的「按你的规则」/「Your rules」一节,第 6 环那一块里也列出来。
+  规则只存原话、没有结构化的触发条件,所以不逐条判断哪条建议该套哪条规则。
 
 ## 二、禁用清单:推荐代码直接过滤
 

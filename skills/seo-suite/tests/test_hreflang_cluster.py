@@ -59,7 +59,7 @@ def page(alternates):
 
 
 def fake_fetch_factory(pages):
-    def fake_fetch(url, timeout=12.0, max_bytes=3_000_000):
+    def fake_fetch(url, timeout=12.0, max_bytes=3_000_000, follow=True):
         m = Message()
         m["Content-Type"] = "text/html; charset=utf-8"
         if url in pages:

@@ -65,6 +65,26 @@ Future content or structure changes must bump the version and add a dated entry.
     Ring 6 needs a plan first: `show --ring 6` runs `plan.py build` when there is no `plan/plan.json` (an existing plan is kept) and prints the strategies, the first 10 roadmap items and the deny list in the block for the user. `answer --ring 6 --confirm` without a plan exits with code 2 and keeps the answers.
   - 读站点时,目录名不在定价、文档、博客、产品这几类里的一级目录(比如 `/shop/`、`/brew-guides/`、`/subscription/`)也各抽 1 页读,页数多的目录先抽,最多 4 页;`scan.json` 的 `samples` 里记成 `type: section`(修前这类站只读首页和 /about/)。
     The site scan also reads one page from each top-level directory that is not one of the known types (for example `/shop/`, `/brew-guides/`, `/subscription/`), largest directory first, at most 4 pages; `samples` records them as `type: section`.
+- **第 3 次试跑后的修复**:
+  Fixes after the third pilot run:
+  - `.agents/product-marketing.md` 和站点对不上时由脚本标出来:站点上写着、文件里没有的金额(文件写订阅 $20/月、首页写 $22)在草稿里写「对不上」,两边的值和出处都列,并写进第 1 问「…文件写「…」,站点写「…」,哪个对?」;只是措辞不同不算。
+    Mismatches between `.agents/product-marketing.md` and the site are flagged by the script: an amount the site states that the file does not (file $20/month, home page $22) is marked as a mismatch in the draft, both values and sources are listed, and question 1 asks which one is right; wording-only differences are not flagged.
+  - 产品线不再因为目录名不是 `/products/` 就记「未知」、成必答:先从上下文文件的 `Products` / `Product lines` / `Offerings` / `Services` / `产品线` 这类标签取(带出处);没有就用 sitemap 里有子页的一级目录当候选、标推测(抽样页有价格的目录优先;超过 8 个照旧不当产品线)。
+    Product lines no longer default to "unknown" (and a required question) when the site does not use `/products/`: they come from a products-style label in the context file, or else from top-level sitemap directories that have sub-pages, marked as a guess (directories whose sampled page shows prices win; more than 8 are still not treated as lines).
+  - 第 1 环只剩「草稿对不对」一问时,用户纠正了某几条、没否认其余:`answer --correct …`(不带 `--confirm`)把这一问记成已答,只再问真正没答到的必答项(修前把整条合并问题原样再打一遍)。
+    When ring 1 is down to "is this draft right?" and the user corrects some items without disputing the rest, `answer --correct …` without `--confirm` records that question as answered and re-asks only the required parts still missing (before, it re-printed the whole merged question).
+  - `onboard.py start` 发现工作区旁 `data/` 里已有 GSC 页面导出(两份 `Pages_起_止.csv`,或盖满 28 天的逐日 `gsc-pages.csv`)时自己读出近两个 28 天的点击和展示记进指标(出处写文件名),阶段按真实数据判,屏幕不再写「没有 GSC 数据」。
+    `onboard.py start` reads GSC page exports already in `data/` (two `Pages_<from>_<to>.csv` files, or a daily `gsc-pages.csv` covering 28 days) into the metrics with the file name as the source, so the stage uses real data instead of "no GSC data".
+  - `answer --confirm` 成功后,在「下一环」那行后面写明:这句原话只确认了刚才这一环,下一环要原样发给用户、等新的回话再确认。只加提示,不拦相同原话(用户常连着回「好」)。
+    After a successful `answer --confirm`, the "next ring" line is followed by a reminder that the quote only confirmed that ring and the next one needs a fresh reply; identical quotes are not blocked.
+  - `checks/registry.json` 存在但读不了时不再当空表:所有自定义检查按「已停用:registry.json 读不了,等用户重新确认」处理,`teach.py check list`、`playbook.py context`、每周运营单 2.6 节逐个点名;写 registry 的命令一律拒写(不把它覆盖成空表),提示重新确认:`check try` 先把读不了的原文件改名留下(`registry.json.unreadable-<时间>`),再 `check enable --quote`。文件不存在仍按空表。
+    An unreadable `checks/registry.json` is no longer read as an empty table: every custom check is treated as disabled pending re-confirmation and named in `check list`, `playbook.py context` and section 2.6 of the weekly sheet; writes are refused so the file is never overwritten with an empty table; re-confirmation starts with `check try`, which first renames the unreadable file aside, then `check enable --quote`. A missing file is still an empty table.
+  - `hreflang_cluster.py` 不再漏报断簇:入口 URL 仍跟随跳转并写明跳到了哪;hreflang 指向的地址不跟随跳转,3xx 记硬失败并写「hreflang 指向跳转地址,应写 <最终 URL>」;回指按语言判,x-default 不算某个语言的回指;补抓走到不动点(新抓到的页面里的 alternate 接着补,`--max-extra` 封顶并写明还剩几个没抓)。`references/technical/hreflang-validation.md` 一起写明。
+    `hreflang_cluster.py` no longer misses broken clusters: entry URLs still follow redirects (and say where they landed), alternates are fetched without following redirects so a 3xx is a hard failure naming the final URL, return links are checked per language (x-default does not count), and alternates of newly fetched pages are followed to a fixed point, capped by `--max-extra`. The hreflang reference says the same.
+  - 方案带上用户教的非禁用类规则:`rules.md` 里适用范围含 plan 的规则原话照抄进 `plan.json` 的 `user_rules`、`plan.md`、`roadmap.md` 和两本战略书的「按你的规则」/「Your rules」一节,第 6 环那一块也列出来;规则没有结构化触发条件,不做逐条匹配。
+    Plans carry the user's non-deny rules: rules that apply to plans are quoted verbatim in `plan.json` `user_rules` and in a "Your rules" section of `plan.md`, `roadmap.md` and both strategy books, and in the ring-6 block; rules have no structured trigger, so they are not matched item by item.
+  - `teach.py check try` 的判定行只印 `[✓ pass] URL` / `[✗ fail] URL`,说明另起缩进行(修前用户原话印在网址同一行,按行读判定会混)。
+    `teach.py check try` prints verdict lines as `[✓ pass] URL` / `[✗ fail] URL` only, with findings on indented lines below.
 
 ## 0.47.1 - 2026-11-21
 

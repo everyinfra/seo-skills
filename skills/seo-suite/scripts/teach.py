@@ -145,7 +145,7 @@ def cmd_rule(ns):
 # check
 # ---------------------------------------------------------------------------
 
-VERDICT = {"pass": "✓ pass 过", "fail": "✗ fail 没过", "error": "error 出错"}
+VERDICT = {"pass": "✓ pass", "fail": "✗ fail", "error": "error"}
 
 
 def _summary(rows):
@@ -154,9 +154,10 @@ def _summary(rows):
 
 def print_rows(name, rows):
     print("检查 %s 在 %d 个页面上的结果:" % (name, len(rows)))
-    for r in rows:
-        extra = r.get("error") or ";".join(r["findings"][:3]) or "—"
-        print("  [%s] %s  %s" % (VERDICT[r["result"]], r["url"], extra))
+    for r in rows:                                  # 判定行只有判定和网址;说明另起缩进行(说明里常带「有 / 要」这类字)
+        print("  [%s] %s" % (VERDICT[r["result"]], r["url"]))
+        for x in ([r["error"]] if r.get("error") else r["findings"][:3]):
+            print("      %s" % x)
 
 
 def cmd_check(ns):
@@ -167,9 +168,13 @@ def cmd_check(ns):
             print(json.dumps([{k: v for k, v in r.items() if k != "entry"} for r in rows], ensure_ascii=False, indent=1))
             return 0
         zh = {"enabled": "已启用", "changed": "脚本改过、已自动停用(等再确认)", "tried": "试跑过、没启用",
-              "draft": "草稿", "disabled": "已停用", "missing": "脚本不在了"}
+              "draft": "草稿", "disabled": "已停用", "missing": "脚本不在了",
+              PB.REG_CORRUPT_STATE: "已停用:registry.json 读不了,等用户重新确认"}
         for r in rows:
             print("- %s:%s%s" % (r["name"], zh[r["state"]], ("(%s)" % r["entry"].get("desc")) if r["entry"].get("desc") else ""))
+        if any(r["state"] == PB.REG_CORRUPT_STATE for r in rows):
+            bad = next(r for r in rows if r["state"] == PB.REG_CORRUPT_STATE)
+            print("registry.json 读不了(%s)。%s" % (bad.get("why"), PB.reconfirm_hint()))
         if not rows:
             print("还没有自定义检查(teach.py check new <名> --desc …)")
         return 0
@@ -185,12 +190,17 @@ def cmd_check(ns):
                 print_rows(c["name"], c["results"])
             for c in res["changed"]:
                 print("- %s 的脚本改过(启用时 %s,现在 %s),已自动停用,等用户再确认" % (c["name"], c["enabled_sha"], c["now_sha"]))
+            for c in res.get("unreadable") or []:
+                print("- %s 已停用:registry.json 读不了(%s),等用户重新确认;%s" % (c["name"], c["why"], PB.reconfirm_hint(c["name"])))
         return 0
     name = ns.name
     if not name:
         raise PB.PlaybookError("check %s 要给检查名" % ns.action)
     script, doc = PB.check_paths(ws, name)
     reg = PB.registry(ws)
+    if reg.get("unreadable") and ns.action != "try":
+        # registry 读不了:不往里写(会把它覆盖成空表);重新确认从 check try 开始,它会先把原文件改名留下
+        raise PB.GateError(PB.unreadable_message(ws, name) + ";这次什么都没写")
     ent = reg["checks"].setdefault(name, {})
     if ns.action == "new":
         if os.path.exists(script):
@@ -220,7 +230,12 @@ def cmd_check(ns):
         ent.setdefault("tries", []).append({"at": PB.now(), "sha256": sha, "urls": urls, "summary": _summary(rows),
                                             "results": rows})
         ent["tries"] = ent["tries"][-5:]
-        PB.save_registry(ws, reg)
+        kept = reg.get("unreadable")
+        PB.save_registry(ws, reg, recover=bool(kept))
+        if kept:
+            print("registry.json 读不了(%s):原文件已改名留在 checks/%s,新表从这次试跑记起;"
+                  "别的检查仍按已停用处理,各自 try + enable 重新确认。"
+                  % (kept, (PB.registry(ws).get("recovered") or {}).get("kept_as")))
         if ns.json:
             print(json.dumps({"name": name, "sha256": sha, "results": rows}, ensure_ascii=False, indent=1))
         else:

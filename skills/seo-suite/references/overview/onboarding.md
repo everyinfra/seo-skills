@@ -27,6 +27,7 @@ python3 scripts/onboard.py skip --quote "<用户原话>"          # 第 1 环确
 python3 scripts/onboard.py event add migration --note "…"    # 改版类事件 → 阶段切到「改版 / 迁移 / 转型」
 python3 scripts/onboard.py metric --set gsc_clicks_28d=1200 --set gsc_clicks_prev_28d=1000 --set gsc_impressions_28d=50000 \
         --source "gsc_api.py 近两个 28 天"                     # 有 GSC 先记,阶段按真实数据判;记完重打当前环整块,贴新的
+# 工作区旁 data/ 里已有 GSC 页面导出(两份 Pages_起_止.csv,或盖满 28 天的逐日 gsc-pages.csv)时,start 自己读进指标(出处写文件名),不用再跑 metric
 python3 scripts/onboard.py status | diagnose
 ```
 
@@ -47,7 +48,7 @@ python3 scripts/onboard.py status | diagnose
 
 每环结束写回档案,下一环开头先复述上一环定下的东西(`show` 的「前面已确认」)。
 
-和 marketingskills 共用产品上下文(例 11):仓库里有 `.agents/product-marketing.md`(它的 product-marketing skill 写的)时,`start` 把里面填了值的一句话介绍、收费方式、目标客户、转化动作读成第 1 环的草稿(来源写这份文件,仍是「未确认」),第 1 环只问它没覆盖或和站点对不上的(它写了目标客户、转化动作时,这两问不再问,确认时取文件里的值)。某一环 `--confirm` 以后,onboard 调 `pm_context.py` 把用户确认或纠正过的条目写回那份文件:只改对应标签那一行,别的段落逐字节不变,照对方规矩版本号 +1、`Last updated` 改成当天、`## Changelog` 最上面加一行;文件没有就不建(建它归对方的 skill)。档案里 `context_sync` 记下写回的时间、字段和文件 sha256。
+和 marketingskills 共用产品上下文(例 11):仓库里有 `.agents/product-marketing.md`(它的 product-marketing skill 写的)时,`start` 把里面填了值的一句话介绍、收费方式、目标客户、转化动作读成第 1 环的草稿(来源写这份文件,仍是「未确认」),第 1 环只问它没覆盖或和站点对不上的(它写了目标客户、转化动作时,这两问不再问,确认时取文件里的值)。站点上写着、文件里没有的金额(比如文件写订阅 $20/月、首页写 $22)由脚本标「对不上」:草稿里两边的值和出处都列出来,并写进第 1 问「…文件写「…」,站点写「…」,哪个对?」;只是措辞不同不算。文件里有 `**Products:**` / `**Product lines:**` / `**Offerings:**` / `**Services:**` / `**产品线:**` 这类标签时,产品线从它取;没有就用 sitemap 里有子页的一级目录(`/shop/<x>`、`/gear/<x>`)当候选、标推测(抽样页上有价格的目录优先;超过 8 个照旧不当产品线)。用户纠正了草稿的某几条、没否认其余时,`answer --correct …`(不带 `--confirm`)把「草稿对不对」那一问记成已答,只再问真正没答到的必答项。某一环 `--confirm` 以后,onboard 调 `pm_context.py` 把用户确认或纠正过的条目写回那份文件:只改对应标签那一行,别的段落逐字节不变,照对方规矩版本号 +1、`Last updated` 改成当天、`## Changelog` 最上面加一行;文件没有就不建(建它归对方的 skill)。档案里 `context_sync` 记下写回的时间、字段和文件 sha256。
 
 ## 四、档案
 

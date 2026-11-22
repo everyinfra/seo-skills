@@ -453,6 +453,7 @@ def build(ws, metrics=None, top=10, today=None):
             "items": recs[:top], "more": recs[top:],
             "backlog": [{"id": p["id"], "title": p["title"]} for p in backlog], "skipped": skipped,
             "deny": [d["item"] for d in deny],
+            "user_rules": PB.rules_for(ws, "plan"),
             "assumptions": {"unconfirmed_facts": unconfirmed, "unknown_facts": unknown, "skipped_rings": skipped_rings,
                             "audit_skipped": audit_skipped,
                             "missing_slots": sorted({m for r in recs[:top] for m in r["facts_missing"]})},
@@ -501,6 +502,24 @@ def by_week(recs):
     return sorted(recs, key=lambda r: ((r["weeks"] or [99])[0], r["rank"]))
 
 
+def rules_lines(plan, lang="zh"):
+    """「按你的规则」一节:用户用 teach.py 教的、适用于方案的规则,原话照抄(不是禁用清单那类)。"""
+    rules = plan.get("user_rules") or []
+    if not rules:
+        return []
+    zh = lang == "zh"
+    L = ["", "## 按你的规则" if zh else "## Your rules", "",
+         "下面每条都适用于这份方案,路线里相关的每一项都要照做(原话照抄,来自 seo-ops/playbook/rules.md):" if zh else
+         "Each rule below applies to this plan; every related roadmap item must follow it "
+         "(quoted as you said it, from seo-ops/playbook/rules.md):", ""]
+    for r in rules:
+        ap = r.get("applies") or ""
+        if not zh:
+            ap = "all" if ap == "全部" else ap.replace("、", ", ")
+        L.append(("- %s:「%s」(适用:%s)" if zh else "- %s: \"%s\" (applies to: %s)") % (r["id"], r["quote"], ap))
+    return L
+
+
 def render_roadmap(plan):
     L = ["# 90 天路线(%s,%s)" % (plan.get("site") or "", (plan.get("stage") or {}).get("name") or "阶段未知"), "",
          "按开始周排;# 是优先级(1 最先)。", ""]
@@ -514,6 +533,7 @@ def render_roadmap(plan):
             "、".join(r["page_types"]), r["metric"], r["measure"],
             "、".join("%s=%s%s" % (f.get("slot"), f.get("value"), "" if f.get("confirmed") else "(未确认)")
                       for f in r["facts_used"] if isinstance(f, dict)) or "—"))
+    L += rules_lines(plan)
     return "\n".join(L) + "\n"
 
 
@@ -565,6 +585,7 @@ def render_book(plan, lang="zh"):
         L.append("| %d | %s | **%s**:%s%s | %s | %s | %s |" % (
             r["rank"], _wk(r, lang), r["title"] if zh else r["title_en"], r["do"] if zh else r["do_en"], note,
             "、".join(r["page_types"]), r["metric"], r["measure"]))
+    L += rules_lines(plan, lang)
     L += ["", "## 5. 这个阶段看哪些数" if zh else "## 5. Metrics for this stage", ""]
     L += ["- %s:%s" % (a, b) for a, b in plan["metrics_by_stage"]]
     sk = plan["skipped"]
@@ -618,6 +639,7 @@ def render_plan_md(plan):
         L.append("%d. **%s**:%s%s" % (r["rank"], r["title"], r["do"], note))
         L.append("   %s;看 %s,怎么量:%s。%s%s" % (_wk(r), r["metric"] or "—", r["measure"] or "—", r["title_en"],
                                             (" " + r["goal"]) if r.get("goal") else ""))
+    L += rules_lines(plan)
     sk = plan["skipped"]
     nots = (["你说过不做:%s" % x for x in plan["deny"]]
             + ["%s:%s(%s)" % (label, x["title"], x["why"]) for k, label in

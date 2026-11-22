@@ -27,7 +27,8 @@
       "都对",
       "有几处要改(请写出来)"
      ],
-     "required": true
+     "required": true,
+     "answered_by_corrections": true
     },
     {
      "id": "conversion",

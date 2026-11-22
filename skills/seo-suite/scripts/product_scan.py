@@ -412,6 +412,36 @@ def route_lines(paths):
     return out
 
 
+def section_lines(paths, samples=None):
+    """没归进已知类型、下面有子页的一级目录(/shop/<x>、/gear/<x>)→ 候选产品线(按目录名取,页数多的在前)。
+    只有一页的目录(/about/、/shipping/ 这类)不算。读站点时抽过这些目录的页(samples 里 type=section):
+    有的抽样页上有价格、有的没有,就只留有价格的(卖东西的目录),都没有价格就全留。"""
+    dirs = {}
+    for path in paths or []:
+        _, segs = split_locale(urllib.parse.urlsplit(path).path)
+        if len(segs) < 2 or classify_segments(segs) not in ("other", "category"):
+            continue
+        name = segs[0]
+        if name.startswith(("[", ":")) or "." in name:
+            continue
+        dirs.setdefault(name.lower(), [name, set()])[1].add("/".join(segs[1:]).lower())
+    priced = {}
+    for s in samples or []:
+        if s.get("type") != "section":
+            continue
+        _, segs = split_locale(urllib.parse.urlsplit(s.get("url") or "").path)
+        if segs:
+            priced[segs[0].lower()] = bool(s.get("prices"))
+    if any(priced.values()):
+        dirs = {k: v for k, v in dirs.items() if priced.get(k, True)}
+    ranked = sorted(dirs.items(), key=lambda kv: (-len(kv[1][1]), kv[0]))
+    out = []
+    for _, (name, _) in ranked:
+        n = re.sub(r"[-_]+", " ", name).strip()
+        out.append(n[:1].upper() + n[1:])
+    return out
+
+
 def classify_segments(segs):
     if not segs:
         return "other"
@@ -1212,12 +1242,18 @@ def build_facts(site_scan, ctx, repo_scan, existing):
     # 首页 h2 多半是「为什么选我们」这类卖点句,不拿来兜底;路由推的只算推测,条目太多(工具、商品清单)不算产品线。
     # 拿不准就留一条「未知」,开局第 1 环问用户。
     rl = rl_site or rl_repo
+    sl = [] if rl else section_lines((ctx or {}).get("pool_paths"), samples)
     if prod_sec:
         add("product.lines", prod_sec[:LINES_MAX], ctx.get("llms_src") if ctx else None, "fact")
     elif rl and len(rl) <= LINES_MAX:
         add("product.lines", rl, (ctx or {}).get("pool_src") if rl_site else ev.get("routes"), "inferred")
+    elif sl and len(sl) <= LINES_MAX:
+        add("product.lines", sl, (ctx or {}).get("pool_src"), "inferred",
+            note="按 sitemap 里有子页的一级目录猜的(目录名,不是页面上写的产品名)")
     elif ss or repo_scan:
-        if rl:
+        if sl and not rl:
+            note = "sitemap 里有 %d 个带子页的一级目录(例:%s),太多,不当产品线" % (len(sl), "、".join(sl[:3]))
+        elif rl:
             note = "网址里有 %d 个同一层的子页(例:%s),像是条目清单,不当产品线" % (len(rl), "、".join(rl[:3]))
         elif home.get("h2"):
             note = "llms.txt 没有产品段,网址里没有 /products/<x> 这类子页;首页的 %d 个小标题多半是卖点句,不当产品线" % len(home["h2"])

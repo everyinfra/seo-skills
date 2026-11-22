@@ -337,8 +337,9 @@ def merge_pm_facts(facts, repo):
         ring = next((r for r, d in b.items() if pf["key"].startswith(tuple(d.get("fact_prefixes") or ()))), None)
         cur = next((f for f in facts if f["key"] == pf["key"]), None)
         if cur:
-            if str(cur.get("value")) != pf["value"]:
+            if known_value(cur.get("value")) and fmt_val(cur.get("value")) != fmt_val(pf["value"]):
                 cur["site_value"], cur["site_source"] = cur.get("value"), cur.get("source")
+            cur.pop("note", None)
             cur.update({"value": pf["value"], "source": pf["source"], "kind": "fact"})
         else:
             facts.append({"key": pf["key"], "value": pf["value"], "source": pf["source"], "kind": "fact",
@@ -433,6 +434,13 @@ def cmd_start(ns):
             "stage": {}, "events": [], "metrics": {}, "deny": [],
             "existing_context": scan.get("existing_context") or [], "changelog": []}
     save_profile(ws, prof, "开局:从 product_scan 起草 %d 条事实(全部未确认)" % len(prof["facts"]))
+    gsc = lifecycle.gsc_export_metrics(ws, prof)
+    if gsc:                                        # data/ 里已经有 GSC 导出:当场读进指标,阶段按真实数据判
+        prof["metrics"].update(gsc["metrics"])
+        prof.setdefault("metric_sources", {}).update({k: gsc["source"] for k in gsc["metrics"]})
+        save_profile(ws, prof, "记指标 %s(来源 %s)" % (",".join(gsc["metrics"]), gsc["source"]))
+        import loops as _loops
+        _loops.append_metrics(ws, gsc["metrics"], gsc["source"], gsc["at"])
     diag = lifecycle.diagnose(scan, ws)
     write_json(ctx(ws, "diagnosis.json"), diag)
     prof = load_profile(ws)
@@ -556,9 +564,13 @@ def question_text(q, prof):
             if f.get("by") == "agent":              # agent 从材料里记的:写实际出处,不说「按网址推的」
                 return "产品线是我从 %s 读的(见上面草稿),对吗?最想先做哪条?" % (f.get("source") or "材料")
             return q["text_inferred"]
-    if q.get("id") == "profile_ok" and not known_value(fact_value(prof, "pricing.model")):
-        return q["text"] + " 没读到收费方式:你们靠什么收钱(订阅、一次性购买、广告或联盟佣金……)?"
-    return q["text"]
+    text = q["text"]
+    if q.get("id") == "profile_ok":
+        for f, c in conflict_facts(prof):
+            text += " " + conflict_question(f, c)
+        if not known_value(fact_value(prof, "pricing.model")):
+            text += " 没读到收费方式:你们靠什么收钱(订阅、一次性购买、广告或联盟佣金……)?"
+    return text
 
 
 def guess_for(q, prof):
@@ -622,8 +634,70 @@ FACT_LABELS = {"product.name": "产品名", "product.one_liner": "一句话介�
 STATUS_ZH = {"unconfirmed": "未确认", "confirmed": "已确认", "corrected": "你改过", "unknown": "未知,待你说"}
 
 
+PRICE_AMOUNT_RE = re.compile(r"(?:[$€£¥₹]\s?\d[\d.,]*|\d[\d.,]*\s?(?:[$€£¥₹]|usd|eur|gbp|cny|rmb|元))", re.I)
+
+
+def _amounts(text):
+    """文字里的金额 → {(币种符号, 数值)};「$20/month」「20 USD」都认。"""
+    out = set()
+    for m in PRICE_AMOUNT_RE.finditer(str(text or "")):
+        s = m.group(0).lower()
+        cur = re.sub(r"[\d.,\s]", "", s) or "?"
+        num = re.search(r"\d[\d.,]*", s).group(0).rstrip(".,")
+        num = num.replace(",", "") if re.search(r",\d{3}(?!\d)", num) else num.replace(",", ".")
+        try:
+            out.add((cur, float(num)))
+        except ValueError:
+            pass
+    return out
+
+
+def _clauses(text):
+    return [c.strip() for c in re.split(r"[;；|]|\s/\s|,\s+|(?<=[.!?。])\s+", str(text or "")) if c.strip()]
+
+
+def fact_conflict(f):
+    """已有上下文文件的值和站点读到的值对不上 → {site_clause, file_clause, site_only};否则 None。
+    对不上 = 站点上写着、文件里没有的金额(站点只写了一部分价格不算);措辞不同、没有金额的不算。
+    用户已经纠正或确认过的不再算。"""
+    if f.get("status") != "unconfirmed" or not known_value(f.get("site_value")):
+        return None
+    site, mine = fmt_val(f["site_value"]), fmt_val(f.get("value"))
+    sa, fa = _amounts(site), _amounts(mine)
+    only = sa - fa
+    if not sa or not fa or not only:
+        return None
+    sc = next((c for c in _clauses(site) if _amounts(c) & only), site)
+    fcs = [c for c in _clauses(mine) if _amounts(c)] or [mine]
+    st = _tokens(re.sub(PRICE_AMOUNT_RE, " ", sc))
+    fc = max(fcs, key=lambda c: (len(st & _tokens(re.sub(PRICE_AMOUNT_RE, " ", c))), -fcs.index(c)))
+    return {"site_clause": sc[:160], "file_clause": fc[:160], "site_source": f.get("site_source") or "站点",
+            "file_source": f.get("source") or "已有上下文文件",
+            "site_only": [m.group(0) for m in PRICE_AMOUNT_RE.finditer(sc) if _amounts(m.group(0)) & only]}
+
+
+def conflict_facts(prof, keys=None):
+    out = []
+    for f in prof.get("facts") or []:
+        c = fact_conflict(f)
+        if c and (keys is None or f.get("key") in keys):
+            out.append((f, c))
+    return out
+
+
+def conflict_question(f, c):
+    label = FACT_LABELS.get(f["key"], f["key"]).split("(")[0]
+    return "%s对不上:%s 写「%s」,%s 写「%s」,哪个对?" % (label, c["file_source"], c["file_clause"],
+                                                    c["site_source"], c["site_clause"])
+
+
 def fact_line(f):
     label = FACT_LABELS.get(f["key"], f["key"])
+    c = fact_conflict(f)
+    if c:
+        return "- %s:对不上(站点写了 %s,文件里没有;在第 1 问里请你定)\n  文件写:%s ← %s\n  站点写:%s ← %s" % (
+            label, "、".join(c["site_only"]), fmt_val(f.get("value"))[:320], c["file_source"],
+            fmt_val(f.get("site_value"))[:320], c["site_source"])
     st = STATUS_ZH.get(f.get("status"), f.get("status") or "未确认")
     if f.get("status") == "unconfirmed" and f.get("kind") == "inferred":
         st += ",推测"
@@ -861,6 +935,8 @@ def plan_lines(ws):
                                                            it.get("metric") or "未定"))
     if len(items) > PLAN_ITEMS_SHOWN:
         L.append("- 另有 %d 条 ← plan/roadmap.md" % (len(items) - PLAN_ITEMS_SHOWN))
+    for r in plan.get("user_rules") or []:
+        L.append("- 按你的规则 %s:「%s」 ← playbook/rules.md" % (r.get("id"), r.get("quote")))
     deny = [d if isinstance(d, str) else d.get("item") for d in plan.get("deny") or []]
     if deny:
         L.append("- 不做:%s ← 你说过不做的" % ";".join(str(d) for d in deny if d))
@@ -904,6 +980,17 @@ def render_ring(prof, view, ws):
     L += ["- " + s for s in view["agent_steps"]]
     if r == 1 and prof.get("existing_context"):
         L.append("- 已有产品上下文文件(先读它当草稿):" + "、".join(c.get("path", "") for c in prof["existing_context"]))
+    msrc = prof.get("metric_sources") or {}
+    if r == 1 and msrc.get("gsc_clicks_28d"):
+        m = prof.get("metrics") or {}
+        L.append("- GSC 指标已经读进档案(不用再跑 metric):近 28 天点击 %s%s、展示 %s ← %s" % (
+            m.get("gsc_clicks_28d"), (",上一期 %s" % m["gsc_clicks_prev_28d"]) if "gsc_clicks_prev_28d" in m else "",
+            m.get("gsc_impressions_28d", "—"), msrc["gsc_clicks_28d"]))
+    if r == 1 and conflict_facts(prof):
+        L.append("- 已有上下文文件和站点对不上的 %d 处,脚本已经在草稿里两边都列出来、并写进第 1 问:%s;"
+                 "用户定了哪个就用 --correct <键>=<对的值> 记" % (
+                     len(conflict_facts(prof)), "、".join(FACT_LABELS.get(f["key"], f["key"]).split("(")[0]
+                                                         for f, _ in conflict_facts(prof))))
     if r == 1:
         miss = missing_core(prof)
         if miss:
@@ -1208,6 +1295,12 @@ def cmd_answer(ns):
             for item in split_deny(v):
                 if item not in [x["item"] for x in prof["deny"]]:
                     prof["deny"].append({"item": item, "at": now(), "quote": ns.quote})
+    if corrections:                                # 纠正了草稿的某几条、没否认其余:「草稿对不对」那一问算答了
+        for q in d["questions"]:
+            if q.get("answered_by_corrections") and q["id"] not in sets and q["id"] not in ring["answers"]:
+                labels = "、".join(FACT_LABELS.get(re.sub(r"\[\d+\]$", "", k), k).split("(")[0] for k in corrections)
+                ring["answers"][q["id"]] = "有几处要改:%s(按用户原话改了;其余照草稿,用户没否认)" % labels
+                ring.setdefault("from_corrections", []).append(q["id"])
     for k in ns.unknown or []:
         if k not in qmap:
             raise UsageError("第 %d 环没有问题 %s" % (r, k))
@@ -1225,7 +1318,9 @@ def cmd_answer(ns):
         ring["quotes"].append({"at": now(), "text": "(含敏感内容,原话存 context/private/,sha %s)" % h})
     else:
         ring["quotes"].append({"at": now(), "text": ns.quote})
-    msg = "第 %d 环记答案 %d 条" % (r, len(sets) + len(ns.unknown or []))
+    msg = "第 %d 环记答案 %d 条" % (r, len(sets) + len(ns.unknown or []) + len(
+        [q for q in d["questions"] if q.get("answered_by_corrections") and corrections and q["id"] not in sets
+         and q["id"] in (ring.get("from_corrections") or [])]))
     if corrections:
         msg += ",纠正 %s" % "、".join(corrections)
     for key in lifecycle.PROFILE_LIST_KEYS:          # 列表字段拆成了几项,打出来让 agent 当场核对
@@ -1293,6 +1388,9 @@ def cmd_answer(ns):
         return 0
     nxt = current_ring(prof)
     print("%s。%s" % (msg, ("下一环:%s" % ob_cmd(ws, "show --ring %d" % nxt)) if nxt else "6 环都完成了。"))
+    if nxt:
+        print("这句原话只确认了刚才的第 %d 环。第 %d 环要把 show 打印的那一块原样发给用户、停下,等到用户新的回话"
+              "再记答案和确认;不能拿同一句话接着确认第 %d 环。" % (r, nxt, nxt))
     return 0
 
 
@@ -1337,20 +1435,37 @@ def question_answered(q, answers):
     return all(m["id"] in answers for m in q.get("merged") or [] if m.get("required"))
 
 
+def unanswered_part(q, answers):
+    """一问并了几个 id、主问已经答了:只留没答的必答部分(文字、猜测、选项取那一部分的),已答的不再问。"""
+    if q["id"] not in answers:
+        return q
+    rest = [m for m in q.get("merged") or [] if m.get("required") and m["id"] not in answers]
+    if not rest:
+        return q
+    m = dict(rest[0], merged=[])
+    for extra in rest[1:]:
+        m["text"] = "%s %s" % (m["text"], extra["text"])
+    return m
+
+
 def partial_report(prof, r, ws, quote):
     """answer 不带 --confirm:哪几题记了、还没答的题原样再问(编号、选项、猜测不变)、怎么确认。"""
     view = ring_view(prof, r)
     answers = prof["rings"][str(r)].get("answers") or {}
     done = [(i, q) for i, q in enumerate(view["questions"], 1) if question_answered(q, answers)]
     todo = [(i, q) for i, q in enumerate(view["questions"], 1) if not question_answered(q, answers)]
-    L = ["已记答案:" + ("、".join("第 %d 题(%s)" % (i, "+".join(q["ids"])) for i, q in done) if done else "没有")]
+    half = [(i, q) for i, q in todo if q["id"] in answers]
+    L = ["已记答案:" + ("、".join("第 %d 题(%s)" % (i, "+".join(q["ids"])) for i, q in done) if done else "没有")
+         + "".join(";第 %d 题答了 %s,只差 %s" % (i, q["id"], "、".join(
+             m["id"] for m in q.get("merged") or [] if m.get("required") and m["id"] not in answers))
+             for i, q in half)]
     rule = ("已答的题里用户没说到的细节不追问、不另编问题:在那一题的答案里写「未说」,或用 --unknown <id>,"
             "然后直接 --confirm。")
     if todo:
         L += ["还没答的题 %d 个:把下面这块原样发给用户,停下等回答(编号、选项和猜测照原样,不加别的问题)。" % len(todo), "",
               BLOCK_START + "(到下面那行等号为止;不改写、不删选项、不合并问题)=====",
               "**开局第 %d 环 · %s**(还没答的题)" % (r, view["title"]), ""]
-        L += [render_question(i, q) for i, q in todo]
+        L += [render_question(i, unanswered_part(q, answers)) for i, q in todo]
         L += [BLOCK_END + " =====", "", rule,
               "用户回了以后:" + ob_cmd(ws, "answer --ring %d --set <id>=<答案> ... --quote \"<用户这次回话的原文>\" --confirm" % r),
               "用户说「按你的猜测来」:没答的题用上面的猜测 --set,或 --unknown <id>,带 --confirm。"]

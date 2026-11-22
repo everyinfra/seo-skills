@@ -1385,6 +1385,10 @@ def render_playbook(pb):
     for c in ch.get("changed") or []:
         L.append("- **检查 %s 的脚本改过了**(启用时 sha %s,现在 %s),已自动停用。给用户看改了什么,"
                  "确认后 `teach.py check try %s --url …` 再 `check enable`" % (c["name"], c["enabled_sha"], c["now_sha"], c["name"]))
+    for c in ch.get("unreadable") or []:
+        L.append("- **检查 %s 已停用:registry.json 读不了**(%s),启用记录和启用时的校验值都读不到,等用户重新确认:"
+                 "`teach.py check try %s --url …` 给用户看结果,再 `teach.py check enable %s --quote \"<原话>\"`"
+                 % (c["name"], c.get("why"), c["name"], c["name"]))
     for c in ch.get("skipped") or []:
         L.append("- 检查 %s 没跑:%s" % (c["name"], c["why"]))
     L.append("")

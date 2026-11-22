@@ -506,6 +506,63 @@ def _period_exports(ws, prof):
     return None
 
 
+def _period_totals(ws, prof):
+    """「网页」界面导出 Pages_起_止.csv(每期约 28 天)→ [(起, 止, 点击合计, 展示合计, 路径)](按止日升序);
+    空表(只有表头,那一期还没有数据)记 0。"""
+    import re as _re
+    for d in gsc_dirs(ws, prof):
+        got = []
+        for f in sorted(os.listdir(d)):
+            m = _re.match(r"^Pages_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.csv$", f)
+            if not m:
+                continue
+            try:
+                a, b = dt.date.fromisoformat(m.group(1)), dt.date.fromisoformat(m.group(2))
+            except ValueError:
+                continue
+            if not 26 <= (b - a).days + 1 <= 30:
+                continue
+            clicks = imps = 0.0
+            for r in _csv_rows(os.path.join(d, f)):
+                low = {str(k).strip().lower(): v for k, v in r.items() if k}
+                clicks += _num(low.get("clicks"))
+                imps += _num(low.get("impressions"))
+            got.append((a, b, clicks, imps, os.path.join(d, f)))
+        if got:
+            return sorted(got, key=lambda x: x[1])
+    return []
+
+
+def _shown(ws, path):
+    """导出文件在屏幕和档案里的写法:相对工作区所在目录(一般是 data/xxx.csv)。"""
+    rel = os.path.relpath(os.path.abspath(path), os.path.dirname(os.path.abspath(ws)))
+    return rel.replace(os.sep, "/") if not rel.startswith("..") else os.path.basename(path)
+
+
+def gsc_export_metrics(ws, prof=None):
+    """工作区旁 data/ 里的 GSC 导出 → 近两个 28 天的点击和展示(和 onboard.py metric 记的是同几个键)。
+    优先两期「网页」导出(Pages_起_止.csv,期间写在文件名里);没有就用逐日 gsc-pages.csv 里 28 天窗口
+    被数据盖满的最近一个检查点。→ {"metrics", "source", "at"};没有导出 → None。"""
+    per = _period_totals(ws, prof)
+    if per:
+        a, b, c, i, p = per[-1]
+        m = {"gsc_clicks_28d": int(c), "gsc_impressions_28d": int(i)}
+        names = [_shown(ws, p)]
+        if len(per) >= 2 and per[-2][1] < a:
+            m["gsc_clicks_prev_28d"] = int(per[-2][2])
+            names.insert(0, _shown(ws, per[-2][4]))
+        return {"metrics": m, "at": b.isoformat(),
+                "source": "%s(GSC 网页导出,这一期 %s~%s%s)" % (
+                    "、".join(names), a.isoformat(), b.isoformat(), ";上一期是前一份" if len(names) > 1 else "")}
+    path, rows = find_daily_pages(ws, prof)
+    pts = weekly_checkpoints(rows)
+    if pts:
+        last = pts[-1]
+        return {"metrics": last["metrics"], "at": last["at"],
+                "source": "%s(GSC 逐日导出,截至 %s 的 28 天)" % (_shown(ws, path), last["at"])}
+    return None
+
+
 def page_drop(ws, prof=None):
     """两期按页点击 → 掉量按页型拆;→ None(没有导出)或
     {"prev","cur","delta_pct","groups":[{"group","prev","cur","delta","share"}](掉得最多的在前),"source"}。"""
