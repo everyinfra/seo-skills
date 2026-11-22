@@ -362,6 +362,15 @@ skip_handled(定义里 kind 是 outcome+process)
   R84 从 Bash 命令里取词(split_simple,R42 / R65 / quote_before_confirm 等都用它)先按 bash 规则处理双引号里的转义:\$ → $、\` → `
       (shlex 的 posix 模式在双引号里只认 \" 和 \\);单引号里照原样。检查跑里 --quote "…\$22 a month…" 经 shell 展开就是 $22,
       档案里落的也是 $22、和用户回话一字不差,原来取到的「\$22」被判成不是用户原话。疑问 D。
+—— 出题人第四轮裁定(11-22,第 5 批检查跑二次补跑 ex6-user-rules 的 2 个疑问 Q-E、Q-F;依据是需求卡例 6 原话、转录和产出文件原文)——
+  R85 判「是不是用户原话」的两处比对先折宽度(fold_width):Unicode 标成 <wide> / <narrow> 的宽度变体换成对应的普通字符
+      (全角，：（）＄Ａ１ → 半角、半角片假名 → 全角、全角空格 → 空格),再照原来的读法比。用在 quotes_recorded(rule_recorded、
+      playbook_survives_upgrade)和 c_quote(quote_before_confirm)。不做 NFKC:①→1、™→TM、ﬁ→fi、½→1⁄2 这类会改掉看得见的内容;
+      「。、「」」没有宽度变体,照样逐字。补跑里用户回话是「…外链了，我们不做」(全角逗号),被测 --quote 传的、rules.md 落的
+      都是「…外链了,我们不做」(半角逗号),字一个不差;卡原文「带日期和用户原话」,换的是同一个标点的宽度,不是改写。疑问 Q-E。
+  R86 R71 的标题行另认「整项加粗的列表项」:1. / 1) / - / * / + 后面跟着一整段 **…**(可带结尾冒号)。补跑的 brief 把价格表放在
+      大纲第 2 项下面,标题行是「2. **价格对照表(R1,必须有)**」,原来只认 Markdown 标题、整行加粗和冒号结尾,「2. 价格对照表:」
+      算、加粗版反而不算。表体至少 2 格货币金额、两个产品名两条要求不变;列表项后面还跟着正文的(「2. **价格**放在后面」)不算。疑问 Q-F。
 """
 import argparse
 import datetime as dt
@@ -372,6 +381,7 @@ import re
 import shlex
 import shutil
 import sys
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EVALS = os.path.dirname(HERE)
@@ -419,6 +429,23 @@ def read_json(path, default=None):
 
 def squash(s):
     return re.sub(r"\s+", "", s or "")
+
+
+def _width_table():
+    t = {}
+    for cp in list(range(0x3000, 0x3001)) + list(range(0xFF00, 0xFFF0)):
+        d = unicodedata.decomposition(chr(cp))
+        if d.startswith(("<wide>", "<narrow>")):
+            t[cp] = chr(int(d.split()[1], 16))
+    return t
+
+
+WIDTH_FOLD = _width_table()
+
+
+def fold_width(s):
+    """R85:只把 Unicode 宽度变体(<wide> / <narrow>)换成普通字符,不做 NFKC 的其他兼容折叠。"""
+    return (s or "").translate(WIDTH_FOLD)
 
 
 def hits(text, words):
@@ -1405,7 +1432,8 @@ def c_quote(cx, cr):
                 continue
             n += 1
             q = (o["quote"] or "").strip()
-            src = next((ln for ln, r in replies if ln < c["line"] and q and q in (r or "")), None)
+            fq = fold_width(q)
+            src = next((ln for ln, r in replies if ln < c["line"] and q and fq in fold_width(r)), None)
             good = bool(q) and len(q) >= 6 and src is not None
             ok = ok and good
             checks.append({"line": c["line"], "ring": o["ring"], "quote": q[:80], "ok": good,

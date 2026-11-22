@@ -2060,5 +2060,63 @@ class Rulings1122P4(unittest.TestCase):
         self.assertFalse(G.c_quote(cx, {})[0])
 
 
+class Rulings1122P5(unittest.TestCase):
+    # R85(疑问 Q-E):原话只差全角 / 半角(Unicode 的 <wide> / <narrow> 宽度变体)算记下了;别的差异照样不算。
+    # 输入取自 runs7/ex6-user-rules-skill-1:用户回话是全角逗号,teach.py 记进 rules.md 的是半角逗号。
+    def test_quote_width_fold(self):
+        user = "别再建议我们去做 Reddit 外链了，我们不做"
+        line = "- 原话:「别再建议我们去做 Reddit 外链了,我们不做」(2026-11-22)"
+        self.assertIsNotNone(E.quotes_recorded([line], [user])[user])
+        for bad in ("- 原话:「别再建议我们做 Reddit 外链了,我们不做」(2026-11-22)",      # 少了字
+                    "- 原话:「别再建议我们去做 Reddit 外链了,我们不做」"):             # 没日期
+            self.assertIsNone(E.quotes_recorded([bad], [user])[user], bad)
+        # 只折宽度,不做 NFKC:① ≠ 1、。≠ .
+        self.assertIsNone(E.quotes_recorded(["第1条 2026-11-22"], ["第①条"])["第①条"])
+        self.assertIsNone(E.quotes_recorded(["不做.2026-11-22"], ["不做。"])["不做。"])
+        self.assertEqual(G.fold_width("ＡＢ１，：（）＄　ｶ"), "AB1,:()$ カ")
+
+    def test_confirm_quote_width_fold(self):
+        cmd = "python3 $S/onboard.py answer --ring 1 --quote '对,产品就是给小团队的告警' --confirm"
+
+        class Cx:
+            pass
+        cx = Cx()
+        cx.tr = G.Transcript.__new__(G.Transcript)
+        cx.tr.calls = lambda **k: [{"name": "Bash", "line": 9, "input": {"command": cmd}}]
+        cx.stops = [{"reply_line": 5, "reply": "对，产品就是给小团队的告警。"}]
+        self.assertTrue(G.c_quote(cx, {})[0])
+        cx.stops = [{"reply_line": 5, "reply": "对，产品就是给大团队的告警。"}]
+        self.assertFalse(G.c_quote(cx, {})[0])
+
+    # R86(疑问 Q-F):编号 / 无序列表项整项加粗的标题行也认;表格取自 runs7/ex6-user-rules-skill-1 t1_compare_brief 的 brief 原文
+    BRIEF = ("1. **TL;DR(首屏)**:两句话 + 一个 CTA。\n"
+             "2. **价格对照表(R1,必须有)**\n"
+             "\n"
+             "| 项目 | Pingwell | Alertmint | 来源 / 核对日期 |\n"
+             "|---|---|---|---|\n"
+             "| 免费档 | Free:3 用户、2 个平台 | [要追加] | pingwell.com/pricing/ 2026-11-22 / Alertmint 定价页 [要追加] |\n"
+             "| 入门付费档 | Team $19/月:最多 15 用户、全部平台、escalation | [要追加] | 同上 |\n"
+             "| 高阶档 | Business $49/月:不限用户、MCP server、SSO | [要追加] | 同上 |\n"
+             "| 计价方式(按人 / 按席位 / 按量) | 表中为月价,是否按人 [要追加: 产品确认] | [要追加] | |\n"
+             "| 试用 | Team 14 天,无需绑卡 | [要追加] | |\n"
+             "| 3 人团队月成本 | $0(Free) | [要追加] | 算式写在表注 |\n"
+             "| 10 人团队月成本 | $19(Team) | [要追加] | 算式写在表注 |\n"
+             "| 15 人团队月成本 | $19(Team) | [要追加] | 算式写在表注 |\n"
+             "| 超过 15 人 | $49(Business) | [要追加] | |\n"
+             "\n"
+             "   表下注明「价格核对日期」;过期就更新或删。\n")
+
+    def test_price_caption_list_item(self):
+        names = ["Alertmint", "PagerNest", "Pingwell"]
+        self.assertTrue(E.price_table_ok(self.BRIEF, names))
+        for cap in ("- **价格对照表**", "* **Pricing**", "3) **价格表**"):
+            self.assertTrue(E.price_table_ok(self.BRIEF.replace("2. **价格对照表(R1,必须有)**", cap), names), cap)
+        # 标题没有价格词、或列表项没整项加粗(后面还跟着正文)、或表体没有金额,照样不算
+        for cap in ("2. **功能对照表**", "2. **价格**放在后面单独一节"):
+            self.assertFalse(E.price_table_ok(self.BRIEF.replace("2. **价格对照表(R1,必须有)**", cap), names), cap)
+        feat = re.sub(r"\$\d+", "有", self.BRIEF)
+        self.assertFalse(E.price_table_ok(feat, names))
+
+
 if __name__ == "__main__":
     unittest.main()

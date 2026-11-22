@@ -981,8 +981,8 @@ def rules_lines(ws):
 def quotes_recorded(lines, quotes):
     rows = {}
     for q in quotes:
-        sq = G.squash(q)
-        ln = next((x for x in lines if sq in G.squash(x) and re.search(r"(?<!\d)20\d\d-\d\d-\d\d(?!\d)", x)), None)
+        sq = G.squash(G.fold_width(q))
+        ln = next((x for x in lines if sq in G.squash(G.fold_width(x)) and re.search(r"(?<!\d)20\d\d-\d\d-\d\d(?!\d)", x)), None)
         rows[q] = ln.strip()[:160] if ln else None
     return rows
 
@@ -1675,14 +1675,15 @@ def md_tables_at(text):
 
 
 def price_caption(lines, i):
-    """R71:表格正上方(跳过空行,最多看 2 个非空行)的标题行:Markdown 标题、整行加粗、或以冒号结尾的说明行。"""
+    """R71:表格正上方(跳过空行,最多看 2 个非空行)的标题行:Markdown 标题、整行加粗、或以冒号结尾的说明行。
+    R86:整项加粗的列表项(1. / 1) / - / * / + 后面一整段 **…**)也算。"""
     seen = 0
     for k in range(i - 1, -1, -1):
         ln = lines[k].strip()
         if not ln:
             continue
         seen += 1
-        if re.match(r"^#{1,6}\s+|^\*\*.+\*\*\s*[:：]?$|.+[:：]$", ln):
+        if re.match(r"^#{1,6}\s+|^(?:(?:\d+[.)]|[-*+])\s+)?\*\*.+\*\*\s*[:：]?$|.+[:：]$", ln):
             return ln
         if seen >= 2:
             break
