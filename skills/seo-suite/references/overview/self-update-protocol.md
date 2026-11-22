@@ -35,7 +35,7 @@
 可选附加(按需写进同一个定时任务):
 
 - **每周一**:有 citation 面板就跑 `python3 skills/seo-suite/scripts/citation_panel.py decay-summary --panel <panel.json> --json`,报告重写队列;`gh run list -R <OWNER/REPO> --limit 5` 看云端 workflow 是否全绿,红了只报告、不改 workflow。
-- **每月 1 日**:数字巡检。实测脚本数(`ls skills/seo-suite/scripts/*.py | wc -l`)、测试数(`python3 skills/seo-suite/tests/run_tests.py` 的 `Ran` 行)、模板数(`find skills/seo-suite/templates -name '*.md' | wc -l`);三个数字要等于 `data/capability-matrix.json` 的 `summary`(脚本 / 模板),再对齐 README.md、README.en.md、manifest.json、`.claude-plugin/` 里的版本号与数字以及 CHANGELOG 最新版本;跑 `python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references` 列出过期断言(只报告,修复走正常工单)。
+- **每月 1 日**:数字巡检。实测脚本数(`ls skills/seo-suite/scripts/*.py | wc -l`)、测试数(`python3 skills/seo-suite/tests/run_tests.py` 的 `Ran` 行)、模板数(`find skills/seo-suite/templates -name '*.md' | wc -l`);三个数字要等于 `data/capability-matrix.json` 的 `summary`(脚本 / 模板),再对齐 README.md、README.zh-CN.md、README.es.md、manifest.json、`.claude-plugin/` 里的版本号与数字以及 CHANGELOG 最新版本;跑 `python3 skills/seo-suite/scripts/freshness.py skills/seo-suite/references` 列出过期断言(只报告,修复走正常工单)。
 
 ## 更新流程(收到变更报告后)
 

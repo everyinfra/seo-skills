@@ -3,6 +3,11 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
+## 未发版 / Unreleased
+
+- **README 英文在前**:英文版改为仓库默认的 `README.md`,中文版移到 `README.zh-CN.md`,`README.en.md` 留作指向新位置的短页,三份顶部的语言切换同步。`install.sh` 结尾的宿主说明链接改指 `HOSTS.md`(原锚点已不存在),SKILL.md 的安装链接改指英文 README 的 `#install`,发版检查和宿主检查改读新文件名。
+  README is English first: the English version is now the default `README.md`, the Chinese version moved to `README.zh-CN.md`, and `README.en.md` stays as a short pointer. The host link printed by `install.sh` now goes to `HOSTS.md`, the install link in SKILL.md goes to `#install`, and the release and host checks read the new file names.
+
 ## 0.48.1 - 2026-11-22
 
 - **成熟度判级的证据补齐**(`lifecycle.py diagnose` 和开局诊断):

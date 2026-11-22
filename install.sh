@@ -209,4 +209,4 @@ done
 echo ""
 echo "  无 API key、无模型、无运行时依赖——skill 是说明与参考,agent 与你的数据干活。"
 echo "  试一试: 帮我做一次 SEO 整站诊断 / run a backlink profile analysis on example.com"
-echo "  宿主适配详情: https://github.com/everyinfra/seo-skills#hosts--宿主适配"
+echo "  宿主适配详情: https://github.com/everyinfra/seo-skills/blob/main/HOSTS.md"
