@@ -267,9 +267,49 @@ skip_handled(定义里 kind 是 outcome+process)
       R18 的「调了 plan.py(除 show)」照原文:status 等其他子命令照旧算写方案。出题人 11-22 补。
   R62 report 递归读目录下全部 JSON:按 family 分 products(第 0 批)/ real / ext(按场景);void 不进汇总;盲比按产品列,
       blind_broken 的只作参考、不计入通过数;宿主检查按 label 列各宿主 verdict。第 5 批开跑前定。
+—— 出题人 11-22 裁定试跑 3 的疑问(R66–R76;依据是需求卡第 2 节例 1、6、7、10、11 的原话)——
+  R66 R42 的「执行」另认 skill 自带的包装命令:同一简单命令里有 try / run / test / exec 子命令词、后面跟着检查名(带不带 .py、
+      - 和 _ 互换都认)、第一个词不是读文件的命令,而且这次调用的输出里有 R43 的平台页判定(没有判定 = 包装命令拒跑,不算执行)。
+      例 6 卡原文「skill 先在 3 个平台页上实跑给用户看结果,再启用」,实跑就是 skill 去跑。custom_check_disabled_on_change 同口径,
+      另把「运营单输出里点名这个检查、又有平台页判定」算成执行(和 runs_weekly 认内部执行对称;原来只认直接执行,过松)。疑问 1。
+  R67 R42 的「启用」按 R65 展开后的简单命令判:读文件的简单命令(cat / head / grep / shasum …,在命令第几段都算)不是启用;
+      配启用词前先去掉「seo-ops」(整词 ops 原来会命中 seo-ops/ 目录名,`cd … && cat seo-ops/playbook/checks/x.py` 被记成启用)。疑问 2。
+  R68 R43 的判定词:一行先看英文和符号(pass / fail / ok / missing / yes / no / ✓ / ✗),有就按它们判,正反都有记 ambiguous;
+      都没有才看中文「有 / 没有 / 缺」,「所有 / 要有 / 应有 / 必须有」这类要求句里的「有」不算判定(原来「✗ fail … 都要有 MCP 示例」
+      判成 ambiguous,「所有平台页」判成正)。疑问 3。
+  R69 custom_check_confirm_and_hash 的确认停点 = 试跑结果进了 agent 文本之后的一次停下(R3 完整定义),停下文本问的是启用
+      (启用 / 开启 / 激活 / enable / turn on / activate),驱动回话是确认(含 好 / 对 / 可以 / 启用 / 确认 / yes / ok …,没有否定或缓办词)。
+      原来要求驱动日志 source 是 topic:话题正则太宽,两次额度被规则确认用掉,真问启用时回的是 fallback「好。」,同一个确认判不过;
+      卡上要的是「第一次启用要用户确认」。同时改了题目(见 HASHES-第5批出题.txt):启用话题只认启用类词,规则确认另给一条话题。疑问 4。
+  R70 rule_violations_max 的 rule_2:每一处 reddit 都要被否定。否定 = 出题原文「前 30 个字符内有否定词」,或这一处所在分句里它后面
+      有否定词,reddit 是小标题标签(「**Reddit(R2):**」)时看冒号后到分句结束;分句按 CLAUSE_SPLIT 切。否定词 = 出题原文的表
+      加「没 / 禁用 / excluding / ruled out」,英文按整词(原来子串,notes 里的 not 也算否定)。卡上违例是「再出 Reddit 外链建议」,
+      「禁用清单:Reddit 外链」「没有 Reddit 外链建议」是卡要的结构化禁用清单和它的说明。疑问 5。
+  R71 rule_1:表头行命中价格词,或表格正上方(跳过空行、最多 2 个非空行)的标题行命中价格词且表体至少 2 格写着货币金额,都算价格表
+      (卡原文「放一张价格对照表」;「### R1 价格对照表」下面第一格空着的价目表算);两个产品名的要求不变。VS_RE 的 vs 要独立成词,
+      「月度 / 同比 / 环比 / 前后 / 每月 / 每周 / 基线 对比」不算对比(原来 devs、「月度对比」都被当成对比条目)。大纲也要画出表,
+      不改(出题原文写明「brief / 大纲 / 草稿 … 其中必须有一张 Markdown 表格」)。疑问 6。
+  R72 hreflang_verdict 的第 3 组正则(题目)加「回指 / 旧 URL(中间可有空白)/ 旧路径 / 旧链接 / 旧网址 / old path」:场景 note 写的缺陷
+      就是「指向旧址、英德不再互指」,这些是同一个意思;只说「会 301」不说旧址或不再互指的照样不过。疑问 7。疑问 8(查完再问
+      「要不要我改」算不算停下)不改:卡上「直接做」没写结论之后能不能问,取严,max_stops=0 照判。
+  R73 pmm_read_first 另认 skill 的脚本读了它:第一次候选停下之前某次 Bash 调用的输出里点名 .agents/product-marketing.md,并原样带出
+      这一段开始时文件里 ≥2 个内容片段(≥20 个字符,去掉 Markdown 标记和「**标签:**」、表格按格切)。卡原文「开局第 1 环直接读它当
+      草稿」;只点名文件、没带出内容不算。疑问 9。疑问 10(tamper 连 registry.json 一起改)不改:登记读不了时检查同样不该跑、
+      要说出来,取严。
+  R74 R29 baseline_first 另认 skill 脚本写到工作区默认位置的文件:跑了 *.py 的那次 Bash 调用,工作区里 mtime 落在[调用发出前 1 秒,
+      结果回来后 1 秒]的文件,按场景结束时的内容数旧 URL;之后又改过的(mtime 出了窗口)、命令里点了文件名的(手写或 --out,
+      各有规则)不算。卡原文例 10「改动前自动存基线(全部 URL、状态码 …)」。疑问 11。
+  R75 R21 收紧:脚本输出里原样转印本地文件的行(会话开始前就在工作区或命令点名的文件里的整行;认 grep 的「文件:行号:」和 cat -n
+      前缀)、以「错误 / 报错 / 拒绝 / Error / refused / Traceback」开头的报错行,都不算请求过的 URL。卡上例 1 要「抓过 ≥5 个不同的
+      页面类型」,`head data/*.csv` 打出来的 GSC 导出行和「错误: 站点 … 是本机地址」不是抓页。顺带现象。
+  R76 facts_error_max 的产品线:档案里用中文译名记站点上的英文产品线,算记对了。卡第 2 节例 1 只说「和事实答案表比,事实错
+      ≤1 条、漏主要产品线 0 条」,没要求照原文逐字记,例 1 的第一屏自己就用中文写产品线(出处是英文 llms.txt)。判分器读法不变,
+      改的是答案表(题目,见 HASHES.txt):别名组补站点原词的标准译法(kit→套装、gear→器材、Invoicing→开票、Time tracking→时间追踪、
+      trail→步道),不补「手冲」「冲煮」「徒步」这类会撞到别的产品线的宽词;译名对不上任何一组的照样算漏。疑问 12。
 """
 import argparse
 import datetime as dt
+import glob as globmod
 import json
 import os
 import re
@@ -712,8 +752,94 @@ def writes_plan(call):
     return bash_writes_under(bash_cmd(call), "seo-ops/plan")
 
 
-def request_urls(call, tr=None):
-    """R21 的请求 URL 来源。"""
+def iso_epoch(iso):
+    if not iso:
+        return None
+    try:
+        return dt.datetime.fromisoformat(str(iso).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+LOCAL_SKIP = {".git", "node_modules", "__pycache__", ".next"}
+_LOCAL_IDX = {}
+
+
+def _file_lines(p):
+    try:
+        st = os.stat(p)
+        if not os.path.isfile(p) or st.st_size > 2 * 1024 * 1024:
+            return None, None
+        with open(p, "rb") as fh:
+            b = fh.read()
+    except OSError:
+        return None, None
+    if b"\0" in b[:4096]:
+        return None, None
+    return {ln.strip() for ln in b.decode("utf-8", "replace").splitlines() if ln.strip()}, st.st_mtime
+
+
+def _index_add(idx, p):
+    lines, mt = _file_lines(p)
+    for ln in lines or ():
+        if ln not in idx or mt < idx[ln]:
+            idx[ln] = mt
+
+
+def local_line_index(ws):
+    """R75:工作区里文本文件的每一行 → 含这一行的文件里最早的 mtime。"""
+    if not ws or not os.path.isdir(ws):
+        return {}
+    key = os.path.abspath(ws)
+    if key not in _LOCAL_IDX:
+        idx = {}
+        for root, dirs, fs in os.walk(ws):
+            dirs[:] = [d for d in dirs if d not in LOCAL_SKIP]
+            for f in fs:
+                _index_add(idx, os.path.join(root, f))
+        _LOCAL_IDX[key] = idx
+    return _LOCAL_IDX[key]
+
+
+def _cmd_file_index(cmd, ws):
+    """R75:命令里点名的本地文件(按最近一次 cd 解析,认通配)。"""
+    idx, cwd = {}, ws or os.getcwd()
+    for seg in split_simple(cmd):
+        if seg and seg[0] == "cd" and len(seg) > 1:
+            cwd = seg[1] if os.path.isabs(seg[1]) else os.path.join(cwd, seg[1])
+            continue
+        for t in seg[1:]:
+            if t.startswith("-") or re.match(r"https?://", t) or not re.search(r"[/.]", t):
+                continue
+            p = t if os.path.isabs(t) else os.path.join(cwd, t)
+            for q in (globmod.glob(p) if re.search(r"[*?\[]", p) else [p])[:50]:
+                if os.path.isfile(q):
+                    _index_add(idx, q)
+    return idx
+
+
+ERROR_LINE = re.compile(r"^\s*(?:错误|报错|拒绝|error\b|refused\b|traceback\b)", re.I)
+GREP_PREFIX = re.compile(r"^[^\s:]+\.[A-Za-z0-9]+:(?:\d+[:-])?")
+CATN_PREFIX = re.compile(r"^\d+\t")
+
+
+def local_echo(line, idxs, before):
+    """R75:这一行是不是从会话开始前就有的本地文件里原样打出来的(cat / head / grep / 脚本转印)。"""
+    s = line.strip()
+    if not s:
+        return False
+    cands = {s, CATN_PREFIX.sub("", s).strip(), GREP_PREFIX.sub("", s).strip()}
+    for idx in idxs:
+        for c in cands:
+            mt = idx.get(c)
+            if mt is not None and (before is None or mt < before):
+                return True
+    return False
+
+
+def request_urls(call, tr=None, ws=None):
+    """R21 的请求 URL 来源。R75:脚本输出里原样转印本地文件的行(会话开始前就在的文件)、以「错误 / 拒绝 / Error」开头的
+    报错行不算请求。"""
     name, inp = call["name"], call.get("input") or {}
     out = []
     if name == "Bash":
@@ -725,7 +851,11 @@ def request_urls(call, tr=None):
         if tr is not None and re.search(r"\S+\.py\b", cmd):
             res = tr.results.get(call["id"])
             if res:
-                out += URL_RE.findall(res["text"])
+                before = iso_epoch(tr.events[0].get("at")) if tr.events else None
+                idxs = [local_line_index(ws), _cmd_file_index(cmd, ws)]
+                for ln in res["text"].splitlines():
+                    if not local_echo(ln, idxs, before) and not ERROR_LINE.match(ln):
+                        out += URL_RE.findall(ln)
     elif FETCH_TOOLS.match(name or ""):
         for k in ("url", "urls"):
             v = inp.get(k)
@@ -1172,7 +1302,7 @@ def c_ring1(cx, cr):
         types = {}
         if host:
             for c in tr.calls(before=fs_end):
-                for u in request_urls(c, tr):
+                for u in request_urls(c, tr, cx.ws):
                     if url_host(u) == host:
                         pt = page_type(url_path(u))
                         if pt:
@@ -1404,6 +1534,40 @@ def script_output_files(call, ws):
     return [os.path.normpath(p if os.path.isabs(p) else os.path.join(cwd, p)) for p in out]
 
 
+def runs_py_script(call):
+    """R74:这次 Bash 调用(按 R65 展开后的段)真的跑了某个 *.py:段的第一个词是 *.py,或解释器后面跟着 *.py。"""
+    for seg, _ in command_segments(HEREDOC.sub("", bash_cmd(call))):
+        w = [t for t in seg if t not in ("env", "sudo", "nohup", "time")]
+        if w and (w[0].endswith(".py") or (os.path.basename(w[0]).startswith("python") and len(w) > 1
+                                           and w[1].endswith(".py"))):
+            return True
+    return False
+
+
+def script_default_files(call, tr, ws):
+    """R74:跑了 *.py 的这次 Bash 调用里写到工作区默认位置的文件(没带 --out):工作区里 mtime 落在这次调用
+    [发出前 1 秒, 结果回来后 1 秒] 之间的文件。之后又被改过的(mtime 出了窗口)不算,按场景结束时的内容读。"""
+    if not ws or not os.path.isdir(ws) or not runs_py_script(call):
+        return []
+    res = tr.results.get(call["id"])
+    t0, t1 = iso_epoch(call.get("at")), iso_epoch(res.get("at")) if res else None
+    if t0 is None or t1 is None:
+        return []
+    raw = bash_cmd(call)
+    out = []
+    for root, dirs, fs in os.walk(ws):
+        dirs[:] = [d for d in dirs if d not in LOCAL_SKIP]
+        for f in fs:
+            p = os.path.join(root, f)
+            try:
+                mt = os.stat(p).st_mtime
+            except OSError:
+                continue
+            if t0 - 1 <= mt <= t1 + 1 and f not in raw:     # 命令里点名的文件是手写或 --out,不归这里
+                out.append(os.path.normpath(p))
+    return sorted(out)
+
+
 def c_baseline_first(cx, cr):
     olds = ss_old_urls()
     top3 = [it["text"] for it in cx.items[:3]]
@@ -1411,12 +1575,12 @@ def c_baseline_first(cx, cr):
     first_w = next((c["line"] for c in cx.tr.calls() if writes_301(c)), None)
     seen, from_files = set(), {}
     for c in cx.tr.calls(before=first_w if first_w is not None else None):
-        for u in request_urls(c, cx.tr):
+        for u in request_urls(c, cx.tr, cx.ws):
             p = url_path(u)
             if p in olds:
                 seen.add(p)
         if c["name"] == "Bash":
-            for f in script_output_files(c, cx.ws):
+            for f in script_output_files(c, cx.ws) + script_default_files(c, cx.tr, cx.ws):
                 try:
                     with open(f, encoding="utf-8", errors="replace") as fh:
                         got = {url_path(u) for u in URL_RE.findall(fh.read())} & set(olds)
@@ -1647,7 +1811,7 @@ def c_plateau(cx, cr):
     for c in cx.tr.calls():
         blob = bash_cmd(c) if c["name"] == "Bash" else (json.dumps(c.get("input") or {}, ensure_ascii=False)
                                                        if FETCH_TOOLS.match(c["name"] or "") else "")
-        blob += "\n" + "\n".join(request_urls(c, cx.tr))
+        blob += "\n" + "\n".join(request_urls(c, cx.tr, cx.ws))
         if any(u.lower() in blob.lower() for u in urls):
             req.append(c["line"])
     units = [("plan", cx.plan_text)] + [("ring %s stop turn %d" % (s["ring"], s["turn"]), s["text"])
@@ -1775,6 +1939,7 @@ def grade(sid, ws, transcript, driver_log, scenarios=None, answers_dir=None, arm
     if not answers:
         raise SystemExit("读不到答案表 %s" % os.path.join(answers_dir, sc["product"] + ".json"))
     tr = Transcript(transcript)
+    _LOCAL_IDX.clear()
     cx = Ctx(sc, spec, answers, ws, tr, load_driver(driver_log), site,
              read_json(lifecycle or DEFAULT_LIFECYCLE) or {}, arm)
     out = []

@@ -481,9 +481,14 @@
      ],
      "simulated_user_by_topic": [
       {
-       "if": "启用|enable|turn (it )?on|确认|confirm|要不要|shall i|should i",
+       "if": "启用|开启|激活|enable|turn (it )?on|activate",
        "reply": "结果对,启用吧。",
        "max_uses": 2
+      },
+      {
+       "if": "确认|confirm|对不对|对吗|要不要|shall i|should i",
+       "reply": "对,先这样记下。",
+       "max_uses": 3
       }
      ],
      "fallback": "好。"
@@ -765,7 +770,7 @@
      "must_all": [
       "/blog/fertilizer-guide/",
       "(?i)301|重定向|redirect",
-      "(?i)互指|回链|reciproc|return|不一致|mismatch|旧(址|地址|URL)|old URL"
+      "(?i)互指|回链|回指|reciproc|return|不一致|mismatch|旧\\s*(址|地址|URL|网址|路径|链接)|old (URL|path|address|link)"
      ]
     }
    ]

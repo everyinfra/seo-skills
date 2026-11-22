@@ -80,8 +80,9 @@ python3 $G onboard-prelaunch --ws WS --transcript <转录> --driver-log RUN/driv
 python3 $G report RESULTS
 ```
 
-- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63–R65。
+- 每条断言给 `pass`、`kind`(outcome / process)和证据(转录行号、文件路径、命中的词)。读法(criteria_defs 有歧义处怎么判)写在 `grade.py` 文件头 R1–R32、R63–R76。
 - R65:认 onboard.py / plan.py 等脚本调用前,把同一条 Bash 命令里前面赋过值的 `$NAME` / `${NAME}`(整词或路径前缀)展开,跨调用不展开,展开后其余判定规则不变。R26 审计脚本、R42 执行、ops weekly 同一口径;纯赋值段和命令前缀赋值(`O=… python3 $O …`)里写的脚本不算调用。
+- R66–R76(出题人 11-22 裁定试跑 3 的 12 个疑问,全文在 `grade.py` 文件头):包装命令 `check try <名>` 输出里有平台页判定就算执行(停用断言同口径,运营单内部跑了也算);启用按简单命令判、不认 `seo-ops/` 里的 ops;判定词英文 / 符号优先;启用确认看「停下问启用 + 回话是确认」;Reddit 否定看前 30 字、同分句后文和标签冒号后;价格表认紧邻上方的价格标题加货币金额,`vs` 独立成词、「月度对比」不算对比;开局脚本输出里原样带出 product-marketing.md 内容算读过;脚本写到默认位置的基线文件按 mtime 窗口归给那次调用;脚本输出里转印本地文件的行和报错行不算请求。R74、R75 要用到工作区文件的 mtime 和转录时间戳:**判分前不要复制或改动工作区**(要复制用 `cp -p` / `shutil.copy2`)。R76(疑问 12):档案里产品线用中文译名记算对,答案表别名组补了站点原词的标准译法(改的是 `answers/*.json`,hash 见 `HASHES.txt`)。
 - `report` 按产品 × arm 汇总:`outcome_pass_pct`、`outcome_gap_pp`(skill − baseline、v043 − baseline、skill − v043,单位百分点)只算 outcome 类;process 类在 `process` 下单列,不进差距(红队致命 2)。`maturity_exact` 是例 9 的 5 维完全一致数(null 只和「未知」对得上)。
 - void 的 run 列在 `void`,不进任何汇总。
 - 判分器改了要先过校准:`python3 -m unittest tools/evals/onboarding/test_grade.py`(发版门 `tools/evals/fast_checks.py` 也跑它)。
@@ -96,6 +97,8 @@ python3 $G report RESULTS
 ## 6. 第 5 批:真实站、扩展场景、盲比、宿主检查
 
 第 5 批的题是另一位出题人写的,**一个字不改**,开跑前核 hash:公开的 `scenarios_ext.json`、`rubric_example3.json`、`hosts_static.json` 对本目录 `HASHES-第5批出题.txt`(`cd tools/evals/onboarding && grep -v '^#' HASHES-第5批出题.txt | awk '{print $1"  "$2}' | shasum -a 256 -c`);私有的 `<PRIVATE>/scenarios-real.json` 和它的答案表对私有目录里的 `HASHES-第5批出题.txt`。真实站的场景 id、产品名和结果文件都只放私有目录,不进本仓。
+
+2026-11-22 出题人裁定试跑 3 后改了 `scenarios_ext.json` 两处(ex6 teach 段的话题回话、ex7-hreflang-broken 第 3 组正则),新旧 hash 和原因记在 `HASHES-第5批出题.txt` 末行;已经跑完的 run 判分时 run.json 里的 `scenarios_file` 指到哪份就用哪份,要按新题判,在内存里把 `R["scenarios_file"]` 换成本检出的文件再调 `grade_ext.grade_ext(R, …)` / `grade.grade(…)`,不改 run 目录。
 
 第 5 批一律走 run 目录:`setup` 建站和工作区、写 `RUN/run.json`,之后的子命令只认 `--run RUN`(布局见 `grade_ext.py` 文件头)。读法在 `grade.py` 文件头 R33–R65。出题人更正过的回话记在场景的 `superseded_replies` 里:收到旧回话的 run,列出的断言记 voided、不进汇总(R63)。
 
