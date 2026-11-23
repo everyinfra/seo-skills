@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""field_data.py 读 CrUX 软导航实验指标(2026-11-05)。
+"""field_data.py 读 CrUX 软导航实验指标(2026-11-22)。
 
 期望值来自一手原文,不是读实现写的:
 - 指标名与类型:CrUX API 文档「Metric value types」表(developer.chrome.com/docs/crux/api,
-  核对 2026-11-05):experimental_cumulative_layout_shift_with_softnavs 为「2 decimal place
+  核对 2026-11-22):experimental_cumulative_layout_shift_with_softnavs 为「2 decimal place
   double encoded as string」,experimental_interaction_to_next_paint_with_softnavs、
   experimental_largest_contentful_paint_with_softnavs 为「int milliseconds」,都有 p75。
+  - 导航类型:experimental_navigation_types_with_softnavs 是 fractions 占比,不是 p75,所以不在脚本常量里,只在事实表里注明。
 - 口径:web.dev 2026-10-13 博文(web.dev/blog/crux-experimental-soft-navs)写明稳定版 Core Web
   Vitals 分数不变,实验版并列评估;所以实验值单列、不覆盖稳定版、不触发退出码。
 - 没有这些字段的记录(大多数非 SPA 站,或 2026-10 之前的数据)照常输出,不报错。
@@ -23,10 +24,11 @@ sys.path.insert(0, os.path.join(BASE, "scripts"))
 
 import field_data as fd  # noqa: E402
 
-DOC_NAMES = {  # CrUX API 文档原文里的三个名字
+DOC_NAMES = {  # CrUX API 文档原文里的四个 p75 名字,2026-11-11 起再加 FCP
     "experimental_largest_contentful_paint_with_softnavs",
     "experimental_interaction_to_next_paint_with_softnavs",
     "experimental_cumulative_layout_shift_with_softnavs",
+  "experimental_first_contentful_paint_with_softnavs",
 }
 
 
@@ -117,7 +119,7 @@ class SoftnavTests(unittest.TestCase):
 
 class FactsTableAlignment(unittest.TestCase):
     def test_facts_softnav_names_match_script(self):
-        """事实表 #crux-softnav 写的三个名字 = 脚本常量(改一边忘另一边就红)。"""
+        """事实表 #crux-softnav 写的四个 p75 名字 = 脚本常量(改一边忘另一边就红)。"""
         import re
         with open(os.path.join(BASE, "references", "overview", "facts.md"), encoding="utf-8") as f:
             text = f.read()
