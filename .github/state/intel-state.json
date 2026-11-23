@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-22T07:58:12.077253+00:00",
+ "checked_at": "2026-11-23T08:58:20.256200+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "fad80f9dcba1221d9e4f55da7b5c0d50",
-   "ts": "2026-11-22T07:57:55.288858+00:00"
+   "hash": "2ff15099f39a73f6b9e57bd916c9ab57",
+   "ts": "2026-11-23T08:58:04.298940+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -111,23 +111,20 @@
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "c8e0dfdff8f8a67e7c84f7cbe36ea2c5",
-   "ts": "2026-11-22T07:58:08.684828+00:00"
+   "hash": "ac6c1d5392e4d7ac9fe2c7f3fb2948c2",
+   "ts": "2026-11-23T08:58:16.548638+00:00"
   },
   "statcounter-ai": {
-   "hash": "d636e937dbad5e191e9e60d446648c2f",
-   "ts": "2026-11-22T07:58:08.956809+00:00"
+   "hash": "dd2cc3d6e01d89672f12fc7da809acd9",
+   "ts": "2026-11-23T08:58:16.895459+00:00"
   },
   "semrush-sensor": {
    "hash": "031f563a5e4f4408383903ac8e8cae54",
    "ts": "2026-11-20T08:30:23.936348+00:00"
   },
   "seroundtable": {
-   "top": "Daily Search Forum Recap: November 20, 2026",
+   "top": "Google StarSearch, AIGC, Zero-History Discovery, Feed Ranking & More",
    "seen": [
-    "Daily Search Forum Recap: November 9, 2026",
-    "Google Search Ranking Volatility Status: Update November 8th/9th?",
-    "Google AI Mode Multiturn Ads Are Live - Follow-Up Query Ads",
     "Google Adding Booking Links To Business Profiles Automatically?",
     "Bing Ads At Top Of AI Mode Results",
     "Google Loses Another Round in Legal Battle Against SerpApi Over Scraping",
@@ -174,9 +171,12 @@
     "Search News Buzz Video Recap: Google November Core Update Status, FBI Alert On SEO Poisoning, Bing & ChatGPT Web Only Links, Microsoft Ads Bid Upgrade",
     "Google, ChatGPT & Others AI Engines Provide Coupon Codes",
     "ChatGPT Card Design",
-    "Google Expands & Clarifies Sexual Content Advertising Policy Examples"
+    "Google Expands & Clarifies Sexual Content Advertising Policy Examples",
+    "Google StarSearch, AIGC, Zero-History Discovery, Feed Ranking & More",
+    "You Can Connect ChatGPT Business Hub With ChatGPT Ad Account",
+    "Google Search Profiles Is Rolling Out Globally"
    ],
-   "ts": "2026-11-21T08:15:02.877945+00:00"
+   "ts": "2026-11-23T08:58:18.447402+00:00"
   },
   "google-docs-rss": {
    "top": "Removed the Data Feed validation tool from the book actions documentation",
