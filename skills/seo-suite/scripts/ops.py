@@ -23,7 +23,8 @@
 安全边界:只读站点、只写 seo-ops/;不改站点代码,不推送,不部署。
 
 用法:
-  python3 ops.py weekly  [--ws seo-ops] [--site URL] [--external FILE] [--top-n 50] [--workers 8]
+  python3 ops.py weekly  [--ws seo-ops] [--site URL] [--external FILE] [--top-n 50]
+                         [--light-delay 0.5] [--light-sample '路径正则=个数' ...]
                          [--repo PATH] [--no-net] [--date YYYY-MM-DD] [--json]
   python3 ops.py monthly ...           # 周单 + 内容退役候选 + 30 条事实断言重抽提醒
   python3 ops.py change add --urls U1,U2 --summary "…" --rollback "git revert abc123" \
@@ -68,6 +69,9 @@ SEARCH_BOTS = ("Googlebot", "bingbot", "Applebot", "YandexBot", "Baiduspider")
 CERT_WARN_DAYS = 14
 ANNOTATION_MAX = 120
 RETRY_PAUSES = (15, 45)          # 秒:两轮重试前各停多久
+# 轻检默认逐个抓、两次请求之间停 0.5 秒(和 sitemap_audit.py 默认一致)。按需渲染的页每抓一次源站就渲染一次、
+# 写一份缓存;不停顿地并发抓几千个 URL,几十分钟就能把源站的缓存盘写满。
+LIGHT_DELAY_S = 0.5
 
 
 class UsageError(Exception):
@@ -299,7 +303,68 @@ def check_one(url, timeout):
     return row
 
 
-def light_check(site, extra_urls, workers, timeout, limit=0):
+def parse_samples(specs):
+    """--light-sample 路径正则=个数 → [(正则, 个数, 原文)]。写错直接报错,不静默改成全量。"""
+    out = []
+    for spec in specs or ():
+        pat, sep, n = spec.rpartition("=")
+        if not sep or not pat or not n.strip().isdigit() or int(n) < 1:
+            raise UsageError("--light-sample 要写成 路径正则=个数(个数 ≥1),如 '^/(ja|ko)/=60';收到 %r" % spec)
+        try:
+            out.append((re.compile(pat), int(n), spec))
+        except re.error as e:
+            raise UsageError("--light-sample 的正则写错了 %r:%s" % (pat, e))
+    return out
+
+
+def sample_targets(targets, keep, samples, notes):
+    """路径匹配抽样规则的 URL 按位置均匀抽 N 个(含首尾,同 sitemap_audit --check-limit);keep 里的
+    (GSC 有点击的页)不抽、照查。一个 URL 只归第一条匹配的规则。
+    返回 (留下的 targets, 抽掉的 URL(已 norm), 每条规则的总数和查了几个)。"""
+    if not samples:
+        return targets, set(), []
+    groups = [[] for _ in samples]
+    for u in targets:
+        if norm(u) in keep:
+            continue
+        path = urllib.parse.urlsplit(u).path or "/"
+        for gi, (rx, _n, _spec) in enumerate(samples):
+            if rx.search(path):
+                groups[gi].append(u)
+                break
+    dropped, report = set(), []
+    for (_rx, n, spec), urls in zip(samples, groups):
+        picked = SM.sample_children(urls, n)
+        dropped |= {norm(u) for u in urls} - {norm(u) for u in picked}
+        report.append({"rule": spec, "total": len(urls), "checked": len(picked)})
+        if len(urls) > len(picked):
+            notes.append("按位置抽样 %s:%d 个查 %d 个(GSC 有点击的页不抽)" % (spec, len(urls), len(picked)))
+    return [u for u in targets if norm(u) not in dropped], dropped, report
+
+
+def fetch_rows(targets, workers, timeout, delay):
+    """delay > 0:逐个抓,两次请求之间停 delay 秒(默认);delay = 0:按 workers 并发,只给本机或扛得住的站。"""
+    if delay > 0:
+        rows = []
+        for i, u in enumerate(targets):
+            if i:
+                time.sleep(delay)
+            rows.append(check_one(u, timeout))
+        return rows
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        return list(ex.map(lambda u: check_one(u, timeout), targets))
+
+
+def light_sitemap_coverage(light):
+    """查到的 sitemap URL ÷(sitemap URL − 按抽样规则抽掉的)。抽样是声明过的口径,覆盖节写明,不算漏查。"""
+    if not light:
+        return 0.0
+    in_sm = set(light["in_sitemap"])
+    hit = len({norm(r["url"]) for r in light["rows"]} & in_sm)
+    return pct(hit, len(in_sm) - light.get("sampled_out", 0))
+
+
+def light_check(site, extra_urls, workers, timeout, limit=0, delay=LIGHT_DELAY_S, samples=()):
     t0 = time.time()
     notes = []
     locs, sm_errors, sm_files = collect_locs(site, timeout, notes)
@@ -313,14 +378,12 @@ def light_check(site, extra_urls, workers, timeout, limit=0):
         if n not in seen:
             seen.add(n)
             targets.append(u)
+    targets, sampled_out, sample_report = sample_targets(targets, {norm(u) for u in extra_urls}, samples, notes)
     if limit and len(targets) > limit:
         notes.append("轻检限到前 %d 个 URL(共 %d)" % (limit, len(targets)))
         targets = targets[:limit]
-    rows = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
-        for row in ex.map(lambda u: check_one(u, timeout), targets):
-            rows.append(row)
-    # 并发下没缓存的动态页会被源站拖慢:失败的先停一会儿,再逐个、加倍超时重试两轮;
+    rows = fetch_rows(targets, workers, timeout, delay)
+    # 没缓存的动态页抓多了会被源站拖慢:失败的先停一会儿,再逐个、加倍超时重试两轮;
     # 后面某轮成功的记 slow_under_load(抓取高峰时超时),都失败才算抓取失败
     failed = [i for i, r in enumerate(rows) if r.get("status") == 0 or r.get("status", 0) >= 500]
     for pause in (RETRY_PAUSES if failed else ()):
@@ -328,7 +391,9 @@ def light_check(site, extra_urls, workers, timeout, limit=0):
             break
         time.sleep(pause)
         still = []
-        for i in failed:
+        for k, i in enumerate(failed):
+            if k and delay > 0:
+                time.sleep(delay)
             row = check_one(rows[i]["url"], timeout * 2)
             if row.get("status") == 0 or row.get("status", 0) >= 500:
                 still.append(i)
@@ -343,7 +408,8 @@ def light_check(site, extra_urls, workers, timeout, limit=0):
         notes.append("跳过 %d 个不在本站的 URL" % offsite)
     return {"sitemap_files": sm_files, "sitemap_errors": sm_errors, "locs_total": len(locs),
             "extra_urls": len(extra_urls), "targets": len(targets), "checked": len(rows),
-            "seconds": round(time.time() - t0, 1), "notes": notes,
+            "seconds": round(time.time() - t0, 1), "notes": notes, "delay": delay, "workers": workers,
+            "sampled": sample_report, "sampled_out": len(sampled_out),
             "in_sitemap": sorted({norm(u) for u in locs}), "rows": rows}
 
 
@@ -916,14 +982,19 @@ def run_ops(args, kind):
         cov["skipped"].append("轻检、深审、证书、robots:--no-net")
     else:
         guard_site(site, args.allow_local)
-        light = light_check(site, [p["page"] for p in clicked], args.workers, args.timeout, args.light_limit)
+        light = light_check(site, [p["page"] for p in clicked], args.workers, args.timeout, args.light_limit,
+                            args.light_delay, parse_samples(args.light_sample))
         # 进 git 的只留有问题的行(状态非 200、noindex、canonical 指别处、重试过);全 OK 的只记个数
         keep = [r for r in light["rows"] if r.get("status") != 200 or r.get("noindex") or r.get("retried")
                 or (r.get("canonical") and not r.get("canonical_self"))]
         write_json(os.path.join(run_dir, "light.json"),
                    dict(light, rows=keep, ok_rows=len(light["rows"]) - len(keep)))
-        cov["ran"].append("轻检 %d 个 URL(sitemap %d 条 + GSC 有点击的页,%d 个 sitemap 文件,%.0f 秒)"
-                          % (light["checked"], light["locs_total"], light["sitemap_files"], light["seconds"]))
+        pace = ("逐个抓、间隔 %g 秒" % light["delay"]) if light["delay"] > 0 else ("%d 路并发" % light["workers"])
+        cov["ran"].append("轻检 %d 个 URL(sitemap %d 条 + GSC 有点击的页,%d 个 sitemap 文件,%s,%.0f 秒)"
+                          % (light["checked"], light["locs_total"], light["sitemap_files"], pace, light["seconds"]))
+        for s in light["sampled"]:
+            if s["total"] > s["checked"]:
+                cov["ran"].append("轻检按位置抽样 %s:%d 个查 %d 个" % (s["rule"], s["total"], s["checked"]))
         if light["sitemap_errors"]:
             hard.append({"title": "sitemap 取不到或解析失败", "evidence": "; ".join(light["sitemap_errors"][:3]),
                          "source": "本周轻检"})
@@ -1084,8 +1155,7 @@ def run_ops(args, kind):
     # 覆盖率门槛
     score = health(run_dir) if audit else None
     light_cov = pct(light["checked"], light["targets"]) if light else 0.0
-    sm_cov = pct(len({norm(r["url"]) for r in light["rows"]} & set(light["in_sitemap"])),
-                 len(light["in_sitemap"])) if light else 0.0
+    sm_cov = light_sitemap_coverage(light)
     deep_n = (audit or {}).get("audited", 0)
     deep_need = min(DEEP_MIN_PAGES, max(1, len(clicked))) if clicked else DEEP_MIN_PAGES
     deep_ratio = pct(deep_n, len(deep_targets))
@@ -2077,7 +2147,13 @@ def build_parser():
         s.add_argument("--market")
         s.add_argument("--external", help="外部数据包路径;默认取 seo-ops/raw/external-*.json 最新一份")
         s.add_argument("--top-n", type=int, default=50, help="深审页数(首页 + 按点击排序)")
-        s.add_argument("--workers", type=int, default=4, help="轻检并发(默认 4;失败的停顿后逐个重试)")
+        s.add_argument("--workers", type=int, default=4, help="--light-delay 0 时的轻检并发(默认 4)")
+        s.add_argument("--light-delay", type=float, default=LIGHT_DELAY_S,
+                       help="轻检逐个抓,两次请求之间停几秒(默认 %g);0 = 按 --workers 并发,只用于本机或扛得住的站"
+                            % LIGHT_DELAY_S)
+        s.add_argument("--light-sample", action="append", default=[], metavar="路径正则=个数",
+                       help="路径匹配正则的 URL 只按位置均匀抽 N 个(含首尾),GSC 有点击的页不抽;可重复。"
+                            "按需渲染的页用它,免得每周抓一遍就把源站缓存写满。例:'^/(ja|ko)/=60'")
         s.add_argument("--timeout", type=float, default=15.0)
         s.add_argument("--light-limit", type=int, default=0, help="轻检最多多少 URL(0 = 全部)")
         s.add_argument("--repo", help="站点源码仓库路径;给了就给推荐项附源码候选")

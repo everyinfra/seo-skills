@@ -11,7 +11,7 @@ python3 scripts/project.py ops weekly            # 在站点仓库根目录(有 
 python3 scripts/project.py ops monthly           # 周单 + 内容退役候选 + 事实重抽提醒
 ```
 
-常用参数:`--top-n 50`(深审页数)、`--workers 6`(轻检并发)、`--repo PATH --rev origin/main`(给推荐项找源码)、`--external FILE`(指定外部数据包)、`--no-net`(只用已有数据)、`--allow-local`(站点是 localhost / 127.0.0.1 预览时才加;不加就拒跑,防止把预览当生产记进台账。开局 `onboard.py start --allow-local` 过的工作区记在 `project.yaml` 的 `allow_local: true`,之后不用再带)。
+常用参数:`--top-n 50`(深审页数)、`--light-delay 0.5`(轻检两次请求的间隔秒数,默认 0.5;`0` 才按 `--workers` 并发)、`--light-sample '^/(ja|ko)/=60'`(路径匹配的页只按位置抽 N 个,可重复;见第 3 节)、`--repo PATH --rev origin/main`(给推荐项找源码)、`--external FILE`(指定外部数据包)、`--no-net`(只用已有数据)、`--allow-local`(站点是 localhost / 127.0.0.1 预览时才加;不加就拒跑,防止把预览当生产记进台账。开局 `onboard.py start --allow-local` 过的工作区记在 `project.yaml` 的 `allow_local: true`,之后不用再带)。
 
 开局做完以后,输出最前面先印「原样发给用户」的首屏块和「给 agent」一段(见 [loops-and-site-move](../lifecycle/loops-and-site-move.md) 第 1 节),后面才是运营单全文;`agenda.md` 是存档,第二次打开不读它当现状。
 
@@ -49,11 +49,13 @@ python3 scripts/project.py ops monthly           # 周单 + 内容退役候选 +
 没有外部数据包时,第 5、6 节和到期复验读工作区旁 `data/` 里的 GSC 导出(逐日 `gsc-pages.csv` 优先,其次两期 `Pages_起_止.csv`),和开局、阶段门槛循环同一套读法;覆盖节写明用的是哪份导出、页面级还是逐日、有没有查询级。这时不做「两个来源对账」(只有一个来源)。
 
 最后一节「8. 做完运营单以后」是给 agent 的固定指引:只有首屏列了问题才停;缺材料写成陈述句的「待你补的材料」,同一项 30 天内不再列(`ledger/needs.jsonl`);起草类(brief、正文草稿、改动稿、提交清单)直接做;工作区里没有站点源码时,改页面的事出改动稿;用户回「carry on / 继续 / 你定」就按默认做。路线项要什么材料写在打法的 `needs` 里(`data/playbooks.json`):缺了做不了的(品牌平台主页链接)「只做这一件」先跳过它、选下一条能做的;缺了也能做的(站点源码、正式域名)照做,产出换成改动稿或占位。
-7. **覆盖率和分数**。sitemap 覆盖率、深审页数、没跑的检查和原因。**覆盖不够不出分**:sitemap 覆盖 ≥95%,深审 ≥ min(20, 有点击页数) 页且 ≥80% 目标页,才给健康分(Ahrefs 口径:无 CRITICAL 页占比)。
+7. **覆盖率和分数**。sitemap 覆盖率、深审页数、没跑的检查和原因。**覆盖不够不出分**:sitemap 覆盖 ≥95%,深审 ≥ min(20, 有点击页数) 页且 ≥80% 目标页,才给健康分(Ahrefs 口径:无 CRITICAL 页占比)。用了 `--light-sample` 时,按规则抽掉的页不算进 sitemap 覆盖率的分母,覆盖节逐条写「按位置抽样 规则:共 M 个查 N 个」。
 
 ## 3. 轻检和深审
 
-- **轻检**:sitemap 全量(robots.txt 声明的 sitemap,index 展开两层,不抽样)加 GSC 有点击的页。每个 URL 只取 `<head>`:状态码、重定向目标、meta robots / X-Robots-Tag、canonical。默认 4 路并发;第一遍超时或 5xx 的停 15 秒、45 秒各逐个重试一轮(加倍超时),后来成功的记 INFO「批量抓取时超时」,都失败才记抓取失败(没缓存的动态页在并发下会被源站拖慢)。2,769 个 URL 实测 3–4 分钟。
+- **轻检**:sitemap 全量(robots.txt 声明的 sitemap,index 展开两层)加 GSC 有点击的页。每个 URL 只取 `<head>`:状态码、重定向目标、meta robots / X-Robots-Tag、canonical。默认逐个抓,两次请求之间停 0.5 秒(`--light-delay`,和 `sitemap_audit.py` 一样);`--light-delay 0` 才按 `--workers` 并发,只用于本机预览或扛得住的站。第一遍超时或 5xx 的停 15 秒、45 秒各逐个重试一轮(加倍超时),后来成功的记 INFO「批量抓取时超时」,都失败才记抓取失败。
+  - 按需渲染的页(源站收到请求才渲染、渲染完写缓存的页,比如 Next.js `dynamicParams = true` 加 `revalidate` 的路由)每抓一次就写一份缓存。几千个这样的页不停顿地并发抓一遍,几十分钟能把源站缓存盘写满。这类页用 `--light-sample '路径正则=个数'` 按位置均匀抽(含首尾,同 `sitemap_audit.py --check-limit`),GSC 有点击的页不抽、照查;没抽到的页上期的问题记「未复查」,不算已解决。预渲染的页照旧全查。
+  - 耗时:逐个抓约每秒 1.5 个 URL,4,000 个 URL 约 45 分钟;LaunchAgent 定时跑不用等。
 - **深审**:首页加按 GSC 点击排序的前 N 页,走 `site_audit.py`。没有 GSC 时取 sitemap 前 N 页,覆盖节写明。
 
 ## 4. 数据接入
