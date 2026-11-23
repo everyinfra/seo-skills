@@ -1,0 +1,58 @@
+{
+ "generated": "2026-11-23T12:37:35",
+ "site": "https://github.com/everyinfra/seo-skills",
+ "market": null,
+ "curr_run": 49,
+ "prev_run": 48,
+ "baseline_run": 43,
+ "baseline_missing": false,
+ "baseline_kind_mismatch": false,
+ "alerts": [
+  {
+   "level": "info",
+   "code": "main_content_change",
+   "key": "/",
+   "message": "首页 主内容字数 4621→2973(36%)",
+   "details": {
+    "prev": 4621,
+    "curr": 2973,
+    "pct": 35.7,
+    "threshold_pct": 30.0
+   },
+   "action": "核对内容体量骤变(误发布/被篡改/软 404 变薄/模板丢正文区);无意则回滚(draft PR)",
+   "boundary": "draft_pr"
+  }
+ ],
+ "healed": [],
+ "suppressed": [],
+ "inhibited": [],
+ "accepted": 0,
+ "slo": null,
+ "counts": {
+  "critical": 0,
+  "warn": 0,
+  "info": 1,
+  "low": 0
+ },
+ "persisted": {
+  "inserted": [
+   {
+    "level": "info",
+    "code": "main_content_change",
+    "key": "/",
+    "message": "首页 主内容字数 4621→2973(36%)",
+    "details_row": {
+     "details": {
+      "prev": 4621,
+      "curr": 2973,
+      "pct": 35.7,
+      "threshold_pct": 30.0
+     },
+     "action": "核对内容体量骤变(误发布/被篡改/软 404 变薄/模板丢正文区);无意则回滚(draft PR)",
+     "boundary": "draft_pr"
+    }
+   }
+  ],
+  "resolved": []
+ }
+}
