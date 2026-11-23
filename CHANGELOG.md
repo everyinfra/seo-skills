@@ -3,8 +3,14 @@
 以后内容或结构有变更时,提升版本号并增加一条带日期的记录。
 Future content or structure changes must bump the version and add a dated entry.
 
-## 未发版 / Unreleased
+## 0.48.2 - 2026-11-23
 
+- **运营单轻检对生产站放慢、按需渲染页抽样**(`ops.py weekly`):
+  The weekly light check is gentle on production sites and samples on-demand pages (`ops.py weekly`):
+  - 轻检默认逐个抓,两次请求之间停 0.5 秒(新参数 `--light-delay`,和 `sitemap_audit.py --delay` 一样);`--light-delay 0` 才按 `--workers` 并发。以前默认 4 路并发、不停顿,一个 8,201 个 URL 的多语言站每秒被抓 7 个页。
+    The light check now fetches one URL at a time with 0.5 s between requests (new `--light-delay`, same default as `sitemap_audit.py --delay`); `--light-delay 0` keeps the old `--workers` concurrency. It used to run 4 workers with no pause, about 7 pages a second on an 8,201-URL multilingual site.
+  - 新参数 `--light-sample '路径正则=个数'`(可重复):路径匹配的 URL 按位置均匀抽 N 个(含首尾),GSC 有点击的页不抽。按需渲染的页每抓一次源站就渲染、写一份缓存,全量抓一遍能在几十分钟里写满源站缓存盘。抽掉的页不算进 sitemap 覆盖率的分母,覆盖节逐条写抽了多少;它们上期的问题记「未复查」,不算已解决。
+    New `--light-sample 'PATH_REGEX=N'` (repeatable): URLs whose path matches are sampled by position, N of them, first and last included; pages with GSC clicks are always checked. Each fetch of an on-demand page makes the origin render it and write a cache entry, and a full pass can fill the origin's cache disk in under an hour. Sampled-out pages are left out of the sitemap-coverage denominator, the coverage section lists each rule, and their previous issues stay "not rechecked" instead of resolved.
 - **README 英文在前**:英文版改为仓库默认的 `README.md`,中文版移到 `README.zh-CN.md`,`README.en.md` 留作指向新位置的短页,三份顶部的语言切换同步。`install.sh` 结尾的宿主说明链接改指 `HOSTS.md`(原锚点已不存在),SKILL.md 的安装链接改指英文 README 的 `#install`,发版检查和宿主检查改读新文件名。
   README is English first: the English version is now the default `README.md`, the Chinese version moved to `README.zh-CN.md`, and `README.en.md` stays as a short pointer. The host link printed by `install.sh` now goes to `HOSTS.md`, the install link in SKILL.md goes to `#install`, and the release and host checks read the new file names.
 
