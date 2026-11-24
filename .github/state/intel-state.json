@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-23T08:58:20.256200+00:00",
+ "checked_at": "2026-11-24T10:53:54.898835+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -17,8 +17,8 @@
    "ts": "2026-11-17T09:10:25.483795+00:00"
   },
   "google-updates": {
-   "hash": "24fc20465b47a619fe7d2167a70960e8",
-   "ts": "2026-11-19T08:44:15.523555+00:00"
+   "hash": "c639341da4d41a23ac18e4bca7775854",
+   "ts": "2026-11-24T10:53:29.773259+00:00"
   },
   "gsc-announce": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "2ff15099f39a73f6b9e57bd916c9ab57",
-   "ts": "2026-11-23T08:58:04.298940+00:00"
+   "hash": "6ebd50af1c2e56bc4a550b7797b07d69",
+   "ts": "2026-11-24T10:53:32.156962+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #111 from 91pavan/docs/observability-section",
@@ -99,12 +99,12 @@
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "1cb7e046235dca629208cacf2561fb3b",
-   "ts": "2026-11-21T08:14:49.878663+00:00"
+   "hash": "5f6ebc4566c76d915bcbe2400d071faa",
+   "ts": "2026-11-24T10:53:36.210450+00:00"
   },
   "naver-wm": {
-   "hash": "ad2962e7521a6622f26fbf62a8d752e5",
-   "ts": "2026-11-19T08:44:23.717894+00:00"
+   "hash": "d435acf416e7e94b5a1cffcc1962f617",
+   "ts": "2026-11-24T10:53:39.403028+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
@@ -112,24 +112,21 @@
   },
   "statcounter-search": {
    "hash": "ac6c1d5392e4d7ac9fe2c7f3fb2948c2",
-   "ts": "2026-11-23T08:58:16.548638+00:00"
+   "ts": "2026-11-24T10:53:50.071751+00:00",
+   "unstable_streak": 1
   },
   "statcounter-ai": {
    "hash": "dd2cc3d6e01d89672f12fc7da809acd9",
-   "ts": "2026-11-23T08:58:16.895459+00:00"
+   "ts": "2026-11-24T10:53:50.769106+00:00",
+   "unstable_streak": 1
   },
   "semrush-sensor": {
-   "hash": "031f563a5e4f4408383903ac8e8cae54",
-   "ts": "2026-11-20T08:30:23.936348+00:00"
+   "hash": "e0d91fd5364c965dc2c2e7ca3de1a05e",
+   "ts": "2026-11-24T10:53:51.361576+00:00"
   },
   "seroundtable": {
-   "top": "Google StarSearch, AIGC, Zero-History Discovery, Feed Ranking & More",
+   "top": "New Google Business Profiles Controls For Appointments & Dinner Reservations",
    "seen": [
-    "Google Adding Booking Links To Business Profiles Automatically?",
-    "Bing Ads At Top Of AI Mode Results",
-    "Google Loses Another Round in Legal Battle Against SerpApi Over Scraping",
-    "Businesses in ChatGPT Business Hub Live With Click Data",
-    "Google November 2026 Core Update Is Rolling Out",
     "Gemini 4 Carbon Available In Google Search AI Mode",
     "Yahoo Search Launches Pivot Search, Yahoo Scout App & More",
     "Google Placing Source Icons At Bottom Of AI Overviews",
@@ -174,12 +171,17 @@
     "Google Expands & Clarifies Sexual Content Advertising Policy Examples",
     "Google StarSearch, AIGC, Zero-History Discovery, Feed Ranking & More",
     "You Can Connect ChatGPT Business Hub With ChatGPT Ad Account",
-    "Google Search Profiles Is Rolling Out Globally"
+    "Google Search Profiles Is Rolling Out Globally",
+    "New Google Business Profiles Controls For Appointments & Dinner Reservations",
+    "Google Documents Previously Undocumented Crawlers & Fetchers",
+    "Google: Connect Apps To Search In Return For Personal Responses",
+    "Google Posts FAQs on Back Button Hijacking Spam",
+    "Daily Search Forum Recap: November 23, 2026"
    ],
-   "ts": "2026-11-23T08:58:18.447402+00:00"
+   "ts": "2026-11-24T10:53:52.402063+00:00"
   },
   "google-docs-rss": {
-   "top": "Removed the Data Feed validation tool from the book actions documentation",
+   "top": "Added an FAQ to the back button hijacking spam policy",
    "seen": [
     "Updating the Indexing API quota page",
     "Added documentation on the UGC Fresh Data Program",
@@ -191,9 +193,10 @@
     "Updated guidance on preventing user-generated spam",
     "Added \"things to do\" query support to the aggregator and supplier units",
     "Added documentation on identifying traffic from Google Search",
-    "Removed the Data Feed validation tool from the book actions documentation"
+    "Removed the Data Feed validation tool from the book actions documentation",
+    "Added an FAQ to the back button hijacking spam policy"
    ],
-   "ts": "2026-11-20T08:30:24.391721+00:00"
+   "ts": "2026-11-24T10:53:51.809291+00:00"
   },
   "openai-bots-rss": {
    "hash": "f237661cad613ae8cbd3da9f508b2565",
