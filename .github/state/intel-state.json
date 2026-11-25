@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-24T10:53:54.898835+00:00",
+ "checked_at": "2026-11-25T09:48:19.533257+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -17,8 +17,8 @@
    "ts": "2026-11-17T09:10:25.483795+00:00"
   },
   "google-updates": {
-   "hash": "c639341da4d41a23ac18e4bca7775854",
-   "ts": "2026-11-24T10:53:29.773259+00:00"
+   "hash": "35f21bcc769d5245c4c69dc16f977cab",
+   "ts": "2026-11-25T09:47:59.102236+00:00"
   },
   "gsc-announce": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -36,8 +36,8 @@
    "ts": "2026-11-17T09:10:26.700669+00:00"
   },
   "status-dashboard": {
-   "hash": "4591d311d804228b6d47223db5708758",
-   "ts": "2026-11-17T09:10:27.262495+00:00"
+   "hash": "69dd1cff06a2df955976f82438f4a7b4",
+   "ts": "2026-11-25T09:47:59.795339+00:00"
   },
   "lighthouse": {
    "top": "v13.6.0",
@@ -64,11 +64,11 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "6ebd50af1c2e56bc4a550b7797b07d69",
-   "ts": "2026-11-24T10:53:32.156962+00:00"
+   "hash": "39f7c153558ae8fde1f6607e30817751",
+   "ts": "2026-11-25T09:48:01.646107+00:00"
   },
   "ard-spec": {
-   "top": "Merge pull request #111 from 91pavan/docs/observability-section",
+   "top": "Merge pull request #119 from jdamick/adopt-ai-catalog-urn",
    "seen": [
     "Merge pull request #85 from thegovind/conformance-extension-media-types",
     "Merge pull request #86 from aaitor/add-nevermined-payment-example",
@@ -81,13 +81,15 @@
     "spec(cddl): allow empty buckets array in explore-facet-result (#34)",
     "Merge pull request #105 from ards-project/fix-skill-and-recognized-me\u2026",
     "Merge pull request #111 from 91pavan/docs/observability-section",
-    "feat(spec): add informative observability guidance"
+    "feat(spec): add informative observability guidance",
+    "Merge pull request #119 from jdamick/adopt-ai-catalog-urn",
+    "spec: adopt AI Catalog's urn:air grammar (Appendix C, ADR-0011)"
    ],
-   "ts": "2026-10-26T06:07:48.821620+00:00"
+   "ts": "2026-11-25T09:48:02.161269+00:00"
   },
   "anthropic-crawl": {
-   "hash": "38f048619ad149829e43609026e91512",
-   "ts": "2026-11-20T08:30:04.929830+00:00"
+   "hash": "776f64b4d0bcf5eac7656bf908d52a73",
+   "ts": "2026-11-25T09:48:02.734101+00:00"
   },
   "schema-org": {
    "hash": "c28ae2197ecacc4469ac00319b179a7f",
@@ -100,7 +102,8 @@
   },
   "yandex-wm": {
    "hash": "5f6ebc4566c76d915bcbe2400d071faa",
-   "ts": "2026-11-24T10:53:36.210450+00:00"
+   "ts": "2026-11-25T09:48:06.105309+00:00",
+   "unstable_streak": 1
   },
   "naver-wm": {
    "hash": "d435acf416e7e94b5a1cffcc1962f617",
@@ -112,26 +115,20 @@
   },
   "statcounter-search": {
    "hash": "ac6c1d5392e4d7ac9fe2c7f3fb2948c2",
-   "ts": "2026-11-24T10:53:50.071751+00:00",
-   "unstable_streak": 1
+   "ts": "2026-11-25T09:48:14.606591+00:00",
+   "unstable_streak": 2
   },
   "statcounter-ai": {
-   "hash": "dd2cc3d6e01d89672f12fc7da809acd9",
-   "ts": "2026-11-24T10:53:50.769106+00:00",
-   "unstable_streak": 1
+   "hash": "82a1458d35381476290155e8616a56dc",
+   "ts": "2026-11-25T09:48:15.331042+00:00"
   },
   "semrush-sensor": {
    "hash": "e0d91fd5364c965dc2c2e7ca3de1a05e",
    "ts": "2026-11-24T10:53:51.361576+00:00"
   },
   "seroundtable": {
-   "top": "New Google Business Profiles Controls For Appointments & Dinner Reservations",
+   "top": "Google On How Links Are Selected & Shown In AI Overviews & AI Mode",
    "seen": [
-    "Gemini 4 Carbon Available In Google Search AI Mode",
-    "Yahoo Search Launches Pivot Search, Yahoo Scout App & More",
-    "Google Placing Source Icons At Bottom Of AI Overviews",
-    "Google Ads API Version 26.2 Now Out Available",
-    "Google Search AI Overview Definitions Expanded By  Default",
     "Google: How Moving to a CDN Can Accidentally Overwhelm Your Website",
     "Daily Search Forum Recap: November 11, 2026",
     "Google Search Console Generative AI Performance Report Data Bug Nov 9 - 11",
@@ -176,9 +173,14 @@
     "Google Documents Previously Undocumented Crawlers & Fetchers",
     "Google: Connect Apps To Search In Return For Personal Responses",
     "Google Posts FAQs on Back Button Hijacking Spam",
-    "Daily Search Forum Recap: November 23, 2026"
+    "Daily Search Forum Recap: November 23, 2026",
+    "Google On How Links Are Selected & Shown In AI Overviews & AI Mode",
+    "New Google Search Ranking Hub, Ranking Principles, Feedback & AI Training Control",
+    "Google December 2026 Core Update Preannounced - Complex Queries & Personalization",
+    "Daily Search Forum Recap: November 24, 2026",
+    "Google November 2026 Core Update Has Completed Rolling Out - What Happened?"
    ],
-   "ts": "2026-11-24T10:53:52.402063+00:00"
+   "ts": "2026-11-25T09:48:16.975506+00:00"
   },
   "google-docs-rss": {
    "top": "Added an FAQ to the back button hijacking spam policy",
