@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-25T09:48:19.533257+00:00",
+ "checked_at": "2026-11-26T09:29:09.374921+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "39f7c153558ae8fde1f6607e30817751",
-   "ts": "2026-11-25T09:48:01.646107+00:00"
+   "hash": "b413e08c8f138e149cdc7a9881aaaf04",
+   "ts": "2026-11-26T09:28:53.036999+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #119 from jdamick/adopt-ai-catalog-urn",
@@ -101,9 +101,8 @@
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "5f6ebc4566c76d915bcbe2400d071faa",
-   "ts": "2026-11-25T09:48:06.105309+00:00",
-   "unstable_streak": 1
+   "hash": "21566637756a98d90aec3ec40706e672",
+   "ts": "2026-11-26T09:28:56.739054+00:00"
   },
   "naver-wm": {
    "hash": "d435acf416e7e94b5a1cffcc1962f617",
@@ -115,25 +114,20 @@
   },
   "statcounter-search": {
    "hash": "ac6c1d5392e4d7ac9fe2c7f3fb2948c2",
-   "ts": "2026-11-25T09:48:14.606591+00:00",
-   "unstable_streak": 2
+   "ts": "2026-11-26T09:29:04.791493+00:00",
+   "unstable_streak": 3
   },
   "statcounter-ai": {
-   "hash": "82a1458d35381476290155e8616a56dc",
-   "ts": "2026-11-25T09:48:15.331042+00:00"
+   "hash": "56137b84086106b08153ce52c0368840",
+   "ts": "2026-11-26T09:29:05.329655+00:00"
   },
   "semrush-sensor": {
-   "hash": "e0d91fd5364c965dc2c2e7ca3de1a05e",
-   "ts": "2026-11-24T10:53:51.361576+00:00"
+   "hash": "713659c081a51d4ab53b228564d0da4a",
+   "ts": "2026-11-26T09:29:05.974851+00:00"
   },
   "seroundtable": {
-   "top": "Google On How Links Are Selected & Shown In AI Overviews & AI Mode",
+   "top": "ChatGPT Ads New Call-To-Actions, Business Agents Beyond US, More Audience Metrics & More",
    "seen": [
-    "Google: How Moving to a CDN Can Accidentally Overwhelm Your Website",
-    "Daily Search Forum Recap: November 11, 2026",
-    "Google Search Console Generative AI Performance Report Data Bug Nov 9 - 11",
-    "Google Search Gets Massive Upgrade With Gemini 4 Hydrogen",
-    "New Google Help Doc Explains How To Identifying Traffic From Google Search",
     "OpenAI ChatGPT Ads Updates: Intelligent Bidding, New Cost Targets, Geo-Flexibility & Product Set Filters",
     "Daily Search Forum Recap: November 12, 2026",
     "Google Tests Dropping AI Mode From Search Bar & Ask Anything",
@@ -178,9 +172,14 @@
     "New Google Search Ranking Hub, Ranking Principles, Feedback & AI Training Control",
     "Google December 2026 Core Update Preannounced - Complex Queries & Personalization",
     "Daily Search Forum Recap: November 24, 2026",
-    "Google November 2026 Core Update Has Completed Rolling Out - What Happened?"
+    "Google November 2026 Core Update Has Completed Rolling Out - What Happened?",
+    "ChatGPT Ads New Call-To-Actions, Business Agents Beyond US, More Audience Metrics & More",
+    "Daily Search Forum Recap: November 25, 2026",
+    "Google Ads Encourages Dynamically Scoring Conversion Values Hack",
+    "Bing Image Search Ask Visual Search Button",
+    "Google Image Collections & Saved Items Adds Ask Anything AI Mode"
    ],
-   "ts": "2026-11-25T09:48:16.975506+00:00"
+   "ts": "2026-11-26T09:29:07.120612+00:00"
   },
   "google-docs-rss": {
    "top": "Added an FAQ to the back button hijacking spam policy",
@@ -227,7 +226,7 @@
    "ts": "2026-11-06T07:54:00.066950+00:00"
   },
   "cloudflare-blog": {
-   "top": "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team",
+   "top": "Introducing Search for Agents",
    "seen": [
     "Agents aren\u2019t humans (but they kinda are)",
     "See the agents, set the terms: new visibility and control for personal agents",
@@ -235,9 +234,10 @@
     "How Commerce.com and Cloudflare are getting storefronts ready for AI agents",
     "Adapting to AI penetration testing orchestrators: The Modern Security Model",
     "See the agents, set the terms: New visibility and control for personal agents",
-    "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team"
+    "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team",
+    "Introducing Search for Agents"
    ],
-   "ts": "2026-11-19T08:44:33.433568+00:00"
+   "ts": "2026-11-26T09:29:07.747688+00:00"
   },
   "openai-news": {
    "top": "ChatGPT Ads increases its market presence in 44 countries",
@@ -297,7 +297,7 @@
    "ts": "2026-11-06T07:54:01.662474+00:00"
   },
   "arxiv-geo": {
-   "top": "GEOHunter: Mapping a Generative Engine Optimization Network in the Wild",
+   "top": "Welfare-Enhancing Mechanism Design for Agent Ecosystems",
    "seen": [
     "IntentGEO: Intent-aware Generative Engine Optimization for Recommendation",
     "Characterizing Adversarial GEO via Implicit Brand Injection",
@@ -305,9 +305,10 @@
     "Predicting What Answer Engines Cite: Open Decision Models, Rerankers and a Distilled 4B Student on Ten Engines under Controlled Retrieval",
     "Toolflation: Seller Agents Distort Tool Markets Through Spontaneous Generative Engine Optimization",
     "Security of Deep Research Agents: Attack Surface, Defenses, Benchmarks, and Agenda Seeding against Research Planning",
-    "GEOHunter: Mapping a Generative Engine Optimization Network in the Wild"
+    "GEOHunter: Mapping a Generative Engine Optimization Network in the Wild",
+    "Welfare-Enhancing Mechanism Design for Agent Ecosystems"
    ],
-   "ts": "2026-11-20T08:30:27.056812+00:00"
+   "ts": "2026-11-26T09:29:09.374358+00:00"
   }
  }
 }
