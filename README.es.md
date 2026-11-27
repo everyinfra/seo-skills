@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Solo la biblioteca estándar de Python">
 </p>
 
-<p align="center"><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <b>Español</b></p>
+<p align="center"><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <b>Español</b> · <a href="README.tr.md">Türkçe</a></p>
 
 **Descarga gratuita. Usa tu propia herramienta de IA y tu propio modelo.**
 
