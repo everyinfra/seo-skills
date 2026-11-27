@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-26T09:29:09.374921+00:00",
+ "checked_at": "2026-11-27T09:39:15.698273+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "b413e08c8f138e149cdc7a9881aaaf04",
-   "ts": "2026-11-26T09:28:53.036999+00:00"
+   "hash": "08b46cf5bee253f684a9b4947d647962",
+   "ts": "2026-11-27T09:38:59.405620+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #119 from jdamick/adopt-ai-catalog-urn",
@@ -101,35 +101,32 @@
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "21566637756a98d90aec3ec40706e672",
-   "ts": "2026-11-26T09:28:56.739054+00:00"
+   "hash": "14ffc3e76b01f4ed1114345c3141d635",
+   "ts": "2026-11-27T09:39:03.086611+00:00"
   },
   "naver-wm": {
-   "hash": "d435acf416e7e94b5a1cffcc1962f617",
-   "ts": "2026-11-24T10:53:39.403028+00:00"
+   "hash": "ec6aff13a41afc14d166df13daa029ac",
+   "ts": "2026-11-27T09:39:06.482789+00:00"
   },
   "baidu-ziyuan": {
    "hash": "5b970db79a084daa5d7c5e7f41f4db61",
    "ts": "2026-10-11T08:35:05.849665+00:00"
   },
   "statcounter-search": {
-   "hash": "ac6c1d5392e4d7ac9fe2c7f3fb2948c2",
-   "ts": "2026-11-26T09:29:04.791493+00:00",
-   "unstable_streak": 3
+   "hash": "88b0d5d2c1ba52644b22eb9815a7cb6e",
+   "ts": "2026-11-27T09:39:12.197792+00:00"
   },
   "statcounter-ai": {
-   "hash": "56137b84086106b08153ce52c0368840",
-   "ts": "2026-11-26T09:29:05.329655+00:00"
+   "hash": "6a958683f251e979036e732452bb3ac1",
+   "ts": "2026-11-27T09:39:12.606620+00:00"
   },
   "semrush-sensor": {
    "hash": "713659c081a51d4ab53b228564d0da4a",
    "ts": "2026-11-26T09:29:05.974851+00:00"
   },
   "seroundtable": {
-   "top": "ChatGPT Ads New Call-To-Actions, Business Agents Beyond US, More Audience Metrics & More",
+   "top": "Ask Jeeves At Macy's Thanksgiving Day Parade (Old Photos)",
    "seen": [
-    "OpenAI ChatGPT Ads Updates: Intelligent Bidding, New Cost Targets, Geo-Flexibility & Product Set Filters",
-    "Daily Search Forum Recap: November 12, 2026",
     "Google Tests Dropping AI Mode From Search Bar & Ask Anything",
     "Microsoft 365 Outage Impact On Microsoft Advertising",
     "Daily Search Forum Recap: November 13, 2026",
@@ -177,9 +174,11 @@
     "Daily Search Forum Recap: November 25, 2026",
     "Google Ads Encourages Dynamically Scoring Conversion Values Hack",
     "Bing Image Search Ask Visual Search Button",
-    "Google Image Collections & Saved Items Adds Ask Anything AI Mode"
+    "Google Image Collections & Saved Items Adds Ask Anything AI Mode",
+    "Ask Jeeves At Macy's Thanksgiving Day Parade (Old Photos)",
+    "Google Local Pack No Reviews Bug"
    ],
-   "ts": "2026-11-26T09:29:07.120612+00:00"
+   "ts": "2026-11-27T09:39:13.815984+00:00"
   },
   "google-docs-rss": {
    "top": "Added an FAQ to the back button hijacking spam policy",
