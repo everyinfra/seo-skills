@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-27T09:39:15.698273+00:00",
+ "checked_at": "2026-11-28T08:53:37.281480+00:00",
  "sources": {
   "google-blog": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -17,8 +17,8 @@
    "ts": "2026-11-17T09:10:25.483795+00:00"
   },
   "google-updates": {
-   "hash": "35f21bcc769d5245c4c69dc16f977cab",
-   "ts": "2026-11-25T09:47:59.102236+00:00"
+   "hash": "26a2901d829749439a6841cca3c68530",
+   "ts": "2026-11-28T08:53:17.482013+00:00"
   },
   "gsc-announce": {
    "top": "New filtering and reporting capabilities in the Search Analytics API",
@@ -64,8 +64,8 @@
    "ts": "2026-10-14T06:06:27.928530+00:00"
   },
   "openai-bots": {
-   "hash": "08b46cf5bee253f684a9b4947d647962",
-   "ts": "2026-11-27T09:38:59.405620+00:00"
+   "hash": "9f6fb62752f960f9602035a4e77d88b4",
+   "ts": "2026-11-28T08:53:19.408512+00:00"
   },
   "ard-spec": {
    "top": "Merge pull request #119 from jdamick/adopt-ai-catalog-urn",
@@ -101,8 +101,8 @@
    "ts": "2026-11-17T09:10:30.278817+00:00"
   },
   "yandex-wm": {
-   "hash": "14ffc3e76b01f4ed1114345c3141d635",
-   "ts": "2026-11-27T09:39:03.086611+00:00"
+   "hash": "78ac7b1c3a375abcafefb941d84700f8",
+   "ts": "2026-11-28T08:53:23.557799+00:00"
   },
   "naver-wm": {
    "hash": "ec6aff13a41afc14d166df13daa029ac",
@@ -125,13 +125,8 @@
    "ts": "2026-11-26T09:29:05.974851+00:00"
   },
   "seroundtable": {
-   "top": "Ask Jeeves At Macy's Thanksgiving Day Parade (Old Photos)",
+   "top": "Google On When To Fix 404 Errors & Updates 404 & Sitemaps Docs",
    "seen": [
-    "Google Tests Dropping AI Mode From Search Bar & Ask Anything",
-    "Microsoft 365 Outage Impact On Microsoft Advertising",
-    "Daily Search Forum Recap: November 13, 2026",
-    "Search News Buzz Video Recap: Google November Core Update Is Here, ChatGPT Business Hub Gives Us Clicks, Yahoo Pivot Search & Google Ads Invalid Traffic",
-    "Yahoo Scout To Pay Publishers Through The ILC For Using Content In AI Answers",
     "Google Business Profiles Now Lets You Add Facebook Messenger Number",
     "Daily Search Forum Recap: November 16, 2026",
     "Google Search Analytics API Adds Branded Queries, Multimodal & Country/Devices Filters",
@@ -176,9 +171,14 @@
     "Bing Image Search Ask Visual Search Button",
     "Google Image Collections & Saved Items Adds Ask Anything AI Mode",
     "Ask Jeeves At Macy's Thanksgiving Day Parade (Old Photos)",
-    "Google Local Pack No Reviews Bug"
+    "Google Local Pack No Reviews Bug",
+    "Google On When To Fix 404 Errors & Updates 404 & Sitemaps Docs",
+    "Daily Search Forum Recap: November 27, 2026",
+    "Search News Buzz Video Recap: Google November Core Update, December Core Preannounced, Search Ranking Hub, Google StarSearch & Search Ad News",
+    "Bing AI Mode Ads Blending More With Organic Results",
+    "Google AI Mode Image Results Ask A Follow Up Button"
    ],
-   "ts": "2026-11-27T09:39:13.815984+00:00"
+   "ts": "2026-11-28T08:53:35.336835+00:00"
   },
   "google-docs-rss": {
    "top": "Added an FAQ to the back button hijacking spam policy",
