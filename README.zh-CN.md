@@ -18,7 +18,7 @@
   <img src="https://img.shields.io/badge/dependencies-Python_stdlib_only-brightgreen" alt="Python standard library only">
 </p>
 
-<p align="center"><a href="README.md">English</a> · <b>简体中文</b> · <a href="README.es.md">Español</a></p>
+<p align="center"><a href="README.md">English</a> · <b>简体中文</b> · <a href="README.es.md">Español</a> · <a href="README.tr.md">Türkçe</a></p>
 
 **免费下载，用你自己的 AI 工具和模型。**
 
