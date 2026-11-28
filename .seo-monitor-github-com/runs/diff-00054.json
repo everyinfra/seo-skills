@@ -1,0 +1,54 @@
+{
+ "generated": "2026-11-28T11:43:34",
+ "site": "https://github.com/everyinfra/seo-skills",
+ "market": null,
+ "curr_run": 54,
+ "prev_run": 53,
+ "baseline_run": 48,
+ "baseline_missing": false,
+ "baseline_kind_mismatch": false,
+ "alerts": [
+  {
+   "level": "warn",
+   "code": "visibility_drop",
+   "key": "site",
+   "message": "site: 抽查可见页 9 → 6(−33%)",
+   "details": {
+    "prev": 9,
+    "curr": 6
+   },
+   "action": "GSC 分层定位(query/page/device);对照 Search Status Dashboard",
+   "boundary": "human"
+  }
+ ],
+ "healed": [],
+ "suppressed": [],
+ "inhibited": [],
+ "accepted": 0,
+ "slo": null,
+ "counts": {
+  "critical": 0,
+  "warn": 1,
+  "info": 0,
+  "low": 0
+ },
+ "persisted": {
+  "inserted": [
+   {
+    "level": "warn",
+    "code": "visibility_drop",
+    "key": "site",
+    "message": "site: 抽查可见页 9 → 6(−33%)",
+    "details_row": {
+     "details": {
+      "prev": 9,
+      "curr": 6
+     },
+     "action": "GSC 分层定位(query/page/device);对照 Search Status Dashboard",
+     "boundary": "human"
+    }
+   }
+  ],
+  "resolved": []
+ }
+}
