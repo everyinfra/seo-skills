@@ -35,7 +35,7 @@ Z = cp.Z          # 1.96,与被测代码同一常数;期望值独立按公式手
 
 
 def run_script(name, args=(), stdin=None):
-    env = dict(os.environ, PYTHONIOENCING="utf-8")
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
     return subprocess.run([sys.executable, os.path.join(SCRIPTS, name), *args],
                           input=stdin, capture_output=True, text=True,
                           encoding="utf-8", env=env)
